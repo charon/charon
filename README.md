@@ -1,10 +1,12 @@
 # Charon
 
-A powerful open source SSO solution.
+A powerful open source account management and SSO solution.
 
 ## Planned features
 
 * Security first with great user experience.
+* Beautiful and intuitive UI/UX.
+* Account creation and management from both user's perspective and admin's perspective.
 * Standard compliant OAuth and OpenID provider.
 * User can be part of multiple communities, with different profiles for differnet communities.
 * Each community can use multiple apps.
