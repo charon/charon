@@ -2,7 +2,7 @@
 
 A powerful open source account management and SSO solution. For end-users, it allows aggregating multiple existing authenticators (Facebook, Google, etc.)
 in one place and managing different (and potentially multiple) profiles exposed do apps. Apps do not have to worry about user management nor multi-tenancy.
-And admins of communities (tenants) using those apps can manage all users in one place.
+And admins of communities (tenants, domains) using those apps can manage all users in one place.
 
 ## Planned features
 
@@ -27,3 +27,5 @@ And admins of communities (tenants) using those apps can manage all users in one
 
 * [Keycloak](https://www.keycloak.org)
 * [Passport](http://www.passportjs.org/)
+* [StackExchange](https://stackexchange.com/)
+* [Google Account](https://en.wikipedia.org/wiki/Google_Account)
