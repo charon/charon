@@ -22,3 +22,8 @@ And admins of communities (tenants) using those apps can manage all users in one
 * Stable GraphQL API.
 * Support for profile impersonation.
 * Everything is logged and auditable.
+
+## Related projects
+
+* [Keycloak](https://www.keycloak.org)
+* [Passport](http://www.passportjs.org/)
