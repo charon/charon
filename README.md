@@ -20,3 +20,5 @@ And admins of communities (tenants) using those apps can manage all users in one
 * U2F support.
 * Support for melding of multiple accounts and profiles into one.
 * Stable GraphQL API.
+* Support for profile impersonation.
+* Everything is logged and auditable.
