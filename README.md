@@ -25,7 +25,12 @@ And admins of communities (tenants, domains, realms) using those apps can manage
 
 ## Related projects
 
-* [Keycloak](https://www.keycloak.org)
-* [Passport](http://www.passportjs.org/)
-* [StackExchange](https://stackexchange.com/)
-* [Google Account](https://en.wikipedia.org/wiki/Google_Account)
+* [Keycloak](https://www.keycloak.org) – enterprise grade, very similar to goals of this project, but: this project aims to have one account for multiple realms (which we call communities),
+  with custom profiles per realm (so the hierarchy/control is different between projects), moreover, it aims to be much simpler in scope, and with admin interface being usable by end-users to manage
+  their communities (Keycloak's admin interface, when enabled for end-users, is quite technical)
+* [Passport](http://www.passportjs.org/) – a low level library, this project uses it internally
+* [StackExchange](https://stackexchange.com/) – an inspiration for this project with its centralized standard-based account system spawning multiple communities,
+  but not available as a stand-alone open source system
+* [Google Account](https://en.wikipedia.org/wiki/Google_Account) – another inspiration of great user flows and quality, but not open source and thus not reusable, moreover, accounts are not shared
+  between domains (which we call communities) but are tied to a domain, something which we want to change with this project (in Charon, you have only one account but multiple profiles for
+  different domains)
