@@ -13,14 +13,14 @@ And admins of communities (tenants, domains, realms) using those apps can manage
 * Account can be part of multiple communities, with different profiles for differnet communities.
 * Each community can use multiple apps.
 * User can authorize all apps in a community, or individual apps.
-* Proactive pushing of profile changes to all apps authorized for a user.
+* Proactive pushing of changes to all apps authorized for a user.
 * User invitation workflow with reminders.
 * Centralized management communities and roles inside communities.
 * Allowing users to link many other authentication providers to their accounts.
 * U2F support.
 * Support for melding of multiple accounts and profiles into one.
 * Stable GraphQL API.
-* Support for profile impersonation.
+* Support for profile impersonation, multiple profiles per app, and ad-hoc anonymous profiles.
 * Everything is logged and auditable.
 
 ## Related projects
