@@ -9,7 +9,7 @@ And admins of communities (tenants, domains, realms) using those apps can manage
 * Security first with great user experience.
 * Beautiful and intuitive UI/UX.
 * Account creation and management from both user's perspective and admin's perspective.
-* Standard compliant OAuth and OpenID provider.
+* Standard compliant OAuth and OpenID Connect provider.
 * Account can be part of multiple communities, with different profiles for differnet communities.
 * Each community can use multiple apps.
 * User can authorize all apps in a community, or individual apps.
