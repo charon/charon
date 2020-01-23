@@ -18,14 +18,14 @@ And admins of communities (tenants, domains, realms) using those apps can manage
 * Centralized management communities and roles inside communities.
 * Allowing users to link many other authentication providers to their accounts.
 * U2F support.
-* Support for melding of multiple accounts and profiles into one.
+* Support for melding of multiple accounts and profiles into one. [#1](https://gitlab.com/charon/charon/issues/1)
 * Stable GraphQL API, which is used by Charon's frontend as well.
-* Support for profile impersonation, multiple profiles per app, and ad-hoc anonymous profiles.
+* Support for profile impersonation, multiple profiles per app, and ad-hoc anonymous profiles. [#1](https://gitlab.com/charon/charon/issues/1)
 * Everything is logged and auditable.
-* Virtual accounts which can be only impersonated.
-* Proxy to log all access and allow/deny high-level access to an app.
+* Virtual accounts which can be only impersonated. [#2](https://gitlab.com/charon/charon/issues/2)
+* Proxy to log all access and allow/deny high-level access to an app and app's APIs.
 * Scoped API tokens to delegate further.
-* Scoped subaccounts to delegate to other people.
+* Scoped subaccounts. [#3](https://gitlab.com/charon/charon/issues/3)
 * Internationalization and localization.
 
 ## Related projects
