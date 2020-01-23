@@ -26,6 +26,7 @@ And admins of communities (tenants, domains, realms) using those apps can manage
 * Proxy to log all access and allow/deny high-level access to an app.
 * Scoped API tokens to delegate further.
 * Scoped subaccounts to delegate to other people.
+* Internationalization and localization.
 
 ## Related projects
 
