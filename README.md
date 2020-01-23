@@ -18,7 +18,8 @@ And admins of communities (tenants, domains, realms) using those apps can manage
 * Centralized management communities and roles inside communities.
 * Allowing users to link many other authentication providers to their accounts.
 * U2F support.
-* Support for melding of multiple accounts and profiles into one.
+* Support for melding of multiple accounts into one.
+* Support for melding of multiple profiles into one.
 * Stable GraphQL API, which is used by Charon's frontend as well.
 * Support for profile impersonation, multiple profiles per app, and ad-hoc anonymous profiles.
 * Everything is logged and auditable.
