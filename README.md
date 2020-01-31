@@ -41,3 +41,4 @@ And admins of communities (tenants, domains, realms) using those apps can manage
 * [Ory](https://www.ory.sh/) – open source identity infrastructure supporting OAuth and OpenID Connect, with focus on standard compliance, with this project it shares the realization
   of a need for [identity infrastructure service](https://www.ory.sh/docs/next/kratos/concepts/) solutions, but this project is innovating with multiple profiles per identity,
   auditable impersonation, and proactive pushing of changes to apps
+* [Gravitee AM](https://gravitee.io/products/am/) – lightweight and easy to use system, but it does not support communities nor impersonation
