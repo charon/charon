@@ -42,3 +42,5 @@ And admins of communities (tenants, domains, realms) using those apps can manage
   of a need for [identity infrastructure service](https://www.ory.sh/docs/next/kratos/concepts/) solutions, but this project is innovating with multiple identities per account,
   auditable impersonation, and proactive pushing of changes to apps
 * [Gravitee AM](https://gravitee.io/products/am/) – lightweight and easy to use system, but it does not support communities nor impersonation
+* [Auth0](https://auth0.com/) – cloud service providing seamless integration of authentication and authorization for apps, but this project tries to provide for all stakeholders
+  (users, apps, admins) and not just apps, moreover, it allows admins (of a community) to be different from developers of apps
