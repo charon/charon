@@ -36,9 +36,9 @@ And admins of communities (tenants, domains, realms) using those apps can manage
 * [StackExchange](https://stackexchange.com/) – an inspiration for this project with its centralized standard-based account system spawning multiple communities,
   but not available as a stand-alone open source system
 * [Google Account](https://en.wikipedia.org/wiki/Google_Account) – another inspiration of great user flows and quality, but not open source and thus not reusable, moreover, accounts are not shared
-  between domains (which we call communities) but are tied to a domain, something which we want to change with this project (in Charon, you have only one account but multiple profiles for
+  between domains (which we call communities) but are tied to a domain, something which we want to change with this project (in Charon, you have only one account but multiple identities for
   different domains)
 * [Ory](https://www.ory.sh/) – open source identity infrastructure supporting OAuth and OpenID Connect, with focus on standard compliance, with this project it shares the realization
-  of a need for [identity infrastructure service](https://www.ory.sh/docs/next/kratos/concepts/) solutions, but this project is innovating with multiple profiles per identity,
+  of a need for [identity infrastructure service](https://www.ory.sh/docs/next/kratos/concepts/) solutions, but this project is innovating with multiple identities per account,
   auditable impersonation, and proactive pushing of changes to apps
 * [Gravitee AM](https://gravitee.io/products/am/) – lightweight and easy to use system, but it does not support communities nor impersonation
