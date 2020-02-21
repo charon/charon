@@ -31,7 +31,7 @@ And admins of communities (tenants, domains, realms) using those apps can manage
 ## Related projects
 
 * [Keycloak](https://www.keycloak.org) – enterprise grade, very similar to goals of this project, but: this project aims to have one account for multiple realms (which we call communities),
-  with custom identites per realm (so the hierarchy/control is different from Keycloak), moreover, it aims to be much simpler in scope, and with admin interface being usable by end-users to manage
+  with custom identites per realm (i.e., the hierarchy/control is different from Keycloak), moreover, it aims to be much simpler in scope, and with admin interface being usable by end-users to manage
   their communities (Keycloak's admin interface, when enabled for end-users, is quite technical)
 * [StackExchange](https://stackexchange.com/) – an inspiration for this project with its centralized standard-based account system spawning multiple communities,
   but not available as a stand-alone open source system
@@ -42,5 +42,6 @@ And admins of communities (tenants, domains, realms) using those apps can manage
   of a need for [identity infrastructure service](https://www.ory.sh/docs/next/kratos/concepts/) solutions, but this project is innovating with multiple identities per account,
   auditable impersonation, and proactive pushing of changes to apps
 * [Gravitee AM](https://gravitee.io/products/am/) – lightweight and easy to use system, but it does not support communities nor impersonation
-* [Auth0](https://auth0.com/) – cloud service providing seamless integration of authentication and authorization for apps, but this project tries to provide for all stakeholders
-  (users, apps, admins) and not just apps, moreover, it allows admins (of a community) to be different from developers of apps
+* [Auth0](https://auth0.com/) – cloud service providing seamless integration of authentication and authorization for apps, hiding the fact that it is being used from the user,
+  but this project aims to be visible to all stakeholders (users, apps, admins), allowing them to control their aspect of its use, moreover, it allows admins (of a community)
+  to be a different entity from developers of apps
