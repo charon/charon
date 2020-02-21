@@ -1,7 +1,7 @@
 # Charon
 
 A powerful open source account management and SSO solution. For end-users, it allows aggregating multiple existing authenticators (Facebook, Google, etc.)
-in one place and managing different (and potentially multiple) profiles exposed to apps. Apps do not have to worry about user management nor multi-tenancy.
+in one place and managing different (and potentially multiple) identities exposed to apps. Apps do not have to worry about user management nor multi-tenancy.
 And admins of communities (tenants, domains, realms) using those apps can manage all users in one place.
 
 ## Planned features
@@ -10,7 +10,7 @@ And admins of communities (tenants, domains, realms) using those apps can manage
 * Beautiful and intuitive UI/UX.
 * Account creation and management from both user's perspective and admin's perspective.
 * Standard compliant OAuth and OpenID Connect provider.
-* Account can be part of multiple communities, with different profiles for differnet communities.
+* Account can be part of multiple communities, with different identities for differnet communities.
 * Each community can use multiple apps.
 * User can authorize all apps in a community, or individual apps.
 * Proactive pushing of changes to all apps authorized for a user.
@@ -18,9 +18,9 @@ And admins of communities (tenants, domains, realms) using those apps can manage
 * Centralized management communities and roles inside communities.
 * Allowing users to link many other authentication providers to their accounts.
 * U2F support.
-* Support for melding of multiple accounts and profiles into one. [#1](https://gitlab.com/charon/charon/issues/1)
+* Support for melding of multiple accounts and identities into one. [#1](https://gitlab.com/charon/charon/issues/1)
 * Stable reactivity-enabled API, which is used by Charon's frontend as well.
-* Support for profile impersonation, multiple profiles per app, and ad-hoc anonymous profiles. [#1](https://gitlab.com/charon/charon/issues/1)
+* Support for identity impersonation, multiple identites per app, and ad-hoc anonymous identites. [#1](https://gitlab.com/charon/charon/issues/1)
 * Everything is logged and auditable.
 * Virtual accounts which can be only impersonated. [#2](https://gitlab.com/charon/charon/issues/2)
 * Proxy to log all access and allow/deny high-level access to an app and app's APIs.
@@ -31,7 +31,7 @@ And admins of communities (tenants, domains, realms) using those apps can manage
 ## Related projects
 
 * [Keycloak](https://www.keycloak.org) – enterprise grade, very similar to goals of this project, but: this project aims to have one account for multiple realms (which we call communities),
-  with custom profiles per realm (so the hierarchy/control is different from Keycloak), moreover, it aims to be much simpler in scope, and with admin interface being usable by end-users to manage
+  with custom identites per realm (so the hierarchy/control is different from Keycloak), moreover, it aims to be much simpler in scope, and with admin interface being usable by end-users to manage
   their communities (Keycloak's admin interface, when enabled for end-users, is quite technical)
 * [StackExchange](https://stackexchange.com/) – an inspiration for this project with its centralized standard-based account system spawning multiple communities,
   but not available as a stand-alone open source system
