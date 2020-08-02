@@ -45,3 +45,4 @@ And admins of communities (tenants, domains, realms) using those apps can manage
 * [Auth0](https://auth0.com/) – cloud service providing seamless integration of authentication and authorization for apps, hiding the fact that it is being used from the user,
   but this project aims to be visible to all stakeholders (users, apps, admins), allowing them to control their aspect of its use, moreover, it allows admins (of a community)
   to be a different entity from developers of apps
+* [Gluu](https://gluu.org) – open source identity infrastructure, seems to be pretty extensive and can support impersonation, but not multiple user profiles
