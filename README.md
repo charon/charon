@@ -47,3 +47,4 @@ And admins of communities (tenants, domains, realms) using those apps can manage
   but this project aims to be visible to all stakeholders (users, apps, admins), allowing them to control their aspect of its use, moreover, it allows admins (of a community)
   to be a different entity from developers of apps
 * [Gluu](https://gluu.org) – open source identity infrastructure, seems to be pretty extensive and can support impersonation, but not multiple user identities
+* [Apple ID SSO](https://support.apple.com/guide/deployment/intro-to-single-sign-on-depfdbf18f55/web) – a closed source and centralized SSO service which does enable users to hide their e-mail address from apps by proxying them
