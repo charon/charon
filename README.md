@@ -1,7 +1,7 @@
 # Charon
 
 A powerful open source Internet-level account management and SSO solution. For end-users, it allows aggregating multiple existing authenticators (Facebook, Google, etc.)
-in one place and managing different (and potentially multiple) identities exposed to apps. Apps do not have to worry about user management nor multi-tenancy.
+in one place and managing different (and potentially multiple) identities exposed to apps. Apps do not have to worry about user management, fake accounts, nor multi-tenancy.
 And admins of communities (tenants, domains, realms) using those apps can manage all users in one place.
 
 ## Planned features
@@ -17,7 +17,11 @@ And admins of communities (tenants, domains, realms) using those apps can manage
 * User invitation workflow with reminders.
 * Centralized management communities and roles inside communities.
 * Allowing users to link many other authentication providers to their accounts.
+* Federation: other authentication providers can be other Charon instances.
 * U2F support.
+* Integration with identify verification providers without exposing details to apps
+  (i.e., app just learns that user has been verified, is unique user, and has satisfied KYC
+  requirements, without learning anything more about the user beyond what user exposes in their identity).
 * Support for melding of multiple accounts and identities into one. [#1](https://gitlab.com/charon/charon/issues/1)
 * Stable reactivity-enabled API, which is used by Charon's frontend as well.
 * Support for identity impersonation, multiple identites per app, and ad-hoc anonymous identites. [#1](https://gitlab.com/charon/charon/issues/1)
