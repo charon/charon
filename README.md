@@ -1,6 +1,6 @@
 # Charon
 
-A powerful open source Internet-level account management and SSO solution. For end-users, it allows aggregating multiple existing authenticators (Facebook, Google, etc.)
+A privacy-focused account management and SSO solution. For end-users, it allows aggregating multiple existing authenticators (Facebook, Google, etc.)
 in one place and managing different (and potentially multiple) identities exposed to apps. Apps do not have to worry about user management, fake accounts, nor multi-tenancy.
 And admins of communities (tenants, domains, realms) using those apps can manage all users in one place.
 
@@ -54,4 +54,4 @@ And admins of communities (tenants, domains, realms) using those apps can manage
 * [Apple ID SSO](https://support.apple.com/guide/deployment/intro-to-single-sign-on-depfdbf18f55/web) – a closed source and centralized SSO service which does enable users to hide their e-mail address from apps by proxying them
 * [GoTrue](https://github.com/netlify/gotrue) – small service for handling user registration and authentication, very low level and without user interface
 * [Casdoor](https://casdoor.org/) – open source authentication service combinings users, organizations and applications in a similar this project does, but does not enable users to control their identity exposed to apps
-* [Mozilla Persona](https://en.wikipedia.org/wiki/Mozilla_Persona) – was Internet-level identity provider integrated with Firefox browser, but it did not gain enough traction; this project aspires to be Internet-level provider, but it is designed to work also as an independent instance, moreover, it adds many other features for both users and app developers and is not just an identity provider
+* [Mozilla Persona](https://en.wikipedia.org/wiki/Mozilla_Persona) – was an identity provider integrated with Firefox browser, but it did not gain enough traction; this project iis more than an identity provider adds many other features for both users and app developers
