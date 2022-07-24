@@ -40,6 +40,7 @@ And admins of communities (tenants, domains, realms) using those apps can manage
   their communities (Keycloak's admin interface, when enabled for end-users, is quite technical)
 * [StackExchange](https://stackexchange.com/) – an inspiration for this project with its centralized standard-based account system spawning multiple communities,
   but not available as a stand-alone open source system
+* [Sandstorm](https://sandstorm.io/) is another inspiration for this project as it demonstrates how you can decouple user management from apps, making app integration easy, while having a trusted, non-customizable and independent UI for both users and admins; their user management is tightly integrated with the platform while Charon is stand-alone (and thus more reusable)
 * [Google Account](https://en.wikipedia.org/wiki/Google_Account) – another inspiration of great user flows and quality, but not open source and thus not reusable, moreover, accounts are not shared
   between domains (which we call communities) but are tied to a domain, something which we want to change with this project (in Charon, you have only one account but multiple identities for
   different domains)
