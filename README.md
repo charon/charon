@@ -80,6 +80,11 @@ Goals:
 - [Casdoor](https://casdoor.org/) – open source authentication service combinings users, organizations and applications in a similar this project does, but does not enable users to control their identity exposed to apps
 - [Mozilla Persona](https://en.wikipedia.org/wiki/Mozilla_Persona) – was an identity provider integrated with Firefox browser, but it did not gain enough traction; this project is more than an identity provider adds many other features for both users and app developers
 
+## GitHub mirror
+
+There is also a [read-only GitHub mirror available](https://github.com/charon/charon),
+if you need to fork the project there.
+
 ## Funding
 
 This project was funded through the [NGI Zero Entrust](https://nlnet.nl/entrust/), a
