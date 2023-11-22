@@ -1,6 +1,24 @@
 SHELL = /bin/bash -o pipefail
 
-.PHONY: test test-ci lint lint-ci fmt fmt-ci clean release lint-docs audit
+# We use ifeq instead of ?= so that we set variables
+# also when they are defined, but empty.
+ifeq ($(VERSION),)
+ VERSION = `git describe --tags --always --dirty=+`
+endif
+ifeq ($(BUILD_TIMESTAMP),)
+ BUILD_TIMESTAMP = `date -u +%FT%TZ`
+endif
+ifeq ($(REVISION),)
+ REVISION = `git rev-parse HEAD`
+endif
+
+.PHONY: build build-static test test-ci lint lint-ci fmt fmt-ci clean release lint-docs audit
+
+build:
+	go build -trimpath -ldflags "-s -w -X gitlab.com/tozd/go/cli.Version=${VERSION} -X gitlab.com/tozd/go/cli.BuildTimestamp=${BUILD_TIMESTAMP} -X gitlab.com/tozd/go/cli.Revision=${REVISION}" -o charon gitlab.com/charon/charon/cmd/charon
+
+build-static:
+	go build -trimpath -ldflags "-s -w -linkmode external -extldflags '-static' -X gitlab.com/tozd/go/cli.Version=${VERSION} -X gitlab.com/tozd/go/cli.BuildTimestamp=${BUILD_TIMESTAMP} -X gitlab.com/tozd/go/cli.Revision=${REVISION}" -o charon gitlab.com/charon/charon/cmd/charon
 
 test:
 	gotestsum --format pkgname --packages ./... -- -race -timeout 10m -cover -covermode atomic
@@ -25,7 +43,7 @@ fmt-ci: fmt
 	git diff --exit-code --color=always
 
 clean:
-	rm -rf coverage.* codeclimate.json tests.xml coverage
+	rm -f coverage.* codeclimate.json tests.xml charon
 
 release:
 	npx --yes --package 'release-it@15.4.2' --package '@release-it/keep-a-changelog@3.1.0' -- release-it
