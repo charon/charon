@@ -12,13 +12,21 @@ ifeq ($(REVISION),)
  REVISION = `git rev-parse HEAD`
 endif
 
-.PHONY: build build-static test test-ci lint lint-ci fmt fmt-ci clean release lint-docs audit
+.PHONY: build build-static test test-ci lint lint-ci fmt fmt-ci clean release lint-docs audit serve watch
 
-build:
+# dist is build only if it is missing. Use "make clean" to remove it to build it again.
+build: dist
 	go build -trimpath -ldflags "-s -w -X gitlab.com/tozd/go/cli.Version=${VERSION} -X gitlab.com/tozd/go/cli.BuildTimestamp=${BUILD_TIMESTAMP} -X gitlab.com/tozd/go/cli.Revision=${REVISION}" -o charon gitlab.com/charon/charon/cmd/charon
 
-build-static:
+# dist is build only if it is missing. Use "make clean" to remove it to build it again.
+build-static: dist
 	go build -trimpath -ldflags "-s -w -linkmode external -extldflags '-static' -X gitlab.com/tozd/go/cli.Version=${VERSION} -X gitlab.com/tozd/go/cli.BuildTimestamp=${BUILD_TIMESTAMP} -X gitlab.com/tozd/go/cli.Revision=${REVISION}" -o charon gitlab.com/charon/charon/cmd/charon
+
+dist: node_modules
+	npm run build
+
+node_modules:
+	npm install
 
 test:
 	gotestsum --format pkgname --packages ./... -- -race -timeout 10m -cover -covermode atomic
@@ -43,7 +51,7 @@ fmt-ci: fmt
 	git diff --exit-code --color=always
 
 clean:
-	rm -f coverage.* codeclimate.json tests.xml charon
+	rm -rf coverage.* codeclimate.json tests.xml coverage dist charon
 
 release:
 	npx --yes --package 'release-it@15.4.2' --package '@release-it/keep-a-changelog@3.1.0' -- release-it
@@ -53,3 +61,6 @@ lint-docs:
 
 audit:
 	go list -json -deps ./... | nancy sleuth --skip-update-check
+
+watch:
+	CompileDaemon -build="make --silent build" -command="./charon -d -k localhost+2.pem -K localhost+2-key.pem" -include="*.json" -include="go.mod" -include="go.sum" -exclude-dir=.git -graceful-kill=true -log-prefix=false -color=true

@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	DefaultProxyTo  = "http://localhost:3000"
+	DefaultProxyTo  = "http://localhost:5173"
 	DefaultTLSCache = "letsencrypt"
 )
 
@@ -34,6 +34,10 @@ type App struct {
 	Version kong.VersionFlag  `         help:"Show program's version and exit."                                              short:"V" yaml:"-"`
 	Config  cli.ConfigFlag    `         help:"Load configuration from a JSON or YAML file." name:"config" placeholder:"PATH" short:"c" yaml:"-"`
 	Server  waf.Server[*Site] `embed:""                                                                                                yaml:",inline"`
+}
+
+type Service struct {
+	waf.Service[*Site]
 }
 
 func (app *App) Run() errors.E {

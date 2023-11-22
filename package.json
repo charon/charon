@@ -4,18 +4,48 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vue-tsc && vite build",
-    "preview": "vite preview"
+    "serve": "vite serve",
+    "build": "vite build",
+    "lint": "eslint --ext .js,.vue,.ts,.html --ignore-path .gitignore --fix src",
+    "lint-style": "stylelint --fix src/**/*.{css,scss,vue.html}",
+    "lint-vue": "vue-tsc --noEmit",
+    "fmt": "prettier src --write",
+    "test": "vitest",
+    "coverage": "vitest --coverage",
+    "test-ci": "vitest run --reporter junit --reporter default --outputFile tests.xml --coverage"
   },
   "dependencies": {
-    "vue": "^3.3.8"
+    "@headlessui/vue": "^1.7.16",
+    "@heroicons/vue": "^2.0.18",
+    "vue": "^3.3.8",
+    "vue-router": "^4.2.5"
   },
   "devDependencies": {
+    "@babel/types": "^7.23.4",
+    "@headlessui/tailwindcss": "^0.2.0",
+    "@tailwindcss/forms": "^0.5.7",
+    "@tailwindcss/typography": "^0.5.10",
+    "@typescript-eslint/eslint-plugin": "^6.12.0",
+    "@typescript-eslint/parser": "^6.12.0",
     "@vitejs/plugin-vue": "^4.5.0",
+    "@vitest/coverage-v8": "^0.34.6",
+    "@vue/eslint-config-typescript": "^12.0.0",
+    "autoprefixer": "^10.4.16",
+    "eslint": "^8.54.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-vue": "^9.18.1",
+    "postcss": "^8.4.31",
+    "postcss-html": "^1.5.0",
+    "prettier": "^3.1.0",
+    "prettier-plugin-tailwindcss": "^0.5.7",
+    "stylelint": "^15.11.0",
+    "stylelint-config-standard": "^34.0.0",
+    "stylelint-config-standard-vue": "^1.0.0",
+    "stylelint-config-tailwindcss": "^0.0.7",
     "tailwindcss": "^3.3.5",
     "typescript": "^5.2.2",
     "vite": "^5.0.0",
+    "vitest": "^0.34.6",
     "vue-tsc": "^1.8.22"
   }
 }
