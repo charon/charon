@@ -4,9 +4,7 @@ import (
 	"context"
 	"embed"
 	"encoding/json"
-	"fmt"
 	"io/fs"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -27,7 +25,7 @@ const (
 //go:embed routes.json
 var routesConfiguration []byte
 
-//go:embed files
+//go:embed dist
 var files embed.FS
 
 type App struct {
@@ -36,11 +34,6 @@ type App struct {
 	Version kong.VersionFlag  `         help:"Show program's version and exit."                                              short:"V" yaml:"-"`
 	Config  cli.ConfigFlag    `         help:"Load configuration from a JSON or YAML file." name:"config" placeholder:"PATH" short:"c" yaml:"-"`
 	Server  waf.Server[*Site] `embed:""                                                                                                yaml:",inline"`
-}
-
-type Site struct {
-	waf.Site
-	Title string `json:"title"`
 }
 
 func (app *App) Run() errors.E {
@@ -55,26 +48,25 @@ func (app *App) Run() errors.E {
 
 	app.Server.Logger = app.Logger
 
-	// Used for testing.
-	if os.Getenv("PEBBLE_HOST") != "" {
-		app.Server.TLS.ACMEDirectory = fmt.Sprintf("https://%s/dir", net.JoinHostPort(os.Getenv("PEBBLE_HOST"), "14000"))
-		app.Server.TLS.ACMEDirectoryRootCAs = "../testdata/pebble.minica.pem"
-		app.Server.Addr = ":5001"
-	}
-
 	// Sites are automatically constructed based on the certificate or domain name for Let's Encrypt.
 	sites, errE := app.Server.Init(nil)
 	if errE != nil {
 		return errE
 	}
 
-	// We set Title on sites.
-	for _, site := range sites {
-		site.Title = "Hello site"
+	// We set build information on sites.
+	if cli.Version != "" || cli.BuildTimestamp != "" || cli.Revision != "" {
+		for _, site := range sites {
+			site.Build = &Build{
+				Version:        cli.Version,
+				BuildTimestamp: cli.BuildTimestamp,
+				Revision:       cli.Revision,
+			}
+		}
 	}
 
-	// We remove "files" prefix.
-	f, err := fs.Sub(files, "files")
+	// We remove "dist" prefix.
+	f, err := fs.Sub(files, "dist")
 	if err != nil {
 		return errors.WithStack(err)
 	}
