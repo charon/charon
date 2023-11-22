@@ -30,3 +30,4 @@ codeclimate.json
 /coverage
 /charon
 *.pem
+/keys.txt
