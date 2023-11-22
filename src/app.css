@@ -1,0 +1,37 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+@import "tailwindcss/variants";
+
+@layer components {
+  .link {
+    @apply rounded-sm font-medium text-primary-600 outline-none drop-shadow-sm;
+
+    text-decoration: unset;
+  }
+
+  a:has(img) {
+    @apply outline-none;
+  }
+
+  a > img {
+    @apply rounded-sm drop-shadow-sm;
+  }
+
+  .link:focus,
+  a:focus > img {
+    @apply ring-2 ring-primary-500 ring-offset-1;
+  }
+
+  .link:visited {
+    @apply text-primary-500;
+  }
+
+  .link:hover {
+    @apply text-primary-700 underline underline-offset-2;
+  }
+
+  .link:active {
+    @apply text-primary-500;
+  }
+}

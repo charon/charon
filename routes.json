@@ -1,0 +1,10 @@
+{
+  "routes": [
+    {
+      "name": "Home",
+      "path": "/",
+      "api": true,
+      "get": true
+    }
+  ]
+}
