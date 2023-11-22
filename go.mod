@@ -7,7 +7,7 @@ require (
 	gitlab.com/tozd/go/cli v0.2.2
 	gitlab.com/tozd/go/errors v0.8.0
 	gitlab.com/tozd/go/zerolog v0.5.1
-	gitlab.com/tozd/waf v0.1.1
+	gitlab.com/tozd/waf v0.1.2
 )
 
 require (
