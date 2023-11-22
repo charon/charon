@@ -6,10 +6,10 @@ variables:
   # We always want to run with the Go version installed in a Docker image.
   GOTOOLCHAIN: local
 
-test:
+test_go:
   stage: test
 
-  image: golang:$IMAGE_TAG
+  image: golang:1.21-alpine3.18
 
   before_script:
     - apk --update add make bash gcc musl-dev
@@ -17,6 +17,8 @@ test:
     - (cd /go; go install github.com/boumenot/gocover-cobertura@v1.2.0)
 
   script:
+    - mkdir -p dist
+    - touch dist/dummy
     - make test-ci
 
   artifacts:
@@ -34,11 +36,35 @@ test:
 
   coverage: '/coverage: \d+\.\d+% of statements/'
 
-  parallel:
-    matrix:
-      - IMAGE_TAG: ['1.21-alpine3.18']
+test_node:
+  stage: test
 
-lint:
+  image: node:20.9-alpine3.18
+
+  before_script:
+    - apk --update add git git-lfs
+    - git lfs fetch
+
+  script:
+    - npm ci --audit=false
+    - npm run test-ci
+
+  artifacts:
+    when: always
+    reports:
+      junit: tests.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+    paths:
+      - coverage/
+    exclude:
+      - coverage/tmp/
+    expire_in: never
+
+  coverage: '/^All files\s+\|\s+\S+\s+\|\s+\S+\s+\|\s+\S+\s+\|\s+\S+\s+\|/'
+
+lint_go:
   stage: test
 
   image: golang:1.21-alpine3.18
@@ -48,6 +74,8 @@ lint:
     - wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.54.2
 
   script:
+    - mkdir -p dist
+    - touch dist/dummy
     - make lint-ci
 
   artifacts:
@@ -56,7 +84,34 @@ lint:
       codequality: codeclimate.json
     expire_in: never
 
-fmt:
+lint_node:
+  stage: test
+
+  image: node:20.9-alpine3.18
+
+  script:
+    - npm ci --audit=false
+    - npm run lint
+
+lint_vue:
+  stage: test
+
+  image: node:20.9-alpine3.18
+
+  script:
+    - npm ci --audit=false
+    - npm run lint-vue
+
+lint_style:
+  stage: test
+
+  image: node:20.9-alpine3.18
+
+  script:
+    - npm ci --audit=false
+    - npm run lint-style
+
+fmt_go:
   stage: test
 
   image: golang:1.21-alpine3.18
@@ -69,10 +124,20 @@ fmt:
   script:
     - make fmt-ci
 
+fmt_node:
+  stage: test
+
+  image: node:20.9-alpine3.18
+
+  script:
+    - npm ci --audit=false
+    - npm run fmt
+    - git diff --exit-code --color=always
+
 lint_docs:
   stage: test
 
-  image: node:17-alpine3.14
+  image: node:20.9-alpine3.18
 
   before_script:
     - apk --update add make bash
@@ -80,7 +145,7 @@ lint_docs:
   script:
     - make lint-docs
 
-audit:
+audit_go:
   stage: test
 
   image: golang:1.21-alpine3.18
@@ -91,6 +156,14 @@ audit:
 
   script:
     - make audit
+
+audit_node:
+  stage: test
+
+  image: node:20.9-alpine3.18
+
+  script:
+    - npm audit
 
 commits:
   stage: test

@@ -1,0 +1,3 @@
+{
+  "extends": ["stylelint-config-standard", "stylelint-config-standard-vue", "stylelint-config-prettier", "stylelint-config-tailwindcss"]
+}
