@@ -9,12 +9,7 @@ module.exports = {
   },
   extends: ["eslint:recommended", "plugin:vue/vue3-recommended", "@vue/typescript/recommended", "prettier"],
   rules: {
-    "vue/multi-word-component-names": [
-      "error",
-      {
-        ignores: ["Home"],
-      },
-    ],
+    "vue/multi-word-component-names": ["off"],
     "@typescript-eslint/no-unused-vars": [
       "error",
       {
