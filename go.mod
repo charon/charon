@@ -7,7 +7,7 @@ require (
 	gitlab.com/tozd/go/cli v0.2.2
 	gitlab.com/tozd/go/errors v0.8.0
 	gitlab.com/tozd/go/zerolog v0.5.1
-	gitlab.com/tozd/waf v0.1.2
+	gitlab.com/tozd/waf v0.2.0
 )
 
 require (
@@ -22,6 +22,8 @@ require (
 	github.com/deckarep/golang-set/v2 v2.3.1 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
+	github.com/fxamacker/cbor/v2 v2.2.0 // indirect
+	github.com/fxamacker/webauthn v0.6.1 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.5.0 // indirect
 	github.com/go-git/go-git/v5 v5.10.0 // indirect
@@ -43,6 +45,7 @@ require (
 	github.com/skeema/knownhosts v1.2.1 // indirect
 	github.com/tozd/go-server-timing v0.0.0-20231113225037-9110c404323f // indirect
 	github.com/whilp/git-urls v1.0.0 // indirect
+	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	gitlab.com/tozd/go/x v0.0.0-20231119172637-21f8c2f899b5 // indirect
 	gitlab.com/tozd/identifier v0.1.0 // indirect
