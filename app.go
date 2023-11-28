@@ -5,8 +5,10 @@ import (
 	"embed"
 	"encoding/json"
 	"io/fs"
+	"net/http"
 	"os"
 	"os/signal"
+	"sort"
 	"syscall"
 
 	"github.com/alecthomas/kong"
@@ -34,6 +36,9 @@ type App struct {
 	Version kong.VersionFlag  `         help:"Show program's version and exit."                                              short:"V" yaml:"-"`
 	Config  cli.ConfigFlag    `         help:"Load configuration from a JSON or YAML file." name:"config" placeholder:"PATH" short:"c" yaml:"-"`
 	Server  waf.Server[*Site] `embed:""                                                                                                yaml:",inline"`
+
+	Domains    []string `name:"domain" help:"Domain name(s) to use. If not provided, they are determined from domain names found in TLS certificates." placeholder:"STRING" short:"D" yaml:"domain"`
+	MainDomain string   `help:"When using multiple domains, which one is the main one." yaml:"mainDomain"`
 }
 
 type Service struct {
@@ -52,7 +57,19 @@ func (app *App) Run() errors.E {
 
 	app.Server.Logger = app.Logger
 
-	// Sites are automatically constructed based on the certificate or domain name for Let's Encrypt.
+	sites := map[string]*Site{}
+	// If domains are provided, we create sites based on those domains.
+	for _, domain := range app.Domains {
+		sites[domain] = &Site{
+			Site: waf.Site{
+				Domain:   domain,
+				CertFile: "",
+				KeyFile:  "",
+			},
+			Build: nil, // We will set build later for all sites.
+		}
+	}
+	// If domains are not provided, sites are automatically constructed based on the certificate.
 	sites, errE := app.Server.Init(nil)
 	if errE != nil {
 		return errE
@@ -91,6 +108,27 @@ func (app *App) Run() errors.E {
 				return path == "/index.html" || path == "/index.json"
 			},
 		},
+	}
+
+	if len(sites) > 1 {
+		if app.MainDomain == "" {
+			return errors.New("main domain is not configured, but multiple domains are used")
+		}
+		if _, ok := sites[app.MainDomain]; !ok {
+			errE = errors.New("main domain is not among domains")
+			errors.Details(errE)["main"] = app.MainDomain
+			domains := []string{}
+			for domain := range sites {
+				domains = append(domains, domain)
+			}
+			sort.Strings(domains)
+			errors.Details(errE)["domains"] = domains
+			return errE
+		}
+
+		service.Middleware = []func(http.Handler) http.Handler{
+			service.RedirectToMainSite(app.MainDomain),
+		}
 	}
 
 	// Construct the main handler for the service using the router.
