@@ -5,7 +5,6 @@ import (
 	"embed"
 	"encoding/json"
 	"io/fs"
-	"net/http"
 	"os"
 	"os/signal"
 	"sort"
@@ -126,9 +125,7 @@ func (app *App) Run() errors.E {
 			return errE
 		}
 
-		service.Middleware = []func(http.Handler) http.Handler{
-			service.RedirectToMainSite(app.MainDomain),
-		}
+		service.Middleware = append(service.Middleware, service.RedirectToMainSite(app.MainDomain))
 	}
 
 	// Construct the main handler for the service using the router.
