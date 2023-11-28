@@ -36,8 +36,8 @@ type App struct {
 	Config  cli.ConfigFlag    `         help:"Load configuration from a JSON or YAML file." name:"config" placeholder:"PATH" short:"c" yaml:"-"`
 	Server  waf.Server[*Site] `embed:""                                                                                                yaml:",inline"`
 
-	Domains    []string `name:"domain" help:"Domain name(s) to use. If not provided, they are determined from domain names found in TLS certificates." placeholder:"STRING" short:"D" yaml:"domain"`
-	MainDomain string   `help:"When using multiple domains, which one is the main one." yaml:"mainDomain"`
+	Domains    []string `help:"Domain name(s) to use. If not provided, they are determined from domain names found in TLS certificates." name:"domain" placeholder:"STRING" short:"D" yaml:"domains"`
+	MainDomain string   `help:"When using multiple domains, which one is the main one."                                                                                               yaml:"mainDomain"`
 }
 
 type Service struct {
