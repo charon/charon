@@ -2,10 +2,8 @@ package charon
 
 import (
 	"net/http"
-	"net/url"
 	"strings"
 
-	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 )
 
@@ -16,15 +14,15 @@ func (s *Service) Home(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 		return
 	}
 
-	// TODO: Check if user is authenticated.
-	qs := url.Values{}
-	qs.Set("flow", identifier.New().String())
-	location, errE := s.Reverse("Auth", nil, qs)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
+	if !s.RequireAuthenticated(w, req, false) {
 		return
 	}
-	s.TemporaryRedirectGetMethod(w, req, location)
+
+	if s.Development != "" {
+		s.Proxy(w, req)
+	} else {
+		s.ServeStaticFile(w, req, "/index.html")
+	}
 }
 
 func (s *Service) HomeGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {

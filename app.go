@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"sort"
+	"sync"
 	"syscall"
 
 	"github.com/alecthomas/kong"
@@ -29,6 +30,20 @@ var routesConfiguration []byte
 //go:embed dist
 var files embed.FS
 
+type Provider struct {
+	ClientID string `env:"CLIENT_ID" help:"${provider}'s client ID. Environment variable: ${env}." yaml:"clientId"`
+	Secret   string `env:"SECRET"    help:"${provider}'s secret. Environment variable: ${env}."    yaml:"secret"`
+}
+
+// TODO: Add Kong validator to Provider to validate that or both or none fields are set.
+//       See: https://github.com/alecthomas/kong/issues/90
+
+type Providers struct {
+	Google   Provider `embed:"" envprefix:"GOOGLE_"   prefix:"google."   set:"provider=Google"   yaml:"google"`
+	Facebook Provider `embed:"" envprefix:"FACEBOOK_" prefix:"facebook." set:"provider=Facebook" yaml:"facebook"`
+}
+
+//nolint:lll
 type App struct {
 	z.LoggingConfig `yaml:",inline"`
 
@@ -38,10 +53,14 @@ type App struct {
 
 	Domains    []string `help:"Domain name(s) to use. If not provided, they are determined from domain names found in TLS certificates." name:"domain" placeholder:"STRING" short:"D" yaml:"domains"`
 	MainDomain string   `help:"When using multiple domains, which one is the main one."                                                                                               yaml:"mainDomain"`
+
+	Providers Providers `embed:"" group:"Providers:" yaml:"providers"`
 }
 
 type Service struct {
 	waf.Service[*Site]
+
+	providers func() map[string]oidcProvider
 }
 
 func (app *App) Run() errors.E {
@@ -65,7 +84,9 @@ func (app *App) Run() errors.E {
 				CertFile: "",
 				KeyFile:  "",
 			},
-			Build: nil, // We will set build later for all sites.
+			// We will set the rest later for all sites.
+			Build:     nil,
+			Providers: nil,
 		}
 	}
 	// If domains are not provided, sites are automatically constructed based on the certificate.
@@ -83,6 +104,35 @@ func (app *App) Run() errors.E {
 				Revision:       cli.Revision,
 			}
 		}
+	}
+
+	providers := []SiteProvider{}
+	if app.Providers.Google.ClientID != "" && app.Providers.Google.Secret != "" {
+		providers = append(providers, SiteProvider{
+			Key:       "google",
+			Name:      "Google",
+			issuer:    "https://accounts.google.com",
+			clientID:  app.Providers.Google.ClientID,
+			secret:    app.Providers.Google.Secret,
+			forcePKCE: false,
+			authURL:   "",
+			tokenURL:  "",
+		})
+	}
+	if app.Providers.Facebook.ClientID != "" && app.Providers.Facebook.Secret != "" {
+		providers = append(providers, SiteProvider{
+			Key:       "facebook",
+			Name:      "Facebook",
+			issuer:    "https://www.facebook.com",
+			clientID:  app.Providers.Facebook.ClientID,
+			secret:    app.Providers.Facebook.Secret,
+			forcePKCE: true,
+			authURL:   "",
+			tokenURL:  "https://graph.facebook.com/oauth/access_token",
+		})
+	}
+	for _, site := range sites {
+		site.Providers = providers
 	}
 
 	// We remove "dist" prefix.
@@ -107,8 +157,10 @@ func (app *App) Run() errors.E {
 				return path == "/index.html" || path == "/index.json"
 			},
 		},
+		nil,
 	}
 
+	var domain string
 	if len(sites) > 1 {
 		if app.MainDomain == "" {
 			return errors.New("main domain is not configured, but multiple domains are used")
@@ -126,13 +178,26 @@ func (app *App) Run() errors.E {
 		}
 
 		service.Middleware = append(service.Middleware, service.RedirectToMainSite(app.MainDomain))
+		domain = app.MainDomain
+	} else {
+		// There is only one really here. app.Server.Init errors if there are not sites.
+		for d := range sites {
+			domain = d
+			break
+		}
 	}
+
+	service.providers = sync.OnceValue(initProviders(app, service, domain, providers))
 
 	// Construct the main handler for the service using the router.
 	handler, errE := service.RouteWith(service, &waf.Router{}) //nolint:exhaustruct
 	if errE != nil {
 		return errE
 	}
+
+	// We start initialization of providers.
+	// Initialization will block until the server runs.
+	go service.providers()
 
 	// We stop the server gracefully on ctrl-c and TERM signal.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

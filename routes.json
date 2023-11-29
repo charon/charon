@@ -5,6 +5,24 @@
       "path": "/",
       "api": true,
       "get": true
+    },
+    {
+      "name": "AuthProvider",
+      "path": "/auth/provider",
+      "api": true,
+      "get": false
+    },
+    {
+      "name": "AuthProviderCallback",
+      "path": "/auth/provider/:provider",
+      "api": true,
+      "get": false
+    },
+    {
+      "name": "Auth",
+      "path": "/auth",
+      "api": false,
+      "get": true
     }
   ]
 }
