@@ -19,6 +19,12 @@
       "get": false
     },
     {
+      "name": "AuthSignout",
+      "path": "/auth/signout",
+      "api": true,
+      "get": false
+    },
+    {
       "name": "Auth",
       "path": "/auth",
       "api": false,
