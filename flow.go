@@ -16,12 +16,17 @@ var (
 	flowsMu = sync.RWMutex{}
 )
 
-type Flow struct {
-	ID       identifier.Identifier
-	Session  *identifier.Identifier
-	Target   string
+type FlowOIDC struct {
 	Verifier string
 	Nonce    string
+}
+
+type Flow struct {
+	ID      identifier.Identifier
+	Session *identifier.Identifier
+	Target  string
+
+	OIDC *FlowOIDC
 }
 
 func GetFlow(ctx context.Context, id identifier.Identifier) (*Flow, errors.E) {

@@ -130,14 +130,16 @@ func (s *Service) AuthProviderPost(w http.ResponseWriter, req *http.Request, _ w
 
 	opts := []oauth2.AuthCodeOption{}
 
+	flow.OIDC = &FlowOIDC{}
+
 	if provider.SupportsPKCE {
 		verifier := oauth2.GenerateVerifier()
-		flow.Verifier = verifier
+		flow.OIDC.Verifier = verifier
 		opts = append(opts, oauth2.S256ChallengeOption(verifier))
 	}
 
-	flow.Nonce = identifier.New().String()
-	opts = append(opts, oidc.Nonce(flow.Nonce))
+	flow.OIDC.Nonce = identifier.New().String()
+	opts = append(opts, oidc.Nonce(flow.OIDC.Nonce))
 
 	errE := SetFlow(req.Context(), flow)
 	if errE != nil {
@@ -164,6 +166,11 @@ func (s *Service) AuthProviderCallbackGet(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
+	if flow.OIDC == nil {
+		s.BadRequestWithError(w, req, errors.New("OIDC not started"))
+		return
+	}
+
 	errorCode := req.Form.Get("error")
 	errorDescription := req.Form.Get("error_description")
 	if errorCode != "" || errorDescription != "" {
@@ -179,7 +186,7 @@ func (s *Service) AuthProviderCallbackGet(w http.ResponseWriter, req *http.Reque
 	opts := []oauth2.AuthCodeOption{}
 
 	if provider.SupportsPKCE {
-		opts = append(opts, oauth2.VerifierOption(flow.Verifier))
+		opts = append(opts, oauth2.VerifierOption(flow.OIDC.Verifier))
 	}
 
 	oauth2Token, err := provider.Config.Exchange(ctx, req.Form.Get("code"), opts...)
@@ -200,7 +207,7 @@ func (s *Service) AuthProviderCallbackGet(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	if idToken.Nonce != flow.Nonce {
+	if idToken.Nonce != flow.OIDC.Nonce {
 		s.BadRequestWithError(w, req, errors.New("nonce mismatch"))
 		return
 	}
