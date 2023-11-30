@@ -31,3 +31,4 @@ codeclimate.json
 /charon
 *.pem
 /keys.txt
+*.env
