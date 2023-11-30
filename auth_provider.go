@@ -6,7 +6,6 @@ import (
 	"net"
 	"net/http"
 	"slices"
-	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/hashicorp/go-cleanhttp"
@@ -206,38 +205,5 @@ func (s *Service) AuthProviderCallbackGet(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	id := identifier.New()
-	errE := SetSession(req.Context(), &Session{
-		ID: id,
-	})
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	flow.Session = &id
-	flow.Verifier = ""
-	flow.Nonce = ""
-
-	errE = SetFlow(ctx, flow)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	cookie := http.Cookie{ //nolint:exhaustruct
-		Name:     SessionCookieName,
-		Value:    id.String(),
-		Path:     "/",
-		Domain:   "",
-		Expires:  time.Now().Add(7 * 24 * time.Hour),
-		MaxAge:   0,
-		Secure:   true,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-	}
-
-	http.SetCookie(w, &cookie)
-
-	s.TemporaryRedirectGetMethod(w, req, flow.Target)
+	s.completeAuthStep(w, req, flow, params["provider"], idToken.Subject)
 }
