@@ -15,6 +15,7 @@ const router = createRouter({
       name: route.name,
       component: () => import(`./views/${route.name}.vue`),
       props: true,
+      strict: true,
     })),
 }) as Router
 
@@ -27,6 +28,7 @@ const apiRouter = createRouter({
       name: route.name,
       component: () => null,
       props: true,
+      strict: true,
     })),
 })
 
