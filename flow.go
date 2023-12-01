@@ -13,8 +13,8 @@ import (
 var ErrFlowNotFound = errors.Base("flow not found")
 
 var (
-	flows   = make(map[identifier.Identifier][]byte)
-	flowsMu = sync.RWMutex{}
+	flows   = make(map[identifier.Identifier][]byte) //nolint:gochecknoglobals
+	flowsMu = sync.RWMutex{}                         //nolint:gochecknoglobals
 )
 
 type FlowOIDC struct {
@@ -31,7 +31,7 @@ type Flow struct {
 	Passkey *webauthn.SessionData
 }
 
-func GetFlow(ctx context.Context, id identifier.Identifier) (*Flow, errors.E) {
+func GetFlow(ctx context.Context, id identifier.Identifier) (*Flow, errors.E) { //nolint:revive
 	flowsMu.RLock()
 	defer flowsMu.RUnlock()
 
@@ -48,7 +48,7 @@ func GetFlow(ctx context.Context, id identifier.Identifier) (*Flow, errors.E) {
 	return &flow, nil
 }
 
-func SetFlow(ctx context.Context, flow *Flow) errors.E {
+func SetFlow(ctx context.Context, flow *Flow) errors.E { //nolint:revive
 	data, errE := x.MarshalWithoutEscapeHTML(flow)
 	if errE != nil {
 		errors.Details(errE)["id"] = flow.ID

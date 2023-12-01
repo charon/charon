@@ -102,15 +102,15 @@ func (s *Service) GetActiveFlow(w http.ResponseWriter, req *http.Request, api bo
 		if api {
 			s.BadRequest(w, req)
 			return nil
-		} else {
-			// TODO: Redirect to target only if same user is still authenticated.
-			//       When flow completes, we should remember the user who authenticated. Then, here, we should check if the same user is still
-			//       authenticated. If yes, then we redirect to target. If not and some user is authenticated, then we redirect to /. If not and
-			//       no user is authenticated, then we start a new flow with additional field which requires the completing user to be the same.
-			//       If after flow completes the user is the same, we redirect to target, otherwise to /.
-			s.TemporaryRedirectGetMethod(w, req, flow.Target)
-			return nil
 		}
+
+		// TODO: Redirect to target only if same user is still authenticated.
+		//       When flow completes, we should remember the user who authenticated. Then, here, we should check if the same user is still
+		//       authenticated. If yes, then we redirect to target. If not and some user is authenticated, then we redirect to /. If not and
+		//       no user is authenticated, then we start a new flow with additional field which requires the completing user to be the same.
+		//       If after flow completes the user is the same, we redirect to target, otherwise to /.
+		s.TemporaryRedirectGetMethod(w, req, flow.Target)
+		return nil
 	}
 
 	return flow

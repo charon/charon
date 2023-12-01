@@ -85,7 +85,7 @@ func initPasskey(app *App, domain string) func() *webauthn.WebAuthn {
 			return nil
 		}
 		origin := fmt.Sprintf("https://%s", host)
-		wconfig := &webauthn.Config{
+		wconfig := &webauthn.Config{ //nolint:exhaustruct
 			RPDisplayName:         "Charon",
 			RPID:                  domain,
 			RPOrigins:             []string{origin},
@@ -168,7 +168,7 @@ func (s *Service) AuthPasskeySigninCompletePost(w http.ResponseWriter, req *http
 	credential, err := s.passkey().FinishDiscoverableLogin(nil, *flow.Passkey, req)
 	// We make sure the body is fully read and closed.
 	// See: https://github.com/go-webauthn/webauthn/issues/189
-	io.Copy(io.Discard, req.Body)
+	io.Copy(io.Discard, req.Body) //nolint:errcheck
 	req.Body.Close()
 	if err != nil {
 		s.BadRequestWithError(w, req, withWebauthnError(err))
@@ -250,7 +250,7 @@ func (s *Service) AuthPasskeySignupCompletePost(w http.ResponseWriter, req *http
 	credential, err := s.passkey().FinishRegistration(&charonUser{}, *flow.Passkey, req)
 	// We make sure the body is fully read and closed.
 	// See: https://github.com/go-webauthn/webauthn/issues/189
-	io.Copy(io.Discard, req.Body)
+	io.Copy(io.Discard, req.Body) //nolint:errcheck
 	req.Body.Close()
 	if err != nil {
 		s.BadRequestWithError(w, req, withWebauthnError(err))

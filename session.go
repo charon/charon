@@ -12,15 +12,15 @@ import (
 var ErrSessionNotFound = errors.Base("session not found")
 
 var (
-	sessions   = make(map[identifier.Identifier][]byte)
-	sessionsMu = sync.RWMutex{}
+	sessions   = make(map[identifier.Identifier][]byte) //nolint:gochecknoglobals
+	sessionsMu = sync.RWMutex{}                         //nolint:gochecknoglobals
 )
 
 type Session struct {
 	ID identifier.Identifier
 }
 
-func GetSession(ctx context.Context, id identifier.Identifier) (*Session, errors.E) {
+func GetSession(ctx context.Context, id identifier.Identifier) (*Session, errors.E) { //nolint:revive
 	sessionsMu.RLock()
 	defer sessionsMu.RUnlock()
 
@@ -37,7 +37,7 @@ func GetSession(ctx context.Context, id identifier.Identifier) (*Session, errors
 	return &session, nil
 }
 
-func SetSession(ctx context.Context, session *Session) errors.E {
+func SetSession(ctx context.Context, session *Session) errors.E { //nolint:revive
 	data, errE := x.MarshalWithoutEscapeHTML(session)
 	if errE != nil {
 		errors.Details(errE)["id"] = session.ID

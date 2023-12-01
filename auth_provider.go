@@ -52,7 +52,7 @@ func initProviders(app *App, service *Service, domain string, providers []SitePr
 			// We make sure JWKS URI is provided.
 			// See: https://github.com/coreos/go-oidc/pull/328
 			var jwksClaims struct {
-				JWKSURL string `json:"jwks_uri"`
+				JWKSURL string `json:"jwks_uri"` //nolint:tagliatelle
 			}
 			err = provider.Claims(&jwksClaims)
 			if err != nil {
@@ -67,7 +67,7 @@ func initProviders(app *App, service *Service, domain string, providers []SitePr
 				// We have to parse it out ourselves.
 				// See: https://github.com/coreos/go-oidc/issues/401
 				var pkceClaims struct {
-					CodeChallengeMethodsSupported []string `json:"code_challenge_methods_supported"`
+					CodeChallengeMethodsSupported []string `json:"code_challenge_methods_supported"` //nolint:tagliatelle
 				}
 				err := provider.Claims(&pkceClaims)
 				if err != nil {
@@ -124,16 +124,17 @@ func (s *Service) AuthProviderPost(w http.ResponseWriter, req *http.Request, _ w
 	opts := []oauth2.AuthCodeOption{}
 
 	// TODO: What if flow.OIDC is already set?
-	flow.OIDC = &FlowOIDC{}
+	flow.OIDC = &FlowOIDC{
+		Verifier: "",
+		Nonce:    identifier.New().String(),
+	}
+	opts = append(opts, oidc.Nonce(flow.OIDC.Nonce))
 
 	if provider.SupportsPKCE {
 		verifier := oauth2.GenerateVerifier()
 		flow.OIDC.Verifier = verifier
 		opts = append(opts, oauth2.S256ChallengeOption(verifier))
 	}
-
-	flow.OIDC.Nonce = identifier.New().String()
-	opts = append(opts, oidc.Nonce(flow.OIDC.Nonce))
 
 	errE := SetFlow(req.Context(), flow)
 	if errE != nil {
