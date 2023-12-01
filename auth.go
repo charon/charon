@@ -20,6 +20,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, flo
 
 	flow.Session = &sessionID
 	flow.OIDC = nil
+	flow.Passkey = nil
 
 	errE = SetFlow(req.Context(), flow)
 	if errE != nil {

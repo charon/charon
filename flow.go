@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/go-webauthn/webauthn/webauthn"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
@@ -26,7 +27,8 @@ type Flow struct {
 	Session *identifier.Identifier
 	Target  string
 
-	OIDC *FlowOIDC
+	OIDC    *FlowOIDC
+	Passkey *webauthn.SessionData
 }
 
 func GetFlow(ctx context.Context, id identifier.Identifier) (*Flow, errors.E) {

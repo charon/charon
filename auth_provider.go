@@ -3,7 +3,6 @@ package charon
 import (
 	"context"
 	"fmt"
-	"net"
 	"net/http"
 	"slices"
 
@@ -25,19 +24,13 @@ type oidcProvider struct {
 
 func initProviders(app *App, service *Service, domain string, providers []SiteProvider) func() map[string]oidcProvider {
 	return func() map[string]oidcProvider {
-		// ListenAddr blocks until the server runs.
-		listenAddr := app.Server.ListenAddr()
-		if listenAddr == "" {
+		host, errE := getHost(app, domain)
+		if errE != nil {
+			panic(errE)
+		}
+		if host == "" {
 			// Server failed to start. We just return in this case.
 			return nil
-		}
-		_, port, err := net.SplitHostPort(listenAddr)
-		if err != nil {
-			panic(errors.WithStack(err))
-		}
-		host := domain
-		if port != "443" {
-			host = net.JoinHostPort(host, port)
 		}
 
 		oidcProviders := map[string]oidcProvider{}
@@ -130,6 +123,7 @@ func (s *Service) AuthProviderPost(w http.ResponseWriter, req *http.Request, _ w
 
 	opts := []oauth2.AuthCodeOption{}
 
+	// TODO: What if flow.OIDC is already set?
 	flow.OIDC = &FlowOIDC{}
 
 	if provider.SupportsPKCE {
@@ -167,7 +161,7 @@ func (s *Service) AuthProviderCallbackGet(w http.ResponseWriter, req *http.Reque
 	}
 
 	if flow.OIDC == nil {
-		s.BadRequestWithError(w, req, errors.New("OIDC not started"))
+		s.BadRequestWithError(w, req, errors.New("provider not started"))
 		return
 	}
 

@@ -12,6 +12,7 @@ import (
 	"syscall"
 
 	"github.com/alecthomas/kong"
+	"github.com/go-webauthn/webauthn/webauthn"
 	"gitlab.com/tozd/go/cli"
 	"gitlab.com/tozd/go/errors"
 	z "gitlab.com/tozd/go/zerolog"
@@ -61,6 +62,7 @@ type Service struct {
 	waf.Service[*Site]
 
 	providers func() map[string]oidcProvider
+	passkey   func() *webauthn.WebAuthn
 }
 
 func (app *App) Run() errors.E {
@@ -141,25 +143,6 @@ func (app *App) Run() errors.E {
 		return errors.WithStack(err)
 	}
 
-	service := &Service{ //nolint:forcetypeassert
-		waf.Service[*Site]{ //nolint:exhaustruct
-			Logger:          app.Logger,
-			CanonicalLogger: app.Logger,
-			WithContext:     app.WithContext,
-			StaticFiles:     f.(fs.ReadFileFS),
-			Routes:          routesConfig.Routes,
-			Sites:           sites,
-			SiteContextPath: "/index.json",
-			Development:     app.Server.InDevelopment(),
-			SkipServingFile: func(path string) bool {
-				// We want files to be served by Home route at / and /api and not be
-				// available at index.html and index.json (as well).
-				return path == "/index.html" || path == "/index.json"
-			},
-		},
-		nil,
-	}
-
 	var domain string
 	if len(sites) > 1 {
 		if app.MainDomain == "" {
@@ -177,7 +160,6 @@ func (app *App) Run() errors.E {
 			return errE
 		}
 
-		service.Middleware = append(service.Middleware, service.RedirectToMainSite(app.MainDomain))
 		domain = app.MainDomain
 	} else {
 		// There is only one really here. app.Server.Init errors if there are not sites.
@@ -187,7 +169,32 @@ func (app *App) Run() errors.E {
 		}
 	}
 
+	service := &Service{ //nolint:forcetypeassert
+		Service: waf.Service[*Site]{ //nolint:exhaustruct
+			Logger:          app.Logger,
+			CanonicalLogger: app.Logger,
+			WithContext:     app.WithContext,
+			StaticFiles:     f.(fs.ReadFileFS),
+			Routes:          routesConfig.Routes,
+			Sites:           sites,
+			SiteContextPath: "/index.json",
+			Development:     app.Server.InDevelopment(),
+			SkipServingFile: func(path string) bool {
+				// We want files to be served by Home route at / and /api and not be
+				// available at index.html and index.json (as well).
+				return path == "/index.html" || path == "/index.json"
+			},
+		},
+		providers: nil,
+		passkey:   nil,
+	}
+
+	if len(sites) > 1 {
+		service.Middleware = append(service.Middleware, service.RedirectToMainSite(domain))
+	}
+
 	service.providers = sync.OnceValue(initProviders(app, service, domain, providers))
+	service.passkey = sync.OnceValue(initPasskey(app, domain))
 
 	// Construct the main handler for the service using the router.
 	handler, errE := service.RouteWith(service, &waf.Router{}) //nolint:exhaustruct

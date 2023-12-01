@@ -1,6 +1,7 @@
 package charon
 
 import (
+	"net"
 	"net/http"
 	"net/url"
 
@@ -64,6 +65,7 @@ func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request,
 		Session: nil,
 		Target:  req.URL.String(),
 		OIDC:    nil,
+		Passkey: nil,
 	})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -112,4 +114,22 @@ func (s *Service) GetActiveFlow(w http.ResponseWriter, req *http.Request, api bo
 	}
 
 	return flow
+}
+
+func getHost(app *App, domain string) (string, errors.E) {
+	// ListenAddr blocks until the server runs.
+	listenAddr := app.Server.ListenAddr()
+	if listenAddr == "" {
+		// Server failed to start. We just return in this case.
+		return "", nil
+	}
+	_, port, err := net.SplitHostPort(listenAddr)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	host := domain
+	if port != "443" {
+		host = net.JoinHostPort(host, port)
+	}
+	return host, nil
 }
