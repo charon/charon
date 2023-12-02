@@ -204,7 +204,7 @@ func (s *Service) AuthPasskeySigninCompletePost(w http.ResponseWriter, req *http
 		return
 	}
 
-	s.completeAuthStep(w, req, flow, "passkey", credentialID, jsonData)
+	s.completeAuthStep(w, req, true, flow, "passkey", credentialID, jsonData)
 }
 
 func (s *Service) AuthPasskeySignup(w http.ResponseWriter, req *http.Request, _ waf.Params) {
@@ -293,5 +293,5 @@ func (s *Service) AuthPasskeySignupCompletePost(w http.ResponseWriter, req *http
 		return
 	}
 
-	s.completeAuthStep(w, req, flow, "passkey", credentialID, jsonData)
+	s.completeAuthStep(w, req, true, flow, "passkey", credentialID, jsonData)
 }

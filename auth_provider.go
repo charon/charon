@@ -217,5 +217,5 @@ func (s *Service) AuthProviderCallbackGet(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	s.completeAuthStep(w, req, flow, params["provider"], idToken.Subject, jsonData)
+	s.completeAuthStep(w, req, false, flow, params["provider"], idToken.Subject, jsonData)
 }

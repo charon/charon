@@ -9,7 +9,11 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
-func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, flow *Flow, provider, credentialID string, jsonData []byte) {
+type AuthResponse struct {
+	Location string `json:"location"`
+}
+
+func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *Flow, provider, credentialID string, jsonData []byte) {
 	ctx := req.Context()
 
 	account, errE := GetAccountByCredential(ctx, provider, credentialID)
@@ -77,7 +81,11 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, flo
 
 	http.SetCookie(w, &cookie)
 
-	s.TemporaryRedirectGetMethod(w, req, flow.Target)
+	if api {
+		s.WriteJSON(w, req, AuthResponse{flow.Target}, nil)
+	} else {
+		s.TemporaryRedirectGetMethod(w, req, flow.Target)
+	}
 }
 
 func (s *Service) Auth(w http.ResponseWriter, req *http.Request, _ waf.Params) {
