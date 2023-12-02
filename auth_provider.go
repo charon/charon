@@ -167,6 +167,8 @@ func (s *Service) AuthProviderCallbackGet(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
+	// TODO: Flow should reset flow.OIDC to nil always after this point, even if there is a failure, so that nonce cannot be reused.
+
 	errorCode := req.Form.Get("error")
 	errorDescription := req.Form.Get("error_description")
 	if errorCode != "" || errorDescription != "" {

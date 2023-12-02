@@ -168,6 +168,8 @@ func (s *Service) AuthPasskeySigninCompletePost(w http.ResponseWriter, req *http
 		return
 	}
 
+	// TODO: Flow should reset flow.Passkey to nil always after this point, even if there is a failure, so that challenge cannot be reused.
+
 	credential, err := s.passkey().FinishDiscoverableLogin(func(rawID, userHandle []byte) (webauthn.User, error) {
 		id := base64.RawURLEncoding.EncodeToString(rawID)
 		account, errE := GetAccountByCredential(req.Context(), "passkey", id)
@@ -272,6 +274,8 @@ func (s *Service) AuthPasskeySignupCompletePost(w http.ResponseWriter, req *http
 		s.BadRequestWithError(w, req, errors.New("passkey not started"))
 		return
 	}
+
+	// TODO: Flow should reset flow.Passkey to nil always after this point, even if there is a failure, so that challenge cannot be reused.
 
 	credential, err := s.passkey().FinishRegistration(&charonUser{nil}, *flow.Passkey, req)
 	if err != nil {
