@@ -18,6 +18,8 @@ var (
 
 type Session struct {
 	ID identifier.Identifier
+
+	Account identifier.Identifier
 }
 
 func GetSession(ctx context.Context, id identifier.Identifier) (*Session, errors.E) { //nolint:revive

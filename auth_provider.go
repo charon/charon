@@ -2,6 +2,7 @@ package charon
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"slices"
@@ -207,5 +208,12 @@ func (s *Service) AuthProviderCallbackGet(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	s.completeAuthStep(w, req, flow, params["provider"], idToken.Subject)
+	var jsonData json.RawMessage
+	err = idToken.Claims(&jsonData)
+	if err != nil {
+		s.BadRequestWithError(w, req, errors.WithStack(err))
+		return
+	}
+
+	s.completeAuthStep(w, req, flow, params["provider"], idToken.Subject, jsonData)
 }

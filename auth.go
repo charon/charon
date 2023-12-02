@@ -4,14 +4,49 @@ import (
 	"net/http"
 	"time"
 
+	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 )
 
-func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, flow *Flow, provider, userID string) {
+func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, flow *Flow, provider, credentialID string, jsonData []byte) {
+	ctx := req.Context()
+
+	account, errE := GetAccountByCredential(ctx, provider, credentialID)
+	if errors.Is(errE, ErrAccountNotFound) {
+		// Sign-up. Create new account.
+		account = &Account{
+			ID: identifier.New(),
+			Credentials: map[string][]Credential{
+				provider: {{
+					ID:       credentialID,
+					Provider: provider,
+					Data:     jsonData,
+				}},
+			},
+		}
+		errE = SetAccount(ctx, account)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+	} else if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	} else {
+		// Sign-in. Update credential for an existing account.
+		account.UpdateCredential(provider, credentialID, jsonData)
+		errE = SetAccount(ctx, account)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+	}
+
 	sessionID := identifier.New()
-	errE := SetSession(req.Context(), &Session{
-		ID: sessionID,
+	errE = SetSession(ctx, &Session{
+		ID:      sessionID,
+		Account: account.ID,
 	})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -22,7 +57,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, flo
 	flow.OIDC = nil
 	flow.Passkey = nil
 
-	errE = SetFlow(req.Context(), flow)
+	errE = SetFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return

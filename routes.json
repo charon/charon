@@ -7,6 +7,30 @@
       "get": true
     },
     {
+      "name": "AuthPasskeySignin",
+      "path": "/auth/passkey/signin",
+      "api": true,
+      "get": true
+    },
+    {
+      "name": "AuthPasskeySigninComplete",
+      "path": "/auth/passkey/signin/complete",
+      "api": true,
+      "get": false
+    },
+    {
+      "name": "AuthPasskeySignup",
+      "path": "/auth/passkey/signup",
+      "api": true,
+      "get": true
+    },
+    {
+      "name": "AuthPasskeySignupComplete",
+      "path": "/auth/passkey/signup/complete",
+      "api": true,
+      "get": false
+    },
+    {
       "name": "AuthProvider",
       "path": "/auth/provider",
       "api": true,

@@ -1,8 +1,8 @@
 package charon
 
 import (
+	"encoding/base64"
 	"fmt"
-	"io"
 	"net/http"
 	"slices"
 	"time"
@@ -10,13 +10,17 @@ import (
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/protocol/webauthncose"
 	"github.com/go-webauthn/webauthn/webauthn"
+	"github.com/rs/zerolog/hlog"
 	"gitlab.com/tozd/go/errors"
+	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/waf"
 )
 
 const defaultPasskeyTimeout = 60 * time.Second
 
-type charonUser struct{}
+type charonUser struct {
+	Credentials []webauthn.Credential
+}
 
 func (*charonUser) WebAuthnID() []byte {
 	return []byte{0}
@@ -34,8 +38,8 @@ func (*charonUser) WebAuthnIcon() string {
 	return ""
 }
 
-func (*charonUser) WebAuthnCredentials() []webauthn.Credential {
-	return []webauthn.Credential{}
+func (u *charonUser) WebAuthnCredentials() []webauthn.Credential {
+	return u.Credentials
 }
 
 func withWebauthnError(err error) errors.E {
@@ -164,19 +168,41 @@ func (s *Service) AuthPasskeySigninCompletePost(w http.ResponseWriter, req *http
 		return
 	}
 
-	// TODO: Pass first argument.
-	credential, err := s.passkey().FinishDiscoverableLogin(nil, *flow.Passkey, req)
-	// We make sure the body is fully read and closed.
-	// See: https://github.com/go-webauthn/webauthn/issues/189
-	io.Copy(io.Discard, req.Body) //nolint:errcheck
-	req.Body.Close()
+	credential, err := s.passkey().FinishDiscoverableLogin(func(rawID, userHandle []byte) (webauthn.User, error) {
+		id := base64.RawURLEncoding.EncodeToString(rawID)
+		account, errE := GetAccountByCredential(req.Context(), "passkey", id)
+		if errE != nil {
+			return nil, errE
+		}
+		var c webauthn.Credential
+		errE = x.Unmarshal(account.GetCredential("passkey", id).Data, &c)
+		if errE != nil {
+			return nil, errE
+		}
+		return &charonUser{
+			Credentials: []webauthn.Credential{c},
+		}, nil
+	}, *flow.Passkey, req)
 	if err != nil {
 		s.BadRequestWithError(w, req, withWebauthnError(err))
 		return
 	}
 
-	// TODO: Convert ID to a more reasonable string.
-	s.completeAuthStep(w, req, flow, "passkey", string(credential.ID))
+	credentialID := base64.RawURLEncoding.EncodeToString(credential.ID)
+
+	if credential.Authenticator.CloneWarning {
+		hlog.FromRequest(req).Warn().Str("credential", credentialID).Msg("authenticator may be cloned")
+	}
+
+	// TODO: Have camelCase json field names.
+	//       See: https://github.com/go-webauthn/webauthn/issues/193
+	jsonData, errE := x.MarshalWithoutEscapeHTML(credential)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	s.completeAuthStep(w, req, flow, "passkey", credentialID, jsonData)
 }
 
 func (s *Service) AuthPasskeySignup(w http.ResponseWriter, req *http.Request, _ waf.Params) {
@@ -202,7 +228,7 @@ func (s *Service) AuthPasskeySignupPost(w http.ResponseWriter, req *http.Request
 	}
 
 	options, session, err := s.passkey().BeginRegistration(
-		&charonUser{},
+		&charonUser{nil},
 		webauthn.WithExtensions(protocol.AuthenticationExtensions{
 			"credentialProtectionPolicy": "userVerificationOptional",
 		}),
@@ -247,17 +273,21 @@ func (s *Service) AuthPasskeySignupCompletePost(w http.ResponseWriter, req *http
 		return
 	}
 
-	credential, err := s.passkey().FinishRegistration(&charonUser{}, *flow.Passkey, req)
-	// We make sure the body is fully read and closed.
-	// See: https://github.com/go-webauthn/webauthn/issues/189
-	io.Copy(io.Discard, req.Body) //nolint:errcheck
-	req.Body.Close()
+	credential, err := s.passkey().FinishRegistration(&charonUser{nil}, *flow.Passkey, req)
 	if err != nil {
 		s.BadRequestWithError(w, req, withWebauthnError(err))
 		return
 	}
 
-	// TODO: Store whole credential?
-	// TODO: Convert ID to a more reasonable string.
-	s.completeAuthStep(w, req, flow, "passkey", string(credential.ID))
+	credentialID := base64.RawURLEncoding.EncodeToString(credential.ID)
+
+	// TODO: Have camelCase json field names.
+	//       See: https://github.com/go-webauthn/webauthn/issues/193
+	jsonData, errE := x.MarshalWithoutEscapeHTML(credential)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	s.completeAuthStep(w, req, flow, "passkey", credentialID, jsonData)
 }
