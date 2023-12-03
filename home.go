@@ -2,14 +2,13 @@ package charon
 
 import (
 	"net/http"
-	"strings"
 
 	"gitlab.com/tozd/waf"
 )
 
 func (s *Service) Home(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	// During development Vite creates WebSocket connection. We always proxy it.
-	if s.Development != "" && strings.ToLower(req.Header.Get("Connection")) == "upgrade" {
+	if s.Development != "" && hasConnectionUpgrade(req) {
 		s.Proxy(w, req)
 		return
 	}

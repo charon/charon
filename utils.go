@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"strings"
 
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/identifier"
@@ -132,4 +133,13 @@ func getHost(app *App, domain string) (string, errors.E) {
 		host = net.JoinHostPort(host, port)
 	}
 	return host, nil
+}
+
+func hasConnectionUpgrade(req *http.Request) bool {
+	for _, value := range strings.Split(req.Header.Get("Connection"), ",") {
+		if strings.ToLower(strings.TrimSpace(value)) == "upgrade" {
+			return true
+		}
+	}
+	return false
 }
