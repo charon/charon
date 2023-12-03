@@ -7,7 +7,7 @@ export class FetchError extends Error {
   }
 }
 
-export async function postURL(url: string, data: object | null, progress: Ref<number>): Promise<object> {
+export async function postURL(url: string, data: object, progress: Ref<number>): Promise<object> {
   progress.value += 1
   try {
     const response = await fetch(url, {
@@ -15,7 +15,33 @@ export async function postURL(url: string, data: object | null, progress: Ref<nu
       headers: {
         "Content-Type": "application/json",
       },
-      body: data === null ? "" : JSON.stringify(data),
+      body: JSON.stringify(data),
+      mode: "same-origin",
+      credentials: "omit",
+      redirect: "error",
+      referrer: document.location.href,
+      referrerPolicy: "strict-origin-when-cross-origin",
+    })
+    if (!response.ok) {
+      const body = await response.text()
+      throw new FetchError(`fetch POST error ${response.status}: ${body}`, {
+        status: response.status,
+        body,
+        url,
+        requestID: response.headers.get("Request-ID"),
+      })
+    }
+    return await response.json()
+  } finally {
+    progress.value -= 1
+  }
+}
+
+export async function deleteURL(url: string, progress: Ref<number>): Promise<object> {
+  progress.value += 1
+  try {
+    const response = await fetch(url, {
+      method: "DELETE",
       mode: "same-origin",
       credentials: "omit",
       redirect: "error",

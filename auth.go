@@ -2,78 +2,21 @@ package charon
 
 import (
 	"net/http"
-	"time"
 
-	"gitlab.com/tozd/go/errors"
-	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 )
 
-type AuthResponse struct {
-	Location string `json:"location"`
-}
+// TODO: Allow specifying target to redirect to?
+//       How to do that in a way that we do not enable open redirect?
 
-func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *Flow, provider, credentialID string, jsonData []byte) {
-	ctx := req.Context()
+// TODO: Allow specifying that a) provider who signed the user in should be signed out as well b) all providers user is known with is signed out as well.
 
-	account, errE := GetAccountByCredential(ctx, provider, credentialID)
-	if errors.Is(errE, ErrAccountNotFound) {
-		// Sign-up. Create new account.
-		account = &Account{
-			ID: identifier.New(),
-			Credentials: map[string][]Credential{
-				provider: {{
-					ID:       credentialID,
-					Provider: provider,
-					Data:     jsonData,
-				}},
-			},
-		}
-		errE = SetAccount(ctx, account)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-	} else if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	} else {
-		// Sign-in. Update credential for an existing account.
-		account.UpdateCredential(provider, credentialID, jsonData)
-		errE = SetAccount(ctx, account)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-	}
-
-	sessionID := identifier.New()
-	errE = SetSession(ctx, &Session{
-		ID:      sessionID,
-		Account: account.ID,
-	})
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	flow.Session = &sessionID
-	flow.OIDC = nil
-	flow.Passkey = nil
-
-	errE = SetFlow(ctx, flow)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
+func (s *Service) AuthDelete(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	cookie := http.Cookie{ //nolint:exhaustruct
 		Name:     SessionCookieName,
-		Value:    sessionID.String(),
 		Path:     "/",
 		Domain:   "",
-		Expires:  time.Now().Add(7 * 24 * time.Hour),
-		MaxAge:   0,
+		MaxAge:   -1,
 		Secure:   true,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
@@ -81,21 +24,9 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 
 	http.SetCookie(w, &cookie)
 
-	if api {
-		s.WriteJSON(w, req, AuthResponse{flow.Target}, nil)
-	} else {
-		s.TemporaryRedirectGetMethod(w, req, flow.Target)
-	}
-}
-
-func (s *Service) Auth(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	if !s.RequireActiveFlow(w, req, false) {
-		return
-	}
-
-	if s.Development != "" {
-		s.Proxy(w, req)
-	} else {
-		s.ServeStaticFile(w, req, "/index.html")
-	}
+	s.WriteJSON(w, req, AuthFlowResponse{
+		ReplaceLocation: "/",
+		PushLocation:    "",
+		Passkey:         nil,
+	}, nil)
 }

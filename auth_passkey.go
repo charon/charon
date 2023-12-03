@@ -13,7 +13,6 @@ import (
 	"github.com/rs/zerolog/hlog"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
-	"gitlab.com/tozd/waf"
 )
 
 const defaultPasskeyTimeout = 60 * time.Second
@@ -78,7 +77,7 @@ func WithPreferredCredentialAlgorithms(preferredAlgorithms []webauthncose.COSEAl
 	}
 }
 
-func initPasskey(app *App, domain string) func() *webauthn.WebAuthn {
+func initPasskeyProvider(app *App, domain string) func() *webauthn.WebAuthn {
 	return func() *webauthn.WebAuthn {
 		host, errE := getHost(app, domain)
 		if errE != nil {
@@ -116,29 +115,8 @@ func initPasskey(app *App, domain string) func() *webauthn.WebAuthn {
 	}
 }
 
-func (s *Service) AuthPasskeySignin(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	if !s.RequireActiveFlow(w, req, false) {
-		return
-	}
-
-	if s.Development != "" {
-		s.Proxy(w, req)
-	} else {
-		s.ServeStaticFile(w, req, "/index.html")
-	}
-}
-
-type AuthPasskeySigninResponse struct {
-	Options *protocol.CredentialAssertion `json:"options"`
-}
-
-func (s *Service) AuthPasskeySigninPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	flow := s.GetActiveFlow(w, req, true, FlowParameterName)
-	if flow == nil {
-		return
-	}
-
-	options, session, err := s.passkey().BeginDiscoverableLogin()
+func (s *Service) startPasskeyGet(w http.ResponseWriter, req *http.Request, flow *Flow) {
+	options, session, err := s.passkeyProvider().BeginDiscoverableLogin()
 	if err != nil {
 		s.InternalServerErrorWithError(w, req, withWebauthnError(err))
 		return
@@ -152,25 +130,53 @@ func (s *Service) AuthPasskeySigninPost(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	s.WriteJSON(w, req, AuthPasskeySigninResponse{
-		Options: options,
+	s.WriteJSON(w, req, AuthFlowResponse{
+		ReplaceLocation: "",
+		PushLocation:    "",
+		Passkey: &AuthFlowResponsePasskey{
+			CreateOptions: nil,
+			GetOptions:    options,
+		},
 	}, nil)
 }
 
-func (s *Service) AuthPasskeySigninCompletePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	flow := s.GetActiveFlow(w, req, true, FlowParameterName)
-	if flow == nil {
-		return
-	}
-
+func (s *Service) getFlowPasskey(w http.ResponseWriter, req *http.Request, flow *Flow) *webauthn.SessionData {
 	if flow.Passkey == nil {
 		s.BadRequestWithError(w, req, errors.New("passkey not started"))
+		return nil
+	}
+
+	flowPasskey := flow.Passkey
+
+	// We reset flow.Passkey to nil always after this point, even if there is a failure,
+	// so that challenge cannot be reused.
+	flow.Passkey = nil
+	errE := SetFlow(req.Context(), flow)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return nil
+	}
+
+	return flowPasskey
+}
+
+func (s *Service) completePasskeyGet(w http.ResponseWriter, req *http.Request, flow *Flow, requestPasskey *AuthFlowRequestPasskey) {
+	if requestPasskey.GetResponse == nil {
+		s.BadRequestWithError(w, req, errors.New("get response missing"))
 		return
 	}
 
-	// TODO: Flow should reset flow.Passkey to nil always after this point, even if there is a failure, so that challenge cannot be reused.
+	parsedResponse, err := requestPasskey.GetResponse.Parse()
+	if err != nil {
+		s.BadRequestWithError(w, req, errors.WithStack(err))
+	}
 
-	credential, err := s.passkey().FinishDiscoverableLogin(func(rawID, userHandle []byte) (webauthn.User, error) {
+	flowPasskey := s.getFlowPasskey(w, req, flow)
+	if flowPasskey == nil {
+		return
+	}
+
+	credential, err := s.passkeyProvider().ValidateDiscoverableLogin(func(rawID, userHandle []byte) (webauthn.User, error) {
 		id := base64.RawURLEncoding.EncodeToString(rawID)
 		account, errE := GetAccountByCredential(req.Context(), "passkey", id)
 		if errE != nil {
@@ -184,7 +190,7 @@ func (s *Service) AuthPasskeySigninCompletePost(w http.ResponseWriter, req *http
 		return &charonUser{
 			Credentials: []webauthn.Credential{c},
 		}, nil
-	}, *flow.Passkey, req)
+	}, *flowPasskey, parsedResponse)
 	if err != nil {
 		s.BadRequestWithError(w, req, withWebauthnError(err))
 		return
@@ -207,29 +213,8 @@ func (s *Service) AuthPasskeySigninCompletePost(w http.ResponseWriter, req *http
 	s.completeAuthStep(w, req, true, flow, "passkey", credentialID, jsonData)
 }
 
-func (s *Service) AuthPasskeySignup(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	if !s.RequireActiveFlow(w, req, false) {
-		return
-	}
-
-	if s.Development != "" {
-		s.Proxy(w, req)
-	} else {
-		s.ServeStaticFile(w, req, "/index.html")
-	}
-}
-
-type AuthPasskeySignupResponse struct {
-	Options *protocol.CredentialCreation `json:"options"`
-}
-
-func (s *Service) AuthPasskeySignupPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	flow := s.GetActiveFlow(w, req, true, FlowParameterName)
-	if flow == nil {
-		return
-	}
-
-	options, session, err := s.passkey().BeginRegistration(
+func (s *Service) startPasskeyCreate(w http.ResponseWriter, req *http.Request, flow *Flow) {
+	options, session, err := s.passkeyProvider().BeginRegistration(
 		&charonUser{nil},
 		webauthn.WithExtensions(protocol.AuthenticationExtensions{
 			"credentialProtectionPolicy": "userVerificationOptional",
@@ -259,25 +244,33 @@ func (s *Service) AuthPasskeySignupPost(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	s.WriteJSON(w, req, AuthPasskeySignupResponse{
-		Options: options,
+	s.WriteJSON(w, req, AuthFlowResponse{
+		ReplaceLocation: "",
+		PushLocation:    "",
+		Passkey: &AuthFlowResponsePasskey{
+			CreateOptions: options,
+			GetOptions:    nil,
+		},
 	}, nil)
 }
 
-func (s *Service) AuthPasskeySignupCompletePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	flow := s.GetActiveFlow(w, req, true, FlowParameterName)
-	if flow == nil {
+func (s *Service) completePasskeyCreate(w http.ResponseWriter, req *http.Request, flow *Flow, requestPasskey *AuthFlowRequestPasskey) {
+	if requestPasskey.CreateResponse == nil {
+		s.BadRequestWithError(w, req, errors.New("create response missing"))
 		return
 	}
 
-	if flow.Passkey == nil {
-		s.BadRequestWithError(w, req, errors.New("passkey not started"))
+	parsedResponse, err := requestPasskey.CreateResponse.Parse()
+	if err != nil {
+		s.BadRequestWithError(w, req, errors.WithStack(err))
+	}
+
+	flowPasskey := s.getFlowPasskey(w, req, flow)
+	if flowPasskey == nil {
 		return
 	}
 
-	// TODO: Flow should reset flow.Passkey to nil always after this point, even if there is a failure, so that challenge cannot be reused.
-
-	credential, err := s.passkey().FinishRegistration(&charonUser{nil}, *flow.Passkey, req)
+	credential, err := s.passkeyProvider().CreateCredential(&charonUser{nil}, *flowPasskey, parsedResponse)
 	if err != nil {
 		s.BadRequestWithError(w, req, withWebauthnError(err))
 		return

@@ -31,17 +31,17 @@ var routesConfiguration []byte
 //go:embed dist
 var files embed.FS
 
-type Provider struct {
+type OIDCProvider struct {
 	ClientID string `env:"CLIENT_ID" help:"${provider}'s client ID. Environment variable: ${env}." yaml:"clientId"`
 	Secret   string `env:"SECRET"    help:"${provider}'s secret. Environment variable: ${env}."    yaml:"secret"`
 }
 
-// TODO: Add Kong validator to Provider to validate that or both or none fields are set.
+// TODO: Add Kong validator to OIDCProvider to validate that or both or none fields are set.
 //       See: https://github.com/alecthomas/kong/issues/90
 
 type Providers struct {
-	Google   Provider `embed:"" envprefix:"GOOGLE_"   prefix:"google."   set:"provider=Google"   yaml:"google"`
-	Facebook Provider `embed:"" envprefix:"FACEBOOK_" prefix:"facebook." set:"provider=Facebook" yaml:"facebook"`
+	Google   OIDCProvider `embed:"" envprefix:"GOOGLE_"   prefix:"google."   set:"provider=Google"   yaml:"google"`
+	Facebook OIDCProvider `embed:"" envprefix:"FACEBOOK_" prefix:"facebook." set:"provider=Facebook" yaml:"facebook"`
 }
 
 //nolint:lll
@@ -61,8 +61,8 @@ type App struct {
 type Service struct {
 	waf.Service[*Site]
 
-	providers func() map[string]oidcProvider
-	passkey   func() *webauthn.WebAuthn
+	oidcProviders   func() map[string]oidcProvider
+	passkeyProvider func() *webauthn.WebAuthn
 }
 
 func (app *App) Run() errors.E {
@@ -185,16 +185,16 @@ func (app *App) Run() errors.E {
 				return path == "/index.html" || path == "/index.json"
 			},
 		},
-		providers: nil,
-		passkey:   nil,
+		oidcProviders:   nil,
+		passkeyProvider: nil,
 	}
 
 	if len(sites) > 1 {
 		service.Middleware = append(service.Middleware, service.RedirectToMainSite(domain))
 	}
 
-	service.providers = sync.OnceValue(initProviders(app, service, domain, providers))
-	service.passkey = sync.OnceValue(initPasskey(app, domain))
+	service.oidcProviders = sync.OnceValue(initOIDCProviders(app, service, domain, providers))
+	service.passkeyProvider = sync.OnceValue(initPasskeyProvider(app, domain))
 
 	// Construct the main handler for the service using the router.
 	handler, errE := service.RouteWith(service, &waf.Router{}) //nolint:exhaustruct
@@ -204,7 +204,8 @@ func (app *App) Run() errors.E {
 
 	// We start initialization of providers.
 	// Initialization will block until the server runs.
-	go service.providers()
+	go service.oidcProviders()
+	go service.passkeyProvider()
 
 	// We stop the server gracefully on ctrl-c and TERM signal.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

@@ -7,51 +7,21 @@
       "get": true
     },
     {
-      "name": "AuthPasskeySignin",
-      "path": "/auth/passkey/signin",
-      "api": true,
-      "get": true
-    },
-    {
-      "name": "AuthPasskeySigninComplete",
-      "path": "/auth/passkey/signin/complete",
-      "api": true,
-      "get": false
-    },
-    {
-      "name": "AuthPasskeySignup",
-      "path": "/auth/passkey/signup",
-      "api": true,
-      "get": true
-    },
-    {
-      "name": "AuthPasskeySignupComplete",
-      "path": "/auth/passkey/signup/complete",
-      "api": true,
-      "get": false
-    },
-    {
-      "name": "AuthProvider",
-      "path": "/auth/provider",
-      "api": true,
-      "get": false
-    },
-    {
-      "name": "AuthProviderCallback",
+      "name": "AuthOIDCProvider",
       "path": "/auth/provider/:provider",
-      "api": true,
-      "get": false
-    },
-    {
-      "name": "AuthSignout",
-      "path": "/auth/signout",
-      "api": true,
-      "get": false
+      "api": false,
+      "get": true
     },
     {
       "name": "Auth",
       "path": "/auth",
-      "api": false,
+      "api": true,
+      "get": false
+    },
+    {
+      "name": "AuthFlow",
+      "path": "/auth/:id",
+      "api": true,
       "get": true
     }
   ]

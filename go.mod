@@ -6,7 +6,7 @@ require (
 	github.com/alecthomas/kong v0.8.1
 	gitlab.com/tozd/go/cli v0.2.2
 	gitlab.com/tozd/go/errors v0.8.0
-	gitlab.com/tozd/go/x v0.0.0-20231119172637-21f8c2f899b5
+	gitlab.com/tozd/go/x v0.0.0-20231203095540-41b15b78555f
 	gitlab.com/tozd/go/zerolog v0.5.1
 	gitlab.com/tozd/identifier v0.1.0
 	gitlab.com/tozd/waf v0.4.0

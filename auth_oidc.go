@@ -23,7 +23,7 @@ type oidcProvider struct {
 	SupportsPKCE bool
 }
 
-func initProviders(app *App, service *Service, domain string, providers []SiteProvider) func() map[string]oidcProvider {
+func initOIDCProviders(app *App, service *Service, domain string, providers []SiteProvider) func() map[string]oidcProvider {
 	return func() map[string]oidcProvider {
 		host, errE := getHost(app, domain)
 		if errE != nil {
@@ -38,7 +38,7 @@ func initProviders(app *App, service *Service, domain string, providers []SitePr
 		for _, p := range providers {
 			app.Logger.Debug().Msgf("enabling %s provider", p.Name)
 
-			path, errE := service.ReverseAPI("AuthProviderCallback", waf.Params{"provider": p.Key}, nil)
+			path, errE := service.Reverse("AuthOIDCProvider", waf.Params{"provider": p.Key}, nil)
 			if errE != nil {
 				panic(errE)
 			}
@@ -107,17 +107,11 @@ func initProviders(app *App, service *Service, domain string, providers []SitePr
 	}
 }
 
-func (s *Service) AuthProviderPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	// We redirect user's browser to this endpoint so we set api=false in the following call.
-	flow := s.GetActiveFlow(w, req, false, FlowParameterName)
-	if flow == nil {
-		return
-	}
-
-	provider, ok := s.providers()[req.Form.Get("provider")]
+func (s *Service) startOIDCProvider(w http.ResponseWriter, req *http.Request, flow *Flow, providerName string) {
+	provider, ok := s.oidcProviders()[providerName]
 	if !ok {
 		errE := errors.New("unknown provider")
-		errors.Details(errE)["provider"] = req.Form.Get("provider")
+		errors.Details(errE)["provider"] = providerName
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
@@ -143,11 +137,17 @@ func (s *Service) AuthProviderPost(w http.ResponseWriter, req *http.Request, _ w
 		return
 	}
 
-	s.TemporaryRedirectGetMethod(w, req, provider.Config.AuthCodeURL(flow.ID.String(), opts...))
+	s.WriteJSON(w, req, AuthFlowResponse{
+		ReplaceLocation: "",
+		PushLocation:    provider.Config.AuthCodeURL(flow.ID.String(), opts...),
+		Passkey:         nil,
+	}, nil)
 }
 
-func (s *Service) AuthProviderCallbackGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	provider, ok := s.providers()[params["provider"]]
+func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	ctx := req.Context()
+
+	provider, ok := s.oidcProviders()[params["provider"]]
 	if !ok {
 		errE := errors.New("unknown provider")
 		errors.Details(errE)["provider"] = params["provider"]
@@ -155,9 +155,8 @@ func (s *Service) AuthProviderCallbackGet(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	// We redirect user's browser to this endpoint so we set api=false in the following call.
 	// State should be provided even in the case of an error.
-	flow := s.GetActiveFlow(w, req, false, "state")
+	flow := s.GetActiveFlow(w, req, false, req.Form.Get("state"))
 	if flow == nil {
 		return
 	}
@@ -167,7 +166,16 @@ func (s *Service) AuthProviderCallbackGet(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	// TODO: Flow should reset flow.OIDC to nil always after this point, even if there is a failure, so that nonce cannot be reused.
+	flowOIDC := *flow.OIDC
+
+	// We reset flow.OIDC to nil always after this point, even if there is a failure,
+	// so that nonce cannot be reused.
+	flow.OIDC = nil
+	errE := SetFlow(ctx, flow)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
 
 	errorCode := req.Form.Get("error")
 	errorDescription := req.Form.Get("error_description")
@@ -179,12 +187,12 @@ func (s *Service) AuthProviderCallbackGet(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	ctx := oidc.ClientContext(req.Context(), provider.Client)
+	ctx = oidc.ClientContext(ctx, provider.Client)
 
 	opts := []oauth2.AuthCodeOption{}
 
 	if provider.SupportsPKCE {
-		opts = append(opts, oauth2.VerifierOption(flow.OIDC.Verifier))
+		opts = append(opts, oauth2.VerifierOption(flowOIDC.Verifier))
 	}
 
 	oauth2Token, err := provider.Config.Exchange(ctx, req.Form.Get("code"), opts...)
@@ -205,7 +213,7 @@ func (s *Service) AuthProviderCallbackGet(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	if idToken.Nonce != flow.OIDC.Nonce {
+	if idToken.Nonce != flowOIDC.Nonce {
 		s.BadRequestWithError(w, req, errors.New("nonce mismatch"))
 		return
 	}
@@ -213,7 +221,7 @@ func (s *Service) AuthProviderCallbackGet(w http.ResponseWriter, req *http.Reque
 	var jsonData json.RawMessage
 	err = idToken.Claims(&jsonData)
 	if err != nil {
-		s.BadRequestWithError(w, req, errors.WithStack(err))
+		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
 		return
 	}
 

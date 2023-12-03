@@ -1,9 +1,9 @@
 package charon
 
 import (
+	"context"
 	"net"
 	"net/http"
-	"net/url"
 
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/identifier"
@@ -11,8 +11,7 @@ import (
 )
 
 const (
-	SessionCookieName = "session"
-	FlowParameterName = "flow"
+	SessionCookieName = "__Host-session"
 )
 
 func getSessionFromRequest(req *http.Request) (*Session, errors.E) {
@@ -31,8 +30,8 @@ func getSessionFromRequest(req *http.Request) (*Session, errors.E) {
 	return GetSession(req.Context(), id)
 }
 
-func getFlowFromRequest(req *http.Request, param string) (*Flow, errors.E) {
-	value := req.Form.Get(param)
+// getFlowFromID obtains Flow from its string ID.
+func getFlowFromID(ctx context.Context, value string) (*Flow, errors.E) {
 	if value == "" {
 		return nil, errors.WithStack(ErrFlowNotFound)
 	}
@@ -42,7 +41,7 @@ func getFlowFromRequest(req *http.Request, param string) (*Flow, errors.E) {
 		return nil, errors.WrapWith(errE, ErrFlowNotFound)
 	}
 
-	return GetFlow(req.Context(), id)
+	return GetFlow(ctx, id)
 }
 
 func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request, api bool) bool {
@@ -72,9 +71,7 @@ func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request,
 		return false
 	}
 
-	qs := url.Values{}
-	qs.Set(FlowParameterName, id.String())
-	location, errE := s.Reverse("Auth", nil, qs)
+	location, errE := s.Reverse("AuthFlow", waf.Params{"id": id.String()}, nil)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return false
@@ -83,13 +80,8 @@ func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request,
 	return false
 }
 
-func (s *Service) RequireActiveFlow(w http.ResponseWriter, req *http.Request, api bool) bool {
-	flow := s.GetActiveFlow(w, req, api, FlowParameterName)
-	return flow != nil
-}
-
-func (s *Service) GetActiveFlow(w http.ResponseWriter, req *http.Request, api bool, param string) *Flow {
-	flow, errE := getFlowFromRequest(req, param)
+func (s *Service) GetActiveFlow(w http.ResponseWriter, req *http.Request, api bool, value string) *Flow {
+	flow, errE := getFlowFromID(req.Context(), value)
 	if errors.Is(errE, ErrFlowNotFound) {
 		s.BadRequestWithError(w, req, errE)
 		return nil
@@ -98,17 +90,23 @@ func (s *Service) GetActiveFlow(w http.ResponseWriter, req *http.Request, api bo
 		return nil
 	}
 
+	// Has flow already completed?
 	if flow.Session != nil {
-		if api {
-			s.BadRequest(w, req)
-			return nil
-		}
-
 		// TODO: Redirect to target only if same user is still authenticated.
 		//       When flow completes, we should remember the user who authenticated. Then, here, we should check if the same user is still
 		//       authenticated. If yes, then we redirect to target. If not and some user is authenticated, then we redirect to /. If not and
 		//       no user is authenticated, then we start a new flow with additional field which requires the completing user to be the same.
 		//       If after flow completes the user is the same, we redirect to target, otherwise to /.
+
+		if api {
+			s.WriteJSON(w, req, AuthFlowResponse{
+				ReplaceLocation: flow.Target,
+				PushLocation:    "",
+				Passkey:         nil,
+			}, nil)
+			return nil
+		}
+
 		s.TemporaryRedirectGetMethod(w, req, flow.Target)
 		return nil
 	}
