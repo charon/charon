@@ -20,6 +20,9 @@ const router = useRouter()
 
 const progress = ref(0)
 const signupProgress = ref(0)
+const signupAttempted = ref(false)
+const signupFailed = ref(false)
+const signupFailedAtLeastOnce = ref(false)
 
 let aborted = false
 
@@ -36,6 +39,8 @@ async function onRetry() {
 }
 
 async function onPasskeySignup() {
+  signupAttempted.value = true
+  signupFailed.value = false
   aborted = false
   const url = router.apiResolve({
     name: "AuthFlow",
@@ -72,7 +77,8 @@ async function onPasskeySignup() {
         return
       }
       aborted = true
-      // TODO: Improve.
+      signupFailed.value = true
+      signupFailedAtLeastOnce.value = true
       return
     }
 
@@ -104,12 +110,16 @@ async function onPasskeySignup() {
 </script>
 
 <template>
-  <div>Signing in using <strong>passkey</strong> failed. Do you want to sign up instead?</div>
+  <div v-if="signupAttempted && signupFailed">Signing up using <strong>passkey</strong> failed.</div>
+  <div v-else-if="signupAttempted">Signing you up using <strong>passkey</strong>. Please follow instructions by your browser and/or device.</div>
+  <div v-else>Signing in using <strong>passkey</strong> failed. Do you want to sign up instead?</div>
   <div class="mt-4 flex flex-row justify-between gap-4">
     <div class="flex flex-row gap-4">
       <Button type="button" :disabled="progress > 0" @click.prevent="onBack">Back</Button>
       <Button type="button" :disabled="progress > 0" @click.prevent="onRetry">Retry sign-in</Button>
     </div>
-    <Button type="button" :disabled="progress + signupProgress > 0" @click.prevent="onPasskeySignup">Passkey sign-up</Button>
+    <Button type="button" :disabled="progress + signupProgress > 0" @click.prevent="onPasskeySignup">{{
+      signupFailedAtLeastOnce ? "Retry sign-up" : "Passkey sign-up"
+    }}</Button>
   </div>
 </template>
