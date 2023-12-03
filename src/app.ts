@@ -9,9 +9,7 @@ import "./app.css"
 // we used createWebHashHistory). In any case it is faster than waiting for router
 // to initialize and then removing the hash using the Vue router.
 if (window.location.hash === "#_=_") {
-  history.replaceState
-    ? history.replaceState(null, "", window.location.href.split("#")[0])
-    : window.location.hash = "";
+  history.replaceState ? history.replaceState(null, "", window.location.href.split("#")[0]) : (window.location.hash = "")
 }
 
 const router = createRouter({

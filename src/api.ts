@@ -15,7 +15,7 @@ export async function postURL(url: string, data: object | null, progress: Ref<nu
       headers: {
         "Content-Type": "application/json",
       },
-      body: data === null ? '' : JSON.stringify(data),
+      body: data === null ? "" : JSON.stringify(data),
       mode: "same-origin",
       credentials: "omit",
       redirect: "error",
