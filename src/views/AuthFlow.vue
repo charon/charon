@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import type { Ref } from "vue"
 import type { AuthFlowResponse } from "@/types"
-import { ref, computed } from "vue"
+import { ref, computed, onMounted, nextTick } from "vue"
 import { useRouter } from "vue-router"
 import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
-import AuthPassword from "@/components/AuthPassword.vue"
+import InputText from "@/components/InputText.vue"
+import AuthPasswordEmail from "@/components/AuthPasswordEmail.vue"
+import AuthPasswordUsername from "@/components/AuthPasswordUsername.vue"
 import AuthPasskeySignin from "@/components/AuthPasskeySignin.vue"
 import AuthPasskeySignup from "@/components/AuthPasskeySignup.vue"
 import { postURL } from "@/api"
@@ -19,6 +21,7 @@ const props = defineProps<{
 const router = useRouter()
 
 const state = ref("start")
+const emailOrUsername = ref("")
 
 const providerProgress = new Map<string, Ref<number>>()
 for (const provider of siteContext.providers.values()) {
@@ -32,6 +35,20 @@ const progress = computed(() => {
   }
   return c
 })
+
+onMounted(async () => {
+  await nextTick()
+  document.getElementById("email-or-username")?.focus()
+})
+
+async function onNext() {
+  emailOrUsername.value = emailOrUsername.value.trim()
+  if (emailOrUsername.value.indexOf("@") >= 0) {
+    state.value = "passwordEmail"
+  } else {
+    state.value = "passwordUsername"
+  }
+}
 
 async function onOIDCProvider(provider: string) {
   const progress = providerProgress.get(provider)!
@@ -64,7 +81,13 @@ async function onOIDCProvider(provider: string) {
   <div class="flex flex-col self-center rounded border bg-white p-4 shadow my-1 mx-4">
     <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>
     <template v-if="state === 'start'">
-      <AuthPassword :id="id" v-model="state" :disabled="progress > 0" />
+      <div class="flex flex-col">
+        <label for="email-or-username" class="mb-1">Enter Charon username or your e-mail address</label>
+        <form class="flex flex-row" @submit.prevent="onNext">
+          <InputText id="email-or-username" v-model="emailOrUsername" class="flex-grow flex-auto min-w-0" :readonly="progress > 0" />
+          <Button type="submit" class="ml-4" :disabled="emailOrUsername.trim().length == 0 || progress > 0">Next</Button>
+        </form>
+      </div>
       <h2 class="text-center m-4 text-xl font-bold uppercase">Or use</h2>
       <Button type="button" :disabled="!browserSupportsWebAuthn() || progress > 0" @click.prevent="state = 'passkeySignin'">Passkey</Button>
       <Button
@@ -80,5 +103,7 @@ async function onOIDCProvider(provider: string) {
     </template>
     <AuthPasskeySignin v-else-if="state === 'passkeySignin'" :id="id" v-model="state" />
     <AuthPasskeySignup v-else-if="state === 'passkeySignup'" :id="id" v-model="state" />
+    <AuthPasswordEmail v-else-if="state === 'passwordEmail'" :id="id" v-model="state" :email="emailOrUsername" />
+    <AuthPasswordUsername v-else-if="state === 'passwordUsername'" :id="id" v-model="state" :username="emailOrUsername" />
   </div>
 </template>
