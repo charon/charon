@@ -17,7 +17,7 @@ export async function postURL(url: string, data: object, progress: Ref<number>):
       },
       body: JSON.stringify(data),
       mode: "same-origin",
-      credentials: "omit",
+      credentials: "same-origin",
       redirect: "error",
       referrer: document.location.href,
       referrerPolicy: "strict-origin-when-cross-origin",
@@ -43,7 +43,7 @@ export async function deleteURL(url: string, progress: Ref<number>): Promise<obj
     const response = await fetch(url, {
       method: "DELETE",
       mode: "same-origin",
-      credentials: "omit",
+      credentials: "same-origin",
       redirect: "error",
       referrer: document.location.href,
       referrerPolicy: "strict-origin-when-cross-origin",
