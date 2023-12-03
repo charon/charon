@@ -11,7 +11,7 @@ const router = useRouter()
 async function onSignOut() {
   const progress = ref(0)
   const response: AuthFlowResponse = await deleteURL(router.apiResolve({ name: "Auth" }).href, progress)
-  locationRedirect(router, response)
+  locationRedirect(response)
 }
 </script>
 

@@ -33,7 +33,7 @@ async function onOIDCProvider(provider: string) {
     },
     progress,
   )
-  locationRedirect(router, response)
+  locationRedirect(response)
 }
 </script>
 

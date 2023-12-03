@@ -43,7 +43,7 @@ onMounted(async () => {
     },
     progress,
   )
-  if (locationRedirect(router, start)) {
+  if (locationRedirect(start)) {
     return
   }
   if (!start.passkey?.getOptions) {
@@ -65,7 +65,7 @@ onMounted(async () => {
     },
     progress,
   )
-  locationRedirect(router, complete)
+  locationRedirect(complete)
 })
 </script>
 

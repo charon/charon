@@ -100,9 +100,11 @@ func (s *Service) GetActiveFlow(w http.ResponseWriter, req *http.Request, api bo
 
 		if api {
 			s.WriteJSON(w, req, AuthFlowResponse{
-				ReplaceLocation: flow.Target,
-				PushLocation:    "",
-				Passkey:         nil,
+				Location: &AuthFlowResponseLocation{
+					URL:     flow.Target,
+					Replace: true,
+				},
+				Passkey: nil,
 			}, nil)
 			return nil
 		}

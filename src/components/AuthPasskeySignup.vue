@@ -43,7 +43,7 @@ async function onPasskeySignup() {
     },
     progress,
   )
-  if (locationRedirect(router, start)) {
+  if (locationRedirect(start)) {
     return
   }
   if (!start.passkey?.createOptions) {
@@ -65,7 +65,7 @@ async function onPasskeySignup() {
     },
     progress,
   )
-  locationRedirect(router, complete)
+  locationRedirect(complete)
 }
 </script>
 

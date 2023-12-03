@@ -1,19 +1,13 @@
-import type { Router } from "vue-router"
 import type { AuthFlowResponse } from "@/types"
 
-export function locationRedirect(router: Router, response: AuthFlowResponse): boolean {
-  if (response.replaceLocation) {
-    if (response.replaceLocation.startsWith("/")) {
-      router.replace({ path: response.replaceLocation, force: true })
+export function locationRedirect(response: AuthFlowResponse): boolean {
+  // We do not use Vue Router to force a server-side request which might return updated cookies
+  // or redirect on its own somewhere because of new (or lack thereof) cookies.
+  if (response.location) {
+    if (response.location.replace) {
+      window.location.replace(response.location.url)
     } else {
-      window.location.replace(response.replaceLocation)
-    }
-    return true
-  } else if (response.pushLocation) {
-    if (response.pushLocation.startsWith("/")) {
-      router.push({ path: response.pushLocation, force: true })
-    } else {
-      window.location.assign(response.pushLocation)
+      window.location.assign(response.location.url)
     }
     return true
   }

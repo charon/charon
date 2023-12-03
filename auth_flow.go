@@ -17,10 +17,14 @@ type AuthFlowResponsePasskey struct {
 	GetOptions    *protocol.CredentialAssertion `json:"getOptions,omitempty"`
 }
 
+type AuthFlowResponseLocation struct {
+	URL     string `json:"url"`
+	Replace bool   `json:"replace"`
+}
+
 type AuthFlowResponse struct {
-	ReplaceLocation string                   `json:"replaceLocation,omitempty"`
-	PushLocation    string                   `json:"pushLocation,omitempty"`
-	Passkey         *AuthFlowResponsePasskey `json:"passkey,omitempty"`
+	Location *AuthFlowResponseLocation `json:"location,omitempty"`
+	Passkey  *AuthFlowResponsePasskey  `json:"passkey,omitempty"`
 }
 
 type AuthFlowRequestPasskey struct {
@@ -173,9 +177,11 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 
 	if api {
 		s.WriteJSON(w, req, AuthFlowResponse{
-			ReplaceLocation: flow.Target,
-			PushLocation:    "",
-			Passkey:         nil,
+			Location: &AuthFlowResponseLocation{
+				URL:     flow.Target,
+				Replace: true,
+			},
+			Passkey: nil,
 		}, nil)
 	} else {
 		s.TemporaryRedirectGetMethod(w, req, flow.Target)
