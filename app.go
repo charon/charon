@@ -113,6 +113,7 @@ func (app *App) Run() errors.E {
 		providers = append(providers, SiteProvider{
 			Key:       "google",
 			Name:      "Google",
+			Type:      "oidc",
 			issuer:    "https://accounts.google.com",
 			clientID:  app.Providers.Google.ClientID,
 			secret:    app.Providers.Google.Secret,
@@ -125,6 +126,7 @@ func (app *App) Run() errors.E {
 		providers = append(providers, SiteProvider{
 			Key:       "facebook",
 			Name:      "Facebook",
+			Type:      "oidc",
 			issuer:    "https://www.facebook.com",
 			clientID:  app.Providers.Facebook.ClientID,
 			secret:    app.Providers.Facebook.Secret,

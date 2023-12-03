@@ -44,6 +44,9 @@ func (s *Service) AuthFlow(w http.ResponseWriter, req *http.Request, params waf.
 		return
 	}
 
+	w.Header().Add("Link", "</api>; rel=preload; as=fetch; crossorigin=anonymous")
+	w.WriteHeader(http.StatusEarlyHints)
+
 	if s.Development != "" {
 		s.Proxy(w, req)
 	} else {

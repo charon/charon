@@ -10,3 +10,17 @@ export type AuthFlowResponse = {
     getOptions?: { publicKey: PublicKeyCredentialRequestOptionsJSON },
   }
 }
+
+export type SiteContext = {
+  domain: string,
+  build?: {
+    version?: string,
+    buildTimestamp?: string,
+    revision?: string,
+  },
+  providers: {
+    key: string,
+    name: string,
+    type: string,
+  }[]
+}

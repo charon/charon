@@ -8,14 +8,23 @@ import { locationRedirect } from "@/utils"
 
 const router = useRouter()
 
+const progress = ref(0)
+
 async function onSignOut() {
-  const progress = ref(0)
-  const response: AuthFlowResponse = await deleteURL(router.apiResolve({ name: "Auth" }).href, progress)
-  locationRedirect(response)
+  progress.value += 1
+  try {
+    const response: AuthFlowResponse = await deleteURL(router.apiResolve({ name: "Auth" }).href, progress)
+    if (locationRedirect(response)) {
+      // We increase the progress and never decrease it to wait for browser to do the redirect.
+      progress.value += 1
+    }
+  } finally {
+    progress.value -= 1
+  }
 }
 </script>
 
 <template>
   <div>Hello world.</div>
-  <div><Button type="submit" @click.prevent="onSignOut">Sign-out</Button></div>
+  <div><Button type="button" :progress="progress" @click.prevent="onSignOut">Sign-out</Button></div>
 </template>
