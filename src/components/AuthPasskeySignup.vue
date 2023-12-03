@@ -2,7 +2,7 @@
 import type { AuthFlowResponse } from "@/types"
 import { ref } from "vue"
 import { useRouter } from "vue-router"
-import { startRegistration } from "@simplewebauthn/browser"
+import { startRegistration, WebAuthnAbortService } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
 import { postURL } from "@/api"
 import { locationRedirect } from "@/utils"
@@ -18,16 +18,25 @@ const emit = defineEmits<{
 
 const router = useRouter()
 
+const progress = ref(0)
+const signupProgress = ref(0)
+
+let aborted = false
+
 async function onBack() {
+  aborted = true
+  WebAuthnAbortService.cancelCeremony()
   emit("update:modelValue", "start")
 }
 
 async function onRetry() {
+  aborted = true
+  WebAuthnAbortService.cancelCeremony()
   emit("update:modelValue", "passkeySignin")
 }
 
 async function onPasskeySignup() {
-  const progress = ref(0)
+  aborted = false
   const url = router.apiResolve({
     name: "AuthFlow",
     params: {
@@ -35,37 +44,62 @@ async function onPasskeySignup() {
     },
   }).href
 
-  const start: AuthFlowResponse = await postURL(
-    url,
-    {
-      step: "createStart",
-      provider: "passkey",
-    },
-    progress,
-  )
-  if (locationRedirect(start)) {
-    return
-  }
-  if (!start.passkey?.createOptions) {
-    // TODO: Handle better?
-    return
-  }
-
-  // TODO: Handle error?
-  const attestation = await startRegistration(start.passkey.createOptions.publicKey)
-
-  const complete: AuthFlowResponse = await postURL(
-    url,
-    {
-      step: "createComplete",
-      provider: "passkey",
-      passkey: {
-        createResponse: attestation,
+  signupProgress.value += 1
+  try {
+    const start: AuthFlowResponse = await postURL(
+      url,
+      {
+        step: "createStart",
+        provider: "passkey",
       },
-    },
-    progress,
-  )
-  locationRedirect(complete)
+      signupProgress,
+    )
+    if (aborted) {
+      return
+    }
+    if (locationRedirect(start)) {
+      return
+    }
+    if (!start.passkey?.createOptions) {
+      throw new Error("Webauthn options missing in response.")
+    }
+
+    let attestation
+    try {
+      attestation = await startRegistration(start.passkey.createOptions.publicKey)
+    } catch (error) {
+      if (aborted) {
+        return
+      }
+      aborted = true
+      // TODO: Improve.
+      return
+    }
+
+    // We do not allow back or cancel after this point.
+    progress.value += 1
+    try {
+      const complete: AuthFlowResponse = await postURL(
+        url,
+        {
+          step: "createComplete",
+          provider: "passkey",
+          passkey: {
+            createResponse: attestation,
+          },
+        },
+        progress,
+      )
+      if (locationRedirect(complete)) {
+        // We increase the progress and never decrease it to wait for browser to do the redirect.
+        progress.value += 1
+      }
+    } finally {
+      progress.value -= 1
+    }
+  } finally {
+    signupProgress.value -= 1
+  }
 }
 </script>
 
@@ -73,9 +107,9 @@ async function onPasskeySignup() {
   <div>Signing in using <strong>passkey</strong> failed. Do you want to sign up instead?</div>
   <div class="mt-4 flex flex-row justify-between gap-4">
     <div class="flex flex-row gap-4">
-      <Button type="button" @click.prevent="onBack">Back</Button>
-      <Button type="button" @click.prevent="onRetry">Retry sign-in</Button>
+      <Button type="button" :disabled="progress > 0" @click.prevent="onBack">Back</Button>
+      <Button type="button" :disabled="progress > 0" @click.prevent="onRetry">Retry sign-in</Button>
     </div>
-    <Button type="button" @click.prevent="onPasskeySignup">Passkey sign-up</Button>
+    <Button type="button" :disabled="progress + signupProgress > 0" @click.prevent="onPasskeySignup">Passkey sign-up</Button>
   </div>
 </template>

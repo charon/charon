@@ -7,8 +7,10 @@ export class FetchError extends Error {
   }
 }
 
-export async function postURL(url: string, data: object, progress: Ref<number>): Promise<object> {
-  progress.value += 1
+export async function postURL(url: string, data: object, progress: Ref<number> | null): Promise<object> {
+  if (progress) {
+    progress.value += 1
+  }
   try {
     const response = await fetch(url, {
       method: "POST",
@@ -33,12 +35,16 @@ export async function postURL(url: string, data: object, progress: Ref<number>):
     }
     return await response.json()
   } finally {
-    progress.value -= 1
+    if (progress) {
+      progress.value -= 1
+    }
   }
 }
 
-export async function deleteURL(url: string, progress: Ref<number>): Promise<object> {
-  progress.value += 1
+export async function deleteURL(url: string, progress: Ref<number> | null): Promise<object> {
+  if (progress) {
+    progress.value += 1
+  }
   try {
     const response = await fetch(url, {
       method: "DELETE",
@@ -59,6 +65,8 @@ export async function deleteURL(url: string, progress: Ref<number>): Promise<obj
     }
     return await response.json()
   } finally {
-    progress.value -= 1
+    if (progress) {
+      progress.value -= 1
+    }
   }
 }
