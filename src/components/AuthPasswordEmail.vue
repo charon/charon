@@ -41,8 +41,8 @@ async function onNext() {}
   <div class="flex flex-col mt-4">
     <label for="password" class="mb-1">Password or passphrase</label>
     <form class="flex flex-row" @submit.prevent="onNext">
-      <InputText id="password" v-model="password" type="password" class="flex-grow flex-auto min-w-0" :readonly="progress > 0" />
-      <Button type="submit" class="ml-4" :disabled="password.trim().length == 0 || progress > 0">Next</Button>
+      <InputText id="password" v-model="password" type="password" tabindex="1" class="flex-grow flex-auto min-w-0" :readonly="progress > 0" />
+      <Button type="submit" class="ml-4" tabindex="2" :disabled="password.trim().length == 0 || progress > 0">Next</Button>
     </form>
   </div>
   <div class="mt-4">
@@ -50,7 +50,7 @@ async function onNext() {}
     a code to your e-mail address. You can also skip entering password or passphrase and directly request the code.
   </div>
   <div class="mt-4 flex flex-row justify-between gap-4">
-    <Button type="button" @click.prevent="onBack">Back</Button>
-    <Button type="button">Send code</Button>
+    <Button type="button" tabindex="4" @click.prevent="onBack">Back</Button>
+    <Button type="button" tabindex="3">Send code</Button>
   </div>
 </template>
