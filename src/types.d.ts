@@ -2,25 +2,25 @@ import type { PublicKeyCredentialCreationOptionsJSON, PublicKeyCredentialRequest
 
 export type AuthFlowResponse = {
   location?: {
-    url: string,
-    replace: boolean,
+    url: string
+    replace: boolean
   }
   passkey?: {
-    createOptions?: { publicKey: PublicKeyCredentialCreationOptionsJSON },
-    getOptions?: { publicKey: PublicKeyCredentialRequestOptionsJSON },
+    createOptions?: { publicKey: PublicKeyCredentialCreationOptionsJSON }
+    getOptions?: { publicKey: PublicKeyCredentialRequestOptionsJSON }
   }
 }
 
 export type SiteContext = {
-  domain: string,
+  domain: string
   build?: {
-    version?: string,
-    buildTimestamp?: string,
-    revision?: string,
-  },
+    version?: string
+    buildTimestamp?: string
+    revision?: string
+  }
   providers: {
-    key: string,
-    name: string,
-    type: string,
+    key: string
+    name: string
+    type: string
   }[]
 }
