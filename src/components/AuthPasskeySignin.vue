@@ -34,6 +34,7 @@ async function onCancel() {
   emit("update:modelValue", "passkeySignup")
 }
 
+// TODO: Better handle unexpected errors. (E.g., getComplete failing.)
 onMounted(async () => {
   aborted = false
   const url = router.apiResolve({

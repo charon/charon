@@ -38,6 +38,7 @@ async function onRetry() {
   emit("update:modelValue", "passkeySignin")
 }
 
+// TODO: Better handle unexpected errors. (E.g., createComplete failing.)
 async function onPasskeySignup() {
   signupAttempted.value = true
   signupFailed.value = false
