@@ -6,8 +6,7 @@ import { useRouter } from "vue-router"
 import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
-import AuthPasswordEmail from "@/components/AuthPasswordEmail.vue"
-import AuthPasswordUsername from "@/components/AuthPasswordUsername.vue"
+import AuthPassword from "@/components/AuthPassword.vue"
 import AuthPasskeySignin from "@/components/AuthPasskeySignin.vue"
 import AuthPasskeySignup from "@/components/AuthPasskeySignup.vue"
 import { postURL } from "@/api"
@@ -42,12 +41,7 @@ onMounted(async () => {
 })
 
 async function onNext() {
-  emailOrUsername.value = emailOrUsername.value.trim()
-  if (emailOrUsername.value.indexOf("@") >= 0) {
-    state.value = "passwordEmail"
-  } else {
-    state.value = "passwordUsername"
-  }
+  state.value = "password"
 }
 
 async function onOIDCProvider(provider: string) {
@@ -103,7 +97,6 @@ async function onOIDCProvider(provider: string) {
     </template>
     <AuthPasskeySignin v-else-if="state === 'passkeySignin'" :id="id" v-model="state" />
     <AuthPasskeySignup v-else-if="state === 'passkeySignup'" :id="id" v-model="state" />
-    <AuthPasswordEmail v-else-if="state === 'passwordEmail'" :id="id" v-model="state" :email="emailOrUsername" />
-    <AuthPasswordUsername v-else-if="state === 'passwordUsername'" :id="id" v-model="state" :username="emailOrUsername" />
+    <AuthPassword v-else-if="state === 'password'" :id="id" v-model="state" :email-or-username="emailOrUsername" />
   </div>
 </template>

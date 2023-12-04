@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AuthFlowResponse } from "@/types"
-import { ref, onMounted, nextTick } from "vue"
+import { ref, onMounted, nextTick, computed } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
@@ -10,7 +10,7 @@ import { locationRedirect, fromBase64, toBase64 } from "@/utils"
 const props = defineProps<{
   modelValue: string
   id: string
-  email: string
+  emailOrUsername: string
 }>()
 
 const emit = defineEmits<{
@@ -22,6 +22,10 @@ const router = useRouter()
 const password = ref("")
 const progress = ref(0)
 const keyProgress = ref(0)
+
+const isEmail = computed(() => {
+  return props.emailOrUsername.indexOf("@") >= 0
+})
 
 let remotePublicKeyBytes: Uint8Array
 let deriveOptions: object
@@ -122,7 +126,7 @@ async function onNext() {
         password: {
           publicKey: toBase64(new Uint8Array(publicKeyBytes)),
           nonce: toBase64(nonce),
-          emailOrUsername: props.email,
+          emailOrUsername: props.emailOrUsername,
           password: toBase64(new Uint8Array(ciphertext)),
         },
       },
@@ -140,13 +144,17 @@ async function onNext() {
 </script>
 
 <template>
-  <button
-    type="button"
-    class="flex-grow appearance-none rounded border-0 border-gray-500 bg-white px-3 py-2 text-left text-base shadow outline-none ring-2 ring-neutral-300 hover:ring-neutral-400 focus:border-blue-600 focus:ring-2 focus:ring-primary-500"
-    @click.prevent="onBack"
-  >
-    {{ email }}
-  </button>
+  <div class="flex flex-col mt-4">
+    <label for="email-or-username" class="mb-1">{{ isEmail ? "Your e-mail address" : "Charon username" }}</label>
+    <button
+      id="email-or-username"
+      type="button"
+      class="flex-grow appearance-none rounded border-0 border-gray-500 bg-white px-3 py-2 text-left text-base shadow outline-none ring-2 ring-neutral-300 hover:ring-neutral-400 focus:border-blue-600 focus:ring-2 focus:ring-primary-500"
+      @click.prevent="onBack"
+    >
+      {{ emailOrUsername }}
+    </button>
+  </div>
   <div class="flex flex-col mt-4">
     <label for="password" class="mb-1">Password or passphrase</label>
     <form class="flex flex-row" @submit.prevent="onNext">
@@ -154,10 +162,16 @@ async function onNext() {
       <Button type="submit" class="ml-4" tabindex="2" :disabled="password.trim().length == 0 || progress + keyProgress > 0">Next</Button>
     </form>
   </div>
-  <div class="mt-4">
+  <div v-if="isEmail" class="mt-4">
     If you do not yet have an account, it will be created for you. If you enter invalid password or passphrase, recovery will be done automatically for you by sending you
-    a code to your e-mail address. You can also skip entering password or passphrase and directly request the code.
+    a code to your e-mail address.
   </div>
+  <div v-else class="mt-4">
+    If you do not yet have an account, it will be created for you. Username will not be visible to others, but it is possible to determine if an account with a username
+    exists or not. If you enter invalid password or passphrase, recovery will be done automatically for you by sending you a code to e-mail address(es) associated with
+    the username, if any.
+  </div>
+  <div class="mt-4">You can also skip entering password or passphrase and directly request the code.</div>
   <div class="mt-4 flex flex-row justify-between gap-4">
     <Button type="button" tabindex="4" :disabled="progress > 0" @click.prevent="onBack">Back</Button>
     <Button type="button" tabindex="3" :disabled="progress > 0">Send code</Button>
