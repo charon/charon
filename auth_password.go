@@ -166,7 +166,7 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 	if len(requestPassword.Nonce) != aesgcm.NonceSize() {
 		errE = errors.New("invalid nonce size")
 		errors.Details(errE)["want"] = aesgcm.NonceSize()
-		errors.Details(errE)["go"] = len(requestPassword.Nonce)
+		errors.Details(errE)["got"] = len(requestPassword.Nonce)
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
