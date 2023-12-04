@@ -17,42 +17,55 @@ var (
 	accountsMu = sync.RWMutex{}                         //nolint:gochecknoglobals
 )
 
+type Provider string
+
 type Credential struct {
 	ID       string
-	Provider string
+	Provider Provider
 	Data     json.RawMessage
 }
 
 type Account struct {
 	ID identifier.Identifier
 
-	Credentials map[string][]Credential
+	Credentials map[Provider][]Credential
 }
 
-func (a *Account) HasCredential(provider, credentialID string) bool {
+func (a *Account) HasCredential(provider Provider, credentialID string) bool {
 	return a.GetCredential(provider, credentialID) != nil
 }
 
-func (a *Account) UpdateCredential(provider, credentialID string, jsonData []byte) {
-	for i, credential := range a.Credentials[provider] {
-		if credential.ID == credentialID {
-			a.Credentials[provider][i] = Credential{
-				ID:       credentialID,
-				Provider: provider,
-				Data:     jsonData,
+func (a *Account) UpdateCredentials(credentials []Credential) {
+	for _, credential := range credentials {
+		for i, c := range a.Credentials[credential.Provider] {
+			if c.ID == credential.ID {
+				a.Credentials[credential.Provider][i] = credential
+				break
 			}
-			break
 		}
 	}
 }
 
-func (a *Account) GetCredential(provider, credentialID string) *Credential {
+func (a *Account) GetCredential(provider Provider, credentialID string) *Credential {
 	for _, credential := range a.Credentials[provider] {
 		if credential.ID == credentialID {
 			return &credential
 		}
 	}
 	return nil
+}
+
+func (a *Account) GetEmailAddresses() ([]string, errors.E) {
+	emails := []string{}
+	for _, credential := range a.Credentials[EmailProvider] {
+		var c emailCredential
+		errE := x.Unmarshal(credential.Data, &c)
+		if errE != nil {
+			return nil, errE
+		}
+		emails = append(emails, c.Email)
+	}
+	return emails, nil
 }
 
 func GetAccount(ctx context.Context, id identifier.Identifier) (*Account, errors.E) { //nolint:revive
@@ -72,7 +85,7 @@ func GetAccount(ctx context.Context, id identifier.Identifier) (*Account, errors
 	return &account, nil
 }
 
-func GetAccountByCredential(ctx context.Context, provider, credentialID string) (*Account, errors.E) {
+func GetAccountByCredential(ctx context.Context, provider Provider, credentialID string) (*Account, errors.E) {
 	accountsMu.RLock()
 	defer accountsMu.RUnlock()
 

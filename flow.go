@@ -22,13 +22,21 @@ type FlowOIDC struct {
 	Nonce    string
 }
 
+type FlowCode struct {
+	Code        string
+	Account     *identifier.Identifier
+	Credentials []Credential
+}
+
 type Flow struct {
 	ID      identifier.Identifier
 	Session *identifier.Identifier
 	Target  string
 
-	OIDC    *FlowOIDC
-	Passkey *webauthn.SessionData
+	OIDC     *FlowOIDC
+	Passkey  *webauthn.SessionData
+	Password []byte
+	Code     *FlowCode
 }
 
 func GetFlow(ctx context.Context, id identifier.Identifier) (*Flow, errors.E) { //nolint:revive

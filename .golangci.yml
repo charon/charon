@@ -138,3 +138,9 @@ linters:
     # - nlreturn
     # - varnamelen
     # - wsl
+
+issues:
+  exclude-rules:
+    - path: utils_test\.go
+      linters:
+        - testpackage

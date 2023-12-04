@@ -61,7 +61,7 @@ type App struct {
 type Service struct {
 	waf.Service[*Site]
 
-	oidcProviders   func() map[string]oidcProvider
+	oidcProviders   func() map[Provider]oidcProvider
 	passkeyProvider func() *webauthn.WebAuthn
 }
 

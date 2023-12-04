@@ -1,7 +1,11 @@
 package charon
 
 import (
+	"bytes"
 	"context"
+	"crypto/rand"
+	"fmt"
+	"math/big"
 	"net"
 	"net/http"
 	"strings"
@@ -9,10 +13,33 @@ import (
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
+	"golang.org/x/text/secure/precis"
+	"golang.org/x/text/unicode/norm"
 )
 
 const (
 	SessionCookieName = "__Host-session"
+)
+
+//nolint:gochecknoglobals
+var (
+	// This is similar to precis.UsernameCasePreserved, but also disallows empty usernames.
+	// See: https://github.com/golang/go/issues/64531
+	usernameCasePreserved = precis.NewIdentifier(
+		precis.FoldWidth,
+		precis.Norm(norm.NFC),
+		precis.BidiRule,
+		precis.DisallowEmpty,
+	)
+	// This is similar to precis.UsernameCaseMapped, but also disallows empty usernames.
+	// See: https://github.com/golang/go/issues/64531
+	usernameCaseMapped = precis.NewIdentifier(
+		precis.FoldWidth,
+		precis.LowerCase(),
+		precis.Norm(norm.NFC),
+		precis.BidiRule,
+		precis.DisallowEmpty,
+	)
 )
 
 func getSessionFromRequest(req *http.Request) (*Session, errors.E) {
@@ -61,11 +88,13 @@ func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request,
 
 	id := identifier.New()
 	errE = SetFlow(req.Context(), &Flow{
-		ID:      id,
-		Session: nil,
-		Target:  req.URL.String(),
-		OIDC:    nil,
-		Passkey: nil,
+		ID:       id,
+		Session:  nil,
+		Target:   req.URL.String(),
+		OIDC:     nil,
+		Passkey:  nil,
+		Password: nil,
+		Code:     nil,
 	})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -105,7 +134,9 @@ func (s *Service) GetActiveFlow(w http.ResponseWriter, req *http.Request, api bo
 					URL:     flow.Target,
 					Replace: true,
 				},
-				Passkey: nil,
+				Passkey:  nil,
+				Password: nil,
+				Code:     false,
 			}, nil)
 			return nil
 		}
@@ -142,4 +173,50 @@ func hasConnectionUpgrade(req *http.Request) bool {
 		}
 	}
 	return false
+}
+
+// normalizeUsernameCasePreserved normalizes username according to the
+// UsernameCasePreserved profile from RFC 8265 with addition of removing
+// leading and trailing whitespace and not allowing whitespace anywhere else.
+func normalizeUsernameCasePreserved(username string) (string, errors.E) {
+	// Our addition: remove leading and trailing whitespace.
+	username = strings.TrimSpace(username)
+	username, err := usernameCasePreserved.String(username)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return username, nil
+}
+
+// normalizeUsernameCaseMapped normalizes username according to the
+// UsernameCaseMapped profile from RFC 8265 with addition of removing
+// leading and trailing whitespace.
+func normalizeUsernameCaseMapped(username string) (string, errors.E) {
+	// Our addition: remove leading and trailing whitespace.
+	username = strings.TrimSpace(username)
+	username, err := usernameCaseMapped.String(username)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return username, nil
+}
+
+// normalizePassword normalizes password according to the OpaqueString profile
+// from RFC 8265 with addition of removing leading and trailing whitespace.
+func normalizePassword(password []byte) ([]byte, errors.E) {
+	// Our addition: remove leading and trailing whitespace.
+	password = bytes.TrimSpace(password)
+	password, err := precis.OpaqueString.Bytes(password)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return password, nil
+}
+
+func getRandomCode() (string, errors.E) {
+	randomNumber, err := rand.Int(rand.Reader, big.NewInt(1000000)) //nolint:gomnd
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return fmt.Sprintf("%06d", randomNumber), nil
 }

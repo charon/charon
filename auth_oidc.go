@@ -23,8 +23,8 @@ type oidcProvider struct {
 	SupportsPKCE bool
 }
 
-func initOIDCProviders(app *App, service *Service, domain string, providers []SiteProvider) func() map[string]oidcProvider {
-	return func() map[string]oidcProvider {
+func initOIDCProviders(app *App, service *Service, domain string, providers []SiteProvider) func() map[Provider]oidcProvider {
+	return func() map[Provider]oidcProvider {
 		host, errE := getHost(app, domain)
 		if errE != nil {
 			panic(errE)
@@ -34,11 +34,11 @@ func initOIDCProviders(app *App, service *Service, domain string, providers []Si
 			return nil
 		}
 
-		oidcProviders := map[string]oidcProvider{}
+		oidcProviders := map[Provider]oidcProvider{}
 		for _, p := range providers {
 			app.Logger.Debug().Msgf("enabling %s provider", p.Name)
 
-			path, errE := service.Reverse("AuthOIDCProvider", waf.Params{"provider": p.Key}, nil)
+			path, errE := service.Reverse("AuthOIDCProvider", waf.Params{"provider": string(p.Key)}, nil)
 			if errE != nil {
 				panic(errE)
 			}
@@ -107,7 +107,7 @@ func initOIDCProviders(app *App, service *Service, domain string, providers []Si
 	}
 }
 
-func (s *Service) startOIDCProvider(w http.ResponseWriter, req *http.Request, flow *Flow, providerName string) {
+func (s *Service) startOIDCProvider(w http.ResponseWriter, req *http.Request, flow *Flow, providerName Provider) {
 	provider, ok := s.oidcProviders()[providerName]
 	if !ok {
 		errE := errors.New("unknown provider")
@@ -142,14 +142,18 @@ func (s *Service) startOIDCProvider(w http.ResponseWriter, req *http.Request, fl
 			URL:     provider.Config.AuthCodeURL(flow.ID.String(), opts...),
 			Replace: false,
 		},
-		Passkey: nil,
+		Passkey:  nil,
+		Password: nil,
+		Code:     false,
 	}, nil)
 }
 
 func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 
-	provider, ok := s.oidcProviders()[params["provider"]]
+	p := Provider(params["provider"])
+
+	provider, ok := s.oidcProviders()[p]
 	if !ok {
 		errE := errors.New("unknown provider")
 		errors.Details(errE)["provider"] = params["provider"]
@@ -182,7 +186,7 @@ func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, par
 	errorCode := req.Form.Get("error")
 	errorDescription := req.Form.Get("error_description")
 	if errorCode != "" || errorDescription != "" {
-		errE := errors.New("authorization error")
+		errE = errors.New("authorization error")
 		errors.Details(errE)["code"] = errorCode
 		errors.Details(errE)["description"] = errorDescription
 		s.BadRequestWithError(w, req, errE)
@@ -227,5 +231,11 @@ func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, par
 		return
 	}
 
-	s.completeAuthStep(w, req, false, flow, params["provider"], idToken.Subject, jsonData)
+	account, errE := GetAccountByCredential(ctx, p, idToken.Subject)
+	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	s.completeAuthStep(w, req, false, flow, account, []Credential{{ID: idToken.Subject, Provider: p, Data: jsonData}})
 }

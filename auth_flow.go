@@ -22,9 +22,15 @@ type AuthFlowResponseLocation struct {
 	Replace bool   `json:"replace"`
 }
 
+type AuthFlowResponsePassword struct {
+	PublicKey []byte `json:"publicKey"`
+}
+
 type AuthFlowResponse struct {
 	Location *AuthFlowResponseLocation `json:"location,omitempty"`
 	Passkey  *AuthFlowResponsePasskey  `json:"passkey,omitempty"`
+	Password *AuthFlowResponsePassword `json:"password,omitempty"`
+	Code     bool                      `json:"code,omitempty"`
 }
 
 type AuthFlowRequestPasskey struct {
@@ -32,10 +38,18 @@ type AuthFlowRequestPasskey struct {
 	GetResponse    *protocol.CredentialAssertionResponse `json:"getResponse,omitempty"`
 }
 
+type AuthFlowRequestPassword struct {
+	PublicKey       []byte `json:"publicKey"`
+	Nonce           []byte `json:"nonce"`
+	EmailOrUsername string `json:"emailOrUsername"`
+	Password        []byte `json:"password"`
+}
+
 type AuthFlowRequest struct {
-	Step     string                  `json:"step"`
-	Provider string                  `json:"provider"`
-	Passkey  *AuthFlowRequestPasskey `json:"passkey,omitempty"`
+	Step     string                   `json:"step"`
+	Provider Provider                 `json:"provider"`
+	Passkey  *AuthFlowRequestPasskey  `json:"passkey,omitempty"`
+	Password *AuthFlowRequestPassword `json:"password,omitempty"`
 }
 
 func (s *Service) AuthFlow(w http.ResponseWriter, req *http.Request, params waf.Params) {
@@ -81,7 +95,7 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 		return
 	}
 
-	if authFlowRequest.Provider == "passkey" {
+	if authFlowRequest.Provider == PasskeyProvider {
 		switch authFlowRequest.Step {
 		case "getStart":
 			s.startPasskeyGet(w, req, flow)
@@ -103,39 +117,50 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 		}
 	}
 
+	if authFlowRequest.Provider == PasswordProvider {
+		switch authFlowRequest.Step {
+		case "start":
+			s.startPassword(w, req, flow)
+			return
+		case "complete":
+			s.completePassword(w, req, flow, authFlowRequest.Password)
+			return
+		default:
+			errE = errors.New("invalid auth request")
+			errors.Details(errE)["request"] = authFlowRequest
+			s.BadRequestWithError(w, req, errE)
+			return
+		}
+	}
+
 	errE = errors.New("invalid auth request")
 	errors.Details(errE)["request"] = authFlowRequest
 	s.BadRequestWithError(w, req, errE)
 }
 
-func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *Flow, provider, credentialID string, jsonData []byte) {
+func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *Flow, account *Account, credentials []Credential) {
 	ctx := req.Context()
 
-	account, errE := GetAccountByCredential(ctx, provider, credentialID)
-	if errors.Is(errE, ErrAccountNotFound) {
+	if account == nil {
 		// Sign-up. Create new account.
 		account = &Account{
-			ID: identifier.New(),
-			Credentials: map[string][]Credential{
-				provider: {{
-					ID:       credentialID,
-					Provider: provider,
-					Data:     jsonData,
-				}},
-			},
+			ID:          identifier.New(),
+			Credentials: map[Provider][]Credential{},
 		}
-		errE = SetAccount(ctx, account)
+		for _, credential := range credentials {
+			account.Credentials[credential.Provider] = append(account.Credentials[credential.Provider], credential)
+		}
+		errE := SetAccount(ctx, account)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
-	} else if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
 	} else {
-		// Sign-in. Update credential for an existing account.
-		account.UpdateCredential(provider, credentialID, jsonData)
-		errE = SetAccount(ctx, account)
+		// Sign-in. Update credentials for an existing account.
+		// TODO: Updating only if credentials (meaningfully) changed.
+		// TODO: Update in a way which does not preserve history.
+		account.UpdateCredentials(credentials)
+		errE := SetAccount(ctx, account)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
@@ -143,7 +168,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	}
 
 	sessionID := identifier.New()
-	errE = SetSession(ctx, &Session{
+	errE := SetSession(ctx, &Session{
 		ID:      sessionID,
 		Account: account.ID,
 	})
@@ -184,7 +209,9 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 				URL:     flow.Target,
 				Replace: true,
 			},
-			Passkey: nil,
+			Passkey:  nil,
+			Password: nil,
+			Code:     false,
 		}, nil)
 	} else {
 		s.TemporaryRedirectGetMethod(w, req, flow.Target)

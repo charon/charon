@@ -11,9 +11,9 @@ type Build struct {
 }
 
 type SiteProvider struct {
-	Key  string `json:"key"`
-	Name string `json:"name"`
-	Type string `json:"type"`
+	Key  Provider `json:"key"`
+	Name string   `json:"name"`
+	Type string   `json:"type"`
 
 	// Private fields.
 	issuer    string

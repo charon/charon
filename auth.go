@@ -29,6 +29,8 @@ func (s *Service) AuthDelete(w http.ResponseWriter, req *http.Request, _ waf.Par
 			URL:     "/",
 			Replace: false,
 		},
-		Passkey: nil,
+		Passkey:  nil,
+		Password: nil,
+		Code:     false,
 	}, nil)
 }

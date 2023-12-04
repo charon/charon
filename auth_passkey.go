@@ -15,6 +15,8 @@ import (
 	"gitlab.com/tozd/go/x"
 )
 
+const PasskeyProvider Provider = "passkey"
+
 const defaultPasskeyTimeout = 60 * time.Second
 
 type charonUser struct {
@@ -136,6 +138,8 @@ func (s *Service) startPasskeyGet(w http.ResponseWriter, req *http.Request, flow
 			CreateOptions: nil,
 			GetOptions:    options,
 		},
+		Password: nil,
+		Code:     false,
 	}, nil)
 }
 
@@ -160,6 +164,13 @@ func (s *Service) getFlowPasskey(w http.ResponseWriter, req *http.Request, flow 
 }
 
 func (s *Service) completePasskeyGet(w http.ResponseWriter, req *http.Request, flow *Flow, requestPasskey *AuthFlowRequestPasskey) {
+	ctx := req.Context()
+
+	flowPasskey := s.getFlowPasskey(w, req, flow)
+	if flowPasskey == nil {
+		return
+	}
+
 	if requestPasskey.GetResponse == nil {
 		s.BadRequestWithError(w, req, errors.New("get response missing"))
 		return
@@ -170,19 +181,14 @@ func (s *Service) completePasskeyGet(w http.ResponseWriter, req *http.Request, f
 		s.BadRequestWithError(w, req, errors.WithStack(err))
 	}
 
-	flowPasskey := s.getFlowPasskey(w, req, flow)
-	if flowPasskey == nil {
-		return
-	}
-
 	credential, err := s.passkeyProvider().ValidateDiscoverableLogin(func(rawID, userHandle []byte) (webauthn.User, error) {
 		id := base64.RawURLEncoding.EncodeToString(rawID)
-		account, errE := GetAccountByCredential(req.Context(), "passkey", id)
+		account, errE := GetAccountByCredential(ctx, PasskeyProvider, id)
 		if errE != nil {
 			return nil, errE
 		}
 		var c webauthn.Credential
-		errE = x.Unmarshal(account.GetCredential("passkey", id).Data, &c)
+		errE = x.Unmarshal(account.GetCredential(PasskeyProvider, id).Data, &c)
 		if errE != nil {
 			return nil, errE
 		}
@@ -209,7 +215,13 @@ func (s *Service) completePasskeyGet(w http.ResponseWriter, req *http.Request, f
 		return
 	}
 
-	s.completeAuthStep(w, req, true, flow, "passkey", credentialID, jsonData)
+	account, errE := GetAccountByCredential(ctx, PasskeyProvider, credentialID)
+	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: credentialID, Provider: PasskeyProvider, Data: jsonData}})
 }
 
 func (s *Service) startPasskeyCreate(w http.ResponseWriter, req *http.Request, flow *Flow) {
@@ -249,6 +261,8 @@ func (s *Service) startPasskeyCreate(w http.ResponseWriter, req *http.Request, f
 			CreateOptions: options,
 			GetOptions:    nil,
 		},
+		Password: nil,
+		Code:     false,
 	}, nil)
 }
 
@@ -284,5 +298,11 @@ func (s *Service) completePasskeyCreate(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	s.completeAuthStep(w, req, true, flow, "passkey", credentialID, jsonData)
+	account, errE := GetAccountByCredential(req.Context(), PasskeyProvider, credentialID)
+	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: credentialID, Provider: PasskeyProvider, Data: jsonData}})
 }
