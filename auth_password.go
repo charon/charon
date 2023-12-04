@@ -298,7 +298,7 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 
 	credentials = append(credentials, Credential{
 		ID:       identifier.New().String(),
-		Provider: PasskeyProvider,
+		Provider: PasswordProvider,
 		Data:     jsonData,
 	})
 
