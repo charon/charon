@@ -21,8 +21,8 @@ const (
 	argon2idTime    = 2
 	argon2idThreads = 1
 
-	// Default Go AES GCM nonce size.
-	nonceSize = 12
+	// Size of the secret returned by P256.PrivateKey.ECDH() call.
+	secretSize = 32
 
 	saltSize = 16
 	keySize  = 32
@@ -69,11 +69,33 @@ func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *
 		return
 	}
 
+	block, err := aes.NewCipher(make([]byte, secretSize))
+	if err != nil {
+		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
+		return
+	}
+
+	aesgcm, err := cipher.NewGCM(block)
+	if err != nil {
+		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
+		return
+	}
+
 	s.WriteJSON(w, req, AuthFlowResponse{
 		Location: nil,
 		Passkey:  nil,
 		Password: &AuthFlowResponsePassword{
 			PublicKey: privateKey.PublicKey().Bytes(),
+			DeriveOptions: AuthFlowResponsePasswordDeriveOptions{
+				Name:       "ECDH",
+				NamedCurve: "P-256",
+			},
+			EncryptOptions: AuthFlowResponsePasswordEncryptOptions{
+				Name:      "AES-GCM",
+				Length:    8 * secretSize, //nolint:gomnd
+				NonceSize: aesgcm.NonceSize(),
+				TagLength: 8 * aesgcm.Overhead(), //nolint:gomnd
+			},
 		},
 		Code: false,
 	}, nil)
@@ -95,14 +117,6 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 	errE := SetFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	if len(requestPassword.Nonce) != nonceSize {
-		errE = errors.New("invalid nonce size")
-		errors.Details(errE)["want"] = nonceSize
-		errors.Details(errE)["go"] = len(requestPassword.Nonce)
-		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
@@ -143,9 +157,17 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 		return
 	}
 
-	aesgcm, err := cipher.NewGCMWithNonceSize(block, nonceSize)
+	aesgcm, err := cipher.NewGCM(block)
 	if err != nil {
 		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
+		return
+	}
+
+	if len(requestPassword.Nonce) != aesgcm.NonceSize() {
+		errE = errors.New("invalid nonce size")
+		errors.Details(errE)["want"] = aesgcm.NonceSize()
+		errors.Details(errE)["go"] = len(requestPassword.Nonce)
+		s.BadRequestWithError(w, req, errE)
 		return
 	}
 

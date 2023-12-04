@@ -57,6 +57,8 @@ onMounted(async () => {
     return
   }
   if (locationRedirect(start)) {
+    // We increase the progress and never decrease it to wait for browser to do the redirect.
+    progress.value += 1
     return
   }
   if (!start.passkey?.getOptions) {

@@ -9,6 +9,15 @@ export type AuthFlowResponse = {
     createOptions?: { publicKey: PublicKeyCredentialCreationOptionsJSON }
     getOptions?: { publicKey: PublicKeyCredentialRequestOptionsJSON }
   }
+  password?: {
+    publicKey: string
+    deriveOptions: object
+    encryptOptions: object & {
+      nonceSize: number
+    }
+    secretSize: number
+  }
+  code?: boolean
 }
 
 export type SiteContext = {

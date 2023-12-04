@@ -13,3 +13,18 @@ export function locationRedirect(response: AuthFlowResponse): boolean {
   }
   return false
 }
+
+export function fromBase64(input: string): Uint8Array {
+  const binary = atob(input)
+  const buffer = new ArrayBuffer(binary.length)
+  const bytes = new Uint8Array(buffer)
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+  return bytes
+}
+
+export function toBase64(input: Uint8Array): string {
+  const str = String.fromCharCode(...input)
+  return btoa(str)
+}

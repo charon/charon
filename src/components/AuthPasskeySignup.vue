@@ -40,18 +40,18 @@ async function onRetry() {
 
 // TODO: Better handle unexpected errors. (E.g., createComplete failing.)
 async function onPasskeySignup() {
-  signupAttempted.value = true
-  signupFailed.value = false
-  aborted = false
-  const url = router.apiResolve({
-    name: "AuthFlow",
-    params: {
-      id: props.id,
-    },
-  }).href
-
   signupProgress.value += 1
   try {
+    signupAttempted.value = true
+    signupFailed.value = false
+    aborted = false
+    const url = router.apiResolve({
+      name: "AuthFlow",
+      params: {
+        id: props.id,
+      },
+    }).href
+
     const start: AuthFlowResponse = await postURL(
       url,
       {
@@ -64,6 +64,8 @@ async function onPasskeySignup() {
       return
     }
     if (locationRedirect(start)) {
+      // We increase the progress and never decrease it to wait for browser to do the redirect.
+      progress.value += 1
       return
     }
     if (!start.passkey?.createOptions) {

@@ -22,8 +22,22 @@ type AuthFlowResponseLocation struct {
 	Replace bool   `json:"replace"`
 }
 
+type AuthFlowResponsePasswordDeriveOptions struct {
+	Name       string `json:"name"`
+	NamedCurve string `json:"namedCurve"`
+}
+
+type AuthFlowResponsePasswordEncryptOptions struct {
+	Name      string `json:"name"`
+	Length    int    `json:"length"`
+	NonceSize int    `json:"nonceSize"`
+	TagLength int    `json:"tagLength"`
+}
+
 type AuthFlowResponsePassword struct {
-	PublicKey []byte `json:"publicKey"`
+	PublicKey      []byte                                 `json:"publicKey"`
+	DeriveOptions  AuthFlowResponsePasswordDeriveOptions  `json:"deriveOptions"`
+	EncryptOptions AuthFlowResponsePasswordEncryptOptions `json:"encryptOptions"`
 }
 
 type AuthFlowResponse struct {
