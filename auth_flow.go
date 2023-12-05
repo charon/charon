@@ -11,6 +11,11 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
+const (
+	StepStart    = "start"
+	StepComplete = "complete"
+)
+
 type AuthFlowRequest struct {
 	Step     string                   `json:"step"`
 	Provider Provider                 `json:"provider"`
@@ -64,7 +69,7 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 	}
 
 	if _, ok := s.oidcProviders()[authFlowRequest.Provider]; ok {
-		if authFlowRequest.Step == "start" {
+		if authFlowRequest.Step == StepStart {
 			if authFlowRequest.Provider != "" {
 				s.startOIDCProvider(w, req, flow, authFlowRequest.Provider)
 				return
@@ -95,10 +100,10 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 
 	if authFlowRequest.Provider == PasswordProvider {
 		switch authFlowRequest.Step {
-		case "start":
+		case StepStart:
 			s.startPassword(w, req, flow)
 			return
-		case "complete":
+		case StepComplete:
 			if authFlowRequest.Password != nil {
 				s.completePassword(w, req, flow, authFlowRequest.Password)
 				return
@@ -108,12 +113,12 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 
 	if authFlowRequest.Provider == CodeProvider {
 		switch authFlowRequest.Step {
-		case "start":
+		case StepStart:
 			if authFlowRequest.Code != nil && authFlowRequest.Code.Start != nil {
 				s.startCode(w, req, flow, authFlowRequest.Code.Start)
 				return
 			}
-		case "complete":
+		case StepComplete:
 			if authFlowRequest.Code != nil && authFlowRequest.Code.Complete != nil {
 				s.completeCode(w, req, flow, authFlowRequest.Code.Complete)
 				return

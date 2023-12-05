@@ -140,7 +140,7 @@ func (s *Service) startCode(w http.ResponseWriter, req *http.Request, flow *Flow
 	// sendCodeForNewAccount will error out on the username case.
 	var credentials []Credential
 	if strings.Contains(mappedEmailOrUsername, "@") {
-		jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{ //nolint:govet
+		jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{ 
 			Email: preservedEmailOrUsername,
 		})
 		if errE != nil {
