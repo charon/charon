@@ -100,8 +100,8 @@ func TestNormalizePassword(t *testing.T) {
 		{``, ``, `precis: transformation resulted in empty string`},
 		{"my cat is a \u0009by", ``, `precis: disallowed rune encountered`},
 
-		{` correct horse battery staple `, `correct horse battery staple`, ``},
-		{` `, ``, `precis: transformation resulted in empty string`},
+		{` correct horse battery staple `, ` correct horse battery staple `, ``},
+		{` `, ` `, ``},
 	}
 
 	for _, tt := range tests {

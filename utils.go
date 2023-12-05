@@ -1,7 +1,6 @@
 package charon
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	"fmt"
@@ -202,10 +201,8 @@ func normalizeUsernameCaseMapped(username string) (string, errors.E) {
 }
 
 // normalizePassword normalizes password according to the OpaqueString profile
-// from RFC 8265 with addition of removing leading and trailing whitespace.
+// from RFC 8265.
 func normalizePassword(password []byte) ([]byte, errors.E) {
-	// Our addition: remove leading and trailing whitespace.
-	password = bytes.TrimSpace(password)
 	password, err := precis.OpaqueString.Bytes(password)
 	if err != nil {
 		return nil, errors.WithStack(err)
