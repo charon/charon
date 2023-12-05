@@ -13,6 +13,14 @@ import (
 
 const CodeProvider Provider = "code"
 
+type AuthFlowRequestCodeStart struct {
+	EmailOrUsername string `json:"emailOrUsername"`
+}
+
+type AuthFlowRequestCodeComplete struct {
+	Code string `json:"code"`
+}
+
 func (s *Service) sendCodeForExistingAccount(w http.ResponseWriter, req *http.Request, flow *Flow, account *Account, mappedEmailOrUsername string) {
 	var emails []string
 	if strings.Contains(mappedEmailOrUsername, "@") {
@@ -37,34 +45,35 @@ func (s *Service) sendCodeForExistingAccount(w http.ResponseWriter, req *http.Re
 		}
 	}
 
-	if len(emails) == 0 {
-		// User provided an invalid password and there are no e-mails available.
-		// TODO: Return a better response?
-		waf.Error(w, req, http.StatusUnauthorized)
-		return
-	}
-
 	s.sendCode(w, req, flow, emails, &account.ID, nil)
 }
 
-func (s *Service) sendCodeForNewAccount(w http.ResponseWriter, req *http.Request, flow *Flow, preservedEmail string, credentials []Credential) {
-	if !strings.Contains(preservedEmail, "@") {
-		panic(errors.New("preservedEmail is not an e-mail address"))
+func (s *Service) sendCodeForNewAccount(w http.ResponseWriter, req *http.Request, flow *Flow, preservedEmailOrUsername string, credentials []Credential) {
+	var emails []string
+	if strings.Contains(preservedEmailOrUsername, "@") {
+		emails = []string{preservedEmailOrUsername}
 	}
-
-	emails := []string{preservedEmail}
 
 	s.sendCode(w, req, flow, emails, nil, credentials)
 }
 
 func (s *Service) sendCode(w http.ResponseWriter, req *http.Request, flow *Flow, emails []string, accountID *identifier.Identifier, credentials []Credential) {
+	if len(emails) == 0 {
+		// User provided an invalid password and there are no e-mails available, or code request for
+		// account without e-mails available, or code request for account which does not exist.
+		// TODO: Return a better response?
+		waf.Error(w, req, http.StatusUnauthorized)
+		return
+	}
+
 	code, errE := getRandomCode()
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	// TODO: What if flow.Code is already set?
+	// TODO: What we clear other flow options?
+	// TODO: This makes only the latest code work. Should we allow previous codes as well?
 	flow.Code = &FlowCode{
 		Code:        code,
 		Account:     accountID,
@@ -121,28 +130,29 @@ func (s *Service) startCode(w http.ResponseWriter, req *http.Request, flow *Flow
 
 	// Account does not exist.
 
-	if !strings.Contains(mappedEmailOrUsername, "@") {
-		// User provided a username but account does not exist.
-		// TODO: Return a better response?
-		s.NotFound(w, req)
-		return
+	// We have to create a credential only for the e-mail case.
+	// sendCodeForNewAccount will error out on the username case.
+	var credentials []Credential
+	if strings.Contains(mappedEmailOrUsername, "@") {
+		jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{ //nolint:govet
+			Email: preservedEmailOrUsername,
+		})
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+		credentials = []Credential{{
+			ID:       mappedEmailOrUsername,
+			Provider: EmailProvider,
+			Data:     jsonData,
+		}}
 	}
 
-	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{ //nolint:govet
-		Email: preservedEmailOrUsername,
-	})
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	// Account does not exist and we do have an e-mail address.
-	// We create a new account with a password with an e-mail address only.
-	s.sendCodeForNewAccount(w, req, flow, preservedEmailOrUsername, []Credential{{
-		ID:       mappedEmailOrUsername,
-		Provider: EmailProvider,
-		Data:     jsonData,
-	}})
+	// Account does not exist but we might have an e-mail address.
+	// We attempt to create a new account with an e-mail address only.
+	// We call sendCodeForNewAccount always and leave to sendCodeForNewAccount
+	// to error out if we have just an username and not an e-mail address.
+	s.sendCodeForNewAccount(w, req, flow, preservedEmailOrUsername, credentials)
 }
 
 func (s *Service) completeCode(w http.ResponseWriter, req *http.Request, flow *Flow, codeComplete *AuthFlowRequestCodeComplete) {

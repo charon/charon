@@ -5,67 +5,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-webauthn/webauthn/protocol"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 )
-
-type AuthFlowResponsePasskey struct {
-	CreateOptions *protocol.CredentialCreation  `json:"createOptions,omitempty"`
-	GetOptions    *protocol.CredentialAssertion `json:"getOptions,omitempty"`
-}
-
-type AuthFlowResponseLocation struct {
-	URL     string `json:"url"`
-	Replace bool   `json:"replace"`
-}
-
-type AuthFlowResponsePasswordDeriveOptions struct {
-	Name       string `json:"name"`
-	NamedCurve string `json:"namedCurve"`
-}
-
-type AuthFlowResponsePasswordEncryptOptions struct {
-	Name      string `json:"name"`
-	Length    int    `json:"length"`
-	NonceSize int    `json:"nonceSize"`
-	TagLength int    `json:"tagLength"`
-}
-
-type AuthFlowResponsePassword struct {
-	PublicKey      []byte                                 `json:"publicKey"`
-	DeriveOptions  AuthFlowResponsePasswordDeriveOptions  `json:"deriveOptions"`
-	EncryptOptions AuthFlowResponsePasswordEncryptOptions `json:"encryptOptions"`
-}
-
-type AuthFlowResponse struct {
-	Location *AuthFlowResponseLocation `json:"location,omitempty"`
-	Passkey  *AuthFlowResponsePasskey  `json:"passkey,omitempty"`
-	Password *AuthFlowResponsePassword `json:"password,omitempty"`
-	Code     bool                      `json:"code,omitempty"`
-}
-
-type AuthFlowRequestPasskey struct {
-	CreateResponse *protocol.CredentialCreationResponse  `json:"createResponse,omitempty"`
-	GetResponse    *protocol.CredentialAssertionResponse `json:"getResponse,omitempty"`
-}
-
-type AuthFlowRequestPassword struct {
-	PublicKey       []byte `json:"publicKey"`
-	Nonce           []byte `json:"nonce"`
-	EmailOrUsername string `json:"emailOrUsername"`
-	Password        []byte `json:"password"`
-}
-
-type AuthFlowRequestCodeStart struct {
-	EmailOrUsername string `json:"emailOrUsername"`
-}
-
-type AuthFlowRequestCodeComplete struct {
-	Code string `json:"code"`
-}
 
 type AuthFlowRequest struct {
 	Step         string                       `json:"step"`
@@ -74,6 +18,18 @@ type AuthFlowRequest struct {
 	Password     *AuthFlowRequestPassword     `json:"password,omitempty"`
 	CodeStart    *AuthFlowRequestCodeStart    `json:"codeStart,omitempty"`
 	CodeComplete *AuthFlowRequestCodeComplete `json:"codeComplete,omitempty"`
+}
+
+type AuthFlowResponseLocation struct {
+	URL     string `json:"url"`
+	Replace bool   `json:"replace"`
+}
+
+type AuthFlowResponse struct {
+	Location *AuthFlowResponseLocation `json:"location,omitempty"`
+	Passkey  *AuthFlowResponsePasskey  `json:"passkey,omitempty"`
+	Password *AuthFlowResponsePassword `json:"password,omitempty"`
+	Code     bool                      `json:"code,omitempty"`
 }
 
 func (s *Service) AuthFlow(w http.ResponseWriter, req *http.Request, params waf.Params) {

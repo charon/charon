@@ -42,6 +42,31 @@ const (
 	UsernameProvider = "username"
 )
 
+type AuthFlowRequestPassword struct {
+	PublicKey       []byte `json:"publicKey"`
+	Nonce           []byte `json:"nonce"`
+	EmailOrUsername string `json:"emailOrUsername"`
+	Password        []byte `json:"password"`
+}
+
+type AuthFlowResponsePasswordDeriveOptions struct {
+	Name       string `json:"name"`
+	NamedCurve string `json:"namedCurve"`
+}
+
+type AuthFlowResponsePasswordEncryptOptions struct {
+	Name      string `json:"name"`
+	Length    int    `json:"length"`
+	NonceSize int    `json:"nonceSize"`
+	TagLength int    `json:"tagLength"`
+}
+
+type AuthFlowResponsePassword struct {
+	PublicKey      []byte                                 `json:"publicKey"`
+	DeriveOptions  AuthFlowResponsePasswordDeriveOptions  `json:"deriveOptions"`
+	EncryptOptions AuthFlowResponsePasswordEncryptOptions `json:"encryptOptions"`
+}
+
 type passwordCredential struct {
 	Hash string `json:"hash"`
 }
@@ -61,7 +86,7 @@ func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *
 		return
 	}
 
-	// TODO: What if flow.Password is already set?
+	// TODO: What we clear other flow options?
 	flow.Password = privateKey.Bytes()
 	errE := SetFlow(req.Context(), flow)
 	if errE != nil {
@@ -303,6 +328,8 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 	})
 
 	if strings.Contains(mappedEmailOrUsername, "@") {
+		// Account does not exist and we do have an e-mail address.
+		// We send the code to verify the e-mail address.
 		s.sendCodeForNewAccount(w, req, flow, preservedEmailOrUsername, credentials)
 		return
 	}

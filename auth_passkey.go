@@ -17,6 +17,16 @@ import (
 
 const PasskeyProvider Provider = "passkey"
 
+type AuthFlowRequestPasskey struct {
+	CreateResponse *protocol.CredentialCreationResponse  `json:"createResponse,omitempty"`
+	GetResponse    *protocol.CredentialAssertionResponse `json:"getResponse,omitempty"`
+}
+
+type AuthFlowResponsePasskey struct {
+	CreateOptions *protocol.CredentialCreation  `json:"createOptions,omitempty"`
+	GetOptions    *protocol.CredentialAssertion `json:"getOptions,omitempty"`
+}
+
 const defaultPasskeyTimeout = 60 * time.Second
 
 type charonUser struct {
@@ -124,7 +134,7 @@ func (s *Service) startPasskeyGet(w http.ResponseWriter, req *http.Request, flow
 		return
 	}
 
-	// TODO: What if flow.Passkey is already set?
+	// TODO: What we clear other flow options?
 	flow.Passkey = session
 	errE := SetFlow(req.Context(), flow)
 	if errE != nil {
@@ -247,7 +257,7 @@ func (s *Service) startPasskeyCreate(w http.ResponseWriter, req *http.Request, f
 		return
 	}
 
-	// TODO: What if flow.Passkey is already set?
+	// TODO: What we clear other flow options?
 	flow.Passkey = session
 	errE := SetFlow(req.Context(), flow)
 	if errE != nil {
