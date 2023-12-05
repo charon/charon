@@ -59,8 +59,10 @@ async function onNext() {
         {
           step: "complete",
           provider: "code",
-          codeComplete: {
-            code: code.value,
+          code: {
+            complete: {
+              code: code.value,
+            },
           },
         },
         progress,
@@ -100,8 +102,10 @@ async function onResend() {
       {
         step: "start",
         provider: "code",
-        codeStart: {
-          emailOrUsername: props.emailOrUsername,
+        code: {
+          start: {
+            emailOrUsername: props.emailOrUsername,
+          },
         },
       },
       progress,

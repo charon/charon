@@ -12,12 +12,11 @@ import (
 )
 
 type AuthFlowRequest struct {
-	Step         string                       `json:"step"`
-	Provider     Provider                     `json:"provider"`
-	Passkey      *AuthFlowRequestPasskey      `json:"passkey,omitempty"`
-	Password     *AuthFlowRequestPassword     `json:"password,omitempty"`
-	CodeStart    *AuthFlowRequestCodeStart    `json:"codeStart,omitempty"`
-	CodeComplete *AuthFlowRequestCodeComplete `json:"codeComplete,omitempty"`
+	Step     string                   `json:"step"`
+	Provider Provider                 `json:"provider"`
+	Passkey  *AuthFlowRequestPasskey  `json:"passkey,omitempty"`
+	Password *AuthFlowRequestPassword `json:"password,omitempty"`
+	Code     *AuthFlowRequestCode     `json:"code,omitempty"`
 }
 
 type AuthFlowResponseLocation struct {
@@ -110,13 +109,13 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 	if authFlowRequest.Provider == CodeProvider {
 		switch authFlowRequest.Step {
 		case "start":
-			if authFlowRequest.CodeStart != nil {
-				s.startCode(w, req, flow, authFlowRequest.CodeStart)
+			if authFlowRequest.Code != nil && authFlowRequest.Code.Start != nil {
+				s.startCode(w, req, flow, authFlowRequest.Code.Start)
 				return
 			}
 		case "complete":
-			if authFlowRequest.CodeComplete != nil {
-				s.completeCode(w, req, flow, authFlowRequest.CodeComplete)
+			if authFlowRequest.Code != nil && authFlowRequest.Code.Complete != nil {
+				s.completeCode(w, req, flow, authFlowRequest.Code.Complete)
 				return
 			}
 		}

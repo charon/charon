@@ -22,6 +22,11 @@ type AuthFlowRequestCodeComplete struct {
 	Code string `json:"code"`
 }
 
+type AuthFlowRequestCode struct {
+	Start    *AuthFlowRequestCodeStart    `json:"start,omitempty"`
+	Complete *AuthFlowRequestCodeComplete `json:"complete,omitempty"`
+}
+
 func (s *Service) sendCodeForExistingAccount(w http.ResponseWriter, req *http.Request, flow *Flow, account *Account, mappedEmailOrUsername string) {
 	var emails []string
 	if strings.Contains(mappedEmailOrUsername, "@") {

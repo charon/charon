@@ -183,8 +183,10 @@ async function onCode() {
         {
           step: "start",
           provider: "code",
-          codeStart: {
-            emailOrUsername: props.emailOrUsername,
+          code: {
+            start: {
+              emailOrUsername: props.emailOrUsername,
+            },
           },
         },
         progress,
