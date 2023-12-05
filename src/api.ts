@@ -1,7 +1,13 @@
 import type { Ref } from "vue"
 
 export class FetchError extends Error {
-  constructor(msg: string, options?: { cause?: Error; status: number; body: string; url: string; requestID: string | null }) {
+  cause?: Error
+  status!: number
+  body!: string
+  url!: string
+  requestID!: string | null
+
+  constructor(msg: string, options: { cause?: Error; status: number; body: string; url: string; requestID: string | null }) {
     super(msg, options)
     Object.assign(this, options)
   }

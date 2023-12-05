@@ -4,7 +4,7 @@ import { ref, onMounted, nextTick, computed } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
-import { postURL } from "@/api"
+import { FetchError, postURL } from "@/api"
 import { locationRedirect, fromBase64, toBase64 } from "@/utils"
 
 const props = defineProps<{
@@ -141,7 +141,7 @@ async function onNext() {
         progress.value += 1
       }
     } catch (error) {
-      if (!isEmail.value && error.status === 401) {
+      if (!isEmail.value && error instanceof FetchError && error.status === 401) {
         invalidPassword.value = true
         // We do not await getKey so that user can fix the password in meantime.
         getKey()
