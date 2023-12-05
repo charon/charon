@@ -118,7 +118,7 @@ func (s *Service) startOIDCProvider(w http.ResponseWriter, req *http.Request, fl
 
 	opts := []oauth2.AuthCodeOption{}
 
-	// TODO: What we clear other flow options?
+	flow.Reset()
 	flow.OIDC = &FlowOIDC{
 		Verifier: "",
 		Nonce:    identifier.New().String(),

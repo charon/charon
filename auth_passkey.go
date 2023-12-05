@@ -134,7 +134,7 @@ func (s *Service) startPasskeyGet(w http.ResponseWriter, req *http.Request, flow
 		return
 	}
 
-	// TODO: What we clear other flow options?
+	flow.Reset()
 	flow.Passkey = session
 	errE := SetFlow(req.Context(), flow)
 	if errE != nil {
@@ -257,7 +257,7 @@ func (s *Service) startPasskeyCreate(w http.ResponseWriter, req *http.Request, f
 		return
 	}
 
-	// TODO: What we clear other flow options?
+	flow.Reset()
 	flow.Passkey = session
 	errE := SetFlow(req.Context(), flow)
 	if errE != nil {

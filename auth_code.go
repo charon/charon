@@ -72,8 +72,8 @@ func (s *Service) sendCode(w http.ResponseWriter, req *http.Request, flow *Flow,
 		return
 	}
 
-	// TODO: What we clear other flow options?
 	// TODO: This makes only the latest code work. Should we allow previous codes as well?
+	flow.Reset()
 	flow.Code = &FlowCode{
 		Code:        code,
 		Account:     accountID,

@@ -86,7 +86,7 @@ func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *
 		return
 	}
 
-	// TODO: What we clear other flow options?
+	flow.Reset()
 	flow.Password = privateKey.Bytes()
 	errE := SetFlow(req.Context(), flow)
 	if errE != nil {

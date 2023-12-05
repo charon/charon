@@ -39,6 +39,13 @@ type Flow struct {
 	Code     *FlowCode
 }
 
+func (f *Flow) Reset() {
+	f.OIDC = nil
+	f.Passkey = nil
+	f.Password = nil
+	f.Code = nil
+}
+
 func GetFlow(ctx context.Context, id identifier.Identifier) (*Flow, errors.E) { //nolint:revive
 	flowsMu.RLock()
 	defer flowsMu.RUnlock()
