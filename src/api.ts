@@ -8,6 +8,7 @@ export class FetchError extends Error {
   requestID: string | null
 
   constructor(msg: string, options: { cause?: Error; status: number; body: string; url: string; requestID: string | null }) {
+    // Cause gets set by super.
     super(msg, options)
     this.status = options.status
     this.body = options.body
