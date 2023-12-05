@@ -36,7 +36,7 @@ let encryptOptions: object & { nonceSize: number }
 
 onMounted(async () => {
   await nextTick()
-  document.getElementById("password")?.focus()
+  document.getElementById("current-password")?.focus()
 })
 
 onMounted(getKey)
@@ -230,9 +230,19 @@ async function onCode() {
     </button>
   </div>
   <div class="flex flex-col mt-4">
-    <label for="password" class="mb-1">Password or passphrase</label>
+    <label for="current-password" class="mb-1">Password or passphrase</label>
     <form class="flex flex-row" @submit.prevent="onNext">
-      <InputText id="password" v-model="password" type="password" tabindex="1" class="flex-grow flex-auto min-w-0" :readonly="progress > 0" />
+      <InputText
+        id="current-password"
+        v-model="password"
+        type="password"
+        tabindex="1"
+        class="flex-grow flex-auto min-w-0"
+        :readonly="progress > 0"
+        autocomplete="current-password"
+        spellcheck="false"
+        required
+      />
       <Button type="submit" class="ml-4" tabindex="2" :disabled="password.trim().length == 0 || progress + keyProgress > 0">Next</Button>
     </form>
   </div>

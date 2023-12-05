@@ -137,7 +137,19 @@ async function onResend() {
       >. Please enter it to continue:</label
     >
     <form class="flex flex-row" @submit.prevent="onNext">
-      <InputText id="code" v-model="code" tabindex="1" class="flex-grow flex-auto min-w-0" :readonly="progress > 0" />
+      <InputText
+        id="code"
+        v-model="code"
+        tabindex="1"
+        class="flex-grow flex-auto min-w-0"
+        :readonly="progress > 0"
+        autocomplete="one-time-code"
+        spellcheck="false"
+        inputmode="numeric"
+        maxlength="6"
+        pattern="[0-9]{6}"
+        required
+      />
       <Button type="submit" class="ml-4" tabindex="2" :disabled="code.trim().length == 0 || progress > 0 || invalidCode">Next</Button>
     </form>
   </div>

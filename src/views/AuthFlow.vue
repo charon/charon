@@ -81,7 +81,15 @@ async function onOIDCProvider(provider: string) {
       <div class="flex flex-col">
         <label for="email-or-username" class="mb-1">Enter Charon username or your e-mail address</label>
         <form class="flex flex-row" @submit.prevent="onNext">
-          <InputText id="email-or-username" v-model="emailOrUsername" class="flex-grow flex-auto min-w-0" :readonly="progress > 0" />
+          <InputText
+            id="email-or-username"
+            v-model="emailOrUsername"
+            class="flex-grow flex-auto min-w-0"
+            :readonly="progress > 0"
+            autocomplete="username"
+            spellcheck="false"
+            required
+          />
           <Button type="submit" class="ml-4" :disabled="emailOrUsername.trim().length == 0 || progress > 0">Next</Button>
         </form>
       </div>
