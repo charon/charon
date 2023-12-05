@@ -11,6 +11,8 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
+const CodeProvider Provider = "code"
+
 func (s *Service) sendCodeForExistingAccount(w http.ResponseWriter, req *http.Request, flow *Flow, account *Account, mappedEmailOrUsername string) {
 	var emails []string
 	if strings.Contains(mappedEmailOrUsername, "@") {
@@ -83,4 +85,101 @@ func (s *Service) sendCode(w http.ResponseWriter, req *http.Request, flow *Flow,
 		Password: nil,
 		Code:     true,
 	}, nil)
+}
+
+func (s *Service) startCode(w http.ResponseWriter, req *http.Request, flow *Flow, codeStart *AuthFlowRequestCodeStart) {
+	ctx := req.Context()
+
+	preservedEmailOrUsername, errE := normalizeUsernameCasePreserved(codeStart.EmailOrUsername)
+	if errE != nil {
+		// TODO: Show reasonable error to the user (not the error message itself).
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+	mappedEmailOrUsername, errE := normalizeUsernameCaseMapped(codeStart.EmailOrUsername)
+	if errE != nil {
+		// TODO: Show reasonable error to the user (not the error message itself).
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	var account *Account
+	if strings.Contains(mappedEmailOrUsername, "@") {
+		account, errE = GetAccountByCredential(ctx, EmailProvider, mappedEmailOrUsername)
+	} else {
+		account, errE = GetAccountByCredential(ctx, UsernameProvider, mappedEmailOrUsername)
+	}
+
+	if errE == nil {
+		// Account already exist.
+		s.sendCodeForExistingAccount(w, req, flow, account, mappedEmailOrUsername)
+		return
+	} else if !errors.Is(errE, ErrAccountNotFound) {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	// Account does not exist.
+
+	if !strings.Contains(mappedEmailOrUsername, "@") {
+		// User provided a username but account does not exist.
+		// TODO: Return a better response?
+		s.NotFound(w, req)
+		return
+	}
+
+	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{ //nolint:govet
+		Email: preservedEmailOrUsername,
+	})
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	// Account does not exist and we do have an e-mail address.
+	// We create a new account with a password with an e-mail address only.
+	s.sendCodeForNewAccount(w, req, flow, preservedEmailOrUsername, []Credential{{
+		ID:       mappedEmailOrUsername,
+		Provider: EmailProvider,
+		Data:     jsonData,
+	}})
+}
+
+func (s *Service) completeCode(w http.ResponseWriter, req *http.Request, flow *Flow, codeComplete *AuthFlowRequestCodeComplete) {
+	ctx := req.Context()
+
+	if flow.Code == nil {
+		s.BadRequestWithError(w, req, errors.New("code not started"))
+		return
+	}
+
+	flowCode := flow.Code
+
+	// We reset flow.Code to nil always after this point, even if there is a failure,
+	// so that code cannot be reused.
+	flow.Password = nil
+	errE := SetFlow(ctx, flow)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	if flowCode.Code != codeComplete.Code {
+		s.BadRequestWithError(w, req, errors.New("code mismatch"))
+		return
+	}
+
+	var account *Account
+	if flow.Code.Account != nil {
+		account, errE = GetAccount(ctx, *flow.Code.Account)
+		if errE != nil {
+			// We return internal server error even on ErrAccountNotFound. It is unlikely that
+			// the account got deleted in meantime so there might be some logic error. In any
+			// case it does not matter to much which error we return.
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+	}
+
+	s.completeAuthStep(w, req, true, flow, account, flow.Code.Credentials)
 }

@@ -112,7 +112,7 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 	flowPassword := flow.Password
 
 	// We reset flow.Password to nil always after this point, even if there is a failure,
-	// so that key cannot be reused.
+	// so that password cannot be reused.
 	flow.Password = nil
 	errE := SetFlow(ctx, flow)
 	if errE != nil {

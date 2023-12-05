@@ -59,11 +59,21 @@ type AuthFlowRequestPassword struct {
 	Password        []byte `json:"password"`
 }
 
+type AuthFlowRequestCodeStart struct {
+	EmailOrUsername string `json:"emailOrUsername"`
+}
+
+type AuthFlowRequestCodeComplete struct {
+	Code string `json:"code"`
+}
+
 type AuthFlowRequest struct {
-	Step     string                   `json:"step"`
-	Provider Provider                 `json:"provider"`
-	Passkey  *AuthFlowRequestPasskey  `json:"passkey,omitempty"`
-	Password *AuthFlowRequestPassword `json:"password,omitempty"`
+	Step         string                       `json:"step"`
+	Provider     Provider                     `json:"provider"`
+	Passkey      *AuthFlowRequestPasskey      `json:"passkey,omitempty"`
+	Password     *AuthFlowRequestPassword     `json:"password,omitempty"`
+	CodeStart    *AuthFlowRequestCodeStart    `json:"codeStart,omitempty"`
+	CodeComplete *AuthFlowRequestCodeComplete `json:"codeComplete,omitempty"`
 }
 
 func (s *Service) AuthFlow(w http.ResponseWriter, req *http.Request, params waf.Params) {
@@ -99,14 +109,12 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 	}
 
 	if _, ok := s.oidcProviders()[authFlowRequest.Provider]; ok {
-		if authFlowRequest.Step != "start" {
-			errE = errors.New("invalid auth request")
-			errors.Details(errE)["request"] = authFlowRequest
-			s.BadRequestWithError(w, req, errE)
-			return
+		if authFlowRequest.Step == "start" {
+			if authFlowRequest.Provider != "" {
+				s.startOIDCProvider(w, req, flow, authFlowRequest.Provider)
+				return
+			}
 		}
-		s.startOIDCProvider(w, req, flow, authFlowRequest.Provider)
-		return
 	}
 
 	if authFlowRequest.Provider == PasskeyProvider {
@@ -115,19 +123,18 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 			s.startPasskeyGet(w, req, flow)
 			return
 		case "getComplete":
-			s.completePasskeyGet(w, req, flow, authFlowRequest.Passkey)
-			return
+			if authFlowRequest.Passkey != nil {
+				s.completePasskeyGet(w, req, flow, authFlowRequest.Passkey)
+				return
+			}
 		case "createStart":
 			s.startPasskeyCreate(w, req, flow)
 			return
 		case "createComplete":
-			s.completePasskeyCreate(w, req, flow, authFlowRequest.Passkey)
-			return
-		default:
-			errE = errors.New("invalid auth request")
-			errors.Details(errE)["request"] = authFlowRequest
-			s.BadRequestWithError(w, req, errE)
-			return
+			if authFlowRequest.Passkey != nil {
+				s.completePasskeyCreate(w, req, flow, authFlowRequest.Passkey)
+				return
+			}
 		}
 	}
 
@@ -137,13 +144,25 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 			s.startPassword(w, req, flow)
 			return
 		case "complete":
-			s.completePassword(w, req, flow, authFlowRequest.Password)
-			return
-		default:
-			errE = errors.New("invalid auth request")
-			errors.Details(errE)["request"] = authFlowRequest
-			s.BadRequestWithError(w, req, errE)
-			return
+			if authFlowRequest.Password != nil {
+				s.completePassword(w, req, flow, authFlowRequest.Password)
+				return
+			}
+		}
+	}
+
+	if authFlowRequest.Provider == CodeProvider {
+		switch authFlowRequest.Step {
+		case "start":
+			if authFlowRequest.CodeStart != nil {
+				s.startCode(w, req, flow, authFlowRequest.CodeStart)
+				return
+			}
+		case "complete":
+			if authFlowRequest.CodeComplete != nil {
+				s.completeCode(w, req, flow, authFlowRequest.CodeComplete)
+				return
+			}
 		}
 	}
 
