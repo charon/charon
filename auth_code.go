@@ -3,6 +3,7 @@ package charon
 import (
 	"net/http"
 	"strings"
+	"unicode"
 
 	"github.com/rs/zerolog/hlog"
 	"gitlab.com/tozd/go/errors"
@@ -174,7 +175,15 @@ func (s *Service) completeCode(w http.ResponseWriter, req *http.Request, flow *F
 		return
 	}
 
-	if flowCode.Code != codeComplete.Code {
+	// We clean the provided code of all whitespace before we check it.
+	code := strings.Map(func(r rune) rune {
+		if unicode.IsSpace(r) {
+			return -1
+		}
+		return r
+	}, codeComplete.Code)
+
+	if flowCode.Code != code {
 		// TODO: Return a better response?
 		waf.Error(w, req, http.StatusUnauthorized)
 		return
