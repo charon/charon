@@ -23,6 +23,8 @@ const password = ref("")
 const progress = ref(0)
 const keyProgress = ref(0)
 const invalidPassword = ref(false)
+const codeNotPossible = ref(false)
+const codeNotPossibleOnce = ref(false)
 
 const isEmail = computed(() => {
   return props.emailOrUsername.indexOf("@") >= 0
@@ -81,6 +83,10 @@ async function getKey() {
 }
 
 async function onBack() {
+  if (progress.value > 0) {
+    // Clicking on disabled links.
+    return
+  }
   emit("update:modelValue", "start")
   await nextTick()
   document.getElementById("email-or-username")?.focus()
@@ -89,6 +95,7 @@ async function onBack() {
 async function onNext() {
   progress.value += 1
   try {
+    codeNotPossibleOnce.value = false
     const url = router.apiResolve({
       name: "AuthFlow",
       params: {
@@ -139,15 +146,66 @@ async function onNext() {
       if (locationRedirect(response)) {
         // We increase the progress and never decrease it to wait for browser to do the redirect.
         progress.value += 1
+      } else if (response.code) {
+        emit("update:modelValue", "code")
+        await nextTick()
+        document.getElementById("code")?.focus()
+      } else {
+        throw new Error("unexpected response")
       }
     } catch (error) {
       if (!isEmail.value && error instanceof FetchError && error.status === 401) {
         invalidPassword.value = true
         // We do not await getKey so that user can fix the password in meantime.
         getKey()
-      } else {
-        throw error
+        return
       }
+      throw error
+    }
+  } finally {
+    progress.value -= 1
+  }
+}
+
+async function onCode() {
+  progress.value += 1
+  try {
+    const url = router.apiResolve({
+      name: "AuthFlow",
+      params: {
+        id: props.id,
+      },
+    }).href
+
+    try {
+      const response: AuthFlowResponse = await postURL(
+        url,
+        {
+          step: "start",
+          provider: "code",
+          codeStart: {
+            emailOrUsername: props.emailOrUsername,
+          },
+        },
+        progress,
+      )
+      if (locationRedirect(response)) {
+        // We increase the progress and never decrease it to wait for browser to do the redirect.
+        progress.value += 1
+      } else if (response.code) {
+        emit("update:modelValue", "code")
+        await nextTick()
+        document.getElementById("code")?.focus()
+      } else {
+        throw new Error("unexpected response")
+      }
+    } catch (error) {
+      if (!isEmail.value && error instanceof FetchError && error.status === 401) {
+        codeNotPossible.value = true
+        codeNotPossibleOnce.value = true
+        return
+      }
+      throw error
     }
   } finally {
     progress.value -= 1
@@ -156,7 +214,7 @@ async function onNext() {
 </script>
 
 <template>
-  <div class="flex flex-col mt-4">
+  <div class="flex flex-col">
     <label for="email-or-username" class="mb-1">{{ isEmail ? "Your e-mail address" : "Charon username" }}</label>
     <button
       id="email-or-username"
@@ -181,9 +239,10 @@ async function onNext() {
     a code to your e-mail address.
   </div>
   <template v-else-if="invalidPassword">
-    <div class="mt-4">Password or passphrase is incorrect for Charon username. Please try again.</div>
+    <div class="mt-4 text-error-600">Password or passphrase is incorrect for Charon username. Please try again.</div>
     <div class="mt-4">
-      If you have trouble remembering your password or passphrase, try a <a href="" class="link" @click.prevent="onBack">different sign-in method</a>.
+      If you have trouble remembering your password or passphrase, try a
+      <a :href="progress > 0 ? undefined : ''" class="link" :class="progress > 0 ? 'disabled' : ''" @click.prevent="onBack">different sign-in method</a>.
     </div>
   </template>
   <div v-else class="mt-4">
@@ -191,10 +250,12 @@ async function onNext() {
     exists or not. If you enter invalid password or passphrase, recovery will be done automatically for you by sending you a code to e-mail address(es) associated with
     the username, if any.
   </div>
-  <div v-if="invalidPassword" class="mt-4">You cannot receive the code because there is no e-mail address associated with the username.</div>
+  <div v-if="invalidPassword || codeNotPossible" class="mt-4" :class="codeNotPossibleOnce ? 'text-error-600' : ''">
+    You cannot receive the code because there is no e-mail address associated with the username.
+  </div>
   <div v-else class="mt-4">You can also skip entering password or passphrase and directly request the code.</div>
   <div class="mt-4 flex flex-row justify-between gap-4">
     <Button type="button" tabindex="4" :disabled="progress > 0" @click.prevent="onBack">Back</Button>
-    <Button type="button" tabindex="3" :disabled="invalidPassword || progress > 0">Send code</Button>
+    <Button type="button" tabindex="3" :disabled="invalidPassword || codeNotPossible || progress > 0" @click.prevent="onCode">Send code</Button>
   </div>
 </template>

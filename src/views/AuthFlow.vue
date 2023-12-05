@@ -9,6 +9,7 @@ import InputText from "@/components/InputText.vue"
 import AuthPassword from "@/components/AuthPassword.vue"
 import AuthPasskeySignin from "@/components/AuthPasskeySignin.vue"
 import AuthPasskeySignup from "@/components/AuthPasskeySignup.vue"
+import AuthCode from "@/components/AuthCode.vue"
 import { postURL } from "@/api"
 import { locationRedirect } from "@/utils"
 import siteContext from "@/context"
@@ -64,6 +65,8 @@ async function onOIDCProvider(provider: string) {
     if (locationRedirect(response)) {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
       progress.value += 1
+    } else {
+      throw new Error("unexpected response")
     }
   } finally {
     progress.value -= 1
@@ -98,5 +101,6 @@ async function onOIDCProvider(provider: string) {
     <AuthPasskeySignin v-else-if="state === 'passkeySignin'" :id="id" v-model="state" />
     <AuthPasskeySignup v-else-if="state === 'passkeySignup'" :id="id" v-model="state" />
     <AuthPassword v-else-if="state === 'password'" :id="id" v-model="state" :email-or-username="emailOrUsername" />
+    <AuthCode v-else-if="state === 'code'" :id="id" v-model="state" :email-or-username="emailOrUsername" />
   </div>
 </template>

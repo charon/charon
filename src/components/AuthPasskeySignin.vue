@@ -94,6 +94,8 @@ onMounted(async () => {
     if (locationRedirect(complete)) {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
       progress.value += 1
+    } else {
+      throw new Error("unexpected response")
     }
   } finally {
     progress.value -= 1

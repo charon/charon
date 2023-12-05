@@ -10,6 +10,10 @@
     text-decoration: unset;
   }
 
+  .link.disabled {
+    @apply text-primary-300 cursor-not-allowed;
+  }
+
   a:has(img) {
     @apply outline-none;
   }
@@ -23,15 +27,31 @@
     @apply ring-2 ring-primary-500 ring-offset-1;
   }
 
+  .link.disabled:focus {
+    @apply ring-primary-300;
+  }
+
   .link:visited {
     @apply text-primary-500;
+  }
+
+  .link.disabled:visited {
+    @apply text-primary-300;
   }
 
   .link:hover {
     @apply text-primary-700 underline underline-offset-2;
   }
 
+  .link.disabled:hover {
+    @apply text-primary-300 no-underline;
+  }
+
   .link:active {
     @apply text-primary-500;
+  }
+
+  .link.disabled:active {
+    @apply text-primary-300;
   }
 }

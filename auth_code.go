@@ -175,7 +175,8 @@ func (s *Service) completeCode(w http.ResponseWriter, req *http.Request, flow *F
 	}
 
 	if flowCode.Code != codeComplete.Code {
-		s.BadRequestWithError(w, req, errors.New("code mismatch"))
+		// TODO: Return a better response?
+		waf.Error(w, req, http.StatusUnauthorized)
 		return
 	}
 
