@@ -25,7 +25,7 @@ const router = useRouter()
 
 const code = ref("")
 const progress = ref(0)
-const resendCounter = ref(0)
+const sendCounter = ref(1)
 const invalidCode = ref(false)
 
 watch(code, () => {
@@ -114,7 +114,7 @@ async function onResend() {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
       progress.value += 1
     } else if (response.code) {
-      resendCounter.value += 1
+      sendCounter.value += 1
       document.getElementById("code")?.focus()
     } else {
       throw new Error("unexpected response")
@@ -128,12 +128,12 @@ async function onResend() {
 <template>
   <div class="flex flex-col">
     <label v-if="isEmail" for="code" class="mb-1"
-      >We {{ resendCounter > 1 ? `resent (${resendCounter}x)` : resendCounter > 0 ? "resent" : "sent" }} a 6-digit code to <strong>{{ emailOrUsername }}</strong> e-mail
-      address. Please enter it to continue:</label
+      >We {{ sendCounter > 1 ? `sent (${sendCounter}x)` : "sent" }} a 6-digit code to <strong>{{ emailOrUsername }}</strong> e-mail address. Please enter it to
+      continue:</label
     >
     <label v-else for="code" class="mb-1">
-      We {{ resendCounter > 1 ? `resent (${resendCounter}x)` : resendCounter > 0 ? "resent" : "sent" }} a 6-digit code to e-mail address(es) associated with the Charon
-      username <strong>{{ emailOrUsername }}</strong
+      We {{ sendCounter > 1 ? `sent (${sendCounter}x)` : "sent" }} a 6-digit code to e-mail address(es) associated with the Charon username
+      <strong>{{ emailOrUsername }}</strong
       >. Please enter it to continue:</label
     >
     <form class="flex flex-row" @submit.prevent="onNext">
@@ -146,8 +146,7 @@ async function onResend() {
         autocomplete="one-time-code"
         spellcheck="false"
         inputmode="numeric"
-        maxlength="6"
-        pattern="[0-9]{6}"
+        pattern="[0-9]*"
         required
       />
       <Button type="submit" class="ml-4" tabindex="2" :disabled="code.trim().length == 0 || progress > 0 || invalidCode">Next</Button>
