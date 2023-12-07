@@ -39,7 +39,7 @@ type AuthFlowResponse struct {
 	Code     *AuthFlowResponseCode     `json:"code,omitempty"`
 }
 
-func (s *Service) flowError(w http.ResponseWriter, req *http.Request, code int, msg string, err errors.E) {
+func (s *Service) flowError(w http.ResponseWriter, req *http.Request, msg string, err errors.E) {
 	ctx := req.Context()
 
 	if err != nil {
@@ -59,7 +59,7 @@ func (s *Service) flowError(w http.ResponseWriter, req *http.Request, code int, 
 		return
 	}
 
-	w.WriteHeader(code)
+	w.WriteHeader(http.StatusBadRequest)
 	_, _ = w.Write(encoded)
 }
 

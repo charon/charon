@@ -95,15 +95,15 @@ func (s *Service) normalizeEmailOrUsername(w http.ResponseWriter, req *http.Requ
 	preservedEmailOrUsername, errE := normalizeUsernameCasePreserved(emailOrUsername)
 	if errE != nil {
 		if strings.Contains(emailOrUsername, "@") {
-			s.flowError(w, req, http.StatusBadRequest, "Invalid e-mail address.", errE)
+			s.flowError(w, req, "Invalid e-mail address.", errE)
 		} else {
-			s.flowError(w, req, http.StatusBadRequest, "Invalid username.", errE)
+			s.flowError(w, req, "Invalid username.", errE)
 		}
 		return ""
 	}
 
 	if !strings.Contains(preservedEmailOrUsername, "@") && len(preservedEmailOrUsername) < usernameMinLength {
-		s.flowError(w, req, http.StatusBadRequest, fmt.Sprintf("Username should be at least %d characters.", usernameMinLength), errE)
+		s.flowError(w, req, fmt.Sprintf("Username should be at least %d characters.", usernameMinLength), errE)
 		return ""
 	}
 
@@ -240,12 +240,12 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 
 	plainPassword, errE = normalizePassword(plainPassword)
 	if errE != nil {
-		s.flowError(w, req, http.StatusBadRequest, "Invalid password.", errE)
+		s.flowError(w, req, "Invalid password.", errE)
 		return
 	}
 
 	if len(plainPassword) < passwordMinLength {
-		s.flowError(w, req, http.StatusBadRequest, fmt.Sprintf("Password should be at least %d characters.", passwordMinLength), errE)
+		s.flowError(w, req, fmt.Sprintf("Password should be at least %d characters.", passwordMinLength), errE)
 		return
 	}
 

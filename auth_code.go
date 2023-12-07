@@ -63,7 +63,7 @@ func (s *Service) sendCodeForExistingAccount(
 			} else {
 				msg = "You cannot receive the code because there is no e-mail address associated with the account for the provided username."
 			}
-			s.flowError(w, req, http.StatusBadRequest, msg, nil)
+			s.flowError(w, req, msg, nil)
 			return
 		}
 	}
@@ -171,7 +171,7 @@ func (s *Service) startCode(w http.ResponseWriter, req *http.Request, flow *Flow
 			Data:     jsonData,
 		}}
 	} else {
-		s.flowError(w, req, http.StatusBadRequest, "Account for the provided username does not exist.", nil)
+		s.flowError(w, req, "Account for the provided username does not exist.", nil)
 		return
 	}
 
@@ -208,7 +208,7 @@ func (s *Service) completeCode(w http.ResponseWriter, req *http.Request, flow *F
 	}, codeComplete.Code)
 
 	if flowCode.Code != code {
-		s.flowError(w, req, http.StatusBadRequest, "Code is invalid. Please try again.", nil)
+		s.flowError(w, req, "Code is invalid. Please try again.", nil)
 		return
 	}
 
