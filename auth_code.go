@@ -9,7 +9,6 @@ import (
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
-	"gitlab.com/tozd/waf"
 )
 
 const CodeProvider Provider = "code"
@@ -32,7 +31,7 @@ type AuthFlowResponseCode struct {
 }
 
 func (s *Service) sendCodeForExistingAccount(
-	w http.ResponseWriter, req *http.Request, flow *Flow,
+	w http.ResponseWriter, req *http.Request, flow *Flow, passwordFlow bool,
 	account *Account, preservedEmailOrUsername, mappedEmailOrUsername string,
 ) {
 	var emails []string
@@ -56,6 +55,17 @@ func (s *Service) sendCodeForExistingAccount(
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
+
+		if len(emails) == 0 {
+			var msg string
+			if passwordFlow {
+				msg = "Invalid password for the account with the provided username."
+			} else {
+				msg = "You cannot receive the code because there is no e-mail address associated with the account for the provided username."
+			}
+			s.flowError(w, req, http.StatusBadRequest, msg, nil)
+			return
+		}
 	}
 
 	s.sendCode(w, req, flow, preservedEmailOrUsername, emails, &account.ID, nil)
@@ -75,11 +85,8 @@ func (s *Service) sendCode(
 	preservedEmailOrUsername string, emails []string, accountID *identifier.Identifier, credentials []Credential,
 ) {
 	if len(emails) == 0 {
-		// User provided an invalid password and there are no e-mails available, or code request for
-		// account without e-mails available, or code request for account which does not exist.
-		// TODO: Return a better response?
-		waf.Error(w, req, http.StatusUnauthorized)
-		return
+		// This method should no be called without e-mail addresses.
+		panic(errors.New("no email addresses"))
 	}
 
 	code, errE := getRandomCode()
@@ -119,16 +126,13 @@ func (s *Service) sendCode(
 func (s *Service) startCode(w http.ResponseWriter, req *http.Request, flow *Flow, codeStart *AuthFlowRequestCodeStart) {
 	ctx := req.Context()
 
-	preservedEmailOrUsername, errE := normalizeUsernameCasePreserved(codeStart.EmailOrUsername)
-	if errE != nil {
-		// TODO: Improve message (check if username or e-mail).
-		s.flowError(w, req, http.StatusBadRequest, "Invalid Charon username or your e-mail address.", errE)
+	preservedEmailOrUsername := s.normalizeEmailOrUsername(w, req, codeStart.EmailOrUsername)
+	if preservedEmailOrUsername == "" {
 		return
 	}
 	mappedEmailOrUsername, errE := normalizeUsernameCaseMapped(preservedEmailOrUsername)
 	if errE != nil {
-		// preservedEmailOrUsername should already be normalized (but not mapped)
-		// so this should not error.
+		// preservedEmailOrUsername should already be normalized (but not mapped) so this should not error.
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
@@ -142,7 +146,7 @@ func (s *Service) startCode(w http.ResponseWriter, req *http.Request, flow *Flow
 
 	if errE == nil {
 		// Account already exist.
-		s.sendCodeForExistingAccount(w, req, flow, account, preservedEmailOrUsername, mappedEmailOrUsername)
+		s.sendCodeForExistingAccount(w, req, flow, false, account, preservedEmailOrUsername, mappedEmailOrUsername)
 		return
 	} else if !errors.Is(errE, ErrAccountNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -152,7 +156,6 @@ func (s *Service) startCode(w http.ResponseWriter, req *http.Request, flow *Flow
 	// Account does not exist.
 
 	// We have to create a credential only for the e-mail case.
-	// sendCodeForNewAccount will error out on the username case.
 	var credentials []Credential
 	if strings.Contains(mappedEmailOrUsername, "@") {
 		jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{
@@ -167,12 +170,13 @@ func (s *Service) startCode(w http.ResponseWriter, req *http.Request, flow *Flow
 			Provider: EmailProvider,
 			Data:     jsonData,
 		}}
+	} else {
+		s.flowError(w, req, http.StatusBadRequest, "Account for the provided username does not exist.", nil)
+		return
 	}
 
 	// Account does not exist but we might have an e-mail address.
 	// We attempt to create a new account with an e-mail address only.
-	// We call sendCodeForNewAccount always and leave to sendCodeForNewAccount
-	// to error out if we have just an username and not an e-mail address.
 	s.sendCodeForNewAccount(w, req, flow, preservedEmailOrUsername, credentials)
 }
 
@@ -204,8 +208,7 @@ func (s *Service) completeCode(w http.ResponseWriter, req *http.Request, flow *F
 	}, codeComplete.Code)
 
 	if flowCode.Code != code {
-		// TODO: Return a better response?
-		waf.Error(w, req, http.StatusUnauthorized)
+		s.flowError(w, req, http.StatusBadRequest, "Code is invalid. Please try again.", nil)
 		return
 	}
 

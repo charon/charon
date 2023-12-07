@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/ecdh"
 	"crypto/rand"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -26,6 +27,9 @@ const (
 
 	saltSize = 16
 	keySize  = 32
+
+	usernameMinLength = 3
+	passwordMinLength = 8
 )
 
 var argon2idParams = argon2id.Params{ //nolint:gochecknoglobals
@@ -87,11 +91,28 @@ type usernameCredential struct {
 	Username string `json:"username"`
 }
 
-func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *Flow, passwordStart *AuthFlowRequestPasswordStart) {
-	preservedEmailOrUsername, errE := normalizeUsernameCasePreserved(passwordStart.EmailOrUsername)
+func (s *Service) normalizeEmailOrUsername(w http.ResponseWriter, req *http.Request, emailOrUsername string) string {
+	preservedEmailOrUsername, errE := normalizeUsernameCasePreserved(emailOrUsername)
 	if errE != nil {
-		// TODO: Improve message (check if username or e-mail).
-		s.flowError(w, req, http.StatusBadRequest, "Invalid Charon username or your e-mail address.", errE)
+		if strings.Contains(emailOrUsername, "@") {
+			s.flowError(w, req, http.StatusBadRequest, "Invalid e-mail address.", errE)
+		} else {
+			s.flowError(w, req, http.StatusBadRequest, "Invalid username.", errE)
+		}
+		return ""
+	}
+
+	if !strings.Contains(preservedEmailOrUsername, "@") && len(preservedEmailOrUsername) < usernameMinLength {
+		s.flowError(w, req, http.StatusBadRequest, fmt.Sprintf("Username should be at least %d characters.", usernameMinLength), errE)
+		return ""
+	}
+
+	return preservedEmailOrUsername
+}
+
+func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *Flow, passwordStart *AuthFlowRequestPasswordStart) {
+	preservedEmailOrUsername := s.normalizeEmailOrUsername(w, req, passwordStart.EmailOrUsername)
+	if preservedEmailOrUsername == "" {
 		return
 	}
 
@@ -101,6 +122,7 @@ func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *
 		return
 	}
 
+	// We create a dummy cipher so that we can obtain nonce size later on.
 	block, err := aes.NewCipher(make([]byte, secretSize))
 	if err != nil {
 		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
@@ -126,7 +148,7 @@ func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *
 		PrivateKey:      privateKey.Bytes(),
 		Nonce:           nonce,
 	}
-	errE = SetFlow(req.Context(), flow)
+	errE := SetFlow(req.Context(), flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -175,8 +197,7 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 
 	mappedEmailOrUsername, errE := normalizeUsernameCaseMapped(flowPassword.EmailOrUsername)
 	if errE != nil {
-		// flowPassword.EmailOrUsername should already be normalized (but not mapped)
-		// so this should not error.
+		// flowPassword.EmailOrUsername should already be normalized (but not mapped) so this should not error.
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
@@ -219,8 +240,12 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 
 	plainPassword, errE = normalizePassword(plainPassword)
 	if errE != nil {
-		// TODO: Check length.
 		s.flowError(w, req, http.StatusBadRequest, "Invalid password.", errE)
+		return
+	}
+
+	if len(plainPassword) < passwordMinLength {
+		s.flowError(w, req, http.StatusBadRequest, fmt.Sprintf("Password should be at least %d characters.", passwordMinLength), errE)
 		return
 	}
 
@@ -282,7 +307,7 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 		}
 
 		// Incorrect password. We do password recovery (if possible).
-		s.sendCodeForExistingAccount(w, req, flow, account, flowPassword.EmailOrUsername, mappedEmailOrUsername)
+		s.sendCodeForExistingAccount(w, req, flow, true, account, flowPassword.EmailOrUsername, mappedEmailOrUsername)
 		return
 	} else if !errors.Is(errE, ErrAccountNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
