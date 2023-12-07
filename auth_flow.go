@@ -226,9 +226,8 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 
 	flow.Session = &sessionID
 
-	// These should already be set to nil at this point, but just to make sure.
-	flow.OIDC = nil
-	flow.Passkey = nil
+	// Should already be set to nil at this point, but just to make sure.
+	flow.Reset()
 
 	errE = SetFlow(ctx, flow)
 	if errE != nil {
