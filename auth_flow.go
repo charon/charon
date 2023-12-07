@@ -29,11 +29,38 @@ type AuthFlowResponseLocation struct {
 	Replace bool   `json:"replace"`
 }
 
+// TODO: Make error message translatable.
+
 type AuthFlowResponse struct {
+	Error    string                    `json:"error,omitempty"`
 	Location *AuthFlowResponseLocation `json:"location,omitempty"`
 	Passkey  *AuthFlowResponsePasskey  `json:"passkey,omitempty"`
 	Password *AuthFlowResponsePassword `json:"password,omitempty"`
-	Code     bool                      `json:"code,omitempty"`
+	Code     *AuthFlowResponseCode     `json:"code,omitempty"`
+}
+
+func (s *Service) flowError(w http.ResponseWriter, req *http.Request, code int, msg string, err errors.E) {
+	ctx := req.Context()
+
+	if err != nil {
+		s.WithError(ctx, err)
+	}
+
+	response := AuthFlowResponse{
+		Error:    msg,
+		Location: nil,
+		Passkey:  nil,
+		Password: nil,
+		Code:     nil,
+	}
+
+	encoded := s.PrepareJSON(w, req, response, nil)
+	if encoded == nil {
+		return
+	}
+
+	w.WriteHeader(code)
+	_, _ = w.Write(encoded)
 }
 
 func (s *Service) AuthFlow(w http.ResponseWriter, req *http.Request, params waf.Params) {
@@ -50,6 +77,31 @@ func (s *Service) AuthFlow(w http.ResponseWriter, req *http.Request, params waf.
 	} else {
 		s.ServeStaticFile(w, req, "/index.html")
 	}
+}
+
+func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	// This already returns AuthFlowResponse with Location set.
+	flow := s.GetActiveFlow(w, req, true, params["id"])
+	if flow == nil {
+		return
+	}
+
+	response := AuthFlowResponse{
+		Error:    "",
+		Location: nil,
+		Passkey:  nil,
+		Password: nil,
+		Code:     nil,
+	}
+
+	// Only code can be resumed.
+	if flow.Code != nil {
+		response.Code = &AuthFlowResponseCode{
+			EmailOrUsername: flow.Code.EmailOrUsername,
+		}
+	}
+
+	s.WriteJSON(w, req, response, nil)
 }
 
 func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
@@ -101,11 +153,13 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 	if authFlowRequest.Provider == PasswordProvider {
 		switch authFlowRequest.Step {
 		case StepStart:
-			s.startPassword(w, req, flow)
-			return
+			if authFlowRequest.Password != nil && authFlowRequest.Password.Start != nil {
+				s.startPassword(w, req, flow, authFlowRequest.Password.Start)
+				return
+			}
 		case StepComplete:
-			if authFlowRequest.Password != nil {
-				s.completePassword(w, req, flow, authFlowRequest.Password)
+			if authFlowRequest.Password != nil && authFlowRequest.Password.Complete != nil {
+				s.completePassword(w, req, flow, authFlowRequest.Password.Complete)
 				return
 			}
 		}
@@ -198,13 +252,14 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 
 	if api {
 		s.WriteJSON(w, req, AuthFlowResponse{
+			Error: "",
 			Location: &AuthFlowResponseLocation{
 				URL:     flow.Target,
 				Replace: true,
 			},
 			Passkey:  nil,
 			Password: nil,
-			Code:     false,
+			Code:     nil,
 		}, nil)
 	} else {
 		s.TemporaryRedirectGetMethod(w, req, flow.Target)

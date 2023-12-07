@@ -129,13 +129,14 @@ func (s *Service) GetActiveFlow(w http.ResponseWriter, req *http.Request, api bo
 
 		if api {
 			s.WriteJSON(w, req, AuthFlowResponse{
+				Error: "",
 				Location: &AuthFlowResponseLocation{
 					URL:     flow.Target,
 					Replace: true,
 				},
 				Passkey:  nil,
 				Password: nil,
-				Code:     false,
+				Code:     nil,
 			}, nil)
 			return nil
 		}

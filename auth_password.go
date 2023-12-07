@@ -42,11 +42,18 @@ const (
 	UsernameProvider = "username"
 )
 
-type AuthFlowRequestPassword struct {
-	PublicKey       []byte `json:"publicKey"`
-	Nonce           []byte `json:"nonce"`
+type AuthFlowRequestPasswordStart struct {
 	EmailOrUsername string `json:"emailOrUsername"`
-	Password        []byte `json:"password"`
+}
+
+type AuthFlowRequestPasswordComplete struct {
+	PublicKey []byte `json:"publicKey"`
+	Password  []byte `json:"password"`
+}
+
+type AuthFlowRequestPassword struct {
+	Start    *AuthFlowRequestPasswordStart    `json:"start,omitempty"`
+	Complete *AuthFlowRequestPasswordComplete `json:"complete,omitempty"`
 }
 
 type AuthFlowResponsePasswordDeriveOptions struct {
@@ -56,15 +63,16 @@ type AuthFlowResponsePasswordDeriveOptions struct {
 
 type AuthFlowResponsePasswordEncryptOptions struct {
 	Name      string `json:"name"`
-	Length    int    `json:"length"`
-	NonceSize int    `json:"nonceSize"`
+	Nonce     []byte `json:"iv"`
 	TagLength int    `json:"tagLength"`
+	Length    int    `json:"length"`
 }
 
 type AuthFlowResponsePassword struct {
-	PublicKey      []byte                                 `json:"publicKey"`
-	DeriveOptions  AuthFlowResponsePasswordDeriveOptions  `json:"deriveOptions"`
-	EncryptOptions AuthFlowResponsePasswordEncryptOptions `json:"encryptOptions"`
+	EmailOrUsername string                                 `json:"emailOrUsername"`
+	PublicKey       []byte                                 `json:"publicKey"`
+	DeriveOptions   AuthFlowResponsePasswordDeriveOptions  `json:"deriveOptions"`
+	EncryptOptions  AuthFlowResponsePasswordEncryptOptions `json:"encryptOptions"`
 }
 
 type passwordCredential struct {
@@ -79,18 +87,17 @@ type usernameCredential struct {
 	Username string `json:"username"`
 }
 
-func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *Flow) {
-	privateKey, err := ecdh.P256().GenerateKey(rand.Reader)
-	if err != nil {
-		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
+func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *Flow, passwordStart *AuthFlowRequestPasswordStart) {
+	preservedEmailOrUsername, errE := normalizeUsernameCasePreserved(passwordStart.EmailOrUsername)
+	if errE != nil {
+		// TODO: Improve message (check if username or e-mail).
+		s.flowError(w, req, http.StatusBadRequest, "Invalid Charon username or your e-mail address.", errE)
 		return
 	}
 
-	flow.Reset()
-	flow.Password = privateKey.Bytes()
-	errE := SetFlow(req.Context(), flow)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
+	privateKey, err := ecdh.P256().GenerateKey(rand.Reader)
+	if err != nil {
+		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
 		return
 	}
 
@@ -106,27 +113,48 @@ func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *
 		return
 	}
 
+	nonce := make([]byte, aesgcm.NonceSize())
+	_, err = rand.Read(nonce)
+	if err != nil {
+		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
+		return
+	}
+
+	flow.Reset()
+	flow.Password = &FlowPassword{
+		EmailOrUsername: preservedEmailOrUsername,
+		PrivateKey:      privateKey.Bytes(),
+		Nonce:           nonce,
+	}
+	errE = SetFlow(req.Context(), flow)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
 	s.WriteJSON(w, req, AuthFlowResponse{
+		Error:    "",
 		Location: nil,
 		Passkey:  nil,
 		Password: &AuthFlowResponsePassword{
-			PublicKey: privateKey.PublicKey().Bytes(),
+			EmailOrUsername: preservedEmailOrUsername,
+			PublicKey:       privateKey.PublicKey().Bytes(),
 			DeriveOptions: AuthFlowResponsePasswordDeriveOptions{
 				Name:       "ECDH",
 				NamedCurve: "P-256",
 			},
 			EncryptOptions: AuthFlowResponsePasswordEncryptOptions{
 				Name:      "AES-GCM",
-				Length:    8 * secretSize, //nolint:gomnd
-				NonceSize: aesgcm.NonceSize(),
+				Nonce:     nonce,
+				Length:    8 * secretSize,        //nolint:gomnd
 				TagLength: 8 * aesgcm.Overhead(), //nolint:gomnd
 			},
 		},
-		Code: false,
+		Code: nil,
 	}, nil)
 }
 
-func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flow *Flow, requestPassword *AuthFlowRequestPassword) { //nolint:maintidx
+func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flow *Flow, passwordComplete *AuthFlowRequestPasswordComplete) {
 	ctx := req.Context()
 
 	if flow.Password == nil {
@@ -145,26 +173,21 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 		return
 	}
 
-	preservedEmailOrUsername, errE := normalizeUsernameCasePreserved(requestPassword.EmailOrUsername)
+	mappedEmailOrUsername, errE := normalizeUsernameCaseMapped(flowPassword.EmailOrUsername)
 	if errE != nil {
-		// TODO: Show reasonable error to the user (not the error message itself).
-		s.BadRequestWithError(w, req, errE)
-		return
-	}
-	mappedEmailOrUsername, errE := normalizeUsernameCaseMapped(requestPassword.EmailOrUsername)
-	if errE != nil {
-		// TODO: Show reasonable error to the user (not the error message itself).
-		s.BadRequestWithError(w, req, errE)
+		// flowPassword.EmailOrUsername should already be normalized (but not mapped)
+		// so this should not error.
+		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	privateKey, err := ecdh.P256().NewPrivateKey(flowPassword)
+	privateKey, err := ecdh.P256().NewPrivateKey(flowPassword.PrivateKey)
 	if err != nil {
 		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
 		return
 	}
 
-	remotePublicKey, err := ecdh.P256().NewPublicKey(requestPassword.PublicKey)
+	remotePublicKey, err := ecdh.P256().NewPublicKey(passwordComplete.PublicKey)
 	if err != nil {
 		s.BadRequestWithError(w, req, errors.WithStack(err))
 		return
@@ -188,15 +211,7 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 		return
 	}
 
-	if len(requestPassword.Nonce) != aesgcm.NonceSize() {
-		errE = errors.New("invalid nonce size")
-		errors.Details(errE)["want"] = aesgcm.NonceSize()
-		errors.Details(errE)["got"] = len(requestPassword.Nonce)
-		s.BadRequestWithError(w, req, errE)
-		return
-	}
-
-	plainPassword, err := aesgcm.Open(nil, requestPassword.Nonce, requestPassword.Password, nil)
+	plainPassword, err := aesgcm.Open(nil, flowPassword.Nonce, passwordComplete.Password, nil)
 	if err != nil {
 		s.BadRequestWithError(w, req, errors.WithStack(err))
 		return
@@ -204,8 +219,8 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 
 	plainPassword, errE = normalizePassword(plainPassword)
 	if errE != nil {
-		// TODO: Show reasonable error to the user (not the error message itself).
-		s.BadRequestWithError(w, req, errE)
+		// TODO: Check length.
+		s.flowError(w, req, http.StatusBadRequest, "Invalid password.", errE)
 		return
 	}
 
@@ -267,7 +282,7 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 		}
 
 		// Incorrect password. We do password recovery (if possible).
-		s.sendCodeForExistingAccount(w, req, flow, account, mappedEmailOrUsername)
+		s.sendCodeForExistingAccount(w, req, flow, account, flowPassword.EmailOrUsername, mappedEmailOrUsername)
 		return
 	} else if !errors.Is(errE, ErrAccountNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -279,7 +294,7 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 	credentials := []Credential{}
 	if strings.Contains(mappedEmailOrUsername, "@") {
 		jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{ //nolint:govet
-			Email: preservedEmailOrUsername,
+			Email: flowPassword.EmailOrUsername,
 		})
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
@@ -292,7 +307,7 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 		})
 	} else {
 		jsonData, errE := x.MarshalWithoutEscapeHTML(usernameCredential{ //nolint:govet
-			Username: preservedEmailOrUsername,
+			Username: flowPassword.EmailOrUsername,
 		})
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
@@ -330,7 +345,7 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 	if strings.Contains(mappedEmailOrUsername, "@") {
 		// Account does not exist and we do have an e-mail address.
 		// We send the code to verify the e-mail address.
-		s.sendCodeForNewAccount(w, req, flow, preservedEmailOrUsername, credentials)
+		s.sendCodeForNewAccount(w, req, flow, flowPassword.EmailOrUsername, credentials)
 		return
 	}
 
