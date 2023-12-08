@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AuthFlowResponse } from "@/types"
+import type { AuthFlowRequest, AuthFlowResponse } from "@/types"
 import { ref } from "vue"
 import { useRouter } from "vue-router"
 import { startRegistration, WebAuthnAbortService } from "@simplewebauthn/browser"
@@ -52,14 +52,14 @@ async function onPasskeySignup() {
       },
     }).href
 
-    const start: AuthFlowResponse = await postURL(
+    const start = (await postURL(
       url,
       {
-        step: "createStart",
         provider: "passkey",
-      },
+        step: "createStart",
+      } as AuthFlowRequest,
       signupProgress,
-    )
+    )) as AuthFlowResponse
     if (aborted) {
       return
     }
@@ -68,8 +68,8 @@ async function onPasskeySignup() {
       progress.value += 1
       return
     }
-    if (!start.passkey?.createOptions) {
-      throw new Error("Webauthn options missing in response.")
+    if (!("passkey" in start && "createOptions" in start.passkey)) {
+      throw new Error("unexpected response")
     }
 
     let attestation
@@ -88,23 +88,23 @@ async function onPasskeySignup() {
     // We do not allow back or cancel after this point.
     progress.value += 1
     try {
-      const complete: AuthFlowResponse = await postURL(
+      const complete = (await postURL(
         url,
         {
-          step: "createComplete",
           provider: "passkey",
+          step: "createComplete",
           passkey: {
             createResponse: attestation,
           },
-        },
+        } as AuthFlowRequest,
         progress,
-      )
+      )) as AuthFlowResponse
       if (locationRedirect(complete)) {
         // We increase the progress and never decrease it to wait for browser to do the redirect.
         progress.value += 1
-      } else {
-        throw new Error("unexpected response")
+        return
       }
+      throw new Error("unexpected response")
     } finally {
       progress.value -= 1
     }

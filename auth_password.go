@@ -5,7 +5,6 @@ import (
 	"crypto/cipher"
 	"crypto/ecdh"
 	"crypto/rand"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -28,8 +27,8 @@ const (
 	saltSize = 16
 	keySize  = 32
 
-	usernameMinLength = 3
-	passwordMinLength = 8
+	emailOrUsernameMinLength = 3
+	passwordMinLength        = 8
 )
 
 var argon2idParams = argon2id.Params{ //nolint:gochecknoglobals
@@ -94,16 +93,12 @@ type usernameCredential struct {
 func (s *Service) normalizeEmailOrUsername(w http.ResponseWriter, req *http.Request, emailOrUsername string) string {
 	preservedEmailOrUsername, errE := normalizeUsernameCasePreserved(emailOrUsername)
 	if errE != nil {
-		if strings.Contains(emailOrUsername, "@") {
-			s.flowError(w, req, "Invalid e-mail address.", errE)
-		} else {
-			s.flowError(w, req, "Invalid username.", errE)
-		}
+		s.flowError(w, req, "invalidEmailOrUsername", errE)
 		return ""
 	}
 
-	if !strings.Contains(preservedEmailOrUsername, "@") && len(preservedEmailOrUsername) < usernameMinLength {
-		s.flowError(w, req, fmt.Sprintf("Username should be at least %d characters.", usernameMinLength), errE)
+	if len(preservedEmailOrUsername) < emailOrUsernameMinLength {
+		s.flowError(w, req, "shortEmailOrUsername", nil)
 		return ""
 	}
 
@@ -240,12 +235,12 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 
 	plainPassword, errE = normalizePassword(plainPassword)
 	if errE != nil {
-		s.flowError(w, req, "Invalid password.", errE)
+		s.flowError(w, req, "invalidPassword", errE)
 		return
 	}
 
 	if len(plainPassword) < passwordMinLength {
-		s.flowError(w, req, fmt.Sprintf("Password should be at least %d characters.", passwordMinLength), errE)
+		s.flowError(w, req, "shortPassword", nil)
 		return
 	}
 
@@ -370,7 +365,7 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 	if strings.Contains(mappedEmailOrUsername, "@") {
 		// Account does not exist and we do have an e-mail address.
 		// We send the code to verify the e-mail address.
-		s.sendCodeForNewAccount(w, req, flow, flowPassword.EmailOrUsername, credentials)
+		s.sendCode(w, req, flow, flowPassword.EmailOrUsername, []string{flowPassword.EmailOrUsername}, nil, credentials)
 		return
 	}
 

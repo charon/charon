@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AuthFlowResponse } from "@/types"
+import type { AuthFlowRequest, AuthFlowResponse } from "@/types"
 import { onMounted, ref } from "vue"
 import { useRouter } from "vue-router"
 import { startAuthentication, WebAuthnAbortService } from "@simplewebauthn/browser"
@@ -44,15 +44,15 @@ onMounted(async () => {
     },
   }).href
 
-  const start: AuthFlowResponse = await postURL(
+  const start = (await postURL(
     url,
     {
-      step: "getStart",
       provider: "passkey",
-    },
+      step: "getStart",
+    } as AuthFlowRequest,
     // We do not pass here progress on purpose.
     null,
-  )
+  )) as AuthFlowResponse
   if (aborted) {
     return
   }
@@ -61,8 +61,8 @@ onMounted(async () => {
     progress.value += 1
     return
   }
-  if (!start.passkey?.getOptions) {
-    throw new Error("Webauthn options missing in response.")
+  if (!("passkey" in start && "getOptions" in start.passkey)) {
+    throw new Error("unexpected response")
   }
 
   let assertion
@@ -80,23 +80,23 @@ onMounted(async () => {
   // We do not allow back or cancel after this point.
   progress.value += 1
   try {
-    const complete: AuthFlowResponse = await postURL(
+    const complete = (await postURL(
       url,
       {
-        step: "getComplete",
         provider: "passkey",
+        step: "getComplete",
         passkey: {
           getResponse: assertion,
         },
-      },
+      } as AuthFlowRequest,
       progress,
-    )
+    )) as AuthFlowResponse
     if (locationRedirect(complete)) {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
       progress.value += 1
-    } else {
-      throw new Error("unexpected response")
+      return
     }
+    throw new Error("unexpected response")
   } finally {
     progress.value -= 1
   }

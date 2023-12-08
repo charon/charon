@@ -29,8 +29,6 @@ type AuthFlowResponseLocation struct {
 	Replace bool   `json:"replace"`
 }
 
-// TODO: Make error message translatable.
-
 type AuthFlowResponse struct {
 	Error    string                    `json:"error,omitempty"`
 	Location *AuthFlowResponseLocation `json:"location,omitempty"`
@@ -39,15 +37,17 @@ type AuthFlowResponse struct {
 	Code     *AuthFlowResponseCode     `json:"code,omitempty"`
 }
 
-func (s *Service) flowError(w http.ResponseWriter, req *http.Request, msg string, err errors.E) {
+func (s *Service) flowError(w http.ResponseWriter, req *http.Request, code string, err errors.E) {
 	ctx := req.Context()
 
-	if err != nil {
-		s.WithError(ctx, err)
+	if err == nil {
+		err = errors.New("flow error")
 	}
+	errors.Details(err)["errorCode"] = code
+	s.WithError(ctx, err)
 
 	response := AuthFlowResponse{
-		Error:    msg,
+		Error:    code,
 		Location: nil,
 		Passkey:  nil,
 		Password: nil,
@@ -135,16 +135,16 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 			s.startPasskeyGet(w, req, flow)
 			return
 		case "getComplete":
-			if authFlowRequest.Passkey != nil {
-				s.completePasskeyGet(w, req, flow, authFlowRequest.Passkey)
+			if authFlowRequest.Passkey != nil && authFlowRequest.Passkey.GetResponse != nil {
+				s.completePasskeyGet(w, req, flow, authFlowRequest.Passkey.GetResponse)
 				return
 			}
 		case "createStart":
 			s.startPasskeyCreate(w, req, flow)
 			return
 		case "createComplete":
-			if authFlowRequest.Passkey != nil {
-				s.completePasskeyCreate(w, req, flow, authFlowRequest.Passkey)
+			if authFlowRequest.Passkey != nil && authFlowRequest.Passkey.CreateResponse != nil {
+				s.completePasskeyCreate(w, req, flow, authFlowRequest.Passkey.CreateResponse)
 				return
 			}
 		}

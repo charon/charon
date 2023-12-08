@@ -174,7 +174,7 @@ func (s *Service) getFlowPasskey(w http.ResponseWriter, req *http.Request, flow 
 	return flowPasskey
 }
 
-func (s *Service) completePasskeyGet(w http.ResponseWriter, req *http.Request, flow *Flow, requestPasskey *AuthFlowRequestPasskey) {
+func (s *Service) completePasskeyGet(w http.ResponseWriter, req *http.Request, flow *Flow, assertionResponse *protocol.CredentialAssertionResponse) {
 	ctx := req.Context()
 
 	flowPasskey := s.getFlowPasskey(w, req, flow)
@@ -182,12 +182,7 @@ func (s *Service) completePasskeyGet(w http.ResponseWriter, req *http.Request, f
 		return
 	}
 
-	if requestPasskey.GetResponse == nil {
-		s.BadRequestWithError(w, req, errors.New("get response missing"))
-		return
-	}
-
-	parsedResponse, err := requestPasskey.GetResponse.Parse()
+	parsedResponse, err := assertionResponse.Parse()
 	if err != nil {
 		s.BadRequestWithError(w, req, errors.WithStack(err))
 	}
@@ -278,13 +273,8 @@ func (s *Service) startPasskeyCreate(w http.ResponseWriter, req *http.Request, f
 	}, nil)
 }
 
-func (s *Service) completePasskeyCreate(w http.ResponseWriter, req *http.Request, flow *Flow, requestPasskey *AuthFlowRequestPasskey) {
-	if requestPasskey.CreateResponse == nil {
-		s.BadRequestWithError(w, req, errors.New("create response missing"))
-		return
-	}
-
-	parsedResponse, err := requestPasskey.CreateResponse.Parse()
+func (s *Service) completePasskeyCreate(w http.ResponseWriter, req *http.Request, flow *Flow, createResponse *protocol.CredentialCreationResponse) {
+	parsedResponse, err := createResponse.Parse()
 	if err != nil {
 		s.BadRequestWithError(w, req, errors.WithStack(err))
 	}

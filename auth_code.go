@@ -59,9 +59,9 @@ func (s *Service) sendCodeForExistingAccount(
 		if len(emails) == 0 {
 			var msg string
 			if passwordFlow {
-				msg = "Invalid password for the account with the provided username."
+				msg = "wrongPassword"
 			} else {
-				msg = "You cannot receive the code because there is no e-mail address associated with the account for the provided username."
+				msg = "noEmails"
 			}
 			s.flowError(w, req, msg, nil)
 			return
@@ -69,15 +69,6 @@ func (s *Service) sendCodeForExistingAccount(
 	}
 
 	s.sendCode(w, req, flow, preservedEmailOrUsername, emails, &account.ID, nil)
-}
-
-func (s *Service) sendCodeForNewAccount(w http.ResponseWriter, req *http.Request, flow *Flow, preservedEmailOrUsername string, credentials []Credential) {
-	var emails []string
-	if strings.Contains(preservedEmailOrUsername, "@") {
-		emails = []string{preservedEmailOrUsername}
-	}
-
-	s.sendCode(w, req, flow, preservedEmailOrUsername, emails, nil, credentials)
 }
 
 func (s *Service) sendCode(
@@ -155,29 +146,28 @@ func (s *Service) startCode(w http.ResponseWriter, req *http.Request, flow *Flow
 
 	// Account does not exist.
 
-	// We have to create a credential only for the e-mail case.
-	var credentials []Credential
-	if strings.Contains(mappedEmailOrUsername, "@") {
-		jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{
-			Email: preservedEmailOrUsername,
-		})
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-		credentials = []Credential{{
-			ID:       mappedEmailOrUsername,
-			Provider: EmailProvider,
-			Data:     jsonData,
-		}}
-	} else {
-		s.flowError(w, req, "Account for the provided username does not exist.", nil)
+	// We can send a code only if we have an e-mail address.
+	if !strings.Contains(mappedEmailOrUsername, "@") {
+		s.flowError(w, req, "noAccount", nil)
 		return
 	}
 
-	// Account does not exist but we might have an e-mail address.
+	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{
+		Email: preservedEmailOrUsername,
+	})
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+	credentials := []Credential{{
+		ID:       mappedEmailOrUsername,
+		Provider: EmailProvider,
+		Data:     jsonData,
+	}}
+
+	// Account does not exist but have an e-mail address.
 	// We attempt to create a new account with an e-mail address only.
-	s.sendCodeForNewAccount(w, req, flow, preservedEmailOrUsername, credentials)
+	s.sendCode(w, req, flow, preservedEmailOrUsername, []string{preservedEmailOrUsername}, nil, credentials)
 }
 
 func (s *Service) completeCode(w http.ResponseWriter, req *http.Request, flow *Flow, codeComplete *AuthFlowRequestCodeComplete) {
@@ -208,7 +198,7 @@ func (s *Service) completeCode(w http.ResponseWriter, req *http.Request, flow *F
 	}, codeComplete.Code)
 
 	if flowCode.Code != code {
-		s.flowError(w, req, "Code is invalid. Please try again.", nil)
+		s.flowError(w, req, "invalidCode", nil)
 		return
 	}
 
