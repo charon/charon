@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AuthFlowRequest, AuthFlowResponse } from "@/types"
-import { ref, nextTick, computed, watch } from "vue"
+import { ref, nextTick, computed, watch, onUnmounted } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
@@ -25,8 +25,13 @@ const router = useRouter()
 
 const code = ref("")
 const mainProgress = ref(0)
+const abortController = new AbortController()
 const sendCounter = ref(1)
 const codeError = ref("")
+
+onUnmounted(async () => {
+  abortController.abort()
+})
 
 watch(code, () => {
   // We reset the flag when input box value changes.
@@ -38,6 +43,7 @@ async function onBack() {
     // Clicking on disabled links.
     return
   }
+  abortController.abort()
   emit("update:modelValue", "start")
   await nextTick()
   document.getElementById("email-or-username")?.focus()
@@ -64,8 +70,12 @@ async function onNext() {
           },
         },
       } as AuthFlowRequest,
+      abortController.signal,
       mainProgress,
     )) as AuthFlowResponse
+    if (abortController.signal.aborted) {
+      return
+    }
     if (locationRedirect(response)) {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
       mainProgress.value += 1
@@ -76,6 +86,11 @@ async function onNext() {
       return
     }
     throw new Error("unexpected response")
+  } catch (error) {
+    if (abortController.signal.aborted) {
+      return
+    }
+    throw error
   } finally {
     mainProgress.value -= 1
   }
@@ -104,8 +119,12 @@ async function onResend() {
           },
         },
       } as AuthFlowRequest,
+      abortController.signal,
       mainProgress,
     )) as AuthFlowResponse
+    if (abortController.signal.aborted) {
+      return
+    }
     if (locationRedirect(response)) {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
       mainProgress.value += 1
@@ -119,6 +138,11 @@ async function onResend() {
       return
     }
     throw new Error("unexpected response")
+  } catch (error) {
+    if (abortController.signal.aborted) {
+      return
+    }
+    throw error
   } finally {
     mainProgress.value -= 1
   }

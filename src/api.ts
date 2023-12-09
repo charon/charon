@@ -20,7 +20,7 @@ export class FetchError extends Error {
   }
 }
 
-export async function postURL(url: string, data: object, progress: Ref<number> | null): Promise<object> {
+export async function postURL(url: string, data: object, abortSignal: AbortSignal, progress: Ref<number> | null): Promise<object> {
   if (progress) {
     progress.value += 1
   }
@@ -36,6 +36,7 @@ export async function postURL(url: string, data: object, progress: Ref<number> |
       redirect: "error",
       referrer: document.location.href,
       referrerPolicy: "strict-origin-when-cross-origin",
+      signal: abortSignal,
     })
     const contentType = response.headers.get("Content-Type");
     if (!contentType || !contentType.includes("application/json")) {
@@ -55,7 +56,7 @@ export async function postURL(url: string, data: object, progress: Ref<number> |
   }
 }
 
-export async function deleteURL(url: string, progress: Ref<number> | null): Promise<object> {
+export async function deleteURL(url: string, abortSignal: AbortSignal, progress: Ref<number> | null): Promise<object> {
   if (progress) {
     progress.value += 1
   }
@@ -67,6 +68,7 @@ export async function deleteURL(url: string, progress: Ref<number> | null): Prom
       redirect: "error",
       referrer: document.location.href,
       referrerPolicy: "strict-origin-when-cross-origin",
+      signal: abortSignal,
     })
     const contentType = response.headers.get("Content-Type");
     if (!contentType || !contentType.includes("application/json")) {
@@ -86,7 +88,7 @@ export async function deleteURL(url: string, progress: Ref<number> | null): Prom
   }
 }
 
-export async function startPassword(router: Router, flowID: string, emailOrUsername: string, progress: Ref<number>, mainProgress: Ref<number>): Promise<PasswordResponse | { error: string } | null> {
+export async function startPassword(router: Router, flowID: string, emailOrUsername: string, abortSignal: AbortSignal, progress: Ref<number>, mainProgress: Ref<number>): Promise<PasswordResponse | { error: string } | null> {
   progress.value += 1
   try {
     const url = router.apiResolve({
@@ -107,6 +109,7 @@ export async function startPassword(router: Router, flowID: string, emailOrUsern
           },
         }
       } as AuthFlowRequest,
+      abortSignal,
       progress,
     )) as AuthFlowResponse
     if (locationRedirect(response)) {

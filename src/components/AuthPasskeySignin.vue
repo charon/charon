@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AuthFlowRequest, AuthFlowResponse } from "@/types"
-import { onMounted, ref } from "vue"
+import { onMounted, onUnmounted, ref } from "vue"
 import { useRouter } from "vue-router"
 import { startAuthentication, WebAuthnAbortService } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
@@ -19,24 +19,27 @@ const emit = defineEmits<{
 const router = useRouter()
 
 const mainProgress = ref(0)
+const abortController = new AbortController()
 
-let aborted = false
+onUnmounted(async () => {
+  abortController.abort()
+  WebAuthnAbortService.cancelCeremony()
+})
 
 async function onBack() {
-  aborted = true
+  abortController.abort()
   WebAuthnAbortService.cancelCeremony()
   emit("update:modelValue", "start")
 }
 
 async function onCancel() {
-  aborted = true
+  abortController.abort()
   WebAuthnAbortService.cancelCeremony()
   emit("update:modelValue", "passkeySignup")
 }
 
 // TODO: Better handle unexpected errors. (E.g., getComplete failing.)
 onMounted(async () => {
-  aborted = false
   const url = router.apiResolve({
     name: "AuthFlow",
     params: {
@@ -44,36 +47,49 @@ onMounted(async () => {
     },
   }).href
 
-  const start = (await postURL(
-    url,
-    {
-      provider: "passkey",
-      step: "getStart",
-    } as AuthFlowRequest,
-    // We do not pass here progress on purpose.
-    null,
-  )) as AuthFlowResponse
-  if (aborted) {
-    return
-  }
-  if (locationRedirect(start)) {
-    // We increase the progress and never decrease it to wait for browser to do the redirect.
-    mainProgress.value += 1
-    return
-  }
-  if (!("passkey" in start && "getOptions" in start.passkey)) {
-    throw new Error("unexpected response")
+  let start
+  try {
+    start = (await postURL(
+      url,
+      {
+        provider: "passkey",
+        step: "getStart",
+      } as AuthFlowRequest,
+      abortController.signal,
+      // We do not pass here progress on purpose.
+      null,
+    )) as AuthFlowResponse
+    if (abortController.signal.aborted) {
+      return
+    }
+    if (locationRedirect(start)) {
+      // We increase the progress and never decrease it to wait for browser to do the redirect.
+      mainProgress.value += 1
+      return
+    }
+    if (!("passkey" in start && "getOptions" in start.passkey)) {
+      throw new Error("unexpected response")
+    }
+  } catch (error) {
+    if (abortController.signal.aborted) {
+      return
+    }
+    throw error
   }
 
   let assertion
   try {
     assertion = await startAuthentication(start.passkey.getOptions.publicKey)
   } catch (error) {
-    if (aborted) {
+    if (abortController.signal.aborted) {
       return
     }
-    aborted = true
+    abortController.abort()
     emit("update:modelValue", "passkeySignup")
+    return
+  }
+
+  if (abortController.signal.aborted) {
     return
   }
 
@@ -89,14 +105,23 @@ onMounted(async () => {
           getResponse: assertion,
         },
       } as AuthFlowRequest,
+      abortController.signal,
       mainProgress,
     )) as AuthFlowResponse
+    if (abortController.signal.aborted) {
+      return
+    }
     if (locationRedirect(complete)) {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
       mainProgress.value += 1
       return
     }
     throw new Error("unexpected response")
+  } catch (error) {
+    if (abortController.signal.aborted) {
+      return
+    }
+    throw error
   } finally {
     mainProgress.value -= 1
   }

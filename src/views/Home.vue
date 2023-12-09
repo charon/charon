@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AuthFlowResponse } from "@/types"
-import { ref } from "vue"
+import { onUnmounted, ref } from "vue"
 import Button from "@/components/Button.vue"
 import { useRouter } from "vue-router"
 import { deleteURL } from "@/api"
@@ -8,25 +8,38 @@ import { locationRedirect } from "@/utils"
 
 const router = useRouter()
 
-const progress = ref(0)
+const mainProgress = ref(0)
+const abortController = new AbortController()
+
+onUnmounted(async () => {
+  abortController.abort()
+})
 
 async function onSignOut() {
-  progress.value += 1
+  mainProgress.value += 1
   try {
-    const response: AuthFlowResponse = await deleteURL(router.apiResolve({ name: "Auth" }).href, progress)
+    const response = (await deleteURL(router.apiResolve({ name: "Auth" }).href, abortController.signal, mainProgress)) as AuthFlowResponse
+    if (abortController.signal.aborted) {
+      return
+    }
     if (locationRedirect(response)) {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
-      progress.value += 1
-    } else {
-      throw new Error("unexpected response")
+      mainProgress.value += 1
+      return
     }
+    throw new Error("unexpected response")
+  } catch (error) {
+    if (abortController.signal.aborted) {
+      return
+    }
+    throw error
   } finally {
-    progress.value -= 1
+    mainProgress.value -= 1
   }
 }
 </script>
 
 <template>
   <div>Hello world.</div>
-  <div><Button primary type="button" :progress="progress" @click.prevent="onSignOut">Sign-out</Button></div>
+  <div><Button primary type="button" :progress="mainProgress" @click.prevent="onSignOut">Sign-out</Button></div>
 </template>

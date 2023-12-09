@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AuthFlowRequest, AuthFlowResponse } from "@/types"
-import { ref } from "vue"
+import { onUnmounted, ref } from "vue"
 import { useRouter } from "vue-router"
 import { startRegistration, WebAuthnAbortService } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
@@ -19,21 +19,24 @@ const emit = defineEmits<{
 const router = useRouter()
 
 const mainProgress = ref(0)
+let abortController = new AbortController()
 const signupProgress = ref(0)
 const signupAttempted = ref(false)
 const signupFailed = ref(false)
 const signupFailedAtLeastOnce = ref(false)
 
-let aborted = false
+onUnmounted(async () => {
+  abortController.abort()
+})
 
 async function onBack() {
-  aborted = true
+  abortController.abort()
   WebAuthnAbortService.cancelCeremony()
   emit("update:modelValue", "start")
 }
 
 async function onRetry() {
-  aborted = true
+  abortController.abort()
   WebAuthnAbortService.cancelCeremony()
   emit("update:modelValue", "passkeySignin")
 }
@@ -44,7 +47,7 @@ async function onPasskeySignup() {
   try {
     signupAttempted.value = true
     signupFailed.value = false
-    aborted = false
+    abortController = new AbortController()
     const url = router.apiResolve({
       name: "AuthFlow",
       params: {
@@ -58,9 +61,10 @@ async function onPasskeySignup() {
         provider: "passkey",
         step: "createStart",
       } as AuthFlowRequest,
+      abortController.signal,
       signupProgress,
     )) as AuthFlowResponse
-    if (aborted) {
+    if (abortController.signal.aborted) {
       return
     }
     if (locationRedirect(start)) {
@@ -76,12 +80,16 @@ async function onPasskeySignup() {
     try {
       attestation = await startRegistration(start.passkey.createOptions.publicKey)
     } catch (error) {
-      if (aborted) {
+      if (abortController.signal.aborted) {
         return
       }
-      aborted = true
+      abortController.abort()
       signupFailed.value = true
       signupFailedAtLeastOnce.value = true
+      return
+    }
+
+    if (abortController.signal.aborted) {
       return
     }
 
@@ -97,8 +105,12 @@ async function onPasskeySignup() {
             createResponse: attestation,
           },
         } as AuthFlowRequest,
+        abortController.signal,
         mainProgress,
       )) as AuthFlowResponse
+      if (abortController.signal.aborted) {
+        return
+      }
       if (locationRedirect(complete)) {
         // We increase the progress and never decrease it to wait for browser to do the redirect.
         mainProgress.value += 1
@@ -108,6 +120,11 @@ async function onPasskeySignup() {
     } finally {
       mainProgress.value -= 1
     }
+  } catch (error) {
+    if (abortController.signal.aborted) {
+      return
+    }
+    throw error
   } finally {
     signupProgress.value -= 1
   }

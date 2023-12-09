@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AuthFlowRequest, AuthFlowResponse, DeriveOptions, EncryptOptions } from "@/types"
-import { ref, onMounted, nextTick, computed, watch } from "vue"
+import { ref, onMounted, nextTick, computed, watch, onUnmounted } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
@@ -24,6 +24,7 @@ const router = useRouter()
 
 const password = ref("")
 const mainProgress = ref(0)
+const abortController = new AbortController()
 const keyProgress = ref(0)
 const passwordError = ref("")
 const codeError = ref("")
@@ -48,20 +49,34 @@ onMounted(async () => {
   document.getElementById("current-password")?.focus()
 })
 
-async function getKey() {
-  const response = await startPassword(router, props.id, props.emailOrUsername, keyProgress, mainProgress)
-  if (response === null) {
-    return
-  }
-  if ("error" in response) {
-    // This call has already succeeded with same arguments so it should not error.
-    throw new Error("unexpected response")
-  }
+onUnmounted(async () => {
+  abortController.abort()
+})
 
-  // We ignore response.emailOrUsername.
-  remotePublicKeyBytes = response.publicKey
-  effectiveDeriveOptions = response.deriveOptions
-  effectiveEncryptOptions = response.encryptOptions
+async function getKey() {
+  try {
+    const response = await startPassword(router, props.id, props.emailOrUsername, abortController.signal, keyProgress, mainProgress)
+    if (abortController.signal.aborted) {
+      return
+    }
+    if (response === null) {
+      return
+    }
+    if ("error" in response) {
+      // This call has already succeeded with same arguments so it should not error.
+      throw new Error("unexpected response")
+    }
+
+    // We ignore response.emailOrUsername.
+    remotePublicKeyBytes = response.publicKey
+    effectiveDeriveOptions = response.deriveOptions
+    effectiveEncryptOptions = response.encryptOptions
+  } catch (error) {
+    if (abortController.signal.aborted) {
+      return
+    }
+    throw error
+  }
 }
 
 async function onBack() {
@@ -69,6 +84,7 @@ async function onBack() {
     // Clicking on disabled links.
     return
   }
+  abortController.abort()
   emit("update:modelValue", "start")
   await nextTick()
   document.getElementById("email-or-username")?.focus()
@@ -87,7 +103,13 @@ async function onNext() {
 
     const encoder = new TextEncoder()
     const keyPair = await crypto.subtle.generateKey(effectiveDeriveOptions, false, ["deriveKey"])
+    if (abortController.signal.aborted) {
+      return
+    }
     const remotePublicKey = await crypto.subtle.importKey("raw", remotePublicKeyBytes, effectiveDeriveOptions, false, [])
+    if (abortController.signal.aborted) {
+      return
+    }
     const secret = await crypto.subtle.deriveKey(
       {
         ...effectiveDeriveOptions,
@@ -98,8 +120,17 @@ async function onNext() {
       false,
       ["encrypt"],
     )
+    if (abortController.signal.aborted) {
+      return
+    }
     const ciphertext = await crypto.subtle.encrypt(effectiveEncryptOptions, secret, encoder.encode(password.value))
+    if (abortController.signal.aborted) {
+      return
+    }
     const publicKeyBytes = await crypto.subtle.exportKey("raw", keyPair.publicKey)
+    if (abortController.signal.aborted) {
+      return
+    }
     const response = (await postURL(
       url,
       {
@@ -112,8 +143,12 @@ async function onNext() {
           },
         },
       } as AuthFlowRequest,
+      abortController.signal,
       mainProgress,
     )) as AuthFlowResponse
+    if (abortController.signal.aborted) {
+      return
+    }
     if (locationRedirect(response)) {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
       mainProgress.value += 1
@@ -140,6 +175,11 @@ async function onNext() {
       return
     }
     throw new Error("unexpected response")
+  } catch (error) {
+    if (abortController.signal.aborted) {
+      return
+    }
+    throw error
   } finally {
     mainProgress.value -= 1
   }
@@ -166,8 +206,12 @@ async function onCode() {
           },
         },
       } as AuthFlowRequest,
+      abortController.signal,
       mainProgress,
     )) as AuthFlowResponse
+    if (abortController.signal.aborted) {
+      return
+    }
     if (locationRedirect(response)) {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
       mainProgress.value += 1

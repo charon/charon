@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Ref } from "vue"
 import type { AuthFlowRequest, AuthFlowResponse } from "@/types"
-import { ref, computed, onMounted, nextTick, watch } from "vue"
+import { ref, computed, onMounted, nextTick, watch, onUnmounted } from "vue"
 import { useRouter } from "vue-router"
 import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
@@ -22,6 +22,7 @@ const router = useRouter()
 
 const state = ref("start")
 const emailOrUsername = ref("")
+const abortController = new AbortController()
 const passwordProgress = ref(0)
 const passwordError = ref("")
 const passwordPublicKey = ref(new Uint8Array())
@@ -55,21 +56,35 @@ onMounted(async () => {
   document.getElementById("email-or-username")?.focus()
 })
 
-async function onNext() {
-  const response = await startPassword(router, props.id, emailOrUsername.value, passwordProgress, passwordProgress)
-  if (response === null) {
-    return
-  }
-  if ("error" in response) {
-    passwordError.value = response.error
-    return
-  }
+onUnmounted(async () => {
+  abortController.abort()
+})
 
-  emailOrUsername.value = response.emailOrUsername
-  passwordPublicKey.value = response.publicKey
-  passwordDeriveOptions.value = response.deriveOptions
-  passwordEncryptOptions.value = response.encryptOptions
-  state.value = "password"
+async function onNext() {
+  try {
+    const response = await startPassword(router, props.id, emailOrUsername.value, abortController.signal, passwordProgress, passwordProgress)
+    if (abortController.signal.aborted) {
+      return
+    }
+    if (response === null) {
+      return
+    }
+    if ("error" in response) {
+      passwordError.value = response.error
+      return
+    }
+
+    emailOrUsername.value = response.emailOrUsername
+    passwordPublicKey.value = response.publicKey
+    passwordDeriveOptions.value = response.deriveOptions
+    passwordEncryptOptions.value = response.encryptOptions
+    state.value = "password"
+  } catch (error) {
+    if (abortController.signal.aborted) {
+      return
+    }
+    throw error
+  }
 }
 
 async function onOIDCProvider(provider: string) {
@@ -87,14 +102,23 @@ async function onOIDCProvider(provider: string) {
         provider: provider,
         step: "start",
       } as AuthFlowRequest,
+      abortController.signal,
       progress,
     )) as AuthFlowResponse
+    if (abortController.signal.aborted) {
+      return
+    }
     if (locationRedirect(response)) {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
       progress.value += 1
     } else {
       throw new Error("unexpected response")
     }
+  } catch (error) {
+    if (abortController.signal.aborted) {
+      return
+    }
+    throw error
   } finally {
     progress.value -= 1
   }
