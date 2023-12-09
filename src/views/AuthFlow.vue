@@ -102,7 +102,7 @@ async function onOIDCProvider(provider: string) {
 </script>
 
 <template>
-  <div v-if="state === 'start'" class="flex flex-col self-center rounded border bg-white p-4 shadow my-1 mx-4">
+  <div v-if="state === 'start'" class="flex flex-col self-center rounded border bg-white p-4 shadow m-1 w-[65ch]">
     <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>
     <div class="flex flex-col">
       <label for="email-or-username" class="mb-1">Enter Charon username or your e-mail address</label>

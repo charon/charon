@@ -115,7 +115,7 @@ async function onPasskeySignup() {
 </script>
 
 <template>
-  <div class="flex flex-col self-center rounded border bg-white p-4 shadow my-1 mx-4">
+  <div class="flex flex-col self-center rounded border bg-white p-4 shadow m-1 w-[65ch]">
     <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>
     <div v-if="signupAttempted && signupFailed">Signing up using <strong>passkey</strong> failed.</div>
     <div v-else-if="signupAttempted">Signing you up using <strong>passkey</strong>. Please follow instructions by your browser and/or device.</div>

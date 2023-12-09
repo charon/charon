@@ -104,7 +104,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex flex-col self-center rounded border bg-white p-4 shadow my-1 mx-4">
+  <div class="flex flex-col self-center rounded border bg-white p-4 shadow m-1 w-[65ch]">
     <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>
     <div>Signing you in using <strong>passkey</strong>. Please follow instructions by your browser and/or device.</div>
     <div class="mt-4">If you have not yet signed up with passkey, this will fail. In that case Charon will offer you to sign up instead.</div>

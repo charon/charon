@@ -126,45 +126,45 @@ async function onResend() {
 </script>
 
 <template>
-  <div class="flex flex-col self-center rounded border bg-white p-4 shadow my-1 mx-4">
+  <div class="flex flex-col self-center rounded border bg-white p-4 shadow m-1 w-[65ch]">
     <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>
-  <div class="flex flex-col">
-    <label v-if="isEmail" for="code" class="mb-1"
-      >We {{ sendCounter > 1 ? `sent (${sendCounter}x)` : "sent" }} a 6-digit code to <strong>{{ emailOrUsername }}</strong> e-mail address. Please enter it to
-      continue:</label
-    >
-    <label v-else for="code" class="mb-1">
-      We {{ sendCounter > 1 ? `sent (${sendCounter}x)` : "sent" }} a 6-digit code to e-mail address(es) associated with the Charon username
-      <strong>{{ emailOrUsername }}</strong
-      >. Please enter it to continue:</label
-    >
-    <form class="flex flex-row" novalidate @submit.prevent="onNext">
-      <InputText
-        id="code"
-        v-model="code"
-        tabindex="1"
-        class="flex-grow flex-auto min-w-0"
-        :readonly="progress > 0"
-        autocomplete="one-time-code"
-        spellcheck="false"
-        inputmode="numeric"
-        pattern="[0-9]*"
-        minlength="6"
-        maxlength="6"
-        required
-      />
-      <Button type="submit" class="ml-4" tabindex="2" :disabled="code.trim().length < 6 || progress > 0 || !!codeError">Next</Button>
-    </form>
+    <div class="flex flex-col">
+      <label v-if="isEmail" for="code" class="mb-1"
+        >We {{ sendCounter > 1 ? `sent (${sendCounter}x)` : "sent" }} a 6-digit code to <strong>{{ emailOrUsername }}</strong> e-mail address. Please enter it to
+        continue:</label
+      >
+      <label v-else for="code" class="mb-1">
+        We {{ sendCounter > 1 ? `sent (${sendCounter}x)` : "sent" }} a 6-digit code to e-mail address(es) associated with the Charon username
+        <strong>{{ emailOrUsername }}</strong
+        >. Please enter it to continue:</label
+      >
+      <form class="flex flex-row" novalidate @submit.prevent="onNext">
+        <InputText
+          id="code"
+          v-model="code"
+          tabindex="1"
+          class="flex-grow flex-auto min-w-0"
+          :readonly="progress > 0"
+          autocomplete="one-time-code"
+          spellcheck="false"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          minlength="6"
+          maxlength="6"
+          required
+        />
+        <Button type="submit" class="ml-4" tabindex="2" :disabled="code.trim().length < 6 || progress > 0 || !!codeError">Next</Button>
+      </form>
+    </div>
+    <div v-if="codeError === 'invalidCode'" class="mt-4 text-error-600">Code is invalid. Please try again.</div>
+    <div v-else class="mt-4">Please allow few minutes for the code to arrive. Check spam or junk folder.</div>
+    <div class="mt-4">
+      If you have trouble accessing your e-mail, try a
+      <a :href="progress > 0 ? undefined : ''" class="link" :class="progress > 0 ? 'disabled' : ''" @click.prevent="onBack">different sign-in method</a>.
+    </div>
+    <div class="mt-4 flex flex-row justify-between gap-4">
+      <Button type="button" tabindex="4" :disabled="progress > 0" @click.prevent="onBack">Back</Button>
+      <Button type="button" tabindex="3" :disabled="progress > 0" @click.prevent="onResend">Resend code</Button>
+    </div>
   </div>
-  <div v-if="codeError === 'invalidCode'" class="mt-4 text-error-600">Code is invalid. Please try again.</div>
-  <div v-else class="mt-4">Please allow few minutes for the code to arrive. Check spam or junk folder.</div>
-  <div class="mt-4">
-    If you have trouble accessing your e-mail, try a
-    <a :href="progress > 0 ? undefined : ''" class="link" :class="progress > 0 ? 'disabled' : ''" @click.prevent="onBack">different sign-in method</a>.
-  </div>
-  <div class="mt-4 flex flex-row justify-between gap-4">
-    <Button type="button" tabindex="4" :disabled="progress > 0" @click.prevent="onBack">Back</Button>
-    <Button type="button" tabindex="3" :disabled="progress > 0" @click.prevent="onResend">Resend code</Button>
-  </div>
-</div>
 </template>
