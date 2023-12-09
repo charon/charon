@@ -18,7 +18,7 @@ const emit = defineEmits<{
 
 const router = useRouter()
 
-const progress = ref(0)
+const mainProgress = ref(0)
 
 let aborted = false
 
@@ -58,7 +58,7 @@ onMounted(async () => {
   }
   if (locationRedirect(start)) {
     // We increase the progress and never decrease it to wait for browser to do the redirect.
-    progress.value += 1
+    mainProgress.value += 1
     return
   }
   if (!("passkey" in start && "getOptions" in start.passkey)) {
@@ -78,7 +78,7 @@ onMounted(async () => {
   }
 
   // We do not allow back or cancel after this point.
-  progress.value += 1
+  mainProgress.value += 1
   try {
     const complete = (await postURL(
       url,
@@ -89,16 +89,16 @@ onMounted(async () => {
           getResponse: assertion,
         },
       } as AuthFlowRequest,
-      progress,
+      mainProgress,
     )) as AuthFlowResponse
     if (locationRedirect(complete)) {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
-      progress.value += 1
+      mainProgress.value += 1
       return
     }
     throw new Error("unexpected response")
   } finally {
-    progress.value -= 1
+    mainProgress.value -= 1
   }
 })
 </script>
@@ -109,8 +109,8 @@ onMounted(async () => {
     <div>Signing you in using <strong>passkey</strong>. Please follow instructions by your browser and/or device.</div>
     <div class="mt-4">If you have not yet signed up with passkey, this will fail. In that case Charon will offer you to sign up instead.</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" :disabled="progress > 0" @click.prevent="onBack">Back</Button>
-      <Button type="button" :disabled="progress > 0" @click.prevent="onCancel">Cancel</Button>
+      <Button type="button" :disabled="mainProgress > 0" @click.prevent="onBack">Back</Button>
+      <Button type="button" :disabled="mainProgress > 0" @click.prevent="onCancel">Cancel</Button>
     </div>
   </div>
 </template>

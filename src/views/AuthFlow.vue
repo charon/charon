@@ -37,7 +37,7 @@ for (const provider of siteContext.providers.values()) {
   providerProgress.set(provider.key, ref(0))
 }
 
-const progress = computed(() => {
+const mainProgress = computed(() => {
   let c = passwordProgress.value
   for (const provider of siteContext.providers.values()) {
     c += providerProgress.get(provider.key)!.value
@@ -111,7 +111,7 @@ async function onOIDCProvider(provider: string) {
           id="email-or-username"
           v-model="emailOrUsername"
           class="flex-grow flex-auto min-w-0"
-          :readonly="progress > 0"
+          :readonly="mainProgress > 0"
           :invalid="!!passwordError"
           autocomplete="username"
           spellcheck="false"
@@ -119,20 +119,20 @@ async function onOIDCProvider(provider: string) {
           minlength="3"
           required
         />
-        <Button primary type="submit" class="ml-4" :disabled="emailOrUsername.trim().length < 3 || progress > 0 || !!passwordError">Next</Button>
+        <Button primary type="submit" class="ml-4" :disabled="emailOrUsername.trim().length < 3 || mainProgress > 0 || !!passwordError">Next</Button>
       </form>
       <div v-if="passwordError === 'invalidEmailOrUsername' && isEmail" class="mt-4 text-error-600">Invalid e-mail address.</div>
       <div v-else-if="passwordError === 'invalidEmailOrUsername' && !isEmail" class="mt-4 text-error-600">Invalid username.</div>
     </div>
     <h2 class="text-center m-4 text-xl font-bold uppercase">Or use</h2>
-    <Button primary type="button" :disabled="!browserSupportsWebAuthn() || progress > 0" @click.prevent="state = 'passkeySignin'">Passkey</Button>
+    <Button primary type="button" :disabled="!browserSupportsWebAuthn() || mainProgress > 0" @click.prevent="state = 'passkeySignin'">Passkey</Button>
     <Button
       v-for="provider of siteContext.providers"
       :key="provider.key"
       primary
       type="button"
       class="mt-4"
-      :disabled="progress > 0"
+      :disabled="mainProgress > 0"
       :progress="providerProgress.get(provider.key)!.value"
       @click.prevent="onOIDCProvider(provider.key)"
       >{{ provider.name }}</Button

@@ -23,7 +23,7 @@ const emit = defineEmits<{
 const router = useRouter()
 
 const password = ref("")
-const progress = ref(0)
+const mainProgress = ref(0)
 const keyProgress = ref(0)
 const passwordError = ref("")
 const codeError = ref("")
@@ -49,7 +49,7 @@ onMounted(async () => {
 })
 
 async function getKey() {
-  const response = await startPassword(router, props.id, props.emailOrUsername, keyProgress, progress)
+  const response = await startPassword(router, props.id, props.emailOrUsername, keyProgress, mainProgress)
   if (response === null) {
     return
   }
@@ -65,7 +65,7 @@ async function getKey() {
 }
 
 async function onBack() {
-  if (progress.value > 0) {
+  if (mainProgress.value > 0) {
     // Clicking on disabled links.
     return
   }
@@ -75,7 +75,7 @@ async function onBack() {
 }
 
 async function onNext() {
-  progress.value += 1
+  mainProgress.value += 1
   try {
     codeErrorOnce.value = false
     const url = router.apiResolve({
@@ -112,11 +112,11 @@ async function onNext() {
           },
         },
       } as AuthFlowRequest,
-      progress,
+      mainProgress,
     )) as AuthFlowResponse
     if (locationRedirect(response)) {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
-      progress.value += 1
+      mainProgress.value += 1
       return
     }
     // We do not list "shortPassword" here because UI does not allow too short password.
@@ -141,12 +141,12 @@ async function onNext() {
     }
     throw new Error("unexpected response")
   } finally {
-    progress.value -= 1
+    mainProgress.value -= 1
   }
 }
 
 async function onCode() {
-  progress.value += 1
+  mainProgress.value += 1
   try {
     const url = router.apiResolve({
       name: "AuthFlow",
@@ -166,11 +166,11 @@ async function onCode() {
           },
         },
       } as AuthFlowRequest,
-      progress,
+      mainProgress,
     )) as AuthFlowResponse
     if (locationRedirect(response)) {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
-      progress.value += 1
+      mainProgress.value += 1
       return
     }
     if ("error" in response && ["noAccount", "noEmails"].includes(response.error)) {
@@ -187,7 +187,7 @@ async function onCode() {
     }
     throw new Error("unexpected response")
   } finally {
-    progress.value -= 1
+    mainProgress.value -= 1
   }
 }
 </script>
@@ -200,7 +200,7 @@ async function onCode() {
       <button
         id="email-or-username"
         tabindex="5"
-        :disabled="progress > 0"
+        :disabled="mainProgress > 0"
         type="button"
         class="flex-grow appearance-none rounded border-0 border-gray-500 bg-white px-3 py-2 text-left text-base shadow outline-none ring-2 ring-neutral-300 hover:ring-neutral-400 focus:border-blue-600 focus:ring-2 focus:ring-primary-500"
         @click.prevent="onBack"
@@ -219,12 +219,12 @@ async function onCode() {
           tabindex="1"
           :invalid="!!passwordError"
           class="flex-grow flex-auto min-w-0"
-          :readonly="progress > 0"
+          :readonly="mainProgress > 0"
           autocomplete="current-password"
           spellcheck="false"
           required
         />
-        <Button primary type="submit" class="ml-4" tabindex="2" :disabled="password.length < 8 || progress + keyProgress > 0 || !!passwordError">Next</Button>
+        <Button primary type="submit" class="ml-4" tabindex="2" :disabled="password.length < 8 || mainProgress + keyProgress > 0 || !!passwordError">Next</Button>
       </form>
     </div>
     <template v-if="passwordError">
@@ -232,7 +232,7 @@ async function onCode() {
       <div v-else-if="passwordError === 'invalidPassword'" class="mt-4 text-error-600">Invalid password or passphrase.</div>
       <div v-if="passwordError === 'wrongPassword'" class="mt-4">
         If you have trouble remembering your password or passphrase, try a
-        <a :href="progress > 0 ? undefined : ''" class="link" :class="progress > 0 ? 'disabled' : ''" @click.prevent="onBack">different sign-in method</a>.
+        <a :href="mainProgress > 0 ? undefined : ''" class="link" :class="mainProgress > 0 ? 'disabled' : ''" @click.prevent="onBack">different sign-in method</a>.
       </div>
     </template>
     <div v-else-if="isEmail" class="mt-4">
@@ -252,8 +252,8 @@ async function onCode() {
     </div>
     <div v-else class="mt-4">You can also skip entering password or passphrase and directly request the code.</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" tabindex="4" :disabled="progress > 0" @click.prevent="onBack">Back</Button>
-      <Button type="button" primary tabindex="3" :disabled="!!codeError || progress > 0" @click.prevent="onCode">Send code</Button>
+      <Button type="button" tabindex="4" :disabled="mainProgress > 0" @click.prevent="onBack">Back</Button>
+      <Button type="button" primary tabindex="3" :disabled="!!codeError || mainProgress > 0" @click.prevent="onCode">Send code</Button>
     </div>
   </div>
 </template>

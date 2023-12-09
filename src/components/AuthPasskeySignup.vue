@@ -18,7 +18,7 @@ const emit = defineEmits<{
 
 const router = useRouter()
 
-const progress = ref(0)
+const mainProgress = ref(0)
 const signupProgress = ref(0)
 const signupAttempted = ref(false)
 const signupFailed = ref(false)
@@ -65,7 +65,7 @@ async function onPasskeySignup() {
     }
     if (locationRedirect(start)) {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
-      progress.value += 1
+      mainProgress.value += 1
       return
     }
     if (!("passkey" in start && "createOptions" in start.passkey)) {
@@ -86,7 +86,7 @@ async function onPasskeySignup() {
     }
 
     // We do not allow back or cancel after this point.
-    progress.value += 1
+    mainProgress.value += 1
     try {
       const complete = (await postURL(
         url,
@@ -97,16 +97,16 @@ async function onPasskeySignup() {
             createResponse: attestation,
           },
         } as AuthFlowRequest,
-        progress,
+        mainProgress,
       )) as AuthFlowResponse
       if (locationRedirect(complete)) {
         // We increase the progress and never decrease it to wait for browser to do the redirect.
-        progress.value += 1
+        mainProgress.value += 1
         return
       }
       throw new Error("unexpected response")
     } finally {
-      progress.value -= 1
+      mainProgress.value -= 1
     }
   } finally {
     signupProgress.value -= 1
@@ -122,10 +122,10 @@ async function onPasskeySignup() {
     <div v-else>Signing in using <strong>passkey</strong> failed. Do you want to sign up instead?</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <div class="flex flex-row gap-4">
-        <Button type="button" :disabled="progress > 0" @click.prevent="onBack">Back</Button>
-        <Button primary type="button" :disabled="progress > 0" @click.prevent="onRetry">Retry sign-in</Button>
+        <Button type="button" :disabled="mainProgress > 0" @click.prevent="onBack">Back</Button>
+        <Button primary type="button" :disabled="mainProgress > 0" @click.prevent="onRetry">Retry sign-in</Button>
       </div>
-      <Button primary type="button" :disabled="progress + signupProgress > 0" @click.prevent="onPasskeySignup">{{
+      <Button primary type="button" :disabled="mainProgress + signupProgress > 0" @click.prevent="onPasskeySignup">{{
         signupFailedAtLeastOnce ? "Retry sign-up" : "Passkey sign-up"
       }}</Button>
     </div>

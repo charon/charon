@@ -24,7 +24,7 @@ const isEmail = computed(() => {
 const router = useRouter()
 
 const code = ref("")
-const progress = ref(0)
+const mainProgress = ref(0)
 const sendCounter = ref(1)
 const codeError = ref("")
 
@@ -34,7 +34,7 @@ watch(code, () => {
 })
 
 async function onBack() {
-  if (progress.value > 0) {
+  if (mainProgress.value > 0) {
     // Clicking on disabled links.
     return
   }
@@ -44,7 +44,7 @@ async function onBack() {
 }
 
 async function onNext() {
-  progress.value += 1
+  mainProgress.value += 1
   try {
     const url = router.apiResolve({
       name: "AuthFlow",
@@ -64,11 +64,11 @@ async function onNext() {
           },
         },
       } as AuthFlowRequest,
-      progress,
+      mainProgress,
     )) as AuthFlowResponse
     if (locationRedirect(response)) {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
-      progress.value += 1
+      mainProgress.value += 1
       return
     }
     if ("error" in response && ["invalidCode"].includes(response.error)) {
@@ -77,12 +77,12 @@ async function onNext() {
     }
     throw new Error("unexpected response")
   } finally {
-    progress.value -= 1
+    mainProgress.value -= 1
   }
 }
 
 async function onResend() {
-  progress.value += 1
+  mainProgress.value += 1
   try {
     codeError.value = ""
     code.value = ""
@@ -104,11 +104,11 @@ async function onResend() {
           },
         },
       } as AuthFlowRequest,
-      progress,
+      mainProgress,
     )) as AuthFlowResponse
     if (locationRedirect(response)) {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
-      progress.value += 1
+      mainProgress.value += 1
       return
     }
     // No error is expected in the response because code has already been generated in the past
@@ -120,7 +120,7 @@ async function onResend() {
     }
     throw new Error("unexpected response")
   } finally {
-    progress.value -= 1
+    mainProgress.value -= 1
   }
 }
 </script>
@@ -144,7 +144,7 @@ async function onResend() {
           v-model="code"
           tabindex="1"
           class="flex-grow flex-auto min-w-0"
-          :readonly="progress > 0"
+          :readonly="mainProgress > 0"
           autocomplete="one-time-code"
           spellcheck="false"
           inputmode="numeric"
@@ -153,18 +153,18 @@ async function onResend() {
           maxlength="6"
           required
         />
-        <Button primary type="submit" class="ml-4" tabindex="2" :disabled="code.trim().length < 6 || progress > 0 || !!codeError">Next</Button>
+        <Button primary type="submit" class="ml-4" tabindex="2" :disabled="code.trim().length < 6 || mainProgress > 0 || !!codeError">Next</Button>
       </form>
     </div>
     <div v-if="codeError === 'invalidCode'" class="mt-4 text-error-600">Code is invalid. Please try again.</div>
     <div v-else class="mt-4">Please allow few minutes for the code to arrive. Check spam or junk folder.</div>
     <div class="mt-4">
       If you have trouble accessing your e-mail, try a
-      <a :href="progress > 0 ? undefined : ''" class="link" :class="progress > 0 ? 'disabled' : ''" @click.prevent="onBack">different sign-in method</a>.
+      <a :href="mainProgress > 0 ? undefined : ''" class="link" :class="mainProgress > 0 ? 'disabled' : ''" @click.prevent="onBack">different sign-in method</a>.
     </div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" tabindex="4" :disabled="progress > 0" @click.prevent="onBack">Back</Button>
-      <Button type="button" tabindex="3" :disabled="progress > 0" @click.prevent="onResend">Resend code</Button>
+      <Button type="button" tabindex="4" :disabled="mainProgress > 0" @click.prevent="onBack">Back</Button>
+      <Button type="button" tabindex="3" :disabled="mainProgress > 0" @click.prevent="onResend">Resend code</Button>
     </div>
   </div>
 </template>
