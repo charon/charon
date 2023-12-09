@@ -224,7 +224,7 @@ async function onCode() {
           spellcheck="false"
           required
         />
-        <Button type="submit" class="ml-4" tabindex="2" :disabled="password.length < 8 || progress + keyProgress > 0 || !!passwordError">Next</Button>
+        <Button primary type="submit" class="ml-4" tabindex="2" :disabled="password.length < 8 || progress + keyProgress > 0 || !!passwordError">Next</Button>
       </form>
     </div>
     <template v-if="passwordError">
@@ -253,7 +253,7 @@ async function onCode() {
     <div v-else class="mt-4">You can also skip entering password or passphrase and directly request the code.</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="4" :disabled="progress > 0" @click.prevent="onBack">Back</Button>
-      <Button type="button" tabindex="3" :disabled="!!codeError || progress > 0" @click.prevent="onCode">Send code</Button>
+      <Button type="button" primary tabindex="3" :disabled="!!codeError || progress > 0" @click.prevent="onCode">Send code</Button>
     </div>
   </div>
 </template>

@@ -123,9 +123,9 @@ async function onPasskeySignup() {
     <div class="mt-4 flex flex-row justify-between gap-4">
       <div class="flex flex-row gap-4">
         <Button type="button" :disabled="progress > 0" @click.prevent="onBack">Back</Button>
-        <Button type="button" :disabled="progress > 0" @click.prevent="onRetry">Retry sign-in</Button>
+        <Button primary type="button" :disabled="progress > 0" @click.prevent="onRetry">Retry sign-in</Button>
       </div>
-      <Button type="button" :disabled="progress + signupProgress > 0" @click.prevent="onPasskeySignup">{{
+      <Button primary type="button" :disabled="progress + signupProgress > 0" @click.prevent="onPasskeySignup">{{
         signupFailedAtLeastOnce ? "Retry sign-up" : "Passkey sign-up"
       }}</Button>
     </div>

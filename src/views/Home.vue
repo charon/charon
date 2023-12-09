@@ -28,5 +28,5 @@ async function onSignOut() {
 
 <template>
   <div>Hello world.</div>
-  <div><Button type="button" :progress="progress" @click.prevent="onSignOut">Sign-out</Button></div>
+  <div><Button primary type="button" :progress="progress" @click.prevent="onSignOut">Sign-out</Button></div>
 </template>

@@ -119,16 +119,17 @@ async function onOIDCProvider(provider: string) {
           minlength="3"
           required
         />
-        <Button type="submit" class="ml-4" :disabled="emailOrUsername.trim().length < 3 || progress > 0 || !!passwordError">Next</Button>
+        <Button primary type="submit" class="ml-4" :disabled="emailOrUsername.trim().length < 3 || progress > 0 || !!passwordError">Next</Button>
       </form>
       <div v-if="passwordError === 'invalidEmailOrUsername' && isEmail" class="mt-4 text-error-600">Invalid e-mail address.</div>
       <div v-else-if="passwordError === 'invalidEmailOrUsername' && !isEmail" class="mt-4 text-error-600">Invalid username.</div>
     </div>
     <h2 class="text-center m-4 text-xl font-bold uppercase">Or use</h2>
-    <Button type="button" :disabled="!browserSupportsWebAuthn() || progress > 0" @click.prevent="state = 'passkeySignin'">Passkey</Button>
+    <Button primary type="button" :disabled="!browserSupportsWebAuthn() || progress > 0" @click.prevent="state = 'passkeySignin'">Passkey</Button>
     <Button
       v-for="provider of siteContext.providers"
       :key="provider.key"
+      primary
       type="button"
       class="mt-4"
       :disabled="progress > 0"

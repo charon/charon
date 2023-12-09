@@ -153,7 +153,7 @@ async function onResend() {
           maxlength="6"
           required
         />
-        <Button type="submit" class="ml-4" tabindex="2" :disabled="code.trim().length < 6 || progress > 0 || !!codeError">Next</Button>
+        <Button primary type="submit" class="ml-4" tabindex="2" :disabled="code.trim().length < 6 || progress > 0 || !!codeError">Next</Button>
       </form>
     </div>
     <div v-if="codeError === 'invalidCode'" class="mt-4 text-error-600">Code is invalid. Please try again.</div>
