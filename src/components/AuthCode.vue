@@ -126,6 +126,8 @@ async function onResend() {
 </script>
 
 <template>
+  <div class="flex flex-col self-center rounded border bg-white p-4 shadow my-1 mx-4">
+    <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>
   <div class="flex flex-col">
     <label v-if="isEmail" for="code" class="mb-1"
       >We {{ sendCounter > 1 ? `sent (${sendCounter}x)` : "sent" }} a 6-digit code to <strong>{{ emailOrUsername }}</strong> e-mail address. Please enter it to
@@ -164,4 +166,5 @@ async function onResend() {
     <Button type="button" tabindex="4" :disabled="progress > 0" @click.prevent="onBack">Back</Button>
     <Button type="button" tabindex="3" :disabled="progress > 0" @click.prevent="onResend">Resend code</Button>
   </div>
+</div>
 </template>
