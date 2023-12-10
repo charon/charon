@@ -8,13 +8,13 @@ import { postURL } from "@/api"
 import { locationRedirect } from "@/utils"
 
 const props = defineProps<{
-  modelValue: string
+  state: string
   id: string
   emailOrUsername: string
 }>()
 
 const emit = defineEmits<{
-  "update:modelValue": [value: string]
+  "update:state": [value: string]
 }>()
 
 const isEmail = computed(() => {
@@ -44,7 +44,7 @@ async function onBack() {
     return
   }
   abortController.abort()
-  emit("update:modelValue", "start")
+  emit("update:state", "start")
   await nextTick()
   document.getElementById("email-or-username")?.focus()
 }

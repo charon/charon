@@ -163,17 +163,17 @@ async function onOIDCProvider(provider: string) {
         >{{ provider.name }}</Button
       >
     </div>
-    <AuthPasskeySignin v-else-if="state === 'passkeySignin'" :id="id" v-model="state" />
-    <AuthPasskeySignup v-else-if="state === 'passkeySignup'" :id="id" v-model="state" />
+    <AuthPasskeySignin v-else-if="state === 'passkeySignin'" :id="id" v-model:state="state" />
+    <AuthPasskeySignup v-else-if="state === 'passkeySignup'" :id="id" v-model:state="state" />
     <AuthPassword
       v-else-if="state === 'password'"
       :id="id"
-      v-model="state"
+      v-model:state="state"
       :email-or-username="emailOrUsername"
       :public-key="passwordPublicKey"
       :derive-options="passwordDeriveOptions"
       :encrypt-options="passwordEncryptOptions"
     />
-    <AuthCode v-else-if="state === 'code'" :id="id" v-model="state" :email-or-username="emailOrUsername" />
+    <AuthCode v-else-if="state === 'code'" :id="id" v-model:state="state" :email-or-username="emailOrUsername" />
   </div>
 </template>

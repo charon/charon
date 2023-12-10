@@ -8,12 +8,12 @@ import { postURL } from "@/api"
 import { locationRedirect } from "@/utils"
 
 const props = defineProps<{
-  modelValue: string
+  state: string
   id: string
 }>()
 
 const emit = defineEmits<{
-  "update:modelValue": [value: string]
+  "update:state": [value: string]
 }>()
 
 const router = useRouter()
@@ -29,13 +29,13 @@ onUnmounted(async () => {
 async function onBack() {
   abortController.abort()
   WebAuthnAbortService.cancelCeremony()
-  emit("update:modelValue", "start")
+  emit("update:state", "start")
 }
 
 async function onCancel() {
   abortController.abort()
   WebAuthnAbortService.cancelCeremony()
-  emit("update:modelValue", "passkeySignup")
+  emit("update:state", "passkeySignup")
 }
 
 // TODO: Better handle unexpected errors. (E.g., getComplete failing.)
@@ -85,7 +85,7 @@ onMounted(async () => {
       return
     }
     abortController.abort()
-    emit("update:modelValue", "passkeySignup")
+    emit("update:state", "passkeySignup")
     return
   }
 

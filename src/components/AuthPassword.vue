@@ -8,7 +8,7 @@ import { postURL, startPassword } from "@/api"
 import { locationRedirect, toBase64 } from "@/utils"
 
 const props = defineProps<{
-  modelValue: string
+  state: string
   id: string
   emailOrUsername: string
   publicKey: Uint8Array
@@ -17,7 +17,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  "update:modelValue": [value: string]
+  "update:state": [value: string]
 }>()
 
 const router = useRouter()
@@ -85,7 +85,7 @@ async function onBack() {
     return
   }
   abortController.abort()
-  emit("update:modelValue", "start")
+  emit("update:state", "start")
   await nextTick()
   document.getElementById("email-or-username")?.focus()
 }
@@ -169,7 +169,7 @@ async function onNext() {
     }
     if ("code" in response) {
       // We ignore response.code.emailOrUsername.
-      emit("update:modelValue", "code")
+      emit("update:state", "code")
       await nextTick()
       document.getElementById("code")?.focus()
       return
@@ -224,7 +224,7 @@ async function onCode() {
     }
     if ("code" in response) {
       // We ignore response.code.emailOrUsername.
-      emit("update:modelValue", "code")
+      emit("update:state", "code")
       await nextTick()
       document.getElementById("code")?.focus()
       return
