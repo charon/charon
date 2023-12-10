@@ -126,52 +126,54 @@ async function onOIDCProvider(provider: string) {
 </script>
 
 <template>
-  <div v-if="state === 'start'" class="flex flex-col self-center rounded border bg-white p-4 shadow m-1 w-[65ch]">
-    <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>
-    <div class="flex flex-col">
-      <label for="email-or-username" class="mb-1">Enter Charon username or your e-mail address</label>
-      <form class="flex flex-row" novalidate @submit.prevent="onNext">
-        <InputText
-          id="email-or-username"
-          v-model="emailOrUsername"
-          class="flex-grow flex-auto min-w-0"
-          :readonly="mainProgress > 0"
-          :invalid="!!passwordError"
-          autocomplete="username"
-          spellcheck="false"
-          type="email"
-          minlength="3"
-          required
-        />
-        <Button primary type="submit" class="ml-4" :disabled="emailOrUsername.trim().length < 3 || mainProgress > 0 || !!passwordError">Next</Button>
-      </form>
-      <div v-if="passwordError === 'invalidEmailOrUsername' && isEmail" class="mt-4 text-error-600">Invalid e-mail address.</div>
-      <div v-else-if="passwordError === 'invalidEmailOrUsername' && !isEmail" class="mt-4 text-error-600">Invalid username.</div>
+  <div class="w-[65ch] m-1 sm:m-4 self-start">
+    <div v-if="state === 'start'" class="flex flex-col float-left rounded border bg-white p-4 shadow w-[100%]">
+      <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>
+      <div class="flex flex-col">
+        <label for="email-or-username" class="mb-1">Enter Charon username or your e-mail address</label>
+        <form class="flex flex-row" novalidate @submit.prevent="onNext">
+          <InputText
+            id="email-or-username"
+            v-model="emailOrUsername"
+            class="flex-grow flex-auto min-w-0"
+            :readonly="mainProgress > 0"
+            :invalid="!!passwordError"
+            autocomplete="username"
+            spellcheck="false"
+            type="email"
+            minlength="3"
+            required
+          />
+          <Button primary type="submit" class="ml-4" :disabled="emailOrUsername.trim().length < 3 || mainProgress > 0 || !!passwordError">Next</Button>
+        </form>
+        <div v-if="passwordError === 'invalidEmailOrUsername' && isEmail" class="mt-4 text-error-600">Invalid e-mail address.</div>
+        <div v-else-if="passwordError === 'invalidEmailOrUsername' && !isEmail" class="mt-4 text-error-600">Invalid username.</div>
+      </div>
+      <h2 class="text-center m-4 text-xl font-bold uppercase">Or use</h2>
+      <Button primary type="button" :disabled="!browserSupportsWebAuthn() || mainProgress > 0" @click.prevent="state = 'passkeySignin'">Passkey</Button>
+      <Button
+        v-for="provider of siteContext.providers"
+        :key="provider.key"
+        primary
+        type="button"
+        class="mt-4"
+        :disabled="mainProgress > 0"
+        :progress="providerProgress.get(provider.key)!.value"
+        @click.prevent="onOIDCProvider(provider.key)"
+        >{{ provider.name }}</Button
+      >
     </div>
-    <h2 class="text-center m-4 text-xl font-bold uppercase">Or use</h2>
-    <Button primary type="button" :disabled="!browserSupportsWebAuthn() || mainProgress > 0" @click.prevent="state = 'passkeySignin'">Passkey</Button>
-    <Button
-      v-for="provider of siteContext.providers"
-      :key="provider.key"
-      primary
-      type="button"
-      class="mt-4"
-      :disabled="mainProgress > 0"
-      :progress="providerProgress.get(provider.key)!.value"
-      @click.prevent="onOIDCProvider(provider.key)"
-      >{{ provider.name }}</Button
-    >
+    <AuthPasskeySignin v-else-if="state === 'passkeySignin'" :id="id" v-model="state" />
+    <AuthPasskeySignup v-else-if="state === 'passkeySignup'" :id="id" v-model="state" />
+    <AuthPassword
+      v-else-if="state === 'password'"
+      :id="id"
+      v-model="state"
+      :email-or-username="emailOrUsername"
+      :public-key="passwordPublicKey"
+      :derive-options="passwordDeriveOptions"
+      :encrypt-options="passwordEncryptOptions"
+    />
+    <AuthCode v-else-if="state === 'code'" :id="id" v-model="state" :email-or-username="emailOrUsername" />
   </div>
-  <AuthPasskeySignin v-else-if="state === 'passkeySignin'" :id="id" v-model="state" />
-  <AuthPasskeySignup v-else-if="state === 'passkeySignup'" :id="id" v-model="state" />
-  <AuthPassword
-    v-else-if="state === 'password'"
-    :id="id"
-    v-model="state"
-    :email-or-username="emailOrUsername"
-    :public-key="passwordPublicKey"
-    :derive-options="passwordDeriveOptions"
-    :encrypt-options="passwordEncryptOptions"
-  />
-  <AuthCode v-else-if="state === 'code'" :id="id" v-model="state" :email-or-username="emailOrUsername" />
 </template>

@@ -237,7 +237,7 @@ async function onCode() {
 </script>
 
 <template>
-  <div class="flex flex-col self-center rounded border bg-white p-4 shadow m-1 w-[65ch]">
+  <div class="flex flex-col float-left rounded border bg-white p-4 shadow w-[100%]">
     <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>
     <div class="flex flex-col">
       <label for="email-or-username" class="mb-1">{{ isEmail ? "Your e-mail address" : "Charon username" }}</label>
