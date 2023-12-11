@@ -63,6 +63,15 @@
   transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
+@media (prefers-reduced-motion) {
+  .forward-enter-active,
+  .forward-leave-active,
+  .backward-enter-active,
+  .backward-leave-active {
+    transition-duration: 0;
+  }
+}
+
 .forward-enter-from {
   transform: translateX(100%);
   opacity: 0;
