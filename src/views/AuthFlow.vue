@@ -77,43 +77,45 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="w-[65ch] m-1 sm:m-4 self-start overflow-hidden">
-    <Transition
-      :name="direction"
-      @before-enter="onBeforeEnter"
-      @enter="onEnter"
-      @after-enter="onAfterEnter"
-      @enter-cancelled="onEnterCancelled"
-      @before-leave="onBeforeLeave"
-      @leave="onLeave"
-      @after-leave="onAfterLeave"
-      @leave-cancelled="onLeaveCancelled"
-    >
-      <AuthStart
-        v-if="state === 'start'"
-        :id="id"
-        ref="component"
-        v-model:state="state"
-        v-model:direction="direction"
-        v-model:emailOrUsername="emailOrUsername"
-        v-model:publicKey="publicKey"
-        v-model:deriveOptions="deriveOptions"
-        v-model:encryptOptions="encryptOptions"
-      />
-      <AuthPasskeySignin v-else-if="state === 'passkeySignin'" :id="id" ref="component" v-model:state="state" v-model:direction="direction" />
-      <AuthPasskeySignup v-else-if="state === 'passkeySignup'" :id="id" ref="component" v-model:state="state" v-model:direction="direction" />
-      <AuthPassword
-        v-else-if="state === 'password'"
-        :id="id"
-        ref="component"
-        v-model:state="state"
-        v-model:direction="direction"
-        :email-or-username="emailOrUsername"
-        :public-key="publicKey"
-        :derive-options="deriveOptions"
-        :encrypt-options="encryptOptions"
-      />
-      <AuthCode v-else-if="state === 'code'" :id="id" ref="component" v-model:state="state" v-model:direction="direction" :email-or-username="emailOrUsername" />
-    </Transition>
+  <div class="w-full self-start overflow-hidden flex flex-row justify-center">
+    <div class="w-[65ch] m-1 sm:m-4">
+      <Transition
+        :name="direction"
+        @before-enter="onBeforeEnter"
+        @enter="onEnter"
+        @after-enter="onAfterEnter"
+        @enter-cancelled="onEnterCancelled"
+        @before-leave="onBeforeLeave"
+        @leave="onLeave"
+        @after-leave="onAfterLeave"
+        @leave-cancelled="onLeaveCancelled"
+      >
+        <AuthStart
+          v-if="state === 'start'"
+          :id="id"
+          ref="component"
+          v-model:state="state"
+          v-model:direction="direction"
+          v-model:emailOrUsername="emailOrUsername"
+          v-model:publicKey="publicKey"
+          v-model:deriveOptions="deriveOptions"
+          v-model:encryptOptions="encryptOptions"
+        />
+        <AuthPasskeySignin v-else-if="state === 'passkeySignin'" :id="id" ref="component" v-model:state="state" v-model:direction="direction" />
+        <AuthPasskeySignup v-else-if="state === 'passkeySignup'" :id="id" ref="component" v-model:state="state" v-model:direction="direction" />
+        <AuthPassword
+          v-else-if="state === 'password'"
+          :id="id"
+          ref="component"
+          v-model:state="state"
+          v-model:direction="direction"
+          :email-or-username="emailOrUsername"
+          :public-key="publicKey"
+          :derive-options="deriveOptions"
+          :encrypt-options="encryptOptions"
+        />
+        <AuthCode v-else-if="state === 'code'" :id="id" ref="component" v-model:state="state" v-model:direction="direction" :email-or-username="emailOrUsername" />
+      </Transition>
+    </div>
   </div>
 </template>
