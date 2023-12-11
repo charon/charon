@@ -55,3 +55,30 @@
     @apply text-primary-300;
   }
 }
+
+.forward-enter-active,
+.forward-leave-active,
+.backward-enter-active,
+.backward-leave-active {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.forward-enter-from {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.forward-leave-to {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+.backward-enter-from {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+.backward-leave-to {
+  transform: translateX(100%);
+  opacity: 0;
+}

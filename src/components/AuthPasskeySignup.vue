@@ -9,11 +9,13 @@ import { locationRedirect } from "@/utils"
 
 const props = defineProps<{
   state: string
+  direction: "forward" | "backward"
   id: string
 }>()
 
 const emit = defineEmits<{
   "update:state": [value: string]
+  "update:direction": [value: "forward" | "backward"]
 }>()
 
 const router = useRouter()
@@ -32,12 +34,14 @@ onUnmounted(async () => {
 async function onBack() {
   abortController.abort()
   WebAuthnAbortService.cancelCeremony()
+  emit("update:direction", "backward")
   emit("update:state", "start")
 }
 
 async function onRetry() {
   abortController.abort()
   WebAuthnAbortService.cancelCeremony()
+  emit("update:direction", "backward")
   emit("update:state", "passkeySignin")
 }
 
@@ -132,7 +136,7 @@ async function onPasskeySignup() {
 </script>
 
 <template>
-  <div class="flex flex-col float-left rounded border bg-white p-4 shadow w-[100%]">
+  <div class="flex flex-col rounded border bg-white p-4 shadow w-full float-left first:ml-0 ml-[-100%]">
     <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>
     <div v-if="signupAttempted && signupFailed">Signing up using <strong>passkey</strong> failed.</div>
     <div v-else-if="signupAttempted">Signing you up using <strong>passkey</strong>. Please follow instructions by your browser and/or device.</div>

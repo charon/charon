@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AuthFlowRequest, AuthFlowResponse, DeriveOptions, EncryptOptions } from "@/types"
-import { ref, onMounted, nextTick, computed, watch, onUnmounted } from "vue"
+import { ref, computed, watch, onUnmounted } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
@@ -9,6 +9,7 @@ import { locationRedirect, toBase64 } from "@/utils"
 
 const props = defineProps<{
   state: string
+  direction: "forward" | "backward"
   id: string
   emailOrUsername: string
   publicKey: Uint8Array
@@ -18,6 +19,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   "update:state": [value: string]
+  "update:direction": [value: "forward" | "backward"]
 }>()
 
 const router = useRouter()
@@ -42,11 +44,6 @@ watch(password, () => {
   // We reset the error when input box value changes.
   passwordError.value = ""
   codeErrorOnce.value = false
-})
-
-onMounted(async () => {
-  await nextTick()
-  document.getElementById("current-password")?.focus()
 })
 
 onUnmounted(async () => {
@@ -85,9 +82,8 @@ async function onBack() {
     return
   }
   abortController.abort()
+  emit("update:direction", "backward")
   emit("update:state", "start")
-  await nextTick()
-  document.getElementById("email-or-username")?.focus()
 }
 
 async function onNext() {
@@ -169,9 +165,8 @@ async function onNext() {
     }
     if ("code" in response) {
       // We ignore response.code.emailOrUsername.
+      emit("update:direction", "forward")
       emit("update:state", "code")
-      await nextTick()
-      document.getElementById("code")?.focus()
       return
     }
     throw new Error("unexpected response")
@@ -224,9 +219,8 @@ async function onCode() {
     }
     if ("code" in response) {
       // We ignore response.code.emailOrUsername.
+      emit("update:direction", "forward")
       emit("update:state", "code")
-      await nextTick()
-      document.getElementById("code")?.focus()
       return
     }
     throw new Error("unexpected response")
@@ -237,7 +231,7 @@ async function onCode() {
 </script>
 
 <template>
-  <div class="flex flex-col float-left rounded border bg-white p-4 shadow w-[100%]">
+  <div class="flex flex-col rounded border bg-white p-4 shadow w-full float-left first:ml-0 ml-[-100%]">
     <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>
     <div class="flex flex-col">
       <label for="email-or-username" class="mb-1">{{ isEmail ? "Your e-mail address" : "Charon username" }}</label>
@@ -262,7 +256,7 @@ async function onCode() {
           minlength="8"
           tabindex="1"
           :invalid="!!passwordError"
-          class="flex-grow flex-auto min-w-0"
+          class="flex-grow flex-auto min-w-0 autofocus"
           :readonly="mainProgress > 0"
           autocomplete="current-password"
           spellcheck="false"

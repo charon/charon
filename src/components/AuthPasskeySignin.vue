@@ -9,11 +9,13 @@ import { locationRedirect } from "@/utils"
 
 const props = defineProps<{
   state: string
+  direction: "forward" | "backward"
   id: string
 }>()
 
 const emit = defineEmits<{
   "update:state": [value: string]
+  "update:direction": [value: "forward" | "backward"]
 }>()
 
 const router = useRouter()
@@ -29,12 +31,14 @@ onUnmounted(async () => {
 async function onBack() {
   abortController.abort()
   WebAuthnAbortService.cancelCeremony()
+  emit("update:direction", "backward")
   emit("update:state", "start")
 }
 
 async function onCancel() {
   abortController.abort()
   WebAuthnAbortService.cancelCeremony()
+  emit("update:direction", "forward")
   emit("update:state", "passkeySignup")
 }
 
@@ -85,6 +89,7 @@ onMounted(async () => {
       return
     }
     abortController.abort()
+    emit("update:direction", "forward")
     emit("update:state", "passkeySignup")
     return
   }
@@ -129,7 +134,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex flex-col float-left rounded border bg-white p-4 shadow w-[100%]">
+  <div class="flex flex-col rounded border bg-white p-4 shadow w-full float-left first:ml-0 ml-[-100%]">
     <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>
     <div>Signing you in using <strong>passkey</strong>. Please follow instructions by your browser and/or device.</div>
     <div class="mt-4">If you have not yet signed up with passkey, this will fail. In that case Charon will offer you to sign up instead.</div>
