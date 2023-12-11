@@ -60,7 +60,9 @@
 .forward-leave-active,
 .backward-enter-active,
 .backward-leave-active {
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
 }
 
 @media (prefers-reduced-motion) {

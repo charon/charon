@@ -38,7 +38,7 @@ export async function postURL(url: string, data: object, abortSignal: AbortSigna
       referrerPolicy: "strict-origin-when-cross-origin",
       signal: abortSignal,
     })
-    const contentType = response.headers.get("Content-Type");
+    const contentType = response.headers.get("Content-Type")
     if (!contentType || !contentType.includes("application/json")) {
       const body = await response.text()
       throw new FetchError(`fetch POST error ${response.status}: ${body}`, {
@@ -70,7 +70,7 @@ export async function deleteURL(url: string, abortSignal: AbortSignal, progress:
       referrerPolicy: "strict-origin-when-cross-origin",
       signal: abortSignal,
     })
-    const contentType = response.headers.get("Content-Type");
+    const contentType = response.headers.get("Content-Type")
     if (!contentType || !contentType.includes("application/json")) {
       const body = await response.text()
       throw new FetchError(`fetch POST error ${response.status}: ${body}`, {
@@ -88,7 +88,14 @@ export async function deleteURL(url: string, abortSignal: AbortSignal, progress:
   }
 }
 
-export async function startPassword(router: Router, flowID: string, emailOrUsername: string, abortSignal: AbortSignal, progress: Ref<number>, mainProgress: Ref<number>): Promise<PasswordResponse | { error: string } | null> {
+export async function startPassword(
+  router: Router,
+  flowID: string,
+  emailOrUsername: string,
+  abortSignal: AbortSignal,
+  progress: Ref<number>,
+  mainProgress: Ref<number>,
+): Promise<PasswordResponse | { error: string } | null> {
   progress.value += 1
   try {
     const url = router.apiResolve({
@@ -107,7 +114,7 @@ export async function startPassword(router: Router, flowID: string, emailOrUsern
           start: {
             emailOrUsername,
           },
-        }
+        },
       } as AuthFlowRequest,
       abortSignal,
       progress,
@@ -118,12 +125,12 @@ export async function startPassword(router: Router, flowID: string, emailOrUsern
       return null
     }
     // We do not list "shortEmailOrUsername" here because UI does not allow too short emailOrUsername.
-    if ('error' in response && ['invalidEmailOrUsername'].includes(response.error)) {
+    if ("error" in response && ["invalidEmailOrUsername"].includes(response.error)) {
       return {
         error: response.error,
       }
     }
-    if ('password' in response) {
+    if ("password" in response) {
       return {
         emailOrUsername: response.password.emailOrUsername,
         publicKey: fromBase64(response.password.publicKey),
@@ -131,7 +138,7 @@ export async function startPassword(router: Router, flowID: string, emailOrUsern
         encryptOptions: {
           ...response.password.encryptOptions,
           iv: fromBase64(response.password.encryptOptions.iv),
-        }
+        },
       }
     }
     throw new Error("unexpected response")

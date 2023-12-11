@@ -1,4 +1,9 @@
-import type { PublicKeyCredentialCreationOptionsJSON, PublicKeyCredentialRequestOptionsJSON, AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/typescript-types"
+import type {
+  PublicKeyCredentialCreationOptionsJSON,
+  PublicKeyCredentialRequestOptionsJSON,
+  AuthenticationResponseJSON,
+  RegistrationResponseJSON,
+} from "@simplewebauthn/typescript-types"
 
 export type DeriveOptions = {
   name: string
@@ -33,82 +38,98 @@ export type PasswordResponse = {
   encryptOptions: EncryptOptions
 }
 
-export type AuthFlowResponse = {
-  error: "wrongPassword" | "noEmails" | "noAccount" | "invalidCode" | "invalidEmailOrUsername" | "shortEmailOrUsername" | "invalidPassword" | "shortPassword"
-} | {
-  location: {
-    url: string
-    replace: boolean
-  }
-} | {
-  passkey: {
-    createOptions: { publicKey: PublicKeyCredentialCreationOptionsJSON }
-  } | {
-    getOptions: { publicKey: PublicKeyCredentialRequestOptionsJSON }
-  }
-} | {
-  password: PasswordResponseJSON
-} | {
-  code: {
-    emailOrUsername: string
-  }
-}
+export type AuthFlowResponse =
+  | {
+      error: "wrongPassword" | "noEmails" | "noAccount" | "invalidCode" | "invalidEmailOrUsername" | "shortEmailOrUsername" | "invalidPassword" | "shortPassword"
+    }
+  | {
+      location: {
+        url: string
+        replace: boolean
+      }
+    }
+  | {
+      passkey:
+        | {
+            createOptions: { publicKey: PublicKeyCredentialCreationOptionsJSON }
+          }
+        | {
+            getOptions: { publicKey: PublicKeyCredentialRequestOptionsJSON }
+          }
+    }
+  | {
+      password: PasswordResponseJSON
+    }
+  | {
+      code: {
+        emailOrUsername: string
+      }
+    }
 
-export type AuthFlowRequest = {
-  provider: string
-  step: "start"
-} | {
-  provider: "passkey"
-  step: "getStart"
-} | {
-  provider: "passkey"
-  step: "getComplete"
-  passkey: {
-    getResponse: AuthenticationResponseJSON
-  }
-} | {
-  provider: "passkey"
-  step: "createStart"
-} | {
-  provider: "passkey"
-  step: 'createComplete'
-  passkey: {
-    createResponse: RegistrationResponseJSON
-  }
-} | {
-  provider: "password"
-  step: "start"
-  password: {
-    start: {
-      emailOrUsername: string
+export type AuthFlowRequest =
+  | {
+      provider: string
+      step: "start"
     }
-  }
-} | {
-  provider: "password"
-  step: "complete"
-  password: {
-    complete: {
-      publicKey: string
-      password: string
+  | {
+      provider: "passkey"
+      step: "getStart"
     }
-  }
-} | {
-  provider: "code"
-  step: "start"
-  code: {
-    start: {
-      emailOrUsername: string
+  | {
+      provider: "passkey"
+      step: "getComplete"
+      passkey: {
+        getResponse: AuthenticationResponseJSON
+      }
     }
-  }
-} | {
-  provider: "code"
-  step: "complete"
-  code: {
-    complete: {
-      code: string
+  | {
+      provider: "passkey"
+      step: "createStart"
     }
-  }
-}
+  | {
+      provider: "passkey"
+      step: "createComplete"
+      passkey: {
+        createResponse: RegistrationResponseJSON
+      }
+    }
+  | {
+      provider: "password"
+      step: "start"
+      password: {
+        start: {
+          emailOrUsername: string
+        }
+      }
+    }
+  | {
+      provider: "password"
+      step: "complete"
+      password: {
+        complete: {
+          publicKey: string
+          password: string
+        }
+      }
+    }
+  | {
+      provider: "code"
+      step: "start"
+      code: {
+        start: {
+          emailOrUsername: string
+        }
+      }
+    }
+  | {
+      provider: "code"
+      step: "complete"
+      code: {
+        complete: {
+          code: string
+        }
+      }
+    }
 
 export type SiteContext = {
   domain: string
