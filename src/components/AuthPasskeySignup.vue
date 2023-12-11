@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AuthFlowRequest, AuthFlowResponse } from "@/types"
-import { onUnmounted, ref } from "vue"
+import { getCurrentInstance, onMounted, onUnmounted, ref } from "vue"
 import { useRouter } from "vue-router"
 import { startRegistration, WebAuthnAbortService } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
@@ -27,7 +27,21 @@ const signupAttempted = ref(false)
 const signupFailed = ref(false)
 const signupFailedAtLeastOnce = ref(false)
 
-onUnmounted(async () => {
+// Define transition hooks to be called by the parent component.
+// See: https://github.com/vuejs/rfcs/discussions/613
+onMounted(() => {
+  const vm = getCurrentInstance()!
+  vm.vnode.el!.__vue_exposed = vm.exposeProxy
+})
+
+defineExpose({
+  onBeforeLeave() {
+    // TODO: What if leaving is cancelled?
+    abortController.abort()
+  },
+})
+
+onUnmounted(() => {
   abortController.abort()
 })
 

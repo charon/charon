@@ -69,10 +69,6 @@ const emailOrUsernameProxy = computed({
   },
 })
 
-onUnmounted(async () => {
-  abortController.abort()
-})
-
 // Define transition hooks to be called by the parent component.
 // See: https://github.com/vuejs/rfcs/discussions/613
 onMounted(() => {
@@ -84,6 +80,14 @@ defineExpose({
   onAfterEnter() {
     document.getElementById("email-or-username")?.focus()
   },
+  onBeforeLeave() {
+    // TODO: What if leaving is cancelled?
+    abortController.abort()
+  },
+})
+
+onUnmounted(() => {
+  abortController.abort()
 })
 
 async function onNext() {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue"
+import { onMounted, onUnmounted, ref } from "vue"
 import AuthStart from "@/components/AuthStart.vue"
 import AuthPassword from "@/components/AuthPassword.vue"
 import AuthPasskeySignin from "@/components/AuthPasskeySignin.vue"
@@ -66,6 +66,12 @@ function onLeaveCancelled(el: Element) {
 onMounted(() => {
   if (component.value && "onAfterEnter" in component.value) {
     component.value.onAfterEnter()
+  }
+})
+
+onUnmounted(() => {
+  if (component.value && "onBeforeLeave" in component.value) {
+    component.value.onBeforeLeave()
   }
 })
 </script>

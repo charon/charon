@@ -11,7 +11,7 @@ const router = useRouter()
 const mainProgress = ref(0)
 const abortController = new AbortController()
 
-onUnmounted(async () => {
+onUnmounted(() => {
   abortController.abort()
 })
 

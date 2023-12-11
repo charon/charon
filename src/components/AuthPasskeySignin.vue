@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AuthFlowRequest, AuthFlowResponse } from "@/types"
-import { onMounted, onUnmounted, ref } from "vue"
+import { getCurrentInstance, onMounted, onUnmounted, ref } from "vue"
 import { useRouter } from "vue-router"
 import { startAuthentication, WebAuthnAbortService } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
@@ -23,27 +23,29 @@ const router = useRouter()
 const mainProgress = ref(0)
 const abortController = new AbortController()
 
-onUnmounted(async () => {
+// Define transition hooks to be called by the parent component.
+// See: https://github.com/vuejs/rfcs/discussions/613
+onMounted(() => {
+  const vm = getCurrentInstance()!
+  vm.vnode.el!.__vue_exposed = vm.exposeProxy
+})
+
+defineExpose({
+  onAfterEnter,
+  onBeforeLeave() {
+    // TODO: What if leaving is cancelled?
+    abortController.abort()
+    WebAuthnAbortService.cancelCeremony()
+  },
+})
+
+onUnmounted(() => {
   abortController.abort()
   WebAuthnAbortService.cancelCeremony()
 })
 
-async function onBack() {
-  abortController.abort()
-  WebAuthnAbortService.cancelCeremony()
-  emit("update:direction", "backward")
-  emit("update:state", "start")
-}
-
-async function onCancel() {
-  abortController.abort()
-  WebAuthnAbortService.cancelCeremony()
-  emit("update:direction", "forward")
-  emit("update:state", "passkeySignup")
-}
-
 // TODO: Better handle unexpected errors. (E.g., getComplete failing.)
-onMounted(async () => {
+async function onAfterEnter() {
   const url = router.apiResolve({
     name: "AuthFlow",
     params: {
@@ -130,7 +132,21 @@ onMounted(async () => {
   } finally {
     mainProgress.value -= 1
   }
-})
+}
+
+async function onBack() {
+  abortController.abort()
+  WebAuthnAbortService.cancelCeremony()
+  emit("update:direction", "backward")
+  emit("update:state", "start")
+}
+
+async function onCancel() {
+  abortController.abort()
+  WebAuthnAbortService.cancelCeremony()
+  emit("update:direction", "forward")
+  emit("update:state", "passkeySignup")
+}
 </script>
 
 <template>

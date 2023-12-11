@@ -31,10 +31,6 @@ const abortController = new AbortController()
 const sendCounter = ref(1)
 const codeError = ref("")
 
-onUnmounted(async () => {
-  abortController.abort()
-})
-
 watch(code, () => {
   // We reset the flag when input box value changes.
   codeError.value = ""
@@ -51,6 +47,14 @@ defineExpose({
   onAfterEnter() {
     document.getElementById("code")?.focus()
   },
+  onBeforeLeave() {
+    // TODO: What if leaving is cancelled?
+    abortController.abort()
+  },
+})
+
+onUnmounted(() => {
+  abortController.abort()
 })
 
 async function onBack() {
