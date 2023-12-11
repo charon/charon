@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AuthFlowRequest, AuthFlowResponse } from "@/types"
-import { ref, computed, watch, onUnmounted } from "vue"
+import { ref, computed, watch, onUnmounted, onMounted, getCurrentInstance } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
@@ -38,6 +38,19 @@ onUnmounted(async () => {
 watch(code, () => {
   // We reset the flag when input box value changes.
   codeError.value = ""
+})
+
+// Define transition hooks to be called by the parent component.
+// See: https://github.com/vuejs/rfcs/discussions/613
+onMounted(() => {
+  const vm = getCurrentInstance()!
+  vm.vnode.el!.__vue_exposed = vm.exposeProxy
+})
+
+defineExpose({
+  onAfterEnter() {
+    document.getElementById("code")?.focus()
+  },
 })
 
 async function onBack() {
@@ -135,7 +148,7 @@ async function onResend() {
     // for the same request, so we do not check response.error here.
     if ("code" in response) {
       sendCounter.value += 1
-      document.querySelector<HTMLElement>("input.autofocus")?.focus()
+      document.getElementById("code")?.focus()
       return
     }
     throw new Error("unexpected response")
@@ -168,7 +181,7 @@ async function onResend() {
           id="code"
           v-model="code"
           tabindex="1"
-          class="flex-grow flex-auto min-w-0 autofocus"
+          class="flex-grow flex-auto min-w-0"
           :readonly="mainProgress > 0"
           autocomplete="one-time-code"
           spellcheck="false"

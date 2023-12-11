@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Ref } from "vue"
 import type { AuthFlowRequest, AuthFlowResponse, DeriveOptions, EncryptOptions } from "@/types"
-import { ref, computed, watch, onUnmounted } from "vue"
+import { ref, computed, watch, onUnmounted, onMounted, getCurrentInstance } from "vue"
 import { useRouter } from "vue-router"
 import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
@@ -71,6 +71,19 @@ const emailOrUsernameProxy = computed({
 
 onUnmounted(async () => {
   abortController.abort()
+})
+
+// Define transition hooks to be called by the parent component.
+// See: https://github.com/vuejs/rfcs/discussions/613
+onMounted(() => {
+  const vm = getCurrentInstance()!
+  vm.vnode.el!.__vue_exposed = vm.exposeProxy
+})
+
+defineExpose({
+  onAfterEnter() {
+    document.getElementById("email-or-username")?.focus()
+  },
 })
 
 async function onNext() {
@@ -153,7 +166,7 @@ async function onOIDCProvider(provider: string) {
         <InputText
           id="email-or-username"
           v-model="emailOrUsernameProxy"
-          class="flex-grow flex-auto min-w-0 autofocus"
+          class="flex-grow flex-auto min-w-0"
           :readonly="mainProgress > 0"
           :invalid="!!passwordError"
           autocomplete="username"
