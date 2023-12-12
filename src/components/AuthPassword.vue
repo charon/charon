@@ -300,6 +300,8 @@ async function onCode() {
           Here we enable button when password is not empty because we do not tell users
           what is expected upfront. If they try a too short password we will tell them.
           We prefer this so that they do not wonder why the button is not enabled.
+          We also prefer this because we do not want to do full password normalization on the
+          client side so we might be counting characters differently here, leading to confusion.
         -->
         <Button primary type="submit" class="ml-4" tabindex="2" :disabled="password.length === 0 || mainProgress + keyProgress > 0 || !!passwordError">Next</Button>
       </form>
