@@ -32,14 +32,6 @@ function callHook(el: Element, hook: string) {
   }
 }
 
-function onBeforeEnter(el: Element) {
-  callHook(el, "onBeforeEnter")
-}
-
-function onEnter(el: Element) {
-  callHook(el, "onEnter")
-}
-
 function onAfterEnter(el: Element) {
   callHook(el, "onAfterEnter")
 }
@@ -82,8 +74,6 @@ onUnmounted(() => {
     <div class="w-[65ch] m-1 sm:m-4">
       <Transition
         :name="direction"
-        @before-enter="onBeforeEnter"
-        @enter="onEnter"
         @after-enter="onAfterEnter"
         @enter-cancelled="onEnterCancelled"
         @before-leave="onBeforeLeave"
