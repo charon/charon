@@ -57,12 +57,17 @@
 }
 
 .forward-enter-active,
+.backward-enter-active {
+  transition:
+    transform 0.3s ease-out,
+    opacity 0.3s ease-out;
+}
+
 .forward-leave-active,
-.backward-enter-active,
 .backward-leave-active {
   transition:
-    transform 0.3s ease,
-    opacity 0.3s ease;
+    transform 0.3s ease-out,
+    opacity 0.3s ease-in;
 }
 
 @media (prefers-reduced-motion) {
