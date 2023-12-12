@@ -23,6 +23,7 @@ import AuthPassword from "@/components/AuthPassword.vue"
 import AuthPasskeySignin from "@/components/AuthPasskeySignin.vue"
 import AuthPasskeySignup from "@/components/AuthPasskeySignup.vue"
 import AuthCode from "@/components/AuthCode.vue"
+import siteContext from "@/context"
 
 defineProps<{
   id: string
@@ -121,6 +122,7 @@ onUnmounted(() => {
           v-model:publicKey="publicKey"
           v-model:deriveOptions="deriveOptions"
           v-model:encryptOptions="encryptOptions"
+          :providers="siteContext.providers"
         />
         <AuthPasskeySignin v-else-if="state === 'passkeySignin'" :id="id" ref="component" v-model:state="state" v-model:direction="direction" />
         <AuthPasskeySignup v-else-if="state === 'passkeySignup'" :id="id" ref="component" v-model:state="state" v-model:direction="direction" />

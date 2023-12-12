@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Ref } from "vue"
-import type { AuthFlowRequest, AuthFlowResponse, DeriveOptions, EncryptOptions } from "@/types"
+import type { AuthFlowRequest, AuthFlowResponse, DeriveOptions, EncryptOptions, Providers } from "@/types"
 import { ref, computed, watch, onUnmounted, onMounted, getCurrentInstance } from "vue"
 import { useRouter } from "vue-router"
 import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
@@ -8,12 +8,12 @@ import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import { postURL, startPassword } from "@/api"
 import { locationRedirect } from "@/utils"
-import siteContext from "@/context"
 
 const props = defineProps<{
   state: string
   direction: "forward" | "backward"
   id: string
+  providers: Providers
   emailOrUsername: string
   publicKey: Uint8Array
   deriveOptions: DeriveOptions
@@ -40,13 +40,13 @@ const isEmail = computed(() => {
 })
 
 const providerProgress = new Map<string, Ref<number>>()
-for (const provider of siteContext.providers.values()) {
+for (const provider of props.providers.values()) {
   providerProgress.set(provider.key, ref(0))
 }
 
 const mainProgress = computed(() => {
   let c = passwordProgress.value
-  for (const provider of siteContext.providers.values()) {
+  for (const provider of props.providers.values()) {
     c += providerProgress.get(provider.key)!.value
   }
   return c
@@ -203,7 +203,7 @@ async function onOIDCProvider(provider: string) {
     <h2 class="text-center m-4 text-xl font-bold uppercase">Or use</h2>
     <Button primary type="button" :disabled="!browserSupportsWebAuthn() || mainProgress > 0" @click.prevent="onPasskey">Passkey</Button>
     <Button
-      v-for="provider of siteContext.providers"
+      v-for="provider of providers"
       :key="provider.key"
       primary
       type="button"

@@ -131,6 +131,12 @@ export type AuthFlowRequest =
       }
     }
 
+export type Providers = {
+  key: string
+  name: string
+  type: string
+}[]
+
 export type SiteContext = {
   domain: string
   build?: {
@@ -138,9 +144,5 @@ export type SiteContext = {
     buildTimestamp?: string
     revision?: string
   }
-  providers: {
-    key: string
-    name: string
-    type: string
-  }[]
+  providers: Providers
 }
