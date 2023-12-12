@@ -45,6 +45,10 @@ function onBeforeLeave() {
 }
 
 async function onBack() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   abortController.abort()
   WebAuthnAbortService.cancelCeremony()
   emit("update:direction", "backward")
@@ -52,6 +56,10 @@ async function onBack() {
 }
 
 async function onRetry() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   abortController.abort()
   WebAuthnAbortService.cancelCeremony()
   emit("update:direction", "backward")
@@ -60,6 +68,10 @@ async function onRetry() {
 
 // TODO: Better handle unexpected errors. (E.g., createComplete failing.)
 async function onPasskeySignup() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   signupProgress.value += 1
   try {
     signupAttempted.value = true

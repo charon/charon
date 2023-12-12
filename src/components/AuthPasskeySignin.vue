@@ -133,6 +133,10 @@ async function onAfterEnter() {
 }
 
 async function onBack() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   abortController.abort()
   WebAuthnAbortService.cancelCeremony()
   emit("update:direction", "backward")
@@ -140,6 +144,10 @@ async function onBack() {
 }
 
 async function onCancel() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   abortController.abort()
   WebAuthnAbortService.cancelCeremony()
   emit("update:direction", "forward")

@@ -1,3 +1,20 @@
+<!--
+For flow step components:
+
+Define transition hooks to be called by the parent component through onMounted
+and defineExpose. Use onBeforeLeave to abort the abort controller. Call
+onBeforeLeave as both the transition hook and onUnmounted.
+
+Use abort controller for async operations. After every await check if it is aborted.
+At the beginning of every event handler check if it is aborted. This allows us to
+quickly abort all async operations if step (and thus its component) changes.
+It also effectively disables the component once it starts being transitioned out.
+
+We do not want to visually disable the component once it starts being transitioned out
+(unless it is already disabled) to avoid flicker. AutoFlow component disables for
+elements and links but that should not change how components look.
+-->
+
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from "vue"
 import Footer from "@/components/Footer.vue"
@@ -42,6 +59,19 @@ function onEnterCancelled(el: Element) {
 
 function onBeforeLeave(el: Element) {
   callHook(el, "onBeforeLeave")
+
+  // We make all form elements be disabled.
+  // Event handlers should be disabled by components themselves.
+  for (const e of el.querySelectorAll("button, input, select, textarea")) {
+    ;(e as HTMLInputElement).disabled = true
+  }
+  // We make all links be disabled.
+  // Links with existing event handlers should be disabled by components themselves.
+  for (const l of el.querySelectorAll("a")) {
+    l.onclick = function () {
+      return false
+    }
+  }
 }
 
 function onLeave(el: Element) {

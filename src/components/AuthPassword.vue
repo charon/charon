@@ -95,16 +95,25 @@ async function getKey() {
 }
 
 async function onBack() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   if (mainProgress.value > 0) {
     // Clicking on disabled links.
     return
   }
+
   abortController.abort()
   emit("update:direction", "backward")
   emit("update:state", "start")
 }
 
 async function onNext() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   mainProgress.value += 1
   try {
     codeErrorOnce.value = false
@@ -199,6 +208,10 @@ async function onNext() {
 }
 
 async function onCode() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   mainProgress.value += 1
   try {
     const url = router.apiResolve({

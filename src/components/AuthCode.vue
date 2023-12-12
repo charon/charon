@@ -59,16 +59,24 @@ function onBeforeLeave() {
 }
 
 async function onBack() {
+  if (abortController.signal.aborted) {
+    return
+  }
   if (mainProgress.value > 0) {
     // Clicking on disabled links.
     return
   }
+
   abortController.abort()
   emit("update:direction", "backward")
   emit("update:state", "start")
 }
 
 async function onNext() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   mainProgress.value += 1
   try {
     const url = router.apiResolve({
@@ -116,6 +124,10 @@ async function onNext() {
 }
 
 async function onResend() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   mainProgress.value += 1
   try {
     codeError.value = ""

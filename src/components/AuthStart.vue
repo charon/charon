@@ -92,6 +92,11 @@ function onBeforeLeave() {
 }
 
 async function onNext() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  passwordProgress.value += 1
   try {
     const response = await startPassword(router, props.id, props.emailOrUsername, abortController.signal, passwordProgress, passwordProgress)
     if (abortController.signal.aborted) {
@@ -116,15 +121,25 @@ async function onNext() {
       return
     }
     throw error
+  } finally {
+    passwordProgress.value -= 1
   }
 }
 
 async function onPasskey() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   emit("update:direction", "forward")
   emit("update:state", "passkeySignin")
 }
 
 async function onOIDCProvider(provider: string) {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   const progress = providerProgress.get(provider)!
   progress.value += 1
   try {
