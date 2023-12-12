@@ -193,7 +193,12 @@ async function onResend() {
         <strong>{{ emailOrUsername }}</strong
         >. Please enter it to continue:</label
       >
+      <!--
+        We set novalidate because we do not UA to show hints.
+        We show them ourselves when we want them.
+      -->
       <form class="flex flex-row" novalidate @submit.prevent="onNext">
+        <!-- We do not set maxlength so that users can paste too long text and clean it up. -->
         <InputText
           id="code"
           v-model="code"
@@ -205,10 +210,13 @@ async function onResend() {
           inputmode="numeric"
           pattern="[0-9]*"
           minlength="6"
-          maxlength="6"
           required
         />
-        <Button primary type="submit" class="ml-4" tabindex="2" :disabled="code.trim().length < 6 || mainProgress > 0 || !!codeError">Next</Button>
+        <!--
+          Here we enable button only if the length of non-whitespace content is exactly
+          6 characters because we tell users what is expected upfront.
+        -->
+        <Button primary type="submit" class="ml-4" tabindex="2" :disabled="code.replace(/\s/g, '').length !== 6 || mainProgress > 0 || !!codeError">Next</Button>
       </form>
     </div>
     <div v-if="codeError === 'invalidCode'" class="mt-4 text-error-600">Code is invalid. Please try again.</div>

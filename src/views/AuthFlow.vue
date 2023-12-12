@@ -23,6 +23,9 @@ import AuthPassword from "@/components/AuthPassword.vue"
 import AuthPasskeySignin from "@/components/AuthPasskeySignin.vue"
 import AuthPasskeySignup from "@/components/AuthPasskeySignup.vue"
 import AuthCode from "@/components/AuthCode.vue"
+// We fetch siteContext in view because the server sends preload header
+// so we have to fetch it always, even if particular step does not need it.
+// Generally this is already cached.
 import siteContext from "@/context"
 
 defineProps<{

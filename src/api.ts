@@ -124,8 +124,7 @@ export async function startPassword(
       mainProgress.value += 1
       return null
     }
-    // We do not list "shortEmailOrUsername" here because UI does not allow too short emailOrUsername.
-    if ("error" in response && ["invalidEmailOrUsername"].includes(response.error)) {
+    if ("error" in response && ["invalidEmailOrUsername", "shortEmailOrUsername"].includes(response.error)) {
       return {
         error: response.error,
       }

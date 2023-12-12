@@ -177,8 +177,7 @@ async function onNext() {
       mainProgress.value += 1
       return
     }
-    // We do not list "shortPassword" here because UI does not allow too short password.
-    if ("error" in response && ["wrongPassword", "invalidPassword"].includes(response.error)) {
+    if ("error" in response && ["wrongPassword", "invalidPassword", "shortPassword"].includes(response.error)) {
       passwordError.value = response.error
       if (response.error === "wrongPassword" && codeError.value === "") {
         // If password error was returned and account recovery was not automatically
@@ -279,6 +278,10 @@ async function onCode() {
     </div>
     <div class="flex flex-col mt-4">
       <label for="current-password" class="mb-1">Password or passphrase</label>
+      <!--
+        We set novalidate because we do not UA to show hints.
+        We show them ourselves when we want them.
+      -->
       <form class="flex flex-row" novalidate @submit.prevent="onNext">
         <InputText
           id="current-password"
@@ -293,12 +296,18 @@ async function onCode() {
           spellcheck="false"
           required
         />
-        <Button primary type="submit" class="ml-4" tabindex="2" :disabled="password.length < 8 || mainProgress + keyProgress > 0 || !!passwordError">Next</Button>
+        <!--
+          Here we enable button when password is not empty because we do not tell users
+          what is expected upfront. If they try a too short password we will tell them.
+          We prefer this so that they do not wonder why the button is not enabled.
+        -->
+        <Button primary type="submit" class="ml-4" tabindex="2" :disabled="password.length === 0 || mainProgress + keyProgress > 0 || !!passwordError">Next</Button>
       </form>
     </div>
     <template v-if="passwordError">
       <div v-if="passwordError === 'wrongPassword'" class="mt-4 text-error-600">Wrong password or passphrase for the account with the provided username.</div>
       <div v-else-if="passwordError === 'invalidPassword'" class="mt-4 text-error-600">Invalid password or passphrase.</div>
+      <div v-else-if="passwordError === 'shortPassword'" class="mt-4 text-error-600">Password or passphrase should be at least 8 characters.</div>
       <div v-if="passwordError === 'wrongPassword'" class="mt-4">
         If you have trouble remembering your password or passphrase, try a
         <a :href="mainProgress > 0 ? undefined : ''" class="link" :class="mainProgress > 0 ? 'disabled' : ''" @click.prevent="onBack">different sign-in method</a>.
