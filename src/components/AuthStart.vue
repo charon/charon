@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import type { Ref } from "vue"
-import type { AuthFlowRequest, AuthFlowResponse, DeriveOptions, EncryptOptions, Providers } from "@/types"
+import type { DeriveOptions, EncryptOptions, Providers } from "@/types"
 import { ref, computed, watch, onUnmounted, onMounted, getCurrentInstance } from "vue"
 import { useRouter } from "vue-router"
 import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
-import { postURL, startPassword } from "@/api"
-import { locationRedirect } from "@/utils"
+import { startPassword } from "@/api"
 
 const props = defineProps<{
   state: string
@@ -18,6 +16,7 @@ const props = defineProps<{
   publicKey: Uint8Array
   deriveOptions: DeriveOptions
   encryptOptions: EncryptOptions
+  provider: string
 }>()
 
 const emit = defineEmits<{
@@ -27,29 +26,17 @@ const emit = defineEmits<{
   "update:publicKey": [value: Uint8Array]
   "update:deriveOptions": [value: DeriveOptions]
   "update:encryptOptions": [value: EncryptOptions]
+  "update:provider": [value: string]
 }>()
 
 const router = useRouter()
 
 const abortController = new AbortController()
-const passwordProgress = ref(0)
+const mainProgress = ref(0)
 const passwordError = ref("")
 
 const isEmail = computed(() => {
   return props.emailOrUsername.indexOf("@") >= 0
-})
-
-const providerProgress = new Map<string, Ref<number>>()
-for (const provider of props.providers.values()) {
-  providerProgress.set(provider.key, ref(0))
-}
-
-const mainProgress = computed(() => {
-  let c = passwordProgress.value
-  for (const provider of props.providers.values()) {
-    c += providerProgress.get(provider.key)!.value
-  }
-  return c
 })
 
 watch(
@@ -97,9 +84,9 @@ async function onNext() {
     return
   }
 
-  passwordProgress.value += 1
+  mainProgress.value += 1
   try {
-    const response = await startPassword(router, props.id, props.emailOrUsername, abortController.signal, passwordProgress, passwordProgress)
+    const response = await startPassword(router, props.id, props.emailOrUsername, abortController.signal, mainProgress, mainProgress)
     if (abortController.signal.aborted) {
       return
     }
@@ -123,7 +110,7 @@ async function onNext() {
     }
     throw error
   } finally {
-    passwordProgress.value -= 1
+    mainProgress.value -= 1
   }
 }
 
@@ -141,40 +128,9 @@ async function onOIDCProvider(provider: string) {
     return
   }
 
-  const progress = providerProgress.get(provider)!
-  progress.value += 1
-  try {
-    const response = (await postURL(
-      router.apiResolve({
-        name: "AuthFlow",
-        params: {
-          id: props.id,
-        },
-      }).href,
-      {
-        provider: provider,
-        step: "start",
-      } as AuthFlowRequest,
-      abortController.signal,
-      progress,
-    )) as AuthFlowResponse
-    if (abortController.signal.aborted) {
-      return
-    }
-    if (locationRedirect(response)) {
-      // We increase the progress and never decrease it to wait for browser to do the redirect.
-      progress.value += 1
-    } else {
-      throw new Error("unexpected response")
-    }
-  } catch (error) {
-    if (abortController.signal.aborted) {
-      return
-    }
-    throw error
-  } finally {
-    progress.value -= 1
-  }
+  emit("update:direction", "forward")
+  emit("update:provider", provider)
+  emit("update:state", "oidcProvider")
 }
 </script>
 
@@ -216,16 +172,8 @@ async function onOIDCProvider(provider: string) {
     </div>
     <h2 class="text-center m-4 text-xl font-bold uppercase">Or use</h2>
     <Button primary type="button" :disabled="!browserSupportsWebAuthn() || mainProgress > 0" @click.prevent="onPasskey">Passkey</Button>
-    <Button
-      v-for="provider of providers"
-      :key="provider.key"
-      primary
-      type="button"
-      class="mt-4"
-      :disabled="mainProgress > 0"
-      :progress="providerProgress.get(provider.key)!.value"
-      @click.prevent="onOIDCProvider(provider.key)"
-      >{{ provider.name }}</Button
-    >
+    <Button v-for="p of providers" :key="p.key" primary type="button" class="mt-4" :disabled="mainProgress > 0" @click.prevent="onOIDCProvider(p.key)">{{
+      p.name
+    }}</Button>
   </div>
 </template>

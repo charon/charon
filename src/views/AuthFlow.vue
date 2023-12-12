@@ -19,6 +19,7 @@ elements and links but that should not change how components look.
 import { onMounted, onUnmounted, ref } from "vue"
 import Footer from "@/components/Footer.vue"
 import AuthStart from "@/components/AuthStart.vue"
+import AuthOIDCProvider from "@/components/AuthOIDCProvider.vue"
 import AuthPassword from "@/components/AuthPassword.vue"
 import AuthPasskeySignin from "@/components/AuthPasskeySignin.vue"
 import AuthPasskeySignup from "@/components/AuthPasskeySignup.vue"
@@ -38,6 +39,7 @@ const emailOrUsername = ref("")
 const publicKey = ref(new Uint8Array())
 const deriveOptions = ref({ name: "", namedCurve: "" })
 const encryptOptions = ref({ name: "", iv: new Uint8Array(), tagLength: 0, length: 0 })
+const provider = ref("")
 
 const component = ref()
 
@@ -125,7 +127,17 @@ onUnmounted(() => {
           v-model:publicKey="publicKey"
           v-model:deriveOptions="deriveOptions"
           v-model:encryptOptions="encryptOptions"
+          v-model:provider="provider"
           :providers="siteContext.providers"
+        />
+        <AuthOIDCProvider
+          v-else-if="state === 'oidcProvider'"
+          :id="id"
+          ref="component"
+          v-model:state="state"
+          v-model:direction="direction"
+          :providers="siteContext.providers"
+          :provider="provider"
         />
         <AuthPasskeySignin v-else-if="state === 'passkeySignin'" :id="id" ref="component" v-model:state="state" v-model:direction="direction" />
         <AuthPasskeySignup v-else-if="state === 'passkeySignup'" :id="id" ref="component" v-model:state="state" v-model:direction="direction" />
