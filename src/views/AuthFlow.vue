@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from "vue"
+import Footer from "@/components/Footer.vue"
 import AuthStart from "@/components/AuthStart.vue"
 import AuthPassword from "@/components/AuthPassword.vue"
 import AuthPasskeySignin from "@/components/AuthPasskeySignin.vue"
@@ -118,4 +119,7 @@ onUnmounted(() => {
       </Transition>
     </div>
   </div>
+  <Teleport to="footer">
+    <Footer />
+  </Teleport>
 </template>
