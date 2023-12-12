@@ -32,17 +32,15 @@ onMounted(() => {
 
 defineExpose({
   onAfterEnter,
-  onBeforeLeave() {
-    // TODO: What if leaving is cancelled?
-    abortController.abort()
-    WebAuthnAbortService.cancelCeremony()
-  },
+  onBeforeLeave,
 })
 
-onUnmounted(() => {
+onUnmounted(onBeforeLeave)
+
+function onBeforeLeave() {
   abortController.abort()
   WebAuthnAbortService.cancelCeremony()
-})
+}
 
 // TODO: Better handle unexpected errors. (E.g., getComplete failing.)
 async function onAfterEnter() {

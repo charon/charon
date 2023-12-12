@@ -35,15 +35,14 @@ onMounted(() => {
 })
 
 defineExpose({
-  onBeforeLeave() {
-    // TODO: What if leaving is cancelled?
-    abortController.abort()
-  },
+  onBeforeLeave,
 })
 
-onUnmounted(() => {
+onUnmounted(onBeforeLeave)
+
+function onBeforeLeave() {
   abortController.abort()
-})
+}
 
 async function onBack() {
   abortController.abort()

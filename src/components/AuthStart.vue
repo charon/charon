@@ -77,18 +77,19 @@ onMounted(() => {
 })
 
 defineExpose({
-  onAfterEnter() {
-    document.getElementById("email-or-username")?.focus()
-  },
-  onBeforeLeave() {
-    // TODO: What if leaving is cancelled?
-    abortController.abort()
-  },
+  onAfterEnter,
+  onBeforeLeave,
 })
 
-onUnmounted(() => {
+onUnmounted(onBeforeLeave)
+
+function onAfterEnter() {
+  document.getElementById("email-or-username")?.focus()
+}
+
+function onBeforeLeave() {
   abortController.abort()
-})
+}
 
 async function onNext() {
   try {

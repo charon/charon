@@ -44,18 +44,19 @@ onMounted(() => {
 })
 
 defineExpose({
-  onAfterEnter() {
-    document.getElementById("code")?.focus()
-  },
-  onBeforeLeave() {
-    // TODO: What if leaving is cancelled?
-    abortController.abort()
-  },
+  onAfterEnter,
+  onBeforeLeave,
 })
 
-onUnmounted(() => {
+onUnmounted(onBeforeLeave)
+
+function onAfterEnter() {
+  document.getElementById("code")?.focus()
+}
+
+function onBeforeLeave() {
   abortController.abort()
-})
+}
 
 async function onBack() {
   if (mainProgress.value > 0) {

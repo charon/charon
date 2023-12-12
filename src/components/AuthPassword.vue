@@ -54,18 +54,19 @@ onMounted(() => {
 })
 
 defineExpose({
-  onAfterEnter() {
-    document.getElementById("current-password")?.focus()
-  },
-  onBeforeLeave() {
-    // TODO: What if leaving is cancelled?
-    abortController.abort()
-  },
+  onAfterEnter,
+  onBeforeLeave,
 })
 
-onUnmounted(() => {
+onUnmounted(onBeforeLeave)
+
+function onAfterEnter() {
+  document.getElementById("current-password")?.focus()
+}
+
+function onBeforeLeave() {
   abortController.abort()
-})
+}
 
 async function getKey() {
   try {
