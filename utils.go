@@ -71,7 +71,7 @@ func getFlowFromID(ctx context.Context, value string) (*Flow, errors.E) {
 	return GetFlow(ctx, id)
 }
 
-func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request, api bool) bool {
+func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request, api bool, targetName string) bool {
 	_, errE := getSessionFromRequest(req)
 	if errE == nil {
 		return true
@@ -87,13 +87,14 @@ func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request,
 
 	id := identifier.New()
 	errE = SetFlow(req.Context(), &Flow{
-		ID:       id,
-		Session:  nil,
-		Target:   req.URL.String(),
-		OIDC:     nil,
-		Passkey:  nil,
-		Password: nil,
-		Code:     nil,
+		ID:             id,
+		Session:        nil,
+		TargetLocation: req.URL.String(),
+		TargetName:     targetName,
+		OIDC:           nil,
+		Passkey:        nil,
+		Password:       nil,
+		Code:           nil,
 	})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -129,9 +130,11 @@ func (s *Service) GetActiveFlow(w http.ResponseWriter, req *http.Request, api bo
 
 		if api {
 			s.WriteJSON(w, req, AuthFlowResponse{
-				Error: "",
+				Error:     "",
+				Completed: true,
 				Location: &AuthFlowResponseLocation{
-					URL:     flow.Target,
+					URL:     flow.TargetLocation,
+					Name:    flow.TargetName,
 					Replace: true,
 				},
 				Passkey:  nil,
@@ -141,7 +144,7 @@ func (s *Service) GetActiveFlow(w http.ResponseWriter, req *http.Request, api bo
 			return nil
 		}
 
-		s.TemporaryRedirectGetMethod(w, req, flow.Target)
+		s.TemporaryRedirectGetMethod(w, req, flow.TargetLocation)
 		return nil
 	}
 

@@ -36,9 +36,10 @@ type FlowCode struct {
 }
 
 type Flow struct {
-	ID      identifier.Identifier
-	Session *identifier.Identifier
-	Target  string
+	ID             identifier.Identifier
+	Session        *identifier.Identifier
+	TargetLocation string
+	TargetName     string
 
 	OIDC     *FlowOIDC
 	Passkey  *webauthn.SessionData

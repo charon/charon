@@ -1,10 +1,14 @@
-import type { AuthFlowResponse } from "@/types"
+import type { InjectionKey } from "vue"
+import type { AuthFlowResponse, Flow } from "@/types"
 
-export function locationRedirect(response: AuthFlowResponse): boolean {
+export function locationRedirect(response: AuthFlowResponse, flow?: Flow): boolean {
   // We do not use Vue Router to force a server-side request which might return updated cookies
   // or redirect on its own somewhere because of new (or lack thereof) cookies.
   if ("location" in response) {
-    if (response.location.replace) {
+    if (response.completed && flow) {
+      flow.updateLocation(response.location)
+      flow.forward("complete")
+    } else if (response.location.replace) {
       window.location.replace(response.location.url)
     } else {
       window.location.assign(response.location.url)
@@ -28,3 +32,5 @@ export function toBase64(input: Uint8Array): string {
   const str = String.fromCharCode(...input)
   return btoa(str)
 }
+
+export const flowKey = Symbol() as InjectionKey<Flow>

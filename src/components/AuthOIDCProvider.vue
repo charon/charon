@@ -1,25 +1,20 @@
 <script setup lang="ts">
 import type { AuthFlowRequest, AuthFlowResponse, Providers } from "@/types"
-import { ref, computed, onUnmounted, onMounted, getCurrentInstance } from "vue"
+import { ref, computed, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import { postURL } from "@/api"
-import { locationRedirect } from "@/utils"
+import { flowKey, locationRedirect } from "@/utils"
 
 const props = defineProps<{
-  state: string
-  direction: "forward" | "backward"
   id: string
   provider: string
   providers: Providers
 }>()
 
-const emit = defineEmits<{
-  "update:state": [value: string]
-  "update:direction": [value: "forward" | "backward"]
-}>()
-
 const router = useRouter()
+
+const flow = inject(flowKey)
 
 const mainProgress = ref(0)
 const abortController = new AbortController()
@@ -61,7 +56,7 @@ defineExpose({
 onUnmounted(onBeforeLeave)
 
 function onAfterEnter() {
-  document.getElementById("redirect-immediately")?.focus()
+  document.getElementById("redirect")?.focus()
 }
 
 function onBeforeLeave() {
@@ -75,8 +70,7 @@ async function onBack() {
 
   clearInterval(interval)
   abortController.abort()
-  emit("update:direction", "backward")
-  emit("update:state", "start")
+  flow!.backward("start")
 }
 
 async function onPauseResume() {
@@ -119,7 +113,7 @@ async function onRedirect() {
     if (abortController.signal.aborted) {
       return
     }
-    if (locationRedirect(response)) {
+    if (locationRedirect(response, flow)) {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
       mainProgress.value += 1
     } else {
@@ -150,7 +144,7 @@ async function onRedirect() {
       <Button type="button" tabindex="3" :disabled="mainProgress > 0" @click.prevent="onBack">Back</Button>
       <div class="flex flex-row gap-4">
         <Button type="button" tabindex="2" :disabled="mainProgress > 0" @click.prevent="onPauseResume">{{ paused ? "Resume" : "Pause" }}</Button>
-        <Button id="redirect-immediately" primary type="button" tabindex="1" :disabled="mainProgress > 0" @click.prevent="onRedirect">Redirect</Button>
+        <Button id="redirect" primary type="button" tabindex="1" :disabled="mainProgress > 0" @click.prevent="onRedirect">Redirect</Button>
       </div>
     </div>
   </div>

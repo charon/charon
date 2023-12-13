@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import type { DeriveOptions, EncryptOptions, Providers } from "@/types"
-import { ref, computed, watch, onUnmounted, onMounted, getCurrentInstance } from "vue"
+import { ref, computed, watch, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
 import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import { startPassword } from "@/api"
+import { flowKey } from "@/utils"
 
 const props = defineProps<{
-  state: string
-  direction: "forward" | "backward"
   id: string
   providers: Providers
   emailOrUsername: string
@@ -19,17 +18,9 @@ const props = defineProps<{
   provider: string
 }>()
 
-const emit = defineEmits<{
-  "update:state": [value: string]
-  "update:direction": [value: "forward" | "backward"]
-  "update:emailOrUsername": [value: string]
-  "update:publicKey": [value: Uint8Array]
-  "update:deriveOptions": [value: DeriveOptions]
-  "update:encryptOptions": [value: EncryptOptions]
-  "update:provider": [value: string]
-}>()
-
 const router = useRouter()
+
+const flow = inject(flowKey)
 
 const abortController = new AbortController()
 const mainProgress = ref(0)
@@ -47,13 +38,13 @@ watch(
   },
 )
 
-// A proxy so that we can pass it as v-model again.
+// A proxy so that we can pass it as v-model.
 const emailOrUsernameProxy = computed({
   get() {
     return props.emailOrUsername
   },
   set(v: string) {
-    emit("update:emailOrUsername", v)
+    flow!.updateEmailOrUsername(v)
   },
 })
 
@@ -86,7 +77,7 @@ async function onNext() {
 
   mainProgress.value += 1
   try {
-    const response = await startPassword(router, props.id, props.emailOrUsername, abortController.signal, mainProgress, mainProgress)
+    const response = await startPassword(router, props.id, props.emailOrUsername, flow!, abortController.signal, mainProgress, mainProgress)
     if (abortController.signal.aborted) {
       return
     }
@@ -98,12 +89,11 @@ async function onNext() {
       return
     }
 
-    emit("update:emailOrUsername", response.emailOrUsername)
-    emit("update:publicKey", response.publicKey)
-    emit("update:deriveOptions", response.deriveOptions)
-    emit("update:encryptOptions", response.encryptOptions)
-    emit("update:direction", "forward")
-    emit("update:state", "password")
+    flow!.updateEmailOrUsername(response.emailOrUsername)
+    flow!.updatePublicKey(response.publicKey)
+    flow!.updateDeriveOptions(response.deriveOptions)
+    flow!.updateEncryptOptions(response.encryptOptions)
+    flow!.forward("password")
   } catch (error) {
     if (abortController.signal.aborted) {
       return
@@ -119,8 +109,7 @@ async function onPasskey() {
     return
   }
 
-  emit("update:direction", "forward")
-  emit("update:state", "passkeySignin")
+  flow!.forward("passkeySignin")
 }
 
 async function onOIDCProvider(provider: string) {
@@ -128,9 +117,8 @@ async function onOIDCProvider(provider: string) {
     return
   }
 
-  emit("update:direction", "forward")
-  emit("update:provider", provider)
-  emit("update:state", "oidcProvider")
+  flow!.updateProvider(provider)
+  flow!.forward("oidcProvider")
 }
 </script>
 

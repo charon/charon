@@ -104,10 +104,11 @@ func (s *Service) sendCode(
 	hlog.FromRequest(req).Info().Str("code", code).Strs("emails", emails).Msg("sending code")
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Error:    "",
-		Location: nil,
-		Passkey:  nil,
-		Password: nil,
+		Error:     "",
+		Completed: false,
+		Location:  nil,
+		Passkey:   nil,
+		Password:  nil,
 		Code: &AuthFlowResponseCode{
 			EmailOrUsername: preservedEmailOrUsername,
 		},

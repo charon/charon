@@ -1,24 +1,19 @@
 <script setup lang="ts">
 import type { AuthFlowRequest, AuthFlowResponse } from "@/types"
-import { getCurrentInstance, onMounted, onUnmounted, ref } from "vue"
+import { getCurrentInstance, inject, onMounted, onUnmounted, ref } from "vue"
 import { useRouter } from "vue-router"
 import { startRegistration, WebAuthnAbortService } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
 import { postURL } from "@/api"
-import { locationRedirect } from "@/utils"
+import { flowKey, locationRedirect } from "@/utils"
 
 const props = defineProps<{
-  state: string
-  direction: "forward" | "backward"
   id: string
 }>()
 
-const emit = defineEmits<{
-  "update:state": [value: string]
-  "update:direction": [value: "forward" | "backward"]
-}>()
-
 const router = useRouter()
+
+const flow = inject(flowKey)
 
 const mainProgress = ref(0)
 let abortController = new AbortController()
@@ -51,8 +46,7 @@ async function onBack() {
 
   abortController.abort()
   WebAuthnAbortService.cancelCeremony()
-  emit("update:direction", "backward")
-  emit("update:state", "start")
+  flow!.backward("start")
 }
 
 async function onRetry() {
@@ -62,8 +56,7 @@ async function onRetry() {
 
   abortController.abort()
   WebAuthnAbortService.cancelCeremony()
-  emit("update:direction", "backward")
-  emit("update:state", "passkeySignin")
+  flow!.backward("passkeySignin")
 }
 
 // TODO: Better handle unexpected errors. (E.g., createComplete failing.)
@@ -96,7 +89,7 @@ async function onPasskeySignup() {
     if (abortController.signal.aborted) {
       return
     }
-    if (locationRedirect(start)) {
+    if (locationRedirect(start, flow)) {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
       mainProgress.value += 1
       return
@@ -140,7 +133,7 @@ async function onPasskeySignup() {
       if (abortController.signal.aborted) {
         return
       }
-      if (locationRedirect(complete)) {
+      if (locationRedirect(complete, flow)) {
         // We increase the progress and never decrease it to wait for browser to do the redirect.
         mainProgress.value += 1
         return

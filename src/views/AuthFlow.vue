@@ -16,7 +16,7 @@ elements and links but that should not change how components look.
 -->
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from "vue"
+import { onMounted, onUnmounted, provide, ref } from "vue"
 import Footer from "@/components/Footer.vue"
 import AuthStart from "@/components/AuthStart.vue"
 import AuthOIDCProvider from "@/components/AuthOIDCProvider.vue"
@@ -24,10 +24,13 @@ import AuthPassword from "@/components/AuthPassword.vue"
 import AuthPasskeySignin from "@/components/AuthPasskeySignin.vue"
 import AuthPasskeySignup from "@/components/AuthPasskeySignup.vue"
 import AuthCode from "@/components/AuthCode.vue"
+import AuthComplete from "@/components/AuthComplete.vue"
+import { flowKey } from "@/utils"
 // We fetch siteContext in view because the server sends preload header
 // so we have to fetch it always, even if particular step does not need it.
 // Generally this is already cached.
 import siteContext from "@/context"
+import { DeriveOptions, EncryptOptions, LocationResponse } from "@/types"
 
 defineProps<{
   id: string
@@ -37,11 +40,41 @@ const state = ref("start")
 const direction = ref<"forward" | "backward">("forward")
 const emailOrUsername = ref("")
 const publicKey = ref(new Uint8Array())
-const deriveOptions = ref({ name: "", namedCurve: "" })
-const encryptOptions = ref({ name: "", iv: new Uint8Array(), tagLength: 0, length: 0 })
+const deriveOptions = ref<DeriveOptions>({ name: "", namedCurve: "" })
+const encryptOptions = ref<EncryptOptions>({ name: "", iv: new Uint8Array(), tagLength: 0, length: 0 })
 const provider = ref("")
+const location = ref<LocationResponse>({ url: "", name: "", replace: false })
 
 const component = ref()
+
+provide(flowKey, {
+  forward(to: string) {
+    direction.value = "forward"
+    state.value = to
+  },
+  backward(to: string) {
+    direction.value = "backward"
+    state.value = to
+  },
+  updateEmailOrUsername(value: string) {
+    emailOrUsername.value = value
+  },
+  updatePublicKey(value: Uint8Array) {
+    publicKey.value = value
+  },
+  updateDeriveOptions(value: DeriveOptions) {
+    deriveOptions.value = value
+  },
+  updateEncryptOptions(value: EncryptOptions) {
+    encryptOptions.value = value
+  },
+  updateProvider(value: string) {
+    provider.value = value
+  },
+  updateLocation(value: LocationResponse) {
+    location.value = value
+  },
+})
 
 // Call transition hooks on child components.
 // See: https://github.com/vuejs/rfcs/discussions/613
@@ -121,38 +154,27 @@ onUnmounted(() => {
           v-if="state === 'start'"
           :id="id"
           ref="component"
-          v-model:state="state"
-          v-model:direction="direction"
-          v-model:emailOrUsername="emailOrUsername"
-          v-model:publicKey="publicKey"
-          v-model:deriveOptions="deriveOptions"
-          v-model:encryptOptions="encryptOptions"
-          v-model:provider="provider"
-          :providers="siteContext.providers"
-        />
-        <AuthOIDCProvider
-          v-else-if="state === 'oidcProvider'"
-          :id="id"
-          ref="component"
-          v-model:state="state"
-          v-model:direction="direction"
-          :providers="siteContext.providers"
+          :email-or-username="emailOrUsername"
+          :public-key="publicKey"
+          :derive-options="deriveOptions"
+          :encrypt-options="encryptOptions"
           :provider="provider"
+          :providers="siteContext.providers"
         />
-        <AuthPasskeySignin v-else-if="state === 'passkeySignin'" :id="id" ref="component" v-model:state="state" v-model:direction="direction" />
-        <AuthPasskeySignup v-else-if="state === 'passkeySignup'" :id="id" ref="component" v-model:state="state" v-model:direction="direction" />
+        <AuthOIDCProvider v-else-if="state === 'oidcProvider'" :id="id" ref="component" :providers="siteContext.providers" :provider="provider" />
+        <AuthPasskeySignin v-else-if="state === 'passkeySignin'" :id="id" ref="component" />
+        <AuthPasskeySignup v-else-if="state === 'passkeySignup'" :id="id" ref="component" />
         <AuthPassword
           v-else-if="state === 'password'"
           :id="id"
           ref="component"
-          v-model:state="state"
-          v-model:direction="direction"
           :email-or-username="emailOrUsername"
           :public-key="publicKey"
           :derive-options="deriveOptions"
           :encrypt-options="encryptOptions"
         />
-        <AuthCode v-else-if="state === 'code'" :id="id" ref="component" v-model:state="state" v-model:direction="direction" :email-or-username="emailOrUsername" />
+        <AuthCode v-else-if="state === 'code'" :id="id" ref="component" :email-or-username="emailOrUsername" />
+        <AuthComplete v-else-if="state === 'complete'" ref="component" :location="location" />
       </Transition>
     </div>
   </div>

@@ -38,15 +38,19 @@ export type PasswordResponse = {
   encryptOptions: EncryptOptions
 }
 
+export type LocationResponse = {
+  url: string
+  name: string
+  replace: boolean
+}
+
 export type AuthFlowResponse =
   | {
       error: "wrongPassword" | "noEmails" | "noAccount" | "invalidCode" | "invalidEmailOrUsername" | "shortEmailOrUsername" | "invalidPassword" | "shortPassword"
     }
   | {
-      location: {
-        url: string
-        replace: boolean
-      }
+      completed: boolean
+      location: LocationResponse
     }
   | {
       passkey:
@@ -145,4 +149,15 @@ export type SiteContext = {
     revision?: string
   }
   providers: Providers
+}
+
+export type Flow = {
+  forward(to: string): void
+  backward(to: string): void
+  updateEmailOrUsername(value: string): void
+  updatePublicKey(value: Uint8Array): void
+  updateDeriveOptions(value: DeriveOptions): void
+  updateEncryptOptions(value: EncryptOptions): void
+  updateProvider(value: string): void
+  updateLocation(value: LocationResponse): void
 }

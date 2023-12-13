@@ -1,6 +1,6 @@
 import type { Ref } from "vue"
 import type { Router } from "vue-router"
-import type { AuthFlowRequest, AuthFlowResponse, PasswordResponse } from "@/types"
+import type { AuthFlowRequest, AuthFlowResponse, Flow, PasswordResponse } from "@/types"
 import { fromBase64, locationRedirect } from "@/utils"
 
 export class FetchError extends Error {
@@ -92,6 +92,7 @@ export async function startPassword(
   router: Router,
   flowID: string,
   emailOrUsername: string,
+  flow: Flow,
   abortSignal: AbortSignal,
   progress: Ref<number>,
   mainProgress: Ref<number>,
@@ -119,7 +120,7 @@ export async function startPassword(
       abortSignal,
       progress,
     )) as AuthFlowResponse
-    if (locationRedirect(response)) {
+    if (locationRedirect(response, flow)) {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
       mainProgress.value += 1
       return null

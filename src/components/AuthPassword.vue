@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import type { AuthFlowRequest, AuthFlowResponse, DeriveOptions, EncryptOptions } from "@/types"
-import { ref, computed, watch, onUnmounted, onMounted, getCurrentInstance } from "vue"
+import { ref, computed, watch, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import { postURL, startPassword } from "@/api"
-import { locationRedirect, toBase64 } from "@/utils"
+import { flowKey, locationRedirect, toBase64 } from "@/utils"
 
 const props = defineProps<{
-  state: string
-  direction: "forward" | "backward"
   id: string
   emailOrUsername: string
   publicKey: Uint8Array
@@ -17,12 +15,9 @@ const props = defineProps<{
   encryptOptions: EncryptOptions
 }>()
 
-const emit = defineEmits<{
-  "update:state": [value: string]
-  "update:direction": [value: "forward" | "backward"]
-}>()
-
 const router = useRouter()
+
+const flow = inject(flowKey)
 
 const password = ref("")
 const mainProgress = ref(0)
@@ -70,7 +65,7 @@ function onBeforeLeave() {
 
 async function getKey() {
   try {
-    const response = await startPassword(router, props.id, props.emailOrUsername, abortController.signal, keyProgress, mainProgress)
+    const response = await startPassword(router, props.id, props.emailOrUsername, flow!, abortController.signal, keyProgress, mainProgress)
     if (abortController.signal.aborted) {
       return
     }
@@ -105,8 +100,7 @@ async function onBack() {
   }
 
   abortController.abort()
-  emit("update:direction", "backward")
-  emit("update:state", "start")
+  flow!.backward("start")
 }
 
 async function onNext() {
@@ -172,7 +166,7 @@ async function onNext() {
     if (abortController.signal.aborted) {
       return
     }
-    if (locationRedirect(response)) {
+    if (locationRedirect(response, flow)) {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
       mainProgress.value += 1
       return
@@ -191,8 +185,7 @@ async function onNext() {
     }
     if ("code" in response) {
       // We ignore response.code.emailOrUsername.
-      emit("update:direction", "forward")
-      emit("update:state", "code")
+      flow!.forward("code")
       return
     }
     throw new Error("unexpected response")
@@ -237,7 +230,7 @@ async function onCode() {
     if (abortController.signal.aborted) {
       return
     }
-    if (locationRedirect(response)) {
+    if (locationRedirect(response, flow)) {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
       mainProgress.value += 1
       return
@@ -249,8 +242,7 @@ async function onCode() {
     }
     if ("code" in response) {
       // We ignore response.code.emailOrUsername.
-      emit("update:direction", "forward")
-      emit("update:state", "code")
+      flow!.forward("code")
       return
     }
     throw new Error("unexpected response")

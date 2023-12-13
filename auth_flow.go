@@ -26,15 +26,17 @@ type AuthFlowRequest struct {
 
 type AuthFlowResponseLocation struct {
 	URL     string `json:"url"`
+	Name    string `json:"name"`
 	Replace bool   `json:"replace"`
 }
 
 type AuthFlowResponse struct {
-	Error    string                    `json:"error,omitempty"`
-	Location *AuthFlowResponseLocation `json:"location,omitempty"`
-	Passkey  *AuthFlowResponsePasskey  `json:"passkey,omitempty"`
-	Password *AuthFlowResponsePassword `json:"password,omitempty"`
-	Code     *AuthFlowResponseCode     `json:"code,omitempty"`
+	Error     string                    `json:"error,omitempty"`
+	Completed bool                      `json:"completed,omitempty"`
+	Location  *AuthFlowResponseLocation `json:"location,omitempty"`
+	Passkey   *AuthFlowResponsePasskey  `json:"passkey,omitempty"`
+	Password  *AuthFlowResponsePassword `json:"password,omitempty"`
+	Code      *AuthFlowResponseCode     `json:"code,omitempty"`
 }
 
 func (s *Service) flowError(w http.ResponseWriter, req *http.Request, code string, err errors.E) {
@@ -47,11 +49,12 @@ func (s *Service) flowError(w http.ResponseWriter, req *http.Request, code strin
 	s.WithError(ctx, err)
 
 	response := AuthFlowResponse{
-		Error:    code,
-		Location: nil,
-		Passkey:  nil,
-		Password: nil,
-		Code:     nil,
+		Error:     code,
+		Completed: false,
+		Location:  nil,
+		Passkey:   nil,
+		Password:  nil,
+		Code:      nil,
 	}
 
 	encoded := s.PrepareJSON(w, req, response, nil)
@@ -87,17 +90,33 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 	}
 
 	response := AuthFlowResponse{
-		Error:    "",
-		Location: nil,
-		Passkey:  nil,
-		Password: nil,
-		Code:     nil,
+		Error:     "",
+		Completed: false,
+		Location:  nil,
+		Passkey:   nil,
+		Password:  nil,
+		Code:      nil,
 	}
 
-	// Only code can be resumed.
+	// Code can be resumed.
 	if flow.Code != nil {
 		response.Code = &AuthFlowResponseCode{
 			EmailOrUsername: flow.Code.EmailOrUsername,
+		}
+	}
+
+	if flow.Session != nil {
+		// TODO: Redirect to target only if same user is still authenticated.
+		//       When flow completes, we should remember the user who authenticated. Then, here, we should check if the same user is still
+		//       authenticated. If yes, then we redirect to target. If not and some user is authenticated, then we redirect to /. If not and
+		//       no user is authenticated, then we start a new flow with additional field which requires the completing user to be the same.
+		//       If after flow completes the user is the same, we redirect to target, otherwise to /.
+
+		response.Completed = true
+		response.Location = &AuthFlowResponseLocation{
+			URL:     flow.TargetLocation,
+			Name:    flow.TargetName,
+			Replace: true,
 		}
 	}
 
@@ -251,9 +270,11 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 
 	if api {
 		s.WriteJSON(w, req, AuthFlowResponse{
-			Error: "",
+			Error:     "",
+			Completed: true,
 			Location: &AuthFlowResponseLocation{
-				URL:     flow.Target,
+				URL:     flow.TargetLocation,
+				Name:    flow.TargetName,
 				Replace: true,
 			},
 			Passkey:  nil,
@@ -261,6 +282,6 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 			Code:     nil,
 		}, nil)
 	} else {
-		s.TemporaryRedirectGetMethod(w, req, flow.Target)
+		s.TemporaryRedirectGetMethod(w, req, flow.TargetLocation)
 	}
 }
