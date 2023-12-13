@@ -120,34 +120,6 @@ func (s *Service) GetActiveFlow(w http.ResponseWriter, req *http.Request, api bo
 		return nil
 	}
 
-	// Has flow already completed?
-	if flow.Session != nil {
-		// TODO: Redirect to target only if same user is still authenticated.
-		//       When flow completes, we should remember the user who authenticated. Then, here, we should check if the same user is still
-		//       authenticated. If yes, then we redirect to target. If not and some user is authenticated, then we redirect to /. If not and
-		//       no user is authenticated, then we start a new flow with additional field which requires the completing user to be the same.
-		//       If after flow completes the user is the same, we redirect to target, otherwise to /.
-
-		if api {
-			s.WriteJSON(w, req, AuthFlowResponse{
-				Error:     "",
-				Completed: true,
-				Location: &AuthFlowResponseLocation{
-					URL:     flow.TargetLocation,
-					Name:    flow.TargetName,
-					Replace: true,
-				},
-				Passkey:  nil,
-				Password: nil,
-				Code:     nil,
-			}, nil)
-			return nil
-		}
-
-		s.TemporaryRedirectGetMethod(w, req, flow.TargetLocation)
-		return nil
-	}
-
 	return flow
 }
 

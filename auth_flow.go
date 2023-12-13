@@ -83,7 +83,6 @@ func (s *Service) AuthFlow(w http.ResponseWriter, req *http.Request, params waf.
 }
 
 func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	// This already returns AuthFlowResponse with Location set.
 	flow := s.GetActiveFlow(w, req, true, params["id"])
 	if flow == nil {
 		return
@@ -105,6 +104,7 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 		}
 	}
 
+	// Has flow already completed?
 	if flow.Session != nil {
 		// TODO: Redirect to target only if same user is still authenticated.
 		//       When flow completes, we should remember the user who authenticated. Then, here, we should check if the same user is still
@@ -131,6 +131,12 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	// Has flow already completed?
+	if flow.Session != nil {
+		s.BadRequestWithError(w, req, errors.New("flow already completed"))
+		return
+	}
 
 	var authFlowRequest AuthFlowRequest
 	errE := x.DecodeJSON(req.Body, &authFlowRequest)
@@ -281,7 +287,15 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 			Password: nil,
 			Code:     nil,
 		}, nil)
-	} else {
-		s.TemporaryRedirectGetMethod(w, req, flow.TargetLocation)
+		return
 	}
+
+	// We redirect back to the flow which then redirects to the target location on the frontend,
+	// after showing the message about successful sign-in or sign-up.
+	l, errE := s.Reverse("AuthFlow", waf.Params{"id": flow.ID.String()}, nil)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+	s.TemporaryRedirectGetMethod(w, req, l)
 }
