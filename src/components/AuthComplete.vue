@@ -83,10 +83,11 @@ async function onRedirect() {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full float-left first:ml-0 ml-[-100%]">
     <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>
-    <div>Success. This concludes the process.</div>
-    <div class="mt-4">
-      You will be now redirected to <strong>{{ location.name }}</strong> in {{ seconds === 1 ? "1 second" : `${seconds} seconds` }}{{ paused ? " (paused)" : "" }}.
+    <div>
+      Congratulations. You successfully signed in or signed up to <strong>{{ location.name }}</strong
+      >.
     </div>
+    <div class="mt-4">You will be now redirected to {{ location.name }} in {{ seconds === 1 ? "1 second" : `${seconds} seconds` }}{{ paused ? " (paused)" : "" }}.</div>
     <div class="mt-4 flex flex-row justify-end gap-4">
       <Button type="button" tabindex="2" :disabled="mainProgress > 0" @click.prevent="onPauseResume">{{ paused ? "Resume" : "Pause" }}</Button>
       <Button id="redirect" primary type="button" tabindex="1" :disabled="mainProgress > 0" @click.prevent="onRedirect">Redirect</Button>
