@@ -195,7 +195,9 @@ onUnmounted(() => {
   <div v-if="!dataLoading" class="w-full self-start overflow-hidden flex flex-col items-center">
     <div class="w-[65ch] m-1 mb-0 sm:mb-0 sm:m-4 rounded border bg-white p-4 shadow">
       <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>
-      <strong>{{ name }}</strong> is asking you to sign-in or sign-up. Please follow the steps below to do so.
+      <div>
+        <strong>{{ name }}</strong> is asking you to sign-in or sign-up. Please follow the steps below to do so.
+      </div>
     </div>
     <div class="w-[65ch] m-1 sm:m-4">
       <Transition

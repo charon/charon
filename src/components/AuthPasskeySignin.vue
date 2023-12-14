@@ -83,7 +83,6 @@ async function onAfterEnter() {
     if (abortController.signal.aborted) {
       return
     }
-    abortController.abort()
     flow!.forward("passkeySignup")
     return
   }

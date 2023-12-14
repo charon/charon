@@ -16,7 +16,7 @@ const router = useRouter()
 const flow = inject(flowKey)
 
 const mainProgress = ref(0)
-let abortController = new AbortController()
+const abortController = new AbortController()
 const signupProgress = ref(0)
 const signupAttempted = ref(false)
 const signupFailed = ref(false)
@@ -69,7 +69,6 @@ async function onPasskeySignup() {
   try {
     signupAttempted.value = true
     signupFailed.value = false
-    abortController = new AbortController()
     const url = router.apiResolve({
       name: "AuthFlow",
       params: {
@@ -105,7 +104,6 @@ async function onPasskeySignup() {
       if (abortController.signal.aborted) {
         return
       }
-      abortController.abort()
       signupFailed.value = true
       signupFailedAtLeastOnce.value = true
       return
