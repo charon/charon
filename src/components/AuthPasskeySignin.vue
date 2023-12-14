@@ -149,7 +149,6 @@ async function onCancel() {
 
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full float-left first:ml-0 ml-[-100%]">
-    <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>
     <div>Signing you in using <strong>passkey</strong>. Please follow instructions by your browser and/or device.</div>
     <div class="mt-4">If you have not yet signed up with passkey, this will fail. In that case Charon will offer you to sign up instead.</div>
     <div class="mt-4 flex flex-row justify-between gap-4">

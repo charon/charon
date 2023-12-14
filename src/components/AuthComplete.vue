@@ -83,7 +83,6 @@ async function onRedirect() {
 
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full float-left first:ml-0 ml-[-100%]">
-    <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>
     <div>Congratulations. You successfully signed in or signed up.</div>
     <div class="mt-4">You will be now redirected to {{ name }} in {{ seconds === 1 ? "1 second" : `${seconds} seconds` }}{{ paused ? " (paused)" : "" }}.</div>
     <div class="mt-4 flex flex-row justify-end gap-4">
