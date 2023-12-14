@@ -16,7 +16,7 @@ elements and links but that should not change how components look.
 -->
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, provide, ref } from "vue"
+import { onBeforeMount, onMounted, onUnmounted, provide, ref } from "vue"
 import Footer from "@/components/Footer.vue"
 import AuthStart from "@/components/AuthStart.vue"
 import AuthOIDCProvider from "@/components/AuthOIDCProvider.vue"
@@ -30,12 +30,17 @@ import { flowKey } from "@/utils"
 // so we have to fetch it always, even if particular step does not need it.
 // Generally this is already cached.
 import siteContext from "@/context"
-import { DeriveOptions, EncryptOptions, LocationResponse } from "@/types"
+import { AuthFlowResponse, DeriveOptions, EncryptOptions, LocationResponse } from "@/types"
+import { useRouter } from "vue-router"
+import { FetchError } from "@/api"
 
-defineProps<{
+const props = defineProps<{
   id: string
 }>()
 
+const router = useRouter()
+
+const dataLoading = ref(true)
 const state = ref("start")
 const direction = ref<"forward" | "backward">("forward")
 const emailOrUsername = ref("")
@@ -44,6 +49,46 @@ const deriveOptions = ref<DeriveOptions>({ name: "", namedCurve: "" })
 const encryptOptions = ref<EncryptOptions>({ name: "", iv: new Uint8Array(), tagLength: 0, length: 0 })
 const provider = ref("")
 const location = ref<LocationResponse>({ url: "", name: "", replace: false })
+
+onBeforeMount(async () => {
+  try {
+    const url = router.apiResolve({
+      name: "AuthFlow",
+      params: {
+        id: props.id,
+      },
+    }).href
+    const response = await fetch(url, {
+      method: "GET",
+      // Mode and credentials match crossorigin=anonymous in link preload header.
+      mode: "cors",
+      credentials: "same-origin",
+      referrer: document.location.href,
+      referrerPolicy: "strict-origin-when-cross-origin",
+    })
+    const contentType = response.headers.get("Content-Type")
+    if (!contentType || !contentType.includes("application/json")) {
+      const body = await response.text()
+      throw new FetchError(`fetch POST error ${response.status}: ${body}`, {
+        status: response.status,
+        body,
+        url,
+        requestID: response.headers.get("Request-ID"),
+      })
+    }
+    const flowResponse = (await response.json()) as AuthFlowResponse
+    if ("code" in flowResponse) {
+      state.value = "code"
+      emailOrUsername.value = flowResponse.code.emailOrUsername
+    } else if ("location" in flowResponse && flowResponse.completed) {
+      state.value = "complete"
+      location.value = flowResponse.location
+    }
+    // TODO: Handle error.
+  } finally {
+    dataLoading.value = false
+  }
+})
 
 const component = ref()
 
@@ -139,7 +184,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="w-full self-start overflow-hidden flex flex-row justify-center">
+  <div v-if="!dataLoading" class="w-full self-start overflow-hidden flex flex-row justify-center">
     <div class="w-[65ch] m-1 sm:m-4">
       <Transition
         :name="direction"
