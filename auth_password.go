@@ -150,6 +150,7 @@ func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
+		Name:      "",
 		Error:     "",
 		Completed: false,
 		Location:  nil,

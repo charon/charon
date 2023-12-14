@@ -26,11 +26,11 @@ type AuthFlowRequest struct {
 
 type AuthFlowResponseLocation struct {
 	URL     string `json:"url"`
-	Name    string `json:"name"`
 	Replace bool   `json:"replace"`
 }
 
 type AuthFlowResponse struct {
+	Name      string                    `json:"name"`
 	Error     string                    `json:"error,omitempty"`
 	Completed bool                      `json:"completed,omitempty"`
 	Location  *AuthFlowResponseLocation `json:"location,omitempty"`
@@ -49,6 +49,7 @@ func (s *Service) flowError(w http.ResponseWriter, req *http.Request, code strin
 	s.WithError(ctx, err)
 
 	response := AuthFlowResponse{
+		Name:      "",
 		Error:     code,
 		Completed: false,
 		Location:  nil,
@@ -89,6 +90,7 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 	}
 
 	response := AuthFlowResponse{
+		Name:      flow.TargetName,
 		Error:     "",
 		Completed: false,
 		Location:  nil,
@@ -115,7 +117,6 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 		response.Completed = true
 		response.Location = &AuthFlowResponseLocation{
 			URL:     flow.TargetLocation,
-			Name:    flow.TargetName,
 			Replace: true,
 		}
 	}
@@ -276,11 +277,11 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 
 	if api {
 		s.WriteJSON(w, req, AuthFlowResponse{
+			Name:      flow.TargetName,
 			Error:     "",
 			Completed: true,
 			Location: &AuthFlowResponseLocation{
 				URL:     flow.TargetLocation,
-				Name:    flow.TargetName,
 				Replace: true,
 			},
 			Passkey:  nil,

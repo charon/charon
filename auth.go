@@ -25,11 +25,11 @@ func (s *Service) AuthDelete(w http.ResponseWriter, req *http.Request, _ waf.Par
 	http.SetCookie(w, &cookie)
 
 	s.WriteJSON(w, req, AuthFlowResponse{
+		Name:      "",
 		Error:     "",
 		Completed: false,
 		Location: &AuthFlowResponseLocation{
 			URL:     "/",
-			Name:    "",
 			Replace: false,
 		},
 		Passkey:  nil,

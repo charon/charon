@@ -40,16 +40,19 @@ export type PasswordResponse = {
 
 export type LocationResponse = {
   url: string
-  name: string
   replace: boolean
 }
 
 export type AuthFlowResponse =
   | {
+      name: string
+    }
+  | {
       error: "wrongPassword" | "noEmails" | "noAccount" | "invalidCode" | "invalidEmailOrUsername" | "shortEmailOrUsername" | "invalidPassword" | "shortPassword"
     }
   | {
-      completed: boolean
+      name?: string
+      completed?: boolean
       location: LocationResponse
     }
   | {
@@ -65,6 +68,7 @@ export type AuthFlowResponse =
       password: PasswordResponseJSON
     }
   | {
+      name?: string
       code: {
         emailOrUsername: string
       }
@@ -160,4 +164,5 @@ export type Flow = {
   updateEncryptOptions(value: EncryptOptions): void
   updateProvider(value: string): void
   updateLocation(value: LocationResponse): void
+  updateName(value: string): void
 }

@@ -48,7 +48,8 @@ const publicKey = ref(new Uint8Array())
 const deriveOptions = ref<DeriveOptions>({ name: "", namedCurve: "" })
 const encryptOptions = ref<EncryptOptions>({ name: "", iv: new Uint8Array(), tagLength: 0, length: 0 })
 const provider = ref("")
-const location = ref<LocationResponse>({ url: "", name: "", replace: false })
+const location = ref<LocationResponse>({ url: "", replace: false })
+const name = ref("")
 
 onBeforeMount(async () => {
   try {
@@ -77,6 +78,9 @@ onBeforeMount(async () => {
       })
     }
     const flowResponse = (await response.json()) as AuthFlowResponse
+    if ("name" in flowResponse && flowResponse.name) {
+      name.value = flowResponse.name
+    }
     if ("code" in flowResponse) {
       state.value = "code"
       emailOrUsername.value = flowResponse.code.emailOrUsername
@@ -118,6 +122,9 @@ provide(flowKey, {
   },
   updateLocation(value: LocationResponse) {
     location.value = value
+  },
+  updateName(value: string) {
+    name.value = value
   },
 })
 
@@ -185,7 +192,10 @@ onUnmounted(() => {
 
 <template>
   <!-- TODO: Show data loading placeholder. -->
-  <div v-if="!dataLoading" class="w-full self-start overflow-hidden flex flex-row justify-center">
+  <div v-if="!dataLoading" class="w-full self-start overflow-hidden flex flex-col items-center">
+    <div class="w-[65ch] m-1 mb-0 sm:mb-0 sm:m-4 rounded border bg-white p-4 shadow">
+      <strong>{{ name }}</strong> is asking you to sign-in or sign-up. Please follow the steps below to do so.
+    </div>
     <div class="w-[65ch] m-1 sm:m-4">
       <Transition
         :name="direction"
@@ -220,7 +230,7 @@ onUnmounted(() => {
           :encrypt-options="encryptOptions"
         />
         <AuthCode v-else-if="state === 'code'" :id="id" ref="component" :email-or-username="emailOrUsername" />
-        <AuthComplete v-else-if="state === 'complete'" ref="component" :location="location" />
+        <AuthComplete v-else-if="state === 'complete'" ref="component" :location="location" :name="name" />
       </Transition>
     </div>
   </div>

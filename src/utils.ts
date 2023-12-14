@@ -7,6 +7,7 @@ export function locationRedirect(response: AuthFlowResponse, flow?: Flow): boole
   if ("location" in response) {
     if (response.completed && flow) {
       flow.updateLocation(response.location)
+      flow.updateName(response.name!)
       flow.forward("complete")
     } else if (response.location.replace) {
       window.location.replace(response.location.url)
