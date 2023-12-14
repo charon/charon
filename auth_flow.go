@@ -1,6 +1,7 @@
 package charon
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -68,12 +69,20 @@ func (s *Service) flowError(w http.ResponseWriter, req *http.Request, code strin
 }
 
 func (s *Service) AuthFlow(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	flow := s.GetActiveFlow(w, req, false, params["id"])
+	flow := s.GetActiveFlow(w, req, params["id"])
 	if flow == nil {
 		return
 	}
 
+	l, errE := s.ReverseAPI("AuthFlow", waf.Params{"id": flow.ID.String()}, nil)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	// We have it hard-coded here because we have it hard-coded on the frontend as well.
 	w.Header().Add("Link", "</api>; rel=preload; as=fetch; crossorigin=anonymous")
+	w.Header().Add("Link", fmt.Sprintf("<%s>; rel=preload; as=fetch; crossorigin=anonymous", l))
 	w.WriteHeader(http.StatusEarlyHints)
 
 	if s.Development != "" {
@@ -84,7 +93,7 @@ func (s *Service) AuthFlow(w http.ResponseWriter, req *http.Request, params waf.
 }
 
 func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	flow := s.GetActiveFlow(w, req, true, params["id"])
+	flow := s.GetActiveFlow(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -125,7 +134,7 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 }
 
 func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	flow := s.GetActiveFlow(w, req, true, params["id"])
+	flow := s.GetActiveFlow(w, req, params["id"])
 	if flow == nil {
 		return
 	}

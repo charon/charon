@@ -165,7 +165,7 @@ func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, par
 	}
 
 	// State should be provided even in the case of an error.
-	flow := s.GetActiveFlow(w, req, false, req.Form.Get("state"))
+	flow := s.GetActiveFlow(w, req, req.Form.Get("state"))
 	if flow == nil {
 		return
 	}
