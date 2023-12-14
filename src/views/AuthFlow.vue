@@ -184,6 +184,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <!-- TODO: Show data loading placeholder. -->
   <div v-if="!dataLoading" class="w-full self-start overflow-hidden flex flex-row justify-center">
     <div class="w-[65ch] m-1 sm:m-4">
       <Transition
