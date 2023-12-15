@@ -4,6 +4,7 @@ import { ref, computed, watch, onUnmounted, onMounted, getCurrentInstance, injec
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
+import InputTextButton from "@/components/InputTextButton.vue"
 import { postURL, startPassword } from "@/api"
 import { flowKey, locationRedirect, toBase64 } from "@/utils"
 
@@ -256,16 +257,9 @@ async function onCode() {
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full float-left first:ml-0 ml-[-100%]">
     <div class="flex flex-col">
       <label for="email-or-username" class="mb-1">{{ isEmail ? "Your e-mail address" : "Charon username" }}</label>
-      <button
-        id="email-or-username"
-        tabindex="5"
-        :disabled="mainProgress > 0"
-        type="button"
-        class="flex-grow appearance-none rounded border-0 border-gray-500 bg-white px-3 py-2 text-left text-base shadow outline-none ring-2 ring-neutral-300 hover:ring-neutral-400 focus:border-blue-600 focus:ring-2 focus:ring-primary-500"
-        @click.prevent="onBack"
-      >
+      <InputTextButton id="email-or-username" class="flex-grow" tabindex="5" :disabled="mainProgress > 0" @click.prevent="onBack">
         {{ emailOrUsername }}
-      </button>
+      </InputTextButton>
     </div>
     <div class="flex flex-col mt-4">
       <label for="current-password" class="mb-1">Password or passphrase</label>
