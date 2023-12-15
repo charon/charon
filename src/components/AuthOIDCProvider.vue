@@ -116,9 +116,9 @@ async function onRedirect() {
     if (locationRedirect(response, flow)) {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
       mainProgress.value += 1
-    } else {
-      throw new Error("unexpected response")
+      return
     }
+    throw new Error("unexpected response")
   } catch (error) {
     if (abortController.signal.aborted) {
       return
