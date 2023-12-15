@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AuthFlowResponse } from "@/types"
 import { onUnmounted, ref } from "vue"
+import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
 import { useRouter } from "vue-router"
 import { deleteURL } from "@/api"
@@ -23,6 +24,9 @@ async function onSignOut() {
       return
     }
     if (locationRedirect(response)) {
+      if (browserSupportsWebAuthn()) {
+        navigator.credentials.preventSilentAccess()
+      }
       // We increase the progress and never decrease it to wait for browser to do the redirect.
       mainProgress.value += 1
       return
