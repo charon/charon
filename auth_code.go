@@ -104,7 +104,7 @@ func (s *Service) sendCode(
 	hlog.FromRequest(req).Info().Str("code", code).Strs("emails", emails).Msg("sending code")
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Name:      "",
+		Name:      flow.TargetName,
 		Error:     "",
 		Completed: false,
 		Location:  nil,

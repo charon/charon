@@ -138,7 +138,7 @@ func (s *Service) startOIDCProvider(w http.ResponseWriter, req *http.Request, fl
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Name:      "",
+		Name:      flow.TargetName,
 		Error:     "",
 		Completed: false,
 		Location: &AuthFlowResponseLocation{

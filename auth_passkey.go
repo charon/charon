@@ -143,7 +143,7 @@ func (s *Service) startPasskeyGet(w http.ResponseWriter, req *http.Request, flow
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Name:      "",
+		Name:      flow.TargetName,
 		Error:     "",
 		Completed: false,
 		Location:  nil,
@@ -264,7 +264,7 @@ func (s *Service) startPasskeyCreate(w http.ResponseWriter, req *http.Request, f
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Name:      "",
+		Name:      flow.TargetName,
 		Error:     "",
 		Completed: false,
 		Location:  nil,
