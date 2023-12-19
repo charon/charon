@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AuthFlowRequest, AuthFlowResponse } from "@/types"
-import { getCurrentInstance, inject, onMounted, onUnmounted, ref } from "vue"
+import { getCurrentInstance, inject, nextTick, onMounted, onUnmounted, ref } from "vue"
 import { useRouter } from "vue-router"
 import { startRegistration, WebAuthnAbortService } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
@@ -29,10 +29,15 @@ onMounted(() => {
 })
 
 defineExpose({
+  onAfterEnter,
   onBeforeLeave,
 })
 
 onUnmounted(onBeforeLeave)
+
+function onAfterEnter() {
+  document.getElementById("passkey-signup")?.focus()
+}
 
 function onBeforeLeave() {
   abortController.abort()
@@ -95,6 +100,10 @@ async function onPasskeySignup() {
       }
       signupFailed.value = true
       signupFailedAtLeastOnce.value = true
+      nextTick(() => {
+        // We refocus button to retry.
+        document.getElementById("passkey-signup")?.focus()
+      })
       return
     }
 
@@ -140,8 +149,8 @@ async function onPasskeySignup() {
     <div v-else-if="signupAttempted">Signing you up using <strong>passkey</strong>. Please follow instructions by your browser and/or device.</div>
     <div v-else>Signing in using <strong>passkey</strong> failed. Do you want to sign up instead?</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" @click.prevent="onBack">Retry sign-in</Button>
-      <Button primary type="button" :disabled="mainProgress > 0" @click.prevent="onPasskeySignup">{{
+      <Button type="button" tabindex="2" @click.prevent="onBack">Retry sign-in</Button>
+      <Button id="passkey-signup" primary type="button" tabindex="1" :disabled="mainProgress > 0" @click.prevent="onPasskeySignup">{{
         signupFailedAtLeastOnce ? "Retry sign-up" : "Passkey sign-up"
       }}</Button>
     </div>

@@ -153,8 +153,8 @@ async function onCancel() {
     <div>Signing you in using <strong>passkey</strong>. Please follow instructions by your browser and/or device.</div>
     <div class="mt-4">If you have not yet signed up with passkey, this will fail. In that case Charon will offer you to sign up instead.</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" @click.prevent="onBack">Back</Button>
-      <Button type="button" :disabled="mainProgress > 0" @click.prevent="onCancel">Cancel</Button>
+      <Button type="button" tabindex="2" @click.prevent="onBack">Back</Button>
+      <Button type="button" tabindex="1" :disabled="mainProgress > 0" @click.prevent="onCancel">Cancel</Button>
     </div>
   </div>
 </template>
