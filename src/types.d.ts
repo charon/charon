@@ -155,9 +155,9 @@ export type Flow = {
   backward(to: string): void
   getEmailOrUsername(): string
   updateEmailOrUsername(value: string): void
-  updatePublicKey(value: Uint8Array): void
-  updateDeriveOptions(value: DeriveOptions): void
-  updateEncryptOptions(value: EncryptOptions): void
+  updatePublicKey(value?: Uint8Array): void
+  updateDeriveOptions(value?: DeriveOptions): void
+  updateEncryptOptions(value?: EncryptOptions): void
   getProvider(): string
   updateProvider(value: string): void
   updateLocation(value: LocationResponse): void

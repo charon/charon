@@ -11,9 +11,9 @@ import { flowKey, locationRedirect, toBase64, updateSteps } from "@/utils"
 const props = defineProps<{
   id: string
   emailOrUsername: string
-  publicKey: Uint8Array
-  deriveOptions: DeriveOptions
-  encryptOptions: EncryptOptions
+  publicKey?: Uint8Array
+  deriveOptions?: DeriveOptions
+  encryptOptions?: EncryptOptions
 }>()
 
 const router = useRouter()
@@ -31,10 +31,6 @@ const codeErrorOnce = ref(false)
 const isEmail = computed(() => {
   return props.emailOrUsername.indexOf("@") >= 0
 })
-
-let remotePublicKeyBytes = props.publicKey
-let effectiveDeriveOptions = props.deriveOptions
-let effectiveEncryptOptions = props.encryptOptions
 
 watch(password, () => {
   // We reset the error when input box value changes.
@@ -58,20 +54,32 @@ onUnmounted(onBeforeLeave)
 
 function onAfterEnter() {
   document.getElementById("current-password")?.focus()
+
+  // If public key or options are not available, we fetch them early so that user
+  // does not have to wait later on for us to fetch them.
+  if (!props.publicKey || !props.deriveOptions || !props.encryptOptions) {
+    // We do not use await here because it is OK if everything else continues to run
+    // while we are fetching the public key and options. (Also onAfterEnter is not async.)
+    getKey()
+  }
 }
 
 function onBeforeLeave() {
   abortController.abort()
 }
 
-async function getKey() {
+async function getKey(): Promise<boolean> {
+  // TODO: If getKey is already running at this point, we should just wait for the other one to finish.
+  //       And then return here with the same return value as the other one.
+
+  keyProgress.value += 1
   try {
     const response = await startPassword(router, props.id, props.emailOrUsername, flow!, abortController.signal, keyProgress, mainProgress)
     if (abortController.signal.aborted) {
-      return
+      return false
     }
     if (response === null) {
-      return
+      return false
     }
     if ("error" in response) {
       // This call has already succeeded with same arguments so it should not error.
@@ -79,14 +87,17 @@ async function getKey() {
     }
 
     // We ignore response.emailOrUsername.
-    remotePublicKeyBytes = response.publicKey
-    effectiveDeriveOptions = response.deriveOptions
-    effectiveEncryptOptions = response.encryptOptions
+    flow!.updatePublicKey(response.publicKey)
+    flow!.updateDeriveOptions(response.deriveOptions)
+    flow!.updateEncryptOptions(response.encryptOptions)
+    return true
   } catch (error) {
     if (abortController.signal.aborted) {
-      return
+      return false
     }
     throw error
+  } finally {
+    keyProgress.value -= 1
   }
 }
 
@@ -119,29 +130,49 @@ async function onNext() {
       },
     }).href
 
+    if (!props.publicKey || !props.deriveOptions || !props.encryptOptions) {
+      if (!(await getKey())) {
+        // Or signal was aborted or it was an redirect response.
+        return
+      }
+      if (!props.deriveOptions || !props.publicKey || !props.encryptOptions) {
+        // This should not happen.
+        throw new Error("missing public key or options")
+      }
+    }
+
+    const deriveOptions = props.deriveOptions
+    const publicKey = props.publicKey
+    const encryptOptions = props.encryptOptions
+
+    // We invalidate public key and options to never reuse them.
+    flow!.updatePublicKey()
+    flow!.updateDeriveOptions()
+    flow!.updateEncryptOptions()
+
     const encoder = new TextEncoder()
-    const keyPair = await crypto.subtle.generateKey(effectiveDeriveOptions, false, ["deriveKey"])
+    const keyPair = await crypto.subtle.generateKey(deriveOptions, false, ["deriveKey"])
     if (abortController.signal.aborted) {
       return
     }
-    const remotePublicKey = await crypto.subtle.importKey("raw", remotePublicKeyBytes, effectiveDeriveOptions, false, [])
+    const remotePublicKey = await crypto.subtle.importKey("raw", publicKey, deriveOptions, false, [])
     if (abortController.signal.aborted) {
       return
     }
     const secret = await crypto.subtle.deriveKey(
       {
-        ...effectiveDeriveOptions,
+        ...deriveOptions,
         public: remotePublicKey,
       },
       keyPair.privateKey,
-      effectiveEncryptOptions,
+      encryptOptions,
       false,
       ["encrypt"],
     )
     if (abortController.signal.aborted) {
       return
     }
-    const ciphertext = await crypto.subtle.encrypt(effectiveEncryptOptions, secret, encoder.encode(password.value))
+    const ciphertext = await crypto.subtle.encrypt(encryptOptions, secret, encoder.encode(password.value))
     if (abortController.signal.aborted) {
       return
     }
@@ -213,6 +244,12 @@ async function onCode() {
         id: props.id,
       },
     }).href
+
+    // We invalidate public key and options because starting the code
+    // provider invalidates them on the server side.
+    flow!.updatePublicKey()
+    flow!.updateDeriveOptions()
+    flow!.updateEncryptOptions()
 
     const response = (await postURL(
       url,

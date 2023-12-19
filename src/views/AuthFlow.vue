@@ -42,9 +42,9 @@ const steps = ref<AuthFlowStep[]>([])
 const currentStep = ref("start")
 const direction = ref<"forward" | "backward">("forward")
 const emailOrUsername = ref("")
-const publicKey = ref(new Uint8Array())
-const deriveOptions = ref<DeriveOptions>({ name: "", namedCurve: "" })
-const encryptOptions = ref<EncryptOptions>({ name: "", iv: new Uint8Array(), tagLength: 0, length: 0 })
+const publicKey = ref<Uint8Array>()
+const deriveOptions = ref<DeriveOptions>()
+const encryptOptions = ref<EncryptOptions>()
 const provider = ref("")
 const location = ref<LocationResponse>({ url: "", replace: false })
 const name = ref("")
@@ -64,13 +64,13 @@ const flow = {
   updateEmailOrUsername(value: string) {
     emailOrUsername.value = value
   },
-  updatePublicKey(value: Uint8Array) {
+  updatePublicKey(value?: Uint8Array) {
     publicKey.value = value
   },
-  updateDeriveOptions(value: DeriveOptions) {
+  updateDeriveOptions(value?: DeriveOptions) {
     deriveOptions.value = value
   },
-  updateEncryptOptions(value: EncryptOptions) {
+  updateEncryptOptions(value?: EncryptOptions) {
     encryptOptions.value = value
   },
   getProvider(): string {

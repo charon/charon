@@ -63,7 +63,7 @@ async function onBack() {
   }
 
   abortController.abort()
-  flow!.backward("start")
+  flow!.backward("password")
 }
 
 async function onNext() {
