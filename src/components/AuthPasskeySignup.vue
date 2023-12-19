@@ -46,16 +46,6 @@ async function onBack() {
 
   abortController.abort()
   WebAuthnAbortService.cancelCeremony()
-  flow!.backward("start")
-}
-
-async function onRetry() {
-  if (abortController.signal.aborted) {
-    return
-  }
-
-  abortController.abort()
-  WebAuthnAbortService.cancelCeremony()
   flow!.backward("passkeySignin")
 }
 
@@ -157,10 +147,7 @@ async function onPasskeySignup() {
     <div v-else-if="signupAttempted">Signing you up using <strong>passkey</strong>. Please follow instructions by your browser and/or device.</div>
     <div v-else>Signing in using <strong>passkey</strong> failed. Do you want to sign up instead?</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <div class="flex flex-row gap-4">
-        <Button type="button" :disabled="mainProgress > 0" @click.prevent="onBack">Back</Button>
-        <Button primary type="button" :disabled="mainProgress > 0" @click.prevent="onRetry">Retry sign-in</Button>
-      </div>
+      <Button type="button" :disabled="mainProgress > 0" @click.prevent="onBack">Retry sign-in</Button>
       <Button primary type="button" :disabled="mainProgress + signupProgress > 0" @click.prevent="onPasskeySignup">{{
         signupFailedAtLeastOnce ? "Retry sign-up" : "Passkey sign-up"
       }}</Button>
