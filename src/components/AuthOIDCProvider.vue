@@ -131,7 +131,7 @@ async function onRedirect() {
       anything.
     </div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" tabindex="3" :disabled="mainProgress > 0" @click.prevent="onBack">Back</Button>
+      <Button type="button" tabindex="3" @click.prevent="onBack">Back</Button>
       <div class="flex flex-row gap-4">
         <Button type="button" tabindex="2" :disabled="mainProgress > 0" @click.prevent="onPauseResume">{{ paused ? "Resume" : "Pause" }}</Button>
         <Button id="redirect" primary type="button" tabindex="1" :disabled="mainProgress > 0" @click.prevent="onRedirect">Redirect</Button>

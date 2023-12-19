@@ -57,13 +57,18 @@ async function onBack() {
   if (abortController.signal.aborted) {
     return
   }
-  if (mainProgress.value > 0) {
-    // Clicking on disabled links.
+
+  abortController.abort()
+  flow!.backward("password")
+}
+
+async function onRedo() {
+  if (abortController.signal.aborted) {
     return
   }
 
   abortController.abort()
-  flow!.backward("password")
+  flow!.backward("start")
 }
 
 async function onNext() {
@@ -217,11 +222,10 @@ async function onResend() {
     <div v-else class="mt-4">Please allow few minutes for the code to arrive. Check spam or junk folder.</div>
     <div class="mt-4">
       If you have trouble accessing your e-mail, try a
-      <a :href="mainProgress > 0 ? undefined : ''" class="link" :class="mainProgress > 0 ? 'disabled' : ''" @click.prevent="onBack">different sign-in or sign-up method</a
-      >.
+      <a href="" class="link" @click.prevent="onRedo">different sign-in or sign-up method</a>.
     </div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" tabindex="4" :disabled="mainProgress > 0" @click.prevent="onBack">Back</Button>
+      <Button type="button" tabindex="4" @click.prevent="onBack">Back</Button>
       <Button type="button" tabindex="3" :disabled="mainProgress > 0" @click.prevent="onResend">Resend code</Button>
     </div>
   </div>

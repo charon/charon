@@ -17,7 +17,6 @@ const flow = inject(flowKey)
 
 const mainProgress = ref(0)
 const abortController = new AbortController()
-const signupProgress = ref(0)
 const signupAttempted = ref(false)
 const signupFailed = ref(false)
 const signupFailedAtLeastOnce = ref(false)
@@ -55,7 +54,7 @@ async function onPasskeySignup() {
     return
   }
 
-  signupProgress.value += 1
+  mainProgress.value += 1
   try {
     signupAttempted.value = true
     signupFailed.value = false
@@ -73,7 +72,7 @@ async function onPasskeySignup() {
         step: "createStart",
       } as AuthFlowRequest,
       abortController.signal,
-      signupProgress,
+      mainProgress,
     )) as AuthFlowResponse
     if (abortController.signal.aborted) {
       return
@@ -103,40 +102,34 @@ async function onPasskeySignup() {
       return
     }
 
-    // We do not allow back or cancel after this point.
-    mainProgress.value += 1
-    try {
-      const complete = (await postURL(
-        url,
-        {
-          provider: "passkey",
-          step: "createComplete",
-          passkey: {
-            createResponse: attestation,
-          },
-        } as AuthFlowRequest,
-        abortController.signal,
-        mainProgress,
-      )) as AuthFlowResponse
-      if (abortController.signal.aborted) {
-        return
-      }
-      if (locationRedirect(complete, flow)) {
-        // We increase the progress and never decrease it to wait for browser to do the redirect.
-        mainProgress.value += 1
-        return
-      }
-      throw new Error("unexpected response")
-    } finally {
-      mainProgress.value -= 1
+    const complete = (await postURL(
+      url,
+      {
+        provider: "passkey",
+        step: "createComplete",
+        passkey: {
+          createResponse: attestation,
+        },
+      } as AuthFlowRequest,
+      abortController.signal,
+      mainProgress,
+    )) as AuthFlowResponse
+    if (abortController.signal.aborted) {
+      return
     }
+    if (locationRedirect(complete, flow)) {
+      // We increase the progress and never decrease it to wait for browser to do the redirect.
+      mainProgress.value += 1
+      return
+    }
+    throw new Error("unexpected response")
   } catch (error) {
     if (abortController.signal.aborted) {
       return
     }
     throw error
   } finally {
-    signupProgress.value -= 1
+    mainProgress.value -= 1
   }
 }
 </script>
@@ -147,8 +140,8 @@ async function onPasskeySignup() {
     <div v-else-if="signupAttempted">Signing you up using <strong>passkey</strong>. Please follow instructions by your browser and/or device.</div>
     <div v-else>Signing in using <strong>passkey</strong> failed. Do you want to sign up instead?</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" :disabled="mainProgress > 0" @click.prevent="onBack">Retry sign-in</Button>
-      <Button primary type="button" :disabled="mainProgress + signupProgress > 0" @click.prevent="onPasskeySignup">{{
+      <Button type="button" @click.prevent="onBack">Retry sign-in</Button>
+      <Button primary type="button" :disabled="mainProgress > 0" @click.prevent="onPasskeySignup">{{
         signupFailedAtLeastOnce ? "Retry sign-up" : "Passkey sign-up"
       }}</Button>
     </div>

@@ -22,8 +22,8 @@ const flow = inject(flowKey)
 
 const password = ref("")
 const mainProgress = ref(0)
-const abortController = new AbortController()
 const keyProgress = ref(0)
+const abortController = new AbortController()
 const passwordError = ref("")
 const codeError = ref("")
 const codeErrorOnce = ref(false)
@@ -106,8 +106,12 @@ async function onBack() {
     return
   }
 
-  if (mainProgress.value > 0) {
-    // Clicking on disabled links.
+  abortController.abort()
+  flow!.backward("start")
+}
+
+async function onRedo() {
+  if (abortController.signal.aborted) {
     return
   }
 
@@ -336,7 +340,7 @@ async function onCode() {
       <div v-else-if="passwordError === 'shortPassword'" class="mt-4 text-error-600">Password or passphrase should be at least 8 characters.</div>
       <div v-if="passwordError === 'wrongPassword'" class="mt-4">
         If you have trouble remembering your password or passphrase, try a
-        <a :href="mainProgress > 0 ? undefined : ''" class="link" :class="mainProgress > 0 ? 'disabled' : ''" @click.prevent="onBack">different sign-in method</a>.
+        <a href="" class="link" @click.prevent="onRedo">different sign-in method</a>.
       </div>
     </template>
     <div v-else-if="isEmail" class="mt-4">
@@ -356,7 +360,7 @@ async function onCode() {
     </div>
     <div v-else class="mt-4">You can also skip entering password or passphrase and directly request the code.</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" tabindex="4" :disabled="mainProgress > 0" @click.prevent="onBack">Back</Button>
+      <Button type="button" tabindex="4" @click.prevent="onBack">Back</Button>
       <Button type="button" primary tabindex="3" :disabled="!!codeError || mainProgress > 0" @click.prevent="onCode">Send code</Button>
     </div>
   </div>
