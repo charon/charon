@@ -11,7 +11,6 @@ const props = defineProps<{
 const mainProgress = ref(0)
 const abortController = new AbortController()
 const paused = ref(false)
-
 const seconds = ref(3)
 
 let interval: number
@@ -23,7 +22,6 @@ function initInterval() {
     }
   }, 1000) as unknown as number // ms
 }
-initInterval()
 
 // Define transition hooks to be called by the parent component.
 // See: https://github.com/vuejs/rfcs/discussions/613
@@ -40,6 +38,7 @@ defineExpose({
 onUnmounted(onBeforeLeave)
 
 function onAfterEnter() {
+  initInterval()
   document.getElementById("redirect")?.focus()
 }
 
@@ -79,6 +78,27 @@ async function onRedirect() {
     window.location.assign(props.location.url)
   }
 }
+
+function onPause(event: KeyboardEvent) {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  if (event.key === "Escape") {
+    clearInterval(interval)
+    paused.value = true
+  }
+}
+
+onMounted(() => {
+  document.addEventListener("keydown", onPause, {
+    signal: abortController.signal,
+  })
+})
+
+onUnmounted(() => {
+  document.removeEventListener("keydown", onPause)
+})
 </script>
 
 <template>
