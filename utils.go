@@ -87,14 +87,16 @@ func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request,
 
 	id := identifier.New()
 	errE = SetFlow(req.Context(), &Flow{
-		ID:             id,
-		Session:        nil,
-		TargetLocation: req.URL.String(),
-		TargetName:     targetName,
-		OIDC:           nil,
-		Passkey:        nil,
-		Password:       nil,
-		Code:           nil,
+		ID:              id,
+		Session:         nil,
+		TargetLocation:  req.URL.String(),
+		TargetName:      targetName,
+		Provider:        "",
+		EmailOrUsername: "",
+		OIDC:            nil,
+		Passkey:         nil,
+		Password:        nil,
+		Code:            nil,
 	})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)

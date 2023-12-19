@@ -1,15 +1,14 @@
 <script setup lang="ts">
-import type { AuthFlowRequest, AuthFlowResponse, Providers } from "@/types"
-import { ref, computed, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
+import type { AuthFlowRequest, AuthFlowResponse } from "@/types"
+import { ref, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import { postURL } from "@/api"
-import { flowKey, locationRedirect } from "@/utils"
+import { flowKey, locationRedirect, providerName } from "@/utils"
 
 const props = defineProps<{
   id: string
   provider: string
-  providers: Providers
 }>()
 
 const router = useRouter()
@@ -19,15 +18,6 @@ const flow = inject(flowKey)
 const mainProgress = ref(0)
 const abortController = new AbortController()
 const paused = ref(false)
-
-const providerName = computed(() => {
-  for (const p of props.providers) {
-    if (p.key === props.provider) {
-      return p.name
-    }
-  }
-  throw new Error(`provider "${props.provider}" not found among providers`)
-})
 const seconds = ref(3)
 
 let interval: number
@@ -133,11 +123,12 @@ async function onRedirect() {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full float-left first:ml-0 ml-[-100%]">
     <div>
-      You will be redirected to <strong>{{ providerName }}</strong> in {{ seconds === 1 ? "1 second" : `${seconds} seconds` }}{{ paused ? " (paused)" : "" }}.
+      You will be redirected to <strong>{{ providerName(provider) }}</strong> in {{ seconds === 1 ? "1 second" : `${seconds} seconds` }}{{ paused ? " (paused)" : "" }}.
     </div>
     <div class="mt-4">Please follow instructions there to sign-in into Charon. Afterwards, you will be redirected back here.</div>
     <div class="mt-4">
-      You might have to sign-in into {{ providerName }} first. You might be redirected back by {{ providerName }} immediately, without showing you anything.
+      You might have to sign-in into {{ providerName(provider) }} first. You might be redirected back by {{ providerName(provider) }} immediately, without showing you
+      anything.
     </div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="3" :disabled="mainProgress > 0" @click.prevent="onBack">Back</Button>

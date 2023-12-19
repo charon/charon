@@ -119,6 +119,7 @@ func (s *Service) startOIDCProvider(w http.ResponseWriter, req *http.Request, fl
 	opts := []oauth2.AuthCodeOption{}
 
 	flow.Reset()
+	flow.Provider = providerName
 	flow.OIDC = &FlowOIDC{
 		Verifier: "",
 		Nonce:    identifier.New().String(),
@@ -138,16 +139,17 @@ func (s *Service) startOIDCProvider(w http.ResponseWriter, req *http.Request, fl
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Name:      flow.TargetName,
-		Error:     "",
-		Completed: false,
+		Name:            flow.TargetName,
+		Provider:        flow.Provider,
+		EmailOrUsername: flow.EmailOrUsername,
+		Error:           "",
+		Completed:       false,
 		Location: &AuthFlowResponseLocation{
 			URL:     provider.Config.AuthCodeURL(flow.ID.String(), opts...),
 			Replace: false,
 		},
 		Passkey:  nil,
 		Password: nil,
-		Code:     nil,
 	}, nil)
 }
 

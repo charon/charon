@@ -1,29 +1,24 @@
 <script setup lang="ts">
-import type { DeriveOptions, EncryptOptions, Providers } from "@/types"
 import { ref, computed, watch, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
 import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import { startPassword } from "@/api"
-import { flowKey } from "@/utils"
+import { flowKey, updateSteps } from "@/utils"
+import siteContext from "@/context"
 
 const props = defineProps<{
   id: string
-  providers: Providers
   emailOrUsername: string
-  publicKey: Uint8Array
-  deriveOptions: DeriveOptions
-  encryptOptions: EncryptOptions
-  provider: string
 }>()
 
 const router = useRouter()
 
 const flow = inject(flowKey)
 
-const abortController = new AbortController()
 const mainProgress = ref(0)
+const abortController = new AbortController()
 const passwordError = ref("")
 
 const isEmail = computed(() => {
@@ -93,6 +88,7 @@ async function onNext() {
     flow!.updatePublicKey(response.publicKey)
     flow!.updateDeriveOptions(response.deriveOptions)
     flow!.updateEncryptOptions(response.encryptOptions)
+    updateSteps(flow!, "password")
     flow!.forward("password")
   } catch (error) {
     if (abortController.signal.aborted) {
@@ -109,6 +105,7 @@ async function onPasskey() {
     return
   }
 
+  updateSteps(flow!, "passkeySignin")
   flow!.forward("passkeySignin")
 }
 
@@ -118,6 +115,7 @@ async function onOIDCProvider(provider: string) {
   }
 
   flow!.updateProvider(provider)
+  updateSteps(flow!, "oidcProvider")
   flow!.forward("oidcProvider")
 }
 </script>
@@ -159,7 +157,7 @@ async function onOIDCProvider(provider: string) {
     </div>
     <h2 class="text-center m-4 text-xl font-bold uppercase">Or use</h2>
     <Button primary type="button" :disabled="!browserSupportsWebAuthn() || mainProgress > 0" @click.prevent="onPasskey">Passkey</Button>
-    <Button v-for="p of providers" :key="p.key" primary type="button" class="mt-4" :disabled="mainProgress > 0" @click.prevent="onOIDCProvider(p.key)">{{
+    <Button v-for="p of siteContext.providers" :key="p.key" primary type="button" class="mt-4" :disabled="mainProgress > 0" @click.prevent="onOIDCProvider(p.key)">{{
       p.name
     }}</Button>
   </div>

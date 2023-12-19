@@ -31,13 +31,14 @@ type AuthFlowResponseLocation struct {
 }
 
 type AuthFlowResponse struct {
-	Name      string                    `json:"name"`
-	Error     string                    `json:"error,omitempty"`
-	Completed bool                      `json:"completed,omitempty"`
-	Location  *AuthFlowResponseLocation `json:"location,omitempty"`
-	Passkey   *AuthFlowResponsePasskey  `json:"passkey,omitempty"`
-	Password  *AuthFlowResponsePassword `json:"password,omitempty"`
-	Code      *AuthFlowResponseCode     `json:"code,omitempty"`
+	Name            string                    `json:"name,omitempty"`
+	Provider        Provider                  `json:"provider,omitempty"`
+	EmailOrUsername string                    `json:"emailOrUsername,omitempty"`
+	Error           string                    `json:"error,omitempty"`
+	Completed       bool                      `json:"completed,omitempty"`
+	Location        *AuthFlowResponseLocation `json:"location,omitempty"`
+	Passkey         *AuthFlowResponsePasskey  `json:"passkey,omitempty"`
+	Password        *AuthFlowResponsePassword `json:"password,omitempty"`
 }
 
 func (s *Service) flowError(w http.ResponseWriter, req *http.Request, code string, err errors.E) {
@@ -50,13 +51,14 @@ func (s *Service) flowError(w http.ResponseWriter, req *http.Request, code strin
 	s.WithError(ctx, err)
 
 	response := AuthFlowResponse{
-		Name:      "",
-		Error:     code,
-		Completed: false,
-		Location:  nil,
-		Passkey:   nil,
-		Password:  nil,
-		Code:      nil,
+		Name:            "",
+		Provider:        "",
+		EmailOrUsername: "",
+		Error:           code,
+		Completed:       false,
+		Location:        nil,
+		Passkey:         nil,
+		Password:        nil,
 	}
 
 	encoded := s.PrepareJSON(w, req, response, nil)
@@ -99,20 +101,14 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 	}
 
 	response := AuthFlowResponse{
-		Name:      flow.TargetName,
-		Error:     "",
-		Completed: false,
-		Location:  nil,
-		Passkey:   nil,
-		Password:  nil,
-		Code:      nil,
-	}
-
-	// Code can be resumed.
-	if flow.Code != nil {
-		response.Code = &AuthFlowResponseCode{
-			EmailOrUsername: flow.Code.EmailOrUsername,
-		}
+		Name:            flow.TargetName,
+		Provider:        flow.Provider,
+		EmailOrUsername: flow.EmailOrUsername,
+		Error:           "",
+		Completed:       false,
+		Location:        nil,
+		Passkey:         nil,
+		Password:        nil,
 	}
 
 	// Has flow already completed?
@@ -286,16 +282,17 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 
 	if api {
 		s.WriteJSON(w, req, AuthFlowResponse{
-			Name:      flow.TargetName,
-			Error:     "",
-			Completed: true,
+			Name:            flow.TargetName,
+			Provider:        flow.Provider,
+			EmailOrUsername: flow.EmailOrUsername,
+			Error:           "",
+			Completed:       true,
 			Location: &AuthFlowResponseLocation{
 				URL:     flow.TargetLocation,
 				Replace: true,
 			},
 			Passkey:  nil,
 			Password: nil,
-			Code:     nil,
 		}, nil)
 		return
 	}

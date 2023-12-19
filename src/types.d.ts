@@ -25,14 +25,12 @@ export type EncryptOptions = {
 }
 
 export type PasswordResponseJSON = {
-  emailOrUsername: string
   publicKey: string
   deriveOptions: DeriveOptions
   encryptOptions: EncryptOptionsJSON
 }
 
 export type PasswordResponse = {
-  emailOrUsername: string
   publicKey: Uint8Array
   deriveOptions: DeriveOptions
   encryptOptions: EncryptOptions
@@ -43,15 +41,17 @@ export type LocationResponse = {
   replace: boolean
 }
 
-export type AuthFlowResponse =
-  | {
-      name: string
-    }
+export type AuthFlowStep = { key: string; name: string }
+
+export type AuthFlowResponse = {
+  name?: string
+  provider?: string
+  emailOrUsername?: string
+} & (
   | {
       error: "wrongPassword" | "noEmails" | "noAccount" | "invalidCode" | "invalidEmailOrUsername" | "shortEmailOrUsername" | "invalidPassword" | "shortPassword"
     }
   | {
-      name?: string
       completed?: boolean
       location: LocationResponse
     }
@@ -67,12 +67,7 @@ export type AuthFlowResponse =
   | {
       password: PasswordResponseJSON
     }
-  | {
-      name?: string
-      code: {
-        emailOrUsername: string
-      }
-    }
+)
 
 export type AuthFlowRequest =
   | {
@@ -139,11 +134,11 @@ export type AuthFlowRequest =
       }
     }
 
-export type Providers = {
+export type Provider = {
   key: string
   name: string
   type: string
-}[]
+}
 
 export type SiteContext = {
   domain: string
@@ -152,17 +147,21 @@ export type SiteContext = {
     buildTimestamp?: string
     revision?: string
   }
-  providers: Providers
+  providers: Provider[]
 }
 
 export type Flow = {
   forward(to: string): void
   backward(to: string): void
+  getEmailOrUsername(): string
   updateEmailOrUsername(value: string): void
   updatePublicKey(value: Uint8Array): void
   updateDeriveOptions(value: DeriveOptions): void
   updateEncryptOptions(value: EncryptOptions): void
+  getProvider(): string
   updateProvider(value: string): void
   updateLocation(value: LocationResponse): void
+  getName(): string
   updateName(value: string): void
+  updateSteps(value: AuthFlowStep[]): void
 }

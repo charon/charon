@@ -16,8 +16,9 @@ elements and links but that should not change how components look.
 -->
 
 <script setup lang="ts">
-import { onBeforeMount, onMounted, onUnmounted, provide, ref } from "vue"
+import { onBeforeMount, onBeforeUnmount, onMounted, provide, ref, watch } from "vue"
 import Footer from "@/components/Footer.vue"
+import Stepper from "@/components/Stepper.vue"
 import AuthStart from "@/components/AuthStart.vue"
 import AuthOIDCProvider from "@/components/AuthOIDCProvider.vue"
 import AuthPassword from "@/components/AuthPassword.vue"
@@ -25,12 +26,8 @@ import AuthPasskeySignin from "@/components/AuthPasskeySignin.vue"
 import AuthPasskeySignup from "@/components/AuthPasskeySignup.vue"
 import AuthCode from "@/components/AuthCode.vue"
 import AuthComplete from "@/components/AuthComplete.vue"
-import { flowKey } from "@/utils"
-// We fetch siteContext in view because the server sends preload header
-// so we have to fetch it always, even if particular step does not need it.
-// Generally this is already cached.
-import siteContext from "@/context"
-import { AuthFlowResponse, DeriveOptions, EncryptOptions, LocationResponse } from "@/types"
+import { flowKey, getProvider, updateSteps } from "@/utils"
+import { AuthFlowResponse, AuthFlowStep, DeriveOptions, EncryptOptions, LocationResponse } from "@/types"
 import { useRouter } from "vue-router"
 import { FetchError } from "@/api"
 
@@ -41,7 +38,8 @@ const props = defineProps<{
 const router = useRouter()
 
 const dataLoading = ref(true)
-const state = ref("start")
+const steps = ref<AuthFlowStep[]>([])
+const currentStep = ref("start")
 const direction = ref<"forward" | "backward">("forward")
 const emailOrUsername = ref("")
 const publicKey = ref(new Uint8Array())
@@ -50,6 +48,51 @@ const encryptOptions = ref<EncryptOptions>({ name: "", iv: new Uint8Array(), tag
 const provider = ref("")
 const location = ref<LocationResponse>({ url: "", replace: false })
 const name = ref("")
+
+const flow = {
+  forward(to: string) {
+    direction.value = "forward"
+    currentStep.value = to
+  },
+  backward(to: string) {
+    direction.value = "backward"
+    currentStep.value = to
+  },
+  getEmailOrUsername(): string {
+    return emailOrUsername.value
+  },
+  updateEmailOrUsername(value: string) {
+    emailOrUsername.value = value
+  },
+  updatePublicKey(value: Uint8Array) {
+    publicKey.value = value
+  },
+  updateDeriveOptions(value: DeriveOptions) {
+    deriveOptions.value = value
+  },
+  updateEncryptOptions(value: EncryptOptions) {
+    encryptOptions.value = value
+  },
+  getProvider(): string {
+    return provider.value
+  },
+  updateProvider(value: string) {
+    provider.value = value
+  },
+  updateLocation(value: LocationResponse) {
+    location.value = value
+  },
+  getName(): string {
+    return name.value
+  },
+  updateName(value: string) {
+    name.value = value
+  },
+  updateSteps(value: AuthFlowStep[]) {
+    steps.value = value
+  },
+}
+provide(flowKey, flow)
 
 onBeforeMount(async () => {
   try {
@@ -80,13 +123,40 @@ onBeforeMount(async () => {
     const flowResponse = (await response.json()) as AuthFlowResponse
     if ("name" in flowResponse && flowResponse.name) {
       name.value = flowResponse.name
+      steps.value = [
+        {
+          key: "start",
+          name: "Charon sign-in or sign-up",
+        },
+        { key: "complete", name: `Redirect to ${flowResponse.name}` },
+      ]
     }
-    if ("code" in flowResponse) {
-      state.value = "code"
-      emailOrUsername.value = flowResponse.code.emailOrUsername
-    } else if ("location" in flowResponse && flowResponse.completed) {
-      state.value = "complete"
+    if ("emailOrUsername" in flowResponse && flowResponse.emailOrUsername) {
+      emailOrUsername.value = flowResponse.emailOrUsername
+    }
+    if ("provider" in flowResponse && flowResponse.provider) {
+      if (flowResponse.provider === "code" || flowResponse.provider === "password") {
+        updateSteps(flow, flowResponse.provider)
+        currentStep.value = flowResponse.provider
+      } else if (flowResponse.provider === "passkey") {
+        updateSteps(flow, "passkeySignin")
+        currentStep.value = "passkeySignin"
+      } else if (getProvider(flowResponse.provider)) {
+        provider.value = flowResponse.provider
+        // We call updateSteps but the flow is probably completed so
+        // we will set currentStep to "complete" below. Still, we
+        // want steps to be updated for the "oidcProvider" first.
+        updateSteps(flow, "oidcProvider")
+        currentStep.value = "oidcProvider"
+      }
+      // TODO: Throw an error for unknown provider value?
+    }
+    if ("location" in flowResponse && flowResponse.completed) {
       location.value = flowResponse.location
+      // updateSteps currently does not do anything for "complete"
+      // target step and just leaves previously set steps.
+      updateSteps(flow, "complete")
+      currentStep.value = "complete"
     }
     // TODO: Handle error.
   } finally {
@@ -95,38 +165,6 @@ onBeforeMount(async () => {
 })
 
 const component = ref()
-
-provide(flowKey, {
-  forward(to: string) {
-    direction.value = "forward"
-    state.value = to
-  },
-  backward(to: string) {
-    direction.value = "backward"
-    state.value = to
-  },
-  updateEmailOrUsername(value: string) {
-    emailOrUsername.value = value
-  },
-  updatePublicKey(value: Uint8Array) {
-    publicKey.value = value
-  },
-  updateDeriveOptions(value: DeriveOptions) {
-    deriveOptions.value = value
-  },
-  updateEncryptOptions(value: EncryptOptions) {
-    encryptOptions.value = value
-  },
-  updateProvider(value: string) {
-    provider.value = value
-  },
-  updateLocation(value: LocationResponse) {
-    location.value = value
-  },
-  updateName(value: string) {
-    name.value = value
-  },
-})
 
 // Call transition hooks on child components.
 // See: https://github.com/vuejs/rfcs/discussions/613
@@ -178,12 +216,22 @@ function onLeaveCancelled(el: Element) {
 }
 
 onMounted(() => {
-  if (component.value && "onAfterEnter" in component.value) {
-    component.value.onAfterEnter()
-  }
+  // We wait for the component to be set for the first time.
+  const unwatch = watch(component, (c) => {
+    if (!c) {
+      // Not yet set.
+      return
+    }
+    // Set, stop watching.
+    unwatch()
+    // Call a hook if it is defined on the component.
+    if ("onAfterEnter" in c) {
+      c.onAfterEnter()
+    }
+  })
 })
 
-onUnmounted(() => {
+onBeforeUnmount(() => {
   if (component.value && "onBeforeLeave" in component.value) {
     component.value.onBeforeLeave()
   }
@@ -195,9 +243,10 @@ onUnmounted(() => {
   <div v-if="!dataLoading" class="w-full self-start overflow-hidden flex flex-col items-center">
     <div class="w-[65ch] m-1 mb-0 sm:mb-0 sm:m-4 rounded border bg-white p-4 shadow">
       <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>
-      <div>
+      <div class="mb-4">
         <strong>{{ name }}</strong> is asking you to sign-in or sign-up. Please follow the steps below to do so.
       </div>
+      <Stepper v-if="steps.length" :steps="steps" :current-step="currentStep" />
     </div>
     <div class="w-[65ch] m-1 sm:m-4">
       <Transition
@@ -209,22 +258,12 @@ onUnmounted(() => {
         @after-leave="onAfterLeave"
         @leave-cancelled="onLeaveCancelled"
       >
-        <AuthStart
-          v-if="state === 'start'"
-          :id="id"
-          ref="component"
-          :email-or-username="emailOrUsername"
-          :public-key="publicKey"
-          :derive-options="deriveOptions"
-          :encrypt-options="encryptOptions"
-          :provider="provider"
-          :providers="siteContext.providers"
-        />
-        <AuthOIDCProvider v-else-if="state === 'oidcProvider'" :id="id" ref="component" :providers="siteContext.providers" :provider="provider" />
-        <AuthPasskeySignin v-else-if="state === 'passkeySignin'" :id="id" ref="component" />
-        <AuthPasskeySignup v-else-if="state === 'passkeySignup'" :id="id" ref="component" />
+        <AuthStart v-if="currentStep === 'start'" :id="id" ref="component" :email-or-username="emailOrUsername" />
+        <AuthOIDCProvider v-else-if="currentStep === 'oidcProvider'" :id="id" ref="component" :provider="provider" />
+        <AuthPasskeySignin v-else-if="currentStep === 'passkeySignin'" :id="id" ref="component" />
+        <AuthPasskeySignup v-else-if="currentStep === 'passkeySignup'" :id="id" ref="component" />
         <AuthPassword
-          v-else-if="state === 'password'"
+          v-else-if="currentStep === 'password'"
           :id="id"
           ref="component"
           :email-or-username="emailOrUsername"
@@ -232,8 +271,8 @@ onUnmounted(() => {
           :derive-options="deriveOptions"
           :encrypt-options="encryptOptions"
         />
-        <AuthCode v-else-if="state === 'code'" :id="id" ref="component" :email-or-username="emailOrUsername" />
-        <AuthComplete v-else-if="state === 'complete'" ref="component" :location="location" :name="name" />
+        <AuthCode v-else-if="currentStep === 'code'" :id="id" ref="component" :email-or-username="emailOrUsername" />
+        <AuthComplete v-else-if="currentStep === 'complete'" ref="component" :name="name" :location="location" />
       </Transition>
     </div>
   </div>

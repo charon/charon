@@ -135,6 +135,7 @@ func (s *Service) startPasskeyGet(w http.ResponseWriter, req *http.Request, flow
 	}
 
 	flow.Reset()
+	flow.Provider = PasskeyProvider
 	flow.Passkey = session
 	errE := SetFlow(req.Context(), flow)
 	if errE != nil {
@@ -143,16 +144,17 @@ func (s *Service) startPasskeyGet(w http.ResponseWriter, req *http.Request, flow
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Name:      flow.TargetName,
-		Error:     "",
-		Completed: false,
-		Location:  nil,
+		Name:            flow.TargetName,
+		Provider:        flow.Provider,
+		EmailOrUsername: flow.EmailOrUsername,
+		Error:           "",
+		Completed:       false,
+		Location:        nil,
 		Passkey: &AuthFlowResponsePasskey{
 			CreateOptions: nil,
 			GetOptions:    options,
 		},
 		Password: nil,
-		Code:     nil,
 	}, nil)
 }
 
@@ -256,6 +258,7 @@ func (s *Service) startPasskeyCreate(w http.ResponseWriter, req *http.Request, f
 	}
 
 	flow.Reset()
+	flow.Provider = PasskeyProvider
 	flow.Passkey = session
 	errE := SetFlow(req.Context(), flow)
 	if errE != nil {
@@ -264,16 +267,17 @@ func (s *Service) startPasskeyCreate(w http.ResponseWriter, req *http.Request, f
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Name:      flow.TargetName,
-		Error:     "",
-		Completed: false,
-		Location:  nil,
+		Name:            flow.TargetName,
+		Provider:        flow.Provider,
+		EmailOrUsername: flow.EmailOrUsername,
+		Error:           "",
+		Completed:       false,
+		Location:        nil,
 		Passkey: &AuthFlowResponsePasskey{
 			CreateOptions: options,
 			GetOptions:    nil,
 		},
 		Password: nil,
-		Code:     nil,
 	}, nil)
 }
 

@@ -6,7 +6,7 @@ import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import InputTextButton from "@/components/InputTextButton.vue"
 import { postURL, startPassword } from "@/api"
-import { flowKey, locationRedirect, toBase64 } from "@/utils"
+import { flowKey, locationRedirect, toBase64, updateSteps } from "@/utils"
 
 const props = defineProps<{
   id: string
@@ -184,8 +184,8 @@ async function onNext() {
       getKey()
       return
     }
-    if ("code" in response) {
-      // We ignore response.code.emailOrUsername.
+    if ("provider" in response && response.provider === "code") {
+      updateSteps(flow!, "code")
       flow!.forward("code")
       return
     }
@@ -241,8 +241,8 @@ async function onCode() {
       codeErrorOnce.value = true
       return
     }
-    if ("code" in response) {
-      // We ignore response.code.emailOrUsername.
+    if ("provider" in response && response.provider === "code") {
+      updateSteps(flow!, "code")
       flow!.forward("code")
       return
     }

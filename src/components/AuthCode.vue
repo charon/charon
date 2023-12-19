@@ -157,7 +157,7 @@ async function onResend() {
     }
     // No error is expected in the response because code has already been generated in the past
     // for the same request, so we do not check response.error here.
-    if ("code" in response) {
+    if ("provider" in response && response.provider === "code") {
       sendCounter.value += 1
       document.getElementById("code")?.focus()
       return
@@ -206,10 +206,11 @@ async function onResend() {
           required
         />
         <!--
-          Here we enable button only if the length of non-whitespace content is exactly
-          6 characters because we tell users what is expected upfront.
+          Here we enable button when non-whitespace content is not empty even if we tell users
+          what is expected upfront. We prefer this so that they do not wonder why the button
+          is not enabled.
         -->
-        <Button primary type="submit" class="ml-4" tabindex="2" :disabled="code.replace(/\s/g, '').length !== 6 || mainProgress > 0 || !!codeError">Next</Button>
+        <Button primary type="submit" class="ml-4" tabindex="2" :disabled="code.replace(/\s/g, '').length === 0 || mainProgress > 0 || !!codeError">Next</Button>
       </form>
     </div>
     <div v-if="codeError === 'invalidCode'" class="mt-4 text-error-600">Code is invalid. Please try again.</div>

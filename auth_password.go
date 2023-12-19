@@ -72,10 +72,9 @@ type AuthFlowResponsePasswordEncryptOptions struct {
 }
 
 type AuthFlowResponsePassword struct {
-	EmailOrUsername string                                 `json:"emailOrUsername"`
-	PublicKey       []byte                                 `json:"publicKey"`
-	DeriveOptions   AuthFlowResponsePasswordDeriveOptions  `json:"deriveOptions"`
-	EncryptOptions  AuthFlowResponsePasswordEncryptOptions `json:"encryptOptions"`
+	PublicKey      []byte                                 `json:"publicKey"`
+	DeriveOptions  AuthFlowResponsePasswordDeriveOptions  `json:"deriveOptions"`
+	EncryptOptions AuthFlowResponsePasswordEncryptOptions `json:"encryptOptions"`
 }
 
 type passwordCredential struct {
@@ -138,10 +137,11 @@ func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *
 	}
 
 	flow.Reset()
+	flow.Provider = PasswordProvider
+	flow.EmailOrUsername = preservedEmailOrUsername
 	flow.Password = &FlowPassword{
-		EmailOrUsername: preservedEmailOrUsername,
-		PrivateKey:      privateKey.Bytes(),
-		Nonce:           nonce,
+		PrivateKey: privateKey.Bytes(),
+		Nonce:      nonce,
 	}
 	errE := SetFlow(req.Context(), flow)
 	if errE != nil {
@@ -150,14 +150,15 @@ func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Name:      flow.TargetName,
-		Error:     "",
-		Completed: false,
-		Location:  nil,
-		Passkey:   nil,
+		Name:            flow.TargetName,
+		Provider:        flow.Provider,
+		EmailOrUsername: flow.EmailOrUsername,
+		Error:           "",
+		Completed:       false,
+		Location:        nil,
+		Passkey:         nil,
 		Password: &AuthFlowResponsePassword{
-			EmailOrUsername: preservedEmailOrUsername,
-			PublicKey:       privateKey.PublicKey().Bytes(),
+			PublicKey: privateKey.PublicKey().Bytes(),
 			DeriveOptions: AuthFlowResponsePasswordDeriveOptions{
 				Name:       "ECDH",
 				NamedCurve: "P-256",
@@ -169,7 +170,6 @@ func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *
 				TagLength: 8 * aesgcm.Overhead(), //nolint:gomnd
 			},
 		},
-		Code: nil,
 	}, nil)
 }
 
@@ -192,7 +192,7 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 		return
 	}
 
-	mappedEmailOrUsername, errE := normalizeUsernameCaseMapped(flowPassword.EmailOrUsername)
+	mappedEmailOrUsername, errE := normalizeUsernameCaseMapped(flow.EmailOrUsername)
 	if errE != nil {
 		// flowPassword.EmailOrUsername should already be normalized (but not mapped) so this should not error.
 		s.InternalServerErrorWithError(w, req, errE)
@@ -304,7 +304,7 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 		}
 
 		// Incorrect password. We do password recovery (if possible).
-		s.sendCodeForExistingAccount(w, req, flow, true, account, flowPassword.EmailOrUsername, mappedEmailOrUsername)
+		s.sendCodeForExistingAccount(w, req, flow, true, account, flow.EmailOrUsername, mappedEmailOrUsername)
 		return
 	} else if !errors.Is(errE, ErrAccountNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -316,7 +316,7 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 	credentials := []Credential{}
 	if strings.Contains(mappedEmailOrUsername, "@") {
 		jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{ //nolint:govet
-			Email: flowPassword.EmailOrUsername,
+			Email: flow.EmailOrUsername,
 		})
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
@@ -329,7 +329,7 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 		})
 	} else {
 		jsonData, errE := x.MarshalWithoutEscapeHTML(usernameCredential{ //nolint:govet
-			Username: flowPassword.EmailOrUsername,
+			Username: flow.EmailOrUsername,
 		})
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
@@ -367,7 +367,7 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 	if strings.Contains(mappedEmailOrUsername, "@") {
 		// Account does not exist and we do have an e-mail address.
 		// We send the code to verify the e-mail address.
-		s.sendCode(w, req, flow, flowPassword.EmailOrUsername, []string{flowPassword.EmailOrUsername}, nil, credentials)
+		s.sendCode(w, req, flow, flow.EmailOrUsername, []string{flow.EmailOrUsername}, nil, credentials)
 		return
 	}
 

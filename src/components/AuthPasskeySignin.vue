@@ -5,7 +5,7 @@ import { useRouter } from "vue-router"
 import { startAuthentication, WebAuthnAbortService } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
 import { postURL } from "@/api"
-import { flowKey, locationRedirect } from "@/utils"
+import { flowKey, locationRedirect, updateSteps } from "@/utils"
 
 const props = defineProps<{
   id: string
@@ -83,6 +83,7 @@ async function onAfterEnter() {
     if (abortController.signal.aborted) {
       return
     }
+    updateSteps(flow!, "passkeySignup")
     flow!.forward("passkeySignup")
     return
   }
@@ -142,6 +143,7 @@ async function onCancel() {
 
   abortController.abort()
   WebAuthnAbortService.cancelCeremony()
+  updateSteps(flow!, "passkeySignup")
   flow!.forward("passkeySignup")
 }
 </script>

@@ -23,23 +23,23 @@ type FlowOIDC struct {
 }
 
 type FlowPassword struct {
-	EmailOrUsername string
-	PrivateKey      []byte
-	Nonce           []byte
+	PrivateKey []byte
+	Nonce      []byte
 }
 
 type FlowCode struct {
-	EmailOrUsername string
-	Code            string
-	Account         *identifier.Identifier
-	Credentials     []Credential
+	Code        string
+	Account     *identifier.Identifier
+	Credentials []Credential
 }
 
 type Flow struct {
-	ID             identifier.Identifier
-	Session        *identifier.Identifier
-	TargetLocation string
-	TargetName     string
+	ID              identifier.Identifier
+	Session         *identifier.Identifier
+	TargetLocation  string
+	TargetName      string
+	Provider        Provider
+	EmailOrUsername string
 
 	OIDC     *FlowOIDC
 	Passkey  *webauthn.SessionData

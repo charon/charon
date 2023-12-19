@@ -26,10 +26,6 @@ type AuthFlowRequestCode struct {
 	Complete *AuthFlowRequestCodeComplete `json:"complete,omitempty"`
 }
 
-type AuthFlowResponseCode struct {
-	EmailOrUsername string `json:"emailOrUsername"`
-}
-
 func (s *Service) sendCodeForExistingAccount(
 	w http.ResponseWriter, req *http.Request, flow *Flow, passwordFlow bool,
 	account *Account, preservedEmailOrUsername, mappedEmailOrUsername string,
@@ -88,11 +84,12 @@ func (s *Service) sendCode(
 
 	// TODO: This makes only the latest code work. Should we allow previous codes as well?
 	flow.Reset()
+	flow.Provider = CodeProvider
+	flow.EmailOrUsername = preservedEmailOrUsername
 	flow.Code = &FlowCode{
-		EmailOrUsername: preservedEmailOrUsername,
-		Code:            code,
-		Account:         accountID,
-		Credentials:     credentials,
+		Code:        code,
+		Account:     accountID,
+		Credentials: credentials,
 	}
 	errE = SetFlow(req.Context(), flow)
 	if errE != nil {
@@ -104,15 +101,14 @@ func (s *Service) sendCode(
 	hlog.FromRequest(req).Info().Str("code", code).Strs("emails", emails).Msg("sending code")
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Name:      flow.TargetName,
-		Error:     "",
-		Completed: false,
-		Location:  nil,
-		Passkey:   nil,
-		Password:  nil,
-		Code: &AuthFlowResponseCode{
-			EmailOrUsername: preservedEmailOrUsername,
-		},
+		Name:            flow.TargetName,
+		Provider:        flow.Provider,
+		EmailOrUsername: preservedEmailOrUsername,
+		Error:           "",
+		Completed:       false,
+		Location:        nil,
+		Passkey:         nil,
+		Password:        nil,
 	}, nil)
 }
 

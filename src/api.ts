@@ -96,7 +96,7 @@ export async function startPassword(
   abortSignal: AbortSignal,
   progress: Ref<number>,
   mainProgress: Ref<number>,
-): Promise<PasswordResponse | { error: string } | null> {
+): Promise<(PasswordResponse & { emailOrUsername: string }) | { error: string } | null> {
   progress.value += 1
   try {
     const url = router.apiResolve({
@@ -132,7 +132,7 @@ export async function startPassword(
     }
     if ("password" in response) {
       return {
-        emailOrUsername: response.password.emailOrUsername,
+        emailOrUsername: response.emailOrUsername!,
         publicKey: fromBase64(response.password.publicKey),
         deriveOptions: response.password.deriveOptions,
         encryptOptions: {
