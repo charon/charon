@@ -57,6 +57,9 @@ export function providerName(provider: string): string {
 export const flowKey = Symbol() as InjectionKey<Flow>
 
 export function updateStepsCodeNotPossible(flow: Flow) {
+  if (!flow.getName()) {
+    throw new Error("name is missing")
+  }
   flow.updateSteps([
     {
       key: "start",
@@ -68,6 +71,9 @@ export function updateStepsCodeNotPossible(flow: Flow) {
 }
 
 export function updateSteps(flow: Flow, targetStep: string) {
+  if (!flow.getName()) {
+    throw new Error("name is missing")
+  }
   if (targetStep === "passkeySignin") {
     flow.updateSteps([
       {
