@@ -56,8 +56,28 @@ export function providerName(provider: string): string {
 
 export const flowKey = Symbol() as InjectionKey<Flow>
 
+export function updateStepsCodeNotPossible(flow: Flow) {
+  flow.updateSteps([
+    {
+      key: "start",
+      name: "Charon sign-in or sign-up",
+    },
+    { key: "password", name: "Provide password or passphrase" },
+    { key: "complete", name: `Redirect to ${flow.getName()}` },
+  ])
+}
+
 export function updateSteps(flow: Flow, targetStep: string) {
-  if (targetStep === "passkeySignup") {
+  if (targetStep === "passkeySignin") {
+    flow.updateSteps([
+      {
+        key: "start",
+        name: "Charon sign-in or sign-up",
+      },
+      { key: "passkeySignin", name: "Passkey sign-in" },
+      { key: "complete", name: `Redirect to ${flow.getName()}` },
+    ])
+  } else if (targetStep === "passkeySignup") {
     flow.updateSteps([
       {
         key: "start",
@@ -67,34 +87,14 @@ export function updateSteps(flow: Flow, targetStep: string) {
       { key: "passkeySignup", name: "Passkey sign-up" },
       { key: "complete", name: `Redirect to ${flow.getName()}` },
     ])
-  } else if (targetStep === "code") {
-    if (flow.getEmailOrUsername().indexOf("@") >= 0) {
-      flow.updateSteps([
-        {
-          key: "start",
-          name: "Charon sign-in or sign-up",
-        },
-        { key: "password", name: "Provide password or passphrase" },
-        { key: "code", name: "Provide code" },
-        { key: "complete", name: `Redirect to ${flow.getName()}` },
-      ])
-    } else {
-      flow.updateSteps([
-        {
-          key: "start",
-          name: "Charon sign-in or sign-up",
-        },
-        { key: "password", name: "Provide password or passphrase" },
-        { key: "complete", name: `Redirect to ${flow.getName()}` },
-      ])
-    }
-  } else if (targetStep === "passkeySignin") {
+  } else if (targetStep === "password" || targetStep === "code") {
     flow.updateSteps([
       {
         key: "start",
         name: "Charon sign-in or sign-up",
       },
-      { key: "passkeySignin", name: "Passkey sign-in" },
+      { key: "password", name: "Provide password or passphrase" },
+      { key: "code", name: "Provide code" },
       { key: "complete", name: `Redirect to ${flow.getName()}` },
     ])
   } else if (targetStep === "oidcProvider") {
@@ -106,26 +106,5 @@ export function updateSteps(flow: Flow, targetStep: string) {
       { key: "oidcProvider", name: `Redirect to ${providerName(flow.getProvider())}` },
       { key: "complete", name: `Redirect to ${flow.getName()}` },
     ])
-  } else if (targetStep === "password") {
-    if (flow.getEmailOrUsername().indexOf("@") >= 0) {
-      flow.updateSteps([
-        {
-          key: "start",
-          name: "Charon sign-in or sign-up",
-        },
-        { key: "password", name: "Provide password or passphrase" },
-        { key: "code", name: "Provide code" },
-        { key: "complete", name: `Redirect to ${flow.getName()}` },
-      ])
-    } else {
-      flow.updateSteps([
-        {
-          key: "start",
-          name: "Charon sign-in or sign-up",
-        },
-        { key: "password", name: "Provide password or passphrase" },
-        { key: "complete", name: `Redirect to ${flow.getName()}` },
-      ])
-    }
   }
 }

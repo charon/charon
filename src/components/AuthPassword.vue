@@ -6,7 +6,7 @@ import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import InputTextButton from "@/components/InputTextButton.vue"
 import { postURL, startPassword } from "@/api"
-import { flowKey, locationRedirect, toBase64, updateSteps } from "@/utils"
+import { flowKey, locationRedirect, toBase64, updateSteps, updateStepsCodeNotPossible } from "@/utils"
 
 const props = defineProps<{
   id: string
@@ -210,6 +210,7 @@ async function onNext() {
         // attempted it means that the account exist but without e-mail addresses.
         codeError.value = "noEmails"
         codeErrorOnce.value = true
+        updateStepsCodeNotPossible(flow!)
       }
       // We do not await getKey so that user can fix the password in meantime.
       getKey()
@@ -276,6 +277,7 @@ async function onCode() {
     if ("error" in response && ["noAccount", "noEmails"].includes(response.error)) {
       codeError.value = response.error
       codeErrorOnce.value = true
+      updateStepsCodeNotPossible(flow!)
       return
     }
     if ("provider" in response && response.provider === "code") {
