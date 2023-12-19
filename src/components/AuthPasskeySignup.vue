@@ -20,6 +20,7 @@ const abortController = new AbortController()
 const signupAttempted = ref(false)
 const signupFailed = ref(false)
 const signupFailedAtLeastOnce = ref(false)
+const unexpectedError = ref("")
 
 // Define transition hooks to be called by the parent component.
 // See: https://github.com/vuejs/rfcs/discussions/613
@@ -53,7 +54,6 @@ async function onBack() {
   flow!.backward("passkeySignin")
 }
 
-// TODO: Better handle unexpected errors. (E.g., createComplete failing.)
 async function onPasskeySignup() {
   if (abortController.signal.aborted) {
     return
@@ -63,6 +63,7 @@ async function onPasskeySignup() {
   try {
     signupAttempted.value = true
     signupFailed.value = false
+    unexpectedError.value = ""
     const url = router.apiResolve({
       name: "AuthFlow",
       params: {
@@ -136,7 +137,9 @@ async function onPasskeySignup() {
     if (abortController.signal.aborted) {
       return
     }
-    throw error
+    console.error(error)
+    unexpectedError.value = `${error}`
+    signupFailedAtLeastOnce.value = true
   } finally {
     mainProgress.value -= 1
   }
@@ -148,6 +151,7 @@ async function onPasskeySignup() {
     <div v-if="signupAttempted && signupFailed">Signing up using <strong>passkey</strong> failed.</div>
     <div v-else-if="signupAttempted">Signing you up using <strong>passkey</strong>. Please follow instructions by your browser and/or device.</div>
     <div v-else>Signing in using <strong>passkey</strong> failed. Do you want to sign up instead?</div>
+    <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="2" @click.prevent="onBack">Retry sign-in</Button>
       <Button id="passkey-signup" primary type="button" tabindex="1" :disabled="mainProgress > 0" @click.prevent="onPasskeySignup">{{

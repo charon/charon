@@ -20,12 +20,14 @@ const flow = inject(flowKey)
 const mainProgress = ref(0)
 const abortController = new AbortController()
 const passwordError = ref("")
+const unexpectedError = ref("")
 
 watch(
   () => props.emailOrUsername,
   () => {
-    // We reset the error when input box value changes.
+    // We reset errors when input box value changes.
     passwordError.value = ""
+    unexpectedError.value = ""
   },
 )
 
@@ -68,6 +70,7 @@ async function onNext() {
 
   mainProgress.value += 1
   try {
+    unexpectedError.value = ""
     const response = await startPassword(router, props.id, props.emailOrUsername, flow!, abortController.signal, mainProgress, mainProgress)
     if (abortController.signal.aborted) {
       return
@@ -90,7 +93,8 @@ async function onNext() {
     if (abortController.signal.aborted) {
       return
     }
-    throw error
+    console.error(error)
+    unexpectedError.value = `${error}`
   } finally {
     mainProgress.value -= 1
   }
@@ -143,13 +147,17 @@ async function onOIDCProvider(provider: string) {
           We prefer this so that they do not wonder why the button is not enabled.
           We also prefer this because we do not want to do full emailOrUsername normalization on the
           client side so we might be counting characters differently here, leading to confusion.
+          Button is on purpose not disabled on unexpectedError so that user can retry.
         -->
         <Button primary type="submit" class="ml-4" :disabled="emailOrUsername.trim().length === 0 || mainProgress > 0 || !!passwordError">Next</Button>
       </form>
       <div v-if="passwordError === 'invalidEmailOrUsername' && isEmail(emailOrUsername)" class="mt-4 text-error-600">Invalid e-mail address.</div>
       <div v-else-if="passwordError === 'invalidEmailOrUsername' && !isEmail(emailOrUsername)" class="mt-4 text-error-600">Invalid username.</div>
-      <div v-if="passwordError === 'shortEmailOrUsername' && isEmail(emailOrUsername)" class="mt-4 text-error-600">E-mail address should be at least 3 characters.</div>
+      <div v-else-if="passwordError === 'shortEmailOrUsername' && isEmail(emailOrUsername)" class="mt-4 text-error-600">
+        E-mail address should be at least 3 characters.
+      </div>
       <div v-else-if="passwordError === 'shortEmailOrUsername' && !isEmail(emailOrUsername)" class="mt-4 text-error-600">Username should be at least 3 characters.</div>
+      <div v-else-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
     </div>
     <h2 class="text-center m-4 text-xl font-bold uppercase">Or use</h2>
     <Button primary type="button" :disabled="!browserSupportsWebAuthn() || mainProgress > 0" @click.prevent="onPasskey">Passkey</Button>

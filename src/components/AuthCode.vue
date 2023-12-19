@@ -21,10 +21,12 @@ const mainProgress = ref(0)
 const abortController = new AbortController()
 const sendCounter = ref(1)
 const codeError = ref("")
+const unexpectedError = ref("")
 
 watch(code, () => {
-  // We reset the flag when input box value changes.
+  // We reset errors when input box value changes.
   codeError.value = ""
+  unexpectedError.value = ""
 })
 
 // Define transition hooks to be called by the parent component.
@@ -74,6 +76,7 @@ async function onNext() {
 
   mainProgress.value += 1
   try {
+    unexpectedError.value = ""
     const url = router.apiResolve({
       name: "AuthFlow",
       params: {
@@ -112,7 +115,8 @@ async function onNext() {
     if (abortController.signal.aborted) {
       return
     }
-    throw error
+    console.error(error)
+    unexpectedError.value = `${error}`
   } finally {
     mainProgress.value -= 1
   }
@@ -126,6 +130,7 @@ async function onResend() {
   mainProgress.value += 1
   try {
     codeError.value = ""
+    unexpectedError.value = ""
     code.value = ""
     const url = router.apiResolve({
       name: "AuthFlow",
@@ -168,7 +173,8 @@ async function onResend() {
     if (abortController.signal.aborted) {
       return
     }
-    throw error
+    console.error(error)
+    unexpectedError.value = `${error}`
   } finally {
     mainProgress.value -= 1
   }
@@ -210,11 +216,13 @@ async function onResend() {
           Here we enable button when non-whitespace content is not empty even if we tell users
           what is expected upfront. We prefer this so that they do not wonder why the button
           is not enabled.
+          Button is on purpose not disabled on unexpectedError so that user can retry.
         -->
         <Button primary type="submit" class="ml-4" tabindex="2" :disabled="code.replace(/\s/g, '').length === 0 || mainProgress > 0 || !!codeError">Next</Button>
       </form>
     </div>
     <div v-if="codeError === 'invalidCode'" class="mt-4 text-error-600">Code is invalid. Please try again.</div>
+    <div v-else-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
     <div v-else class="mt-4">Please allow few minutes for the code to arrive. Check spam or junk folder.</div>
     <div class="mt-4">
       If you have trouble accessing your e-mail, try a

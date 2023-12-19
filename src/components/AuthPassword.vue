@@ -27,11 +27,15 @@ const abortController = new AbortController()
 const passwordError = ref("")
 const codeError = ref("")
 const codeErrorOnce = ref(false)
+const unexpectedPasswordError = ref("")
+const unexpectedCodeError = ref("")
 
 watch(password, () => {
-  // We reset the error when input box value changes.
+  // We reset errors when input box value changes.
   passwordError.value = ""
   codeErrorOnce.value = false
+  unexpectedPasswordError.value = ""
+  unexpectedCodeError.value = ""
 })
 
 // Define transition hooks to be called by the parent component.
@@ -91,6 +95,11 @@ async function getKey(): Promise<boolean> {
     if (abortController.signal.aborted) {
       return false
     }
+    // We just rethrow the error here. If this is called from onNext it will be handled
+    // there. Otherwise it will be logged as we call getKey without awaiting on it.
+    // If the error is persistent, then it will be eventually handled by the onNext
+    // because the public key or options will not be set.
+    // TODO: Can we do something better?
     throw error
   } finally {
     keyProgress.value -= 1
@@ -123,6 +132,8 @@ async function onNext() {
   mainProgress.value += 1
   try {
     codeErrorOnce.value = false
+    unexpectedPasswordError.value = ""
+    unexpectedCodeError.value = ""
     const url = router.apiResolve({
       name: "AuthFlow",
       params: {
@@ -226,7 +237,8 @@ async function onNext() {
     if (abortController.signal.aborted) {
       return
     }
-    throw error
+    console.error(error)
+    unexpectedPasswordError.value = `${error}`
   } finally {
     mainProgress.value -= 1
   }
@@ -239,6 +251,8 @@ async function onCode() {
 
   mainProgress.value += 1
   try {
+    unexpectedPasswordError.value = ""
+    unexpectedCodeError.value = ""
     const url = router.apiResolve({
       name: "AuthFlow",
       params: {
@@ -286,6 +300,12 @@ async function onCode() {
       return
     }
     throw new Error("unexpected response")
+  } catch (error) {
+    if (abortController.signal.aborted) {
+      return
+    }
+    console.error(error)
+    unexpectedCodeError.value = `${error}`
   } finally {
     mainProgress.value -= 1
   }
@@ -326,6 +346,7 @@ async function onCode() {
           We prefer this so that they do not wonder why the button is not enabled.
           We also prefer this because we do not want to do full password normalization on the
           client side so we might be counting characters differently here, leading to confusion.
+          Button is on purpose not disabled on unexpectedPasswordError so that user can retry.
         -->
         <Button primary type="submit" class="ml-4" tabindex="2" :disabled="password.length === 0 || mainProgress + keyProgress > 0 || !!passwordError">Next</Button>
       </form>
@@ -339,6 +360,7 @@ async function onCode() {
         <a href="" class="link" @click.prevent="onRedo">different sign-in method</a>.
       </div>
     </template>
+    <div v-else-if="unexpectedPasswordError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
     <div v-else-if="isEmail(emailOrUsername)" class="mt-4">
       If you do not yet have an account, it will be created for you. If you enter wrong password or passphrase, recovery will be done automatically for you by sending you
       a code to your e-mail address.
@@ -354,9 +376,13 @@ async function onCode() {
     <div v-else-if="codeError === 'noEmails'" class="mt-4" :class="codeErrorOnce ? 'text-error-600' : ''">
       You cannot receive the code because there is no e-mail address associated with the provided username.
     </div>
+    <div v-else-if="unexpectedCodeError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
     <div v-else class="mt-4">You can also skip entering password or passphrase and directly request the code.</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="4" @click.prevent="onBack">Back</Button>
+      <!--
+        Button is on purpose not disabled on unexpectedCodeError so that user can retry.
+      -->
       <Button type="button" primary tabindex="3" :disabled="!!codeError || mainProgress > 0" @click.prevent="onCode">Send code</Button>
     </div>
   </div>

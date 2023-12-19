@@ -17,6 +17,7 @@ const flow = inject(flowKey)
 
 const mainProgress = ref(0)
 const abortController = new AbortController()
+const unexpectedError = ref("")
 const paused = ref(false)
 const seconds = ref(3)
 
@@ -68,6 +69,9 @@ async function onPauseResume() {
     return
   }
 
+  // We reset the error on interaction.
+  unexpectedError.value = ""
+
   if (paused.value) {
     initInterval()
     paused.value = false
@@ -86,13 +90,16 @@ async function onRedirect() {
 
   mainProgress.value += 1
   try {
+    unexpectedError.value = ""
+    const url = router.apiResolve({
+      name: "AuthFlow",
+      params: {
+        id: props.id,
+      },
+    }).href
+
     const response = (await postURL(
-      router.apiResolve({
-        name: "AuthFlow",
-        params: {
-          id: props.id,
-        },
-      }).href,
+      url,
       {
         provider: props.provider,
         step: "start",
@@ -113,7 +120,11 @@ async function onRedirect() {
     if (abortController.signal.aborted) {
       return
     }
-    throw error
+    console.error(error)
+    unexpectedError.value = `${error}`
+    // We reset the counter and pause it on an error.
+    seconds.value = 3
+    paused.value = true
   } finally {
     mainProgress.value -= 1
   }
@@ -125,6 +136,9 @@ function onPause(event: KeyboardEvent) {
   }
 
   if (event.key === "Escape") {
+    // We reset the error on interaction.
+    unexpectedError.value = ""
+
     clearInterval(interval)
     paused.value = true
   }
@@ -151,6 +165,7 @@ onUnmounted(() => {
       You might have to sign-in into {{ providerName(provider) }} first. You might be redirected back by {{ providerName(provider) }} immediately, without showing you
       anything.
     </div>
+    <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="3" @click.prevent="onBack">Back</Button>
       <div class="flex flex-row gap-4">

@@ -38,6 +38,7 @@ const props = defineProps<{
 const router = useRouter()
 
 const dataLoading = ref(true)
+const unexpectedError = ref("")
 const steps = ref<AuthFlowStep[]>([])
 const currentStep = ref("start")
 const direction = ref<"forward" | "backward">("forward")
@@ -148,8 +149,9 @@ onBeforeMount(async () => {
         // want steps to be updated for the "oidcProvider" first.
         updateSteps(flow, "oidcProvider")
         currentStep.value = "oidcProvider"
+      } else {
+        throw new Error(`unknown provider "${flowResponse.provider}"`)
       }
-      // TODO: Throw an error for unknown provider value?
     }
     if ("location" in flowResponse && flowResponse.completed) {
       location.value = flowResponse.location
@@ -158,7 +160,12 @@ onBeforeMount(async () => {
       updateSteps(flow, "complete")
       currentStep.value = "complete"
     }
-    // TODO: Handle error.
+    if ("error" in flowResponse && flowResponse.error) {
+      throw new Error(`unexpected error "${flowResponse.error}"`)
+    }
+  } catch (error) {
+    console.error(error)
+    unexpectedError.value = `${error}`
   } finally {
     dataLoading.value = false
   }
@@ -244,7 +251,8 @@ onBeforeUnmount(() => {
 
 <template>
   <!-- TODO: Show data loading placeholder. -->
-  <div v-if="!dataLoading" class="w-full self-start overflow-hidden flex flex-col items-center">
+  <div v-if="unexpectedError" class="w-[65ch] self-start m-1 sm:m-4 rounded border bg-white p-4 shadow text-error-600">Unexpected error. Please try again.</div>
+  <div v-else-if="!dataLoading" class="w-full self-start overflow-hidden flex flex-col items-center">
     <div class="w-[65ch] m-1 mb-0 sm:mb-0 sm:m-4 rounded border bg-white p-4 shadow">
       <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>
       <div class="mb-4">
