@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { AuthFlowRequest, AuthFlowResponse, DeriveOptions, EncryptOptions } from "@/types"
-import { ref, computed, watch, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
+import { ref, watch, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import InputTextButton from "@/components/InputTextButton.vue"
 import { postURL, startPassword } from "@/api"
-import { flowKey, locationRedirect, toBase64, updateSteps, updateStepsCodeNotPossible } from "@/utils"
+import { flowKey, locationRedirect, toBase64, updateSteps, updateStepsCodeNotPossible, isEmail } from "@/utils"
 
 const props = defineProps<{
   id: string
@@ -27,10 +27,6 @@ const abortController = new AbortController()
 const passwordError = ref("")
 const codeError = ref("")
 const codeErrorOnce = ref(false)
-
-const isEmail = computed(() => {
-  return props.emailOrUsername.indexOf("@") >= 0
-})
 
 watch(password, () => {
   // We reset the error when input box value changes.
@@ -299,7 +295,7 @@ async function onCode() {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full float-left first:ml-0 ml-[-100%]">
     <div class="flex flex-col">
-      <label for="email-or-username" class="mb-1">{{ isEmail ? "Your e-mail address" : "Charon username" }}</label>
+      <label for="email-or-username" class="mb-1">{{ isEmail(emailOrUsername) ? "Your e-mail address" : "Charon username" }}</label>
       <InputTextButton id="email-or-username" class="flex-grow" tabindex="5" :disabled="mainProgress > 0" @click.prevent="onBack">
         {{ emailOrUsername }}
       </InputTextButton>
@@ -343,7 +339,7 @@ async function onCode() {
         <a href="" class="link" @click.prevent="onRedo">different sign-in method</a>.
       </div>
     </template>
-    <div v-else-if="isEmail" class="mt-4">
+    <div v-else-if="isEmail(emailOrUsername)" class="mt-4">
       If you do not yet have an account, it will be created for you. If you enter wrong password or passphrase, recovery will be done automatically for you by sending you
       a code to your e-mail address.
     </div>

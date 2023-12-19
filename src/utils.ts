@@ -114,3 +114,7 @@ export function updateSteps(flow: Flow, targetStep: string) {
     ])
   }
 }
+
+export function isEmail(emailOrUsername: string): boolean {
+  return emailOrUsername.indexOf("@") >= 0
+}

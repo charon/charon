@@ -5,7 +5,7 @@ import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import { startPassword } from "@/api"
-import { flowKey, updateSteps } from "@/utils"
+import { flowKey, updateSteps, isEmail } from "@/utils"
 import siteContext from "@/context"
 
 const props = defineProps<{
@@ -20,10 +20,6 @@ const flow = inject(flowKey)
 const mainProgress = ref(0)
 const abortController = new AbortController()
 const passwordError = ref("")
-
-const isEmail = computed(() => {
-  return props.emailOrUsername.indexOf("@") >= 0
-})
 
 watch(
   () => props.emailOrUsername,
@@ -150,10 +146,10 @@ async function onOIDCProvider(provider: string) {
         -->
         <Button primary type="submit" class="ml-4" :disabled="emailOrUsername.trim().length === 0 || mainProgress > 0 || !!passwordError">Next</Button>
       </form>
-      <div v-if="passwordError === 'invalidEmailOrUsername' && isEmail" class="mt-4 text-error-600">Invalid e-mail address.</div>
-      <div v-else-if="passwordError === 'invalidEmailOrUsername' && !isEmail" class="mt-4 text-error-600">Invalid username.</div>
-      <div v-if="passwordError === 'shortEmailOrUsername' && isEmail" class="mt-4 text-error-600">E-mail address should be at least 3 characters.</div>
-      <div v-else-if="passwordError === 'shortEmailOrUsername' && !isEmail" class="mt-4 text-error-600">Username should be at least 3 characters.</div>
+      <div v-if="passwordError === 'invalidEmailOrUsername' && isEmail(emailOrUsername)" class="mt-4 text-error-600">Invalid e-mail address.</div>
+      <div v-else-if="passwordError === 'invalidEmailOrUsername' && !isEmail(emailOrUsername)" class="mt-4 text-error-600">Invalid username.</div>
+      <div v-if="passwordError === 'shortEmailOrUsername' && isEmail(emailOrUsername)" class="mt-4 text-error-600">E-mail address should be at least 3 characters.</div>
+      <div v-else-if="passwordError === 'shortEmailOrUsername' && !isEmail(emailOrUsername)" class="mt-4 text-error-600">Username should be at least 3 characters.</div>
     </div>
     <h2 class="text-center m-4 text-xl font-bold uppercase">Or use</h2>
     <Button primary type="button" :disabled="!browserSupportsWebAuthn() || mainProgress > 0" @click.prevent="onPasskey">Passkey</Button>

@@ -1,20 +1,16 @@
 <script setup lang="ts">
 import type { AuthFlowRequest, AuthFlowResponse } from "@/types"
-import { ref, computed, watch, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
+import { ref, watch, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import { postURL } from "@/api"
-import { flowKey, locationRedirect } from "@/utils"
+import { flowKey, locationRedirect, isEmail } from "@/utils"
 
 const props = defineProps<{
   id: string
   emailOrUsername: string
 }>()
-
-const isEmail = computed(() => {
-  return props.emailOrUsername.indexOf("@") >= 0
-})
 
 const router = useRouter()
 
@@ -182,7 +178,7 @@ async function onResend() {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full float-left first:ml-0 ml-[-100%]">
     <div class="flex flex-col">
-      <label v-if="isEmail" for="code" class="mb-1"
+      <label v-if="isEmail(emailOrUsername)" for="code" class="mb-1"
         >We {{ sendCounter > 1 ? `sent (${sendCounter}x)` : "sent" }} a 6-digit code to <strong>{{ emailOrUsername }}</strong> e-mail address. Please enter it to
         continue:</label
       >
