@@ -164,6 +164,10 @@ onBeforeMount(async () => {
   }
 })
 
+async function onPreviousStep(step: string) {
+  flow.backward(step)
+}
+
 const component = ref()
 
 // Call transition hooks on child components.
@@ -246,7 +250,11 @@ onBeforeUnmount(() => {
       <div class="mb-4">
         <strong>{{ name }}</strong> is asking you to sign-in or sign-up. Please follow the steps below to do so.
       </div>
-      <Stepper v-if="steps.length" :steps="steps" :current-step="currentStep" />
+      <Stepper v-if="steps.length" v-slot="{ step, active, beforeActive }" :steps="steps" :current-step="currentStep">
+        <strong v-if="active">{{ step.name }}</strong>
+        <a v-else-if="beforeActive" href="" class="link" @click.prevent="onPreviousStep(step.key)">{{ step.name }}</a>
+        <template v-else>{{ step.name }}</template>
+      </Stepper>
     </div>
     <div class="w-[65ch] m-1 sm:m-4">
       <Transition
