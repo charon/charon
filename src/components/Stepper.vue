@@ -42,11 +42,11 @@ function beforeActive(step: string): boolean {
     </div>
   </div>
   <ul class="grid grid-flow-col auto-cols-fr w-full gap-x-2 mt-2">
-    <li v-for="step in steps" :key="step.key" class="text-center">
-      <slot :active="step.key === currentStep" :step="step" :before-active="beforeActive(step.key)">
+    <slot v-for="step in steps" :key="step.key" :active="step.key === currentStep" :step="step" :before-active="beforeActive(step.key)">
+      <li class="text-center">
         <strong v-if="step.key === currentStep">{{ step.name }}</strong>
         <template v-else>{{ step.name }}</template>
-      </slot>
-    </li>
+      </li>
+    </slot>
   </ul>
 </template>
