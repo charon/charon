@@ -229,6 +229,8 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 		return
 	}
 
+	// TODO: Use memguard to protect plain password in memory.
+	//       See: https://github.com/awnumar/memguard
 	plainPassword, err := aesgcm.Open(nil, flowPassword.Nonce, passwordComplete.Password, nil)
 	if err != nil {
 		s.BadRequestWithError(w, req, errors.WithStack(err))
