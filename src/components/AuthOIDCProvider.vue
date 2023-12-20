@@ -144,6 +144,10 @@ function onPause(event: KeyboardEvent) {
     return
   }
 
+  if (mainProgress.value > 0) {
+    return
+  }
+
   if (event.key === "Escape") {
     // We reset the error on interaction.
     unexpectedError.value = ""
