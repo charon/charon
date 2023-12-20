@@ -251,49 +251,51 @@ onBeforeUnmount(() => {
 
 <template>
   <!-- TODO: Show data loading placeholder. -->
-  <div v-if="unexpectedError" class="w-[65ch] self-start m-1 sm:m-4 rounded border bg-white p-4 shadow text-error-600">Unexpected error. Please try again.</div>
-  <div v-else-if="!dataLoading" class="w-full self-start overflow-hidden flex flex-col items-center">
-    <div class="w-[65ch] m-1 mb-0 sm:mb-0 sm:m-4 rounded border bg-white p-4 shadow">
-      <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>
-      <div class="mb-4">
-        <strong>{{ name }}</strong> is asking you to sign-in or sign-up. Please follow the steps below to do so.
+  <div v-if="unexpectedError" class="w-[65ch] self-center m-1 sm:m-4 rounded border bg-white p-4 shadow text-error-600">Unexpected error. Please try again.</div>
+  <div v-else-if="!dataLoading" class="w-full self-stretch overflow-hidden flex flex-col items-center justify-center">
+    <div class="flex flex-col">
+      <div class="w-[65ch] m-1 mb-0 sm:mb-0 sm:m-4 rounded border bg-white p-4 shadow">
+        <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>
+        <div class="mb-4">
+          <strong>{{ name }}</strong> is asking you to sign-in or sign-up. Please follow the steps below to do so.
+        </div>
+        <Stepper v-if="steps.length" v-slot="{ step, active, beforeActive }" :steps="steps" :current-step="currentStep">
+          <!-- TODO: Use text-balance instead of style here once TailwindCSS releases a new version. -->
+          <!-- TODO: Text wrapping can change as text changes between regular and bold. Find a way to prevent that (maybe always use wrapping of a bold version). -->
+          <li class="text-center" style="text-wrap: balance">
+            <strong v-if="active">{{ step.name }}</strong>
+            <a v-else-if="beforeActive" href="" class="link" @click.prevent="onPreviousStep(step.key)">{{ step.name }}</a>
+            <template v-else>{{ step.name }}</template>
+          </li>
+        </Stepper>
       </div>
-      <Stepper v-if="steps.length" v-slot="{ step, active, beforeActive }" :steps="steps" :current-step="currentStep">
-        <!-- TODO: Use text-balance instead of style here once TailwindCSS releases a new version. -->
-        <!-- TODO: Text wrapping can change as text changes between regular and bold. Find a way to prevent that (maybe always use wrapping of a bold version). -->
-        <li class="text-center" style="text-wrap: balance">
-          <strong v-if="active">{{ step.name }}</strong>
-          <a v-else-if="beforeActive" href="" class="link" @click.prevent="onPreviousStep(step.key)">{{ step.name }}</a>
-          <template v-else>{{ step.name }}</template>
-        </li>
-      </Stepper>
-    </div>
-    <div class="w-[65ch] m-1 sm:m-4">
-      <Transition
-        :name="direction"
-        @after-enter="onAfterEnter"
-        @enter-cancelled="onEnterCancelled"
-        @before-leave="onBeforeLeave"
-        @leave="onLeave"
-        @after-leave="onAfterLeave"
-        @leave-cancelled="onLeaveCancelled"
-      >
-        <AuthStart v-if="currentStep === 'start'" :id="id" ref="component" :email-or-username="emailOrUsername" />
-        <AuthOIDCProvider v-else-if="currentStep === 'oidcProvider'" :id="id" ref="component" :provider="provider" />
-        <AuthPasskeySignin v-else-if="currentStep === 'passkeySignin'" :id="id" ref="component" />
-        <AuthPasskeySignup v-else-if="currentStep === 'passkeySignup'" :id="id" ref="component" />
-        <AuthPassword
-          v-else-if="currentStep === 'password'"
-          :id="id"
-          ref="component"
-          :email-or-username="emailOrUsername"
-          :public-key="publicKey"
-          :derive-options="deriveOptions"
-          :encrypt-options="encryptOptions"
-        />
-        <AuthCode v-else-if="currentStep === 'code'" :id="id" ref="component" :email-or-username="emailOrUsername" />
-        <AuthComplete v-else-if="currentStep === 'complete'" ref="component" :name="name" :location="location" />
-      </Transition>
+      <div class="w-[65ch] m-1 sm:m-4 relative">
+        <Transition
+          :name="direction"
+          @after-enter="onAfterEnter"
+          @enter-cancelled="onEnterCancelled"
+          @before-leave="onBeforeLeave"
+          @leave="onLeave"
+          @after-leave="onAfterLeave"
+          @leave-cancelled="onLeaveCancelled"
+        >
+          <AuthStart v-if="currentStep === 'start'" :id="id" ref="component" :email-or-username="emailOrUsername" />
+          <AuthOIDCProvider v-else-if="currentStep === 'oidcProvider'" :id="id" ref="component" :provider="provider" />
+          <AuthPasskeySignin v-else-if="currentStep === 'passkeySignin'" :id="id" ref="component" />
+          <AuthPasskeySignup v-else-if="currentStep === 'passkeySignup'" :id="id" ref="component" />
+          <AuthPassword
+            v-else-if="currentStep === 'password'"
+            :id="id"
+            ref="component"
+            :email-or-username="emailOrUsername"
+            :public-key="publicKey"
+            :derive-options="deriveOptions"
+            :encrypt-options="encryptOptions"
+          />
+          <AuthCode v-else-if="currentStep === 'code'" :id="id" ref="component" :email-or-username="emailOrUsername" />
+          <AuthComplete v-else-if="currentStep === 'complete'" ref="component" :name="name" :location="location" />
+        </Transition>
+      </div>
     </div>
   </div>
   <Teleport to="footer">

@@ -182,7 +182,7 @@ async function onResend() {
 </script>
 
 <template>
-  <div class="flex flex-col rounded border bg-white p-4 shadow w-full float-left first:ml-0 ml-[-100%]">
+  <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div class="flex flex-col">
       <label v-if="isEmail(emailOrUsername)" for="code" class="mb-1"
         >We {{ sendCounter > 1 ? `sent (${sendCounter}x)` : "sent" }} a 6-digit code to <strong>{{ emailOrUsername }}</strong> e-mail address. Please enter it to

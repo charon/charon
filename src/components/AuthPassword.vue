@@ -313,7 +313,7 @@ async function onCode() {
 </script>
 
 <template>
-  <div class="flex flex-col rounded border bg-white p-4 shadow w-full float-left first:ml-0 ml-[-100%]">
+  <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div class="flex flex-col">
       <label for="email-or-username" class="mb-1">{{ isEmail(emailOrUsername) ? "Your e-mail address" : "Charon username" }}</label>
       <InputTextButton id="email-or-username" class="flex-grow" tabindex="5" @click.prevent="onBack">

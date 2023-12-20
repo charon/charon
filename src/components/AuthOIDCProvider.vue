@@ -156,7 +156,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col rounded border bg-white p-4 shadow w-full float-left first:ml-0 ml-[-100%]">
+  <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div>
       You will be redirected to <strong>{{ providerName(provider) }}</strong> in {{ seconds === 1 ? "1 second" : `${seconds} seconds` }}{{ paused ? " (paused)" : "" }}.
     </div>
