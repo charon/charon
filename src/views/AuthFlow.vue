@@ -251,6 +251,7 @@ onBeforeUnmount(() => {
 
 <template>
   <!-- TODO: Show data loading placeholder. -->
+  <!-- TODO: Contents should recenter after height change using a transition which runs at the same time transition between steps does. -->
   <!--
     We use overflow-x-hidden so that during transition we do not get scrollbars while elements are moved in and out.
     We could potentially add overflow-x-hidden only during transition, but for now it does not seem to be a problem to have it always.
