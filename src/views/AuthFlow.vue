@@ -255,6 +255,9 @@ onBeforeUnmount(() => {
   <!--
     We use overflow-x-hidden so that during transition we do not get scrollbars while elements are moved in and out.
     We could potentially add overflow-x-hidden only during transition, but for now it does not seem to be a problem to have it always.
+
+    Use of v-if="!dataLoading" is critical here, because otherwise onAfterEnter on step components can be called twice.
+    Also transitions break because it can happen that first start step is rendered and then it is updated to another one after data loads.
   -->
   <div v-if="!dataLoading" class="w-full self-stretch overflow-x-hidden flex flex-col items-center justify-center">
     <!--
