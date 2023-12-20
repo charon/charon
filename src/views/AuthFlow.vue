@@ -281,7 +281,7 @@ onBeforeUnmount(() => {
             -->
             <li class="text-center" style="text-wrap: balance">
               <strong v-if="active">{{ step.name }}</strong>
-              <a v-else-if="beforeActive" href="" class="link" @click.prevent="onPreviousStep(step.key)">{{ step.name }}</a>
+              <a v-else-if="beforeActive && currentStep !== 'complete'" href="" class="link" @click.prevent="onPreviousStep(step.key)">{{ step.name }}</a>
               <template v-else>{{ step.name }}</template>
             </li>
           </Stepper>
