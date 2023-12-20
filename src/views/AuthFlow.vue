@@ -256,7 +256,7 @@ onBeforeUnmount(() => {
     We use overflow-x-hidden so that during transition we do not get scrollbars while elements are moved in and out.
     We could potentially add overflow-x-hidden only during transition, but for now it does not seem to be a problem to have it always.
   -->
-  <div if="!dataLoading" class="w-full self-stretch overflow-x-hidden flex flex-col items-center justify-center">
+  <div v-if="!dataLoading" class="w-full self-stretch overflow-x-hidden flex flex-col items-center justify-center">
     <!--
       We use grid here to have contents of maximum 65ch and grow to 65ch even if contents are narrower,
       but allow contents to shrink if necessary to fit into the smaller window width.
