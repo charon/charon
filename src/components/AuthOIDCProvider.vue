@@ -23,6 +23,9 @@ const seconds = ref(3)
 
 let interval: number
 function initInterval() {
+  if (interval) {
+    clearInterval(interval)
+  }
   interval = setInterval(() => {
     seconds.value -= 1
     if (seconds.value === 0) {
@@ -46,7 +49,10 @@ defineExpose({
 onUnmounted(onBeforeLeave)
 
 function onAfterEnter() {
-  initInterval()
+  if (!paused.value) {
+    // User might already paused using the esc key.
+    initInterval()
+  }
   document.getElementById("redirect")?.focus()
 }
 
@@ -60,6 +66,7 @@ async function onBack() {
   }
 
   clearInterval(interval)
+  interval = 0
   abortController.abort()
   flow!.backward("start")
 }
@@ -77,6 +84,7 @@ async function onPauseResume() {
     paused.value = false
   } else {
     clearInterval(interval)
+    interval = 0
     paused.value = true
   }
 }
@@ -87,6 +95,7 @@ async function onRedirect() {
   }
 
   clearInterval(interval)
+  interval = 0
 
   mainProgress.value += 1
   try {
@@ -140,6 +149,7 @@ function onPause(event: KeyboardEvent) {
     unexpectedError.value = ""
 
     clearInterval(interval)
+    interval = 0
     paused.value = true
   }
 }

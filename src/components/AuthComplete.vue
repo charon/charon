@@ -15,6 +15,9 @@ const seconds = ref(3)
 
 let interval: number
 function initInterval() {
+  if (interval) {
+    clearInterval(interval)
+  }
   interval = setInterval(() => {
     seconds.value -= 1
     if (seconds.value === 0) {
@@ -38,7 +41,10 @@ defineExpose({
 onUnmounted(onBeforeLeave)
 
 function onAfterEnter() {
-  initInterval()
+  if (!paused.value) {
+    // User might already paused using the esc key.
+    initInterval()
+  }
   document.getElementById("redirect")?.focus()
 }
 
@@ -56,6 +62,7 @@ async function onPauseResume() {
     paused.value = false
   } else {
     clearInterval(interval)
+    interval = 0
     paused.value = true
   }
 }
@@ -66,6 +73,7 @@ async function onRedirect() {
   }
 
   clearInterval(interval)
+  interval = 0
 
   // We increase the progress and never decrease it to wait for browser to do the redirect.
   mainProgress.value += 1
@@ -86,6 +94,7 @@ function onPause(event: KeyboardEvent) {
 
   if (event.key === "Escape") {
     clearInterval(interval)
+    interval = 0
     paused.value = true
   }
 }
