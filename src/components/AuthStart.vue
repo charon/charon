@@ -136,6 +136,8 @@ async function onOIDCProvider(provider: string) {
           :readonly="mainProgress > 0"
           :invalid="!!passwordError"
           autocomplete="username"
+          autocorrect="off"
+          autocapitalize="none"
           spellcheck="false"
           type="email"
           minlength="3"

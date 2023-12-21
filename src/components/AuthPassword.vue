@@ -337,6 +337,8 @@ async function onCode() {
           class="flex-grow flex-auto min-w-0"
           :readonly="mainProgress > 0"
           autocomplete="current-password"
+          autocorrect="off"
+          autocapitalize="none"
           spellcheck="false"
           required
         />

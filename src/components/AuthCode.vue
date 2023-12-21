@@ -206,6 +206,8 @@ async function onResend() {
           class="flex-grow flex-auto min-w-0"
           :readonly="mainProgress > 0"
           autocomplete="one-time-code"
+          autocorrect="off"
+          autocapitalize="none"
           spellcheck="false"
           inputmode="numeric"
           pattern="[0-9]*"
