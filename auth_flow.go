@@ -325,8 +325,10 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 		return
 	}
 
+	s.WithError(ctx, err)
+
 	if api {
-		s.WriteJSON(w, req, AuthFlowResponse{
+		encoded := s.PrepareJSON(w, req, AuthFlowResponse{
 			Name:            flow.TargetName,
 			Provider:        flow.Provider,
 			EmailOrUsername: flow.EmailOrUsername,
@@ -339,6 +341,12 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 			Passkey:  nil,
 			Password: nil,
 		}, nil)
+		if encoded == nil {
+			return
+		}
+
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write(encoded)
 		return
 	}
 
