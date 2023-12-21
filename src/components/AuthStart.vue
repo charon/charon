@@ -132,6 +132,7 @@ async function onOIDCProvider(provider: string) {
         <InputText
           id="email"
           v-model="emailOrUsernameProxy"
+          name="email"
           class="flex-grow flex-auto min-w-0"
           :readonly="mainProgress > 0"
           :invalid="!!passwordError"

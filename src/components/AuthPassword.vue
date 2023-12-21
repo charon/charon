@@ -331,10 +331,21 @@ async function onCode() {
           Help Chrome remember the username/e-mail address using hidden input field.
           See: https://www.chromium.org/developers/design-documents/form-styles-that-chromium-understands/
         -->
-        <input id="email" autocomplete="username" autocorrect="off" autocapitalize="none" spellcheck="false" type="email" :value="emailOrUsername" class="hidden" />
+        <input
+          id="email"
+          name="email"
+          autocomplete="username"
+          autocorrect="off"
+          autocapitalize="none"
+          spellcheck="false"
+          type="email"
+          :value="emailOrUsername"
+          class="hidden"
+        />
         <InputText
           id="current-password"
           v-model="password"
+          name="current-password"
           type="password"
           minlength="8"
           tabindex="1"
