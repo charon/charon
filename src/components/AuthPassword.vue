@@ -214,7 +214,7 @@ async function onNext() {
       mainProgress.value += 1
       return
     }
-    if ("error" in response && ["wrongPassword", "invalidPassword", "shortPassword"].includes(response.error)) {
+    if ("error" in response && response.error && ["wrongPassword", "invalidPassword", "shortPassword"].includes(response.error)) {
       passwordError.value = response.error
       if (response.error === "wrongPassword" && codeError.value === "") {
         // If password error was returned and account recovery was not automatically
@@ -288,7 +288,7 @@ async function onCode() {
       mainProgress.value += 1
       return
     }
-    if ("error" in response && ["noAccount", "noEmails"].includes(response.error)) {
+    if ("error" in response && response.error && ["noAccount", "noEmails"].includes(response.error)) {
       codeError.value = response.error
       codeErrorOnce.value = true
       updateStepsCodeNotPossible(flow!)

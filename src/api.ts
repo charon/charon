@@ -125,7 +125,7 @@ export async function startPassword(
       mainProgress.value += 1
       return null
     }
-    if ("error" in response && ["invalidEmailOrUsername", "shortEmailOrUsername"].includes(response.error)) {
+    if ("error" in response && response.error && ["invalidEmailOrUsername", "shortEmailOrUsername"].includes(response.error)) {
       return {
         error: response.error,
       }
