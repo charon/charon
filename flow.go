@@ -36,6 +36,7 @@ type FlowCode struct {
 type Flow struct {
 	ID              identifier.Identifier
 	Session         *identifier.Identifier
+	Failed          bool
 	TargetLocation  string
 	TargetName      string
 	Provider        Provider

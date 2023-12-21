@@ -26,6 +26,7 @@ import AuthPasskeySignin from "@/components/AuthPasskeySignin.vue"
 import AuthPasskeySignup from "@/components/AuthPasskeySignup.vue"
 import AuthCode from "@/components/AuthCode.vue"
 import AuthComplete from "@/components/AuthComplete.vue"
+import AuthFailed from "@/components/AuthFailed.vue"
 import { flowKey, getProvider, updateSteps } from "@/utils"
 import { AuthFlowResponse, AuthFlowStep, DeriveOptions, EncryptOptions, LocationResponse } from "@/types"
 import { useRouter } from "vue-router"
@@ -89,6 +90,9 @@ const flow = {
   updateName(value: string) {
     name.value = value
   },
+  getSteps(): AuthFlowStep[] {
+    return steps.value
+  },
   updateSteps(value: AuthFlowStep[]) {
     steps.value = value
   },
@@ -145,8 +149,8 @@ onBeforeMount(async () => {
       } else if (getProvider(flowResponse.provider)) {
         provider.value = flowResponse.provider
         // We call updateSteps but the flow is probably completed so
-        // we will set currentStep to "complete" below. Still, we
-        // want steps to be updated for the "oidcProvider" first.
+        // we will set currentStep to "complete" (or "failure") below.
+        // Still, we want steps to be updated for the "oidcProvider" first.
         updateSteps(flow, "oidcProvider")
         currentStep.value = "oidcProvider"
       } else {
@@ -155,10 +159,18 @@ onBeforeMount(async () => {
     }
     if ("location" in flowResponse && flowResponse.completed) {
       location.value = flowResponse.location
-      // updateSteps currently does not do anything for "complete"
-      // target step and just leaves previously set steps.
-      updateSteps(flow, "complete")
-      currentStep.value = "complete"
+      if ("error" in flowResponse && flowResponse.error === "failed") {
+        // updateSteps currently just changes the last step name to "failure"
+        // but otherwise just leaves previously set steps.
+        updateSteps(flow, "failure")
+        currentStep.value = "failure"
+        return
+      } else {
+        // updateSteps currently does not do anything for "complete"
+        // target step and just leaves previously set steps.
+        updateSteps(flow, "complete")
+        currentStep.value = "complete"
+      }
     }
     if ("error" in flowResponse && flowResponse.error) {
       throw new Error(`unexpected error "${flowResponse.error}"`)
@@ -281,7 +293,9 @@ onBeforeUnmount(() => {
             -->
             <li class="text-center" style="text-wrap: balance">
               <strong v-if="active">{{ step.name }}</strong>
-              <a v-else-if="beforeActive && currentStep !== 'complete'" href="" class="link" @click.prevent="onPreviousStep(step.key)">{{ step.name }}</a>
+              <a v-else-if="beforeActive && currentStep !== 'complete' && currentStep !== 'failure'" href="" class="link" @click.prevent="onPreviousStep(step.key)">{{
+                step.name
+              }}</a>
               <template v-else>{{ step.name }}</template>
             </li>
           </Stepper>
@@ -311,6 +325,7 @@ onBeforeUnmount(() => {
             />
             <AuthCode v-else-if="currentStep === 'code'" :id="id" ref="component" :email-or-username="emailOrUsername" />
             <AuthComplete v-else-if="currentStep === 'complete'" ref="component" :name="name" :location="location" />
+            <AuthFailed v-else-if="currentStep === 'failure'" ref="component" :name="name" :location="location" />
           </Transition>
         </div>
       </template>

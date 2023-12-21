@@ -11,7 +11,11 @@ export function locationRedirect(response: AuthFlowResponse, flow?: Flow): boole
     if (response.completed && flow) {
       flow.updateLocation(response.location)
       flow.updateName(response.name!)
-      flow.forward("complete")
+      if ("error" in response && response.error === "failed") {
+        flow.forward("failure")
+      } else {
+        flow.forward("complete")
+      }
     } else if (response.location.replace) {
       window.location.replace(response.location.url)
     } else {
@@ -112,6 +116,12 @@ export function updateSteps(flow: Flow, targetStep: string) {
       { key: "oidcProvider", name: `Redirect to ${providerName(flow.getProvider())}` },
       { key: "complete", name: `Redirect to ${flow.getName()}` },
     ])
+  } else if (targetStep === "failure") {
+    const steps = flow.getSteps()
+    if (!steps.length) {
+      throw new Error("steps are missing")
+    }
+    steps[steps.length - 1].key = "failure"
   }
 }
 

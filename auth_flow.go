@@ -47,7 +47,7 @@ func (s *Service) flowError(w http.ResponseWriter, req *http.Request, code strin
 	if err == nil {
 		err = errors.New("flow error")
 	}
-	errors.Details(err)["errorCode"] = code
+	errors.Details(err)["code"] = code
 	s.WithError(ctx, err)
 
 	response := AuthFlowResponse{
@@ -112,7 +112,7 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 	}
 
 	// Has flow already completed?
-	if flow.Session != nil {
+	if flow.Session != nil || flow.Failed {
 		// TODO: Redirect to target only if same user is still authenticated.
 		//       When flow completes, we should remember the user who authenticated. Then, here, we should check if the same user is still
 		//       authenticated. If yes, then we redirect to target. If not and some user is authenticated, then we redirect to /. If not and
@@ -123,6 +123,10 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 		response.Location = &AuthFlowResponseLocation{
 			URL:     flow.TargetLocation,
 			Replace: true,
+		}
+
+		if flow.Failed {
+			response.Error = "failed"
 		}
 	}
 
@@ -139,7 +143,7 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	// Has flow already completed?
-	if flow.Session != nil {
+	if flow.Session != nil || flow.Failed {
 		s.BadRequestWithError(w, req, errors.New("flow already completed"))
 		return
 	}
@@ -299,6 +303,46 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 
 	// We redirect back to the flow which then redirects to the target location on the frontend,
 	// after showing the message about successful sign-in or sign-up.
+	l, errE := s.Reverse("AuthFlow", waf.Params{"id": flow.ID.String()}, nil)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+	s.TemporaryRedirectGetMethod(w, req, l)
+}
+
+func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *Flow, err errors.E) {
+	ctx := req.Context()
+
+	flow.Failed = true
+
+	// Should already be set to nil at this point, but just to make sure.
+	flow.Reset()
+
+	errE := SetFlow(ctx, flow)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	if api {
+		s.WriteJSON(w, req, AuthFlowResponse{
+			Name:            flow.TargetName,
+			Provider:        flow.Provider,
+			EmailOrUsername: flow.EmailOrUsername,
+			Error:           "failed",
+			Completed:       true,
+			Location: &AuthFlowResponseLocation{
+				URL:     flow.TargetLocation,
+				Replace: true,
+			},
+			Passkey:  nil,
+			Password: nil,
+		}, nil)
+		return
+	}
+
+	// We redirect back to the flow which then shows the failure message.
 	l, errE := s.Reverse("AuthFlow", waf.Params{"id": flow.ID.String()}, nil)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)

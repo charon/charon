@@ -89,6 +89,7 @@ func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request,
 	errE = SetFlow(req.Context(), &Flow{
 		ID:              id,
 		Session:         nil,
+		Failed:          false,
 		TargetLocation:  req.URL.String(),
 		TargetName:      targetName,
 		Provider:        "",

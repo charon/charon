@@ -194,7 +194,7 @@ func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, par
 		errE = errors.New("authorization error")
 		errors.Details(errE)["code"] = errorCode
 		errors.Details(errE)["description"] = errorDescription
-		s.BadRequestWithError(w, req, errE)
+		s.failAuthStep(w, req, false, flow, errE)
 		return
 	}
 
