@@ -56,7 +56,7 @@ defineExpose({
 onUnmounted(onBeforeLeave)
 
 function onAfterEnter() {
-  document.getElementById("email-or-username")?.focus()
+  document.getElementById("email")?.focus()
 }
 
 function onBeforeLeave() {
@@ -123,14 +123,14 @@ async function onOIDCProvider(provider: string) {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div class="flex flex-col">
-      <label for="email-or-username" class="mb-1">Enter Charon username or your e-mail address</label>
+      <label for="email" class="mb-1">Enter Charon username or your e-mail address</label>
       <!--
         We set novalidate because we do not UA to show hints.
         We show them ourselves when we want them.
       -->
       <form class="flex flex-row" novalidate @submit.prevent="onNext">
         <InputText
-          id="email-or-username"
+          id="email"
           v-model="emailOrUsernameProxy"
           class="flex-grow flex-auto min-w-0"
           :readonly="mainProgress > 0"
