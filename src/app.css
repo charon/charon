@@ -3,6 +3,20 @@
 @import url("tailwindcss/utilities");
 @import url("tailwindcss/variants");
 
+@layer base {
+  .input-code-gradient {
+    --input-code-gradient: linear-gradient(90deg, theme(colors.neutral.300) 2px, transparent 0);
+  }
+
+  .input-code-gradient:hover {
+    --input-code-gradient: linear-gradient(90deg, theme(colors.neutral.400) 2px, transparent 0);
+  }
+
+  .input-code-gradient:focus {
+    --input-code-gradient: linear-gradient(90deg, theme(colors.primary.500) 2px, transparent 0)
+  }
+}
+
 @layer components {
   .link {
     @apply rounded-sm font-medium text-primary-600 outline-none drop-shadow-sm;

@@ -8,9 +8,9 @@ const props = defineProps<{
 
 <template>
   <InputText
-    class="font-mono tracking-[2ch] bg-repeat-x bg-origin-padding"
+    class="font-mono tracking-[2ch] bg-repeat-x bg-origin-padding input-code-gradient"
     :style="{
-      backgroundImage: Array(props.codeLength).fill('linear-gradient(90deg, #eee 2px, transparent 0)').join(','),
+      backgroundImage: Array(props.codeLength).fill('var(--input-code-gradient)').join(','),
       backgroundPositionX: Array.from({ length: props.codeLength }, (v, i) => `calc(${2 + 3 * i}ch + 0.75rem - 1px)`).join(','),
       backgroundPositionY:
         Array(props.codeLength - 1)
