@@ -3,7 +3,7 @@ import type { AuthFlowRequest, AuthFlowResponse } from "@/types"
 import { ref, watch, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
-import InputText from "@/components/InputText.vue"
+import InputCode from "@/components/InputCode.vue"
 import { postURL } from "@/api"
 import { flowKey, locationRedirect, isEmail } from "@/utils"
 
@@ -199,19 +199,15 @@ async function onResend() {
       -->
       <form class="flex flex-row" novalidate @submit.prevent="onNext">
         <!-- We do not set maxlength so that users can paste too long text and clean it up. -->
-        <InputText
+        <InputCode
           id="code"
           v-model="code"
           tabindex="1"
           class="flex-grow flex-auto min-w-0"
           :readonly="mainProgress > 0"
-          autocomplete="one-time-code"
-          autocorrect="off"
-          autocapitalize="none"
-          spellcheck="false"
           inputmode="numeric"
           pattern="[0-9]*"
-          minlength="6"
+          :code-length="6"
           required
         />
         <!--
@@ -220,7 +216,7 @@ async function onResend() {
           is not enabled.
           Button is on purpose not disabled on unexpectedError so that user can retry.
         -->
-        <Button primary type="submit" class="ml-4" tabindex="2" :disabled="code.replace(/\s/g, '').length === 0 || mainProgress > 0 || !!codeError">Next</Button>
+        <Button primary type="submit" class="ml-4" tabindex="2" :disabled="code.replaceAll(/\s/g, '').length === 0 || mainProgress > 0 || !!codeError">Next</Button>
       </form>
     </div>
     <div v-if="codeError === 'invalidCode'" class="mt-4 text-error-600">Code is invalid. Please try again.</div>
