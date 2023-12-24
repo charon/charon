@@ -217,8 +217,6 @@ func (s *Service) completePasskeyGet(w http.ResponseWriter, req *http.Request, f
 		hlog.FromRequest(req).Warn().Str("credential", credentialID).Msg("authenticator may be cloned")
 	}
 
-	// TODO: Have camelCase json field names.
-	//       See: https://github.com/go-webauthn/webauthn/issues/193
 	jsonData, errE := x.MarshalWithoutEscapeHTML(credential)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -300,8 +298,6 @@ func (s *Service) completePasskeyCreate(w http.ResponseWriter, req *http.Request
 
 	credentialID := base64.RawURLEncoding.EncodeToString(credential.ID)
 
-	// TODO: Have camelCase json field names.
-	//       See: https://github.com/go-webauthn/webauthn/issues/193
 	jsonData, errE := x.MarshalWithoutEscapeHTML(credential)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
