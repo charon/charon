@@ -242,18 +242,22 @@ function onLeaveCancelled(el: Element) {
 
 onMounted(() => {
   // We wait for the component to be set for the first time.
-  const unwatch = watch(component, (c) => {
-    if (!c) {
-      // Not yet set.
-      return
-    }
-    // Set, stop watching.
-    unwatch()
-    // Call a hook if it is defined on the component.
-    if ("onAfterEnter" in c) {
-      c.onAfterEnter()
-    }
-  })
+  const unwatch = watch(
+    component,
+    (c) => {
+      if (!c) {
+        // Not yet set.
+        return
+      }
+      // Set, stop watching.
+      unwatch()
+      // Call a hook if it is defined on the component.
+      if ("onAfterEnter" in c) {
+        c.onAfterEnter()
+      }
+    },
+    { immediate: true },
+  )
 })
 
 onBeforeUnmount(() => {
