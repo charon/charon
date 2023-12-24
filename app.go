@@ -180,12 +180,12 @@ func (app *App) Run() errors.E {
 			StaticFiles:     f.(fs.ReadFileFS),
 			Routes:          routesConfig.Routes,
 			Sites:           sites,
-			SiteContextPath: "/index.json",
+			SiteContextPath: "/context.json",
 			Development:     app.Server.InDevelopment(),
 			SkipServingFile: func(path string) bool {
-				// We want files to be served by Home route at / and /api and not be
-				// available at index.html and index.json (as well).
-				return path == "/index.html" || path == "/index.json"
+				// We want the file to be served by Home route at / and not be
+				// available at index.html (as well).
+				return path == "/index.html"
 			},
 		},
 		oidcProviders:   nil,

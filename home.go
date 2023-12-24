@@ -23,7 +23,3 @@ func (s *Service) Home(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 		s.ServeStaticFile(w, req, "/index.html")
 	}
 }
-
-func (s *Service) HomeGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	s.ServeStaticFile(w, req, "/index.json")
-}

@@ -83,7 +83,7 @@ func (s *Service) AuthFlow(w http.ResponseWriter, req *http.Request, params waf.
 	}
 
 	// We have it hard-coded here because we have it hard-coded on the frontend as well.
-	w.Header().Add("Link", "</api>; rel=preload; as=fetch; crossorigin=anonymous")
+	w.Header().Add("Link", "</context.json>; rel=preload; as=fetch; crossorigin=anonymous")
 	w.Header().Add("Link", fmt.Sprintf("<%s>; rel=preload; as=fetch; crossorigin=anonymous", l))
 	w.WriteHeader(http.StatusEarlyHints)
 
