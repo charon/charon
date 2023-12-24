@@ -329,7 +329,7 @@ onBeforeUnmount(() => {
               :derive-options="deriveOptions"
               :encrypt-options="encryptOptions"
             />
-            <AuthCode v-else-if="currentStep === 'code'" :id="id" ref="component" :email-or-username="emailOrUsername" />
+            <AuthCode v-else-if="currentStep === 'code'" :id="id" ref="component" :name="name" :email-or-username="emailOrUsername" />
             <AuthComplete v-else-if="currentStep === 'complete'" ref="component" :name="name" :location="location" />
             <AuthFailed v-else-if="currentStep === 'failure'" ref="component" :name="name" :location="location" />
           </Transition>

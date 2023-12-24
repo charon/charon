@@ -10,6 +10,7 @@ import { flowKey } from "@/flow"
 
 const props = defineProps<{
   id: string
+  name: string
   emailOrUsername: string
 }>()
 
@@ -255,9 +256,12 @@ async function onResend() {
     </div>
     <div v-if="codeError === 'invalidCode'" class="mt-4 text-error-600">Code is invalid. Please try again.</div>
     <div v-else-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
-    <div v-else-if="codeProvided" class="mt-4">Please confirm it to continue.</div>
+    <div v-else-if="codeProvided" class="mt-4">Please confirm the code to continue.</div>
     <div v-else class="mt-4">Please allow few minutes for the code to arrive. Check spam or junk folder.</div>
-    <div v-if="!codeProvided" class="mt-4">
+    <div v-if="codeProvided" class="mt-4">
+      If you were not signing in or signing up into {{ name }}, please disregard the e-mail and <strong>do not</strong> confirm the code.
+    </div>
+    <div v-else class="mt-4">
       If you have trouble accessing your e-mail, try a
       <a href="" class="link" @click.prevent="onRedo">different sign-in or sign-up method</a>.
     </div>
