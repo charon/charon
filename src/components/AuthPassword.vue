@@ -6,7 +6,8 @@ import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import InputTextButton from "@/components/InputTextButton.vue"
 import { postURL, startPassword } from "@/api"
-import { flowKey, locationRedirect, toBase64, updateSteps, updateStepsCodeNotPossible, isEmail } from "@/utils"
+import { locationRedirect, toBase64, isEmail } from "@/utils"
+import { flowKey, updateSteps, updateStepsCodeNotPossible } from "@/flow"
 
 const props = defineProps<{
   id: string

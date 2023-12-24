@@ -5,7 +5,8 @@ import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import { startPassword } from "@/api"
-import { flowKey, updateSteps, isEmail } from "@/utils"
+import { isEmail } from "@/utils"
+import { flowKey, updateSteps } from "@/flow"
 import siteContext from "@/context"
 
 const props = defineProps<{

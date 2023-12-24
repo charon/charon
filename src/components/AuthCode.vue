@@ -5,7 +5,8 @@ import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import InputCode from "@/components/InputCode.vue"
 import { postURL } from "@/api"
-import { flowKey, locationRedirect, isEmail } from "@/utils"
+import { locationRedirect, isEmail } from "@/utils"
+import { flowKey } from "@/flow"
 
 const props = defineProps<{
   id: string

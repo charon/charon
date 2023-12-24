@@ -5,7 +5,8 @@ import { useRouter } from "vue-router"
 import { startRegistration, WebAuthnAbortService } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
 import { postURL } from "@/api"
-import { flowKey, locationRedirect } from "@/utils"
+import { locationRedirect } from "@/utils"
+import { flowKey } from "@/flow"
 
 const props = defineProps<{
   id: string

@@ -4,7 +4,8 @@ import { ref, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import { postURL } from "@/api"
-import { flowKey, locationRedirect, providerName } from "@/utils"
+import { locationRedirect } from "@/utils"
+import { flowKey, providerName } from "@/flow"
 
 const props = defineProps<{
   id: string

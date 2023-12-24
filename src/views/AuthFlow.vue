@@ -16,7 +16,9 @@ elements and links but that should not change how components look.
 -->
 
 <script setup lang="ts">
+import type { AuthFlowResponse, AuthFlowStep, DeriveOptions, EncryptOptions, LocationResponse } from "@/types"
 import { onBeforeMount, onBeforeUnmount, onMounted, provide, ref, watch } from "vue"
+import { useRouter } from "vue-router"
 import Footer from "@/components/Footer.vue"
 import Stepper from "@/components/Stepper.vue"
 import AuthStart from "@/components/AuthStart.vue"
@@ -27,10 +29,10 @@ import AuthPasskeySignup from "@/components/AuthPasskeySignup.vue"
 import AuthCode from "@/components/AuthCode.vue"
 import AuthComplete from "@/components/AuthComplete.vue"
 import AuthFailed from "@/components/AuthFailed.vue"
-import { flowKey, getProvider, updateSteps } from "@/utils"
-import { AuthFlowResponse, AuthFlowStep, DeriveOptions, EncryptOptions, LocationResponse } from "@/types"
-import { useRouter } from "vue-router"
 import { FetchError } from "@/api"
+// Importing "@/flow" also fetches siteContext which we have to fetch because
+// the server sends the preload header for it. Generally this is already cached.
+import { getProvider, updateSteps, flowKey } from "@/flow"
 
 const props = defineProps<{
   id: string
