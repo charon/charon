@@ -13,7 +13,7 @@
   }
 
   .input-code-gradient:focus {
-    --input-code-gradient: linear-gradient(90deg, theme(colors.primary.500) 2px, transparent 0)
+    --input-code-gradient: linear-gradient(90deg, theme(colors.primary.500) 2px, transparent 0);
   }
 }
 
