@@ -63,6 +63,7 @@ type Service struct {
 
 	oidcProviders   func() map[Provider]oidcProvider
 	passkeyProvider func() *webauthn.WebAuthn
+	codeProvider    func() *codeProvider
 }
 
 func (app *App) Run() errors.E {
@@ -189,6 +190,7 @@ func (app *App) Run() errors.E {
 		},
 		oidcProviders:   nil,
 		passkeyProvider: nil,
+		codeProvider:    nil,
 	}
 
 	if len(sites) > 1 {
@@ -197,6 +199,7 @@ func (app *App) Run() errors.E {
 
 	service.oidcProviders = sync.OnceValue(initOIDCProviders(app, service, domain, providers))
 	service.passkeyProvider = sync.OnceValue(initPasskeyProvider(app, domain))
+	service.codeProvider = sync.OnceValue(initCodeProvider(app, domain))
 
 	// Construct the main handler for the service using the router.
 	handler, errE := service.RouteWith(service, &waf.Router{}) //nolint:exhaustruct

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AuthFlowRequest, AuthFlowResponse } from "@/types"
 import { ref, watch, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
-import { useRouter } from "vue-router"
+import { useRoute, useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import InputCode from "@/components/InputCode.vue"
 import { postURL } from "@/api"
@@ -14,6 +14,7 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+const route = useRoute()
 
 const flow = inject(flowKey)
 
@@ -23,12 +24,29 @@ const abortController = new AbortController()
 const sendCounter = ref(1)
 const codeError = ref("")
 const unexpectedError = ref("")
+const codeProvided = ref(false)
 
 watch(code, () => {
   // We reset errors when input box value changes.
   codeError.value = ""
   unexpectedError.value = ""
 })
+
+watch(
+  () => route.hash,
+  (h) => {
+    if (!h || h.substring(0, 1) !== "#") {
+      return
+    }
+    const params = new URLSearchParams(h.substring(1))
+    const c = params.get("code")
+    if (c) {
+      code.value = c
+      codeProvided.value = true
+    }
+  },
+  { immediate: true },
+)
 
 // Define transition hooks to be called by the parent component.
 // See: https://github.com/vuejs/rfcs/discussions/613
@@ -45,7 +63,11 @@ defineExpose({
 onUnmounted(onBeforeLeave)
 
 function onAfterEnter() {
-  document.getElementById("code")?.focus()
+  if (codeProvided.value) {
+    document.getElementById("submit-code")?.focus()
+  } else {
+    document.getElementById("code")?.focus()
+  }
 }
 
 function onBeforeLeave() {
@@ -133,6 +155,7 @@ async function onResend() {
     codeError.value = ""
     unexpectedError.value = ""
     code.value = ""
+    codeProvided.value = false
     const url = router.apiResolve({
       name: "AuthFlow",
       params: {
@@ -185,11 +208,19 @@ async function onResend() {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div class="flex flex-col">
-      <label v-if="isEmail(emailOrUsername)" for="code" class="mb-1"
+      <label v-if="codeProvided && isEmail(emailOrUsername)" for="code" class="mb-1"
+        >We sent the following 6-digit code to <strong>{{ emailOrUsername }}</strong> e-mail address:</label
+      >
+      <label v-else-if="codeProvided" for="code" class="mb-1">
+        We sent the following 6-digit code to e-mail address(es) associated with the Charon username
+        <strong>{{ emailOrUsername }}</strong
+        >:</label
+      >
+      <label v-else-if="!codeProvided && isEmail(emailOrUsername)" for="code" class="mb-1"
         >We {{ sendCounter > 1 ? `sent (${sendCounter}x)` : "sent" }} a 6-digit code to <strong>{{ emailOrUsername }}</strong> e-mail address. Please enter it to
         continue:</label
       >
-      <label v-else for="code" class="mb-1">
+      <label v-else-if="!codeProvided" for="code" class="mb-1">
         We {{ sendCounter > 1 ? `sent (${sendCounter}x)` : "sent" }} a 6-digit code to e-mail address(es) associated with the Charon username
         <strong>{{ emailOrUsername }}</strong
         >. Please enter it to continue:</label
@@ -217,13 +248,16 @@ async function onResend() {
           is not enabled.
           Button is on purpose not disabled on unexpectedError so that user can retry.
         -->
-        <Button primary type="submit" class="ml-4" tabindex="2" :disabled="code.replaceAll(/\s/g, '').length === 0 || mainProgress > 0 || !!codeError">Next</Button>
+        <Button id="submit-code" primary type="submit" class="ml-4" tabindex="2" :disabled="code.replaceAll(/\s/g, '').length === 0 || mainProgress > 0 || !!codeError"
+          >Next</Button
+        >
       </form>
     </div>
     <div v-if="codeError === 'invalidCode'" class="mt-4 text-error-600">Code is invalid. Please try again.</div>
     <div v-else-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
+    <div v-else-if="codeProvided" class="mt-4">Please confirm it to continue.</div>
     <div v-else class="mt-4">Please allow few minutes for the code to arrive. Check spam or junk folder.</div>
-    <div class="mt-4">
+    <div v-if="!codeProvided" class="mt-4">
       If you have trouble accessing your e-mail, try a
       <a href="" class="link" @click.prevent="onRedo">different sign-in or sign-up method</a>.
     </div>

@@ -1,6 +1,7 @@
 package charon
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"unicode"
@@ -9,6 +10,7 @@ import (
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
+	"gitlab.com/tozd/waf"
 )
 
 const CodeProvider Provider = "code"
@@ -24,6 +26,34 @@ type AuthFlowRequestCodeComplete struct {
 type AuthFlowRequestCode struct {
 	Start    *AuthFlowRequestCodeStart    `json:"start,omitempty"`
 	Complete *AuthFlowRequestCodeComplete `json:"complete,omitempty"`
+}
+
+type codeProvider struct {
+	origin string
+}
+
+func (p *codeProvider) URL(s *Service, flow *Flow, code string) (string, errors.E) {
+	path, errE := s.Reverse("AuthFlow", waf.Params{"id": flow.ID.String()}, nil)
+	if errE != nil {
+		return "", errE
+	}
+	return fmt.Sprintf("%s%s#code=%s", p.origin, path, code), nil
+}
+
+func initCodeProvider(app *App, domain string) func() *codeProvider {
+	return func() *codeProvider {
+		host, errE := getHost(app, domain)
+		if errE != nil {
+			panic(errE)
+		}
+		if host == "" {
+			// Server failed to start. We just return in this case.
+			return nil
+		}
+		return &codeProvider{
+			origin: fmt.Sprintf("https://%s", host),
+		}
+	}
 }
 
 func (s *Service) sendCodeForExistingAccount(
@@ -97,8 +127,13 @@ func (s *Service) sendCode(
 		return
 	}
 
+	url, errE := s.codeProvider().URL(s, flow, code)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
 	// TODO: Send e-mails.
-	hlog.FromRequest(req).Info().Str("code", code).Strs("emails", emails).Msg("sending code")
+	hlog.FromRequest(req).Info().Str("code", code).Str("url", url).Strs("emails", emails).Msg("sending code")
 
 	s.WriteJSON(w, req, AuthFlowResponse{
 		Name:            flow.TargetName,
