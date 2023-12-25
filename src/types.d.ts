@@ -52,8 +52,7 @@ export type AuthFlowResponse = {
       error: "wrongPassword" | "noEmails" | "noAccount" | "invalidCode" | "invalidEmailOrUsername" | "shortEmailOrUsername" | "invalidPassword" | "shortPassword"
     }
   | {
-      error?: "failed"
-      completed?: boolean
+      completed?: "signin" | "signup" | "failed"
       location: LocationResponse
     }
   | {
@@ -166,4 +165,5 @@ export type Flow = {
   updateName(value: string): void
   getSteps(): AuthFlowStep[]
   updateSteps(value: AuthFlowStep[]): void
+  updateCompleted(value: "signin" | "signup"): void
 }

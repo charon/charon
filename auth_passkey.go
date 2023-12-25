@@ -148,7 +148,7 @@ func (s *Service) startPasskeyGet(w http.ResponseWriter, req *http.Request, flow
 		Provider:        flow.Provider,
 		EmailOrUsername: flow.EmailOrUsername,
 		Error:           "",
-		Completed:       false,
+		Completed:       "",
 		Location:        nil,
 		Passkey: &AuthFlowResponsePasskey{
 			CreateOptions: nil,
@@ -269,7 +269,7 @@ func (s *Service) startPasskeyCreate(w http.ResponseWriter, req *http.Request, f
 		Provider:        flow.Provider,
 		EmailOrUsername: flow.EmailOrUsername,
 		Error:           "",
-		Completed:       false,
+		Completed:       "",
 		Location:        nil,
 		Passkey: &AuthFlowResponsePasskey{
 			CreateOptions: options,

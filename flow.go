@@ -17,6 +17,14 @@ var (
 	flowsMu = sync.RWMutex{}                         //nolint:gochecknoglobals
 )
 
+type Completed string
+
+const (
+	CompletedSignin Completed = "signin"
+	CompletedSignup Completed = "signup"
+	CompletedFailed Completed = "failed"
+)
+
 type FlowOIDC struct {
 	Verifier string
 	Nonce    string
@@ -36,7 +44,7 @@ type FlowCode struct {
 type Flow struct {
 	ID              identifier.Identifier
 	Session         *identifier.Identifier
-	Failed          bool
+	Completed       Completed
 	TargetLocation  string
 	TargetName      string
 	Provider        Provider

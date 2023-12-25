@@ -5,6 +5,7 @@ import Button from "@/components/Button.vue"
 
 const props = defineProps<{
   name: string
+  completed: "signin" | "signup"
   location: LocationResponse
 }>()
 
@@ -112,7 +113,8 @@ onUnmounted(() => {
 
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
-    <div><strong>Congratulations.</strong> You successfully signed in or signed up.</div>
+    <div v-if="completed === 'signin'"><strong>Congratulations.</strong> You successfully signed in.</div>
+    <div v-else><strong>Congratulations.</strong> You successfully signed up.</div>
     <div class="mt-4">You will be now redirected to {{ name }} in {{ seconds === 1 ? "1 second" : `${seconds} seconds` }}{{ paused ? " (paused)" : "" }}.</div>
     <div class="mt-4 flex flex-row justify-end gap-4">
       <Button type="button" tabindex="2" :disabled="mainProgress > 0" @click.prevent="onPauseResume">{{ paused ? "Resume" : "Pause" }}</Button>

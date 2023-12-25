@@ -52,6 +52,7 @@ const encryptOptions = ref<EncryptOptions>()
 const provider = ref("")
 const location = ref<LocationResponse>({ url: "", replace: false })
 const name = ref("")
+const completed = ref<"signin" | "signup">("signin")
 
 const flow = {
   forward(to: string) {
@@ -97,6 +98,9 @@ const flow = {
   },
   updateSteps(value: AuthFlowStep[]) {
     steps.value = value
+  },
+  updateCompleted(value: "signin" | "signup") {
+    completed.value = value
   },
 }
 provide(flowKey, flow)
@@ -330,7 +334,7 @@ onBeforeUnmount(() => {
               :encrypt-options="encryptOptions"
             />
             <AuthCode v-else-if="currentStep === 'code'" :id="id" ref="component" :name="name" :email-or-username="emailOrUsername" />
-            <AuthComplete v-else-if="currentStep === 'complete'" ref="component" :name="name" :location="location" />
+            <AuthComplete v-else-if="currentStep === 'complete'" ref="component" :name="name" :completed="completed" :location="location" />
             <AuthFailed v-else-if="currentStep === 'failure'" ref="component" :name="name" :location="location" />
           </Transition>
         </div>

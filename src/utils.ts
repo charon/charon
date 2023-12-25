@@ -7,9 +7,10 @@ export function locationRedirect(response: AuthFlowResponse, flow?: Flow): boole
     if (response.completed && flow) {
       flow.updateLocation(response.location)
       flow.updateName(response.name!)
-      if ("error" in response && response.error === "failed") {
+      if (response.completed === "failed") {
         flow.forward("failure")
       } else {
+        flow.updateCompleted(response.completed)
         flow.forward("complete")
       }
     } else if (response.location.replace) {

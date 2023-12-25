@@ -143,7 +143,7 @@ func (s *Service) startOIDCProvider(w http.ResponseWriter, req *http.Request, fl
 		Provider:        flow.Provider,
 		EmailOrUsername: flow.EmailOrUsername,
 		Error:           "",
-		Completed:       false,
+		Completed:       "",
 		Location: &AuthFlowResponseLocation{
 			URL:     provider.Config.AuthCodeURL(flow.ID.String(), opts...),
 			Replace: false,

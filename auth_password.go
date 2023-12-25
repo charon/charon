@@ -154,7 +154,7 @@ func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *
 		Provider:        flow.Provider,
 		EmailOrUsername: flow.EmailOrUsername,
 		Error:           "",
-		Completed:       false,
+		Completed:       "",
 		Location:        nil,
 		Passkey:         nil,
 		Password: &AuthFlowResponsePassword{

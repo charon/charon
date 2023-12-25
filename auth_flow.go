@@ -35,7 +35,7 @@ type AuthFlowResponse struct {
 	Provider        Provider                  `json:"provider,omitempty"`
 	EmailOrUsername string                    `json:"emailOrUsername,omitempty"`
 	Error           string                    `json:"error,omitempty"`
-	Completed       bool                      `json:"completed,omitempty"`
+	Completed       Completed                 `json:"completed,omitempty"`
 	Location        *AuthFlowResponseLocation `json:"location,omitempty"`
 	Passkey         *AuthFlowResponsePasskey  `json:"passkey,omitempty"`
 	Password        *AuthFlowResponsePassword `json:"password,omitempty"`
@@ -55,7 +55,7 @@ func (s *Service) flowError(w http.ResponseWriter, req *http.Request, code strin
 		Provider:        "",
 		EmailOrUsername: "",
 		Error:           code,
-		Completed:       false,
+		Completed:       "",
 		Location:        nil,
 		Passkey:         nil,
 		Password:        nil,
@@ -105,28 +105,24 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 		Provider:        flow.Provider,
 		EmailOrUsername: flow.EmailOrUsername,
 		Error:           "",
-		Completed:       false,
+		Completed:       "",
 		Location:        nil,
 		Passkey:         nil,
 		Password:        nil,
 	}
 
 	// Has flow already completed?
-	if flow.Session != nil || flow.Failed {
+	if flow.Completed != "" {
 		// TODO: Redirect to target only if same user is still authenticated.
 		//       When flow completes, we should remember the user who authenticated. Then, here, we should check if the same user is still
 		//       authenticated. If yes, then we redirect to target. If not and some user is authenticated, then we redirect to /. If not and
 		//       no user is authenticated, then we start a new flow with additional field which requires the completing user to be the same.
 		//       If after flow completes the user is the same, we redirect to target, otherwise to /.
 
-		response.Completed = true
+		response.Completed = flow.Completed
 		response.Location = &AuthFlowResponseLocation{
 			URL:     flow.TargetLocation,
 			Replace: true,
-		}
-
-		if flow.Failed {
-			response.Error = "failed"
 		}
 	}
 
@@ -143,7 +139,7 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	// Has flow already completed?
-	if flow.Session != nil || flow.Failed {
+	if flow.Completed != "" {
 		s.BadRequestWithError(w, req, errors.New("flow already completed"))
 		return
 	}
@@ -223,8 +219,10 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *Flow, account *Account, credentials []Credential) {
 	ctx := req.Context()
 
+	var completed Completed
 	if account == nil {
 		// Sign-up. Create new account.
+		completed = CompletedSignup
 		account = &Account{
 			ID:          identifier.New(),
 			Credentials: map[Provider][]Credential{},
@@ -239,6 +237,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 		}
 	} else {
 		// Sign-in. Update credentials for an existing account.
+		completed = CompletedSignin
 		// TODO: Updating only if credentials (meaningfully) changed.
 		// TODO: Update in a way which does not preserve history.
 		account.UpdateCredentials(credentials)
@@ -260,6 +259,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	}
 
 	flow.Session = &sessionID
+	flow.Completed = completed
 
 	// Should already be set to nil at this point, but just to make sure.
 	flow.Reset()
@@ -290,7 +290,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 			Provider:        flow.Provider,
 			EmailOrUsername: flow.EmailOrUsername,
 			Error:           "",
-			Completed:       true,
+			Completed:       flow.Completed,
 			Location: &AuthFlowResponseLocation{
 				URL:     flow.TargetLocation,
 				Replace: true,
@@ -314,7 +314,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *Flow, err errors.E) {
 	ctx := req.Context()
 
-	flow.Failed = true
+	flow.Completed = CompletedFailed
 
 	// Should already be set to nil at this point, but just to make sure.
 	flow.Reset()
@@ -332,8 +332,8 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 			Name:            flow.TargetName,
 			Provider:        flow.Provider,
 			EmailOrUsername: flow.EmailOrUsername,
-			Error:           "failed",
-			Completed:       true,
+			Error:           "",
+			Completed:       flow.Completed,
 			Location: &AuthFlowResponseLocation{
 				URL:     flow.TargetLocation,
 				Replace: true,

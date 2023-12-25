@@ -130,7 +130,7 @@ async function onNext() {
       mainProgress.value += 1
       return
     }
-    if ("error" in response && response.error && ["invalidCode"].includes(response.error)) {
+    if ("error" in response && ["invalidCode"].includes(response.error)) {
       codeError.value = response.error
       return
     }

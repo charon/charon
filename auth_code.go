@@ -140,7 +140,7 @@ func (s *Service) sendCode(
 		Provider:        flow.Provider,
 		EmailOrUsername: preservedEmailOrUsername,
 		Error:           "",
-		Completed:       false,
+		Completed:       "",
 		Location:        nil,
 		Passkey:         nil,
 		Password:        nil,

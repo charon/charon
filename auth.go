@@ -29,7 +29,7 @@ func (s *Service) AuthDelete(w http.ResponseWriter, req *http.Request, _ waf.Par
 		Provider:        "",
 		EmailOrUsername: "",
 		Error:           "",
-		Completed:       false,
+		Completed:       "",
 		Location: &AuthFlowResponseLocation{
 			URL:     "/",
 			Replace: false,
