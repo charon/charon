@@ -7,7 +7,7 @@ import InputText from "@/components/InputText.vue"
 import InputTextButton from "@/components/InputTextButton.vue"
 import { postURL, startPassword } from "@/api"
 import { locationRedirect, toBase64, isEmail } from "@/utils"
-import { flowKey, updateSteps, updateStepsCodeNotPossible } from "@/flow"
+import { flowKey, updateSteps, updateStepsNoCode } from "@/flow"
 
 const props = defineProps<{
   id: string
@@ -211,6 +211,7 @@ async function onNext() {
       return
     }
     if (locationRedirect(response, flow)) {
+      updateStepsNoCode(flow!)
       // We increase the progress and never decrease it to wait for browser to do the redirect.
       mainProgress.value += 1
       return
@@ -222,7 +223,7 @@ async function onNext() {
         // attempted it means that the account exist but without e-mail addresses.
         codeError.value = "noEmails"
         codeErrorOnce.value = true
-        updateStepsCodeNotPossible(flow!)
+        updateStepsNoCode(flow!)
       }
       // We do not await getKey so that user can fix the password in meantime.
       getKey()
@@ -292,7 +293,7 @@ async function onCode() {
     if ("error" in response && response.error && ["noAccount", "noEmails"].includes(response.error)) {
       codeError.value = response.error
       codeErrorOnce.value = true
-      updateStepsCodeNotPossible(flow!)
+      updateStepsNoCode(flow!)
       return
     }
     if ("provider" in response && response.provider === "code") {

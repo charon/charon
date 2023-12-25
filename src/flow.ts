@@ -6,7 +6,7 @@ import siteContext from "@/context"
 
 export const flowKey = Symbol() as InjectionKey<Flow>
 
-export function updateStepsCodeNotPossible(flow: Flow) {
+export function updateStepsNoCode(flow: Flow) {
   if (!flow.getName()) {
     throw new Error("name is missing")
   }
