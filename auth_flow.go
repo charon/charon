@@ -113,18 +113,21 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 
 	// Has flow already completed?
 	if flow.Completed != "" {
-		session, errE := getSessionFromRequest(req)
-		if errors.Is(errE, ErrSessionNotFound) {
-			waf.Error(w, req, http.StatusGone)
-			return
-		} else if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
+		// If the active flow was successful, then we require that the session matches the one made by the flow.
+		if flow.Completed != CompletedFailed {
+			session, errE := getSessionFromRequest(req)
+			if errors.Is(errE, ErrSessionNotFound) {
+				waf.Error(w, req, http.StatusGone)
+				return
+			} else if errE != nil {
+				s.InternalServerErrorWithError(w, req, errE)
+				return
+			}
 
-		if *flow.Session != session.ID {
-			waf.Error(w, req, http.StatusGone)
-			return
+			if *flow.Session != session.ID {
+				waf.Error(w, req, http.StatusGone)
+				return
+			}
 		}
 
 		response.Completed = flow.Completed
