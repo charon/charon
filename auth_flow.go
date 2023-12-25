@@ -273,7 +273,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	flow.Completed = completed
 
 	// Should already be set to nil at this point, but just to make sure.
-	flow.Reset()
+	flow.Clear()
 
 	errE = SetFlow(ctx, flow)
 	if errE != nil {
@@ -328,7 +328,7 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 	flow.Completed = CompletedFailed
 
 	// Should already be set to nil at this point, but just to make sure.
-	flow.Reset()
+	flow.Clear()
 
 	errE := SetFlow(ctx, flow)
 	if errE != nil {

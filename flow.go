@@ -56,7 +56,7 @@ type Flow struct {
 	Code     *FlowCode
 }
 
-func (f *Flow) Reset() {
+func (f *Flow) Clear() {
 	f.OIDC = nil
 	f.Passkey = nil
 	f.Password = nil

@@ -113,7 +113,7 @@ func (s *Service) sendCode(
 	}
 
 	// TODO: This makes only the latest code work. Should we allow previous codes as well?
-	flow.Reset()
+	flow.Clear()
 	flow.Provider = CodeProvider
 	flow.EmailOrUsername = preservedEmailOrUsername
 	flow.Code = &FlowCode{

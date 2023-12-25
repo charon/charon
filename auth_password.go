@@ -136,7 +136,7 @@ func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *
 		return
 	}
 
-	flow.Reset()
+	flow.Clear()
 	flow.Provider = PasswordProvider
 	flow.EmailOrUsername = preservedEmailOrUsername
 	flow.Password = &FlowPassword{
