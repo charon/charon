@@ -113,11 +113,19 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 
 	// Has flow already completed?
 	if flow.Completed != "" {
-		// TODO: Redirect to target only if same user is still authenticated.
-		//       When flow completes, we should remember the user who authenticated. Then, here, we should check if the same user is still
-		//       authenticated. If yes, then we redirect to target. If not and some user is authenticated, then we redirect to /. If not and
-		//       no user is authenticated, then we start a new flow with additional field which requires the completing user to be the same.
-		//       If after flow completes the user is the same, we redirect to target, otherwise to /.
+		session, errE := getSessionFromRequest(req)
+		if errors.Is(errE, ErrSessionNotFound) {
+			waf.Error(w, req, http.StatusGone)
+			return
+		} else if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+
+		if *flow.Session != session.ID {
+			waf.Error(w, req, http.StatusGone)
+			return
+		}
 
 		response.Completed = flow.Completed
 		response.Location = &AuthFlowResponseLocation{
