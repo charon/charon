@@ -197,3 +197,14 @@ func getRandomCode() (string, errors.E) {
 	}
 	return fmt.Sprintf("%06d", randomNumber), nil
 }
+
+// pointerEqual returns true if both pointers are nil or if they point to equal values.
+func pointerEqual[T comparable](a *T, b *T) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a != nil && b != nil {
+		return *a == *b
+	}
+	return false
+}

@@ -1,6 +1,7 @@
 package charon
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"sync"
@@ -23,6 +24,16 @@ type Credential struct {
 	ID       string
 	Provider Provider
 	Data     json.RawMessage
+}
+
+func (c1 *Credential) Equal(c2 *Credential) bool {
+	if c1 == nil && c2 == nil {
+		return true
+	}
+	if c1 == nil || c2 == nil {
+		return false
+	}
+	return c1.ID == c2.ID && c1.Provider == c2.Provider && bytes.Equal(c1.Data, c2.Data)
 }
 
 type Account struct {

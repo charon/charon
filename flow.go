@@ -36,7 +36,7 @@ type FlowPassword struct {
 }
 
 type FlowCode struct {
-	Code        string
+	Codes       []string
 	Account     *identifier.Identifier
 	Credentials []Credential
 }
@@ -56,11 +56,23 @@ type Flow struct {
 	Code     *FlowCode
 }
 
-func (f *Flow) Clear() {
+func (f *Flow) Clear(emailOrUsername string) {
 	f.OIDC = nil
 	f.Passkey = nil
 	f.Password = nil
+
+	// If emailOrUsername is provided, we require that it is the same as what was previously
+	// provided to not clear the code provider's state as well.
+	if emailOrUsername != "" && emailOrUsername != f.EmailOrUsername {
+		f.Code = nil
+		f.EmailOrUsername = emailOrUsername
+	}
+}
+
+func (f *Flow) ClearAll() {
+	f.Clear("")
 	f.Code = nil
+	f.EmailOrUsername = ""
 }
 
 func GetFlow(ctx context.Context, id identifier.Identifier) (*Flow, errors.E) { //nolint:revive
