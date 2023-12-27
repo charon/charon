@@ -141,13 +141,13 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 }
 
 func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	defer req.Body.Close()
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
 	flow := s.GetActiveFlow(w, req, params["id"])
 	if flow == nil {
 		return
 	}
-
-	defer req.Body.Close()
-	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	// Has flow already completed?
 	if flow.Completed != "" {

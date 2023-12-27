@@ -173,6 +173,12 @@ func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, par
 		return
 	}
 
+	// Has flow already completed?
+	if flow.Completed != "" {
+		s.BadRequestWithError(w, req, errors.New("flow already completed"))
+		return
+	}
+
 	if flow.OIDC == nil {
 		s.BadRequestWithError(w, req, errors.New("provider not started"))
 		return
