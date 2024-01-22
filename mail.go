@@ -21,42 +21,69 @@ func init() { //nolint:gochecknoinits
 	}
 }
 
-func (s *Service) sendMail(ctx context.Context, flow *Flow, to, subject string, body *tt.Template, data interface{}) errors.E {
+func (s *Service) sendMail(ctx context.Context, flow *Flow, emails []string, subject string, body *tt.Template, data interface{}) errors.E {
 	logger := zerolog.Ctx(ctx)
-	m := mail.NewMsg()
-	id := identifier.New()
-	messageID := fmt.Sprintf("%s.%s@%s", id, flow.ID, s.domain)
-	m.SetMessageIDWithValue(messageID)
-	err := m.From(s.mailFrom)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	err = m.To(to)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	m.Subject(subject)
-	err = m.SetBodyTextTemplate(body, data)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	// By setting X-Entity-Ref-ID to a random value, Gmail does not combine
-	// similar e-mails into one thread.
-	m.SetGenHeader("X-Entity-Ref-ID", id.String())
-	if s.mailClient != nil {
-		err = s.mailClient.DialAndSendWithContext(ctx, m)
+	ms := []*mail.Msg{}
+	for _, to := range emails {
+		m := mail.NewMsg()
+		id := identifier.New()
+		messageID := fmt.Sprintf("%s.%s@%s", id, flow.ID, s.domain)
+		m.SetMessageIDWithValue(messageID)
+		err := m.From(s.mailFrom)
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		logger.Debug().Str("messageID", messageID).Msg("e-mail sent")
-		return nil
+		err = m.To(to)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		m.Subject(subject)
+		err = m.SetBodyTextTemplate(body, data)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		// By setting X-Entity-Ref-ID to a random value, Gmail does not combine
+		// similar e-mails into one thread.
+		m.SetGenHeader("X-Entity-Ref-ID", id.String())
+		ms = append(ms, m)
 	}
+
+	// If we have a mail client, we can send e-mails.
+	if s.mailClient != nil {
+		err := s.mailClient.DialWithContext(ctx)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		defer s.mailClient.Close()
+
+		// We loop over all e-mails ourselves to know if sending failed.
+		// See: https://github.com/wneessen/go-mail/issues/166
+		errs := []error{}
+		for _, m := range ms {
+			err := s.mailClient.Send(m)
+			errs = append(errs, err)
+			if err == nil {
+				messageID := strings.Trim(m.GetGenHeader(mail.HeaderMessageID)[0], "<>")
+				logger.Debug().Str("messageID", messageID).Msg("e-mail sent")
+			}
+		}
+
+		return errors.Join(errs...)
+	}
+
+	// Otherwise we just log them.
 	buffer := new(bytes.Buffer)
-	_, err = m.WriteTo(buffer)
-	if err != nil {
-		return errors.WithStack(err)
+	for _, m := range ms {
+		_, err := m.WriteTo(buffer)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		messageID := strings.Trim(m.GetGenHeader(mail.HeaderMessageID)[0], "<>")
+		// TODO: Log mail in the way that console formatter formats it after the log line.
+		logger.Info().Str("messageID", messageID).Str("mail", buffer.String()).Msg("e-mail sending not configured")
+		buffer.Reset()
 	}
-	logger.Info().Str("messageID", messageID).Str("mail", buffer.String()).Msg("e-mail sending not configured")
+
 	return nil
 }
 
