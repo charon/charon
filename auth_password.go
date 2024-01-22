@@ -172,7 +172,7 @@ func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *
 	}, nil)
 }
 
-func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flow *Flow, passwordComplete *AuthFlowRequestPasswordComplete) {
+func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flow *Flow, passwordComplete *AuthFlowRequestPasswordComplete) { //nolint:maintidx
 	ctx := req.Context()
 
 	if flow.Password == nil {
