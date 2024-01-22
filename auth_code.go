@@ -71,7 +71,7 @@ func initCodeProvider(app *App, domain string) func() *codeProvider {
 	}
 }
 
-var codeProviderTemplate = tt.Must(tt.New("CodeProviderTemplate").Parse(CodeProviderTemplate))
+var codeProviderTemplate = tt.Must(tt.New("CodeProviderTemplate").Parse(CodeProviderTemplate)) //nolint:gochecknoglobals
 
 var errMultipleCredentials = errors.Base("multiple credentials for the provider")
 
