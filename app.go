@@ -202,7 +202,7 @@ func (app *App) Run() errors.E {
 	service.codeProvider = sync.OnceValue(initCodeProvider(app, domain))
 
 	// Construct the main handler for the service using the router.
-	handler, errE := service.RouteWith(service, &waf.Router{}) //nolint:exhaustruct
+	handler, errE := service.RouteWith(service, new(waf.Router))
 	if errE != nil {
 		return errE
 	}
