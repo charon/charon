@@ -11,6 +11,7 @@ import (
 	"github.com/wneessen/go-mail"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/identifier"
+	"gitlab.com/tozd/waf"
 )
 
 var MailAuthTypes = map[string]mail.SMTPAuthType{} //nolint:gochecknoglobals
@@ -45,6 +46,8 @@ func (s *Service) sendMail(ctx context.Context, flow *Flow, emails []string, sub
 		// By setting X-Entity-Ref-ID to a random value, Gmail does not combine
 		// similar e-mails into one thread.
 		m.SetGenHeader("X-Entity-Ref-ID", id.String())
+		site := waf.MustGetSite[*Site](ctx)
+		m.SetUserAgent(fmt.Sprintf("Charon version %s (build on %s, git revision %s)", site.Build.Version, site.Build.BuildTimestamp, site.Build.Revision))
 		ms = append(ms, m)
 	}
 
