@@ -32,7 +32,8 @@ import AuthFailed from "@/components/AuthFailed.vue"
 import { FetchError } from "@/api"
 // Importing "@/flow" also fetches siteContext which we have to fetch because
 // the server sends the preload header for it. Generally this is already cached.
-import { getProvider, updateSteps, flowKey } from "@/flow"
+import { getProvider, updateSteps, flowKey, updateStepsNoCode } from "@/flow"
+import { processCompleted } from "@/utils"
 
 const props = defineProps<{
   id: string
@@ -56,6 +57,7 @@ const completed = ref<"signin" | "signup">("signin")
 
 const flow = {
   forward(to: string) {
+    updateSteps(flow, to)
     direction.value = "forward"
     currentStep.value = to
   },
@@ -132,7 +134,7 @@ onBeforeMount(async () => {
       })
     }
     const flowResponse = (await response.json()) as AuthFlowResponse
-    if ("name" in flowResponse && flowResponse.name) {
+    if (flowResponse.name) {
       name.value = flowResponse.name
       steps.value = [
         {
@@ -142,10 +144,10 @@ onBeforeMount(async () => {
         { key: "complete", name: `Redirect to ${flowResponse.name}` },
       ]
     }
-    if ("emailOrUsername" in flowResponse && flowResponse.emailOrUsername) {
+    if (flowResponse.emailOrUsername) {
       emailOrUsername.value = flowResponse.emailOrUsername
     }
-    if ("provider" in flowResponse && flowResponse.provider) {
+    if (flowResponse.provider) {
       if (flowResponse.provider === "code" || flowResponse.provider === "password") {
         updateSteps(flow, flowResponse.provider)
         currentStep.value = flowResponse.provider
@@ -163,20 +165,11 @@ onBeforeMount(async () => {
         throw new Error(`unknown provider "${flowResponse.provider}"`)
       }
     }
-    if ("location" in flowResponse && flowResponse.completed) {
-      location.value = flowResponse.location
-      if ("error" in flowResponse && flowResponse.error === "failed") {
-        // updateSteps currently just changes the last step name to "failure"
-        // but otherwise just leaves previously set steps.
-        updateSteps(flow, "failure")
-        currentStep.value = "failure"
-        return
-      } else {
-        // updateSteps currently does not do anything for "complete"
-        // target step and just leaves previously set steps.
-        updateSteps(flow, "complete")
-        currentStep.value = "complete"
+    if ("location" in flowResponse && "completed" in flowResponse) {
+      if (flowResponse.provider === "password") {
+        updateStepsNoCode(flow)
       }
+      processCompleted(flow, flowResponse.location, flowResponse.name, flowResponse.completed)
     }
     if ("error" in flowResponse && flowResponse.error) {
       throw new Error(`unexpected error "${flowResponse.error}"`)

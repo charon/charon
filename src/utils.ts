@@ -1,18 +1,23 @@
-import type { AuthFlowResponse, Flow } from "@/types"
+import type { AuthFlowResponse, Flow, LocationResponse } from "@/types"
+
+export function processCompleted(flow: Flow, location: LocationResponse, name: string, completed: "signin" | "signup" | "failed") {
+  flow.updateLocation(location)
+  flow.updateName(name)
+  if (completed === "failed") {
+    flow.forward("failure")
+  } else {
+    // "completed" on the front-end is used only when not a failure.
+    flow.updateCompleted(completed)
+    flow.forward("complete")
+  }
+}
 
 export function locationRedirect(response: AuthFlowResponse, flow?: Flow): boolean {
   // We do not use Vue Router to force a server-side request which might return updated cookies
   // or redirect on its own somewhere because of new (or lack thereof) cookies.
   if ("location" in response) {
-    if (response.completed && flow) {
-      flow.updateLocation(response.location)
-      flow.updateName(response.name!)
-      if (response.completed === "failed") {
-        flow.forward("failure")
-      } else {
-        flow.updateCompleted(response.completed)
-        flow.forward("complete")
-      }
+    if ("completed" in response && flow) {
+      processCompleted(flow, response.location, response.name, response.completed)
     } else if (response.location.replace) {
       window.location.replace(response.location.url)
     } else {

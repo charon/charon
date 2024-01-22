@@ -10,14 +10,14 @@ export function updateStepsNoCode(flow: Flow) {
   if (!flow.getName()) {
     throw new Error("name is missing")
   }
-  flow.updateSteps([
-    {
-      key: "start",
-      name: "Charon sign-in or sign-up",
-    },
-    { key: "password", name: "Provide password or passphrase" },
-    { key: "complete", name: `Redirect to ${flow.getName()}` },
-  ])
+  const steps = flow.getSteps()
+  for (const [i, step] of steps.entries()) {
+    if (step.key === "code") {
+      // We found the code step. We remove it.
+      steps.splice(i, 1)
+      break
+    }
+  }
 }
 
 export function getProvider(provider: string): Provider | null {

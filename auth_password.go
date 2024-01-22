@@ -305,6 +305,9 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 		}
 
 		// Incorrect password. We do password recovery (if possible).
+		if !s.increaseAttempts(w, req, flow) {
+			return
+		}
 		s.sendCodeForExistingAccount(w, req, flow, true, account, flow.EmailOrUsername, mappedEmailOrUsername)
 		return
 	} else if !errors.Is(errE, ErrAccountNotFound) {

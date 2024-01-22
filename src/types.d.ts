@@ -52,7 +52,11 @@ export type AuthFlowResponse = {
       error: "wrongPassword" | "noEmails" | "noAccount" | "invalidCode" | "invalidEmailOrUsername" | "shortEmailOrUsername" | "invalidPassword" | "shortPassword"
     }
   | {
-      completed?: "signin" | "signup" | "failed"
+      location: LocationResponse
+    }
+  | {
+      name: string
+      completed: "signin" | "signup" | "failed"
       location: LocationResponse
     }
   | {

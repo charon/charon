@@ -331,17 +331,6 @@ func (s *Service) completeCode(w http.ResponseWriter, req *http.Request, flow *F
 		return
 	}
 
-	flowCode := flow.Code
-
-	// We reset flow.Code to nil always after this point, even if there is a failure,
-	// so that code cannot be reused.
-	flow.Code = nil
-	errE := SetFlow(ctx, flow)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
 	// We clean the provided code of all whitespace before we check it.
 	code := strings.Map(func(r rune) rune {
 		if unicode.IsSpace(r) {
@@ -350,14 +339,18 @@ func (s *Service) completeCode(w http.ResponseWriter, req *http.Request, flow *F
 		return r
 	}, codeComplete.Code)
 
-	if !slices.Contains(flowCode.Codes, code) {
+	if !slices.Contains(flow.Code.Codes, code) {
+		if !s.increaseAttempts(w, req, flow) {
+			return
+		}
 		s.flowError(w, req, "invalidCode", nil)
 		return
 	}
 
 	var account *Account
-	if flowCode.Account != nil {
-		account, errE = GetAccount(ctx, *flowCode.Account)
+	if flow.Code.Account != nil {
+		var errE errors.E
+		account, errE = GetAccount(ctx, *flow.Code.Account)
 		if errE != nil {
 			// We return internal server error even on ErrAccountNotFound. It is unlikely that
 			// the account got deleted in meantime so there might be some logic error. In any
@@ -367,5 +360,5 @@ func (s *Service) completeCode(w http.ResponseWriter, req *http.Request, flow *F
 		}
 	}
 
-	s.completeAuthStep(w, req, true, flow, account, flowCode.Credentials)
+	s.completeAuthStep(w, req, true, flow, account, flow.Code.Credentials)
 }

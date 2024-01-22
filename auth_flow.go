@@ -15,6 +15,8 @@ import (
 const (
 	StepStart    = "start"
 	StepComplete = "complete"
+
+	MaxAuthAttempts = 10
 )
 
 type AuthFlowRequest struct {
@@ -320,6 +322,24 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 		return
 	}
 	s.TemporaryRedirectGetMethod(w, req, l)
+}
+
+func (s *Service) increaseAttempts(w http.ResponseWriter, req *http.Request, flow *Flow) bool {
+	ctx := req.Context()
+
+	flow.Attempts++
+	errE := SetFlow(ctx, flow)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return false
+	}
+
+	if flow.Attempts >= MaxAuthAttempts {
+		s.failAuthStep(w, req, true, flow, errors.New("reached max auth attempts"))
+		return false
+	}
+
+	return true
 }
 
 func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *Flow, err errors.E) {

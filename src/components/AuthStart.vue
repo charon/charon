@@ -6,7 +6,7 @@ import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import { startPassword } from "@/api"
 import { isEmail } from "@/utils"
-import { flowKey, updateSteps } from "@/flow"
+import { flowKey } from "@/flow"
 import siteContext from "@/context"
 
 const props = defineProps<{
@@ -88,7 +88,6 @@ async function onNext() {
     flow!.updatePublicKey(response.publicKey)
     flow!.updateDeriveOptions(response.deriveOptions)
     flow!.updateEncryptOptions(response.encryptOptions)
-    updateSteps(flow!, "password")
     flow!.forward("password")
   } catch (error) {
     if (abortController.signal.aborted) {
@@ -106,7 +105,6 @@ async function onPasskey() {
     return
   }
 
-  updateSteps(flow!, "passkeySignin")
   flow!.forward("passkeySignin")
 }
 
@@ -116,7 +114,6 @@ async function onOIDCProvider(provider: string) {
   }
 
   flow!.updateProvider(provider)
-  updateSteps(flow!, "oidcProvider")
   flow!.forward("oidcProvider")
 }
 </script>

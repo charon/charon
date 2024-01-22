@@ -49,6 +49,7 @@ type Flow struct {
 	TargetName      string
 	Provider        Provider
 	EmailOrUsername string
+	Attempts        int
 
 	OIDC     *FlowOIDC
 	Passkey  *webauthn.SessionData
