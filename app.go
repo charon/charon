@@ -47,12 +47,12 @@ type Providers struct {
 
 //nolint:lll
 type Mail struct {
-	Host     string `                                                                    help:"Host to send e-mails to. If not set, e-mails are logged instead."                                          yaml:"host"`
-	Port     int    `default:"25"                                                        help:"Port to send e-mails to. Default: ${default}."                                        placeholder:"INT"    yaml:"port"`
-	Username string `                                                                    help:"Username to use to send e-mails."                                                                          yaml:"username"`
-	Password string `                                                     env:"PASSWORD" help:"Password to use to send e-mails. Environment variable: ${env}."                                            yaml:"password"`
-	Auth     string `default:"${defaultMailAuth}" enum:"${mailAuthTypes}"                help:"Authentication type to use. Possible: ${mailAuthTypes}. Default: ${defaultMailAuth}." placeholder:"STRING" yaml:"auth"`
-	From     string `                                                                    help:"From header for e-mails."                                                             placeholder:"EMAIL"  yaml:"from"`
+	Host     string `                                                                    help:"Host to send e-mails to. If not set, e-mails are logged instead."                                                      yaml:"host"`
+	Port     int    `default:"25"                                                        help:"Port to send e-mails to. Default: ${default}."                                        placeholder:"INT"                yaml:"port"`
+	Username string `                                                                    help:"Username to use to send e-mails."                                                                                      yaml:"username"`
+	Password string `                                                     env:"PASSWORD" help:"Password to use to send e-mails. Environment variable: ${env}."                                                        yaml:"password"`
+	Auth     string `default:"${defaultMailAuth}" enum:"${mailAuthTypes}"                help:"Authentication type to use. Possible: ${mailAuthTypes}. Default: ${defaultMailAuth}." placeholder:"STRING"             yaml:"auth"`
+	From     string `                                                                    help:"From header for e-mails."                                                             placeholder:"EMAIL"  required:"" yaml:"from"`
 }
 
 //nolint:lll

@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	tt "text/template"
 	"unicode"
 
-	"github.com/rs/zerolog/hlog"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
@@ -15,6 +15,20 @@ import (
 )
 
 const CodeProvider Provider = "code"
+
+const (
+	CodeProviderSubject  = `Your code for Charon`
+	CodeProviderTemplate = `Hi!
+
+Here is the code to complete your Charon sign-in or sign-up:
+
+{{.code}}
+
+You can also open:
+
+{{.url}}
+`
+)
 
 type AuthFlowRequestCodeStart struct {
 	EmailOrUsername string `json:"emailOrUsername"`
@@ -56,6 +70,8 @@ func initCodeProvider(app *App, domain string) func() *codeProvider {
 		}
 	}
 }
+
+var codeProviderTemplate = tt.Must(tt.New("CodeProviderTemplate").Parse(CodeProviderTemplate))
 
 var errMultipleCredentials = errors.Base("multiple credentials for the provider")
 
@@ -252,8 +268,14 @@ func (s *Service) sendCode(
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-	// TODO: Send e-mails.
-	hlog.FromRequest(req).Info().Str("code", code).Str("url", url).Strs("emails", emails).Msg("sending code")
+	errE = s.sendMail(req.Context(), flow, emails, CodeProviderSubject, codeProviderTemplate, map[string]string{
+		"code": code,
+		"url":  url,
+	})
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
 		Name:            flow.TargetName,
