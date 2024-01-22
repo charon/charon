@@ -13,6 +13,7 @@ import (
 
 	"github.com/alecthomas/kong"
 	"github.com/go-webauthn/webauthn/webauthn"
+	"github.com/wneessen/go-mail"
 	"gitlab.com/tozd/go/cli"
 	"gitlab.com/tozd/go/errors"
 	z "gitlab.com/tozd/go/zerolog"
@@ -45,6 +46,16 @@ type Providers struct {
 }
 
 //nolint:lll
+type Mail struct {
+	Host     string `                                                                    help:"Host to send e-mails to. If not set, e-mails are logged instead."                                          yaml:"host"`
+	Port     int    `default:"25"                                                        help:"Port to send e-mails to. Default: ${default}."                                        placeholder:"INT"    yaml:"port"`
+	Username string `                                                                    help:"Username to use to send e-mails."                                                                          yaml:"username"`
+	Password string `                                                     env:"PASSWORD" help:"Password to use to send e-mails. Environment variable: ${env}."                                            yaml:"password"`
+	Auth     string `default:"${defaultMailAuth}" enum:"${mailAuthTypes}"                help:"Authentication type to use. Possible: ${mailAuthTypes}. Default: ${defaultMailAuth}." placeholder:"STRING" yaml:"auth"`
+	From     string `                                                                    help:"From header for e-mails."                                                             placeholder:"EMAIL"  yaml:"from"`
+}
+
+//nolint:lll
 type App struct {
 	z.LoggingConfig `yaml:",inline"`
 
@@ -56,6 +67,8 @@ type App struct {
 	MainDomain string   `help:"When using multiple domains, which one is the main one."                                                                                               yaml:"mainDomain"`
 
 	Providers Providers `embed:"" group:"Providers:" yaml:"providers"`
+
+	Mail Mail `embed:"" envprefix:"MAIL_" prefix:"mail." yaml:"mail"`
 }
 
 type Service struct {
@@ -64,6 +77,11 @@ type Service struct {
 	oidcProviders   func() map[Provider]oidcProvider
 	passkeyProvider func() *webauthn.WebAuthn
 	codeProvider    func() *codeProvider
+
+	domain string
+
+	mailClient *mail.Client
+	mailFrom   string
 }
 
 func (app *App) Run() errors.E {
@@ -155,8 +173,8 @@ func (app *App) Run() errors.E {
 			errE = errors.New("main domain is not among domains")
 			errors.Details(errE)["main"] = app.MainDomain
 			domains := []string{}
-			for domain := range sites {
-				domains = append(domains, domain)
+			for site := range sites {
+				domains = append(domains, site)
 			}
 			sort.Strings(domains)
 			errors.Details(errE)["domains"] = domains
@@ -191,6 +209,24 @@ func (app *App) Run() errors.E {
 		oidcProviders:   nil,
 		passkeyProvider: nil,
 		codeProvider:    nil,
+		domain:          domain,
+		mailClient:      nil,
+		mailFrom:        app.Mail.From,
+	}
+
+	if app.Mail.Host != "" {
+		c, err := mail.NewClient(
+			app.Mail.Host,
+			mail.WithPort(app.Mail.Port),
+			mail.WithSMTPAuth(MailAuthTypes[app.Mail.Auth]),
+			mail.WithUsername(app.Mail.Username),
+			mail.WithPassword(app.Mail.Password),
+			mail.WithLogger(loggerAdapter{app.Logger}),
+		)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		service.mailClient = c
 	}
 
 	if len(sites) > 1 {

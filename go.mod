@@ -5,6 +5,7 @@ go 1.21
 require (
 	github.com/alecthomas/kong v0.8.1
 	github.com/alexedwards/argon2id v1.0.0
+	github.com/wneessen/go-mail v0.4.0
 	gitlab.com/tozd/go/cli v0.2.2
 	gitlab.com/tozd/go/errors v0.8.1
 	gitlab.com/tozd/go/x v0.0.0-20231203095540-41b15b78555f
