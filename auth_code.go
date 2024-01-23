@@ -55,9 +55,9 @@ func (p *codeProvider) URL(s *Service, flow *Flow, code string) (string, errors.
 	return fmt.Sprintf("%s%s#code=%s", p.origin, path, code), nil
 }
 
-func initCodeProvider(app *App, domain string) func() *codeProvider {
+func initCodeProvider(config *Config, domain string) func() *codeProvider {
 	return func() *codeProvider {
-		host, errE := getHost(app, domain)
+		host, errE := getHost(config, domain)
 		if errE != nil {
 			panic(errE)
 		}

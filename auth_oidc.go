@@ -23,9 +23,9 @@ type oidcProvider struct {
 	SupportsPKCE bool
 }
 
-func initOIDCProviders(app *App, service *Service, domain string, providers []SiteProvider) func() map[Provider]oidcProvider {
+func initOIDCProviders(config *Config, service *Service, domain string, providers []SiteProvider) func() map[Provider]oidcProvider {
 	return func() map[Provider]oidcProvider {
-		host, errE := getHost(app, domain)
+		host, errE := getHost(config, domain)
 		if errE != nil {
 			panic(errE)
 		}
@@ -36,7 +36,7 @@ func initOIDCProviders(app *App, service *Service, domain string, providers []Si
 
 		oidcProviders := map[Provider]oidcProvider{}
 		for _, p := range providers {
-			app.Logger.Debug().Msgf("enabling %s provider", p.Name)
+			config.Logger.Debug().Msgf("enabling %s provider", p.Name)
 
 			path, errE := service.Reverse("AuthOIDCProvider", waf.Params{"provider": string(p.Key)}, nil)
 			if errE != nil {

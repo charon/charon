@@ -56,7 +56,7 @@ type Mail struct {
 }
 
 //nolint:lll
-type App struct {
+type Config struct {
 	z.LoggingConfig `yaml:",inline"`
 
 	Version kong.VersionFlag  `         help:"Show program's version and exit."                                              short:"V" yaml:"-"`
@@ -84,7 +84,7 @@ type Service struct {
 	mailFrom   string
 }
 
-func (app *App) Run() errors.E {
+func (config *Config) Run() errors.E {
 	// Routes come from a single source of truth, e.g., a file.
 	var routesConfig struct {
 		Routes []waf.Route `json:"routes"`
@@ -94,11 +94,11 @@ func (app *App) Run() errors.E {
 		return errors.WithStack(err)
 	}
 
-	app.Server.Logger = app.Logger
+	config.Server.Logger = config.Logger
 
 	sites := map[string]*Site{}
 	// If domains are provided, we create sites based on those domains.
-	for _, domain := range app.Domains {
+	for _, domain := range config.Domains {
 		sites[domain] = &Site{
 			Site: waf.Site{
 				Domain:   domain,
@@ -111,7 +111,7 @@ func (app *App) Run() errors.E {
 		}
 	}
 	// If domains are not provided, sites are automatically constructed based on the certificate.
-	sites, errE := app.Server.Init(nil)
+	sites, errE := config.Server.Init(nil)
 	if errE != nil {
 		return errE
 	}
@@ -128,27 +128,27 @@ func (app *App) Run() errors.E {
 	}
 
 	providers := []SiteProvider{}
-	if app.Providers.Google.ClientID != "" && app.Providers.Google.Secret != "" {
+	if config.Providers.Google.ClientID != "" && config.Providers.Google.Secret != "" {
 		providers = append(providers, SiteProvider{
 			Key:       "google",
 			Name:      "Google",
 			Type:      "oidc",
 			issuer:    "https://accounts.google.com",
-			clientID:  app.Providers.Google.ClientID,
-			secret:    app.Providers.Google.Secret,
+			clientID:  config.Providers.Google.ClientID,
+			secret:    config.Providers.Google.Secret,
 			forcePKCE: false,
 			authURL:   "",
 			tokenURL:  "",
 		})
 	}
-	if app.Providers.Facebook.ClientID != "" && app.Providers.Facebook.Secret != "" {
+	if config.Providers.Facebook.ClientID != "" && config.Providers.Facebook.Secret != "" {
 		providers = append(providers, SiteProvider{
 			Key:       "facebook",
 			Name:      "Facebook",
 			Type:      "oidc",
 			issuer:    "https://www.facebook.com",
-			clientID:  app.Providers.Facebook.ClientID,
-			secret:    app.Providers.Facebook.Secret,
+			clientID:  config.Providers.Facebook.ClientID,
+			secret:    config.Providers.Facebook.Secret,
 			forcePKCE: true,
 			authURL:   "",
 			tokenURL:  "https://graph.facebook.com/oauth/access_token",
@@ -166,12 +166,12 @@ func (app *App) Run() errors.E {
 
 	var domain string
 	if len(sites) > 1 {
-		if app.MainDomain == "" {
+		if config.MainDomain == "" {
 			return errors.New("main domain is not configured, but multiple domains are used")
 		}
-		if _, ok := sites[app.MainDomain]; !ok {
+		if _, ok := sites[config.MainDomain]; !ok {
 			errE = errors.New("main domain is not among domains")
-			errors.Details(errE)["main"] = app.MainDomain
+			errors.Details(errE)["main"] = config.MainDomain
 			domains := []string{}
 			for site := range sites {
 				domains = append(domains, site)
@@ -181,9 +181,9 @@ func (app *App) Run() errors.E {
 			return errE
 		}
 
-		domain = app.MainDomain
+		domain = config.MainDomain
 	} else {
-		// There is only one really here. app.Server.Init errors if there are not sites.
+		// There is only one really here. config.Server.Init errors if there are not sites.
 		for d := range sites {
 			domain = d
 			break
@@ -192,14 +192,14 @@ func (app *App) Run() errors.E {
 
 	service := &Service{ //nolint:forcetypeassert
 		Service: waf.Service[*Site]{ //nolint:exhaustruct
-			Logger:          app.Logger,
-			CanonicalLogger: app.Logger,
-			WithContext:     app.WithContext,
+			Logger:          config.Logger,
+			CanonicalLogger: config.Logger,
+			WithContext:     config.WithContext,
 			StaticFiles:     f.(fs.ReadFileFS),
 			Routes:          routesConfig.Routes,
 			Sites:           sites,
 			SiteContextPath: "/context.json",
-			Development:     app.Server.InDevelopment(),
+			Development:     config.Server.InDevelopment(),
 			SkipServingFile: func(path string) bool {
 				// We want the file to be served by Home route at / and not be
 				// available at index.html (as well).
@@ -211,17 +211,17 @@ func (app *App) Run() errors.E {
 		codeProvider:    nil,
 		domain:          domain,
 		mailClient:      nil,
-		mailFrom:        app.Mail.From,
+		mailFrom:        config.Mail.From,
 	}
 
-	if app.Mail.Host != "" {
+	if config.Mail.Host != "" {
 		c, err := mail.NewClient(
-			app.Mail.Host,
-			mail.WithPort(app.Mail.Port),
-			mail.WithSMTPAuth(MailAuthTypes[app.Mail.Auth]),
-			mail.WithUsername(app.Mail.Username),
-			mail.WithPassword(app.Mail.Password),
-			mail.WithLogger(loggerAdapter{app.Logger}),
+			config.Mail.Host,
+			mail.WithPort(config.Mail.Port),
+			mail.WithSMTPAuth(MailAuthTypes[config.Mail.Auth]),
+			mail.WithUsername(config.Mail.Username),
+			mail.WithPassword(config.Mail.Password),
+			mail.WithLogger(loggerAdapter{config.Logger}),
 		)
 		if err != nil {
 			return errors.WithStack(err)
@@ -233,9 +233,9 @@ func (app *App) Run() errors.E {
 		service.Middleware = append(service.Middleware, service.RedirectToMainSite(domain))
 	}
 
-	service.oidcProviders = sync.OnceValue(initOIDCProviders(app, service, domain, providers))
-	service.passkeyProvider = sync.OnceValue(initPasskeyProvider(app, domain))
-	service.codeProvider = sync.OnceValue(initCodeProvider(app, domain))
+	service.oidcProviders = sync.OnceValue(initOIDCProviders(config, service, domain, providers))
+	service.passkeyProvider = sync.OnceValue(initPasskeyProvider(config, domain))
+	service.codeProvider = sync.OnceValue(initCodeProvider(config, domain))
 
 	// Construct the main handler for the service using the router.
 	handler, errE := service.RouteWith(service, new(waf.Router))
@@ -253,5 +253,5 @@ func (app *App) Run() errors.E {
 	defer stop()
 
 	// It returns only on error or if the server is gracefully shut down using ctrl-c.
-	return app.Server.Run(ctx, handler)
+	return config.Server.Run(ctx, handler)
 }

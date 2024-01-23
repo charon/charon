@@ -89,9 +89,9 @@ func WithPreferredCredentialAlgorithms(preferredAlgorithms []webauthncose.COSEAl
 	}
 }
 
-func initPasskeyProvider(app *App, domain string) func() *webauthn.WebAuthn {
+func initPasskeyProvider(config *Config, domain string) func() *webauthn.WebAuthn {
 	return func() *webauthn.WebAuthn {
-		host, errE := getHost(app, domain)
+		host, errE := getHost(config, domain)
 		if errE != nil {
 			panic(errE)
 		}

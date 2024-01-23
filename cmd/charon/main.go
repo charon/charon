@@ -18,8 +18,8 @@ func main() {
 		mailAuthTypes = append(mailAuthTypes, t)
 	}
 	sort.Strings(mailAuthTypes)
-	var app charon.App
-	cli.Run(&app, kong.Vars{
+	var config charon.Config
+	cli.Run(&config, kong.Vars{
 		"defaultProxyTo":  charon.DefaultProxyTo,
 		"defaultTLSCache": charon.DefaultTLSCache,
 		"defaultMailAuth": strings.ToLower(string(mail.SMTPAuthPlain)),

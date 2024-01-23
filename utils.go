@@ -128,9 +128,9 @@ func (s *Service) GetActiveFlow(w http.ResponseWriter, req *http.Request, value 
 	return flow
 }
 
-func getHost(app *App, domain string) (string, errors.E) {
+func getHost(config *Config, domain string) (string, errors.E) {
 	// ListenAddr blocks until the server runs.
-	listenAddr := app.Server.ListenAddr()
+	listenAddr := config.Server.ListenAddr()
 	if listenAddr == "" {
 		// Server failed to start. We just return in this case.
 		return "", nil
