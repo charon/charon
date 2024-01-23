@@ -25,13 +25,13 @@
       "get": true
     },
     {
-      "name": "Apps",
+      "name": "Applications",
       "path": "/a",
       "api": true,
       "get": true
     },
     {
-      "name": "App",
+      "name": "Application",
       "path": "/a/:id",
       "api": true,
       "get": true
