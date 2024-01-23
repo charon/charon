@@ -12,7 +12,7 @@ const router = useRouter()
 const mainProgress = ref(0)
 const abortController = new AbortController()
 const dataLoading = ref(true)
-const unexpectedError = ref("")
+const dataLoadingError = ref("")
 const applications = ref<Applications>([])
 
 onUnmounted(() => {
@@ -31,7 +31,7 @@ onBeforeMount(async () => {
       return
     }
     console.error(error)
-    unexpectedError.value = `${error}`
+    dataLoadingError.value = `${error}`
   } finally {
     dataLoading.value = false
     mainProgress.value -= 1
@@ -48,7 +48,7 @@ onBeforeMount(async () => {
         </div>
       </div>
       <div v-if="dataLoading" class="w-full rounded border bg-white p-4 shadow">Loading...</div>
-      <div v-else-if="unexpectedError" class="w-full rounded border bg-white p-4 shadow text-error-600">Unexpected error. Please try again.</div>
+      <div v-else-if="dataLoadingError" class="w-full rounded border bg-white p-4 shadow text-error-600">Unexpected error. Please try again.</div>
       <template v-else>
         <div v-for="application of applications" :key="application.id" class="w-full rounded border bg-white p-4 shadow">
           <WithDocument :id="application.id" name="Application">

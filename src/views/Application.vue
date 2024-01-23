@@ -16,6 +16,7 @@ const router = useRouter()
 const mainProgress = ref(0)
 const abortController = new AbortController()
 const dataLoading = ref(true)
+const dataLoadingError = ref("")
 const unexpectedError = ref("")
 const application = ref<Application | null>(null)
 const name = ref("")
@@ -43,7 +44,7 @@ onBeforeMount(async () => {
     }
     // TODO: 404 should be shown differently, but probably in the same way for all 404.
     console.error(error)
-    unexpectedError.value = `${error}`
+    dataLoadingError.value = `${error}`
   } finally {
     dataLoading.value = false
     mainProgress.value -= 1
@@ -53,6 +54,7 @@ onBeforeMount(async () => {
 async function onSubmit() {
   mainProgress.value += 1
   try {
+    unexpectedError.value = ""
     const payload: Application = {
       id: props.id,
       name: name.value,
@@ -90,13 +92,17 @@ async function onSubmit() {
           <span class="font-bold">Application</span>
         </div>
         <div v-if="dataLoading">Loading...</div>
-        <div v-else-if="unexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
+        <div v-else-if="dataLoadingError" class="text-error-600">Unexpected error. Please try again.</div>
         <form v-else class="flex flex-col" novalidate @submit.prevent="onSubmit">
           <label for="name" class="mb-1">Application name</label>
           <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0" required />
           <label for="name" class="mb-1 mt-4">OpenID Connect redirect path</label>
           <InputText id="name" v-model="redirectPath" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0" required />
+          <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
           <div class="mt-4 flex flex-row justify-end">
+            <!--
+              Button is on purpose not disabled on unexpectedError so that user can retry.
+            -->
             <Button
               type="submit"
               primary
