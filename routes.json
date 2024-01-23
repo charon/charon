@@ -35,6 +35,18 @@
       "path": "/a/:id",
       "api": true,
       "get": true
+    },
+    {
+      "name": "Organizations",
+      "path": "/o",
+      "api": true,
+      "get": true
+    },
+    {
+      "name": "Organization",
+      "path": "/o/:id",
+      "api": true,
+      "get": true
     }
   ]
 }
