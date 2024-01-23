@@ -31,10 +31,22 @@
       "get": true
     },
     {
+      "name": "ApplicationCreate",
+      "path": "/a/create",
+      "api": true,
+      "get": true
+    },
+    {
       "name": "Application",
       "path": "/a/:id",
       "api": true,
       "get": true
+    },
+    {
+      "name": "ApplicationUpdate",
+      "path": "/a/update/:id",
+      "api": true,
+      "get": false
     },
     {
       "name": "Organizations",
@@ -43,10 +55,22 @@
       "get": true
     },
     {
+      "name": "OrganizationCreate",
+      "path": "/o/create",
+      "api": true,
+      "get": true
+    },
+    {
       "name": "Organization",
       "path": "/o/:id",
       "api": true,
       "get": true
+    },
+    {
+      "name": "OrganizationUpdate",
+      "path": "/o/update/:id",
+      "api": true,
+      "get": false
     }
   ]
 }

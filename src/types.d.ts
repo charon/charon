@@ -171,3 +171,18 @@ export type Flow = {
   updateSteps(value: AuthFlowStep[]): void
   updateCompleted(value: "signin" | "signup"): void
 }
+
+export type ApplicationsResponse = {
+  id: string
+}[]
+
+export type Application = {
+  id: string
+  name: string
+  redirectPath: string
+}
+
+export type ApplicationCreate = {
+  name: string
+  redirectPath: string
+}

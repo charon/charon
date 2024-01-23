@@ -126,7 +126,7 @@ onBeforeMount(async () => {
     const contentType = response.headers.get("Content-Type")
     if (!contentType || !contentType.includes("application/json")) {
       const body = await response.text()
-      throw new FetchError(`fetch POST error ${response.status}: ${body}`, {
+      throw new FetchError(`fetch GEt error ${response.status}: ${body}`, {
         status: response.status,
         body,
         url,

@@ -48,10 +48,13 @@ async function onSignOut() {
 <template>
   <div class="w-full flex flex-col items-center">
     <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
-      <div>Welcome.</div>
-      <Button primary type="button" :disabled="mainProgress > 0" @click.prevent="onSignOut">Sign-out</Button>
-      <ButtonLink :to="{ name: 'Applications' }" :disabled="mainProgress > 0" primary>Applications</ButtonLink>
-      <ButtonLink :to="{ name: 'Organizations' }" :disabled="mainProgress > 0" primary>Organizations</ButtonLink>
+      <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
+        <div class="flex flex-row justify-between items-center gap-4">
+          <span class="font-bold">Welcome</span><Button primary type="button" :disabled="mainProgress > 0" @click.prevent="onSignOut">Sign-out</Button>
+        </div>
+        <ButtonLink :to="{ name: 'Applications' }" :disabled="mainProgress > 0" primary>Applications</ButtonLink>
+        <ButtonLink :to="{ name: 'Organizations' }" :disabled="mainProgress > 0" primary>Organizations</ButtonLink>
+      </div>
     </div>
   </div>
   <Teleport to="footer">
