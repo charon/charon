@@ -3,8 +3,8 @@ import { onBeforeMount, onUnmounted, ref } from "vue"
 import { useRouter } from "vue-router"
 import ButtonLink from "@/components/ButtonLink.vue"
 import Footer from "@/components/Footer.vue"
-import { FetchError } from "@/api"
-import { ApplicationsResponse } from "@/types"
+import { getURL } from "@/api"
+import { Applications } from "@/types"
 
 const router = useRouter()
 
@@ -12,41 +12,25 @@ const mainProgress = ref(0)
 const abortController = new AbortController()
 const dataLoading = ref(true)
 const unexpectedError = ref("")
-const applications = ref<ApplicationsResponse>([])
+const applications = ref<Applications>([])
 
 onUnmounted(() => {
   abortController.abort()
 })
 
 onBeforeMount(async () => {
+  mainProgress.value += 1
   try {
     const url = router.apiResolve({
       name: "Applications",
     }).href
-    const response = await fetch(url, {
-      method: "GET",
-      // Mode and credentials match crossorigin=anonymous in link preload header.
-      mode: "cors",
-      credentials: "same-origin",
-      referrer: document.location.href,
-      referrerPolicy: "strict-origin-when-cross-origin",
-    })
-    const contentType = response.headers.get("Content-Type")
-    if (!contentType || !contentType.includes("application/json")) {
-      const body = await response.text()
-      throw new FetchError(`fetch GET error ${response.status}: ${body}`, {
-        status: response.status,
-        body,
-        url,
-        requestID: response.headers.get("Request-ID"),
-      })
-    }
-    applications.value = await response.json()
+    applications.value = (await getURL(url, abortController.signal, mainProgress)) as Applications
   } catch (error) {
     console.error(error)
     unexpectedError.value = `${error}`
   } finally {
     dataLoading.value = false
+    mainProgress.value -= 1
   }
 })
 </script>

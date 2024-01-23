@@ -17,6 +17,7 @@ elements and links but that should not change how components look.
 
 <script setup lang="ts">
 import type { AuthFlowResponse, AuthFlowStep, DeriveOptions, EncryptOptions, LocationResponse } from "@/types"
+
 import { onBeforeMount, onBeforeUnmount, onMounted, provide, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import Footer from "@/components/Footer.vue"
@@ -29,7 +30,7 @@ import AuthPasskeySignup from "@/components/AuthPasskeySignup.vue"
 import AuthCode from "@/components/AuthCode.vue"
 import AuthComplete from "@/components/AuthComplete.vue"
 import AuthFailed from "@/components/AuthFailed.vue"
-import { FetchError } from "@/api"
+import { getURL } from "@/api"
 // Importing "@/flow" also fetches siteContext which we have to fetch because
 // the server sends the preload header for it. Generally this is already cached.
 import { getProvider, updateSteps, flowKey, updateStepsNoCode } from "@/flow"
@@ -115,25 +116,7 @@ onBeforeMount(async () => {
         id: props.id,
       },
     }).href
-    const response = await fetch(url, {
-      method: "GET",
-      // Mode and credentials match crossorigin=anonymous in link preload header.
-      mode: "cors",
-      credentials: "same-origin",
-      referrer: document.location.href,
-      referrerPolicy: "strict-origin-when-cross-origin",
-    })
-    const contentType = response.headers.get("Content-Type")
-    if (!contentType || !contentType.includes("application/json")) {
-      const body = await response.text()
-      throw new FetchError(`fetch GEt error ${response.status}: ${body}`, {
-        status: response.status,
-        body,
-        url,
-        requestID: response.headers.get("Request-ID"),
-      })
-    }
-    const flowResponse = (await response.json()) as AuthFlowResponse
+    const flowResponse = (await getURL(url, null, null)) as AuthFlowResponse
     if (flowResponse.name) {
       name.value = flowResponse.name
       steps.value = [

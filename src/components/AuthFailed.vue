@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { LocationResponse } from "@/types"
+
 import { ref, onUnmounted, onMounted, getCurrentInstance } from "vue"
 import Button from "@/components/Button.vue"
 

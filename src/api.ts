@@ -1,6 +1,7 @@
 import type { Ref } from "vue"
 import type { Router } from "vue-router"
 import type { AuthFlowRequest, AuthFlowResponse, Flow, PasswordResponse } from "@/types"
+
 import { fromBase64, locationRedirect } from "@/utils"
 
 export class FetchError extends Error {
@@ -17,6 +18,38 @@ export class FetchError extends Error {
     this.body = options.body
     this.url = options.url
     this.requestID = options.requestID
+  }
+}
+
+export async function getURL(url: string, abortSignal: AbortSignal | null, progress: Ref<number> | null): Promise<unknown> {
+  if (progress) {
+    progress.value += 1
+  }
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      // Mode and credentials match crossorigin=anonymous in link preload header.
+      mode: "cors",
+      credentials: "same-origin",
+      referrer: document.location.href,
+      referrerPolicy: "strict-origin-when-cross-origin",
+      signal: abortSignal,
+    })
+    const contentType = response.headers.get("Content-Type")
+    if (!contentType || !contentType.includes("application/json")) {
+      const body = await response.text()
+      throw new FetchError(`fetch GET error ${response.status}: ${body}`, {
+        status: response.status,
+        body,
+        url,
+        requestID: response.headers.get("Request-ID"),
+      })
+    }
+    return await response.json()
+  } finally {
+    if (progress) {
+      progress.value -= 1
+    }
   }
 }
 

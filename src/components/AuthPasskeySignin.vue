@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AuthFlowRequest, AuthFlowResponse } from "@/types"
+
 import { getCurrentInstance, inject, onMounted, onUnmounted, ref } from "vue"
 import { useRouter } from "vue-router"
 import { startAuthentication, WebAuthnAbortService } from "@simplewebauthn/browser"

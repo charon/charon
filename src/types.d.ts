@@ -172,7 +172,7 @@ export type Flow = {
   updateCompleted(value: "signin" | "signup"): void
 }
 
-export type ApplicationsResponse = {
+export type Applications = {
   id: string
 }[]
 

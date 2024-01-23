@@ -1,5 +1,6 @@
 import type { InjectionKey } from "vue"
 import type { Flow, Provider } from "@/types"
+
 // It is OK that we fetch siteContext here because the server sends preload header
 // so we have to fetch it always anyway. Generally this is already cached.
 import siteContext from "@/context"

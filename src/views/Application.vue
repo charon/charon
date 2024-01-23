@@ -4,7 +4,7 @@ import { useRouter } from "vue-router"
 import InputText from "@/components/InputText.vue"
 import Button from "@/components/Button.vue"
 import Footer from "@/components/Footer.vue"
-import { FetchError, postURL } from "@/api"
+import { getURL, postURL } from "@/api"
 import { Application } from "@/types"
 
 const props = defineProps<{
@@ -26,6 +26,7 @@ onUnmounted(() => {
 })
 
 onBeforeMount(async () => {
+  mainProgress.value += 1
   try {
     const url = router.apiResolve({
       name: "Application",
@@ -33,25 +34,7 @@ onBeforeMount(async () => {
         id: props.id,
       },
     }).href
-    const response = await fetch(url, {
-      method: "GET",
-      // Mode and credentials match crossorigin=anonymous in link preload header.
-      mode: "cors",
-      credentials: "same-origin",
-      referrer: document.location.href,
-      referrerPolicy: "strict-origin-when-cross-origin",
-    })
-    const contentType = response.headers.get("Content-Type")
-    if (!contentType || !contentType.includes("application/json")) {
-      const body = await response.text()
-      throw new FetchError(`fetch GET error ${response.status}: ${body}`, {
-        status: response.status,
-        body,
-        url,
-        requestID: response.headers.get("Request-ID"),
-      })
-    }
-    application.value = await response.json()
+    application.value = (await getURL(url, abortController.signal, mainProgress)) as Application
     name.value = application.value!.name
     redirectPath.value = application.value!.redirectPath
   } catch (error) {
@@ -60,6 +43,7 @@ onBeforeMount(async () => {
     unexpectedError.value = `${error}`
   } finally {
     dataLoading.value = false
+    mainProgress.value -= 1
   }
 })
 
@@ -80,6 +64,7 @@ async function onSubmit() {
 
     await postURL(url, payload, abortController.signal, mainProgress)
 
+    // We update application document state so that we can detect further changes.
     application.value!.name = payload.name
     application.value!.redirectPath = payload.redirectPath
   } catch (error) {

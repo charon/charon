@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AuthFlowResponse } from "@/types"
+
 import { onUnmounted, ref } from "vue"
 import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"

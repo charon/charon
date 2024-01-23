@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AuthFlowRequest, AuthFlowResponse } from "@/types"
+
 import { ref, watch, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
