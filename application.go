@@ -63,7 +63,7 @@ func SetApplication(ctx context.Context, application *Application) errors.E { //
 	return nil
 }
 
-func UpsertApplication(ctx context.Context, application *Application) errors.E { 
+func UpsertApplication(ctx context.Context, application *Application) errors.E {
 	data, errE := x.MarshalWithoutEscapeHTML(application)
 	if errE != nil {
 		errors.Details(errE)["id"] = application.ID

@@ -63,7 +63,7 @@ func SetOrganization(ctx context.Context, organization *Organization) errors.E {
 	return nil
 }
 
-func UpsertOrganization(ctx context.Context, organization *Organization) errors.E { 
+func UpsertOrganization(ctx context.Context, organization *Organization) errors.E {
 	data, errE := x.MarshalWithoutEscapeHTML(organization)
 	if errE != nil {
 		errors.Details(errE)["id"] = organization.ID
