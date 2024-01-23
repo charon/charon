@@ -7,7 +7,7 @@
       <li><RouterLink :to="{ name: 'Home }" class="link">Terms</RouterLink></li> -->
     </ul>
     <ul class="flex gap-x-2 sm:gap-x-4">
-      <li class="text-neutral-500" title="build ">Powered by <a href="https://gitlab.com/charon/charon" class="link">Charon</a></li>
+      <li class="text-neutral-500">Powered by <a href="https://gitlab.com/charon/charon" class="link">Charon</a></li>
     </ul>
   </div>
 </template>

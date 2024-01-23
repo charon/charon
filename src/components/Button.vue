@@ -1,6 +1,6 @@
 <!--
 We do not use :read-only or :disabled pseudo classes to style the component because
-we want component to retain how it visually looks even if DOM element's read-only or
+we want component to retain how it visually looks even if DOM element is read-only or
 disabled attributes are set, unless they are set through component's props.
 This is used during transitions/animations to disable the component by directly setting
 its DOM attributes without flickering how the component looks.
@@ -28,7 +28,7 @@ withDefaults(
 <template>
   <button
     :disabled="progress > 0 || disabled"
-    class="relative select-none rounded px-6 py-2.5 font-medium uppercase leading-tight shadow outline-none focus:ring-2 focus:ring-offset-1"
+    class="relative select-none rounded px-6 py-2.5 font-medium uppercase leading-tight shadow outline-none focus:ring-2 focus:ring-offset-1 text-center"
     :class="{
       'cursor-not-allowed': progress > 0 || disabled,
       'bg-primary-300 text-gray-100': primary && (progress > 0 || disabled),
