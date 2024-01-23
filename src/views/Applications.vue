@@ -26,6 +26,9 @@ onBeforeMount(async () => {
     }).href
     applications.value = (await getURL(url, abortController.signal, mainProgress)) as Applications
   } catch (error) {
+    if (abortController.signal.aborted) {
+      return
+    }
     console.error(error)
     unexpectedError.value = `${error}`
   } finally {

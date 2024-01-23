@@ -18,7 +18,7 @@ elements and links but that should not change how components look.
 <script setup lang="ts">
 import type { AuthFlowResponse, AuthFlowStep, DeriveOptions, EncryptOptions, LocationResponse } from "@/types"
 
-import { onBeforeMount, onBeforeUnmount, onMounted, provide, ref, watch } from "vue"
+import { onBeforeMount, onBeforeUnmount, onMounted, onUnmounted, provide, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import Footer from "@/components/Footer.vue"
 import Stepper from "@/components/Stepper.vue"
@@ -42,6 +42,7 @@ const props = defineProps<{
 
 const router = useRouter()
 
+const abortController = new AbortController()
 const dataLoading = ref(true)
 const unexpectedError = ref("")
 const steps = ref<AuthFlowStep[]>([])
@@ -55,6 +56,10 @@ const provider = ref("")
 const location = ref<LocationResponse>({ url: "", replace: false })
 const name = ref("")
 const completed = ref<"signin" | "signup">("signin")
+
+onUnmounted(() => {
+  abortController.abort()
+})
 
 const flow = {
   forward(to: string) {
@@ -116,7 +121,7 @@ onBeforeMount(async () => {
         id: props.id,
       },
     }).href
-    const flowResponse = (await getURL(url, null, null)) as AuthFlowResponse
+    const flowResponse = (await getURL(url, abortController.signal, null)) as AuthFlowResponse
     if (flowResponse.name) {
       name.value = flowResponse.name
       steps.value = [
@@ -158,6 +163,9 @@ onBeforeMount(async () => {
       throw new Error(`unexpected error "${flowResponse.error}"`)
     }
   } catch (error) {
+    if (abortController.signal.aborted) {
+      return
+    }
     console.error(error)
     unexpectedError.value = `${error}`
   } finally {

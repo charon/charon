@@ -21,7 +21,7 @@ export class FetchError extends Error {
   }
 }
 
-export async function getURL(url: string, abortSignal: AbortSignal | null, progress: Ref<number> | null): Promise<unknown> {
+export async function getURL(url: string, abortSignal: AbortSignal, progress: Ref<number> | null): Promise<unknown> {
   if (progress) {
     progress.value += 1
   }

@@ -38,6 +38,9 @@ onBeforeMount(async () => {
     name.value = application.value!.name
     redirectPath.value = application.value!.redirectPath
   } catch (error) {
+    if (abortController.signal.aborted) {
+      return
+    }
     // TODO: 404 should be shown differently, but probably in the same way for all 404.
     console.error(error)
     unexpectedError.value = `${error}`
