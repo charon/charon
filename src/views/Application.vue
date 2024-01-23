@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeMount, onUnmounted, ref } from "vue"
+import { onBeforeMount, onUnmounted, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import InputText from "@/components/InputText.vue"
 import Button from "@/components/Button.vue"
@@ -18,9 +18,20 @@ const abortController = new AbortController()
 const dataLoading = ref(true)
 const dataLoadingError = ref("")
 const unexpectedError = ref("")
+const updated = ref(false)
 const application = ref<Application | null>(null)
 const name = ref("")
 const redirectPath = ref("")
+
+watch(name, () => {
+  // We reset updated flag when input box value changes.
+  updated.value = false
+})
+
+watch(redirectPath, () => {
+  // We reset updated flag when input box value changes.
+  updated.value = false
+})
 
 onUnmounted(() => {
   abortController.abort()
@@ -72,6 +83,8 @@ async function onSubmit() {
     // We update application document state so that we can detect further changes.
     application.value!.name = payload.name
     application.value!.redirectPath = payload.redirectPath
+
+    updated.value = true
   } catch (error) {
     if (abortController.signal.aborted) {
       return
@@ -99,6 +112,7 @@ async function onSubmit() {
           <label for="name" class="mb-1 mt-4">OpenID Connect redirect path</label>
           <InputText id="name" v-model="redirectPath" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0" required />
           <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
+          <div v-else-if="updated" class="mt-4 text-success-600">Application updated successfully.</div>
           <div class="mt-4 flex flex-row justify-end">
             <!--
               Button is on purpose not disabled on unexpectedError so that user can retry.

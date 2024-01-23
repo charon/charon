@@ -13,6 +13,7 @@ export default {
         secondary: colors.yellow,
         error: colors.red,
         warning: colors.yellow,
+        success: colors.green,
       },
     },
   },
