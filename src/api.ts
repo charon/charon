@@ -21,7 +21,8 @@ export class FetchError extends Error {
   }
 }
 
-export async function getURL(url: string, abortSignal: AbortSignal, progress: Ref<number> | null): Promise<unknown> {
+// TODO: Improve priority with "el".
+export async function getURL(url: string, el: Ref<Element | null> | null, abortSignal: AbortSignal, progress: Ref<number> | null): Promise<unknown> {
   if (progress) {
     progress.value += 1
   }

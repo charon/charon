@@ -121,7 +121,7 @@ onBeforeMount(async () => {
         id: props.id,
       },
     }).href
-    const flowResponse = (await getURL(url, abortController.signal, null)) as AuthFlowResponse
+    const flowResponse = (await getURL(url, null, abortController.signal, null)) as AuthFlowResponse
     if (flowResponse.name) {
       name.value = flowResponse.name
       steps.value = [

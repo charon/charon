@@ -34,7 +34,7 @@ onBeforeMount(async () => {
         id: props.id,
       },
     }).href
-    application.value = (await getURL(url, abortController.signal, mainProgress)) as Application
+    application.value = (await getURL(url, null, abortController.signal, mainProgress)) as Application
     name.value = application.value!.name
     redirectPath.value = application.value!.redirectPath
   } catch (error) {

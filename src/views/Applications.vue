@@ -2,9 +2,10 @@
 import { onBeforeMount, onUnmounted, ref } from "vue"
 import { useRouter } from "vue-router"
 import ButtonLink from "@/components/ButtonLink.vue"
+import WithDocument from "@/components/WithDocument.vue"
 import Footer from "@/components/Footer.vue"
 import { getURL } from "@/api"
-import { Applications } from "@/types"
+import { Application, Applications } from "@/types"
 
 const router = useRouter()
 
@@ -24,7 +25,7 @@ onBeforeMount(async () => {
     const url = router.apiResolve({
       name: "Applications",
     }).href
-    applications.value = (await getURL(url, abortController.signal, mainProgress)) as Applications
+    applications.value = (await getURL(url, null, abortController.signal, mainProgress)) as Applications
   } catch (error) {
     if (abortController.signal.aborted) {
       return
@@ -50,7 +51,12 @@ onBeforeMount(async () => {
       <div v-else-if="unexpectedError" class="w-full rounded border bg-white p-4 shadow text-error-600">Unexpected error. Please try again.</div>
       <template v-else>
         <div v-for="application of applications" :key="application.id" class="w-full rounded border bg-white p-4 shadow">
-          <router-link :to="{ name: 'Application', params: { id: application.id } }" class="link">{{ application.id }}</router-link>
+          <WithDocument :id="application.id" name="Application">
+            <template #default="{ doc, url }">
+              <!-- TODO: How to make it be just "doc.name" and not "(doc as Application).name"? -->
+              <router-link :to="{ name: 'Application', params: { id: application.id } }" :data-url="url" class="link">{{ (doc as Application).name }}</router-link>
+            </template>
+          </WithDocument>
         </div>
       </template>
     </div>
