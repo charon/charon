@@ -13,7 +13,7 @@ func (s *Service) Home(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 		return
 	}
 
-	if !s.RequireAuthenticated(w, req, false, "Charon Dashboard") {
+	if s.RequireAuthenticated(w, req, false, "Charon Dashboard") == nil {
 		return
 	}
 

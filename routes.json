@@ -23,6 +23,18 @@
       "path": "/auth/:id",
       "api": true,
       "get": true
+    },
+    {
+      "name": "Apps",
+      "path": "/a",
+      "api": true,
+      "get": true
+    },
+    {
+      "name": "App",
+      "path": "/a/:id",
+      "api": true,
+      "get": true
     }
   ]
 }

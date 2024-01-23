@@ -20,6 +20,15 @@ const (
 	SessionCookieName = "__Host-session"
 )
 
+// contextKey is a value for use with context.WithValue. It's used as
+// a pointer so it fits in an interface{} without allocation.
+type contextKey struct {
+	name string
+}
+
+// accountContextKey provides current account ID.
+var accountContextKey = &contextKey{"account"} //nolint:gochecknoglobals
+
 //nolint:gochecknoglobals
 var (
 	// This is similar to precis.UsernameCasePreserved, but also disallows empty usernames.
@@ -71,18 +80,31 @@ func getFlowFromID(ctx context.Context, value string) (*Flow, errors.E) {
 	return GetFlow(ctx, id)
 }
 
-func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request, api bool, targetName string) bool {
-	_, errE := getSessionFromRequest(req)
+func getAccount(ctx context.Context) (identifier.Identifier, bool) {
+	a, ok := ctx.Value(accountContextKey).(identifier.Identifier)
+	return a, ok
+}
+
+func mustGetAccount(ctx context.Context) identifier.Identifier {
+	a, ok := getAccount(ctx)
+	if !ok {
+		panic(errors.New("account not found in context"))
+	}
+	return a
+}
+
+func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request, api bool, targetName string) context.Context {
+	session, errE := getSessionFromRequest(req)
 	if errE == nil {
-		return true
+		return context.WithValue(req.Context(), accountContextKey, session.Account)
 	} else if !errors.Is(errE, ErrSessionNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
-		return false
+		return nil
 	}
 
 	if api {
 		waf.Error(w, req, http.StatusUnauthorized)
-		return false
+		return nil
 	}
 
 	id := identifier.New()
@@ -102,16 +124,16 @@ func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request,
 	})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
-		return false
+		return nil
 	}
 
 	location, errE := s.Reverse("AuthFlow", waf.Params{"id": id.String()}, nil)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
-		return false
+		return nil
 	}
 	s.TemporaryRedirectGetMethod(w, req, location)
-	return false
+	return nil
 }
 
 func (s *Service) GetActiveFlow(w http.ResponseWriter, req *http.Request, value string) *Flow {
