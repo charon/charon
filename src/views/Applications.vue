@@ -37,6 +37,8 @@ onBeforeMount(async () => {
     mainProgress.value -= 1
   }
 })
+
+const WithApplicationDocument = WithDocument<Application>
 </script>
 
 <template>
@@ -51,12 +53,12 @@ onBeforeMount(async () => {
       <div v-else-if="dataLoadingError" class="w-full rounded border bg-white p-4 shadow text-error-600">Unexpected error. Please try again.</div>
       <template v-else>
         <div v-for="application of applications" :key="application.id" class="w-full rounded border bg-white p-4 shadow">
-          <WithDocument :id="application.id" name="Application">
+          <WithApplicationDocument :id="application.id" name="Application">
             <template #default="{ doc, url }">
               <!-- TODO: How to make it be just "doc.name" and not "(doc as Application).name"? -->
-              <router-link :to="{ name: 'Application', params: { id: application.id } }" :data-url="url" class="link">{{ (doc as Application).name }}</router-link>
+              <router-link :to="{ name: 'Application', params: { id: application.id } }" :data-url="url" class="link">{{ doc.name }}</router-link>
             </template>
-          </WithDocument>
+          </WithApplicationDocument>
         </div>
       </template>
     </div>
