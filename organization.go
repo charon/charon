@@ -71,7 +71,7 @@ func CreateOrganization(ctx context.Context, organization *Organization) errors.
 	return nil
 }
 
-func UpdateOrganization(ctx context.Context, organization *Organization) errors.E {
+func UpdateOrganization(ctx context.Context, organization *Organization) errors.E { //nolint:dupl
 	account := mustGetAccount(ctx)
 	if !slices.Contains(organization.Admins, account) {
 		organization.Admins = append(organization.Admins, account)
@@ -193,7 +193,7 @@ func (s *Service) OrganizationsGet(w http.ResponseWriter, req *http.Request, _ w
 	s.WriteJSON(w, req, result, nil)
 }
 
-func (s *Service) OrganizationUpdatePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+func (s *Service) OrganizationUpdatePost(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 

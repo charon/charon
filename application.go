@@ -70,7 +70,7 @@ func CreateApplication(ctx context.Context, application *Application) errors.E {
 	return nil
 }
 
-func UpdateApplication(ctx context.Context, application *Application) errors.E {
+func UpdateApplication(ctx context.Context, application *Application) errors.E { //nolint:dupl
 	account := mustGetAccount(ctx)
 	if !slices.Contains(application.Admins, account) {
 		application.Admins = append(application.Admins, account)
@@ -196,7 +196,7 @@ func (s *Service) ApplicationsGet(w http.ResponseWriter, req *http.Request, _ wa
 	s.WriteJSON(w, req, result, nil)
 }
 
-func (s *Service) ApplicationUpdatePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+func (s *Service) ApplicationUpdatePost(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
