@@ -49,7 +49,7 @@ async function onAfterEnter() {
       },
     }).href
 
-    const start = (await postURL(
+    const start = await postURL<AuthFlowResponse>(
       url,
       {
         provider: "passkey",
@@ -58,7 +58,7 @@ async function onAfterEnter() {
       abortController.signal,
       // We do not pass here progress on purpose.
       null,
-    )) as AuthFlowResponse
+    )
     if (abortController.signal.aborted) {
       return
     }
@@ -89,7 +89,7 @@ async function onAfterEnter() {
     // We do not allow cancel after this point.
     mainProgress.value += 1
     try {
-      const complete = (await postURL(
+      const complete = await postURL<AuthFlowResponse>(
         url,
         {
           provider: "passkey",
@@ -100,7 +100,7 @@ async function onAfterEnter() {
         } as AuthFlowRequest,
         abortController.signal,
         mainProgress,
-      )) as AuthFlowResponse
+      )
       if (abortController.signal.aborted) {
         return
       }

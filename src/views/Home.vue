@@ -22,7 +22,7 @@ onUnmounted(() => {
 async function onSignOut() {
   mainProgress.value += 1
   try {
-    const response = (await deleteURL(router.apiResolve({ name: "Auth" }).href, abortController.signal, mainProgress)) as AuthFlowResponse
+    const response = await deleteURL<AuthFlowResponse>(router.apiResolve({ name: "Auth" }).href, abortController.signal, mainProgress)
     if (abortController.signal.aborted) {
       return
     }

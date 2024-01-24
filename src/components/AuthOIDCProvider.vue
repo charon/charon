@@ -109,7 +109,7 @@ async function onRedirect() {
       },
     }).href
 
-    const response = (await postURL(
+    const response = await postURL<AuthFlowResponse>(
       url,
       {
         provider: props.provider,
@@ -117,7 +117,7 @@ async function onRedirect() {
       } as AuthFlowRequest,
       abortController.signal,
       mainProgress,
-    )) as AuthFlowResponse
+    )
     if (abortController.signal.aborted) {
       return
     }

@@ -25,7 +25,7 @@ onBeforeMount(async () => {
     const url = router.apiResolve({
       name: "Applications",
     }).href
-    applications.value = (await getURL(url, null, abortController.signal, mainProgress)) as Applications
+    applications.value = (await getURL<Applications>(url, null, abortController.signal, mainProgress)).doc
   } catch (error) {
     if (abortController.signal.aborted) {
       return
@@ -55,7 +55,6 @@ const WithApplicationDocument = WithDocument<Application>
         <div v-for="application of applications" :key="application.id" class="w-full rounded border bg-white p-4 shadow">
           <WithApplicationDocument :id="application.id" name="Application">
             <template #default="{ doc, url }">
-              <!-- TODO: How to make it be just "doc.name" and not "(doc as Application).name"? -->
               <router-link :to="{ name: 'Application', params: { id: application.id } }" :data-url="url" class="link">{{ doc.name }}</router-link>
             </template>
           </WithApplicationDocument>

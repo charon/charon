@@ -73,7 +73,7 @@ async function onPasskeySignup() {
       },
     }).href
 
-    const start = (await postURL(
+    const start = await postURL<AuthFlowResponse>(
       url,
       {
         provider: "passkey",
@@ -81,7 +81,7 @@ async function onPasskeySignup() {
       } as AuthFlowRequest,
       abortController.signal,
       mainProgress,
-    )) as AuthFlowResponse
+    )
     if (abortController.signal.aborted) {
       return
     }
@@ -114,7 +114,7 @@ async function onPasskeySignup() {
       return
     }
 
-    const complete = (await postURL(
+    const complete = await postURL<AuthFlowResponse>(
       url,
       {
         provider: "passkey",
@@ -125,7 +125,7 @@ async function onPasskeySignup() {
       } as AuthFlowRequest,
       abortController.signal,
       mainProgress,
-    )) as AuthFlowResponse
+    )
     if (abortController.signal.aborted) {
       return
     }

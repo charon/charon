@@ -54,7 +54,7 @@ watch(
     _error.value = null
 
     try {
-      _doc.value = (await getURL(newURL, el, abortController.signal, null)) as T
+      _doc.value = (await getURL<T>(newURL, el, abortController.signal, null)).doc
     } catch (error) {
       if (abortController.signal.aborted) {
         return

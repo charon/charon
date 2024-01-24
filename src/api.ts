@@ -1,8 +1,9 @@
 import type { Ref } from "vue"
 import type { Router } from "vue-router"
-import type { AuthFlowRequest, AuthFlowResponse, Flow, PasswordResponse } from "@/types"
+import type { AuthFlowRequest, AuthFlowResponse, Flow, Metadata, PasswordResponse } from "@/types"
 
 import { fromBase64, locationRedirect } from "@/utils"
+import { decodeMetadata } from "./metadata"
 
 export class FetchError extends Error {
   cause?: Error
@@ -22,7 +23,12 @@ export class FetchError extends Error {
 }
 
 // TODO: Improve priority with "el".
-export async function getURL(url: string, el: Ref<Element | null> | null, abortSignal: AbortSignal, progress: Ref<number> | null): Promise<unknown> {
+export async function getURL<T>(
+  url: string,
+  el: Ref<Element | null> | null,
+  abortSignal: AbortSignal,
+  progress: Ref<number> | null,
+): Promise<{ doc: T; metadata: Metadata }> {
   if (progress) {
     progress.value += 1
   }
@@ -46,7 +52,7 @@ export async function getURL(url: string, el: Ref<Element | null> | null, abortS
         requestID: response.headers.get("Request-ID"),
       })
     }
-    return await response.json()
+    return { doc: await response.json(), metadata: decodeMetadata(response.headers) }
   } finally {
     if (progress) {
       progress.value -= 1
@@ -54,7 +60,7 @@ export async function getURL(url: string, el: Ref<Element | null> | null, abortS
   }
 }
 
-export async function postURL(url: string, data: object, abortSignal: AbortSignal, progress: Ref<number> | null): Promise<object> {
+export async function postURL<T>(url: string, data: object, abortSignal: AbortSignal, progress: Ref<number> | null): Promise<T> {
   if (progress) {
     progress.value += 1
   }
@@ -90,7 +96,7 @@ export async function postURL(url: string, data: object, abortSignal: AbortSigna
   }
 }
 
-export async function deleteURL(url: string, abortSignal: AbortSignal, progress: Ref<number> | null): Promise<object> {
+export async function deleteURL<T>(url: string, abortSignal: AbortSignal, progress: Ref<number> | null): Promise<T> {
   if (progress) {
     progress.value += 1
   }
@@ -140,7 +146,7 @@ export async function startPassword(
       },
     }).href
 
-    const response = (await postURL(
+    const response = await postURL<AuthFlowResponse>(
       url,
       {
         provider: "password",
@@ -153,7 +159,7 @@ export async function startPassword(
       } as AuthFlowRequest,
       abortSignal,
       progress,
-    )) as AuthFlowResponse
+    )
     if (locationRedirect(response, flow)) {
       // We increase the progress and never decrease it to wait for browser to do the redirect.
       mainProgress.value += 1

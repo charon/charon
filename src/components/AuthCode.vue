@@ -109,7 +109,7 @@ async function onNext() {
       },
     }).href
 
-    const response = (await postURL(
+    const response = await postURL<AuthFlowResponse>(
       url,
       {
         provider: "code",
@@ -122,7 +122,7 @@ async function onNext() {
       } as AuthFlowRequest,
       abortController.signal,
       mainProgress,
-    )) as AuthFlowResponse
+    )
     if (abortController.signal.aborted) {
       return
     }
@@ -165,7 +165,7 @@ async function onResend() {
       },
     }).href
 
-    const response = (await postURL(
+    const response = await postURL<AuthFlowResponse>(
       url,
       {
         provider: "code",
@@ -178,7 +178,7 @@ async function onResend() {
       } as AuthFlowRequest,
       abortController.signal,
       mainProgress,
-    )) as AuthFlowResponse
+    )
     if (abortController.signal.aborted) {
       return
     }

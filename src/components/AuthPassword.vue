@@ -193,7 +193,7 @@ async function onNext() {
     if (abortController.signal.aborted) {
       return
     }
-    const response = (await postURL(
+    const response = await postURL<AuthFlowResponse>(
       url,
       {
         provider: "password",
@@ -207,7 +207,7 @@ async function onNext() {
       } as AuthFlowRequest,
       abortController.signal,
       mainProgress,
-    )) as AuthFlowResponse
+    )
     if (abortController.signal.aborted) {
       return
     }
@@ -268,7 +268,7 @@ async function onCode() {
     flow!.updateDeriveOptions()
     flow!.updateEncryptOptions()
 
-    const response = (await postURL(
+    const response = await postURL<AuthFlowResponse>(
       url,
       {
         provider: "code",
@@ -281,7 +281,7 @@ async function onCode() {
       } as AuthFlowRequest,
       abortController.signal,
       mainProgress,
-    )) as AuthFlowResponse
+    )
     if (abortController.signal.aborted) {
       return
     }
