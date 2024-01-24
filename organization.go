@@ -170,7 +170,11 @@ func (s *Service) OrganizationGet(w http.ResponseWriter, req *http.Request, para
 		return
 	}
 
-	s.WriteJSON(w, req, organization, nil)
+	account := mustGetAccount(ctx)
+
+	s.WriteJSON(w, req, organization, map[string]interface{}{
+		"can_update": slices.Contains(organization.Admins, account),
+	})
 }
 
 func (s *Service) OrganizationsGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {

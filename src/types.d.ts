@@ -192,3 +192,16 @@ export type ApplicationCreate = {
   name: string
   redirectPath: string
 }
+
+export type Organizations = {
+  id: string
+}[]
+
+export type Organization = {
+  id: string
+  name: string
+}
+
+export type OrganizationCreate = {
+  name: string
+}

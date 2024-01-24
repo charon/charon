@@ -1,0 +1,73 @@
+<script setup lang="ts">
+import { onBeforeMount, onUnmounted, ref } from "vue"
+import { useRouter } from "vue-router"
+import ButtonLink from "@/components/ButtonLink.vue"
+import WithDocument from "@/components/WithDocument.vue"
+import Footer from "@/components/Footer.vue"
+import { getURL } from "@/api"
+import { Organization, Organizations } from "@/types"
+
+const router = useRouter()
+
+const mainProgress = ref(0)
+const abortController = new AbortController()
+const dataLoading = ref(true)
+const dataLoadingError = ref("")
+const organizations = ref<Organizations>([])
+
+onUnmounted(() => {
+  abortController.abort()
+})
+
+onBeforeMount(async () => {
+  mainProgress.value += 1
+  try {
+    const url = router.apiResolve({
+      name: "Organizations",
+    }).href
+    organizations.value = (await getURL<Organizations>(url, null, abortController.signal, mainProgress)).doc
+  } catch (error) {
+    if (abortController.signal.aborted) {
+      return
+    }
+    console.error(error)
+    dataLoadingError.value = `${error}`
+  } finally {
+    dataLoading.value = false
+    mainProgress.value -= 1
+  }
+})
+
+const WithOrganizationDocument = WithDocument<Organization>
+</script>
+
+<template>
+  <div class="w-full flex flex-col items-center">
+    <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
+      <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
+        <div class="flex flex-row justify-between items-center gap-4">
+          <span class="font-bold">Organizations</span><ButtonLink :to="{ name: 'OrganizationCreate' }" :disabled="mainProgress > 0" primary>Create</ButtonLink>
+        </div>
+      </div>
+      <div v-if="dataLoading" class="w-full rounded border bg-white p-4 shadow">Loading...</div>
+      <div v-else-if="dataLoadingError" class="w-full rounded border bg-white p-4 shadow text-error-600">Unexpected error. Please try again.</div>
+      <template v-else>
+        <div v-for="organization of organizations" :key="organization.id" class="w-full rounded border bg-white p-4 shadow grid grid-cols-1 gap-4">
+          <WithOrganizationDocument :id="organization.id" name="Organization">
+            <template #default="{ doc, metadata, url }">
+              <h2 class="text-xl leading-none">
+                <router-link :to="{ name: 'Organization', params: { id: organization.id } }" :data-url="url" class="link">{{ doc.name }}</router-link>
+              </h2>
+              <ul v-if="metadata.can_update" class="-mt-3 flex flex-row flex-wrap content-start items-baseline gap-1 text-sm">
+                <li class="rounded-sm bg-slate-100 py-0.5 px-1.5 leading-none text-gray-600 shadow-sm">admin</li>
+              </ul>
+            </template>
+          </WithOrganizationDocument>
+        </div>
+      </template>
+    </div>
+  </div>
+  <Teleport to="footer">
+    <Footer />
+  </Teleport>
+</template>
