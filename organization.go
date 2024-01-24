@@ -31,6 +31,7 @@ type Organization struct {
 
 	Name         string                  `json:"name"`
 	Applications []identifier.Identifier `json:"applications"`
+	Members      []identifier.Identifier `json:"members"`
 }
 
 func GetOrganization(ctx context.Context, id identifier.Identifier) (*Organization, errors.E) { //nolint:revive
