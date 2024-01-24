@@ -169,7 +169,11 @@ func (s *Service) ApplicationGet(w http.ResponseWriter, req *http.Request, param
 		return
 	}
 
-	s.WriteJSON(w, req, application, nil)
+	account := mustGetAccount(ctx)
+
+	s.WriteJSON(w, req, application, map[string]interface{}{
+		"can_update": slices.Contains(application.Admins, account),
+	})
 }
 
 func (s *Service) ApplicationsGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {

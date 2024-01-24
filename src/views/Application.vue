@@ -5,7 +5,7 @@ import InputText from "@/components/InputText.vue"
 import Button from "@/components/Button.vue"
 import Footer from "@/components/Footer.vue"
 import { getURL, postURL } from "@/api"
-import { Application } from "@/types"
+import { Application, Metadata } from "@/types"
 
 const props = defineProps<{
   id: string
@@ -20,6 +20,7 @@ const dataLoadingError = ref("")
 const unexpectedError = ref("")
 const updated = ref(false)
 const application = ref<Application | null>(null)
+const metadata = ref<Metadata>({})
 const name = ref("")
 const redirectPath = ref("")
 
@@ -46,9 +47,11 @@ onBeforeMount(async () => {
         id: props.id,
       },
     }).href
-    application.value = (await getURL<Application>(url, null, abortController.signal, mainProgress)).doc
-    name.value = application.value!.name
-    redirectPath.value = application.value!.redirectPath
+    const data = await getURL<Application>(url, null, abortController.signal, mainProgress)
+    application.value = data.doc
+    metadata.value = data.metadata
+    name.value = data.doc.name
+    redirectPath.value = data.doc.redirectPath
   } catch (error) {
     if (abortController.signal.aborted) {
       return
@@ -108,12 +111,12 @@ async function onSubmit() {
         <div v-else-if="dataLoadingError" class="text-error-600">Unexpected error. Please try again.</div>
         <form v-else class="flex flex-col" novalidate @submit.prevent="onSubmit">
           <label for="name" class="mb-1">Application name</label>
-          <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0" required />
+          <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0 || !metadata.can_update" required />
           <label for="name" class="mb-1 mt-4">OpenID Connect redirect path</label>
-          <InputText id="name" v-model="redirectPath" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0" required />
+          <InputText id="name" v-model="redirectPath" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0 || !metadata.can_update" required />
           <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
           <div v-else-if="updated" class="mt-4 text-success-600">Application updated successfully.</div>
-          <div class="mt-4 flex flex-row justify-end">
+          <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
             <!--
               Button is on purpose not disabled on unexpectedError so that user can retry.
             -->

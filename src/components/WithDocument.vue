@@ -1,4 +1,6 @@
 <script setup lang="ts" generic="T">
+import type { Metadata } from "@/types"
+
 import { ref, watch, readonly, onMounted, onUpdated, onUnmounted, getCurrentInstance, Ref, DeepReadonly } from "vue"
 import { useRouter } from "vue-router"
 import { getURL } from "@/api"
@@ -11,9 +13,11 @@ const props = defineProps<{
 const router = useRouter()
 
 const _doc = ref<T | null>(null) as Ref<T | null>
+const _metadata = ref<Metadata>({})
 const _error = ref<string | null>(null)
 const _url = ref<string | null>(null)
 const doc = (import.meta.env.DEV ? readonly(_doc) : _doc) as DeepReadonly<Ref<T | null>>
+const metadata = import.meta.env.DEV ? readonly(_metadata) : _metadata
 const error = import.meta.env.DEV ? readonly(_error) : _error
 const url = import.meta.env.DEV ? readonly(_url) : _url
 
@@ -50,11 +54,14 @@ watch(
 
     // We want to eagerly remove any old doc and show loading again.
     _doc.value = null
+    _metadata.value = {}
     // We want to eagerly remove any error.
     _error.value = null
 
     try {
-      _doc.value = (await getURL<T>(newURL, el, abortController.signal, null)).doc
+      const data = await getURL<T>(newURL, el, abortController.signal, null)
+      _doc.value = data.doc
+      _metadata.value = data.metadata
     } catch (error) {
       if (abortController.signal.aborted) {
         return
@@ -76,14 +83,14 @@ defineExpose({
 })
 
 defineSlots<{
-  default(props: { doc: DeepReadonly<T>; url: string }): unknown
+  default(props: { doc: DeepReadonly<T>; metadata: DeepReadonly<Metadata>; url: string }): unknown
   error(props: { error: string; url: string | null }): unknown
   loading(props: { url: string | null }): unknown
 }>()
 </script>
 
 <template>
-  <slot v-if="doc" :doc="doc" :url="url!"></slot>
+  <slot v-if="doc" :doc="doc" :metadata="metadata" :url="url!"></slot>
   <slot v-else-if="error" name="error" :error="error" :url="url">
     <i class="text-error-600" :data-url="url">loading data failed</i>
   </slot>

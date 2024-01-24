@@ -52,10 +52,15 @@ const WithApplicationDocument = WithDocument<Application>
       <div v-if="dataLoading" class="w-full rounded border bg-white p-4 shadow">Loading...</div>
       <div v-else-if="dataLoadingError" class="w-full rounded border bg-white p-4 shadow text-error-600">Unexpected error. Please try again.</div>
       <template v-else>
-        <div v-for="application of applications" :key="application.id" class="w-full rounded border bg-white p-4 shadow">
+        <div v-for="application of applications" :key="application.id" class="w-full rounded border bg-white p-4 shadow grid grid-cols-1 gap-4">
           <WithApplicationDocument :id="application.id" name="Application">
-            <template #default="{ doc, url }">
-              <router-link :to="{ name: 'Application', params: { id: application.id } }" :data-url="url" class="link">{{ doc.name }}</router-link>
+            <template #default="{ doc, metadata, url }">
+              <h2 class="text-xl leading-none">
+                <router-link :to="{ name: 'Application', params: { id: application.id } }" :data-url="url" class="link">{{ doc.name }}</router-link>
+              </h2>
+              <ul v-if="metadata.can_update" class="-mt-3 flex flex-row flex-wrap content-start items-baseline gap-1 text-sm">
+                <li class="rounded-sm bg-slate-100 py-0.5 px-1.5 leading-none text-gray-600 shadow-sm">admin</li>
+              </ul>
             </template>
           </WithApplicationDocument>
         </div>
