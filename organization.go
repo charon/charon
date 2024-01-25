@@ -1,12 +1,16 @@
 package charon
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"net/http"
 	"slices"
 	"sync"
 
+	"github.com/alexedwards/argon2id"
+	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/google/uuid"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
@@ -24,14 +28,89 @@ var (
 	organizationsMu = sync.RWMutex{}                         //nolint:gochecknoglobals
 )
 
+type OrganizationApplication struct {
+	ID          *identifier.Identifier `json:"id"`
+	Application identifier.Identifier  `json:"application"`
+
+	Secret []byte `json:"secret"`
+}
+
 type Organization struct {
-	ID identifier.Identifier `json:"id"`
+	ID *identifier.Identifier `json:"id"`
 
 	Admins []identifier.Identifier `json:"admins"`
 
-	Name         string                  `json:"name"`
-	Applications []identifier.Identifier `json:"applications"`
-	Members      []identifier.Identifier `json:"members"`
+	Name         string                    `json:"name"`
+	Applications []OrganizationApplication `json:"applications"`
+}
+
+type OrganizationRef struct {
+	ID identifier.Identifier `json:"id"`
+}
+
+func (o *Organization) Validate(ctx context.Context) errors.E {
+	if o.ID == nil {
+		id := identifier.New()
+		o.ID = &id
+	}
+
+	account := mustGetAccount(ctx)
+	if !slices.Contains(o.Admins, account) {
+		o.Admins = append(o.Admins, account)
+	}
+
+	// We sort and remove duplicates.
+	slices.SortFunc(o.Admins, func(a identifier.Identifier, b identifier.Identifier) int {
+		return bytes.Compare(a[:], b[:])
+	})
+	o.Admins = slices.Compact(o.Admins)
+
+	if o.Name == "" {
+		return errors.New("name is required")
+	}
+
+	appsSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
+	for i, orgApp := range o.Applications {
+		// IDs can be deterministic here.
+		id := identifier.FromUUID(uuid.NewSHA1(uuid.UUID(*o.ID), orgApp.Application[:]))
+		if orgApp.ID == nil {
+			orgApp.ID = &id
+		} else if *orgApp.ID != id {
+			errE := errors.New("invalid app ID")
+			errors.Details(errE)["id"] = *orgApp.ID
+			errors.Details(errE)["application"] = orgApp.Application
+			return errE
+		}
+
+		if appsSet.Contains(orgApp.Application) {
+			errE := errors.New("duplicate app")
+			errors.Details(errE)["id"] = *orgApp.ID
+			errors.Details(errE)["application"] = orgApp.Application
+			return errE
+		}
+		appsSet.Add(orgApp.Application)
+
+		// TODO: Use byte as input and not string.
+		//       See: https://github.com/alexedwards/argon2id/issues/26
+		params, _, _, err := argon2id.DecodeHash(string(orgApp.Secret))
+		// TODO: What is a workflow to make these params stricter in the future?
+		//       API calls will start failing with existing secrets on unrelated updates.
+		if err != nil ||
+			params.Memory < argon2idParams.Memory ||
+			params.Iterations < argon2idParams.Iterations ||
+			params.Parallelism < argon2idParams.Parallelism ||
+			params.SaltLength < argon2idParams.SaltLength ||
+			params.KeyLength < argon2idParams.KeyLength {
+			errE := errors.WithMessage(err, "invalid app secret")
+			errors.Details(errE)["id"] = *orgApp.ID
+			errors.Details(errE)["application"] = orgApp.Application
+			return errE
+		}
+
+		o.Applications[i] = orgApp
+	}
+
+	return nil
 }
 
 func GetOrganization(ctx context.Context, id identifier.Identifier) (*Organization, errors.E) { //nolint:revive
@@ -52,11 +131,9 @@ func GetOrganization(ctx context.Context, id identifier.Identifier) (*Organizati
 }
 
 func CreateOrganization(ctx context.Context, organization *Organization) errors.E {
-	organization.ID = identifier.New()
-
-	account := mustGetAccount(ctx)
-	if !slices.Contains(organization.Admins, account) {
-		organization.Admins = append(organization.Admins, account)
+	errE := organization.Validate(ctx)
+	if errE != nil {
+		return errE
 	}
 
 	data, errE := x.MarshalWithoutEscapeHTML(organization)
@@ -67,42 +144,43 @@ func CreateOrganization(ctx context.Context, organization *Organization) errors.
 	organizationsMu.Lock()
 	defer organizationsMu.Unlock()
 
-	organizations[organization.ID] = data
+	organizations[*organization.ID] = data
 	return nil
 }
 
-func UpdateOrganization(ctx context.Context, organization *Organization) errors.E { //nolint:dupl
-	account := mustGetAccount(ctx)
-	if !slices.Contains(organization.Admins, account) {
-		organization.Admins = append(organization.Admins, account)
+func UpdateOrganization(ctx context.Context, organization *Organization) errors.E {
+	errE := organization.Validate(ctx)
+	if errE != nil {
+		return errE
 	}
 
 	data, errE := x.MarshalWithoutEscapeHTML(organization)
 	if errE != nil {
-		errors.Details(errE)["id"] = organization.ID
+		errors.Details(errE)["id"] = *organization.ID
 		return errE
 	}
 
 	organizationsMu.Lock()
 	defer organizationsMu.Unlock()
 
-	existingData, ok := organizations[organization.ID]
+	existingData, ok := organizations[*organization.ID]
 	if !ok {
-		return errors.WithDetails(ErrOrganizationNotFound, "id", organization.ID)
+		return errors.WithDetails(ErrOrganizationNotFound, "id", *organization.ID)
 	}
 
 	var existingOrganization Organization
 	errE = x.UnmarshalWithoutUnknownFields(existingData, &existingOrganization)
 	if errE != nil {
-		errors.Details(errE)["id"] = organization.ID
+		errors.Details(errE)["id"] = *organization.ID
 		return errE
 	}
 
+	account := mustGetAccount(ctx)
 	if !slices.Contains(existingOrganization.Admins, account) {
 		return errors.WithDetails(ErrOrganizationUnauthorized, "id", organization.ID)
 	}
 
-	organizations[organization.ID] = data
+	organizations[*organization.ID] = data
 	return nil
 }
 
@@ -143,16 +221,24 @@ func (s *Service) Organizations(w http.ResponseWriter, req *http.Request, _ waf.
 }
 
 func getOrganizationFromID(ctx context.Context, value string) (*Organization, errors.E) {
-	if value == "" {
-		return nil, errors.WithStack(ErrOrganizationNotFound)
-	}
-
 	id, errE := identifier.FromString(value)
 	if errE != nil {
 		return nil, errors.WrapWith(errE, ErrOrganizationNotFound)
 	}
 
 	return GetOrganization(ctx, id)
+}
+
+func (s *Service) returnOrganization(ctx context.Context, w http.ResponseWriter, req *http.Request, organization *Organization) {
+	account := mustGetAccount(ctx)
+
+	s.WriteJSON(w, req, organization, map[string]interface{}{
+		"can_update": slices.Contains(organization.Admins, account),
+	})
+}
+
+func (s *Service) returnOrganizationRef(_ context.Context, w http.ResponseWriter, req *http.Request, organization *Organization) {
+	s.WriteJSON(w, req, OrganizationRef{ID: *organization.ID}, nil)
 }
 
 func (s *Service) OrganizationGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
@@ -170,11 +256,7 @@ func (s *Service) OrganizationGet(w http.ResponseWriter, req *http.Request, para
 		return
 	}
 
-	account := mustGetAccount(ctx)
-
-	s.WriteJSON(w, req, organization, map[string]interface{}{
-		"can_update": slices.Contains(organization.Admins, account),
-	})
+	s.returnOrganization(ctx, w, req, organization)
 }
 
 func (s *Service) OrganizationsGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
@@ -183,16 +265,18 @@ func (s *Service) OrganizationsGet(w http.ResponseWriter, req *http.Request, _ w
 		return
 	}
 
-	result := []map[string]identifier.Identifier{}
+	result := []OrganizationRef{}
 
 	organizationsMu.RLock()
 	defer organizationsMu.RUnlock()
 
 	for id := range organizations {
-		result = append(result, map[string]identifier.Identifier{
-			"id": id,
-		})
+		result = append(result, OrganizationRef{ID: id})
 	}
+
+	slices.SortFunc(result, func(a OrganizationRef, b OrganizationRef) int {
+		return bytes.Compare(a.ID[:], b.ID[:])
+	})
 
 	s.WriteJSON(w, req, result, nil)
 }
@@ -213,10 +297,16 @@ func (s *Service) OrganizationUpdatePost(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	if params["id"] != organization.ID.String() {
+	if organization.ID == nil {
+		id, errE := identifier.FromString(params["id"]) //nolint:govet
+		if errE != nil {
+			s.BadRequestWithError(w, req, errE)
+		}
+		organization.ID = &id
+	} else if params["id"] != organization.ID.String() {
 		errE = errors.New("params ID does not match payload ID")
 		errors.Details(errE)["params"] = params["id"]
-		errors.Details(errE)["payload"] = organization.ID
+		errors.Details(errE)["payload"] = *organization.ID
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
@@ -233,7 +323,7 @@ func (s *Service) OrganizationUpdatePost(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	s.WriteJSON(w, req, []byte(`{}`), nil)
+	s.returnOrganization(ctx, w, req, &organization)
 }
 
 func (s *Service) OrganizationCreatePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
@@ -252,11 +342,16 @@ func (s *Service) OrganizationCreatePost(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
+	if organization.ID != nil {
+		s.BadRequestWithError(w, req, errors.New("payload contains ID"))
+		return
+	}
+
 	errE = CreateOrganization(ctx, &organization)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	s.WriteJSON(w, req, []byte(`{}`), nil)
+	s.returnOrganizationRef(ctx, w, req, &organization)
 }

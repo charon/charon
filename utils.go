@@ -68,10 +68,6 @@ func getSessionFromRequest(req *http.Request) (*Session, errors.E) {
 
 // getFlowFromID obtains Flow from its string ID.
 func getFlowFromID(ctx context.Context, value string) (*Flow, errors.E) {
-	if value == "" {
-		return nil, errors.WithStack(ErrFlowNotFound)
-	}
-
 	id, errE := identifier.FromString(value)
 	if errE != nil {
 		return nil, errors.WrapWith(errE, ErrFlowNotFound)
