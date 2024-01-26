@@ -32,13 +32,16 @@ const codeErrorOnce = ref(false)
 const unexpectedPasswordError = ref("")
 const unexpectedCodeError = ref("")
 
-watch(password, () => {
-  // We reset errors when input box value changes.
+function resetOnInteraction() {
+  // We reset errors on interaction.
   passwordError.value = ""
+  // codeError is not reset on purpose, once it is set it stays set.
   codeErrorOnce.value = false
   unexpectedPasswordError.value = ""
   unexpectedCodeError.value = ""
-})
+}
+
+watch(password, resetOnInteraction)
 
 // Define transition hooks to be called by the parent component.
 // See: https://github.com/vuejs/rfcs/discussions/613
@@ -131,11 +134,10 @@ async function onNext() {
     return
   }
 
+  resetOnInteraction()
+
   mainProgress.value += 1
   try {
-    codeErrorOnce.value = false
-    unexpectedPasswordError.value = ""
-    unexpectedCodeError.value = ""
     const url = router.apiResolve({
       name: "AuthFlow",
       params: {
@@ -251,10 +253,10 @@ async function onCode() {
     return
   }
 
+  resetOnInteraction()
+
   mainProgress.value += 1
   try {
-    unexpectedPasswordError.value = ""
-    unexpectedCodeError.value = ""
     const url = router.apiResolve({
       name: "AuthFlow",
       params: {

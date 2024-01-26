@@ -23,14 +23,13 @@ const abortController = new AbortController()
 const passwordError = ref("")
 const unexpectedError = ref("")
 
-watch(
-  () => props.emailOrUsername,
-  () => {
-    // We reset errors when input box value changes.
-    passwordError.value = ""
-    unexpectedError.value = ""
-  },
-)
+function resetOnInteraction() {
+  // We reset errors on interaction.
+  passwordError.value = ""
+  unexpectedError.value = ""
+}
+
+watch(() => props.emailOrUsername, resetOnInteraction)
 
 // A proxy so that we can pass it as v-model.
 const emailOrUsernameProxy = computed({
@@ -69,9 +68,10 @@ async function onNext() {
     return
   }
 
+  resetOnInteraction()
+
   mainProgress.value += 1
   try {
-    unexpectedError.value = ""
     const response = await startPassword(router, props.id, props.emailOrUsername, flow!, abortController.signal, mainProgress, mainProgress)
     if (abortController.signal.aborted) {
       return

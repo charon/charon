@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import type { Organization, Organizations } from "@/types"
+
 import { onBeforeMount, onUnmounted, ref } from "vue"
 import { useRouter } from "vue-router"
 import ButtonLink from "@/components/ButtonLink.vue"
 import WithDocument from "@/components/WithDocument.vue"
 import Footer from "@/components/Footer.vue"
 import { getURL } from "@/api"
-import { Organization, Organizations } from "@/types"
 
 const router = useRouter()
 
@@ -46,7 +47,8 @@ const WithOrganizationDocument = WithDocument<Organization>
     <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
       <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
         <div class="flex flex-row justify-between items-center gap-4">
-          <span class="font-bold">Organizations</span><ButtonLink :to="{ name: 'OrganizationCreate' }" :disabled="mainProgress > 0" primary>Create</ButtonLink>
+          <h1 class="text-2xl font-bold">Organizations</h1>
+          <ButtonLink :to="{ name: 'OrganizationCreate' }" :disabled="mainProgress > 0" primary>Create</ButtonLink>
         </div>
       </div>
       <div v-if="dataLoading" class="w-full rounded border bg-white p-4 shadow">Loading...</div>
@@ -55,12 +57,10 @@ const WithOrganizationDocument = WithDocument<Organization>
         <div v-for="organization of organizations" :key="organization.id" class="w-full rounded border bg-white p-4 shadow grid grid-cols-1 gap-4">
           <WithOrganizationDocument :id="organization.id" name="Organization">
             <template #default="{ doc, metadata, url }">
-              <h2 class="text-xl leading-none">
+              <h2 class="text-xl flex flex-row items-center gap-1">
                 <router-link :to="{ name: 'Organization', params: { id: organization.id } }" :data-url="url" class="link">{{ doc.name }}</router-link>
+                <span v-if="metadata.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">admin</span>
               </h2>
-              <ul v-if="metadata.can_update" class="-mt-3 flex flex-row flex-wrap content-start items-baseline gap-1 text-sm">
-                <li class="rounded-sm bg-slate-100 py-0.5 px-1.5 leading-none text-gray-600 shadow-sm">admin</li>
-              </ul>
             </template>
           </WithOrganizationDocument>
         </div>

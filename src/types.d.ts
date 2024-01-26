@@ -197,9 +197,16 @@ export type Organizations = {
   id: string
 }[]
 
+export type OrganizationApplication = {
+  id?: string
+  application: string
+  secret: string
+}
+
 export type Organization = {
   id: string
   name: string
+  applications: OrganizationApplication[]
 }
 
 export type OrganizationCreate = {

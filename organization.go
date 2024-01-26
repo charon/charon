@@ -32,7 +32,7 @@ type OrganizationApplication struct {
 	ID          *identifier.Identifier `json:"id"`
 	Application identifier.Identifier  `json:"application"`
 
-	Secret []byte `json:"secret"`
+	Secret string `json:"secret"`
 }
 
 type Organization struct {

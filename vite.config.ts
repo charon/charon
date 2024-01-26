@@ -29,4 +29,5 @@ export default defineConfig({
       all: true,
     },
   },
+  assetsInclude: ["**/argon2id/dist/*.wasm"],
 })

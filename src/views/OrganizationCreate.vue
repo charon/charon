@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import type { OrganizationCreate } from "@/types"
+
 import { onUnmounted, ref } from "vue"
 import { useRouter } from "vue-router"
 import InputText from "@/components/InputText.vue"
 import Button from "@/components/Button.vue"
 import Footer from "@/components/Footer.vue"
-import { OrganizationCreate } from "@/types"
 import { postURL } from "@/api"
 
 const router = useRouter()
@@ -52,7 +53,7 @@ async function onSubmit() {
     <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
       <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
         <div class="flex flex-row items-center">
-          <span class="font-bold">Create organization</span>
+          <h1 class="text-2xl font-bold">Create organization</h1>
         </div>
         <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
           <label for="name" class="mb-1">Organization name</label>

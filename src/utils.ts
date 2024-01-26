@@ -43,6 +43,13 @@ export function toBase64(input: Uint8Array): string {
   return btoa(str)
 }
 
+const paddingRegexp = /=+$/
+
+export function toBase64Raw(input: Uint8Array): string {
+  const str = String.fromCharCode(...input)
+  return btoa(str).replace(paddingRegexp, "")
+}
+
 export function isEmail(emailOrUsername: string): boolean {
   return emailOrUsername.indexOf("@") >= 0
 }

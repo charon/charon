@@ -26,13 +26,15 @@ const abortController = new AbortController()
 const sendCounter = ref(1)
 const codeError = ref("")
 const unexpectedError = ref("")
-const codeProvided = ref(false)
+const codeFromHash = ref(false)
 
-watch(code, () => {
-  // We reset errors when input box value changes.
+function resetOnInteraction() {
+  // We reset errors on interaction.
   codeError.value = ""
   unexpectedError.value = ""
-})
+}
+
+watch(code, resetOnInteraction)
 
 watch(
   () => route.hash,
@@ -44,7 +46,8 @@ watch(
     const c = params.get("code")
     if (c) {
       code.value = c
-      codeProvided.value = true
+      codeFromHash.value = true
+      resetOnInteraction()
     }
   },
   { immediate: true },
@@ -65,7 +68,7 @@ defineExpose({
 onUnmounted(onBeforeLeave)
 
 function onAfterEnter() {
-  if (codeProvided.value) {
+  if (codeFromHash.value) {
     document.getElementById("submit-code")?.focus()
   } else {
     document.getElementById("code")?.focus()
@@ -99,9 +102,10 @@ async function onNext() {
     return
   }
 
+  resetOnInteraction()
+
   mainProgress.value += 1
   try {
-    unexpectedError.value = ""
     const url = router.apiResolve({
       name: "AuthFlow",
       params: {
@@ -152,12 +156,12 @@ async function onResend() {
     return
   }
 
+  resetOnInteraction()
+
   mainProgress.value += 1
   try {
-    codeError.value = ""
-    unexpectedError.value = ""
     code.value = ""
-    codeProvided.value = false
+    codeFromHash.value = false
     const url = router.apiResolve({
       name: "AuthFlow",
       params: {
@@ -210,19 +214,19 @@ async function onResend() {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div class="flex flex-col">
-      <label v-if="codeProvided && isEmail(emailOrUsername)" for="code" class="mb-1"
+      <label v-if="codeFromHash && isEmail(emailOrUsername)" for="code" class="mb-1"
         >We sent the following 6-digit code to <strong>{{ emailOrUsername }}</strong> e-mail address:</label
       >
-      <label v-else-if="codeProvided" for="code" class="mb-1">
+      <label v-else-if="codeFromHash" for="code" class="mb-1">
         We sent the following 6-digit code to e-mail address(es) associated with the Charon username
         <strong>{{ emailOrUsername }}</strong
         >:</label
       >
-      <label v-else-if="!codeProvided && isEmail(emailOrUsername)" for="code" class="mb-1"
+      <label v-else-if="!codeFromHash && isEmail(emailOrUsername)" for="code" class="mb-1"
         >We {{ sendCounter > 1 ? `sent (${sendCounter}x)` : "sent" }} a 6-digit code to <strong>{{ emailOrUsername }}</strong> e-mail address. Please enter it to
         continue:</label
       >
-      <label v-else-if="!codeProvided" for="code" class="mb-1">
+      <label v-else-if="!codeFromHash" for="code" class="mb-1">
         We {{ sendCounter > 1 ? `sent (${sendCounter}x)` : "sent" }} a 6-digit code to e-mail address(es) associated with the Charon username
         <strong>{{ emailOrUsername }}</strong
         >. Please enter it to continue:</label
@@ -257,9 +261,9 @@ async function onResend() {
     </div>
     <div v-if="codeError === 'invalidCode'" class="mt-4 text-error-600">Code is invalid. Please try again.</div>
     <div v-else-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
-    <div v-else-if="codeProvided" class="mt-4">Please confirm the code to continue.</div>
+    <div v-else-if="codeFromHash" class="mt-4">Please confirm the code to continue.</div>
     <div v-else class="mt-4">Please allow few minutes for the code to arrive. Check spam or junk folder.</div>
-    <div v-if="codeProvided" class="mt-4">
+    <div v-if="codeFromHash" class="mt-4">
       If you were not signing in or signing up into {{ name }}, please disregard the e-mail and <strong>do not</strong> confirm the code.
     </div>
     <div v-else class="mt-4">

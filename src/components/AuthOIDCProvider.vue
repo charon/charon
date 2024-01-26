@@ -23,6 +23,11 @@ const unexpectedError = ref("")
 const paused = ref(false)
 const seconds = ref(3)
 
+function resetOnInteraction() {
+  // We reset the error on interaction.
+  unexpectedError.value = ""
+}
+
 let interval: number
 function initInterval() {
   if (interval) {
@@ -78,8 +83,7 @@ async function onPauseResume() {
     return
   }
 
-  // We reset the error on interaction.
-  unexpectedError.value = ""
+  resetOnInteraction()
 
   if (paused.value) {
     initInterval()
@@ -151,8 +155,7 @@ function onPause(event: KeyboardEvent) {
   }
 
   if (event.key === "Escape") {
-    // We reset the error on interaction.
-    unexpectedError.value = ""
+    resetOnInteraction()
 
     clearInterval(interval)
     interval = 0
