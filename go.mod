@@ -39,7 +39,7 @@ require (
 	github.com/cloudflare/circl v1.3.6 // indirect
 	github.com/coreos/go-oidc/v3 v3.8.0
 	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
-	github.com/deckarep/golang-set/v2 v2.3.1 // indirect
+	github.com/deckarep/golang-set/v2 v2.3.1
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
@@ -48,7 +48,7 @@ require (
 	github.com/go-webauthn/webauthn v0.10.0
 	github.com/golang/gddo v0.0.0-20210115222349-20d68f94ee1f // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
-	github.com/google/uuid v1.5.0 // indirect
+	github.com/google/uuid v1.5.0
 	github.com/hashicorp/go-cleanhttp v0.5.2
 	github.com/hashicorp/go-retryablehttp v0.7.5 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect

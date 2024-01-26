@@ -90,9 +90,7 @@ func (o *Organization) Validate(ctx context.Context) errors.E {
 		}
 		appsSet.Add(orgApp.Application)
 
-		// TODO: Use byte as input and not string.
-		//       See: https://github.com/alexedwards/argon2id/issues/26
-		params, _, _, err := argon2id.DecodeHash(string(orgApp.Secret))
+		params, _, _, err := argon2id.DecodeHash(orgApp.Secret)
 		// TODO: What is a workflow to make these params stricter in the future?
 		//       API calls will start failing with existing secrets on unrelated updates.
 		if err != nil ||
