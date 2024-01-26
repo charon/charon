@@ -248,10 +248,12 @@ const WithApplicationDocument = WithDocument<Application>
             <li v-for="application of applications" :key="application.id" class="flex flex-row items-baseline gap-x-1">
               <input
                 :id="'app/' + application.id"
-                :disabled="mainProgress > 0"
+                :disabled="mainProgress > 0 || !metadata.can_update"
                 :checked="isEnabled(application.id)"
                 :class="
-                  mainProgress > 0 ? 'cursor-not-allowed bg-gray-100 text-primary-300 focus:ring-primary-300' : 'cursor-pointer text-primary-600 focus:ring-primary-500'
+                  mainProgress > 0 || !metadata.can_update
+                    ? 'cursor-not-allowed bg-gray-100 text-primary-300 focus:ring-primary-300'
+                    : 'cursor-pointer text-primary-600 focus:ring-primary-500'
                 "
                 type="checkbox"
                 class="my-1 rounded"
@@ -264,20 +266,24 @@ const WithApplicationDocument = WithDocument<Application>
                       <label
                         :for="'app/' + application.id"
                         class="my-1 leading-none"
-                        :class="mainProgress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                        :class="mainProgress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
                         :data-url="url"
                         >{{ doc.name }}</label
                       >
                     </template>
                   </WithApplicationDocument>
-                  <label :for="'app/' + application.id" class="my-1 leading-none" :class="mainProgress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                  <label
+                    :for="'app/' + application.id"
+                    class="my-1 leading-none"
+                    :class="mainProgress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
                     >xxx</label
                   >
                   <router-link :to="{ name: 'Application', params: { id: application.id } }" class="link"
                     ><ArrowTopRightOnSquareIcon alt="Link" class="inline h-5 w-5 align-text-top"
                   /></router-link>
                 </div>
-                <div v-if="getOrganizationApplicationID(application.id)">Client ID: {{ getOrganizationApplicationID(application.id) }}</div>
+                <!-- Client ID is not sensitive any anyone can compute it themselves, but we still hide it to not introduce confusion. -->
+                <div v-if="metadata.can_update && getOrganizationApplicationID(application.id)">Client ID: {{ getOrganizationApplicationID(application.id) }}</div>
                 <div v-if="generatedSecrets.has(application.id)">Client secret: {{ generatedSecrets.get(application.id) }}</div>
               </div>
             </li>
