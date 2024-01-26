@@ -259,7 +259,7 @@ const WithApplicationDocument = WithDocument<Application>
                 class="my-1 rounded"
                 @change="onChange($event, application.id)"
               />
-              <div class="lex flex-col">
+              <div class="flex flex-col">
                 <div class="flex flex-row items-baseline gap-x-1">
                   <WithApplicationDocument :id="application.id" name="Application">
                     <template #default="{ doc, metadata: meta, url }">
