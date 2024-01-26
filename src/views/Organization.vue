@@ -262,7 +262,7 @@ const WithApplicationDocument = WithDocument<Application>
               <div class="lex flex-col">
                 <div class="flex flex-row items-baseline gap-x-1">
                   <WithApplicationDocument :id="application.id" name="Application">
-                    <template #default="{ doc, url }">
+                    <template #default="{ doc, metadata: meta, url }">
                       <label
                         :for="'app/' + application.id"
                         class="my-1 leading-none"
@@ -270,14 +270,15 @@ const WithApplicationDocument = WithDocument<Application>
                         :data-url="url"
                         >{{ doc.name }}</label
                       >
+                      <label
+                        v-if="meta.can_update"
+                        :for="'app/' + application.id"
+                        class="my-1 rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none"
+                        :class="mainProgress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                        >admin</label
+                      >
                     </template>
                   </WithApplicationDocument>
-                  <label
-                    :for="'app/' + application.id"
-                    class="my-1 leading-none"
-                    :class="mainProgress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                    >xxx</label
-                  >
                   <router-link :to="{ name: 'Application', params: { id: application.id } }" class="link"
                     ><ArrowTopRightOnSquareIcon alt="Link" class="inline h-5 w-5 align-text-top"
                   /></router-link>
