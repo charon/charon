@@ -245,7 +245,7 @@ const WithApplicationDocument = WithDocument<Application>
           <div v-if="applicationsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
           <div v-else-if="applicationsUpdated" class="text-success-600">Applications updated successfully.</div>
           <ul>
-            <li v-for="application of applications" :key="application.id" class="flex flex-row items-baseline gap-x-1">
+            <li v-for="application of applications" :key="application.id" class="flex flex-row gap-1">
               <input
                 :id="'app/' + application.id"
                 :disabled="mainProgress > 0 || !metadata.can_update"
@@ -260,12 +260,12 @@ const WithApplicationDocument = WithDocument<Application>
                 @change="onChange($event, application.id)"
               />
               <div class="flex flex-col">
-                <div class="flex flex-row items-baseline gap-x-1">
+                <div class="flex flex-row items-center gap-1">
                   <WithApplicationDocument :id="application.id" name="Application">
                     <template #default="{ doc, metadata: meta, url }">
                       <label
                         :for="'app/' + application.id"
-                        class="my-1 leading-none"
+                        class="leading-none"
                         :class="mainProgress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
                         :data-url="url"
                         >{{ doc.name }}</label
@@ -273,7 +273,7 @@ const WithApplicationDocument = WithDocument<Application>
                       <label
                         v-if="meta.can_update"
                         :for="'app/' + application.id"
-                        class="my-1 rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none"
+                        class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none"
                         :class="mainProgress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
                         >admin</label
                       >
