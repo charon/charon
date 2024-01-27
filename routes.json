@@ -25,6 +25,54 @@
       "get": true
     },
     {
+      "name": "OIDCAuthorize",
+      "path": "/auth/oidc/authorize",
+      "api": false,
+      "get": true
+    },
+    {
+      "name": "OIDCToken",
+      "path": "/auth/oidc/token",
+      "api": true,
+      "get": false
+    },
+    {
+      "name": "OIDCRevoke",
+      "path": "/auth/oidc/revoke",
+      "api": true,
+      "get": false
+    },
+    {
+      "name": "OIDCIntrospect",
+      "path": "/auth/oidc/introspect",
+      "api": true,
+      "get": false
+    },
+    {
+      "name": "OIDCUserInfo",
+      "path": "/auth/oidc/userinfo",
+      "api": true,
+      "get": false
+    },
+    {
+      "name": "OIDCKeys",
+      "path": "/.well-known/jwks.json",
+      "api": false,
+      "get": true
+    },
+    {
+      "name": "OIDCConfiguration1",
+      "path": "/.well-known/oauth-authorization-server",
+      "api": false,
+      "get": true
+    },
+    {
+      "name": "OIDCConfiguration2",
+      "path": "/.well-known/openid-configuration",
+      "api": false,
+      "get": true
+    },
+    {
       "name": "Applications",
       "path": "/a",
       "api": true,

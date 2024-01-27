@@ -2,7 +2,11 @@ package charon
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"embed"
+	"encoding/base64"
 	"encoding/json"
 	"io/fs"
 	"os"
@@ -12,7 +16,9 @@ import (
 	"syscall"
 
 	"github.com/alecthomas/kong"
+	"github.com/go-jose/go-jose/v3"
 	"github.com/go-webauthn/webauthn/webauthn"
+	"github.com/ory/fosite"
 	"github.com/wneessen/go-mail"
 	"gitlab.com/tozd/go/cli"
 	"gitlab.com/tozd/go/errors"
@@ -55,6 +61,12 @@ type Mail struct {
 	From     string `                                                                    help:"From header for e-mails."                                                             placeholder:"EMAIL"  required:"" yaml:"from"`
 }
 
+type OIDC struct {
+	Development bool   `             help:"Run OIDC in development mode: send debug messages to clients, generate secret and key if not provided. LEAKS SENSITIVE INFORMATION!"                      short:"O" yaml:"development"`
+	Secret      string `env:"SECRET" help:"Base64 (URL encoding, no padding) encoded 32 bytes used for tokens' HMAC. Environment variable: ${env}."                             placeholder:"STRING"           yaml:"secret"`
+	Key         string `env:"KEY"    help:"ECDSA private key in JWK format for signing tokens. Only the key is used, other fields are ignored. Environment variable: ${env}."   placeholder:"JWK"              yaml:"key"`
+}
+
 //nolint:lll
 type Config struct {
 	z.LoggingConfig `yaml:",inline"`
@@ -68,11 +80,16 @@ type Config struct {
 
 	Providers Providers `embed:"" group:"Providers:" yaml:"providers"`
 
-	Mail Mail `embed:"" envprefix:"MAIL_" prefix:"mail." yaml:"mail"`
+	Mail Mail `embed:"" envprefix:"MAIL_" group:"Mail" prefix:"mail." yaml:"mail"`
+
+	OIDC OIDC `embed:"" envprefix:"OIDC_" group:"OIDC" prefix:"oidc." yaml:"oidc"`
 }
 
 type Service struct {
 	waf.Service[*Site]
+
+	oidc          func() fosite.OAuth2Provider
+	oidcPublicKey jose.JSONWebKey
 
 	oidcProviders   func() map[Provider]oidcProvider
 	passkeyProvider func() *webauthn.WebAuthn
@@ -85,6 +102,55 @@ type Service struct {
 }
 
 func (config *Config) Run() errors.E {
+	var secret []byte
+	if config.OIDC.Secret != "" {
+		var err error
+		secret, err = base64.RawURLEncoding.DecodeString(config.OIDC.Secret)
+		if err != nil {
+			return errors.WithMessage(err, "invalid OIDC secret")
+		}
+		if len(secret) != 32 {
+			return errors.Errorf("OIDC secret does not have 32 bytes, but %d", len(secret))
+		}
+	} else if config.OIDC.Development {
+		secret = make([]byte, 32)
+		_, err := rand.Read(secret)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+	} else {
+		return errors.New("OIDC secret not provided")
+	}
+
+	var privateKey *ecdsa.PrivateKey
+	if config.OIDC.Key != "" {
+		var jwk jose.JSONWebKey
+		err := json.Unmarshal([]byte(config.OIDC.Key), &jwk)
+		if err != nil {
+			return errors.WithMessage(err, "invalid OIDC private key")
+		}
+		var ok bool
+		privateKey, ok = jwk.Key.(*ecdsa.PrivateKey)
+		if !ok {
+			return errors.New("OIDC private key is not an ECDSA private key")
+		}
+	} else if config.OIDC.Development {
+		var err error
+		privateKey, err = ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+	} else {
+		return errors.New("OIDC private key not provided")
+	}
+
+	// We on purpose ignore all other fields and reconstruct JWK from scratch.
+	// This assures all our keys have same JWK representation.
+	oidcPublicKey, errE := makeJSONWebKey(&privateKey.PublicKey)
+	if errE != nil {
+		return errE
+	}
+
 	// Routes come from a single source of truth, e.g., a file.
 	var routesConfig struct {
 		Routes []waf.Route `json:"routes"`
@@ -111,7 +177,7 @@ func (config *Config) Run() errors.E {
 		}
 	}
 	// If domains are not provided, sites are automatically constructed based on the certificate.
-	sites, errE := config.Server.Init(nil)
+	sites, errE = config.Server.Init(nil)
 	if errE != nil {
 		return errE
 	}
@@ -206,6 +272,8 @@ func (config *Config) Run() errors.E {
 				return path == "/index.html"
 			},
 		},
+		oidc:            nil,
+		oidcPublicKey:   oidcPublicKey,
 		oidcProviders:   nil,
 		passkeyProvider: nil,
 		codeProvider:    nil,
@@ -232,6 +300,8 @@ func (config *Config) Run() errors.E {
 	if len(sites) > 1 {
 		service.Middleware = append(service.Middleware, service.RedirectToMainSite(domain))
 	}
+
+	service.oidc = sync.OnceValue(initOIDC(config, service, domain, secret, privateKey))
 
 	service.oidcProviders = sync.OnceValue(initOIDCProviders(config, service, domain, providers))
 	service.passkeyProvider = sync.OnceValue(initPasskeyProvider(config, domain))

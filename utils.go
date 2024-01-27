@@ -2,13 +2,20 @@ package charon
 
 import (
 	"context"
+	"crypto"
+	"crypto/ecdsa"
 	"crypto/rand"
+	"crypto/sha1"
+	"crypto/sha256"
+	"crypto/x509"
+	"encoding/base64"
 	"fmt"
 	"math/big"
 	"net"
 	"net/http"
 	"strings"
 
+	"github.com/go-jose/go-jose/v3"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
@@ -226,4 +233,57 @@ func pointerEqual[T comparable](a *T, b *T) bool {
 		return *a == *b
 	}
 	return false
+}
+
+// getKeyThumbprint computes SHA256 key thumbprint as described in RFC 7638,
+// which we use for the "kid" (key ID) field of a JWK.
+// See: https://tools.ietf.org/html/rfc7638
+func getKeyThumbprint(publicKey *ecdsa.PublicKey) (string, errors.E) {
+	thumbprint, err := (&jose.JSONWebKey{
+		Key:       publicKey,
+		Algorithm: "ES256",
+		Use:       "sig",
+	}).Thumbprint(crypto.SHA256)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return base64.RawURLEncoding.EncodeToString(thumbprint), nil
+}
+
+// getKeyFingerprints computes SHA1 and SHA256 key fingerprints as described in RFC 7517, section 4.8,
+// used for the "x5t" and "x5t#S256" fields of a JWK.
+// See: https://tools.ietf.org/html/rfc7517#section-4.8
+func getKeyFingerprints(publicKey *ecdsa.PublicKey) ([]byte, []byte, errors.E) {
+	pemKey, err := x509.MarshalPKIXPublicKey(publicKey)
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+	fingerprintsSha1 := sha1.Sum(pemKey) //nolint:gosec
+	fingerprintsSha256 := sha256.Sum256(pemKey)
+	return fingerprintsSha1[:], fingerprintsSha256[:], nil
+}
+
+// makeJSONWebKey makes a JWK of the public key from the ECDSA public key.
+func makeJSONWebKey(publicKey *ecdsa.PublicKey) (jose.JSONWebKey, errors.E) {
+	thumbprint, errE := getKeyThumbprint(publicKey)
+	if errE != nil {
+		return jose.JSONWebKey{}, errE
+	}
+	fingerprintsSha1, fingerprintsSha256, errE := getKeyFingerprints(publicKey)
+	if errE != nil {
+		return jose.JSONWebKey{}, errE
+	}
+	return jose.JSONWebKey{
+		Key:       publicKey,
+		Algorithm: "ES256",
+		Use:       "sig",
+		KeyID:     thumbprint,
+		// We initialize this explicitly to an empty slice so that it is not nil. Otherwise JSON
+		// serialization and deserialization is not an identity, as it converts nil to an empty slice.
+		Certificates: []*x509.Certificate{},
+		// This is made into the "x5t" field.
+		CertificateThumbprintSHA1: fingerprintsSha1,
+		// This is made into the "x5t#S256" field.
+		CertificateThumbprintSHA256: fingerprintsSha256,
+	}, nil
 }
