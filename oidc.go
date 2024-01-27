@@ -61,7 +61,7 @@ func initOIDC(config *Config, service *Service, domain string, secret []byte, pr
 			return nil
 		}
 
-		tokenPath, errE := service.Reverse("OIDCToken", nil, nil)
+		tokenPath, errE := service.ReverseAPI("OIDCToken", nil, nil)
 		if errE != nil {
 			panic(errE)
 		}
