@@ -5,7 +5,7 @@ import (
 	"crypto"
 	"crypto/ecdsa"
 	"crypto/rand"
-	"crypto/sha1"
+	"crypto/sha1" //nolint:gosec
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
@@ -239,7 +239,7 @@ func pointerEqual[T comparable](a *T, b *T) bool {
 // which we use for the "kid" (key ID) field of a JWK.
 // See: https://tools.ietf.org/html/rfc7638
 func getKeyThumbprint(publicKey *ecdsa.PublicKey) (string, errors.E) {
-	thumbprint, err := (&jose.JSONWebKey{
+	thumbprint, err := (&jose.JSONWebKey{ //nolint:exhaustruct
 		Key:       publicKey,
 		Algorithm: "ES256",
 		Use:       "sig",
@@ -267,11 +267,11 @@ func getKeyFingerprints(publicKey *ecdsa.PublicKey) ([]byte, []byte, errors.E) {
 func makeJSONWebKey(publicKey *ecdsa.PublicKey) (jose.JSONWebKey, errors.E) {
 	thumbprint, errE := getKeyThumbprint(publicKey)
 	if errE != nil {
-		return jose.JSONWebKey{}, errE
+		return jose.JSONWebKey{}, errE //nolint:exhaustruct
 	}
 	fingerprintsSha1, fingerprintsSha256, errE := getKeyFingerprints(publicKey)
 	if errE != nil {
-		return jose.JSONWebKey{}, errE
+		return jose.JSONWebKey{}, errE //nolint:exhaustruct
 	}
 	return jose.JSONWebKey{
 		Key:       publicKey,
@@ -280,7 +280,8 @@ func makeJSONWebKey(publicKey *ecdsa.PublicKey) (jose.JSONWebKey, errors.E) {
 		KeyID:     thumbprint,
 		// We initialize this explicitly to an empty slice so that it is not nil. Otherwise JSON
 		// serialization and deserialization is not an identity, as it converts nil to an empty slice.
-		Certificates: []*x509.Certificate{},
+		Certificates:    []*x509.Certificate{},
+		CertificatesURL: nil,
 		// This is made into the "x5t" field.
 		CertificateThumbprintSHA1: fingerprintsSha1,
 		// This is made into the "x5t#S256" field.

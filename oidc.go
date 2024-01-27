@@ -18,7 +18,7 @@ import (
 
 type argon2idHasher struct{}
 
-func (argon2idHasher) Compare(ctx context.Context, hash, data []byte) error {
+func (argon2idHasher) Compare(_ context.Context, hash, data []byte) error {
 	// TODO: Use byte as input and not string.
 	//       See: https://github.com/alexedwards/argon2id/issues/26
 	match, err := argon2id.ComparePasswordAndHash(string(hash), string(data))
@@ -33,7 +33,7 @@ func (argon2idHasher) Compare(ctx context.Context, hash, data []byte) error {
 	return nil
 }
 
-func (argon2idHasher) Hash(ctx context.Context, data []byte) ([]byte, error) {
+func (argon2idHasher) Hash(_ context.Context, data []byte) ([]byte, error) {
 	// TODO: Use byte as input and not string.
 	//       See: https://github.com/alexedwards/argon2id/issues/26
 	hashedPassword, err := argon2id.CreateHash(string(data), &argon2idParams)
@@ -70,7 +70,7 @@ func initOIDC(config *Config, service *Service, domain string, secret []byte, pr
 
 		store := storage.NewMemoryStore()
 
-		config := &fosite.Config{
+		config := &fosite.Config{ //nolint:exhaustruct
 			IDTokenIssuer: issuer,
 			// Send some debug messages to clients?
 			SendDebugMessagesToClients: config.OIDC.Development,

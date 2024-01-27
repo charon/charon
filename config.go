@@ -32,6 +32,8 @@ const (
 	DefaultTLSCache = "letsencrypt"
 )
 
+const oidcCSecretSize = 32
+
 //go:embed routes.json
 var routesConfiguration []byte
 
@@ -61,6 +63,7 @@ type Mail struct {
 	From     string `                                                                    help:"From header for e-mails."                                                             placeholder:"EMAIL"  required:"" yaml:"from"`
 }
 
+//nolint:lll
 type OIDC struct {
 	Development bool   `             help:"Run OIDC in development mode: send debug messages to clients, generate secret and key if not provided. LEAKS SENSITIVE INFORMATION!"                      short:"O" yaml:"development"`
 	Secret      string `env:"SECRET" help:"Base64 (URL encoding, no padding) encoded 32 bytes used for tokens' HMAC. Environment variable: ${env}."                             placeholder:"STRING"           yaml:"secret"`
@@ -101,7 +104,7 @@ type Service struct {
 	mailFrom   string
 }
 
-func (config *Config) Run() errors.E {
+func (config *Config) Run() errors.E { //nolint:maintidx
 	var secret []byte
 	if config.OIDC.Secret != "" {
 		var err error
@@ -109,11 +112,11 @@ func (config *Config) Run() errors.E {
 		if err != nil {
 			return errors.WithMessage(err, "invalid OIDC secret")
 		}
-		if len(secret) != 32 {
+		if len(secret) != oidcCSecretSize {
 			return errors.Errorf("OIDC secret does not have 32 bytes, but %d", len(secret))
 		}
 	} else if config.OIDC.Development {
-		secret = make([]byte, 32)
+		secret = make([]byte, oidcCSecretSize)
 		_, err := rand.Read(secret)
 		if err != nil {
 			return errors.WithStack(err)
