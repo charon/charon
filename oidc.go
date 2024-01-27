@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
-	"net/http"
 	"net/url"
 
 	"github.com/alexedwards/argon2id"
@@ -13,7 +12,6 @@ import (
 	"github.com/ory/fosite/storage"
 	"github.com/ory/fosite/token/jwt"
 	"gitlab.com/tozd/go/errors"
-	"gitlab.com/tozd/waf"
 )
 
 type argon2idHasher struct{}
