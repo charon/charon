@@ -316,10 +316,12 @@ func (config *Config) Run() errors.E { //nolint:maintidx
 		return errE
 	}
 
-	// We start initialization of providers.
+	// We start initialization of OIDC and providers.
 	// Initialization will block until the server runs.
+	go service.oidc()
 	go service.oidcProviders()
 	go service.passkeyProvider()
+	go service.codeProvider()
 
 	// We stop the server gracefully on ctrl-c and TERM signal.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
