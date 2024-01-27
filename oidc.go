@@ -5,13 +5,19 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"net/url"
+	"time"
 
 	"github.com/alexedwards/argon2id"
+	"github.com/mohae/deepcopy"
 	"github.com/ory/fosite"
 	"github.com/ory/fosite/compose"
+	"github.com/ory/fosite/handler/oauth2"
+	"github.com/ory/fosite/handler/openid"
+	"github.com/ory/fosite/handler/rfc7523"
 	"github.com/ory/fosite/storage"
 	"github.com/ory/fosite/token/jwt"
 	"gitlab.com/tozd/go/errors"
+	"gitlab.com/tozd/identifier"
 )
 
 type argon2idHasher struct{}
@@ -127,4 +133,142 @@ func initOIDC(config *Config, service *Service, domain string, secret []byte, pr
 			compose.PushedAuthorizeHandlerFactory,
 		)
 	}
+}
+
+var (
+	_ fosite.Session             = (*OIDCSession)(nil)
+	_ openid.Session             = (*OIDCSession)(nil)
+	_ rfc7523.Session            = (*OIDCSession)(nil)
+	_ oauth2.JWTSessionContainer = (*OIDCSession)(nil)
+	_ fosite.ExtraClaimsSession  = (*OIDCSession)(nil)
+)
+
+// OIDCSession is a struct to store OIDC session (token) information (claims).
+// All fields are public so that JSON marshaling can preserve the object.
+// We use JSON marshaling when persisting sessions in the store.
+type OIDCSession struct {
+	Subject     identifier.Identifier          `json:"subject"`
+	ExpiresAt   map[fosite.TokenType]time.Time `json:"expiresAt"`
+	RequestedAt time.Time                      `json:"requestedAt"`
+	AuthTime    time.Time                      `json:"authTime"`
+	Client      identifier.Identifier          `json:"client"`
+	// Fosite modifies these structs in-place and we have to keep a pointer
+	// to them so that we return always the same struct between calls.
+	JWTClaims  *jwt.JWTClaims `json:"jwtClaims"`
+	JWTHeaders *jwt.Headers   `json:"jwtHeaders"`
+	// Fosite modifies these structs in-place and we have to keep a pointer
+	// to them so that we return always the same struct between calls.
+	// We use "Internal" suffix because names would otherwise overlap with getters.
+	IDTokenClaimsInternal  *jwt.IDTokenClaims `json:"idTokenClaims"`
+	IDTokenHeadersInternal *jwt.Headers       `json:"idTokenHeaders"`
+	Extra                  map[string]interface{}
+}
+
+// GetJWTClaims returns the claims of the JWT access token.
+func (s *OIDCSession) GetJWTClaims() jwt.JWTClaimsContainer {
+	if s.JWTClaims == nil {
+		s.JWTClaims = new(jwt.JWTClaims)
+	}
+
+	s.JWTClaims.Subject = s.Subject.String()
+	s.JWTClaims.Add("client_id", s.Client.String())
+
+	return s.JWTClaims
+}
+
+// GetJWTHeader returns the header of the JWT access token.
+func (s *OIDCSession) GetJWTHeader() *jwt.Headers {
+	if s.JWTHeaders == nil {
+		s.JWTHeaders = new(jwt.Headers)
+	}
+
+	return s.JWTHeaders
+}
+
+// IDTokenClaims returns the claims of the JWT ID token.
+func (s *OIDCSession) IDTokenClaims() *jwt.IDTokenClaims {
+	if s.IDTokenClaimsInternal == nil {
+		s.IDTokenClaimsInternal = new(jwt.IDTokenClaims)
+	}
+
+	s.IDTokenClaimsInternal.Subject = s.Subject.String()
+	s.IDTokenClaimsInternal.RequestedAt = s.RequestedAt
+	s.IDTokenClaimsInternal.AuthTime = s.AuthTime
+	s.IDTokenClaimsInternal.Add("client_id", s.Client.String())
+
+	return s.IDTokenClaimsInternal
+}
+
+// IDTokenHeaders returns the header of ID token.
+func (s *OIDCSession) IDTokenHeaders() *jwt.Headers {
+	if s.IDTokenHeadersInternal == nil {
+		s.IDTokenHeadersInternal = new(jwt.Headers)
+	}
+
+	return s.IDTokenHeadersInternal
+}
+
+// SetExpiresAt sets the expiration time of a token.
+func (s *OIDCSession) SetExpiresAt(key fosite.TokenType, exp time.Time) {
+	if s.ExpiresAt == nil {
+		s.ExpiresAt = make(map[fosite.TokenType]time.Time)
+	}
+
+	s.ExpiresAt[key] = exp
+}
+
+// GetExpiresAt returns the expiration time of a token if set, or time.IsZero() if not.
+func (s *OIDCSession) GetExpiresAt(key fosite.TokenType) time.Time {
+	if s.ExpiresAt == nil {
+		s.ExpiresAt = make(map[fosite.TokenType]time.Time)
+	}
+
+	_, ok := s.ExpiresAt[key]
+	if !ok {
+		return time.Time{}
+	}
+
+	return s.ExpiresAt[key]
+}
+
+// GetUsername returns the username, if set. This is optional and only used during token introspection.
+func (s *OIDCSession) GetUsername() string {
+	return ""
+}
+
+// GetSubject returns the subject, if set. This is optional and only used during token introspection.
+func (s *OIDCSession) GetSubject() string {
+	if s == nil {
+		return ""
+	}
+
+	return s.Subject.String()
+}
+
+// Clone clones the session.
+func (s *OIDCSession) Clone() fosite.Session {
+	if s == nil {
+		return nil
+	}
+
+	return deepcopy.Copy(s).(fosite.Session)
+}
+
+// GetExtraClaims implements fosite.ExtraClaimsSession.
+func (s *OIDCSession) GetExtraClaims() map[string]interface{} {
+	if s == nil {
+		return nil
+	}
+
+	if s.Extra == nil {
+		s.Extra = make(map[string]interface{})
+	}
+
+	return s.Extra
+}
+
+// SetSubject implements rfc7523.Session.
+func (s *OIDCSession) SetSubject(subject string) {
+	// Subject is validated earlier (in GetPublicKeyScopes).
+	s.Subject = identifier.MustFromString(subject)
 }
