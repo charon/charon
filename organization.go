@@ -72,6 +72,7 @@ func (o *Organization) Validate(ctx context.Context) errors.E {
 	appsSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
 	for i, orgApp := range o.Applications {
 		// IDs can be deterministic here.
+		// TODO: Make them be generated randomly. But update should the operate on JSON patches.
 		id := identifier.FromUUID(uuid.NewSHA1(uuid.UUID(*o.ID), orgApp.Application[:]))
 		if orgApp.ID == nil {
 			orgApp.ID = &id
