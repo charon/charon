@@ -25,7 +25,7 @@ const (
 	CompletedFailed Completed = "failed"
 )
 
-type FlowOIDC struct {
+type FlowOIDCProvider struct {
 	Verifier string
 	Nonce    string
 }
@@ -51,14 +51,14 @@ type Flow struct {
 	EmailOrUsername string
 	Attempts        int
 
-	OIDC     *FlowOIDC
-	Passkey  *webauthn.SessionData
-	Password *FlowPassword
-	Code     *FlowCode
+	OIDCProvider *FlowOIDCProvider
+	Passkey      *webauthn.SessionData
+	Password     *FlowPassword
+	Code         *FlowCode
 }
 
 func (f *Flow) Clear(emailOrUsername string) {
-	f.OIDC = nil
+	f.OIDCProvider = nil
 	f.Passkey = nil
 	f.Password = nil
 

@@ -120,15 +120,15 @@ func (s *Service) startOIDCProvider(w http.ResponseWriter, req *http.Request, fl
 
 	flow.Clear("")
 	flow.Provider = providerName
-	flow.OIDC = &FlowOIDC{
+	flow.OIDCProvider = &FlowOIDCProvider{
 		Verifier: "",
 		Nonce:    identifier.New().String(),
 	}
-	opts = append(opts, oidc.Nonce(flow.OIDC.Nonce))
+	opts = append(opts, oidc.Nonce(flow.OIDCProvider.Nonce))
 
 	if provider.SupportsPKCE {
 		verifier := oauth2.GenerateVerifier()
-		flow.OIDC.Verifier = verifier
+		flow.OIDCProvider.Verifier = verifier
 		opts = append(opts, oauth2.S256ChallengeOption(verifier))
 	}
 
@@ -179,16 +179,16 @@ func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, par
 		return
 	}
 
-	if flow.OIDC == nil {
+	if flow.OIDCProvider == nil {
 		s.BadRequestWithError(w, req, errors.New("provider not started"))
 		return
 	}
 
-	flowOIDC := *flow.OIDC
+	flowOIDC := *flow.OIDCProvider
 
-	// We reset flow.OIDC to nil always after this point, even if there is a failure,
+	// We reset flow.OIDCProvider to nil always after this point, even if there is a failure,
 	// so that nonce cannot be reused.
-	flow.OIDC = nil
+	flow.OIDCProvider = nil
 	errE := SetFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
