@@ -19,7 +19,7 @@ func (s *Service) oidcCUserInfo(w http.ResponseWriter, req *http.Request) {
 	oidc := s.oidc()
 
 	// Create an empty session object which serves as a prototype of the reconstructed session object.
-	session := &OIDCSession{}
+	session := new(OIDCSession)
 
 	tokenType, ar, err := oidc.IntrospectToken(ctx, fosite.AccessTokenFromRequest(req), fosite.AccessToken, session)
 	if err != nil {
@@ -33,14 +33,14 @@ func (s *Service) oidcCUserInfo(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if tokenType != fosite.AccessToken {
-		errE := errors.New("only access tokens are allowed in the authorization header") //nolint:govet
+		errE := errors.New("only access tokens are allowed in the authorization header")
 		w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Bearer error="invalid_token",error_description="%s"`, err.Error()))
 		s.WithError(ctx, errE)
 		waf.Error(w, req, http.StatusUnauthorized)
 		return
 	}
 
-	interim := ar.GetSession().(openid.Session).IDTokenClaims().ToMap()
+	interim := ar.GetSession().(openid.Session).IDTokenClaims().ToMap() //nolint:forcetypeassert
 	keysToDelete := []string{"aud", "auth_time", "exp", "gau", "iat", "iss", "jti", "nonce", "rat", "at_hash", "c_hash", "sid"}
 	for _, key := range keysToDelete {
 		delete(interim, key)

@@ -9,6 +9,7 @@ import (
 // TODO: Implement using fosite.
 //       See: https://github.com/ory/fosite/issues/405
 
+//nolint:tagliatelle
 type wellKnown struct {
 	// REQUIRED. URL using the https scheme with no query or fragment component that the OP asserts as its
 	// Issuer Identifier. If Issuer discovery is supported, this value MUST be identical to the issuer value
@@ -258,7 +259,7 @@ func (s *Service) oidcConfiguration(w http.ResponseWriter, req *http.Request) {
 	// TODO: Add EndSessionEndpoint.
 	// TODO: Add ServiceDocumentation.
 	// TODO: Can we support RegistrationEndpoint?
-	response := wellKnown{
+	response := wellKnown{ //nolint:exhaustruct
 		Issuer:                issuer,
 		AuthorizationEndpoint: issuer + authorizenPath,
 		TokenEndpoint:         issuer + tokenPath,

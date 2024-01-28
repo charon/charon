@@ -105,7 +105,7 @@ func initOIDC(config *Config, service *Service, domain string, secret []byte, pr
 			return privateKey, nil
 		}
 
-		return compose.Compose(
+		return compose.Compose( //nolint:forcetypeassert
 			config,
 			store,
 			&compose.CommonStrategy{
