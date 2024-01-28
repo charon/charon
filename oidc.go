@@ -54,8 +54,8 @@ func isRedirectURISecureStrict(_ context.Context, redirectURI *url.URL) bool {
 	return fosite.IsRedirectURISecureStrict(redirectURI)
 }
 
-func initOIDC(config *Config, service *Service, domain string, secret []byte, privateKey *ecdsa.PrivateKey) func() fosite.OAuth2Provider {
-	return func() fosite.OAuth2Provider {
+func initOIDC(config *Config, service *Service, domain string, secret []byte, privateKey *ecdsa.PrivateKey) func() *fosite.Fosite {
+	return func() *fosite.Fosite {
 		host, errE := getHost(config, domain)
 		if errE != nil {
 			panic(errE)
@@ -131,7 +131,7 @@ func initOIDC(config *Config, service *Service, domain string, secret []byte, pr
 
 			compose.OAuth2PKCEFactory,
 			compose.PushedAuthorizeHandlerFactory,
-		)
+		).(*fosite.Fosite)
 	}
 }
 

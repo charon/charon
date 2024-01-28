@@ -91,7 +91,7 @@ type Config struct {
 type Service struct {
 	waf.Service[*Site]
 
-	oidc          func() fosite.OAuth2Provider
+	oidc          func() *fosite.Fosite
 	oidcPublicKey jose.JSONWebKey
 
 	oidcProviders   func() map[Provider]oidcProvider

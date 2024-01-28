@@ -75,13 +75,23 @@
       "name": "OIDCConfiguration1",
       "path": "/.well-known/oauth-authorization-server",
       "api": false,
-      "get": true
+      "get": true,
+      "getCors": {
+        "allowedOrigins": ["*"],
+        "allowedMethods": ["GET", "HEAD"],
+        "maxAge": 600
+      }
     },
     {
       "name": "OIDCConfiguration2",
       "path": "/.well-known/openid-configuration",
       "api": false,
-      "get": true
+      "get": true,
+      "getCors": {
+        "allowedOrigins": ["*"],
+        "allowedMethods": ["GET", "HEAD"],
+        "maxAge": 600
+      }
     },
     {
       "name": "Applications",
