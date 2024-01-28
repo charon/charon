@@ -260,7 +260,7 @@ func (config *Config) Run() errors.E { //nolint:maintidx
 	}
 
 	service := &Service{ //nolint:forcetypeassert
-		Service: waf.Service[*Site]{ //nolint:exhaustruct
+		Service: waf.Service[*Site]{
 			Logger:          config.Logger,
 			CanonicalLogger: config.Logger,
 			WithContext:     config.WithContext,

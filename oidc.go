@@ -165,7 +165,7 @@ type OIDCSession struct {
 }
 
 // GetJWTClaims returns the claims of the JWT access token.
-func (s *OIDCSession) GetJWTClaims() jwt.JWTClaimsContainer {
+func (s *OIDCSession) GetJWTClaims() jwt.JWTClaimsContainer { //nolint:ireturn
 	if s.JWTClaims == nil {
 		s.JWTClaims = new(jwt.JWTClaims)
 	}
@@ -246,12 +246,12 @@ func (s *OIDCSession) GetSubject() string {
 }
 
 // Clone clones the session.
-func (s *OIDCSession) Clone() fosite.Session {
+func (s *OIDCSession) Clone() fosite.Session { //nolint:ireturn
 	if s == nil {
 		return nil
 	}
 
-	return deepcopy.Copy(s).(fosite.Session)
+	return deepcopy.Copy(s).(fosite.Session) //nolint:forcetypeassert
 }
 
 // GetExtraClaims implements fosite.ExtraClaimsSession.
