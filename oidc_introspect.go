@@ -3,7 +3,6 @@ package charon
 import (
 	"net/http"
 
-	"github.com/ory/fosite"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/waf"
 )
@@ -17,7 +16,7 @@ func (s *Service) OIDCIntrospectPost(w http.ResponseWriter, req *http.Request, _
 	oidc := s.oidc()
 
 	// Create an empty session object which serves as a prototype of the reconstructed session object.
-	session := new(fosite.DefaultSession)
+	session := new(OIDCSession)
 
 	ir, err := oidc.NewIntrospectionRequest(ctx, req, session)
 	if err != nil {
