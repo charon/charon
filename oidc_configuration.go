@@ -270,7 +270,7 @@ func (s *Service) oidcConfiguration(w http.ResponseWriter, req *http.Request) {
 		ResponseTypesSupported: []string{"id_token", "code", "code id_token"},
 		ResponseModesSupported: []string{"query", "form_post"},
 		GrantTypesSupported:    []string{"client_credentials", "authorization_code", "refresh_token"},
-		// We do not use pairwise type because we use unique subject identifiers per community, not per app/client,
+		// We do not use pairwise type because we use unique subject identifiers per organization, not per app/client,
 		// so we list "public" here instead of "pairwise".
 		SubjectTypesSupported:            []string{"public"},
 		IDTokenSigningAlgValuesSupported: []string{"ES256"},
