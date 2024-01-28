@@ -211,7 +211,7 @@ type wellKnown struct {
 	EndSessionEndpoint string `json:"end_session_endpoint,omitempty"`
 }
 
-// Provides discovery configuration.
+// oidcConfiguration provides discovery configuration.
 func (s *Service) oidcConfiguration(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	oidc := s.oidc()
