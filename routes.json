@@ -40,7 +40,13 @@
       "name": "OIDCRevoke",
       "path": "/auth/oidc/revoke",
       "api": true,
-      "get": false
+      "get": false,
+      "apiCors": {
+        "allowedOrigins": ["*"],
+        "allowedMethods": ["POST"],
+        "allowedHeaders": ["Authorization"],
+        "maxAge": 600
+      }
     },
     {
       "name": "OIDCIntrospect",
@@ -58,7 +64,12 @@
       "name": "OIDCKeys",
       "path": "/.well-known/jwks.json",
       "api": false,
-      "get": true
+      "get": true,
+      "getCors": {
+        "allowedOrigins": ["*"],
+        "allowedMethods": ["GET", "HEAD"],
+        "maxAge": 600
+      }
     },
     {
       "name": "OIDCConfiguration1",

@@ -6,6 +6,7 @@ require (
 	github.com/alecthomas/kong v0.8.1
 	github.com/alexedwards/argon2id v1.0.0
 	github.com/go-jose/go-jose/v3 v3.0.1
+	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/ory/fosite v0.45.0
 	github.com/wneessen/go-mail v0.4.0
 	gitlab.com/tozd/go/cli v0.2.2
@@ -13,7 +14,7 @@ require (
 	gitlab.com/tozd/go/x v0.0.0-20231203095540-41b15b78555f
 	gitlab.com/tozd/go/zerolog v0.6.0
 	gitlab.com/tozd/identifier v0.1.0
-	gitlab.com/tozd/waf v0.6.0
+	gitlab.com/tozd/waf v0.7.0
 	golang.org/x/oauth2 v0.13.0
 )
 
@@ -48,13 +49,13 @@ require (
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/goveralls v0.0.12 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
-	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/openzipkin/zipkin-go v0.4.1 // indirect
 	github.com/ory/go-acc v0.2.9-0.20230103102148-6b1c9a70dbbe // indirect
 	github.com/ory/go-convenience v0.1.0 // indirect
 	github.com/ory/x v0.0.575 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.9 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/rs/cors v1.10.1 // indirect
 	github.com/seatgeek/logrus-gelf-formatter v0.0.0-20210414080842-5b05eb8ff761 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/spf13/afero v1.9.5 // indirect

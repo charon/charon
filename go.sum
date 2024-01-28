@@ -460,6 +460,8 @@ github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFR
 github.com/rogpeppe/go-internal v1.9.0/go.mod h1:WtVeX8xhTBvf0smdhujwtBcq4Qrzq/fJaraNFVN+nFs=
 github.com/rogpeppe/go-internal v1.11.0 h1:cWPaGQEPrBb5/AsnsZesgZZ9yb1OQ+GOISoDNXVBh4M=
 github.com/rogpeppe/go-internal v1.11.0/go.mod h1:ddIwULY96R17DhadqLgMfk9H9tvdUzkipdSkR5nkCZA=
+github.com/rs/cors v1.10.1 h1:L0uuZVXIKlI1SShY2nhFfo44TYvDPQ1w4oFkUJNfhyo=
+github.com/rs/cors v1.10.1/go.mod h1:XyqrcTp5zjWr1wsJ8PIRZssZ8b/WMcMf71DJnit4EMU=
 github.com/rs/xid v1.2.1/go.mod h1:+uKXf+4Djp6Md1KODXJxgGQPKngRmWyn10oCKFzNHOQ=
 github.com/rs/xid v1.5.0 h1:mKX4bl4iPYJtEIxp6CYiUuLQ/8DYMoz0PUdtGgMFRVc=
 github.com/rs/xid v1.5.0/go.mod h1:trrq9SKmegXys3aeAKXMUTdJsYXVwGY3RLcfgqegfbg=
@@ -558,8 +560,8 @@ gitlab.com/tozd/go/zerolog v0.6.0 h1:+nR1D6w2afK6nXId64untH8J9cd4catcK0i0m4j//m4
 gitlab.com/tozd/go/zerolog v0.6.0/go.mod h1:my9jXGUOlH2Ln9PHPutHmUXZmExm3JO69vlcU3QKjto=
 gitlab.com/tozd/identifier v0.1.0 h1:+XX7yRwUzbq1nf/+N/F+A0BpZyby77CuCOkbngkut/4=
 gitlab.com/tozd/identifier v0.1.0/go.mod h1:gq8Gs7n/c5Qo97QBi7sYDEbqqaj5D3bvujA/c2Linq4=
-gitlab.com/tozd/waf v0.6.0 h1:H8LjOVF0kvNFj8b/97QXnNABn6QSr6FcJikMNiGm3M8=
-gitlab.com/tozd/waf v0.6.0/go.mod h1:4fReJEN18UkFbKtWM+lbmIxJPVY7XBSpTd0OBTwtsdM=
+gitlab.com/tozd/waf v0.7.0 h1:tfARdJa6+oANEdr6PuZjR89tOaq7YGAk8yS2Hu/mtT4=
+gitlab.com/tozd/waf v0.7.0/go.mod h1:F1Tv6v2JjX9tszdKqQ7Wfl0lYqjEQJTTByTBcpPEa2A=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=
 go.opencensus.io v0.22.2/go.mod h1:yxeiOL68Rb0Xd1ddK5vPZ/oVn4vY4Ynel7k9FzqtOIw=
