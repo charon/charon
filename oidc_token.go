@@ -1,0 +1,52 @@
+package charon
+
+import (
+	"net/http"
+
+	"gitlab.com/tozd/go/errors"
+	"gitlab.com/tozd/identifier"
+	"gitlab.com/tozd/waf"
+)
+
+// OIDCTokenPost handler handles requests to issue access and other tokens.
+func (s *Service) OIDCTokenPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	ctx := req.Context()
+	oidc := s.oidc()
+
+	// Create an empty session object which serves as a prototype of the reconstructed session object.
+	// For client credentials grant type there is no reconstruction and then we set subject to client's
+	// ID in those tokens, because client credentials based tokens do not have associated
+	// user, but represent access for the client itself.
+	sessionData := new(OIDCSession)
+
+	accessRequest, err := oidc.NewAccessRequest(ctx, req, sessionData)
+	if err != nil {
+		errE := errors.WithStack(err)
+		s.WithError(ctx, errE)
+		oidc.WriteAccessError(ctx, w, accessRequest, errE)
+		return
+	}
+
+	if accessRequest.GetGrantTypes().ExactOne("client_credentials") {
+		// This is used by the client credentials grant type. For implicit
+		// and explicit flows this is done in the authorization handler.
+
+		grantAllAudiences(accessRequest)
+		grantAllScopes(accessRequest)
+
+		session := accessRequest.GetSession().(*OIDCSession) //nolint:errcheck
+		client := accessRequest.GetClient().(*OIDCClient)    //nolint:errcheck
+		session.Client = identifier.MustFromString(client.GetID())
+		session.Subject = client.GetAppID()
+	}
+
+	response, err := oidc.NewAccessResponse(ctx, accessRequest)
+	if err != nil {
+		errE := errors.WithStack(err)
+		s.WithError(ctx, errE)
+		oidc.WriteAccessError(ctx, w, accessRequest, errE)
+		return
+	}
+
+	oidc.WriteAccessResponse(ctx, w, accessRequest, response)
+}
