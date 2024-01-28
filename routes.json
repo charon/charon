@@ -34,7 +34,13 @@
       "name": "OIDCToken",
       "path": "/auth/oidc/token",
       "api": true,
-      "get": false
+      "get": false,
+      "apiCors": {
+        "allowedOrigins": ["*"],
+        "allowedMethods": ["POST"],
+        "allowedHeaders": ["Authorization"],
+        "maxAge": 600
+      }
     },
     {
       "name": "OIDCRevoke",
@@ -58,7 +64,13 @@
       "name": "OIDCUserInfo",
       "path": "/auth/oidc/userinfo",
       "api": true,
-      "get": false
+      "get": false,
+      "apiCors": {
+        "allowedOrigins": ["*"],
+        "allowedMethods": ["GET", "HEAD", "POST"],
+        "allowedHeaders": ["Authorization"],
+        "maxAge": 600
+      }
     },
     {
       "name": "OIDCKeys",
