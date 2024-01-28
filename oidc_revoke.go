@@ -3,6 +3,7 @@ package charon
 import (
 	"net/http"
 
+	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/waf"
 )
 
@@ -12,5 +13,12 @@ func (s *Service) OIDCRevokePost(w http.ResponseWriter, req *http.Request, _ waf
 	oidc := s.oidc()
 
 	err := oidc.NewRevocationRequest(ctx, req)
-	oidc.WriteRevocationResponse(ctx, w, err)
+	if err != nil {
+		errE := errors.WithStack(err)
+		s.WithError(ctx, errE)
+		oidc.WriteRevocationResponse(ctx, w, errE)
+		return
+	}
+
+	oidc.WriteRevocationResponse(ctx, w, nil)
 }
