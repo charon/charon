@@ -185,12 +185,12 @@ export type Applications = {
 export type Application = {
   id: string
   name: string
-  redirectPath: string
+  redirectPaths: string[]
 }
 
 export type ApplicationCreate = {
   name: string
-  redirectPath: string
+  redirectPaths: string[]
 }
 
 export type Organizations = {

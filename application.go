@@ -30,8 +30,8 @@ type Application struct {
 
 	Admins []identifier.Identifier `json:"admins"`
 
-	Name         string `json:"name"`
-	RedirectPath string `json:"redirectPath"`
+	Name          string   `json:"name"`
+	RedirectPaths []string `json:"redirectPaths"`
 }
 
 type ApplicationRef struct {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Application, Metadata } from "@/types"
 
-import { onBeforeMount, onUnmounted, ref, watch } from "vue"
+import { computed, onBeforeMount, onUnmounted, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import InputText from "@/components/InputText.vue"
 import Button from "@/components/Button.vue"
@@ -23,7 +23,17 @@ const updated = ref(false)
 const application = ref<Application | null>(null)
 const metadata = ref<Metadata>({})
 const name = ref("")
-const redirectPath = ref("")
+const redirectPaths = ref<string[]>([])
+
+// TODO: Support managing all redirect paths.
+const firstRedirectPath = computed({
+  get() {
+    return redirectPaths.value[0]
+  },
+  set(value) {
+    return redirectPaths.value.splice(0, 1, value)
+  },
+})
 
 function resetOnInteraction() {
   // We reset flags and errors on interaction.
@@ -33,7 +43,7 @@ function resetOnInteraction() {
   // purpose because they are used only on mount.
 }
 
-watch([name, redirectPath], resetOnInteraction)
+watch([name, redirectPaths], resetOnInteraction)
 
 onUnmounted(() => {
   abortController.abort()
@@ -54,7 +64,9 @@ async function loadData(init: boolean) {
 
     if (init) {
       name.value = data.doc.name
-      redirectPath.value = data.doc.redirectPath
+      // We have to make a copy of the array so that data.doc.redirectPaths
+      // is not changed when redirectPaths changes.
+      redirectPaths.value = [...data.doc.redirectPaths]
     }
   } catch (error) {
     if (abortController.signal.aborted) {
@@ -82,7 +94,7 @@ async function onSubmit() {
       const payload: Application = {
         id: props.id,
         name: name.value,
-        redirectPath: redirectPath.value,
+        redirectPaths: redirectPaths.value,
       }
       const url = router.apiResolve({
         name: "ApplicationUpdate",
@@ -123,7 +135,7 @@ async function onSubmit() {
           <label for="name" class="mb-1">Application name</label>
           <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0 || !metadata.can_update" required />
           <label for="name" class="mb-1 mt-4">OpenID Connect redirect path</label>
-          <InputText id="name" v-model="redirectPath" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0 || !metadata.can_update" required />
+          <InputText id="name" v-model="firstRedirectPath" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0 || !metadata.can_update" required />
           <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
           <div v-else-if="updated" class="mt-4 text-success-600">Application updated successfully.</div>
           <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
@@ -133,7 +145,12 @@ async function onSubmit() {
             <Button
               type="submit"
               primary
-              :disabled="name.length === 0 || redirectPath.length === 0 || (application!.name === name && application!.redirectPath === redirectPath) || mainProgress > 0"
+              :disabled="
+                name.length === 0 ||
+                firstRedirectPath.length === 0 ||
+                (application!.name === name && application!.redirectPaths[0] === firstRedirectPath) ||
+                mainProgress > 0
+              "
               >Update</Button
             >
           </div>

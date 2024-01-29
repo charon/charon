@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onUnmounted, ref } from "vue"
+import { computed, onUnmounted, ref } from "vue"
 import { useRouter } from "vue-router"
 import InputText from "@/components/InputText.vue"
 import Button from "@/components/Button.vue"
@@ -13,7 +13,17 @@ const mainProgress = ref(0)
 const abortController = new AbortController()
 const unexpectedError = ref("")
 const name = ref("")
-const redirectPath = ref("")
+const redirectPaths = ref<string[]>([])
+
+// TODO: Support managing all redirect paths.
+const firstRedirectPath = computed({
+  get() {
+    return redirectPaths.value[0]
+  },
+  set(value) {
+    return redirectPaths.value.splice(0, 1, value)
+  },
+})
 
 onUnmounted(() => {
   abortController.abort()
@@ -25,7 +35,7 @@ async function onSubmit() {
     unexpectedError.value = ""
     const payload: ApplicationCreate = {
       name: name.value,
-      redirectPath: redirectPath.value,
+      redirectPaths: redirectPaths.value,
     }
     const url = router.apiResolve({
       name: "ApplicationCreate",
@@ -60,13 +70,13 @@ async function onSubmit() {
           <label for="name" class="mb-1">Application name</label>
           <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0" required />
           <label for="name" class="mb-1 mt-4">OpenID Connect redirect path</label>
-          <InputText id="name" v-model="redirectPath" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0" required />
+          <InputText id="name" v-model="firstRedirectPath" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0" required />
           <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
           <div class="mt-4 flex flex-row justify-end">
             <!--
               Button is on purpose not disabled on unexpectedError so that user can retry.
             -->
-            <Button type="submit" primary :disabled="name.length === 0 || redirectPath.length === 0 || mainProgress > 0">Create</Button>
+            <Button type="submit" primary :disabled="name.length === 0 || firstRedirectPath.length === 0 || mainProgress > 0">Create</Button>
           </div>
         </form>
       </div>
