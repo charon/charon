@@ -227,8 +227,8 @@ var (
 
 // TODO: This JSON could be generated once and stored as []byte.
 
-// oidcConfiguration provides discovery configuration.
-func (s *Service) oidcConfiguration(w http.ResponseWriter, req *http.Request) {
+// oidcDiscovery provides discovery configuration.
+func (s *Service) oidcDiscovery(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	oidc := s.oidc()
 	issuer := oidc.Config.GetAccessTokenIssuer(ctx)
@@ -324,10 +324,10 @@ func (s *Service) oidcConfiguration(w http.ResponseWriter, req *http.Request) {
 	s.WriteJSON(w, req, response, nil)
 }
 
-func (s *Service) OIDCConfiguration1(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	s.oidcConfiguration(w, req)
+func (s *Service) OIDCDiscovery1(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	s.oidcDiscovery(w, req)
 }
 
-func (s *Service) OIDCConfiguration2(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	s.oidcConfiguration(w, req)
+func (s *Service) OIDCDiscovery2(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	s.oidcDiscovery(w, req)
 }

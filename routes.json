@@ -84,7 +84,7 @@
       }
     },
     {
-      "name": "OIDCConfiguration1",
+      "name": "OIDCDiscovery1",
       "path": "/.well-known/oauth-authorization-server",
       "api": false,
       "get": true,
@@ -95,7 +95,7 @@
       }
     },
     {
-      "name": "OIDCConfiguration2",
+      "name": "OIDCDiscovery2",
       "path": "/.well-known/openid-configuration",
       "api": false,
       "get": true,
