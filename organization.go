@@ -32,7 +32,10 @@ type OrganizationApplication struct {
 	ID          *identifier.Identifier `json:"id"`
 	Application identifier.Identifier  `json:"application"`
 
+	// TODO: This should really be a []byte, but should not be base64 encoded when in JSON. Go JSONv2 might support that.
 	Secret string `json:"secret"`
+
+	URLBase string `json:"urlBase"`
 }
 
 type Organization struct {

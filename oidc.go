@@ -276,3 +276,137 @@ func (s *OIDCSession) SetSubject(subject string) {
 	// Subject is validated earlier (in GetPublicKeyScopes).
 	s.Subject = identifier.MustFromString(subject)
 }
+
+var (
+	_ fosite.Client                   = (*OIDCClient)(nil)
+	_ fosite.OpenIDConnectClient      = (*OIDCClient)(nil)
+	_ fosite.ResponseModeClient       = (*OIDCClient)(nil)
+	_ fosite.ClientWithSecretRotation = (*OIDCClient)(nil)
+)
+
+type ClientType string
+
+const (
+	ClientPublic  ClientType = "public"
+	ClientBackend ClientType = "backend"
+	ClientService ClientType = "service"
+)
+
+// OIDCClient represents a configuration of the OIDC client for an app
+// enabled in an organization.
+type OIDCClient struct {
+	ID                      identifier.Identifier
+	Application             *Application
+	OrganizationApplication *OrganizationApplication
+	TokenEndpointAuthMethod string
+	Type                    ClientType
+}
+
+func (c *OIDCClient) GetAppID() identifier.Identifier {
+	return *c.OrganizationApplication.ID
+}
+
+// GetResponseModes implements fosite.ResponseModeClient.
+func (*OIDCClient) GetResponseModes() []fosite.ResponseModeType {
+	return responseModesSupported
+}
+
+// GetJSONWebKeys implements fosite.OpenIDConnectClient.
+func (*OIDCClient) GetJSONWebKeys() *jose.JSONWebKeySet {
+	// TODO: Support JWKs for authentication.
+	return nil
+}
+
+// GetJSONWebKeysURI implements fosite.OpenIDConnectClient.
+func (*OIDCClient) GetJSONWebKeysURI() string {
+	// We are not planing to support JWK URIs so that apps do not have to store secrets (we prefer to store them).
+	// If you need this feature please open an issue explaining the use cae and the app which needs it.
+	return ""
+}
+
+// GetRequestObjectSigningAlgorithm implements fosite.OpenIDConnectClient.
+func (*OIDCClient) GetRequestObjectSigningAlgorithm() string {
+	// We do not really care how the request object is signed, so we support anything fosite does.
+	return ""
+}
+
+// GetRequestURIs implements fosite.OpenIDConnectClient.
+func (*OIDCClient) GetRequestURIs() []string {
+	// We currently do not support allowlisting URIs for clients.
+	return nil
+}
+
+// GetTokenEndpointAuthMethod implements fosite.OpenIDConnectClient.
+func (c *OIDCClient) GetTokenEndpointAuthMethod() string {
+	if c.IsPublic() {
+		return "none"
+	}
+	return c.TokenEndpointAuthMethod
+}
+
+// GetTokenEndpointAuthSigningAlgorithm implements fosite.OpenIDConnectClient.
+func (*OIDCClient) GetTokenEndpointAuthSigningAlgorithm() string {
+	// TODO: Support JWKs for authentication.
+	return ""
+}
+
+// GetAudience implements fosite.Client.
+func (c *OIDCClient) GetAudience() fosite.Arguments {
+	return fosite.Arguments{c.ID.String()}
+}
+
+// GetGrantTypes implements fosite.Client.
+func (c *OIDCClient) GetGrantTypes() fosite.Arguments {
+	switch c.Type {
+	case ClientPublic:
+		fallthrough
+	case ClientBackend:
+		return fosite.Arguments{"authorization_code", "refresh_token"}
+	case ClientService:
+		return fosite.Arguments{"client_credentials"}
+	default:
+		panic(errors.Errorf("unknown client type: %s", c.Type))
+	}
+}
+
+// GetHashedSecret implements fosite.Client.
+func (c *OIDCClient) GetHashedSecret() []byte {
+	return []byte(c.OrganizationApplication.Secret)
+}
+
+// GetID implements fosite.Client.
+func (c *OIDCClient) GetID() string {
+	return c.ID.String()
+}
+
+// GetRedirectURIs implements fosite.Client.
+func (c *OIDCClient) GetRedirectURIs() []string {
+	redirects := []string{}
+	for _, redirect := range c.Application.RedirectPaths {
+		// TODO: Support arbitrary variables to be interpolated into app config.
+		redirects = append(redirects, c.OrganizationApplication.URLBase+redirect)
+	}
+	return redirects
+}
+
+// GetResponseTypes implements fosite.Client.
+func (*OIDCClient) GetResponseTypes() fosite.Arguments {
+	return fosite.Arguments{"id_token", "code", "code id_token"}
+}
+
+// GetScopes implements fosite.Client.
+func (*OIDCClient) GetScopes() fosite.Arguments {
+	// TODO: Support configurable scopes.
+	return fosite.Arguments{"openid", "offline_access"}
+}
+
+// IsPublic implements fosite.Client.
+func (c *OIDCClient) IsPublic() bool {
+	return c.Type == ClientPublic
+}
+
+// GetRotatedHashes implements fosite.ClientWithSecretRotation.
+func (*OIDCClient) GetRotatedHashes() [][]byte {
+	// We currently do not support secret rotation.
+	return nil
+}
