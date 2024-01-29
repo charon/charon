@@ -299,7 +299,7 @@ func (s *Service) oidcDiscovery(w http.ResponseWriter, req *http.Request) {
 		TokenEndpointAuthSigningAlgValuesSupported: signingAlgValuesSupported,
 		DisplayValuesSupported:                     []string{"page"},
 		ClaimTypesSupported:                        []string{"normal"},
-		// TODO: Extend ClaimsSupported with common scopes across all apps.
+		// TODO: Extend ClaimsSupported with common claims across all apps.
 		ClaimsSupported:           []string{},
 		ClaimsParameterSupported:  false,
 		RequestParameterSupported: true,
