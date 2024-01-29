@@ -109,6 +109,8 @@ func initOIDC(config *Config, service *Service, domain string, secret []byte, pr
 			config,
 			store,
 			&compose.CommonStrategy{
+				// TODO: Make HMACSHAStrategy use "charon" prefix instead of "ory" prefix.
+				//       See: https://github.com/ory/fosite/issues/789
 				CoreStrategy:               compose.NewOAuth2JWTStrategy(getPrivateKey, compose.NewOAuth2HMACStrategy(config), config),
 				OpenIDConnectTokenStrategy: compose.NewOpenIDConnectStrategy(getPrivateKey, config),
 				Signer: &jwt.DefaultSigner{
