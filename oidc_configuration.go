@@ -214,16 +214,16 @@ type wellKnown struct {
 	EndSessionEndpoint string `json:"end_session_endpoint,omitempty"`
 }
 
+//nolint:gochecknoglobals
 var (
 	responseModesSupported        = []fosite.ResponseModeType{fosite.ResponseModeQuery, fosite.ResponseModeFragment, fosite.ResponseModeFormPost}
 	responseModesSupportedStrings = []string{string(fosite.ResponseModeQuery), string(fosite.ResponseModeFragment), string(fosite.ResponseModeFormPost)}
+	signingAlgValuesSupported     = []string{
+		string(jose.RS256), string(jose.RS384), string(jose.RS512),
+		string(jose.ES256), string(jose.ES384), string(jose.ES512),
+		string(jose.PS256), string(jose.PS384), string(jose.PS512),
+	}
 )
-
-var signingAlgValuesSupported = []string{
-	string(jose.RS256), string(jose.RS384), string(jose.RS512),
-	string(jose.ES256), string(jose.ES384), string(jose.ES512),
-	string(jose.PS256), string(jose.PS384), string(jose.PS512),
-}
 
 // TODO: This JSON could be generated once and stored as []byte.
 

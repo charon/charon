@@ -34,8 +34,8 @@ func (s *Service) OIDCTokenPost(w http.ResponseWriter, req *http.Request, _ waf.
 		grantAllAudiences(accessRequest)
 		grantAllScopes(accessRequest)
 
-		session := accessRequest.GetSession().(*OIDCSession) //nolint:errcheck
-		client := accessRequest.GetClient().(*OIDCClient)    //nolint:errcheck
+		session := accessRequest.GetSession().(*OIDCSession) //nolint:errcheck,forcetypeassert
+		client := accessRequest.GetClient().(*OIDCClient)    //nolint:errcheck,forcetypeassert
 		session.Client = identifier.MustFromString(client.GetID())
 		session.Subject = client.GetAppID()
 	}
