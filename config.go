@@ -2,7 +2,6 @@ package charon
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
 	"embed"
@@ -63,11 +62,85 @@ type Mail struct {
 	From     string `                                                                    help:"From header for e-mails."                                                             placeholder:"EMAIL"  required:"" yaml:"from"`
 }
 
+type Keys struct {
+	RSA  string `env:"RSA"  help:"RSA private key. Environment variable: ${env}."               placeholder:"JWK" yaml:"rsa"`
+	P256 string `env:"P256" help:"P-256 private key. Environment variable: ${env}." name:"p256" placeholder:"JWK" yaml:"p256"`
+	P384 string `env:"P384" help:"P-384 private key. Environment variable: ${env}." name:"p384" placeholder:"JWK" yaml:"p384"`
+	P521 string `env:"P521" help:"P-521 private key. Environment variable: ${env}." name:"p521" placeholder:"JWK" yaml:"p521"`
+
+	rsa  *jose.JSONWebKey
+	p256 *jose.JSONWebKey
+	p384 *jose.JSONWebKey
+	p521 *jose.JSONWebKey
+}
+
+func (k *Keys) Init(development bool) errors.E {
+	if k.RSA != "" {
+		key, errE := makeRSAKey(k.RSA)
+		if errE != nil {
+			return errors.WithMessage(errE, "invalid RSA private key")
+		}
+		k.rsa = key
+	} else if development {
+		key, errE := generateRSAKey()
+		if errE != nil {
+			return errE
+		}
+		k.rsa = key
+	} else {
+		return errors.New("OIDC RSA private key not provided")
+	}
+
+	if k.P256 != "" {
+		key, errE := makeEllipticKey(k.P256, elliptic.P256(), "ES256")
+		if errE != nil {
+			return errors.WithMessage(errE, "invalid P256 private key")
+		}
+		k.p256 = key
+	} else if development {
+		key, errE := generateEllipticKey(elliptic.P256(), "ES256")
+		if errE != nil {
+			return errE
+		}
+		k.p256 = key
+	}
+
+	if k.P384 != "" {
+		key, errE := makeEllipticKey(k.P384, elliptic.P384(), "ES384")
+		if errE != nil {
+			return errors.WithMessage(errE, "invalid P384 private key")
+		}
+		k.p384 = key
+	} else if development {
+		key, errE := generateEllipticKey(elliptic.P384(), "ES384")
+		if errE != nil {
+			return errE
+		}
+		k.p384 = key
+	}
+
+	if k.P521 != "" {
+		key, errE := makeEllipticKey(k.P521, elliptic.P521(), "ES512")
+		if errE != nil {
+			return errors.WithMessage(errE, "invalid P521 private key")
+		}
+		k.p521 = key
+	} else if development {
+		key, errE := generateEllipticKey(elliptic.P521(), "ES512")
+		if errE != nil {
+			return errE
+		}
+		k.p521 = key
+	}
+
+	return nil
+}
+
 //nolint:lll
 type OIDC struct {
-	Development bool   `             help:"Run OIDC in development mode: send debug messages to clients, generate secret and key if not provided. LEAKS SENSITIVE INFORMATION!"                      short:"O" yaml:"development"`
-	Secret      string `env:"SECRET" help:"Base64 (URL encoding, no padding) encoded 32 bytes used for tokens' HMAC. Environment variable: ${env}."                             placeholder:"STRING"           yaml:"secret"`
-	Key         string `env:"KEY"    help:"ECDSA private key in JWK format for signing tokens. Only the key is used, other fields are ignored. Environment variable: ${env}."   placeholder:"JWK"              yaml:"key"`
+	Development bool   `                                        help:"Run OIDC in development mode: send debug messages to clients, generate secret and key if not provided. LEAKS SENSITIVE INFORMATION!"                                     short:"O" yaml:"development"`
+	Secret      string `         env:"SECRET"                   help:"Base64 (URL encoding, no padding) encoded 32 bytes used for tokens' HMAC. Environment variable: ${env}."                             placeholder:"BASE64"                          yaml:"secret"`
+	Keys        Keys   `embed:""              envprefix:"KEYS_" help:"Private keys in JWK format for signing tokens. Only keys in JWKs are used, other fields are ignored."                                                     prefix:"keys."           yaml:"keys"`
 }
 
 //nolint:lll
@@ -91,8 +164,8 @@ type Config struct {
 type Service struct {
 	waf.Service[*Site]
 
-	oidc          func() *fosite.Fosite
-	oidcPublicKey jose.JSONWebKey
+	oidc     func() *fosite.Fosite
+	oidcKeys *Keys
 
 	oidcProviders   func() map[Provider]oidcProvider
 	passkeyProvider func() *webauthn.WebAuthn
@@ -125,31 +198,7 @@ func (config *Config) Run() errors.E { //nolint:maintidx
 		return errors.New("OIDC secret not provided")
 	}
 
-	var privateKey *ecdsa.PrivateKey
-	if config.OIDC.Key != "" {
-		var jwk jose.JSONWebKey
-		err := json.Unmarshal([]byte(config.OIDC.Key), &jwk)
-		if err != nil {
-			return errors.WithMessage(err, "invalid OIDC private key")
-		}
-		var ok bool
-		privateKey, ok = jwk.Key.(*ecdsa.PrivateKey)
-		if !ok {
-			return errors.New("OIDC private key is not an ECDSA private key")
-		}
-	} else if config.OIDC.Development {
-		var err error
-		privateKey, err = ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-	} else {
-		return errors.New("OIDC private key not provided")
-	}
-
-	// We on purpose ignore all other fields and reconstruct JWK from scratch.
-	// This assures all our keys have same JWK representation.
-	oidcPublicKey, errE := makeJSONWebKey(&privateKey.PublicKey)
+	errE := config.OIDC.Keys.Init(config.OIDC.Development)
 	if errE != nil {
 		return errE
 	}
@@ -276,7 +325,7 @@ func (config *Config) Run() errors.E { //nolint:maintidx
 			},
 		},
 		oidc:            nil,
-		oidcPublicKey:   oidcPublicKey,
+		oidcKeys:        &config.OIDC.Keys,
 		oidcProviders:   nil,
 		passkeyProvider: nil,
 		codeProvider:    nil,
@@ -304,7 +353,7 @@ func (config *Config) Run() errors.E { //nolint:maintidx
 		service.Middleware = append(service.Middleware, service.RedirectToMainSite(domain))
 	}
 
-	service.oidc = sync.OnceValue(initOIDC(config, service, domain, secret, privateKey))
+	service.oidc = sync.OnceValue(initOIDC(config, service, domain, secret))
 
 	service.oidcProviders = sync.OnceValue(initOIDCProviders(config, service, domain, providers))
 	service.passkeyProvider = sync.OnceValue(initPasskeyProvider(config, domain))

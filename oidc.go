@@ -2,12 +2,12 @@ package charon
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"fmt"
 	"net/url"
 	"time"
 
 	"github.com/alexedwards/argon2id"
+	"github.com/go-jose/go-jose/v3"
 	"github.com/mohae/deepcopy"
 	"github.com/ory/fosite"
 	"github.com/ory/fosite/compose"
@@ -54,7 +54,7 @@ func isRedirectURISecureStrict(_ context.Context, redirectURI *url.URL) bool {
 	return fosite.IsRedirectURISecureStrict(redirectURI)
 }
 
-func initOIDC(config *Config, service *Service, domain string, secret []byte, privateKey *ecdsa.PrivateKey) func() *fosite.Fosite {
+func initOIDC(config *Config, service *Service, domain string, secret []byte) func() *fosite.Fosite {
 	return func() *fosite.Fosite {
 		host, errE := getHost(config, domain)
 		if errE != nil {
@@ -101,8 +101,10 @@ func initOIDC(config *Config, service *Service, domain string, secret []byte, pr
 
 		// TODO: Support rotating private keys.
 		//       See: https://github.com/ory/fosite/issues/786
+		// TODO: Implement support and add all from signingAlgValuesSupported.
+		//       See: https://github.com/ory/fosite/issues/788
 		getPrivateKey := func(context.Context) (interface{}, error) {
-			return privateKey, nil
+			return service.oidcKeys.rsa, nil
 		}
 
 		return compose.Compose( //nolint:forcetypeassert

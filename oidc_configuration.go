@@ -3,6 +3,8 @@ package charon
 import (
 	"net/http"
 
+	"github.com/go-jose/go-jose/v3"
+	"github.com/ory/fosite"
 	"gitlab.com/tozd/waf"
 )
 
@@ -212,6 +214,19 @@ type wellKnown struct {
 	EndSessionEndpoint string `json:"end_session_endpoint,omitempty"`
 }
 
+var (
+	responseModesSupported        = []fosite.ResponseModeType{fosite.ResponseModeQuery, fosite.ResponseModeFragment, fosite.ResponseModeFormPost}
+	responseModesSupportedStrings = []string{string(fosite.ResponseModeQuery), string(fosite.ResponseModeFragment), string(fosite.ResponseModeFormPost)}
+)
+
+var signingAlgValuesSupported = []string{
+	string(jose.RS256), string(jose.RS384), string(jose.RS512),
+	string(jose.ES256), string(jose.ES384), string(jose.ES512),
+	string(jose.PS256), string(jose.PS384), string(jose.PS512),
+}
+
+// TODO: This JSON could be generated once and stored as []byte.
+
 // oidcConfiguration provides discovery configuration.
 func (s *Service) oidcConfiguration(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
@@ -268,17 +283,20 @@ func (s *Service) oidcConfiguration(w http.ResponseWriter, req *http.Request) {
 		// TODO: Extend ScopesSupported with common scopes across all apps.
 		ScopesSupported:        []string{"openid", "offline_access"},
 		ResponseTypesSupported: []string{"id_token", "code", "code id_token"},
-		ResponseModesSupported: []string{"query", "form_post"},
+		ResponseModesSupported: responseModesSupportedStrings,
 		GrantTypesSupported:    []string{"client_credentials", "authorization_code", "refresh_token"},
 		// We do not use pairwise type because we use unique subject identifiers per organization, not per app/client,
 		// so we list "public" here instead of "pairwise".
-		SubjectTypesSupported:            []string{"public"},
-		IDTokenSigningAlgValuesSupported: []string{"ES256"},
-		// TODO: Implement support and add "ES256".
-		UserinfoSigningAlgValuesSupported:          []string{"none"},
-		RequestObjectSigningAlgValuesSupported:     []string{"ES256"},
-		TokenEndpointAuthMethodsSupported:          []string{"client_secret_post", "client_secret_basic", "private_key_jwt", "none"},
-		TokenEndpointAuthSigningAlgValuesSupported: []string{"ES256"},
+		SubjectTypesSupported: []string{"public"},
+		// TODO: Implement support and add all from signingAlgValuesSupported.
+		//       See: https://github.com/ory/fosite/issues/788
+		IDTokenSigningAlgValuesSupported: []string{"RS256"},
+		// TODO: Implement support and add all from signingAlgValuesSupported.
+		UserinfoSigningAlgValuesSupported: []string{"none"},
+		// We do not really care how the request object is signed, so we support anything fosite does.
+		RequestObjectSigningAlgValuesSupported:     append([]string{"none"}, signingAlgValuesSupported...),
+		TokenEndpointAuthMethodsSupported:          []string{"none", "client_secret_post", "client_secret_basic", "private_key_jwt"},
+		TokenEndpointAuthSigningAlgValuesSupported: signingAlgValuesSupported,
 		DisplayValuesSupported:                     []string{"page"},
 		ClaimTypesSupported:                        []string{"normal"},
 		// TODO: Extend ClaimsSupported with common scopes across all apps.
@@ -292,13 +310,13 @@ func (s *Service) oidcConfiguration(w http.ResponseWriter, req *http.Request) {
 		// nor we have a registration endpoint).
 		RequireRequestURIRegistration:                   true,
 		RevocationEndpoint:                              issuer + revokePath,
-		RevocationEndpointAuthMethodsSupported:          []string{"client_secret_post", "client_secret_basic", "private_key_jwt", "none"},
-		RevocationEndpointAuthSigningAlgValuesSupported: []string{"ES256"},
+		RevocationEndpointAuthMethodsSupported:          []string{"none", "client_secret_post", "client_secret_basic", "private_key_jwt"},
+		RevocationEndpointAuthSigningAlgValuesSupported: signingAlgValuesSupported,
 		IntrospectionEndpoint:                           issuer + introspectPath,
 		// TODO: Add "private_key_jwt" and "client_secret_post" once supported.
 		//       See: https://github.com/ory/fosite/issues/447
 		IntrospectionEndpointAuthMethodsSupported: []string{"bearer", "client_secret_basic"},
-		// TODO: Add "ES256" once "private_key_jwt" is supported.
+		// TODO: Use signingAlgValuesSupported once "private_key_jwt" is supported.
 		IntrospectionEndpointAuthSigningAlgValuesSupported: []string{},
 		CodeChallengeMethodsSupported:                      []string{"S256"},
 	}

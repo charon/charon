@@ -4,11 +4,14 @@ import (
 	"context"
 	"crypto"
 	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/rsa"
 	"crypto/sha1" //nolint:gosec
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"net"
@@ -238,10 +241,10 @@ func pointerEqual[T comparable](a *T, b *T) bool {
 // getKeyThumbprint computes SHA256 key thumbprint as described in RFC 7638,
 // which we use for the "kid" (key ID) field of a JWK.
 // See: https://tools.ietf.org/html/rfc7638
-func getKeyThumbprint(publicKey *ecdsa.PublicKey) (string, errors.E) {
+func getKeyThumbprint(publicKey interface{}, algorithm string) (string, errors.E) {
 	thumbprint, err := (&jose.JSONWebKey{ //nolint:exhaustruct
 		Key:       publicKey,
-		Algorithm: "ES256",
+		Algorithm: algorithm,
 		Use:       "sig",
 	}).Thumbprint(crypto.SHA256)
 	if err != nil {
@@ -250,32 +253,32 @@ func getKeyThumbprint(publicKey *ecdsa.PublicKey) (string, errors.E) {
 	return base64.RawURLEncoding.EncodeToString(thumbprint), nil
 }
 
-// getKeyFingerprints computes SHA1 and SHA256 key fingerprints as described in RFC 7517, section 4.8,
-// used for the "x5t" and "x5t#S256" fields of a JWK.
+// getKeyThumbprints computes SHA1 and SHA256 key thumbprints as described in RFC 7517,
+// section 4.8, used for the "x5t" and "x5t#S256" fields of a JWK.
 // See: https://tools.ietf.org/html/rfc7517#section-4.8
-func getKeyFingerprints(publicKey *ecdsa.PublicKey) ([]byte, []byte, errors.E) {
+func getKeyThumbprints(publicKey interface{}) ([]byte, []byte, errors.E) {
 	pemKey, err := x509.MarshalPKIXPublicKey(publicKey)
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
-	fingerprintsSha1 := sha1.Sum(pemKey) //nolint:gosec
-	fingerprintsSha256 := sha256.Sum256(pemKey)
-	return fingerprintsSha1[:], fingerprintsSha256[:], nil
+	thumbprintsSha1 := sha1.Sum(pemKey) //nolint:gosec
+	thumbprintsSha256 := sha256.Sum256(pemKey)
+	return thumbprintsSha1[:], thumbprintsSha256[:], nil
 }
 
-// makeJSONWebKey makes a JWK of the public key from the ECDSA public key.
-func makeJSONWebKey(publicKey *ecdsa.PublicKey) (jose.JSONWebKey, errors.E) {
-	thumbprint, errE := getKeyThumbprint(publicKey)
+// makeJSONWebKey makes a JWK of the private key.
+func makeJSONWebKey(privateKey crypto.Signer, algorithm string) (*jose.JSONWebKey, errors.E) {
+	thumbprint, errE := getKeyThumbprint(privateKey.Public(), algorithm)
 	if errE != nil {
-		return jose.JSONWebKey{}, errE //nolint:exhaustruct
+		return nil, errE
 	}
-	fingerprintsSha1, fingerprintsSha256, errE := getKeyFingerprints(publicKey)
+	thumbprintsSha1, thumbprintsSha256, errE := getKeyThumbprints(privateKey.Public())
 	if errE != nil {
-		return jose.JSONWebKey{}, errE //nolint:exhaustruct
+		return nil, errE
 	}
-	return jose.JSONWebKey{
-		Key:       publicKey,
-		Algorithm: "ES256",
+	return &jose.JSONWebKey{
+		Key:       privateKey,
+		Algorithm: algorithm,
 		Use:       "sig",
 		KeyID:     thumbprint,
 		// We initialize this explicitly to an empty slice so that it is not nil. Otherwise JSON
@@ -283,8 +286,71 @@ func makeJSONWebKey(publicKey *ecdsa.PublicKey) (jose.JSONWebKey, errors.E) {
 		Certificates:    []*x509.Certificate{},
 		CertificatesURL: nil,
 		// This is made into the "x5t" field.
-		CertificateThumbprintSHA1: fingerprintsSha1,
+		CertificateThumbprintSHA1: thumbprintsSha1,
 		// This is made into the "x5t#S256" field.
-		CertificateThumbprintSHA256: fingerprintsSha256,
+		CertificateThumbprintSHA256: thumbprintsSha256,
 	}, nil
+}
+
+func generateEllipticKey(c elliptic.Curve, algorithm string) (*jose.JSONWebKey, errors.E) {
+	privateKey, err := ecdsa.GenerateKey(c, rand.Reader)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return makeJSONWebKey(privateKey, algorithm)
+}
+
+func makeEllipticKey(privateKey string, c elliptic.Curve, algorithm string) (*jose.JSONWebKey, errors.E) {
+	var jwk jose.JSONWebKey
+	err := json.Unmarshal([]byte(privateKey), &jwk)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	key, ok := jwk.Key.(*ecdsa.PrivateKey)
+	if !ok {
+		return nil, errors.New("not an ECDSA private key")
+	}
+
+	if key.Params().Name != c.Params().Name {
+		errE := errors.New("a different curve than expected")
+		errors.Details(errE)["has"] = key.Params().Name
+		errors.Details(errE)["expected"] = c.Params().Name
+		return nil, errE
+	}
+
+	// We on purpose ignore all other fields and reconstruct JWK from scratch.
+	// This assures all our keys have same JWK representation.
+	return makeJSONWebKey(key, algorithm)
+}
+
+func generateRSAKey() (*jose.JSONWebKey, errors.E) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 4096) //nolint:gomnd
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	// TODO: This is currently hard-coded to RS256 until we can support all from signingAlgValuesSupported.
+	//       See: https://github.com/ory/fosite/issues/788
+	return makeJSONWebKey(privateKey, "RS256")
+}
+
+func makeRSAKey(privateKey string) (*jose.JSONWebKey, errors.E) {
+	var jwk jose.JSONWebKey
+	err := json.Unmarshal([]byte(privateKey), &jwk)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	key, ok := jwk.Key.(*rsa.PrivateKey)
+	if !ok {
+		return nil, errors.New("not an RSA private key")
+	}
+
+	// We on purpose ignore all other fields and reconstruct JWK from scratch.
+	// This assures all our keys have same JWK representation.
+	// TODO: This is currently hard-coded to RS256 until we can support all from signingAlgValuesSupported.
+	//       See: https://github.com/ory/fosite/issues/788
+	return makeJSONWebKey(key, "RS256")
 }
