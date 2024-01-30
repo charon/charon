@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { OrganizationCreate } from "@/types"
+import type { OrganizationCreate, OrganizationRef } from "@/types"
 
 import { onUnmounted, ref } from "vue"
 import { useRouter } from "vue-router"
@@ -31,10 +31,9 @@ async function onSubmit() {
       name: "OrganizationCreate",
     }).href
 
-    await postURL(url, payload, abortController.signal, mainProgress)
+    const organization = await postURL<OrganizationRef>(url, payload, abortController.signal, mainProgress)
 
-    // TODO: We should somehow inform the user that creation was successful.
-    router.push({ name: "Organizations" })
+    router.push({ name: "Organization", params: { id: organization.id } })
     // We increase the progress and never decrease it to wait for browser to do the redirect.
     mainProgress.value += 1
   } catch (error) {
@@ -62,6 +61,8 @@ async function onSubmit() {
         <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
           <label for="name" class="mb-1">Organization name</label>
           <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0" required />
+          <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
+          <div v-else class="mt-4">Pick a name. You will be able to configure the organization after it is created.</div>
           <div class="mt-4 flex flex-row justify-end">
             <!--
               Button is on purpose not disabled on unexpectedError so that user can retry.

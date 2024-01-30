@@ -178,9 +178,11 @@ type ItemTypes = BareItem | ItemTypes[]
 
 export type Metadata = Record<Key, ItemTypes>
 
-export type Applications = {
+export type Applications = ApplicationRef[]
+
+export type ApplicationRef = {
   id: string
-}[]
+}
 
 export type Application = {
   id: string
@@ -190,12 +192,13 @@ export type Application = {
 
 export type ApplicationCreate = {
   name: string
-  redirectPaths: string[]
 }
 
-export type Organizations = {
+export type Organizations = OrganizationRef[]
+
+export type OrganizationRef = {
   id: string
-}[]
+}
 
 export type OrganizationApplication = {
   id?: string

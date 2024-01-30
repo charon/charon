@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref } from "vue"
+import type { ApplicationCreate, ApplicationRef } from "@/types"
+
+import { onUnmounted, ref } from "vue"
 import { useRouter } from "vue-router"
 import InputText from "@/components/InputText.vue"
 import Button from "@/components/Button.vue"
 import NavBar from "@/components/NavBar.vue"
 import Footer from "@/components/Footer.vue"
-import { ApplicationCreate } from "@/types"
 import { postURL } from "@/api"
 
 const router = useRouter()
@@ -14,17 +15,6 @@ const mainProgress = ref(0)
 const abortController = new AbortController()
 const unexpectedError = ref("")
 const name = ref("")
-const redirectPaths = ref<string[]>([])
-
-// TODO: Support managing all redirect paths.
-const firstRedirectPath = computed({
-  get() {
-    return redirectPaths.value[0]
-  },
-  set(value) {
-    return redirectPaths.value.splice(0, 1, value)
-  },
-})
 
 onUnmounted(() => {
   abortController.abort()
@@ -36,16 +26,14 @@ async function onSubmit() {
     unexpectedError.value = ""
     const payload: ApplicationCreate = {
       name: name.value,
-      redirectPaths: redirectPaths.value,
     }
     const url = router.apiResolve({
       name: "ApplicationCreate",
     }).href
 
-    await postURL(url, payload, abortController.signal, mainProgress)
+    const application = await postURL<ApplicationRef>(url, payload, abortController.signal, mainProgress)
 
-    // TODO: We should somehow inform the user that creation was successful.
-    router.push({ name: "Applications" })
+    router.push({ name: "Application", params: { id: application.id } })
     // We increase the progress and never decrease it to wait for browser to do the redirect.
     mainProgress.value += 1
   } catch (error) {
@@ -73,14 +61,13 @@ async function onSubmit() {
         <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
           <label for="name" class="mb-1">Application name</label>
           <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0" required />
-          <label for="name" class="mb-1 mt-4">OpenID Connect redirect path</label>
-          <InputText id="name" v-model="firstRedirectPath" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0" required />
           <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
+          <div v-else class="mt-4">Pick a name. You will be able to configure the application after it is created.</div>
           <div class="mt-4 flex flex-row justify-end">
             <!--
               Button is on purpose not disabled on unexpectedError so that user can retry.
             -->
-            <Button type="submit" primary :disabled="name.length === 0 || firstRedirectPath.length === 0 || mainProgress > 0">Create</Button>
+            <Button type="submit" primary :disabled="name.length === 0 || mainProgress > 0">Create</Button>
           </div>
         </form>
       </div>
