@@ -22,6 +22,8 @@ import (
 
 type argon2idHasher struct{}
 
+var oidcStore = storage.NewMemoryStore()
+
 func (argon2idHasher) Compare(_ context.Context, hash, data []byte) error {
 	// TODO: Use byte as input and not string.
 	//       See: https://github.com/alexedwards/argon2id/issues/26
@@ -72,8 +74,6 @@ func initOIDC(config *Config, service *Service, domain string, secret []byte) fu
 
 		issuer := fmt.Sprintf("https://%s", host)
 
-		store := storage.NewMemoryStore()
-
 		config := &fosite.Config{ //nolint:exhaustruct
 			IDTokenIssuer: issuer,
 			// Send some debug messages to clients?
@@ -109,7 +109,7 @@ func initOIDC(config *Config, service *Service, domain string, secret []byte) fu
 
 		return compose.Compose( //nolint:forcetypeassert
 			config,
-			store,
+			oidcStore,
 			&compose.CommonStrategy{
 				// TODO: Make HMACSHAStrategy use "charon" prefix instead of "ory" prefix.
 				//       See: https://github.com/ory/fosite/issues/789
