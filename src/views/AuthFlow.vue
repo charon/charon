@@ -279,13 +279,12 @@ onBeforeUnmount(() => {
             <strong>{{ name }}</strong> is asking you to sign-in or sign-up. Please follow the steps below to do so.
           </div>
           <Stepper v-if="steps.length" v-slot="{ step, active, beforeActive }" :steps="steps" :current-step="currentStep">
-            <!-- TODO: Use text-balance instead of style here once TailwindCSS releases a new version. -->
             <!--
               TODO: Text wrapping can change as text changes between regular and bold.
                     Find a way to prevent that (maybe always use wrapping of a bold version, it is not a problem that
                     characters move inside the line but they should not move between lines and rewrapping should not happen).
             -->
-            <li class="text-center" style="text-wrap: balance">
+            <li class="text-center text-balance">
               <strong v-if="active">{{ step.name }}</strong>
               <a v-else-if="beforeActive && currentStep !== 'complete' && currentStep !== 'failure'" href="" class="link" @click.prevent="onPreviousStep(step.key)">{{
                 step.name

@@ -68,6 +68,23 @@
   .link.disabled:active {
     @apply text-primary-300;
   }
+
+  .animate-navbar {
+    animation-duration: 100ms;
+    animation-iteration-count: 1;
+    animation-timing-function: linear;
+    animation-name: animate-navbar;
+  }
+
+  @keyframes animate-navbar {
+    0% {
+      transform: translate3d(0, -100%, 0);
+    }
+
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+  }
 }
 
 .forward-enter-active,
