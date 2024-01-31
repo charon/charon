@@ -22,7 +22,7 @@ import (
 
 type argon2idHasher struct{}
 
-var oidcStore = storage.NewMemoryStore()
+var oidcStore = storage.NewMemoryStore() //nolint:gochecknoglobals
 
 func (argon2idHasher) Compare(_ context.Context, hash, data []byte) error {
 	// TODO: Use byte as input and not string.
@@ -379,7 +379,7 @@ func (c *OIDCClient) GetRedirectURIs() []string {
 	// for _, redirect := range c.Application.RedirectPaths {
 	// 	// TODO: Support arbitrary variables to be interpolated into app config.
 	// 	redirects = append(redirects, c.OrganizationApplication.URLBase+redirect)
-	// }
+	// }.
 	return redirects
 }
 

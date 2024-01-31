@@ -5,9 +5,13 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"net/url"
+	"regexp"
 	"slices"
+	"sort"
 	"sync"
 
+	mapset "github.com/deckarep/golang-set/v2"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
@@ -20,18 +24,254 @@ var (
 	ErrApplicationUnauthorized  = errors.Base("application change unauthorized")
 )
 
+type ClientType string
+
+const (
+	ClientPublic  ClientType = "public"
+	ClientBackend ClientType = "backend"
+	ClientService ClientType = "service"
+)
+
 var (
 	applications   = make(map[identifier.Identifier][]byte) //nolint:gochecknoglobals
 	applicationsMu = sync.RWMutex{}                         //nolint:gochecknoglobals
 )
 
+func validateRedirectURITemplates(redirectURITemplates []string, variables []Variable) ([]string, errors.E) {
+	if redirectURITemplates == nil {
+		redirectURITemplates = []string{}
+	}
+
+	templatesSet := mapset.NewThreadUnsafeSet[string]()
+	for i, template := range redirectURITemplates {
+		errE := validateRedirectURIsTemplate(template, variables)
+		if errE != nil {
+			errE = errors.WithMessage(errE, "redirect URI template")
+			errors.Details(errE)["i"] = i
+			return nil, errE
+		}
+
+		if templatesSet.Contains(template) {
+			errE := errors.New("duplicate redirect URI template")
+			errors.Details(errE)["i"] = i
+			errors.Details(errE)["template"] = template
+			return nil, errE
+		}
+		templatesSet.Add(template)
+	}
+
+	return redirectURITemplates, nil
+}
+
+func validateRedirectURIsTemplate(template string, variables []Variable) errors.E {
+	if template == "" {
+		return errors.New("cannot be empty")
+	}
+
+	vars := map[string]string{}
+	for _, variable := range variables {
+		vars[variable.Name] = validationValues[variable.Type]
+	}
+
+	value, errE := interpolateVariables(template, vars)
+	if errE != nil {
+		return errE
+	}
+
+	_, err := url.Parse(value)
+	if err != nil {
+		errE := errors.Wrap(err, "unable to parse resulting URI")
+		errors.Details(errE)["template"] = template
+		return errE
+	}
+
+	return nil
+}
+
+type clientType interface {
+	GetID() identifier.Identifier
+	GetClientType() ClientType
+	Validate(ctx context.Context, variables []Variable) errors.E
+}
+
+var _ clientType = (*ApplicationClientPublic)(nil)
+
+type ApplicationClientPublic struct {
+	ID          *identifier.Identifier `json:"id"`
+	Type        ClientType             `json:"type"`
+	Description string                 `json:"description,omitempty"`
+
+	RedirectURITemplates []string `json:"redirectUriTemplates"`
+}
+
+// GetID implements clientType.
+func (c *ApplicationClientPublic) GetID() identifier.Identifier {
+	return *c.ID
+}
+
+// GetClientType implements clientType.
+func (c *ApplicationClientPublic) GetClientType() ClientType {
+	return c.Type
+}
+
+// Validate implements clientType.
+func (c *ApplicationClientPublic) Validate(_ context.Context, variables []Variable) errors.E {
+	if c.ID == nil {
+		id := identifier.New()
+		c.ID = &id
+	}
+
+	if c.Type != ClientPublic {
+		return errors.New("invalid type")
+	}
+
+	redirectURIsTemplates, errE := validateRedirectURITemplates(c.RedirectURITemplates, variables)
+	if errE != nil {
+		return errE
+	}
+	c.RedirectURITemplates = redirectURIsTemplates
+
+	return nil
+}
+
+var _ clientType = (*ApplicationClientBackend)(nil)
+
+type ApplicationClientBackend struct {
+	ID          *identifier.Identifier `json:"id"`
+	Type        ClientType             `json:"type"`
+	Description string                 `json:"description,omitempty"`
+
+	RedirectURITemplates []string `json:"redirectUriTemplates"`
+}
+
+// GetID implements clientType.
+func (c *ApplicationClientBackend) GetID() identifier.Identifier {
+	return *c.ID
+}
+
+// GetClientType implements getClientType.
+func (c *ApplicationClientBackend) GetClientType() ClientType {
+	return c.Type
+}
+
+// Validate implements clientType.
+func (c *ApplicationClientBackend) Validate(_ context.Context, variables []Variable) errors.E {
+	if c.ID == nil {
+		id := identifier.New()
+		c.ID = &id
+	}
+
+	if c.Type != ClientBackend {
+		return errors.New("invalid type")
+	}
+
+	redirectURIsTemplates, errE := validateRedirectURITemplates(c.RedirectURITemplates, variables)
+	if errE != nil {
+		return errE
+	}
+	c.RedirectURITemplates = redirectURIsTemplates
+
+	return nil
+}
+
+var _ clientType = (*ApplicationClientService)(nil)
+
+type ApplicationClientService struct {
+	ID          *identifier.Identifier `json:"id"`
+	Type        ClientType             `json:"type"`
+	Description string                 `json:"description,omitempty"`
+}
+
+// GetID implements clientType.
+func (c *ApplicationClientService) GetID() identifier.Identifier {
+	return *c.ID
+}
+
+// GetClientType implements clientType.
+func (c *ApplicationClientService) GetClientType() ClientType {
+	return c.Type
+}
+
+// Validate implements clientType.
+func (c *ApplicationClientService) Validate(_ context.Context, _ []Variable) errors.E {
+	if c.ID == nil {
+		id := identifier.New()
+		c.ID = &id
+	}
+
+	if c.Type != ClientService {
+		return errors.New("invalid type")
+	}
+
+	return nil
+}
+
+type VariableType string
+
+const (
+	VariableTypeURIPrefix VariableType = "uriPrefix"
+)
+
+var validationValues = map[VariableType]string{ //nolint:gochecknoglobals
+	VariableTypeURIPrefix: "https://sub.example.com:8080/foo",
+}
+
+type Variable struct {
+	Name        string       `json:"name"`
+	Type        VariableType `json:"type"`
+	Description string       `json:"description,omitempty"`
+}
+
+func (v *Variable) Validate(_ context.Context) errors.E {
+	if v.Name == "" {
+		return errors.New("name is required")
+	}
+
+	switch v.Type {
+	case VariableTypeURIPrefix:
+	default:
+		return errors.New("invalid type")
+	}
+
+	return nil
+}
+
+var variableRegexp = regexp.MustCompile(`\{([^}]+)\}`)
+
+func interpolateVariables(template string, variables map[string]string) (string, errors.E) {
+	unmatchedVariables := []string{}
+	result := variableRegexp.ReplaceAllStringFunc(template, func(match string) string {
+		varName := match[1 : len(match)-1] // Removing the curly braces.
+		if value, ok := variables[varName]; ok {
+			return value
+		}
+		// Unmatched variable.
+		unmatchedVariables = append(unmatchedVariables, varName)
+		return ""
+	})
+
+	if len(unmatchedVariables) > 0 {
+		errE := errors.New("unknown variables")
+		sort.Strings(unmatchedVariables)
+		errors.Details(errE)["variables"] = unmatchedVariables
+		return "", errE
+	}
+
+	return result, nil
+}
+
 type Application struct {
 	ID *identifier.Identifier `json:"id"`
 
-	Admins []identifier.Identifier `json:"admins"`
+	Admins []AccountRef `json:"admins"`
 
-	Name          string   `json:"name"`
-	RedirectPaths []string `json:"redirectPaths"`
+	Name string `json:"name"`
+
+	IDScopes  []string `json:"idScopes"`
+	AppScopes []string `json:"appScopes"`
+
+	Variables []Variable   `json:"variables"`
+	Clients   []clientType `json:"clients"`
 }
 
 type ApplicationRef struct {
@@ -45,8 +285,81 @@ func (a *Application) Validate(ctx context.Context) errors.E {
 	}
 
 	account := mustGetAccount(ctx)
-	if !slices.Contains(a.Admins, account) {
-		a.Admins = append(a.Admins, account)
+	accountRef := AccountRef{account}
+	if !slices.Contains(a.Admins, accountRef) {
+		a.Admins = append(a.Admins, accountRef)
+	}
+
+	// We sort and remove duplicates.
+	slices.SortFunc(a.Admins, func(a AccountRef, b AccountRef) int {
+		return bytes.Compare(a.ID[:], b.ID[:])
+	})
+	a.Admins = slices.Compact(a.Admins)
+
+	if a.Name == "" {
+		return errors.New("name is required")
+	}
+
+	// We sort and remove duplicates.
+	slices.Sort(a.IDScopes)
+	a.IDScopes = slices.Compact(a.IDScopes)
+
+	// We sort and remove duplicates.
+	slices.Sort(a.AppScopes)
+	a.AppScopes = slices.Compact(a.AppScopes)
+
+	if a.Variables == nil {
+		// Default variable.
+		a.Variables = []Variable{{
+			Name:        "uriBase",
+			Type:        VariableTypeURIPrefix,
+			Description: "uriBase is a URI prefix used to construct URIs (e.g., OIDC redirect URIs) based on the domain on which the application is deployed.",
+		}}
+	}
+
+	variablesSet := mapset.NewThreadUnsafeSet[string]()
+	for i, variable := range a.Variables {
+		errE := variable.Validate(ctx)
+		if errE != nil {
+			errE = errors.WithMessage(errE, "variable")
+			errors.Details(errE)["i"] = i
+			return errE
+		}
+
+		if variablesSet.Contains(variable.Name) {
+			errE := errors.New("duplicate variable name")
+			errors.Details(errE)["i"] = i
+			errors.Details(errE)["name"] = variable.Name
+			return errE
+		}
+		variablesSet.Add(variable.Name)
+
+		// Variable might have been changed by Validate, so we assign it back.
+		a.Variables[i] = variable
+	}
+
+	if a.Clients == nil {
+		a.Clients = []clientType{}
+	}
+
+	clientsSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
+	for i, client := range a.Clients {
+		errE := client.Validate(ctx, a.Variables)
+		if errE != nil {
+			errE = errors.WithMessage(errE, "client")
+			errors.Details(errE)["i"] = i
+			return errE
+		}
+
+		if clientsSet.Contains(client.GetID()) {
+			errE := errors.New("duplicate client ID")
+			errors.Details(errE)["i"] = i
+			errors.Details(errE)["id"] = client.GetID()
+			return errE
+		}
+		clientsSet.Add(client.GetID())
+
+		// We do not need to assign client back because it is an interface (a pointer).
 	}
 
 	return nil
@@ -115,7 +428,7 @@ func UpdateApplication(ctx context.Context, application *Application) errors.E {
 	}
 
 	account := mustGetAccount(ctx)
-	if !slices.Contains(existingApplication.Admins, account) {
+	if !slices.Contains(existingApplication.Admins, AccountRef{account}) {
 		return errors.WithDetails(ErrApplicationUnauthorized, "id", *application.ID)
 	}
 
@@ -172,7 +485,7 @@ func (s *Service) returnApplication(ctx context.Context, w http.ResponseWriter, 
 	account := mustGetAccount(ctx)
 
 	s.WriteJSON(w, req, application, map[string]interface{}{
-		"can_update": slices.Contains(application.Admins, account),
+		"can_update": slices.Contains(application.Admins, AccountRef{account}),
 	})
 }
 
@@ -230,7 +543,7 @@ func (s *Service) ApplicationUpdatePost(w http.ResponseWriter, req *http.Request
 	}
 
 	var application Application
-	errE := x.DecodeJSON(req.Body, &application)
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &application)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
@@ -275,7 +588,7 @@ func (s *Service) ApplicationCreatePost(w http.ResponseWriter, req *http.Request
 	}
 
 	var application Application
-	errE := x.DecodeJSON(req.Body, &application)
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &application)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return

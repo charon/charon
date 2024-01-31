@@ -30,7 +30,7 @@ var (
 
 type OrganizationApplication struct {
 	ID          *identifier.Identifier `json:"id"`
-	Application identifier.Identifier  `json:"application"`
+	Application ApplicationRef         `json:"application"`
 
 	// TODO: This should really be a []byte, but should not be base64 encoded when in JSON. Go JSONv2 might support that.
 	Secret string `json:"secret"`
@@ -41,7 +41,7 @@ type OrganizationApplication struct {
 type Organization struct {
 	ID *identifier.Identifier `json:"id"`
 
-	Admins []identifier.Identifier `json:"admins"`
+	Admins []AccountRef `json:"admins"`
 
 	Name         string                    `json:"name"`
 	Applications []OrganizationApplication `json:"applications"`
@@ -58,13 +58,14 @@ func (o *Organization) Validate(ctx context.Context) errors.E {
 	}
 
 	account := mustGetAccount(ctx)
-	if !slices.Contains(o.Admins, account) {
-		o.Admins = append(o.Admins, account)
+	accountRef := AccountRef{account}
+	if !slices.Contains(o.Admins, accountRef) {
+		o.Admins = append(o.Admins, accountRef)
 	}
 
 	// We sort and remove duplicates.
-	slices.SortFunc(o.Admins, func(a identifier.Identifier, b identifier.Identifier) int {
-		return bytes.Compare(a[:], b[:])
+	slices.SortFunc(o.Admins, func(a AccountRef, b AccountRef) int {
+		return bytes.Compare(a.ID[:], b.ID[:])
 	})
 	o.Admins = slices.Compact(o.Admins)
 
@@ -76,23 +77,23 @@ func (o *Organization) Validate(ctx context.Context) errors.E {
 	for i, orgApp := range o.Applications {
 		// IDs can be deterministic here.
 		// TODO: Make them be generated randomly. But update should the operate on JSON patches.
-		id := identifier.FromUUID(uuid.NewSHA1(uuid.UUID(*o.ID), orgApp.Application[:]))
+		id := identifier.FromUUID(uuid.NewSHA1(uuid.UUID(*o.ID), orgApp.Application.ID[:]))
 		if orgApp.ID == nil {
 			orgApp.ID = &id
 		} else if *orgApp.ID != id {
 			errE := errors.New("invalid app ID")
 			errors.Details(errE)["id"] = *orgApp.ID
-			errors.Details(errE)["application"] = orgApp.Application
+			errors.Details(errE)["application"] = orgApp.Application.ID
 			return errE
 		}
 
-		if appsSet.Contains(orgApp.Application) {
+		if appsSet.Contains(orgApp.Application.ID) {
 			errE := errors.New("duplicate app")
 			errors.Details(errE)["id"] = *orgApp.ID
-			errors.Details(errE)["application"] = orgApp.Application
+			errors.Details(errE)["application"] = orgApp.Application.ID
 			return errE
 		}
-		appsSet.Add(orgApp.Application)
+		appsSet.Add(orgApp.Application.ID)
 
 		params, _, _, err := argon2id.DecodeHash(orgApp.Secret)
 		// TODO: What is a workflow to make these params stricter in the future?
@@ -105,7 +106,7 @@ func (o *Organization) Validate(ctx context.Context) errors.E {
 			params.KeyLength < argon2idParams.KeyLength {
 			errE := errors.WithMessage(err, "invalid app secret")
 			errors.Details(errE)["id"] = *orgApp.ID
-			errors.Details(errE)["application"] = orgApp.Application
+			errors.Details(errE)["application"] = orgApp.Application.ID
 			return errE
 		}
 
@@ -178,7 +179,7 @@ func UpdateOrganization(ctx context.Context, organization *Organization) errors.
 	}
 
 	account := mustGetAccount(ctx)
-	if !slices.Contains(existingOrganization.Admins, account) {
+	if !slices.Contains(existingOrganization.Admins, AccountRef{account}) {
 		return errors.WithDetails(ErrOrganizationUnauthorized, "id", organization.ID)
 	}
 
@@ -235,7 +236,7 @@ func (s *Service) returnOrganization(ctx context.Context, w http.ResponseWriter,
 	account := mustGetAccount(ctx)
 
 	s.WriteJSON(w, req, organization, map[string]interface{}{
-		"can_update": slices.Contains(organization.Admins, account),
+		"can_update": slices.Contains(organization.Admins, AccountRef{account}),
 	})
 }
 
@@ -293,7 +294,7 @@ func (s *Service) OrganizationUpdatePost(w http.ResponseWriter, req *http.Reques
 	}
 
 	var organization Organization
-	errE := x.DecodeJSON(req.Body, &organization)
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &organization)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
@@ -338,7 +339,7 @@ func (s *Service) OrganizationCreatePost(w http.ResponseWriter, req *http.Reques
 	}
 
 	var organization Organization
-	errE := x.DecodeJSON(req.Body, &organization)
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &organization)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return

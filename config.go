@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"embed"
 	"encoding/base64"
-	"encoding/json"
 	"io/fs"
 	"os"
 	"os/signal"
@@ -21,6 +20,7 @@ import (
 	"github.com/wneessen/go-mail"
 	"gitlab.com/tozd/go/cli"
 	"gitlab.com/tozd/go/errors"
+	"gitlab.com/tozd/go/x"
 	z "gitlab.com/tozd/go/zerolog"
 
 	"gitlab.com/tozd/waf"
@@ -210,9 +210,9 @@ func (config *Config) Run() errors.E { //nolint:maintidx
 	var routesConfig struct {
 		Routes []waf.Route `json:"routes"`
 	}
-	err := json.Unmarshal(routesConfiguration, &routesConfig)
-	if err != nil {
-		return errors.WithStack(err)
+	errE = x.UnmarshalWithoutUnknownFields(routesConfiguration, &routesConfig)
+	if errE != nil {
+		return errE
 	}
 
 	config.Server.Logger = config.Logger

@@ -158,7 +158,7 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 	}
 
 	var authFlowRequest AuthFlowRequest
-	errE := x.DecodeJSON(req.Body, &authFlowRequest)
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &authFlowRequest)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return

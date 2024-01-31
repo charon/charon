@@ -3,8 +3,13 @@ package charon
 import (
 	"net/http"
 
+	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 )
+
+type AccountRef struct {
+	ID identifier.Identifier `json:"id"`
+}
 
 // TODO: Allow specifying target to redirect to?
 //       How to do that in a way that we do not enable open redirect?
