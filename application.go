@@ -88,43 +88,19 @@ func validateRedirectURIsTemplate(template string, variables []Variable) errors.
 	return nil
 }
 
-type clientType interface {
-	GetID() identifier.Identifier
-	GetClientType() ClientType
-	Validate(ctx context.Context, variables []Variable) errors.E
-}
-
-var _ clientType = (*ApplicationClientPublic)(nil)
-
 type ApplicationClientPublic struct {
 	ID          *identifier.Identifier `json:"id"`
-	Type        ClientType             `json:"type"`
 	Description string                 `json:"description,omitempty"`
 
 	RedirectURITemplates []string `json:"redirectUriTemplates"`
 }
 
-// GetID implements clientType.
-func (c *ApplicationClientPublic) GetID() identifier.Identifier {
-	return *c.ID
-}
-
-// GetClientType implements clientType.
-func (c *ApplicationClientPublic) GetClientType() ClientType {
-	return c.Type
-}
-
-// Validate implements clientType.
 func (c *ApplicationClientPublic) Validate(_ context.Context, variables []Variable) errors.E {
 	if c.ID == nil {
 		id := identifier.New()
 		c.ID = &id
 	}
 
-	if c.Type != ClientPublic {
-		return errors.New("invalid type")
-	}
-
 	redirectURIsTemplates, errE := validateRedirectURITemplates(c.RedirectURITemplates, variables)
 	if errE != nil {
 		return errE
@@ -134,37 +110,19 @@ func (c *ApplicationClientPublic) Validate(_ context.Context, variables []Variab
 	return nil
 }
 
-var _ clientType = (*ApplicationClientBackend)(nil)
-
 type ApplicationClientBackend struct {
 	ID          *identifier.Identifier `json:"id"`
-	Type        ClientType             `json:"type"`
 	Description string                 `json:"description,omitempty"`
 
 	RedirectURITemplates []string `json:"redirectUriTemplates"`
 }
 
-// GetID implements clientType.
-func (c *ApplicationClientBackend) GetID() identifier.Identifier {
-	return *c.ID
-}
-
-// GetClientType implements getClientType.
-func (c *ApplicationClientBackend) GetClientType() ClientType {
-	return c.Type
-}
-
-// Validate implements clientType.
 func (c *ApplicationClientBackend) Validate(_ context.Context, variables []Variable) errors.E {
 	if c.ID == nil {
 		id := identifier.New()
 		c.ID = &id
 	}
 
-	if c.Type != ClientBackend {
-		return errors.New("invalid type")
-	}
-
 	redirectURIsTemplates, errE := validateRedirectURITemplates(c.RedirectURITemplates, variables)
 	if errE != nil {
 		return errE
@@ -174,33 +132,15 @@ func (c *ApplicationClientBackend) Validate(_ context.Context, variables []Varia
 	return nil
 }
 
-var _ clientType = (*ApplicationClientService)(nil)
-
 type ApplicationClientService struct {
 	ID          *identifier.Identifier `json:"id"`
-	Type        ClientType             `json:"type"`
 	Description string                 `json:"description,omitempty"`
 }
 
-// GetID implements clientType.
-func (c *ApplicationClientService) GetID() identifier.Identifier {
-	return *c.ID
-}
-
-// GetClientType implements clientType.
-func (c *ApplicationClientService) GetClientType() ClientType {
-	return c.Type
-}
-
-// Validate implements clientType.
 func (c *ApplicationClientService) Validate(_ context.Context, _ []Variable) errors.E {
 	if c.ID == nil {
 		id := identifier.New()
 		c.ID = &id
-	}
-
-	if c.Type != ClientService {
-		return errors.New("invalid type")
 	}
 
 	return nil
@@ -270,8 +210,10 @@ type Application struct {
 	IDScopes  []string `json:"idScopes"`
 	AppScopes []string `json:"appScopes"`
 
-	Variables []Variable   `json:"variables"`
-	Clients   []clientType `json:"clients"`
+	Variables      []Variable                 `json:"variables"`
+	ClientsPublic  []ApplicationClientPublic  `json:"clientsPublic"`
+	ClientsBackend []ApplicationClientBackend `json:"clientsBackend"`
+	ClientsService []ApplicationClientService `json:"clientsService"`
 }
 
 type ApplicationRef struct {
@@ -338,28 +280,78 @@ func (a *Application) Validate(ctx context.Context) errors.E {
 		a.Variables[i] = variable
 	}
 
-	if a.Clients == nil {
-		a.Clients = []clientType{}
+	if a.ClientsPublic == nil {
+		a.ClientsPublic = []ApplicationClientPublic{}
+	}
+
+	if a.ClientsBackend == nil {
+		a.ClientsBackend = []ApplicationClientBackend{}
+	}
+
+	if a.ClientsService == nil {
+		a.ClientsService = []ApplicationClientService{}
 	}
 
 	clientsSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
-	for i, client := range a.Clients {
+
+	for i, client := range a.ClientsPublic {
 		errE := client.Validate(ctx, a.Variables)
 		if errE != nil {
-			errE = errors.WithMessage(errE, "client")
+			errE = errors.WithMessage(errE, "public client")
 			errors.Details(errE)["i"] = i
 			return errE
 		}
 
-		if clientsSet.Contains(client.GetID()) {
+		if clientsSet.Contains(*client.ID) {
 			errE := errors.New("duplicate client ID")
 			errors.Details(errE)["i"] = i
-			errors.Details(errE)["id"] = client.GetID()
+			errors.Details(errE)["id"] = *client.ID
 			return errE
 		}
-		clientsSet.Add(client.GetID())
+		clientsSet.Add(*client.ID)
 
-		// We do not need to assign client back because it is an interface (a pointer).
+		// Client might have been changed by Validate, so we assign it back.
+		a.ClientsPublic[i] = client
+	}
+
+	for i, client := range a.ClientsBackend {
+		errE := client.Validate(ctx, a.Variables)
+		if errE != nil {
+			errE = errors.WithMessage(errE, "backend client")
+			errors.Details(errE)["i"] = i
+			return errE
+		}
+
+		if clientsSet.Contains(*client.ID) {
+			errE := errors.New("duplicate client ID")
+			errors.Details(errE)["i"] = i
+			errors.Details(errE)["id"] = *client.ID
+			return errE
+		}
+		clientsSet.Add(*client.ID)
+
+		// Client might have been changed by Validate, so we assign it back.
+		a.ClientsBackend[i] = client
+	}
+
+	for i, client := range a.ClientsService {
+		errE := client.Validate(ctx, a.Variables)
+		if errE != nil {
+			errE = errors.WithMessage(errE, "service client")
+			errors.Details(errE)["i"] = i
+			return errE
+		}
+
+		if clientsSet.Contains(*client.ID) {
+			errE := errors.New("duplicate client ID")
+			errors.Details(errE)["i"] = i
+			errors.Details(errE)["id"] = *client.ID
+			return errE
+		}
+		clientsSet.Add(*client.ID)
+
+		// Client might have been changed by Validate, so we assign it back.
+		a.ClientsService[i] = client
 	}
 
 	return nil
