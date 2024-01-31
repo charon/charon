@@ -315,7 +315,7 @@ func makeEllipticKey(privateKey string, c elliptic.Curve, algorithm string) (*jo
 
 	if key.Params().Name != c.Params().Name {
 		errE := errors.New("a different curve than expected")
-		errors.Details(errE)["has"] = key.Params().Name
+		errors.Details(errE)["got"] = key.Params().Name
 		errors.Details(errE)["expected"] = c.Params().Name
 		return nil, errE
 	}

@@ -284,14 +284,6 @@ var (
 	_ fosite.ClientWithSecretRotation = (*OIDCClient)(nil)
 )
 
-type ClientType string
-
-const (
-	ClientPublic  ClientType = "public"
-	ClientBackend ClientType = "backend"
-	ClientService ClientType = "service"
-)
-
 // OIDCClient represents a configuration of the OIDC client for an app
 // enabled in an organization.
 type OIDCClient struct {
@@ -365,7 +357,9 @@ func (c *OIDCClient) GetGrantTypes() fosite.Arguments {
 	case ClientService:
 		return fosite.Arguments{"client_credentials"}
 	default:
-		panic(errors.Errorf("unknown client type: %s", c.Type))
+		errE := errors.New("unknown client type")
+		errors.Details(errE)["type"] = c.Type
+		panic(errE)
 	}
 }
 
@@ -382,16 +376,18 @@ func (c *OIDCClient) GetID() string {
 // GetRedirectURIs implements fosite.Client.
 func (c *OIDCClient) GetRedirectURIs() []string {
 	redirects := []string{}
-	for _, redirect := range c.Application.RedirectPaths {
-		// TODO: Support arbitrary variables to be interpolated into app config.
-		redirects = append(redirects, c.OrganizationApplication.URLBase+redirect)
-	}
+	// for _, redirect := range c.Application.RedirectPaths {
+	// 	// TODO: Support arbitrary variables to be interpolated into app config.
+	// 	redirects = append(redirects, c.OrganizationApplication.URLBase+redirect)
+	// }
 	return redirects
 }
 
 // GetResponseTypes implements fosite.Client.
 func (*OIDCClient) GetResponseTypes() fosite.Arguments {
-	return fosite.Arguments{"id_token", "code", "code id_token"}
+	// We allow only code and require apps to use token endpoint to retrieve tokens.
+	// This prevents tokens from being logged anywhere.
+	return fosite.Arguments{"code"}
 }
 
 // GetScopes implements fosite.Client.

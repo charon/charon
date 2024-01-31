@@ -186,7 +186,10 @@ func (config *Config) Run() errors.E { //nolint:maintidx
 			return errors.WithMessage(err, "invalid OIDC secret")
 		}
 		if len(secret) != oidcCSecretSize {
-			return errors.Errorf("OIDC secret does not have 32 bytes, but %d", len(secret))
+			errE := errors.New("OIDC secret does not have valid length")
+			errors.Details(errE)["got"] = len(secret)
+			errors.Details(errE)["expected"] = 32
+			return errE
 		}
 	} else if config.OIDC.Development {
 		secret = make([]byte, oidcCSecretSize)
