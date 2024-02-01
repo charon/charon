@@ -147,7 +147,8 @@ type ApplicationTemplateClientBackend struct {
 
 	AdditionalScopes []string `json:"additionalScopes"`
 
-	RedirectURITemplates []string `json:"redirectUriTemplates"`
+	TokenEndpointAuthMethod string   `json:"tokenEndpointAuthMethod"`
+	RedirectURITemplates    []string `json:"redirectUriTemplates"`
 }
 
 func (c *ApplicationTemplateClientBackend) Validate(_ context.Context, variables []Variable) errors.E {
@@ -164,6 +165,15 @@ func (c *ApplicationTemplateClientBackend) Validate(_ context.Context, variables
 	slices.Sort(c.AdditionalScopes)
 	c.AdditionalScopes = slices.Compact(c.AdditionalScopes)
 
+	switch c.TokenEndpointAuthMethod {
+	case "client_secret_post":
+	case "client_secret_basic":
+	default:
+		errE := errors.New("unsupported token endpoint auth method")
+		errors.Details(errE)["method"] = c.TokenEndpointAuthMethod
+		return errE
+	}
+
 	redirectURIsTemplates, errE := validateRedirectURITemplates(c.RedirectURITemplates, variables)
 	if errE != nil {
 		return errE
@@ -178,6 +188,8 @@ type ApplicationTemplateClientService struct {
 	Description string                 `json:"description,omitempty"`
 
 	AdditionalScopes []string `json:"additionalScopes"`
+
+	TokenEndpointAuthMethod string `json:"tokenEndpointAuthMethod"`
 }
 
 func (c *ApplicationTemplateClientService) Validate(_ context.Context, _ []Variable) errors.E {
@@ -193,6 +205,15 @@ func (c *ApplicationTemplateClientService) Validate(_ context.Context, _ []Varia
 	// We sort and remove duplicates.
 	slices.Sort(c.AdditionalScopes)
 	c.AdditionalScopes = slices.Compact(c.AdditionalScopes)
+
+	switch c.TokenEndpointAuthMethod {
+	case "client_secret_post":
+	case "client_secret_basic":
+	default:
+		errE := errors.New("unsupported token endpoint auth method")
+		errors.Details(errE)["method"] = c.TokenEndpointAuthMethod
+		return errE
+	}
 
 	return nil
 }

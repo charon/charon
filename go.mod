@@ -108,7 +108,7 @@ require (
 	github.com/go-webauthn/webauthn v0.10.0
 	github.com/golang/gddo v0.0.0-20210115222349-20d68f94ee1f // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
-	github.com/google/uuid v1.5.0
+	github.com/google/uuid v1.5.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2
 	github.com/hashicorp/go-retryablehttp v0.7.5 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect

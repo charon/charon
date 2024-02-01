@@ -32,7 +32,7 @@ type Value struct {
 	Value string `json:"value"`
 }
 
-func (v *Value) Validate(ctx context.Context) errors.E {
+func (v *Value) Validate(_ context.Context) errors.E {
 	if v.Name == "" {
 		return errors.New("name is required")
 	}
@@ -49,7 +49,7 @@ type OrganizationApplicationClientPublic struct {
 	Client ClientRef              `json:"client"`
 }
 
-func (c *OrganizationApplicationClientPublic) Validate(ctx context.Context, applicationTemplate *ApplicationTemplate, values map[string]string) errors.E {
+func (c *OrganizationApplicationClientPublic) Validate(_ context.Context, applicationTemplate *ApplicationTemplate, values map[string]string) errors.E {
 	if c.ID == nil {
 		id := identifier.New()
 		c.ID = &id
@@ -65,6 +65,7 @@ func (c *OrganizationApplicationClientPublic) Validate(ctx context.Context, appl
 	// We do not check if interpolated templates have duplicates.
 	// This would be hard to fix for the user of the application template anyway.
 	for i, template := range client.RedirectURITemplates {
+		// TODO: We could store interpolated redirect URIs somewhere after this point so that we do not have to do interpolation again and again.
 		errE := validateRedirectURIsTemplate(template, values)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "redirect URI")
@@ -88,7 +89,7 @@ type OrganizationApplicationClientBackend struct {
 	Secret string `json:"secret"`
 }
 
-func (c *OrganizationApplicationClientBackend) Validate(ctx context.Context, applicationTemplate *ApplicationTemplate, values map[string]string) errors.E {
+func (c *OrganizationApplicationClientBackend) Validate(_ context.Context, applicationTemplate *ApplicationTemplate, values map[string]string) errors.E {
 	if c.ID == nil {
 		id := identifier.New()
 		c.ID = &id
@@ -118,6 +119,7 @@ func (c *OrganizationApplicationClientBackend) Validate(ctx context.Context, app
 	// We do not check if interpolated templates have duplicates.
 	// This would be hard to fix for the user of the application template anyway.
 	for i, template := range client.RedirectURITemplates {
+		// TODO: We could store interpolated redirect URIs somewhere after this point so that we do not have to do interpolation again and again.
 		errE := validateRedirectURIsTemplate(template, values)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "redirect URI")
@@ -141,7 +143,7 @@ type OrganizationApplicationClientService struct {
 	Secret string `json:"secret"`
 }
 
-func (c *OrganizationApplicationClientService) Validate(ctx context.Context, applicationTemplate *ApplicationTemplate, values map[string]string) errors.E {
+func (c *OrganizationApplicationClientService) Validate(_ context.Context, applicationTemplate *ApplicationTemplate, _ map[string]string) errors.E {
 	if c.ID == nil {
 		id := identifier.New()
 		c.ID = &id
@@ -186,7 +188,7 @@ type OrganizationApplication struct {
 	ClientsService []OrganizationApplicationClientService `json:"clientsService"`
 }
 
-func (a *OrganizationApplication) GetClientPublic(ctx context.Context, id identifier.Identifier) *OrganizationApplicationClientPublic {
+func (a *OrganizationApplication) GetClientPublic(id identifier.Identifier) *OrganizationApplicationClientPublic {
 	for _, client := range a.ClientsPublic {
 		if *client.ID == id {
 			return &client
@@ -196,7 +198,7 @@ func (a *OrganizationApplication) GetClientPublic(ctx context.Context, id identi
 	return nil
 }
 
-func (a *OrganizationApplication) GetClientBackend(ctx context.Context, id identifier.Identifier) *OrganizationApplicationClientBackend {
+func (a *OrganizationApplication) GetClientBackend(id identifier.Identifier) *OrganizationApplicationClientBackend {
 	for _, client := range a.ClientsBackend {
 		if *client.ID == id {
 			return &client
@@ -206,7 +208,7 @@ func (a *OrganizationApplication) GetClientBackend(ctx context.Context, id ident
 	return nil
 }
 
-func (a *OrganizationApplication) GetClientService(ctx context.Context, id identifier.Identifier) *OrganizationApplicationClientService {
+func (a *OrganizationApplication) GetClientService(id identifier.Identifier) *OrganizationApplicationClientService {
 	for _, client := range a.ClientsService {
 		if *client.ID == id {
 			return &client

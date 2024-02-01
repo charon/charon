@@ -14,7 +14,6 @@ import (
 	"github.com/ory/fosite/handler/oauth2"
 	"github.com/ory/fosite/handler/openid"
 	"github.com/ory/fosite/handler/rfc7523"
-	"github.com/ory/fosite/storage"
 	"github.com/ory/fosite/token/jwt"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/identifier"
@@ -22,7 +21,7 @@ import (
 
 type argon2idHasher struct{}
 
-var oidcStore = storage.NewMemoryStore() //nolint:gochecknoglobals
+var oidcStore = NewOIDCStore() //nolint:gochecknoglobals
 
 func (argon2idHasher) Compare(_ context.Context, hash, data []byte) error {
 	// TODO: Use byte as input and not string.
@@ -288,14 +287,16 @@ var (
 // enabled in an organization.
 type OIDCClient struct {
 	ID                      identifier.Identifier
-	Application             *ApplicationTemplate
-	OrganizationApplication *OrganizationApplication
-	TokenEndpointAuthMethod string
+	AppID                   identifier.Identifier
 	Type                    ClientType
+	TokenEndpointAuthMethod string
+	Scopes                  []string
+	RedirectURIs            []string
+	Secret                  []byte
 }
 
 func (c *OIDCClient) GetAppID() identifier.Identifier {
-	return *c.OrganizationApplication.ID
+	return c.AppID
 }
 
 // GetResponseModes implements fosite.ResponseModeClient.
@@ -330,9 +331,6 @@ func (*OIDCClient) GetRequestURIs() []string {
 
 // GetTokenEndpointAuthMethod implements fosite.OpenIDConnectClient.
 func (c *OIDCClient) GetTokenEndpointAuthMethod() string {
-	if c.IsPublic() {
-		return "none"
-	}
 	return c.TokenEndpointAuthMethod
 }
 
@@ -344,7 +342,7 @@ func (*OIDCClient) GetTokenEndpointAuthSigningAlgorithm() string {
 
 // GetAudience implements fosite.Client.
 func (c *OIDCClient) GetAudience() fosite.Arguments {
-	return fosite.Arguments{c.ID.String()}
+	return fosite.Arguments{c.GetID(), c.GetAppID().String()}
 }
 
 // GetGrantTypes implements fosite.Client.
@@ -365,7 +363,7 @@ func (c *OIDCClient) GetGrantTypes() fosite.Arguments {
 
 // GetHashedSecret implements fosite.Client.
 func (c *OIDCClient) GetHashedSecret() []byte {
-	return []byte(c.OrganizationApplication.Secret)
+	return c.Secret
 }
 
 // GetID implements fosite.Client.
@@ -375,12 +373,7 @@ func (c *OIDCClient) GetID() string {
 
 // GetRedirectURIs implements fosite.Client.
 func (c *OIDCClient) GetRedirectURIs() []string {
-	redirects := []string{}
-	// for _, redirect := range c.Application.RedirectPaths {
-	// 	// TODO: Support arbitrary variables to be interpolated into app config.
-	// 	redirects = append(redirects, c.OrganizationApplication.URLBase+redirect)
-	// }.
-	return redirects
+	return c.RedirectURIs
 }
 
 // GetResponseTypes implements fosite.Client.
@@ -391,9 +384,8 @@ func (*OIDCClient) GetResponseTypes() fosite.Arguments {
 }
 
 // GetScopes implements fosite.Client.
-func (*OIDCClient) GetScopes() fosite.Arguments {
-	// TODO: Support configurable scopes.
-	return fosite.Arguments{"openid", "offline_access"}
+func (c *OIDCClient) GetScopes() fosite.Arguments {
+	return fosite.Arguments(c.Scopes)
 }
 
 // IsPublic implements fosite.Client.
