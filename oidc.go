@@ -288,7 +288,7 @@ var (
 // enabled in an organization.
 type OIDCClient struct {
 	ID                      identifier.Identifier
-	Application             *Application
+	Application             *ApplicationTemplate
 	OrganizationApplication *OrganizationApplication
 	TokenEndpointAuthMethod string
 	Type                    ClientType

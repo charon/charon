@@ -106,25 +106,25 @@
       }
     },
     {
-      "name": "Applications",
+      "name": "ApplicationTemplates",
       "path": "/a",
       "api": true,
       "get": true
     },
     {
-      "name": "ApplicationCreate",
+      "name": "ApplicationTemplateCreate",
       "path": "/a/create",
       "api": true,
       "get": true
     },
     {
-      "name": "Application",
+      "name": "ApplicationTemplate",
       "path": "/a/:id",
       "api": true,
       "get": true
     },
     {
-      "name": "ApplicationUpdate",
+      "name": "ApplicationTemplateUpdate",
       "path": "/a/update/:id",
       "api": true,
       "get": false

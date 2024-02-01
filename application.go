@@ -19,9 +19,9 @@ import (
 )
 
 var (
-	ErrApplicationNotFound      = errors.Base("application not found")
-	ErrApplicationAlreadyExists = errors.Base("application already exists")
-	ErrApplicationUnauthorized  = errors.Base("application change unauthorized")
+	ErrApplicationTemplateNotFound      = errors.Base("application template not found")
+	ErrApplicationTemplateAlreadyExists = errors.Base("application template already exists")
+	ErrApplicationTemplateUnauthorized  = errors.Base("application template change unauthorized")
 )
 
 type ClientType string
@@ -33,8 +33,8 @@ const (
 )
 
 var (
-	applications   = make(map[identifier.Identifier][]byte) //nolint:gochecknoglobals
-	applicationsMu = sync.RWMutex{}                         //nolint:gochecknoglobals
+	applicationTemplates   = make(map[identifier.Identifier][]byte) //nolint:gochecknoglobals
+	applicationTemplatesMu = sync.RWMutex{}                         //nolint:gochecknoglobals
 )
 
 func validateRedirectURITemplates(redirectURITemplates []string, variables []Variable) ([]string, errors.E) {
@@ -109,7 +109,7 @@ type ClientRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
-type ApplicationClientPublic struct {
+type ApplicationTemplateClientPublic struct {
 	ID          *identifier.Identifier `json:"id"`
 	Description string                 `json:"description,omitempty"`
 
@@ -118,7 +118,7 @@ type ApplicationClientPublic struct {
 	RedirectURITemplates []string `json:"redirectUriTemplates"`
 }
 
-func (c *ApplicationClientPublic) Validate(_ context.Context, variables []Variable) errors.E {
+func (c *ApplicationTemplateClientPublic) Validate(_ context.Context, variables []Variable) errors.E {
 	if c.ID == nil {
 		id := identifier.New()
 		c.ID = &id
@@ -141,7 +141,7 @@ func (c *ApplicationClientPublic) Validate(_ context.Context, variables []Variab
 	return nil
 }
 
-type ApplicationClientBackend struct {
+type ApplicationTemplateClientBackend struct {
 	ID          *identifier.Identifier `json:"id"`
 	Description string                 `json:"description,omitempty"`
 
@@ -150,7 +150,7 @@ type ApplicationClientBackend struct {
 	RedirectURITemplates []string `json:"redirectUriTemplates"`
 }
 
-func (c *ApplicationClientBackend) Validate(_ context.Context, variables []Variable) errors.E {
+func (c *ApplicationTemplateClientBackend) Validate(_ context.Context, variables []Variable) errors.E {
 	if c.ID == nil {
 		id := identifier.New()
 		c.ID = &id
@@ -173,14 +173,14 @@ func (c *ApplicationClientBackend) Validate(_ context.Context, variables []Varia
 	return nil
 }
 
-type ApplicationClientService struct {
+type ApplicationTemplateClientService struct {
 	ID          *identifier.Identifier `json:"id"`
 	Description string                 `json:"description,omitempty"`
 
 	AdditionalScopes []string `json:"additionalScopes"`
 }
 
-func (c *ApplicationClientService) Validate(_ context.Context, _ []Variable) errors.E {
+func (c *ApplicationTemplateClientService) Validate(_ context.Context, _ []Variable) errors.E {
 	if c.ID == nil {
 		id := identifier.New()
 		c.ID = &id
@@ -252,8 +252,8 @@ func interpolateVariables(template string, values map[string]string) (string, er
 	return result, nil
 }
 
-// Application is an application template which can be deployed multiple times.
-type Application struct {
+// ApplicationTemplate is an application template which can be deployed multiple times.
+type ApplicationTemplate struct {
 	ID *identifier.Identifier `json:"id"`
 
 	// When this application template is embedded into OrganizationApplication, the
@@ -264,13 +264,13 @@ type Application struct {
 
 	IDScopes []string `json:"idScopes"`
 
-	Variables      []Variable                 `json:"variables"`
-	ClientsPublic  []ApplicationClientPublic  `json:"clientsPublic"`
-	ClientsBackend []ApplicationClientBackend `json:"clientsBackend"`
-	ClientsService []ApplicationClientService `json:"clientsService"`
+	Variables      []Variable                         `json:"variables"`
+	ClientsPublic  []ApplicationTemplateClientPublic  `json:"clientsPublic"`
+	ClientsBackend []ApplicationTemplateClientBackend `json:"clientsBackend"`
+	ClientsService []ApplicationTemplateClientService `json:"clientsService"`
 }
 
-func (a *Application) GetClientPublic(id identifier.Identifier) *ApplicationClientPublic {
+func (a *ApplicationTemplate) GetClientPublic(id identifier.Identifier) *ApplicationTemplateClientPublic {
 	for _, client := range a.ClientsPublic {
 		if client.ID != nil && *client.ID == id {
 			return &client
@@ -280,7 +280,7 @@ func (a *Application) GetClientPublic(id identifier.Identifier) *ApplicationClie
 	return nil
 }
 
-func (a *Application) GetClientBackend(id identifier.Identifier) *ApplicationClientBackend {
+func (a *ApplicationTemplate) GetClientBackend(id identifier.Identifier) *ApplicationTemplateClientBackend {
 	for _, client := range a.ClientsBackend {
 		if client.ID != nil && *client.ID == id {
 			return &client
@@ -290,7 +290,7 @@ func (a *Application) GetClientBackend(id identifier.Identifier) *ApplicationCli
 	return nil
 }
 
-func (a *Application) GetClientService(id identifier.Identifier) *ApplicationClientService {
+func (a *ApplicationTemplate) GetClientService(id identifier.Identifier) *ApplicationTemplateClientService {
 	for _, client := range a.ClientsService {
 		if client.ID != nil && *client.ID == id {
 			return &client
@@ -300,11 +300,11 @@ func (a *Application) GetClientService(id identifier.Identifier) *ApplicationCli
 	return nil
 }
 
-type ApplicationRef struct {
+type ApplicationTemplateRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
-func (a *Application) Validate(ctx context.Context) errors.E {
+func (a *ApplicationTemplate) Validate(ctx context.Context) errors.E {
 	if a.ID == nil {
 		id := identifier.New()
 		a.ID = &id
@@ -370,15 +370,15 @@ func (a *Application) Validate(ctx context.Context) errors.E {
 	}
 
 	if a.ClientsPublic == nil {
-		a.ClientsPublic = []ApplicationClientPublic{}
+		a.ClientsPublic = []ApplicationTemplateClientPublic{}
 	}
 
 	if a.ClientsBackend == nil {
-		a.ClientsBackend = []ApplicationClientBackend{}
+		a.ClientsBackend = []ApplicationTemplateClientBackend{}
 	}
 
 	if a.ClientsService == nil {
-		a.ClientsService = []ApplicationClientService{}
+		a.ClientsService = []ApplicationTemplateClientService{}
 	}
 
 	clientsSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
@@ -456,78 +456,78 @@ func (a *Application) Validate(ctx context.Context) errors.E {
 	return nil
 }
 
-func GetApplication(ctx context.Context, id identifier.Identifier) (*Application, errors.E) { //nolint:revive
-	applicationsMu.RLock()
-	defer applicationsMu.RUnlock()
+func GetApplicationTemplate(ctx context.Context, id identifier.Identifier) (*ApplicationTemplate, errors.E) { //nolint:revive
+	applicationTemplatesMu.RLock()
+	defer applicationTemplatesMu.RUnlock()
 
-	data, ok := applications[id]
+	data, ok := applicationTemplates[id]
 	if !ok {
-		return nil, errors.WithDetails(ErrApplicationNotFound, "id", id)
+		return nil, errors.WithDetails(ErrApplicationTemplateNotFound, "id", id)
 	}
-	var application Application
-	errE := x.UnmarshalWithoutUnknownFields(data, &application)
+	var applicationTemplate ApplicationTemplate
+	errE := x.UnmarshalWithoutUnknownFields(data, &applicationTemplate)
 	if errE != nil {
 		errors.Details(errE)["id"] = id
 		return nil, errE
 	}
-	return &application, nil
+	return &applicationTemplate, nil
 }
 
-func CreateApplication(ctx context.Context, application *Application) errors.E {
-	errE := application.Validate(ctx)
+func CreateApplicationTemplate(ctx context.Context, applicationTemplate *ApplicationTemplate) errors.E {
+	errE := applicationTemplate.Validate(ctx)
 	if errE != nil {
 		return errE
 	}
 
-	data, errE := x.MarshalWithoutEscapeHTML(application)
+	data, errE := x.MarshalWithoutEscapeHTML(applicationTemplate)
 	if errE != nil {
 		return errE
 	}
 
-	applicationsMu.Lock()
-	defer applicationsMu.Unlock()
+	applicationTemplatesMu.Lock()
+	defer applicationTemplatesMu.Unlock()
 
-	applications[*application.ID] = data
+	applicationTemplates[*applicationTemplate.ID] = data
 	return nil
 }
 
-func UpdateApplication(ctx context.Context, application *Application) errors.E {
-	errE := application.Validate(ctx)
+func UpdateApplicationTemplate(ctx context.Context, applicationTemplate *ApplicationTemplate) errors.E {
+	errE := applicationTemplate.Validate(ctx)
 	if errE != nil {
 		return errE
 	}
 
-	data, errE := x.MarshalWithoutEscapeHTML(application)
+	data, errE := x.MarshalWithoutEscapeHTML(applicationTemplate)
 	if errE != nil {
-		errors.Details(errE)["id"] = *application.ID
+		errors.Details(errE)["id"] = *applicationTemplate.ID
 		return errE
 	}
 
-	applicationsMu.Lock()
-	defer applicationsMu.Unlock()
+	applicationTemplatesMu.Lock()
+	defer applicationTemplatesMu.Unlock()
 
-	existingData, ok := applications[*application.ID]
+	existingData, ok := applicationTemplates[*applicationTemplate.ID]
 	if !ok {
-		return errors.WithDetails(ErrApplicationNotFound, "id", *application.ID)
+		return errors.WithDetails(ErrApplicationTemplateNotFound, "id", *applicationTemplate.ID)
 	}
 
-	var existingApplication Application
-	errE = x.UnmarshalWithoutUnknownFields(existingData, &existingApplication)
+	var existingApplicationTemplate ApplicationTemplate
+	errE = x.UnmarshalWithoutUnknownFields(existingData, &existingApplicationTemplate)
 	if errE != nil {
-		errors.Details(errE)["id"] = *application.ID
+		errors.Details(errE)["id"] = *applicationTemplate.ID
 		return errE
 	}
 
 	account := mustGetAccount(ctx)
-	if !slices.Contains(existingApplication.Admins, AccountRef{account}) {
-		return errors.WithDetails(ErrApplicationUnauthorized, "id", *application.ID)
+	if !slices.Contains(existingApplicationTemplate.Admins, AccountRef{account}) {
+		return errors.WithDetails(ErrApplicationTemplateUnauthorized, "id", *applicationTemplate.ID)
 	}
 
-	applications[*application.ID] = data
+	applicationTemplates[*applicationTemplate.ID] = data
 	return nil
 }
 
-func (s *Service) Application(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+func (s *Service) ApplicationTemplate(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.RequireAuthenticated(w, req, false, "Charon Dashboard") == nil {
 		return
 	}
@@ -539,7 +539,7 @@ func (s *Service) Application(w http.ResponseWriter, req *http.Request, _ waf.Pa
 	}
 }
 
-func (s *Service) ApplicationCreate(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+func (s *Service) ApplicationTemplateCreate(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.RequireAuthenticated(w, req, false, "Charon Dashboard") == nil {
 		return
 	}
@@ -551,7 +551,7 @@ func (s *Service) ApplicationCreate(w http.ResponseWriter, req *http.Request, _ 
 	}
 }
 
-func (s *Service) Applications(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+func (s *Service) ApplicationTemplates(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.RequireAuthenticated(w, req, false, "Charon Dashboard") == nil {
 		return
 	}
@@ -563,35 +563,35 @@ func (s *Service) Applications(w http.ResponseWriter, req *http.Request, _ waf.P
 	}
 }
 
-func getApplicationFromID(ctx context.Context, value string) (*Application, errors.E) {
+func getApplicationTemplateFromID(ctx context.Context, value string) (*ApplicationTemplate, errors.E) {
 	id, errE := identifier.FromString(value)
 	if errE != nil {
-		return nil, errors.WrapWith(errE, ErrApplicationNotFound)
+		return nil, errors.WrapWith(errE, ErrApplicationTemplateNotFound)
 	}
 
-	return GetApplication(ctx, id)
+	return GetApplicationTemplate(ctx, id)
 }
 
-func (s *Service) returnApplication(ctx context.Context, w http.ResponseWriter, req *http.Request, application *Application) {
+func (s *Service) returnApplicationTemplate(ctx context.Context, w http.ResponseWriter, req *http.Request, applicationTemplate *ApplicationTemplate) {
 	account := mustGetAccount(ctx)
 
-	s.WriteJSON(w, req, application, map[string]interface{}{
-		"can_update": slices.Contains(application.Admins, AccountRef{account}),
+	s.WriteJSON(w, req, applicationTemplate, map[string]interface{}{
+		"can_update": slices.Contains(applicationTemplate.Admins, AccountRef{account}),
 	})
 }
 
-func (s *Service) returnApplicationRef(_ context.Context, w http.ResponseWriter, req *http.Request, application *Application) {
-	s.WriteJSON(w, req, ApplicationRef{ID: *application.ID}, nil)
+func (s *Service) returnApplicationTemplateRef(_ context.Context, w http.ResponseWriter, req *http.Request, applicationTemplate *ApplicationTemplate) {
+	s.WriteJSON(w, req, ApplicationTemplateRef{ID: *applicationTemplate.ID}, nil)
 }
 
-func (s *Service) ApplicationGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+func (s *Service) ApplicationTemplateGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := s.RequireAuthenticated(w, req, true, "Charon Dashboard")
 	if ctx == nil {
 		return
 	}
 
-	application, errE := getApplicationFromID(ctx, params["id"])
-	if errors.Is(errE, ErrApplicationNotFound) {
+	applicationTemplate, errE := getApplicationTemplateFromID(ctx, params["id"])
+	if errors.Is(errE, ErrApplicationTemplateNotFound) {
 		s.NotFound(w, req)
 		return
 	} else if errE != nil {
@@ -599,32 +599,32 @@ func (s *Service) ApplicationGet(w http.ResponseWriter, req *http.Request, param
 		return
 	}
 
-	s.returnApplication(ctx, w, req, application)
+	s.returnApplicationTemplate(ctx, w, req, applicationTemplate)
 }
 
-func (s *Service) ApplicationsGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+func (s *Service) ApplicationTemplatesGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	ctx := s.RequireAuthenticated(w, req, true, "Charon Dashboard")
 	if ctx == nil {
 		return
 	}
 
-	result := []ApplicationRef{}
+	result := []ApplicationTemplateRef{}
 
-	applicationsMu.RLock()
-	defer applicationsMu.RUnlock()
+	applicationTemplatesMu.RLock()
+	defer applicationTemplatesMu.RUnlock()
 
-	for id := range applications {
-		result = append(result, ApplicationRef{ID: id})
+	for id := range applicationTemplates {
+		result = append(result, ApplicationTemplateRef{ID: id})
 	}
 
-	slices.SortFunc(result, func(a ApplicationRef, b ApplicationRef) int {
+	slices.SortFunc(result, func(a ApplicationTemplateRef, b ApplicationTemplateRef) int {
 		return bytes.Compare(a.ID[:], b.ID[:])
 	})
 
 	s.WriteJSON(w, req, result, nil)
 }
 
-func (s *Service) ApplicationUpdatePost(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
+func (s *Service) ApplicationTemplateUpdatePost(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -633,32 +633,32 @@ func (s *Service) ApplicationUpdatePost(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	var application Application
-	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &application)
+	var applicationTemplate ApplicationTemplate
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &applicationTemplate)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
-	if application.ID == nil {
+	if applicationTemplate.ID == nil {
 		id, errE := identifier.FromString(params["id"]) //nolint:govet
 		if errE != nil {
 			s.BadRequestWithError(w, req, errE)
 		}
-		application.ID = &id
-	} else if params["id"] != application.ID.String() {
+		applicationTemplate.ID = &id
+	} else if params["id"] != applicationTemplate.ID.String() {
 		errE = errors.New("params ID does not match payload ID")
 		errors.Details(errE)["params"] = params["id"]
-		errors.Details(errE)["payload"] = *application.ID
+		errors.Details(errE)["payload"] = *applicationTemplate.ID
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
-	errE = UpdateApplication(ctx, &application)
-	if errors.Is(errE, ErrApplicationUnauthorized) {
+	errE = UpdateApplicationTemplate(ctx, &applicationTemplate)
+	if errors.Is(errE, ErrApplicationTemplateUnauthorized) {
 		waf.Error(w, req, http.StatusUnauthorized)
 		return
-	} else if errors.Is(errE, ErrApplicationNotFound) {
+	} else if errors.Is(errE, ErrApplicationTemplateNotFound) {
 		waf.Error(w, req, http.StatusNotFound)
 		return
 	} else if errE != nil {
@@ -666,10 +666,10 @@ func (s *Service) ApplicationUpdatePost(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	s.returnApplication(ctx, w, req, &application)
+	s.returnApplicationTemplate(ctx, w, req, &applicationTemplate)
 }
 
-func (s *Service) ApplicationCreatePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+func (s *Service) ApplicationTemplateCreatePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -678,23 +678,23 @@ func (s *Service) ApplicationCreatePost(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	var application Application
-	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &application)
+	var applicationTemplate ApplicationTemplate
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &applicationTemplate)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
-	if application.ID != nil {
+	if applicationTemplate.ID != nil {
 		s.BadRequestWithError(w, req, errors.New("payload contains ID"))
 		return
 	}
 
-	errE = CreateApplication(ctx, &application)
+	errE = CreateApplicationTemplate(ctx, &applicationTemplate)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	s.returnApplicationRef(ctx, w, req, &application)
+	s.returnApplicationTemplateRef(ctx, w, req, &applicationTemplate)
 }

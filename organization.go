@@ -49,13 +49,13 @@ type OrganizationApplicationClientPublic struct {
 	Client ClientRef              `json:"client"`
 }
 
-func (c *OrganizationApplicationClientPublic) Validate(ctx context.Context, application *Application, values map[string]string) errors.E {
+func (c *OrganizationApplicationClientPublic) Validate(ctx context.Context, applicationTemplate *ApplicationTemplate, values map[string]string) errors.E {
 	if c.ID == nil {
 		id := identifier.New()
 		c.ID = &id
 	}
 
-	client := application.GetClientPublic(c.Client.ID)
+	client := applicationTemplate.GetClientPublic(c.Client.ID)
 	if client == nil {
 		errE := errors.New("unable to find referenced public client")
 		errors.Details(errE)["id"] = c.Client.ID
@@ -88,7 +88,7 @@ type OrganizationApplicationClientBackend struct {
 	Secret string `json:"secret"`
 }
 
-func (c *OrganizationApplicationClientBackend) Validate(ctx context.Context, application *Application, values map[string]string) errors.E {
+func (c *OrganizationApplicationClientBackend) Validate(ctx context.Context, applicationTemplate *ApplicationTemplate, values map[string]string) errors.E {
 	if c.ID == nil {
 		id := identifier.New()
 		c.ID = &id
@@ -108,7 +108,7 @@ func (c *OrganizationApplicationClientBackend) Validate(ctx context.Context, app
 		return errE
 	}
 
-	client := application.GetClientBackend(c.Client.ID)
+	client := applicationTemplate.GetClientBackend(c.Client.ID)
 	if client == nil {
 		errE := errors.New("unable to find referenced backend client")
 		errors.Details(errE)["id"] = c.Client.ID
@@ -141,7 +141,7 @@ type OrganizationApplicationClientService struct {
 	Secret string `json:"secret"`
 }
 
-func (c *OrganizationApplicationClientService) Validate(ctx context.Context, application *Application, values map[string]string) errors.E {
+func (c *OrganizationApplicationClientService) Validate(ctx context.Context, applicationTemplate *ApplicationTemplate, values map[string]string) errors.E {
 	if c.ID == nil {
 		id := identifier.New()
 		c.ID = &id
@@ -161,7 +161,7 @@ func (c *OrganizationApplicationClientService) Validate(ctx context.Context, app
 		return errE
 	}
 
-	client := application.GetClientService(c.Client.ID)
+	client := applicationTemplate.GetClientService(c.Client.ID)
 	if client == nil {
 		errE := errors.New("unable to find referenced service client")
 		errors.Details(errE)["id"] = c.Client.ID
@@ -178,12 +178,42 @@ type OrganizationApplication struct {
 	// application template changes, this one continues to be consistent.
 	// It can in fact be even a template which has not been published at all.
 	// TODO: Show to the organization admin that upstream template changed and invite them to update their template.
-	Application Application `json:"application"`
+	ApplicationTemplate ApplicationTemplate `json:"applicationTemplate"`
 
 	Values         []Value                                `json:"values"`
 	ClientsPublic  []OrganizationApplicationClientPublic  `json:"clientsPublic"`
 	ClientsBackend []OrganizationApplicationClientBackend `json:"clientsBackend"`
 	ClientsService []OrganizationApplicationClientService `json:"clientsService"`
+}
+
+func (a *OrganizationApplication) GetClientPublic(ctx context.Context, id identifier.Identifier) *OrganizationApplicationClientPublic {
+	for _, client := range a.ClientsPublic {
+		if *client.ID == id {
+			return &client
+		}
+	}
+
+	return nil
+}
+
+func (a *OrganizationApplication) GetClientBackend(ctx context.Context, id identifier.Identifier) *OrganizationApplicationClientBackend {
+	for _, client := range a.ClientsBackend {
+		if *client.ID == id {
+			return &client
+		}
+	}
+
+	return nil
+}
+
+func (a *OrganizationApplication) GetClientService(ctx context.Context, id identifier.Identifier) *OrganizationApplicationClientService {
+	for _, client := range a.ClientsService {
+		if *client.ID == id {
+			return &client
+		}
+	}
+
+	return nil
 }
 
 func (a *OrganizationApplication) Validate(ctx context.Context) errors.E {
@@ -195,13 +225,13 @@ func (a *OrganizationApplication) Validate(ctx context.Context) errors.E {
 	// This validation adds current user to admins of the embedded application template
 	// (the admin of the original application template might be somebody else). This is
 	// fine because we in the next step set admins to nil anyway.
-	errE := a.Application.Validate(ctx)
+	errE := a.ApplicationTemplate.Validate(ctx)
 	if errE != nil {
 		return errE
 	}
 
 	// When we embed a copy of the application template, we set admin always to nil.
-	a.Application.Admins = nil
+	a.ApplicationTemplate.Admins = nil
 
 	values := map[string]string{}
 	valuesSet := mapset.NewThreadUnsafeSet[string]()
@@ -230,8 +260,8 @@ func (a *OrganizationApplication) Validate(ctx context.Context) errors.E {
 	}
 
 	variablesSet := mapset.NewThreadUnsafeSet[string]()
-	for _, variable := range a.Application.Variables {
-		// Variables have already been validated by us validating a.Application above.
+	for _, variable := range a.ApplicationTemplate.Variables {
+		// Variables have already been validated by us validating a.ApplicationTemplate above.
 		variablesSet.Add(variable.Name)
 	}
 
@@ -251,9 +281,9 @@ func (a *OrganizationApplication) Validate(ctx context.Context) errors.E {
 	clientSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
 
 	for i, client := range a.ClientsPublic {
-		errE := client.Validate(ctx, &a.Application, values)
+		errE := client.Validate(ctx, &a.ApplicationTemplate, values)
 		if errE != nil {
-			errE := errors.WithMessage(errE, "public client")
+			errE = errors.WithMessage(errE, "public client")
 			errors.Details(errE)["i"] = i
 			errors.Details(errE)["id"] = *client.ID
 			return errE
@@ -272,9 +302,9 @@ func (a *OrganizationApplication) Validate(ctx context.Context) errors.E {
 	}
 
 	for i, client := range a.ClientsBackend {
-		errE := client.Validate(ctx, &a.Application, values)
+		errE := client.Validate(ctx, &a.ApplicationTemplate, values)
 		if errE != nil {
-			errE := errors.WithMessage(errE, "backend client")
+			errE = errors.WithMessage(errE, "backend client")
 			errors.Details(errE)["i"] = i
 			errors.Details(errE)["id"] = *client.ID
 			return errE
@@ -293,9 +323,9 @@ func (a *OrganizationApplication) Validate(ctx context.Context) errors.E {
 	}
 
 	for i, client := range a.ClientsService {
-		errE := client.Validate(ctx, &a.Application, values)
+		errE := client.Validate(ctx, &a.ApplicationTemplate, values)
 		if errE != nil {
-			errE := errors.WithMessage(errE, "service client")
+			errE = errors.WithMessage(errE, "service client")
 			errors.Details(errE)["i"] = i
 			errors.Details(errE)["id"] = *client.ID
 			return errE
