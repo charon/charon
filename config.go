@@ -9,7 +9,7 @@ import (
 	"io/fs"
 	"os"
 	"os/signal"
-	"sort"
+	"slices"
 	"sync"
 	"syscall"
 
@@ -297,7 +297,7 @@ func (config *Config) Run() errors.E { //nolint:maintidx
 			for site := range sites {
 				domains = append(domains, site)
 			}
-			sort.Strings(domains)
+			slices.Sort(domains)
 			errors.Details(errE)["domains"] = domains
 			return errE
 		}

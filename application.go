@@ -8,10 +8,10 @@ import (
 	"net/url"
 	"regexp"
 	"slices"
-	"sort"
 	"sync"
 
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/ory/fosite"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
@@ -42,12 +42,20 @@ func validateRedirectURITemplates(redirectURITemplates []string, variables []Var
 		redirectURITemplates = []string{}
 	}
 
+	values := map[string]string{}
+	for _, variable := range variables {
+		values[variable.Name] = validationValues[variable.Type]
+	}
+
 	templatesSet := mapset.NewThreadUnsafeSet[string]()
 	for i, template := range redirectURITemplates {
-		errE := validateRedirectURIsTemplate(template, variables)
+		errE := validateRedirectURIsTemplate(template, values)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "redirect URI template")
 			errors.Details(errE)["i"] = i
+			if template != "" {
+				errors.Details(errE)["template"] = template
+			}
 			return nil, errE
 		}
 
@@ -63,24 +71,33 @@ func validateRedirectURITemplates(redirectURITemplates []string, variables []Var
 	return redirectURITemplates, nil
 }
 
-func validateRedirectURIsTemplate(template string, variables []Variable) errors.E {
+func validateRedirectURIsTemplate(template string, values map[string]string) errors.E {
 	if template == "" {
 		return errors.New("cannot be empty")
 	}
 
-	vars := map[string]string{}
-	for _, variable := range variables {
-		vars[variable.Name] = validationValues[variable.Type]
-	}
-
-	value, errE := interpolateVariables(template, vars)
+	value, errE := interpolateVariables(template, values)
 	if errE != nil {
 		return errE
 	}
 
-	_, err := url.Parse(value)
+	u, err := url.Parse(value)
 	if err != nil {
 		errE := errors.Wrap(err, "unable to parse resulting URI")
+		errors.Details(errE)["template"] = template
+		return errE
+	}
+
+	// The following two checks are the same as what we configured fosite to check.
+
+	if !fosite.IsValidRedirectURI(u) {
+		errE := errors.Wrap(err, "resulting URI is not a valid redirect URI")
+		errors.Details(errE)["template"] = template
+		return errE
+	}
+
+	if !fosite.IsRedirectURISecureStrict(u) {
+		errE := errors.Wrap(err, "resulting URI is not secure")
 		errors.Details(errE)["template"] = template
 		return errE
 	}
@@ -88,9 +105,15 @@ func validateRedirectURIsTemplate(template string, variables []Variable) errors.
 	return nil
 }
 
+type ClientRef struct {
+	ID identifier.Identifier `json:"id"`
+}
+
 type ApplicationClientPublic struct {
 	ID          *identifier.Identifier `json:"id"`
 	Description string                 `json:"description,omitempty"`
+
+	AdditionalScopes []string `json:"additionalScopes"`
 
 	RedirectURITemplates []string `json:"redirectUriTemplates"`
 }
@@ -100,6 +123,14 @@ func (c *ApplicationClientPublic) Validate(_ context.Context, variables []Variab
 		id := identifier.New()
 		c.ID = &id
 	}
+
+	if c.AdditionalScopes == nil {
+		c.AdditionalScopes = []string{}
+	}
+
+	// We sort and remove duplicates.
+	slices.Sort(c.AdditionalScopes)
+	c.AdditionalScopes = slices.Compact(c.AdditionalScopes)
 
 	redirectURIsTemplates, errE := validateRedirectURITemplates(c.RedirectURITemplates, variables)
 	if errE != nil {
@@ -114,6 +145,8 @@ type ApplicationClientBackend struct {
 	ID          *identifier.Identifier `json:"id"`
 	Description string                 `json:"description,omitempty"`
 
+	AdditionalScopes []string `json:"additionalScopes"`
+
 	RedirectURITemplates []string `json:"redirectUriTemplates"`
 }
 
@@ -122,6 +155,14 @@ func (c *ApplicationClientBackend) Validate(_ context.Context, variables []Varia
 		id := identifier.New()
 		c.ID = &id
 	}
+
+	if c.AdditionalScopes == nil {
+		c.AdditionalScopes = []string{}
+	}
+
+	// We sort and remove duplicates.
+	slices.Sort(c.AdditionalScopes)
+	c.AdditionalScopes = slices.Compact(c.AdditionalScopes)
 
 	redirectURIsTemplates, errE := validateRedirectURITemplates(c.RedirectURITemplates, variables)
 	if errE != nil {
@@ -135,6 +176,8 @@ func (c *ApplicationClientBackend) Validate(_ context.Context, variables []Varia
 type ApplicationClientService struct {
 	ID          *identifier.Identifier `json:"id"`
 	Description string                 `json:"description,omitempty"`
+
+	AdditionalScopes []string `json:"additionalScopes"`
 }
 
 func (c *ApplicationClientService) Validate(_ context.Context, _ []Variable) errors.E {
@@ -142,6 +185,14 @@ func (c *ApplicationClientService) Validate(_ context.Context, _ []Variable) err
 		id := identifier.New()
 		c.ID = &id
 	}
+
+	if c.AdditionalScopes == nil {
+		c.AdditionalScopes = []string{}
+	}
+
+	// We sort and remove duplicates.
+	slices.Sort(c.AdditionalScopes)
+	c.AdditionalScopes = slices.Compact(c.AdditionalScopes)
 
 	return nil
 }
@@ -178,11 +229,11 @@ func (v *Variable) Validate(_ context.Context) errors.E {
 
 var variableRegexp = regexp.MustCompile(`\{([^}]+)\}`)
 
-func interpolateVariables(template string, variables map[string]string) (string, errors.E) {
+func interpolateVariables(template string, values map[string]string) (string, errors.E) {
 	unmatchedVariables := []string{}
 	result := variableRegexp.ReplaceAllStringFunc(template, func(match string) string {
 		varName := match[1 : len(match)-1] // Removing the curly braces.
-		if value, ok := variables[varName]; ok {
+		if value, ok := values[varName]; ok {
 			return value
 		}
 		// Unmatched variable.
@@ -192,7 +243,8 @@ func interpolateVariables(template string, variables map[string]string) (string,
 
 	if len(unmatchedVariables) > 0 {
 		errE := errors.New("unknown variables")
-		sort.Strings(unmatchedVariables)
+		slices.Sort(unmatchedVariables)
+		unmatchedVariables = slices.Compact(unmatchedVariables)
 		errors.Details(errE)["variables"] = unmatchedVariables
 		return "", errE
 	}
@@ -200,20 +252,52 @@ func interpolateVariables(template string, variables map[string]string) (string,
 	return result, nil
 }
 
+// Application is an application template which can be deployed multiple times.
 type Application struct {
 	ID *identifier.Identifier `json:"id"`
 
-	Admins []AccountRef `json:"admins"`
+	// When this application template is embedded into OrganizationApplication, the
+	// list of admins is set to nil and we do not want it to be shown as a field.
+	Admins []AccountRef `json:"admins,omitempty"`
 
 	Name string `json:"name"`
 
-	IDScopes  []string `json:"idScopes"`
-	AppScopes []string `json:"appScopes"`
+	IDScopes []string `json:"idScopes"`
 
 	Variables      []Variable                 `json:"variables"`
 	ClientsPublic  []ApplicationClientPublic  `json:"clientsPublic"`
 	ClientsBackend []ApplicationClientBackend `json:"clientsBackend"`
 	ClientsService []ApplicationClientService `json:"clientsService"`
+}
+
+func (a *Application) GetClientPublic(id identifier.Identifier) *ApplicationClientPublic {
+	for _, client := range a.ClientsPublic {
+		if client.ID != nil && *client.ID == id {
+			return &client
+		}
+	}
+
+	return nil
+}
+
+func (a *Application) GetClientBackend(id identifier.Identifier) *ApplicationClientBackend {
+	for _, client := range a.ClientsBackend {
+		if client.ID != nil && *client.ID == id {
+			return &client
+		}
+	}
+
+	return nil
+}
+
+func (a *Application) GetClientService(id identifier.Identifier) *ApplicationClientService {
+	for _, client := range a.ClientsService {
+		if client.ID != nil && *client.ID == id {
+			return &client
+		}
+	}
+
+	return nil
 }
 
 type ApplicationRef struct {
@@ -242,13 +326,15 @@ func (a *Application) Validate(ctx context.Context) errors.E {
 		return errors.New("name is required")
 	}
 
+	if a.IDScopes == nil {
+		a.IDScopes = []string{}
+	}
+
 	// We sort and remove duplicates.
 	slices.Sort(a.IDScopes)
 	a.IDScopes = slices.Compact(a.IDScopes)
 
-	// We sort and remove duplicates.
-	slices.Sort(a.AppScopes)
-	a.AppScopes = slices.Compact(a.AppScopes)
+	// TODO: Validate that a.IDScopes is a (non-strict) subset of supported ID scopes.
 
 	if a.Variables == nil {
 		// Default variable.
@@ -265,6 +351,9 @@ func (a *Application) Validate(ctx context.Context) errors.E {
 		if errE != nil {
 			errE = errors.WithMessage(errE, "variable")
 			errors.Details(errE)["i"] = i
+			if variable.Name != "" {
+				errors.Details(errE)["name"] = variable.Name
+			}
 			return errE
 		}
 
@@ -299,6 +388,9 @@ func (a *Application) Validate(ctx context.Context) errors.E {
 		if errE != nil {
 			errE = errors.WithMessage(errE, "public client")
 			errors.Details(errE)["i"] = i
+			if client.ID != nil {
+				errors.Details(errE)["id"] = *client.ID
+			}
 			return errE
 		}
 
@@ -319,6 +411,10 @@ func (a *Application) Validate(ctx context.Context) errors.E {
 		if errE != nil {
 			errE = errors.WithMessage(errE, "backend client")
 			errors.Details(errE)["i"] = i
+			if client.ID != nil {
+				errors.Details(errE)["id"] = *client.ID
+			}
+
 			return errE
 		}
 
@@ -339,6 +435,9 @@ func (a *Application) Validate(ctx context.Context) errors.E {
 		if errE != nil {
 			errE = errors.WithMessage(errE, "service client")
 			errors.Details(errE)["i"] = i
+			if client.ID != nil {
+				errors.Details(errE)["id"] = *client.ID
+			}
 			return errE
 		}
 

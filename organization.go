@@ -10,7 +10,6 @@ import (
 
 	"github.com/alexedwards/argon2id"
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/google/uuid"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
@@ -28,14 +27,293 @@ var (
 	organizationsMu = sync.RWMutex{}                         //nolint:gochecknoglobals
 )
 
-type OrganizationApplication struct {
-	ID          *identifier.Identifier `json:"id"`
-	Application ApplicationRef         `json:"application"`
+type Value struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
 
-	// TODO: This should really be a []byte, but should not be base64 encoded when in JSON. Go JSONv2 might support that.
+func (v *Value) Validate(ctx context.Context) errors.E {
+	if v.Name == "" {
+		return errors.New("name is required")
+	}
+
+	if v.Value == "" {
+		return errors.New("value is required")
+	}
+
+	return nil
+}
+
+type OrganizationApplicationClientPublic struct {
+	ID     *identifier.Identifier `json:"id"`
+	Client ClientRef              `json:"client"`
+}
+
+func (c *OrganizationApplicationClientPublic) Validate(ctx context.Context, application *Application, values map[string]string) errors.E {
+	if c.ID == nil {
+		id := identifier.New()
+		c.ID = &id
+	}
+
+	client := application.GetClientPublic(c.Client.ID)
+	if client == nil {
+		errE := errors.New("unable to find referenced public client")
+		errors.Details(errE)["id"] = c.Client.ID
+		return errE
+	}
+
+	// We do not check if interpolated templates have duplicates.
+	// This would be hard to fix for the user of the application template anyway.
+	for i, template := range client.RedirectURITemplates {
+		errE := validateRedirectURIsTemplate(template, values)
+		if errE != nil {
+			errE = errors.WithMessage(errE, "redirect URI")
+			errors.Details(errE)["i"] = i
+			if template != "" {
+				errors.Details(errE)["template"] = template
+			}
+			return errE
+		}
+	}
+
+	return nil
+}
+
+type OrganizationApplicationClientBackend struct {
+	ID     *identifier.Identifier `json:"id"`
+	Client ClientRef              `json:"client"`
+
+	// TODO: This should really be a []byte, but should not be base64 encoded when in JSON.
+	//       Go JSONv2 might support that with "format:string".
 	Secret string `json:"secret"`
+}
 
-	URLBase string `json:"urlBase"`
+func (c *OrganizationApplicationClientBackend) Validate(ctx context.Context, application *Application, values map[string]string) errors.E {
+	if c.ID == nil {
+		id := identifier.New()
+		c.ID = &id
+	}
+
+	params, _, _, err := argon2id.DecodeHash(c.Secret)
+	// TODO: What is a workflow to make these params stricter in the future?
+	//       API calls will start failing with existing secrets on unrelated updates.
+	if err != nil ||
+		params.Memory < argon2idParams.Memory ||
+		params.Iterations < argon2idParams.Iterations ||
+		params.Parallelism < argon2idParams.Parallelism ||
+		params.SaltLength < argon2idParams.SaltLength ||
+		params.KeyLength < argon2idParams.KeyLength {
+		errE := errors.WithMessage(err, "invalid client secret")
+		errors.Details(errE)["id"] = *c.ID
+		return errE
+	}
+
+	client := application.GetClientBackend(c.Client.ID)
+	if client == nil {
+		errE := errors.New("unable to find referenced backend client")
+		errors.Details(errE)["id"] = c.Client.ID
+		return errE
+	}
+
+	// We do not check if interpolated templates have duplicates.
+	// This would be hard to fix for the user of the application template anyway.
+	for i, template := range client.RedirectURITemplates {
+		errE := validateRedirectURIsTemplate(template, values)
+		if errE != nil {
+			errE = errors.WithMessage(errE, "redirect URI")
+			errors.Details(errE)["i"] = i
+			if template != "" {
+				errors.Details(errE)["template"] = template
+			}
+			return errE
+		}
+	}
+
+	return nil
+}
+
+type OrganizationApplicationClientService struct {
+	ID     *identifier.Identifier `json:"id"`
+	Client ClientRef              `json:"client"`
+
+	// TODO: This should really be a []byte, but should not be base64 encoded when in JSON.
+	//       Go JSONv2 might support that with "format:string".
+	Secret string `json:"secret"`
+}
+
+func (c *OrganizationApplicationClientService) Validate(ctx context.Context, application *Application, values map[string]string) errors.E {
+	if c.ID == nil {
+		id := identifier.New()
+		c.ID = &id
+	}
+
+	params, _, _, err := argon2id.DecodeHash(c.Secret)
+	// TODO: What is a workflow to make these params stricter in the future?
+	//       API calls will start failing with existing secrets on unrelated updates.
+	if err != nil ||
+		params.Memory < argon2idParams.Memory ||
+		params.Iterations < argon2idParams.Iterations ||
+		params.Parallelism < argon2idParams.Parallelism ||
+		params.SaltLength < argon2idParams.SaltLength ||
+		params.KeyLength < argon2idParams.KeyLength {
+		errE := errors.WithMessage(err, "invalid client secret")
+		errors.Details(errE)["id"] = *c.ID
+		return errE
+	}
+
+	client := application.GetClientService(c.Client.ID)
+	if client == nil {
+		errE := errors.New("unable to find referenced service client")
+		errors.Details(errE)["id"] = c.Client.ID
+		return errE
+	}
+
+	return nil
+}
+
+type OrganizationApplication struct {
+	ID *identifier.Identifier `json:"id"`
+
+	// We store full application template for this deployment, so if upstream
+	// application template changes, this one continues to be consistent.
+	// It can in fact be even a template which has not been published at all.
+	// TODO: Show to the organization admin that upstream template changed and invite them to update their template.
+	Application Application `json:"application"`
+
+	Values         []Value                                `json:"values"`
+	ClientsPublic  []OrganizationApplicationClientPublic  `json:"clientsPublic"`
+	ClientsBackend []OrganizationApplicationClientBackend `json:"clientsBackend"`
+	ClientsService []OrganizationApplicationClientService `json:"clientsService"`
+}
+
+func (a *OrganizationApplication) Validate(ctx context.Context) errors.E {
+	if a.ID == nil {
+		id := identifier.New()
+		a.ID = &id
+	}
+
+	// This validation adds current user to admins of the embedded application template
+	// (the admin of the original application template might be somebody else). This is
+	// fine because we in the next step set admins to nil anyway.
+	errE := a.Application.Validate(ctx)
+	if errE != nil {
+		return errE
+	}
+
+	// When we embed a copy of the application template, we set admin always to nil.
+	a.Application.Admins = nil
+
+	values := map[string]string{}
+	valuesSet := mapset.NewThreadUnsafeSet[string]()
+	for i, value := range a.Values {
+		errE := value.Validate(ctx)
+		if errE != nil {
+			errE = errors.WithMessage(errE, "value")
+			errors.Details(errE)["i"] = i
+			if value.Name != "" {
+				errors.Details(errE)["name"] = value.Name
+			}
+			return errE
+		}
+
+		if valuesSet.Contains(value.Name) {
+			errE := errors.New("duplicate value")
+			errors.Details(errE)["i"] = i
+			errors.Details(errE)["name"] = value.Name
+			return errE
+		}
+		valuesSet.Add(value.Name)
+		values[value.Name] = value.Value
+
+		// Value might have been changed by Validate, so we assign it back.
+		a.Values[i] = value
+	}
+
+	variablesSet := mapset.NewThreadUnsafeSet[string]()
+	for _, variable := range a.Application.Variables {
+		// Variables have already been validated by us validating a.Application above.
+		variablesSet.Add(variable.Name)
+	}
+
+	if !valuesSet.Equal(variablesSet) {
+		errE := errors.New("values do not match variables")
+		extra := valuesSet.Difference(variablesSet).ToSlice()
+		slices.Sort(extra)
+		missing := variablesSet.Difference(valuesSet).ToSlice()
+		slices.Sort(missing)
+		errors.Details(errE)["extra"] = extra
+		errors.Details(errE)["missing"] = missing
+		return errE
+	}
+
+	// We require unique IDs across all clients.
+	// TODO: IDs should be unique across all clients across all organizations.
+	clientSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
+
+	for i, client := range a.ClientsPublic {
+		errE := client.Validate(ctx, &a.Application, values)
+		if errE != nil {
+			errE := errors.WithMessage(errE, "public client")
+			errors.Details(errE)["i"] = i
+			errors.Details(errE)["id"] = *client.ID
+			return errE
+		}
+
+		if clientSet.Contains(*client.ID) {
+			errE := errors.New("duplicate client ID")
+			errors.Details(errE)["i"] = i
+			errors.Details(errE)["id"] = *client.ID
+			return errE
+		}
+		clientSet.Add(*client.ID)
+
+		// Client might have been changed by Validate, so we assign it back.
+		a.ClientsPublic[i] = client
+	}
+
+	for i, client := range a.ClientsBackend {
+		errE := client.Validate(ctx, &a.Application, values)
+		if errE != nil {
+			errE := errors.WithMessage(errE, "backend client")
+			errors.Details(errE)["i"] = i
+			errors.Details(errE)["id"] = *client.ID
+			return errE
+		}
+
+		if clientSet.Contains(*client.ID) {
+			errE := errors.New("duplicate client ID")
+			errors.Details(errE)["i"] = i
+			errors.Details(errE)["id"] = *client.ID
+			return errE
+		}
+		clientSet.Add(*client.ID)
+
+		// Client might have been changed by Validate, so we assign it back.
+		a.ClientsBackend[i] = client
+	}
+
+	for i, client := range a.ClientsService {
+		errE := client.Validate(ctx, &a.Application, values)
+		if errE != nil {
+			errE := errors.WithMessage(errE, "service client")
+			errors.Details(errE)["i"] = i
+			errors.Details(errE)["id"] = *client.ID
+			return errE
+		}
+
+		if clientSet.Contains(*client.ID) {
+			errE := errors.New("duplicate client ID")
+			errors.Details(errE)["i"] = i
+			errors.Details(errE)["id"] = *client.ID
+			return errE
+		}
+		clientSet.Add(*client.ID)
+
+		// Client might have been changed by Validate, so we assign it back.
+		a.ClientsService[i] = client
+	}
+
+	return nil
 }
 
 type Organization struct {
@@ -44,6 +322,7 @@ type Organization struct {
 	Admins []AccountRef `json:"admins"`
 
 	Name         string                    `json:"name"`
+	Active       bool                      `json:"active"`
 	Applications []OrganizationApplication `json:"applications"`
 }
 
@@ -75,41 +354,28 @@ func (o *Organization) Validate(ctx context.Context) errors.E {
 
 	appsSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
 	for i, orgApp := range o.Applications {
-		// IDs can be deterministic here.
-		// TODO: Make them be generated randomly. But update should the operate on JSON patches.
-		id := identifier.FromUUID(uuid.NewSHA1(uuid.UUID(*o.ID), orgApp.Application.ID[:]))
-		if orgApp.ID == nil {
-			orgApp.ID = &id
-		} else if *orgApp.ID != id {
-			errE := errors.New("invalid app ID")
-			errors.Details(errE)["id"] = *orgApp.ID
-			errors.Details(errE)["application"] = orgApp.Application.ID
-			return errE
+		errE := orgApp.Validate(ctx)
+		if errE != nil {
+			errE = errors.WithMessage(errE, "application")
+			errors.Details(errE)["i"] = i
+			if orgApp.ID != nil {
+				errors.Details(errE)["id"] = *orgApp.ID
+			}
+			return nil
 		}
 
-		if appsSet.Contains(orgApp.Application.ID) {
-			errE := errors.New("duplicate app")
+		if appsSet.Contains(*orgApp.ID) {
+			errE := errors.New("duplicate application ID")
+			errors.Details(errE)["i"] = i
 			errors.Details(errE)["id"] = *orgApp.ID
-			errors.Details(errE)["application"] = orgApp.Application.ID
 			return errE
 		}
-		appsSet.Add(orgApp.Application.ID)
+		appsSet.Add(*orgApp.ID)
 
-		params, _, _, err := argon2id.DecodeHash(orgApp.Secret)
-		// TODO: What is a workflow to make these params stricter in the future?
-		//       API calls will start failing with existing secrets on unrelated updates.
-		if err != nil ||
-			params.Memory < argon2idParams.Memory ||
-			params.Iterations < argon2idParams.Iterations ||
-			params.Parallelism < argon2idParams.Parallelism ||
-			params.SaltLength < argon2idParams.SaltLength ||
-			params.KeyLength < argon2idParams.KeyLength {
-			errE := errors.WithMessage(err, "invalid app secret")
-			errors.Details(errE)["id"] = *orgApp.ID
-			errors.Details(errE)["application"] = orgApp.Application.ID
-			return errE
-		}
+		// We on purpose allow that organization can use same application template multiple
+		// times so we do not check if orgApp.Application.ID are repeated.
 
+		// OrganizationApplication might have been changed by Validate, so we assign it back.
 		o.Applications[i] = orgApp
 	}
 

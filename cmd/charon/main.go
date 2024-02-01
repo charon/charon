@@ -1,7 +1,7 @@
 package main
 
 import (
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/alecthomas/kong"
@@ -17,7 +17,7 @@ func main() {
 	for t := range charon.MailAuthTypes {
 		mailAuthTypes = append(mailAuthTypes, t)
 	}
-	sort.Strings(mailAuthTypes)
+	slices.Sort(mailAuthTypes)
 	var config charon.Config
 	cli.Run(&config, kong.Vars{
 		"defaultProxyTo":  charon.DefaultProxyTo,
