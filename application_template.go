@@ -281,7 +281,8 @@ type ApplicationTemplate struct {
 	// list of admins is set to nil and we do not want it to be shown as a field.
 	Admins []AccountRef `json:"admins,omitempty"`
 
-	Name string `json:"name"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
 
 	IDScopes []string `json:"idScopes"`
 
