@@ -28,9 +28,11 @@ withDefaults(
 <template>
   <button
     :disabled="progress > 0 || disabled"
-    class="relative select-none rounded px-6 py-2.5 font-medium uppercase leading-tight shadow outline-none focus:ring-2 focus:ring-offset-1 text-center"
+    class="relative select-none rounded font-medium uppercase leading-tight shadow outline-none focus:ring-2 focus:ring-offset-1 text-center"
     :class="{
       'cursor-not-allowed': progress > 0 || disabled,
+      'px-6 py-2.5 ': primary,
+      'px-[calc(1.5rem_-_2px)] py-[calc(0.625rem_-_2px)]': !primary,
       'bg-primary-300 text-gray-100': primary && (progress > 0 || disabled),
       'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 active:bg-primary-500': primary && progress === 0 && !disabled,
       'border-neutral-300 border-2 bg-gray-100 text-gray-800 shadow-none': !primary && (progress > 0 || disabled),
