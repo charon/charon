@@ -13,6 +13,7 @@ const router = useRouter()
 
 const mainProgress = ref(0)
 const abortController = new AbortController()
+
 const unexpectedError = ref("")
 const name = ref("")
 
@@ -67,7 +68,7 @@ async function onSubmit() {
             <!--
               Button is on purpose not disabled on unexpectedError so that user can retry.
             -->
-            <Button type="submit" primary :disabled="name.length === 0 || mainProgress > 0">Create</Button>
+            <Button type="submit" primary :disabled="!name || mainProgress > 0">Create</Button>
           </div>
         </form>
       </div>

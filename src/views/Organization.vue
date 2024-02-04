@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Organization, Metadata, Applications, Application, OrganizationApplication } from "@/types"
+import type { Organization, Metadata, ApplicationTemplates, ApplicationTemplate, OrganizationApplication } from "@/types"
 
 import { onBeforeMount, onUnmounted, ref, watch } from "vue"
 import { useRouter } from "vue-router"
@@ -22,23 +22,25 @@ const mainProgress = ref(0)
 const abortController = new AbortController()
 const dataLoading = ref(true)
 const dataLoadingError = ref("")
-const unexpectedError = ref("")
-const updated = ref(false)
-const applicationsUnexpectedError = ref("")
-const applicationsUpdated = ref(false)
 const organization = ref<Organization | null>(null)
 const metadata = ref<Metadata>({})
+
+const unexpectedError = ref("")
+const updated = ref(false)
 const name = ref("")
 const organizationApplications = ref<OrganizationApplication[]>([])
-const applications = ref<Applications>([])
+
+const applicationsUnexpectedError = ref("")
+const applicationsUpdated = ref(false)
+const applicationTemplates = ref<ApplicationTemplates>([])
 const generatedSecrets = ref(new Map<string, string>())
 
 function resetOnInteraction() {
   // We reset flags and errors on interaction.
-  updated.value = false
-  applicationsUpdated.value = false
   unexpectedError.value = ""
+  updated.value = false
   applicationsUnexpectedError.value = ""
+  applicationsUpdated.value = false
   // dataLoading and dataLoadingError are not listed here on
   // purpose because they are used only on mount.
 }
@@ -67,9 +69,9 @@ async function loadData(init: boolean) {
       organizationApplications.value = data.doc.applications || []
 
       const applicationsURL = router.apiResolve({
-        name: "Applications",
+        name: "ApplicationTemplates",
       }).href
-      applications.value = (await getURL<Applications>(applicationsURL, null, abortController.signal, mainProgress)).doc
+      applicationTemplates.value = (await getURL<ApplicationTemplates>(applicationsURL, null, abortController.signal, mainProgress)).doc
     }
   } catch (error) {
     if (abortController.signal.aborted) {
@@ -217,7 +219,7 @@ async function onChange(event: Event, id: string) {
   }
 }
 
-const WithApplicationDocument = WithDocument<Application>
+const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
 </script>
 
 <template>
@@ -242,18 +244,18 @@ const WithApplicationDocument = WithDocument<Application>
               <!--
                 Button is on purpose not disabled on unexpectedError so that user can retry.
               -->
-              <Button type="submit" primary :disabled="name.length === 0 || organization!.name === name || mainProgress > 0">Update</Button>
+              <Button type="submit" primary :disabled="!name || organization!.name === name || mainProgress > 0">Update</Button>
             </div>
           </form>
           <h2 class="text-xl font-bold">Enabled applications</h2>
           <div v-if="applicationsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
           <div v-else-if="applicationsUpdated" class="text-success-600">Applications updated successfully.</div>
           <ul>
-            <li v-for="application of applications" :key="application.id" class="flex flex-row gap-1">
+            <li v-for="applicationTemplate of applicationTemplates" :key="applicationTemplate.id" class="flex flex-row gap-1">
               <input
-                :id="'app/' + application.id"
+                :id="'app/' + applicationTemplate.id"
                 :disabled="mainProgress > 0 || !metadata.can_update"
-                :checked="isEnabled(application.id)"
+                :checked="isEnabled(applicationTemplate.id)"
                 :class="
                   mainProgress > 0 || !metadata.can_update
                     ? 'cursor-not-allowed bg-gray-100 text-primary-300 focus:ring-primary-300'
@@ -261,14 +263,14 @@ const WithApplicationDocument = WithDocument<Application>
                 "
                 type="checkbox"
                 class="my-1 rounded"
-                @change="onChange($event, application.id)"
+                @change="onChange($event, applicationTemplate.id)"
               />
               <div class="flex flex-col">
                 <div class="flex flex-row items-center gap-1">
-                  <WithApplicationDocument :id="application.id" name="Application">
+                  <WithApplicationTemplateDocument :id="applicationTemplate.id" name="Application">
                     <template #default="{ doc, metadata: meta, url }">
                       <label
-                        :for="'app/' + application.id"
+                        :for="'app/' + applicationTemplate.id"
                         class="leading-none"
                         :class="mainProgress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
                         :data-url="url"
@@ -276,20 +278,22 @@ const WithApplicationDocument = WithDocument<Application>
                       >
                       <label
                         v-if="meta.can_update"
-                        :for="'app/' + application.id"
+                        :for="'app/' + applicationTemplate.id"
                         class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none"
                         :class="mainProgress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
                         >admin</label
                       >
                     </template>
-                  </WithApplicationDocument>
-                  <router-link :to="{ name: 'Application', params: { id: application.id } }" class="link"
+                  </WithApplicationTemplateDocument>
+                  <router-link :to="{ name: 'ApplicationTemplate', params: { id: applicationTemplate.id } }" class="link"
                     ><ArrowTopRightOnSquareIcon alt="Link" class="inline h-5 w-5 align-text-top"
                   /></router-link>
                 </div>
                 <!-- Client ID is not sensitive any anyone can compute it themselves, but we still hide it to not introduce confusion. -->
-                <div v-if="metadata.can_update && getOrganizationApplicationID(application.id)">Client ID: {{ getOrganizationApplicationID(application.id) }}</div>
-                <div v-if="generatedSecrets.has(application.id)">Client secret: {{ generatedSecrets.get(application.id) }}</div>
+                <div v-if="metadata.can_update && getOrganizationApplicationID(applicationTemplate.id)">
+                  Client ID: {{ getOrganizationApplicationID(applicationTemplate.id) }}
+                </div>
+                <div v-if="generatedSecrets.has(applicationTemplate.id)">Client secret: {{ generatedSecrets.get(applicationTemplate.id) }}</div>
               </div>
             </li>
           </ul>

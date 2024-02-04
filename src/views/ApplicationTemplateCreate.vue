@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ApplicationCreate, ApplicationRef } from "@/types"
+import type { ApplicationTemplateCreate, ApplicationTemplateRef } from "@/types"
 
 import { onUnmounted, ref } from "vue"
 import { useRouter } from "vue-router"
@@ -13,6 +13,7 @@ const router = useRouter()
 
 const mainProgress = ref(0)
 const abortController = new AbortController()
+
 const unexpectedError = ref("")
 const name = ref("")
 
@@ -24,16 +25,16 @@ async function onSubmit() {
   mainProgress.value += 1
   try {
     unexpectedError.value = ""
-    const payload: ApplicationCreate = {
+    const payload: ApplicationTemplateCreate = {
       name: name.value,
     }
     const url = router.apiResolve({
-      name: "ApplicationCreate",
+      name: "ApplicationTemplateCreate",
     }).href
 
-    const application = await postURL<ApplicationRef>(url, payload, abortController.signal, mainProgress)
+    const applicationTemplate = await postURL<ApplicationTemplateRef>(url, payload, abortController.signal, mainProgress)
 
-    router.push({ name: "Application", params: { id: application.id } })
+    router.push({ name: "ApplicationTemplate", params: { id: applicationTemplate.id } })
     // We increase the progress and never decrease it to wait for browser to do the redirect.
     mainProgress.value += 1
   } catch (error) {
@@ -56,18 +57,18 @@ async function onSubmit() {
     <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
       <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
         <div class="flex flex-row items-center">
-          <h1 class="text-2xl font-bold">Create application</h1>
+          <h1 class="text-2xl font-bold">Create application template</h1>
         </div>
         <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
-          <label for="name" class="mb-1">Application name</label>
+          <label for="name" class="mb-1">Application template name</label>
           <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0" required />
           <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
-          <div v-else class="mt-4">Pick a name. You will be able to configure the application after it is created.</div>
+          <div v-else class="mt-4">Pick a name. You will be able to configure the application template after it is created.</div>
           <div class="mt-4 flex flex-row justify-end">
             <!--
               Button is on purpose not disabled on unexpectedError so that user can retry.
             -->
-            <Button type="submit" primary :disabled="name.length === 0 || mainProgress > 0">Create</Button>
+            <Button type="submit" primary :disabled="!name || mainProgress > 0">Create</Button>
           </div>
         </form>
       </div>

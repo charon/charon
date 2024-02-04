@@ -178,19 +178,54 @@ type ItemTypes = BareItem | ItemTypes[]
 
 export type Metadata = Record<Key, ItemTypes>
 
-export type Applications = ApplicationRef[]
+export type ApplicationTemplates = ApplicationTemplateRef[]
 
-export type ApplicationRef = {
+export type ApplicationTemplateRef = {
   id: string
 }
 
-export type Application = {
+export type VariableType = "uriPrefix"
+
+export type Variable = {
+  name: string
+  type: VariableType
+  description: string
+}
+
+export type ApplicationTemplateClientPublic = {
+  id: string
+  description: string
+  additionalScopes: string[]
+  redirectUriTemplates: string[]
+}
+
+export type ApplicationTemplateClientBackend = {
+  id: string
+  description: string
+  additionalScopes: string[]
+  tokenEndpointAuthMethod: "client_secret_post" | "client_secret_basic"
+  redirectUriTemplates: string[]
+}
+
+export type ApplicationTemplateClientService = {
+  id: string
+  description: string
+  additionalScopes: string[]
+  tokenEndpointAuthMethod: "client_secret_post" | "client_secret_basic"
+}
+
+export type ApplicationTemplate = {
   id: string
   name: string
-  redirectPaths: string[]
+  description: string
+  idScopes: string[]
+  variables: Variable[]
+  clientsPublic: ApplicationTemplateClientPublic[]
+  clientsBackend: ApplicationTemplateClientBackend[]
+  clientsService: ApplicationTemplateClientService[]
 }
 
-export type ApplicationCreate = {
+export type ApplicationTemplateCreate = {
   name: string
 }
 

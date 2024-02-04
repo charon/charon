@@ -111,7 +111,7 @@ type ClientRef struct {
 
 type ApplicationTemplateClientPublic struct {
 	ID          *identifier.Identifier `json:"id"`
-	Description string                 `json:"description,omitempty"`
+	Description string                 `json:"description"`
 
 	AdditionalScopes []string `json:"additionalScopes"`
 
@@ -128,9 +128,12 @@ func (c *ApplicationTemplateClientPublic) Validate(_ context.Context, variables 
 		c.AdditionalScopes = []string{}
 	}
 
-	// We sort and remove duplicates.
+	// We sort, remove duplicates and empty strings.
 	slices.Sort(c.AdditionalScopes)
 	c.AdditionalScopes = slices.Compact(c.AdditionalScopes)
+	c.AdditionalScopes = slices.DeleteFunc(c.AdditionalScopes, func(scope string) bool {
+		return scope == ""
+	})
 
 	redirectURIsTemplates, errE := validateRedirectURITemplates(c.RedirectURITemplates, variables)
 	if errE != nil {
@@ -143,7 +146,7 @@ func (c *ApplicationTemplateClientPublic) Validate(_ context.Context, variables 
 
 type ApplicationTemplateClientBackend struct {
 	ID          *identifier.Identifier `json:"id"`
-	Description string                 `json:"description,omitempty"`
+	Description string                 `json:"description"`
 
 	AdditionalScopes []string `json:"additionalScopes"`
 
@@ -161,9 +164,12 @@ func (c *ApplicationTemplateClientBackend) Validate(_ context.Context, variables
 		c.AdditionalScopes = []string{}
 	}
 
-	// We sort and remove duplicates.
+	// We sort, remove duplicates and empty strings.
 	slices.Sort(c.AdditionalScopes)
 	c.AdditionalScopes = slices.Compact(c.AdditionalScopes)
+	c.AdditionalScopes = slices.DeleteFunc(c.AdditionalScopes, func(scope string) bool {
+		return scope == ""
+	})
 
 	switch c.TokenEndpointAuthMethod {
 	case "client_secret_post":
@@ -185,7 +191,7 @@ func (c *ApplicationTemplateClientBackend) Validate(_ context.Context, variables
 
 type ApplicationTemplateClientService struct {
 	ID          *identifier.Identifier `json:"id"`
-	Description string                 `json:"description,omitempty"`
+	Description string                 `json:"description"`
 
 	AdditionalScopes []string `json:"additionalScopes"`
 
@@ -202,9 +208,12 @@ func (c *ApplicationTemplateClientService) Validate(_ context.Context, _ []Varia
 		c.AdditionalScopes = []string{}
 	}
 
-	// We sort and remove duplicates.
+	// We sort, remove duplicates and empty strings.
 	slices.Sort(c.AdditionalScopes)
 	c.AdditionalScopes = slices.Compact(c.AdditionalScopes)
+	c.AdditionalScopes = slices.DeleteFunc(c.AdditionalScopes, func(scope string) bool {
+		return scope == ""
+	})
 
 	switch c.TokenEndpointAuthMethod {
 	case "client_secret_post":
@@ -231,7 +240,7 @@ var validationValues = map[VariableType]string{ //nolint:gochecknoglobals
 type Variable struct {
 	Name        string       `json:"name"`
 	Type        VariableType `json:"type"`
-	Description string       `json:"description,omitempty"`
+	Description string       `json:"description"`
 }
 
 func (v *Variable) Validate(_ context.Context) errors.E {
@@ -282,7 +291,7 @@ type ApplicationTemplate struct {
 	Admins []AccountRef `json:"admins,omitempty"`
 
 	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 
 	IDScopes []string `json:"idScopes"`
 
@@ -352,9 +361,12 @@ func (a *ApplicationTemplate) Validate(ctx context.Context) errors.E {
 		a.IDScopes = []string{}
 	}
 
-	// We sort and remove duplicates.
+	// We sort, remove duplicates and empty strings.
 	slices.Sort(a.IDScopes)
 	a.IDScopes = slices.Compact(a.IDScopes)
+	a.IDScopes = slices.DeleteFunc(a.IDScopes, func(scope string) bool {
+		return scope == ""
+	})
 
 	// TODO: Validate that a.IDScopes is a (non-strict) subset of supported ID scopes.
 

@@ -221,7 +221,7 @@ async function onNext() {
     }
     if ("error" in response && ["wrongPassword", "invalidPassword", "shortPassword"].includes(response.error)) {
       passwordError.value = response.error
-      if (response.error === "wrongPassword" && codeError.value === "") {
+      if (response.error === "wrongPassword" && !codeError.value) {
         // If password error was returned and account recovery was not automatically
         // attempted it means that the account exist but without e-mail addresses.
         codeError.value = "noEmails"
@@ -369,7 +369,7 @@ async function onCode() {
           client side so we might be counting characters differently here, leading to confusion.
           Button is on purpose not disabled on unexpectedPasswordError so that user can retry.
         -->
-        <Button primary type="submit" class="ml-4" tabindex="2" :disabled="password.length === 0 || mainProgress + keyProgress > 0 || !!passwordError">Next</Button>
+        <Button primary type="submit" class="ml-4" tabindex="2" :disabled="!password || mainProgress + keyProgress > 0 || !!passwordError">Next</Button>
       </form>
     </div>
     <template v-if="passwordError">

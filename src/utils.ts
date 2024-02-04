@@ -1,5 +1,8 @@
 import type { AuthFlowResponse, Flow, LocationResponse } from "@/types"
 
+import { cloneDeep, isEqual } from "lodash-es"
+import { toRaw } from "vue"
+
 export function processCompleted(flow: Flow, location: LocationResponse, name: string, completed: "signin" | "signup" | "failed") {
   flow.updateLocation(location)
   flow.updateName(name)
@@ -60,4 +63,12 @@ export function replaceLocationHash(hash: string) {
   } else {
     history.replaceState ? history.replaceState(null, "", window.location.href.split("#")[0]) : (window.location.hash = "")
   }
+}
+
+export function clone<T>(input: T): T {
+  return cloneDeep(toRaw(input))
+}
+
+export function equals<T>(a: T, b: T): boolean {
+  return isEqual(a, b)
 }

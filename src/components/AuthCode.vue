@@ -254,9 +254,7 @@ async function onResend() {
           is not enabled.
           Button is on purpose not disabled on unexpectedError so that user can retry.
         -->
-        <Button id="submit-code" primary type="submit" class="ml-4" tabindex="2" :disabled="code.replaceAll(/\s/g, '').length === 0 || mainProgress > 0 || !!codeError"
-          >Next</Button
-        >
+        <Button id="submit-code" primary type="submit" class="ml-4" tabindex="2" :disabled="!code.replaceAll(/\s/g, '') || mainProgress > 0 || !!codeError">Next</Button>
       </form>
     </div>
     <div v-if="codeError === 'invalidCode'" class="mt-4 text-error-600">Code is invalid. Please try again.</div>
