@@ -739,7 +739,7 @@ func (s *Service) ApplicationTemplateUpdatePost(w http.ResponseWriter, req *http
 		return
 	}
 
-	s.returnApplicationTemplate(ctx, w, req, &applicationTemplate)
+	s.returnApplicationTemplateRef(ctx, w, req, &applicationTemplate)
 }
 
 func (s *Service) ApplicationTemplateCreatePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {

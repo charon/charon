@@ -624,7 +624,7 @@ func (s *Service) OrganizationUpdatePost(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	s.returnOrganization(ctx, w, req, &organization)
+	s.returnOrganizationRef(ctx, w, req, &organization)
 }
 
 func (s *Service) OrganizationCreatePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
