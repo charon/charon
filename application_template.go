@@ -37,6 +37,9 @@ var (
 	applicationTemplatesMu = sync.RWMutex{}                         //nolint:gochecknoglobals
 )
 
+// From RFC 6749: scope-token = 1*( %x21 / %x23-5B / %x5D-7E ).
+var validScopeRegexp = regexp.MustCompile(`^[\x21\x23-\x5B\x5D-\x7E]+$`)
+
 func validateRedirectURITemplates(redirectURITemplates []string, variables []Variable) ([]string, errors.E) {
 	if redirectURITemplates == nil {
 		redirectURITemplates = []string{}
@@ -128,6 +131,15 @@ func (c *ApplicationTemplateClientPublic) Validate(_ context.Context, variables 
 		c.AdditionalScopes = []string{}
 	}
 
+	for i, scope := range c.AdditionalScopes {
+		if !validScopeRegexp.MatchString(scope) {
+			errE := errors.New("invalid scope")
+			errors.Details(errE)["i"] = i
+			errors.Details(errE)["scope"] = scope
+			return errE
+		}
+	}
+
 	// We sort, remove duplicates and empty strings.
 	slices.Sort(c.AdditionalScopes)
 	c.AdditionalScopes = slices.Compact(c.AdditionalScopes)
@@ -162,6 +174,15 @@ func (c *ApplicationTemplateClientBackend) Validate(_ context.Context, variables
 
 	if c.AdditionalScopes == nil {
 		c.AdditionalScopes = []string{}
+	}
+
+	for i, scope := range c.AdditionalScopes {
+		if !validScopeRegexp.MatchString(scope) {
+			errE := errors.New("invalid scope")
+			errors.Details(errE)["i"] = i
+			errors.Details(errE)["scope"] = scope
+			return errE
+		}
 	}
 
 	// We sort, remove duplicates and empty strings.
@@ -206,6 +227,15 @@ func (c *ApplicationTemplateClientService) Validate(_ context.Context, _ []Varia
 
 	if c.AdditionalScopes == nil {
 		c.AdditionalScopes = []string{}
+	}
+
+	for i, scope := range c.AdditionalScopes {
+		if !validScopeRegexp.MatchString(scope) {
+			errE := errors.New("invalid scope")
+			errors.Details(errE)["i"] = i
+			errors.Details(errE)["scope"] = scope
+			return errE
+		}
 	}
 
 	// We sort, remove duplicates and empty strings.
@@ -359,6 +389,15 @@ func (a *ApplicationTemplate) Validate(ctx context.Context) errors.E {
 
 	if a.IDScopes == nil {
 		a.IDScopes = []string{}
+	}
+
+	for i, scope := range a.IDScopes {
+		if !validScopeRegexp.MatchString(scope) {
+			errE := errors.New("invalid scope")
+			errors.Details(errE)["i"] = i
+			errors.Details(errE)["scope"] = scope
+			return errE
+		}
 	}
 
 	// We sort, remove duplicates and empty strings.

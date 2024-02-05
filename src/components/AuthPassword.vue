@@ -329,7 +329,7 @@ async function onCode() {
         We set novalidate because we do not UA to show hints.
         We show them ourselves when we want them.
       -->
-      <form class="flex flex-row" novalidate @submit.prevent="onNext">
+      <form class="flex flex-row gap-4" novalidate @submit.prevent="onNext">
         <!--
           Help Chrome remember the username/e-mail address using hidden input field.
           See: https://www.chromium.org/developers/design-documents/form-styles-that-chromium-understands/
@@ -369,7 +369,7 @@ async function onCode() {
           client side so we might be counting characters differently here, leading to confusion.
           Button is on purpose not disabled on unexpectedPasswordError so that user can retry.
         -->
-        <Button primary type="submit" class="ml-4" tabindex="2" :disabled="!password || mainProgress + keyProgress > 0 || !!passwordError">Next</Button>
+        <Button primary type="submit" tabindex="2" :disabled="!password || mainProgress + keyProgress > 0 || !!passwordError">Next</Button>
       </form>
     </div>
     <template v-if="passwordError">

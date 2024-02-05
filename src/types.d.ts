@@ -193,14 +193,14 @@ export type Variable = {
 }
 
 export type ApplicationTemplateClientPublic = {
-  id: string
+  id?: string
   description: string
   additionalScopes: string[]
   redirectUriTemplates: string[]
 }
 
 export type ApplicationTemplateClientBackend = {
-  id: string
+  id?: string
   description: string
   additionalScopes: string[]
   tokenEndpointAuthMethod: "client_secret_post" | "client_secret_basic"
@@ -208,7 +208,7 @@ export type ApplicationTemplateClientBackend = {
 }
 
 export type ApplicationTemplateClientService = {
-  id: string
+  id?: string
   description: string
   additionalScopes: string[]
   tokenEndpointAuthMethod: "client_secret_post" | "client_secret_basic"
