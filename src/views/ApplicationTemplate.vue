@@ -71,7 +71,18 @@ function resetOnInteraction() {
   // purpose because they are used only on mount.
 }
 
-watch([name, description, idScopes, variables, clientsPublic, clientsBackend, clientsService], resetOnInteraction, { deep: true })
+let watchInteractionStop: (() => void) | null = null
+function initWatchInteraction() {
+  const stop = watch([name, description, idScopes, variables, clientsPublic, clientsBackend, clientsService], resetOnInteraction, { deep: true })
+  if (watchInteractionStop !== null) {
+    throw new Error("watchInteractionStop already set")
+  }
+  watchInteractionStop = () => {
+    watchInteractionStop = null
+    stop()
+  }
+}
+initWatchInteraction()
 
 onUnmounted(() => {
   abortController.abort()
@@ -79,6 +90,7 @@ onUnmounted(() => {
 
 async function loadData(update: "init" | "basic" | "variables" | "clientsPublic" | "clientsBackend" | "clientsService") {
   mainProgress.value += 1
+  watchInteractionStop!()
   try {
     const url = router.apiResolve({
       name: "ApplicationTemplate",
@@ -117,6 +129,7 @@ async function loadData(update: "init" | "basic" | "variables" | "clientsPublic"
     dataLoadingError.value = `${error}`
   } finally {
     dataLoading.value = false
+    initWatchInteraction()
     mainProgress.value -= 1
   }
 }
