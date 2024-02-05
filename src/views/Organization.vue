@@ -247,7 +247,7 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
               <Button type="submit" primary :disabled="!name || organization!.name === name || mainProgress > 0">Update</Button>
             </div>
           </form>
-          <h2 class="text-xl font-bold">Enabled applications</h2>
+          <h2 class="text-xl font-bold mt-4">Enabled applications</h2>
           <div v-if="applicationsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
           <div v-else-if="applicationsUpdated" class="text-success-600">Applications updated successfully.</div>
           <ul>
