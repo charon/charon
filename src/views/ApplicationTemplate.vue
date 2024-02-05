@@ -430,12 +430,12 @@ function onAddClientService() {
               <Button type="submit" primary :disabled="!canBasicSubmit() || mainProgress > 0">Update</Button>
             </div>
           </form>
-          <h2 class="text-xl font-bold mt-4">Variables</h2>
+          <h2 class="text-xl font-bold">Variables</h2>
           <div v-if="variablesUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
           <div v-else-if="variablesUpdated" class="text-success-600">Variables updated successfully.</div>
           <form class="flex flex-col" novalidate @submit.prevent="onVariablesSubmit">
             <ol>
-              <li v-for="(variable, i) in variables" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
+              <li v-for="(variable, i) in variables" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
                 <div>{{ i + 1 }}.</div>
                 <div class="flex flex-col">
                   <label :for="`variable-${i}-name`" class="mb-1">Name</label>
@@ -461,7 +461,7 @@ function onAddClientService() {
                 </div>
               </li>
             </ol>
-            <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-between gap-4">
+            <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
               <Button type="button" @click.prevent="onAddVariable">Add variable</Button>
               <!--
                 Button is on purpose not disabled on unexpectedError so that user can retry.
@@ -469,12 +469,12 @@ function onAddClientService() {
               <Button type="submit" primary :disabled="!canVariablesSubmit() || mainProgress > 0">Update</Button>
             </div>
           </form>
-          <h2 class="text-xl font-bold mt-4">Public clients</h2>
+          <h2 class="text-xl font-bold">Public clients</h2>
           <div v-if="clientsPublicUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
           <div v-else-if="clientsPublicUpdated" class="text-success-600">Public clients updated successfully.</div>
           <form class="flex flex-col" novalidate @submit.prevent="onClientsPublicSubmit">
             <ol>
-              <li v-for="(client, i) in clientsPublic" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
+              <li v-for="(client, i) in clientsPublic" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
                 <div>{{ i + 1 }}.</div>
                 <div class="flex flex-col">
                   <fieldset>
@@ -526,7 +526,7 @@ function onAddClientService() {
                 </div>
               </li>
             </ol>
-            <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-between gap-4">
+            <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
               <Button type="button" @click.prevent="onAddClientPublic">Add client</Button>
               <!--
                 Button is on purpose not disabled on unexpectedError so that user can retry.
@@ -534,12 +534,12 @@ function onAddClientService() {
               <Button type="submit" primary :disabled="!canClientsPublicSubmit() || mainProgress > 0">Update</Button>
             </div>
           </form>
-          <h2 class="text-xl font-bold mt-4">Backend clients</h2>
+          <h2 class="text-xl font-bold">Backend clients</h2>
           <div v-if="clientsBackendUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
           <div v-else-if="clientsBackendUpdated" class="text-success-600">Backend clients updated successfully.</div>
           <form class="flex flex-col" novalidate @submit.prevent="onClientsBackendSubmit">
             <ol>
-              <li v-for="(client, i) in clientsBackend" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
+              <li v-for="(client, i) in clientsBackend" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
                 <div>{{ i + 1 }}.</div>
                 <div class="flex flex-col">
                   <fieldset>
@@ -614,7 +614,7 @@ function onAddClientService() {
                 </div>
               </li>
             </ol>
-            <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-between gap-4">
+            <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
               <Button type="button" @click.prevent="onAddClientBackend">Add client</Button>
               <!--
                 Button is on purpose not disabled on unexpectedError so that user can retry.
@@ -622,12 +622,12 @@ function onAddClientService() {
               <Button type="submit" primary :disabled="!canClientsBackendSubmit() || mainProgress > 0">Update</Button>
             </div>
           </form>
-          <h2 class="text-xl font-bold mt-4">Service clients</h2>
+          <h2 class="text-xl font-bold">Service clients</h2>
           <div v-if="clientsServiceUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
           <div v-else-if="clientsServiceUpdated" class="text-success-600">Service clients updated successfully.</div>
           <form class="flex flex-col" novalidate @submit.prevent="onClientsServiceSubmit">
             <ol>
-              <li v-for="(client, i) in clientsService" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
+              <li v-for="(client, i) in clientsService" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
                 <div>{{ i + 1 }}.</div>
                 <div class="flex flex-col">
                   <fieldset>
@@ -680,7 +680,7 @@ function onAddClientService() {
                 </div>
               </li>
             </ol>
-            <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-between gap-4">
+            <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
               <Button type="button" @click.prevent="onAddClientService">Add client</Button>
               <!--
                 Button is on purpose not disabled on unexpectedError so that user can retry.
