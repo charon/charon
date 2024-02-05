@@ -7,7 +7,9 @@ its DOM attributes without flickering how the component looks.
 -->
 
 <script setup lang="ts">
-withDefaults(
+import { computed } from "vue"
+
+const props = withDefaults(
   defineProps<{
     progress?: number
     readonly?: boolean
@@ -24,13 +26,23 @@ withDefaults(
   },
 )
 
-defineEmits<{
+const $emit = defineEmits<{
   "update:modelValue": [value: string]
 }>()
+
+const v = computed({
+  get() {
+    return props.modelValue
+  },
+  set(value: string) {
+    $emit("update:modelValue", value)
+  },
+})
 </script>
 
 <template>
   <input
+    v-model="v"
     :readonly="progress > 0 || readonly"
     :type="type"
     class="rounded border-0 shadow ring-2 ring-neutral-300 focus:ring-2"
@@ -40,7 +52,5 @@ defineEmits<{
       'bg-white hover:ring-neutral-400 focus:ring-primary-500': progress === 0 && !readonly,
       'bg-error-50': invalid,
     }"
-    :value="modelValue"
-    @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
   />
 </template>
