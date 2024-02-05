@@ -14,6 +14,7 @@ import { useRouter } from "vue-router"
 import InputText from "@/components/InputText.vue"
 import TextArea from "@/components/TextArea.vue"
 import Button from "@/components/Button.vue"
+import RadioButton from "@/components/RadioButton.vue"
 import NavBar from "@/components/NavBar.vue"
 import Footer from "@/components/Footer.vue"
 import { getURL, postURL } from "@/api"
@@ -46,6 +47,8 @@ const clientsPublicUnexpectedError = ref("")
 const clientsPublicUpdated = ref(false)
 const clientsPublic = ref<ApplicationTemplateClientPublic[]>([])
 
+const clientsBackendUnexpectedError = ref("")
+const clientsBackendUpdated = ref(false)
 const clientsBackend = ref<ApplicationTemplateClientBackend[]>([])
 
 const clientsService = ref<ApplicationTemplateClientService[]>([])
@@ -58,6 +61,8 @@ function resetOnInteraction() {
   variablesUpdated.value = false
   clientsPublicUnexpectedError.value = ""
   clientsPublicUpdated.value = false
+  clientsBackendUnexpectedError.value = ""
+  clientsBackendUpdated.value = false
   // dataLoading and dataLoadingError are not listed here on
   // purpose because they are used only on mount.
 }
@@ -85,7 +90,7 @@ async function loadData(init: boolean) {
       name.value = data.doc.name
       description.value = data.doc.description
       // We have to make copies so that we break reactivity link with data.doc.
-      idScopes.value = data.doc.idScopes
+      idScopes.value = clone(data.doc.idScopes)
       variables.value = clone(data.doc.variables)
       clientsPublic.value = clone(data.doc.clientsPublic)
       clientsBackend.value = clone(data.doc.clientsBackend)
@@ -277,6 +282,62 @@ function onAddClientPublic() {
     redirectUriTemplates: [],
   })
 }
+
+function canClientsBackendSubmit(): boolean {
+  // Required fields.
+  for (const client of clientsBackend.value) {
+    if (!client.redirectUriTemplates.length) {
+      return false
+    }
+  }
+
+  // Anything changed?
+  if (!equals(applicationTemplate.value!.clientsBackend, clientsBackend.value)) {
+    return true
+  }
+
+  return false
+}
+
+async function onClientsBackendSubmit() {
+  const payload: ApplicationTemplate = {
+    // We update only clientsBackend.
+    id: props.id,
+    name: applicationTemplate.value!.name,
+    description: applicationTemplate.value!.description,
+    idScopes: applicationTemplate.value!.idScopes,
+    variables: applicationTemplate.value!.variables,
+    clientsPublic: applicationTemplate.value!.clientsPublic,
+    clientsBackend: clientsBackend.value,
+    clientsService: applicationTemplate.value!.clientsService,
+  }
+  await onSubmit(payload, variablesUpdated, variablesUnexpectedError)
+}
+
+function onAddClientBackend() {
+  // No need to call resetOnInteraction here because we modify variables
+  // which we watch to call resetOnInteraction.
+
+  // If there is standard uriBase variable, we populate with example redirect.
+  for (const variable of variables.value) {
+    if (variable.name === "uriBase") {
+      clientsBackend.value.push({
+        description: "",
+        additionalScopes: [],
+        tokenEndpointAuthMethod: "client_secret_post",
+        redirectUriTemplates: ["{uriBase}/oidc/redirect"],
+      })
+      return
+    }
+  }
+
+  clientsBackend.value.push({
+    description: "",
+    additionalScopes: [],
+    tokenEndpointAuthMethod: "client_secret_post",
+    redirectUriTemplates: [],
+  })
+}
 </script>
 
 <template>
@@ -396,7 +457,7 @@ function onAddClientPublic() {
                     class="flex-grow flex-auto min-w-0"
                     :readonly="mainProgress > 0 || !metadata.can_update"
                   />
-                  <label for="client-public-${i}-additionalScopes" class="mb-1 mt-4"
+                  <label :for="`client-public-${i}-additionalScopes`" class="mb-1 mt-4"
                     >Space-separated additional scopes the application might request<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">
                       (optional)</span
                     ></label
@@ -420,6 +481,94 @@ function onAddClientPublic() {
                 Button is on purpose not disabled on unexpectedError so that user can retry.
               -->
               <Button type="submit" primary :disabled="!canClientsPublicSubmit() || mainProgress > 0">Update</Button>
+            </div>
+          </form>
+          <h2 class="text-xl font-bold mt-4">Backend clients</h2>
+          <div v-if="clientsBackendUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
+          <div v-else-if="clientsBackendUpdated" class="text-success-600">Backend clients updated successfully.</div>
+          <form class="flex flex-col" novalidate @submit.prevent="onClientsBackendSubmit">
+            <ol>
+              <li v-for="(client, i) in clientsBackend" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
+                <div>{{ i + 1 }}.</div>
+                <div class="flex flex-col">
+                  <fieldset>
+                    <legend>OIDC redirect URI templates</legend>
+                    <ol>
+                      <li v-for="(_, j) in client.redirectUriTemplates" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
+                        <div>{{ j + 1 }}.</div>
+                        <div class="flex flex-row gap-4">
+                          <InputText
+                            v-model="client.redirectUriTemplates[j]"
+                            class="flex-grow flex-auto min-w-0"
+                            :readonly="mainProgress > 0 || !metadata.can_update"
+                            required
+                          />
+                          <Button v-if="metadata.can_update" type="button" :disabled="mainProgress > 0" @click.prevent="client.redirectUriTemplates.splice(j, 1)"
+                            >Remove</Button
+                          >
+                        </div>
+                      </li>
+                    </ol>
+                  </fieldset>
+                  <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-start">
+                    <Button type="button" :disabled="mainProgress > 0" @click.prevent="client.redirectUriTemplates.push('')">Add template</Button>
+                  </div>
+                  <fieldset class="mt-4">
+                    <legend class="mb-1">Token endpoint authentication method</legend>
+                    <div class="flex flex-col gap-1">
+                      <div>
+                        <RadioButton
+                          :id="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_post`"
+                          v-model="client.tokenEndpointAuthMethod"
+                          value="client_secret_post"
+                          class="mx-2"
+                        />
+                        <label :for="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_post`"><tt>client_secret_post</tt></label>
+                      </div>
+                      <div>
+                        <RadioButton
+                          :id="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_basic`"
+                          v-model="client.tokenEndpointAuthMethod"
+                          value="client_secret_basic"
+                          class="mx-2"
+                        />
+                        <label :for="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_basic`"><tt>client_secret_basic</tt></label>
+                      </div>
+                    </div>
+                  </fieldset>
+                  <label :for="`client-backend-${i}-description`" class="mb-1 mt-4"
+                    >Description<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label
+                  >
+                  <TextArea
+                    :id="`client-backend-${i}-description`"
+                    v-model="client.description"
+                    class="flex-grow flex-auto min-w-0"
+                    :readonly="mainProgress > 0 || !metadata.can_update"
+                  />
+                  <label :for="`client-backend-${i}-additionalScopes`" class="mb-1 mt-4"
+                    >Space-separated additional scopes the application might request<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">
+                      (optional)</span
+                    ></label
+                  >
+                  <TextArea
+                    id="client-backend-${i}-additionalScopes"
+                    :model-value="client.additionalScopes.join(' ')"
+                    class="flex-grow flex-auto min-w-0"
+                    :readonly="mainProgress > 0 || !metadata.can_update"
+                    @update:model-value="(v) => (client.additionalScopes = splitSpace(v))"
+                  />
+                  <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
+                    <Button type="button" :disabled="mainProgress > 0" @click.prevent="clientsBackend.splice(i, 1)">Remove</Button>
+                  </div>
+                </div>
+              </li>
+            </ol>
+            <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-between gap-4">
+              <Button type="button" @click.prevent="onAddClientBackend">Add client</Button>
+              <!--
+                Button is on purpose not disabled on unexpectedError so that user can retry.
+              -->
+              <Button type="submit" primary :disabled="!canClientsBackendSubmit() || mainProgress > 0">Update</Button>
             </div>
           </form>
         </template>
