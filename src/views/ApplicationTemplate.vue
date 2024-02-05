@@ -51,6 +51,8 @@ const clientsBackendUnexpectedError = ref("")
 const clientsBackendUpdated = ref(false)
 const clientsBackend = ref<ApplicationTemplateClientBackend[]>([])
 
+const clientsServiceUnexpectedError = ref("")
+const clientsServiceUpdated = ref(false)
 const clientsService = ref<ApplicationTemplateClientService[]>([])
 
 function resetOnInteraction() {
@@ -63,6 +65,8 @@ function resetOnInteraction() {
   clientsPublicUpdated.value = false
   clientsBackendUnexpectedError.value = ""
   clientsBackendUpdated.value = false
+  clientsServiceUnexpectedError.value = ""
+  clientsServiceUpdated.value = false
   // dataLoading and dataLoadingError are not listed here on
   // purpose because they are used only on mount.
 }
@@ -338,6 +342,53 @@ function onAddClientBackend() {
     redirectUriTemplates: [],
   })
 }
+
+function canClientsServiceSubmit(): boolean {
+  // Anything changed?
+  if (!equals(applicationTemplate.value!.clientsService, clientsService.value)) {
+    return true
+  }
+
+  return false
+}
+
+async function onClientsServiceSubmit() {
+  const payload: ApplicationTemplate = {
+    // We update only clientsService.
+    id: props.id,
+    name: applicationTemplate.value!.name,
+    description: applicationTemplate.value!.description,
+    idScopes: applicationTemplate.value!.idScopes,
+    variables: applicationTemplate.value!.variables,
+    clientsPublic: applicationTemplate.value!.clientsPublic,
+    clientsBackend: applicationTemplate.value!.clientsBackend,
+    clientsService: clientsService.value,
+  }
+  await onSubmit(payload, variablesUpdated, variablesUnexpectedError)
+}
+
+function onAddClientService() {
+  // No need to call resetOnInteraction here because we modify variables
+  // which we watch to call resetOnInteraction.
+
+  // If there is standard uriBase variable, we populate with example redirect.
+  for (const variable of variables.value) {
+    if (variable.name === "uriBase") {
+      clientsService.value.push({
+        description: "",
+        additionalScopes: [],
+        tokenEndpointAuthMethod: "client_secret_post",
+      })
+      return
+    }
+  }
+
+  clientsService.value.push({
+    description: "",
+    additionalScopes: [],
+    tokenEndpointAuthMethod: "client_secret_post",
+  })
+}
 </script>
 
 <template>
@@ -523,7 +574,7 @@ function onAddClientBackend() {
                           value="client_secret_post"
                           class="mx-2"
                         />
-                        <label :for="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_post`"><tt>client_secret_post</tt></label>
+                        <label :for="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_post`"><code>client_secret_post</code></label>
                       </div>
                       <div>
                         <RadioButton
@@ -532,7 +583,7 @@ function onAddClientBackend() {
                           value="client_secret_basic"
                           class="mx-2"
                         />
-                        <label :for="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_basic`"><tt>client_secret_basic</tt></label>
+                        <label :for="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_basic`"><code>client_secret_basic</code></label>
                       </div>
                     </div>
                   </fieldset>
@@ -569,6 +620,72 @@ function onAddClientBackend() {
                 Button is on purpose not disabled on unexpectedError so that user can retry.
               -->
               <Button type="submit" primary :disabled="!canClientsBackendSubmit() || mainProgress > 0">Update</Button>
+            </div>
+          </form>
+          <h2 class="text-xl font-bold mt-4">Service clients</h2>
+          <div v-if="clientsServiceUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
+          <div v-else-if="clientsServiceUpdated" class="text-success-600">Service clients updated successfully.</div>
+          <form class="flex flex-col" novalidate @submit.prevent="onClientsServiceSubmit">
+            <ol>
+              <li v-for="(client, i) in clientsService" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
+                <div>{{ i + 1 }}.</div>
+                <div class="flex flex-col">
+                  <fieldset>
+                    <legend class="mb-1">Token endpoint authentication method</legend>
+                    <div class="flex flex-col gap-1">
+                      <div>
+                        <RadioButton
+                          :id="`client-service-${i}-tokenEndpointAuthMethod-client_secret_post`"
+                          v-model="client.tokenEndpointAuthMethod"
+                          value="client_secret_post"
+                          class="mx-2"
+                        />
+                        <label :for="`client-service-${i}-tokenEndpointAuthMethod-client_secret_post`"><code>client_secret_post</code></label>
+                      </div>
+                      <div>
+                        <RadioButton
+                          :id="`client-service-${i}-tokenEndpointAuthMethod-client_secret_basic`"
+                          v-model="client.tokenEndpointAuthMethod"
+                          value="client_secret_basic"
+                          class="mx-2"
+                        />
+                        <label :for="`client-service-${i}-tokenEndpointAuthMethod-client_secret_basic`"><code>client_secret_basic</code></label>
+                      </div>
+                    </div>
+                  </fieldset>
+                  <label :for="`client-service-${i}-description`" class="mb-1 mt-4"
+                    >Description<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label
+                  >
+                  <TextArea
+                    :id="`client-service-${i}-description`"
+                    v-model="client.description"
+                    class="flex-grow flex-auto min-w-0"
+                    :readonly="mainProgress > 0 || !metadata.can_update"
+                  />
+                  <label :for="`client-service-${i}-additionalScopes`" class="mb-1 mt-4"
+                    >Space-separated additional scopes the application might request<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">
+                      (optional)</span
+                    ></label
+                  >
+                  <TextArea
+                    id="client-service-${i}-additionalScopes"
+                    :model-value="client.additionalScopes.join(' ')"
+                    class="flex-grow flex-auto min-w-0"
+                    :readonly="mainProgress > 0 || !metadata.can_update"
+                    @update:model-value="(v) => (client.additionalScopes = splitSpace(v))"
+                  />
+                  <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
+                    <Button type="button" :disabled="mainProgress > 0" @click.prevent="clientsService.splice(i, 1)">Remove</Button>
+                  </div>
+                </div>
+              </li>
+            </ol>
+            <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-between gap-4">
+              <Button type="button" @click.prevent="onAddClientService">Add client</Button>
+              <!--
+                Button is on purpose not disabled on unexpectedError so that user can retry.
+              -->
+              <Button type="submit" primary :disabled="!canClientsServiceSubmit() || mainProgress > 0">Update</Button>
             </div>
           </form>
         </template>
