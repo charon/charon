@@ -77,7 +77,7 @@ onUnmounted(() => {
   abortController.abort()
 })
 
-async function loadData(init: boolean) {
+async function loadData(update: "init" | "basic" | "variables" | "clientsPublic" | "clientsBackend" | "clientsService") {
   mainProgress.value += 1
   try {
     const url = router.apiResolve({
@@ -90,14 +90,22 @@ async function loadData(init: boolean) {
     applicationTemplate.value = data.doc
     metadata.value = data.metadata
 
-    if (init) {
+    // We have to make copies so that we break reactivity link with data.doc.
+    if (update === "init" || update === "basic") {
       name.value = data.doc.name
       description.value = data.doc.description
-      // We have to make copies so that we break reactivity link with data.doc.
       idScopes.value = clone(data.doc.idScopes)
+    }
+    if (update === "init" || update === "variables") {
       variables.value = clone(data.doc.variables)
+    }
+    if (update === "init" || update === "clientsPublic") {
       clientsPublic.value = clone(data.doc.clientsPublic)
+    }
+    if (update === "init" || update === "clientsBackend") {
       clientsBackend.value = clone(data.doc.clientsBackend)
+    }
+    if (update === "init" || update === "clientsService") {
       clientsService.value = clone(data.doc.clientsService)
     }
   } catch (error) {
@@ -114,10 +122,15 @@ async function loadData(init: boolean) {
 }
 
 onBeforeMount(async () => {
-  await loadData(true)
+  await loadData("init")
 })
 
-async function onSubmit(payload: ApplicationTemplate, updated: Ref<boolean>, unexpectedError: Ref<string>) {
+async function onSubmit(
+  payload: ApplicationTemplate,
+  update: "basic" | "variables" | "clientsPublic" | "clientsBackend" | "clientsService",
+  updated: Ref<boolean>,
+  unexpectedError: Ref<string>,
+) {
   resetOnInteraction()
 
   mainProgress.value += 1
@@ -141,7 +154,7 @@ async function onSubmit(payload: ApplicationTemplate, updated: Ref<boolean>, une
       unexpectedError.value = `${error}`
     } finally {
       // We update state even on errors.
-      await loadData(false)
+      await loadData(update)
     }
   } finally {
     mainProgress.value -= 1
@@ -188,7 +201,7 @@ async function onBasicSubmit() {
     clientsBackend: applicationTemplate.value!.clientsBackend,
     clientsService: applicationTemplate.value!.clientsService,
   }
-  await onSubmit(payload, basicUpdated, basicUnexpectedError)
+  await onSubmit(payload, "basic", basicUpdated, basicUnexpectedError)
 }
 
 function canVariablesSubmit(): boolean {
@@ -219,7 +232,7 @@ async function onVariablesSubmit() {
     clientsBackend: applicationTemplate.value!.clientsBackend,
     clientsService: applicationTemplate.value!.clientsService,
   }
-  await onSubmit(payload, variablesUpdated, variablesUnexpectedError)
+  await onSubmit(payload, "variables", variablesUpdated, variablesUnexpectedError)
 }
 
 function onAddVariable() {
@@ -261,7 +274,7 @@ async function onClientsPublicSubmit() {
     clientsBackend: applicationTemplate.value!.clientsBackend,
     clientsService: applicationTemplate.value!.clientsService,
   }
-  await onSubmit(payload, variablesUpdated, variablesUnexpectedError)
+  await onSubmit(payload, "clientsPublic", clientsPublicUpdated, clientsPublicUnexpectedError)
 }
 
 function onAddClientPublic() {
@@ -315,7 +328,7 @@ async function onClientsBackendSubmit() {
     clientsBackend: clientsBackend.value,
     clientsService: applicationTemplate.value!.clientsService,
   }
-  await onSubmit(payload, variablesUpdated, variablesUnexpectedError)
+  await onSubmit(payload, "clientsBackend", clientsBackendUpdated, clientsBackendUnexpectedError)
 }
 
 function onAddClientBackend() {
@@ -364,7 +377,7 @@ async function onClientsServiceSubmit() {
     clientsBackend: applicationTemplate.value!.clientsBackend,
     clientsService: clientsService.value,
   }
-  await onSubmit(payload, variablesUpdated, variablesUnexpectedError)
+  await onSubmit(payload, "clientsService", clientsServiceUpdated, clientsServiceUnexpectedError)
 }
 
 function onAddClientService() {
