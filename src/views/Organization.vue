@@ -333,9 +333,9 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                     </h3>
                   </template>
                 </WithApplicationTemplateDocument>
-                <div class="mt-4 ml-6">
-                  <div v-if="application.applicationTemplate.description">{{ application.applicationTemplate.description }}</div>
-                  <fieldset class="mt-4">
+                <div class="ml-6">
+                  <div v-if="application.applicationTemplate.description" class="mt-4">{{ application.applicationTemplate.description }}</div>
+                  <fieldset v-if="application.values.length" class="mt-4">
                     <legend class="font-bold">Configuration</legend>
                     <ol>
                       <li v-for="value in application.values" :key="value.name" class="flex flex-col mt-4">
@@ -351,10 +351,13 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                       <div>{{ j + 1 }}.</div>
                       <div class="flex flex-col gap-4">
                         <div v-if="getPublicClientDescription(application, client.client.id)">{{ getPublicClientDescription(application, client.client.id) }}</div>
-                        <div v-if="client.id">
-                          Client ID: <code>{{ client.id }}</code>
+                        <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
+                          <div>Client ID:</div>
+                          <div v-if="client.id">
+                            <code>{{ client.id }}</code>
+                          </div>
+                          <div v-else><span class="italic">conclude update to allocate</span></div>
                         </div>
-                        <div v-else>Client ID: <span class="italic">conclude update to allocate</span></div>
                       </div>
                     </li>
                   </ol>
@@ -364,12 +367,18 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                       <div>{{ j + 1 }}.</div>
                       <div class="flex flex-col gap-4">
                         <div v-if="getBackendClientDescription(application, client.client.id)">{{ getBackendClientDescription(application, client.client.id) }}</div>
-                        <div v-if="client.id">
-                          Client ID: <code>{{ client.id }}</code>
-                        </div>
-                        <div v-else>Client ID: <span class="italic">conclude update to allocate</span></div>
-                        <div v-if="client.id && generatedSecrets.has(client.client.id)">
-                          Client secret: <code>{{ generatedSecrets.get(client.client.id) }}</code>
+                        <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
+                          <div>Client ID:</div>
+                          <div v-if="client.id">
+                            <code>{{ client.id }}</code>
+                          </div>
+                          <div v-else><span class="italic">conclude update to allocate</span></div>
+                          <template v-if="client.id && generatedSecrets.has(client.client.id)">
+                            <div>Client secret:</div>
+                            <div>
+                              <code>{{ generatedSecrets.get(client.client.id) }}</code>
+                            </div>
+                          </template>
                         </div>
                       </div>
                     </li>
@@ -380,12 +389,18 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                       <div>{{ j + 1 }}.</div>
                       <div class="flex flex-col gap-4">
                         <div v-if="getServiceClientDescription(application, client.client.id)">{{ getServiceClientDescription(application, client.client.id) }}</div>
-                        <div v-if="client.id">
-                          Client ID: <code>{{ client.id }}</code>
-                        </div>
-                        <div v-else>Client ID: <span class="italic">conclude update to allocate</span></div>
-                        <div v-if="client.id && generatedSecrets.has(client.client.id)">
-                          Client secret: <code>{{ generatedSecrets.get(client.client.id) }}</code>
+                        <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
+                          <div>Client ID:</div>
+                          <div v-if="client.id">
+                            <code>{{ client.id }}</code>
+                          </div>
+                          <div v-else><span class="italic">conclude update to allocate</span></div>
+                          <template v-if="client.id && generatedSecrets.has(client.client.id)">
+                            <div>Client secret:</div>
+                            <div>
+                              <code>{{ generatedSecrets.get(client.client.id) }}</code>
+                            </div>
+                          </template>
                         </div>
                       </div>
                     </li>
