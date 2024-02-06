@@ -570,7 +570,7 @@ function onAddClientService() {
                     ></label
                   >
                   <TextArea
-                    id="client-public-${i}-additionalScopes"
+                    :id="`client-public-${i}-additionalScopes`"
                     :model-value="client.additionalScopes.join(' ')"
                     class="flex-grow flex-auto min-w-0"
                     :readonly="mainProgress > 0 || !metadata.can_update"
@@ -665,7 +665,7 @@ function onAddClientService() {
                     ></label
                   >
                   <TextArea
-                    id="client-backend-${i}-additionalScopes"
+                    :id="`client-backend-${i}-additionalScopes`"
                     :model-value="client.additionalScopes.join(' ')"
                     class="flex-grow flex-auto min-w-0"
                     :readonly="mainProgress > 0 || !metadata.can_update"
@@ -731,7 +731,7 @@ function onAddClientService() {
                     ></label
                   >
                   <TextArea
-                    id="client-service-${i}-additionalScopes"
+                    :id="`client-service-${i}-additionalScopes`"
                     :model-value="client.additionalScopes.join(' ')"
                     class="flex-grow flex-auto min-w-0"
                     :readonly="mainProgress > 0 || !metadata.can_update"
