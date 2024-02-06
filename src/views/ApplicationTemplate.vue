@@ -9,7 +9,7 @@ import type {
   Variable,
 } from "@/types"
 
-import { onBeforeMount, onUnmounted, ref, watch } from "vue"
+import { nextTick, onBeforeMount, onUnmounted, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import InputText from "@/components/InputText.vue"
 import TextArea from "@/components/TextArea.vue"
@@ -182,6 +182,14 @@ function splitSpace(str: string): string[] {
   return out
 }
 
+function addRedirectUriTemplate(client: { redirectUriTemplates: string[] }, idPrefix: string) {
+  client.redirectUriTemplates.push("")
+
+  nextTick(() => {
+    document.getElementById(`${idPrefix}${client.redirectUriTemplates.length - 1}`)?.focus()
+  })
+}
+
 function canBasicSubmit(): boolean {
   // Required fields.
   if (!name.value) {
@@ -257,6 +265,10 @@ function onAddVariable() {
     type: "uriPrefix",
     description: "",
   })
+
+  nextTick(() => {
+    document.getElementById(`variable-${variables.value.length - 1}-name`)?.focus()
+  })
 }
 
 function canClientsPublicSubmit(): boolean {
@@ -302,6 +314,11 @@ function onAddClientPublic() {
         additionalScopes: [],
         redirectUriTemplates: ["{uriBase}/oidc/redirect"],
       })
+
+      nextTick(() => {
+        document.getElementById(`client-public-${clientsPublic.value.length - 1}-redirectUriTemplates-0`)?.focus()
+      })
+
       return
     }
   }
@@ -310,6 +327,10 @@ function onAddClientPublic() {
     description: "",
     additionalScopes: [],
     redirectUriTemplates: [],
+  })
+
+  nextTick(() => {
+    document.getElementById(`client-public-${clientsPublic.value.length - 1}-addTemplate`)?.focus()
   })
 }
 
@@ -357,6 +378,11 @@ function onAddClientBackend() {
         tokenEndpointAuthMethod: "client_secret_post",
         redirectUriTemplates: ["{uriBase}/oidc/redirect"],
       })
+
+      nextTick(() => {
+        document.getElementById(`client-backend-${clientsBackend.value.length - 1}-redirectUriTemplates-0`)?.focus()
+      })
+
       return
     }
   }
@@ -366,6 +392,10 @@ function onAddClientBackend() {
     additionalScopes: [],
     tokenEndpointAuthMethod: "client_secret_post",
     redirectUriTemplates: [],
+  })
+
+  nextTick(() => {
+    document.getElementById(`client-backend-${clientsBackend.value.length - 1}-addTemplate`)?.focus()
   })
 }
 
@@ -397,22 +427,14 @@ function onAddClientService() {
   // No need to call resetOnInteraction here because we modify variables
   // which we watch to call resetOnInteraction.
 
-  // If there is standard uriBase variable, we populate with example redirect.
-  for (const variable of variables.value) {
-    if (variable.name === "uriBase") {
-      clientsService.value.push({
-        description: "",
-        additionalScopes: [],
-        tokenEndpointAuthMethod: "client_secret_post",
-      })
-      return
-    }
-  }
-
   clientsService.value.push({
     description: "",
     additionalScopes: [],
     tokenEndpointAuthMethod: "client_secret_post",
+  })
+
+  nextTick(() => {
+    document.getElementById(`client-service-${clientsService.value.length - 1}-tokenEndpointAuthMethod-client_secret_post`)?.focus()
   })
 }
 </script>
@@ -510,6 +532,7 @@ function onAddClientService() {
                         <div>{{ j + 1 }}.</div>
                         <div class="flex flex-row gap-4">
                           <InputText
+                            :id="`client-public-${i}-redirectUriTemplates-${j}`"
                             v-model="client.redirectUriTemplates[j]"
                             class="flex-grow flex-auto min-w-0"
                             :readonly="mainProgress > 0 || !metadata.can_update"
@@ -523,7 +546,13 @@ function onAddClientService() {
                     </ol>
                   </fieldset>
                   <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-start">
-                    <Button type="button" :disabled="mainProgress > 0" @click.prevent="client.redirectUriTemplates.push('')">Add template</Button>
+                    <Button
+                      :id="`client-public-${i}-addTemplate`"
+                      type="button"
+                      :disabled="mainProgress > 0"
+                      @click.prevent="addRedirectUriTemplate(client, `client-public-${i}-redirectUriTemplates-`)"
+                      >Add template</Button
+                    >
                   </div>
                   <label :for="`client-public-${i}-description`" class="mb-1 mt-4"
                     >Description<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label
@@ -575,6 +604,7 @@ function onAddClientService() {
                         <div>{{ j + 1 }}.</div>
                         <div class="flex flex-row gap-4">
                           <InputText
+                            :id="`client-backend-${i}-redirectUriTemplates-${j}`"
                             v-model="client.redirectUriTemplates[j]"
                             class="flex-grow flex-auto min-w-0"
                             :readonly="mainProgress > 0 || !metadata.can_update"
@@ -588,7 +618,13 @@ function onAddClientService() {
                     </ol>
                   </fieldset>
                   <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-start">
-                    <Button type="button" :disabled="mainProgress > 0" @click.prevent="client.redirectUriTemplates.push('')">Add template</Button>
+                    <Button
+                      :id="`client-backend-${i}-addTemplate`"
+                      type="button"
+                      :disabled="mainProgress > 0"
+                      @click.prevent="addRedirectUriTemplate(client, `client-backend-${i}-redirectUriTemplates-`)"
+                      >Add template</Button
+                    >
                   </div>
                   <fieldset class="mt-4">
                     <legend class="mb-1">Token endpoint authentication method</legend>
