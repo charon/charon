@@ -2,7 +2,7 @@
 import type { DeepReadonly, Ref } from "vue"
 import type { Organization, Metadata, ApplicationTemplates, ApplicationTemplate, OrganizationApplication, ApplicationTemplateRef } from "@/types"
 
-import { computed, onBeforeMount, onUnmounted, ref, watch } from "vue"
+import { computed, nextTick, onBeforeMount, onUnmounted, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import InputText from "@/components/InputText.vue"
 import Button from "@/components/Button.vue"
@@ -236,6 +236,15 @@ async function onEnableApplicationTemplate(applicationTemplate: DeepReadonly<App
       })),
     ),
   })
+
+  nextTick(() => {
+    const el = document.getElementById(`application-${applications.value.length - 1}-values-0`)
+    if (el) {
+      el.focus()
+    } else {
+      document.getElementById("applications-update")?.focus()
+    }
+  })
 }
 
 async function getSecret(id: string): Promise<string> {
@@ -342,10 +351,16 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                   <fieldset v-if="application.values.length" class="mt-4">
                     <legend class="font-bold">Configuration</legend>
                     <ol>
-                      <li v-for="value in application.values" :key="value.name" class="flex flex-col mt-4">
+                      <li v-for="(value, j) in application.values" :key="value.name" class="flex flex-col mt-4">
                         <code>{{ value.name }}</code>
                         <div v-if="getValueDescription(application, value.name)" class="ml-6">{{ getValueDescription(application, value.name) }}</div>
-                        <InputText v-model="value.value" class="flex-grow flex-auto min-w-0 ml-6 mt-1" :readonly="mainProgress > 0 || !metadata.can_update" required />
+                        <InputText
+                          :id="`application-${i}-values-${j}`"
+                          v-model="value.value"
+                          class="flex-grow flex-auto min-w-0 ml-6 mt-1"
+                          :readonly="mainProgress > 0 || !metadata.can_update"
+                          required
+                        />
                       </li>
                     </ol>
                   </fieldset>
@@ -430,7 +445,7 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
               <!--
                 Button is on purpose not disabled on unexpectedError so that user can retry.
               -->
-              <Button type="submit" primary :disabled="!canApplicationsSubmit() || mainProgress > 0">Update</Button>
+              <Button id="applications-update" type="submit" primary :disabled="!canApplicationsSubmit() || mainProgress > 0">Update</Button>
             </div>
           </form>
           <h2 v-if="metadata.can_update" class="text-xl font-bold">Available applications</h2>

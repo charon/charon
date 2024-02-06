@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { OrganizationCreate, OrganizationRef } from "@/types"
 
-import { onUnmounted, ref } from "vue"
+import { onMounted, onUnmounted, ref } from "vue"
 import { useRouter } from "vue-router"
 import InputText from "@/components/InputText.vue"
 import Button from "@/components/Button.vue"
@@ -19,6 +19,10 @@ const name = ref("")
 
 onUnmounted(() => {
   abortController.abort()
+})
+
+onMounted(() => {
+  document.getElementById("name")?.focus()
 })
 
 async function onSubmit() {
