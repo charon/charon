@@ -88,7 +88,7 @@ onUnmounted(() => {
   abortController.abort()
 })
 
-async function loadData(update: "init" | "basic" | "variables" | "clientsPublic" | "clientsBackend" | "clientsService") {
+async function loadData(update: "init" | "basic" | "variables" | "clientsPublic" | "clientsBackend" | "clientsService" | null) {
   mainProgress.value += 1
   watchInteractionStop!()
   try {
@@ -166,8 +166,9 @@ async function onSubmit(
       console.error(error)
       unexpectedError.value = `${error}`
     } finally {
-      // We update state even on errors.
-      await loadData(update)
+      // We update applicationTemplate state even on errors,
+      // but do not update individual fields on errors.
+      await loadData(unexpectedError.value ? null : update)
     }
   } finally {
     mainProgress.value -= 1
