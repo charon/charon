@@ -237,6 +237,10 @@ func (a *OrganizationApplication) Validate(ctx context.Context) errors.E {
 	// When we embed a copy of the application template, we set admin always to nil.
 	a.ApplicationTemplate.Admins = nil
 
+	if a.Values == nil {
+		a.Values = []Value{}
+	}
+
 	values := map[string]string{}
 	valuesSet := mapset.NewThreadUnsafeSet[string]()
 	for i, value := range a.Values {
@@ -278,6 +282,18 @@ func (a *OrganizationApplication) Validate(ctx context.Context) errors.E {
 		errors.Details(errE)["extra"] = extra
 		errors.Details(errE)["missing"] = missing
 		return errE
+	}
+
+	if a.ClientsPublic == nil {
+		a.ClientsPublic = []OrganizationApplicationClientPublic{}
+	}
+
+	if a.ClientsBackend == nil {
+		a.ClientsBackend = []OrganizationApplicationClientBackend{}
+	}
+
+	if a.ClientsService == nil {
+		a.ClientsService = []OrganizationApplicationClientService{}
 	}
 
 	// We require unique IDs across all clients.
@@ -383,6 +399,10 @@ func (o *Organization) Validate(ctx context.Context) errors.E {
 
 	if o.Name == "" {
 		return errors.New("name is required")
+	}
+
+	if o.Applications == nil {
+		o.Applications = []OrganizationApplication{}
 	}
 
 	appsSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
