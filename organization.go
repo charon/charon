@@ -176,6 +176,8 @@ func (c *OrganizationApplicationClientService) Validate(_ context.Context, appli
 type OrganizationApplication struct {
 	ID *identifier.Identifier `json:"id"`
 
+	Active bool `json:"active"`
+
 	// We store full application template for this deployment, so if upstream
 	// application template changes, this one continues to be consistent.
 	// It can in fact be even a template which has not been published at all.
@@ -354,7 +356,6 @@ type Organization struct {
 	Admins []AccountRef `json:"admins"`
 
 	Name         string                    `json:"name"`
-	Active       bool                      `json:"active"`
 	Applications []OrganizationApplication `json:"applications"`
 }
 

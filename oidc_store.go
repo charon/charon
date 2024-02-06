@@ -41,6 +41,10 @@ func (s *OIDCStore) GetClient(_ context.Context, strID string) (fosite.Client, e
 		}
 
 		for _, app := range organization.Applications {
+			if !app.Active {
+				continue
+			}
+
 			clientPublic := app.GetClientPublic(id)
 			if clientPublic != nil {
 				// We should always find template client because we check for this during validation.
