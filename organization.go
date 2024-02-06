@@ -414,7 +414,7 @@ func (o *Organization) Validate(ctx context.Context) errors.E {
 			if orgApp.ID != nil {
 				errors.Details(errE)["id"] = *orgApp.ID
 			}
-			return nil
+			return errE
 		}
 
 		if appsSet.Contains(*orgApp.ID) {
