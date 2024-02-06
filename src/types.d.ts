@@ -5,6 +5,7 @@ import type {
   RegistrationResponseJSON,
 } from "@simplewebauthn/typescript-types"
 import type { BareItem, Key } from "structured-field-values"
+import type { DeepReadonly } from "vue"
 
 export type DeriveOptions = {
   name: string
@@ -235,10 +236,40 @@ export type OrganizationRef = {
   id: string
 }
 
+export type Value = {
+  name: string
+  value: string
+}
+
+export type ClientRef = {
+  id: string
+}
+
+export type OrganizationApplicationClientPublic = {
+  id?: string
+  client: ClientRef
+}
+
+export type OrganizationApplicationClientBackend = {
+  id?: string
+  client: ClientRef
+  secret: string
+}
+
+export type OrganizationApplicationClientService = {
+  id?: string
+  client: ClientRef
+  secret: string
+}
+
 export type OrganizationApplication = {
   id?: string
-  application: string
-  secret: string
+  active: boolean
+  applicationTemplate: ApplicationTemplate | DeepReadonly<ApplicationTemplate>
+  values: Value[]
+  clientsPublic: OrganizationApplicationClientPublic[]
+  clientsBackend: OrganizationApplicationClientBackend[]
+  clientsService: OrganizationApplicationClientService[]
 }
 
 export type Organization = {

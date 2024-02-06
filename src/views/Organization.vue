@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { Organization, Metadata, ApplicationTemplates, ApplicationTemplate, OrganizationApplication } from "@/types"
+import type { DeepReadonly, Ref } from "vue"
+import type { Organization, Metadata, ApplicationTemplates, ApplicationTemplate, OrganizationApplication, ApplicationTemplateRef } from "@/types"
 
-import { onBeforeMount, onUnmounted, ref, watch } from "vue"
+import { computed, onBeforeMount, onUnmounted, ref, watch } from "vue"
 import { useRouter } from "vue-router"
-import { ArrowTopRightOnSquareIcon } from "@heroicons/vue/20/solid"
 import InputText from "@/components/InputText.vue"
 import Button from "@/components/Button.vue"
 import WithDocument from "@/components/WithDocument.vue"
@@ -11,6 +11,7 @@ import NavBar from "@/components/NavBar.vue"
 import Footer from "@/components/Footer.vue"
 import { getURL, postURL } from "@/api"
 import { setupArgon2id } from "@/argon2id"
+import { clone, equals } from "@/utils"
 
 const props = defineProps<{
   id: string
@@ -24,35 +25,66 @@ const dataLoading = ref(true)
 const dataLoadingError = ref("")
 const organization = ref<Organization | null>(null)
 const metadata = ref<Metadata>({})
-
-const unexpectedError = ref("")
-const updated = ref(false)
-const name = ref("")
-const organizationApplications = ref<OrganizationApplication[]>([])
-
-const applicationsUnexpectedError = ref("")
-const applicationsUpdated = ref(false)
 const applicationTemplates = ref<ApplicationTemplates>([])
 const generatedSecrets = ref(new Map<string, string>())
 
+const basicUnexpectedError = ref("")
+const basicUpdated = ref(false)
+const name = ref("")
+
+const applicationsUnexpectedError = ref("")
+const applicationsUpdated = ref(false)
+const applications = ref<OrganizationApplication[]>([])
+
+function isApplicationEnabled(applicationTemplate: ApplicationTemplateRef): boolean {
+  for (const application of applications.value) {
+    if (application.applicationTemplate.id === applicationTemplate.id) {
+      return true
+    }
+  }
+  return false
+}
+
+const availableApplicationTemplates = computed(() => {
+  const apps = []
+  for (const applicationTemplate of applicationTemplates.value) {
+    if (!isApplicationEnabled(applicationTemplate)) {
+      apps.push(applicationTemplate)
+    }
+  }
+  return apps
+})
+
 function resetOnInteraction() {
   // We reset flags and errors on interaction.
-  unexpectedError.value = ""
-  updated.value = false
+  basicUnexpectedError.value = ""
+  basicUpdated.value = false
   applicationsUnexpectedError.value = ""
   applicationsUpdated.value = false
   // dataLoading and dataLoadingError are not listed here on
   // purpose because they are used only on mount.
 }
 
-watch([name, organizationApplications], resetOnInteraction)
+let watchInteractionStop: (() => void) | null = null
+function initWatchInteraction() {
+  const stop = watch([name, applications], resetOnInteraction, { deep: true })
+  if (watchInteractionStop !== null) {
+    throw new Error("watchInteractionStop already set")
+  }
+  watchInteractionStop = () => {
+    watchInteractionStop = null
+    stop()
+  }
+}
+initWatchInteraction()
 
 onUnmounted(() => {
   abortController.abort()
 })
 
-async function loadData(init: boolean) {
+async function loadData(update: "init" | "basic" | "applications" | null) {
   mainProgress.value += 1
+  watchInteractionStop!()
   try {
     const organizationURL = router.apiResolve({
       name: "Organization",
@@ -64,10 +96,15 @@ async function loadData(init: boolean) {
     organization.value = data.doc
     metadata.value = data.metadata
 
-    if (init) {
+    // We have to make copies so that we break reactivity link with data.doc.
+    if (update === "init" || update === "basic") {
       name.value = data.doc.name
-      organizationApplications.value = data.doc.applications || []
+    }
+    if (update === "init" || update === "applications") {
+      applications.value = clone(data.doc.applications)
+    }
 
+    if (update === "init") {
       const applicationsURL = router.apiResolve({
         name: "ApplicationTemplates",
       }).href
@@ -82,55 +119,21 @@ async function loadData(init: boolean) {
     dataLoadingError.value = `${error}`
   } finally {
     dataLoading.value = false
+    initWatchInteraction()
     mainProgress.value -= 1
   }
 }
 
 onBeforeMount(async () => {
-  await loadData(true)
+  await loadData("init")
 })
 
-function isEnabled(id: string): boolean {
-  for (const orgApp of organizationApplications.value) {
-    if (orgApp.application === id) {
-      return true
-    }
-  }
-  return false
-}
-
-function getOrganizationApplicationID(id: string): string {
-  for (const orgApp of organizationApplications.value) {
-    if (orgApp.application === id) {
-      if (orgApp.id) {
-        return orgApp.id
-      }
-      break
-    }
-  }
-  for (const orgApp of organization.value?.applications || []) {
-    if (orgApp.application === id) {
-      if (orgApp.id) {
-        return orgApp.id
-      }
-      break
-    }
-  }
-  return ""
-}
-
-async function onSubmit() {
+async function onSubmit(payload: Organization, update: "basic" | "applications", updated: Ref<boolean>, unexpectedError: Ref<string>) {
   resetOnInteraction()
 
   mainProgress.value += 1
   try {
     try {
-      const payload: Organization = {
-        id: props.id,
-        name: name.value,
-        // We update only name.
-        applications: organization.value!.applications,
-      }
       const url = router.apiResolve({
         name: "OrganizationUpdate",
         params: {
@@ -148,12 +151,91 @@ async function onSubmit() {
       console.error(error)
       unexpectedError.value = `${error}`
     } finally {
-      // We update state even on errors.
-      await loadData(false)
+      // We update applicationTemplate state even on errors,
+      // but do not update individual fields on errors.
+      await loadData(unexpectedError.value ? null : update)
     }
   } finally {
     mainProgress.value -= 1
   }
+}
+
+function canBasicSubmit(): boolean {
+  // Required fields.
+  if (!name.value) {
+    return false
+  }
+
+  // Anything changed?
+  if (organization.value!.name !== name.value) {
+    return true
+  }
+
+  return false
+}
+
+async function onBasicSubmit() {
+  const payload: Organization = {
+    // We update only basic fields.
+    id: props.id,
+    name: name.value,
+    applications: organization.value!.applications,
+  }
+  await onSubmit(payload, "basic", basicUpdated, basicUnexpectedError)
+}
+
+function canApplicationsSubmit(): boolean {
+  // Required fields.
+  for (const application of applications.value) {
+    for (const value of application.values) {
+      if (!value.value) {
+        return false
+      }
+    }
+  }
+
+  // Anything changed?
+  if (!equals(organization.value!.applications, applications.value)) {
+    return true
+  }
+
+  return false
+}
+
+async function onApplicationsSubmit() {
+  const payload: Organization = {
+    // We update only applications.
+    id: props.id,
+    name: organization.value!.name,
+    applications: applications.value,
+  }
+  await onSubmit(payload, "applications", applicationsUpdated, applicationsUnexpectedError)
+}
+
+async function onEnableApplicationTemplate(applicationTemplate: DeepReadonly<ApplicationTemplate>) {
+  applications.value.push({
+    active: false,
+    applicationTemplate: applicationTemplate,
+    values: applicationTemplate.variables.map((variable) => ({
+      name: variable.name,
+      value: "",
+    })),
+    clientsPublic: applicationTemplate.clientsPublic.map((client) => ({
+      client: { id: client.id! },
+    })),
+    clientsBackend: await Promise.all(
+      applicationTemplate.clientsBackend.map(async (client) => ({
+        client: { id: client.id! },
+        secret: await getSecret(client.id!),
+      })),
+    ),
+    clientsService: await Promise.all(
+      applicationTemplate.clientsService.map(async (client) => ({
+        client: { id: client.id! },
+        secret: await getSecret(client.id!),
+      })),
+    ),
+  })
 }
 
 async function getSecret(id: string): Promise<string> {
@@ -168,56 +250,44 @@ async function getSecret(id: string): Promise<string> {
   return hash
 }
 
-// TODO: Remember previous secrets and reuse them if an enabled application is disabled and then enabled back.
-// TODO: Provide explicit buttons to rotate the secret, remove (and not just disable) the app (with all the data).
-async function onChange(event: Event, id: string) {
-  resetOnInteraction()
-
-  if ((event.target as HTMLInputElement).checked) {
-    if (!isEnabled(id)) {
-      organizationApplications.value.push({
-        application: id,
-        secret: await getSecret(id),
-      })
+function getValueDescription(application: OrganizationApplication, valueName: string): string {
+  for (const variable of application.applicationTemplate.variables) {
+    if (variable.name === valueName) {
+      return variable.description
     }
-  } else {
-    organizationApplications.value = organizationApplications.value.filter((x) => x.application !== id)
-    generatedSecrets.value.delete(id)
   }
-
-  mainProgress.value += 1
-  try {
-    try {
-      const payload: Organization = {
-        id: props.id,
-        // We update only applications.
-        name: organization.value!.name,
-        applications: organizationApplications.value,
-      }
-      const url = router.apiResolve({
-        name: "OrganizationUpdate",
-        params: {
-          id: props.id,
-        },
-      }).href
-
-      await postURL(url, payload, abortController.signal, mainProgress)
-
-      applicationsUpdated.value = true
-    } catch (error) {
-      if (abortController.signal.aborted) {
-        return
-      }
-      console.error(error)
-      applicationsUnexpectedError.value = `${error}`
-    } finally {
-      // We update state even on errors.
-      await loadData(false)
-    }
-  } finally {
-    mainProgress.value -= 1
-  }
+  return ""
 }
+
+function getPublicClientDescription(application: OrganizationApplication, clientId: string): string {
+  for (const client of application.applicationTemplate.clientsPublic) {
+    if (client.id === clientId) {
+      return client.description
+    }
+  }
+  return ""
+}
+
+function getBackendClientDescription(application: OrganizationApplication, clientId: string): string {
+  for (const client of application.applicationTemplate.clientsBackend) {
+    if (client.id === clientId) {
+      return client.description
+    }
+  }
+  return ""
+}
+
+function getServiceClientDescription(application: OrganizationApplication, clientId: string): string {
+  for (const client of application.applicationTemplate.clientsService) {
+    if (client.id === clientId) {
+      return client.description
+    }
+  }
+  return ""
+}
+
+// TODO: Remember previous secrets and reuse them if an add application is removed and then added back.
+// TODO: Provide explicit buttons to rotate each secret.
 
 const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
 </script>
@@ -235,66 +305,130 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
         <div v-if="dataLoading">Loading...</div>
         <div v-else-if="dataLoadingError" class="text-error-600">Unexpected error. Please try again.</div>
         <template v-else>
-          <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
+          <form class="flex flex-col" novalidate @submit.prevent="onBasicSubmit">
             <label for="name" class="mb-1">Organization name</label>
             <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0 || !metadata.can_update" required />
-            <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
-            <div v-else-if="updated" class="mt-4 text-success-600">Organization updated successfully.</div>
+            <div v-if="basicUnexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
+            <div v-else-if="basicUpdated" class="mt-4 text-success-600">Organization updated successfully.</div>
             <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
               <!--
                 Button is on purpose not disabled on unexpectedError so that user can retry.
               -->
-              <Button type="submit" primary :disabled="!name || organization!.name === name || mainProgress > 0">Update</Button>
+              <Button type="submit" primary :disabled="!canBasicSubmit() || mainProgress > 0">Update</Button>
             </div>
           </form>
-          <h2 class="text-xl font-bold mt-4">Enabled applications</h2>
+          <h2 class="text-xl font-bold">Added applications</h2>
           <div v-if="applicationsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
-          <div v-else-if="applicationsUpdated" class="text-success-600">Applications updated successfully.</div>
-          <ul>
-            <li v-for="applicationTemplate of applicationTemplates" :key="applicationTemplate.id" class="flex flex-row gap-1">
-              <input
-                :id="'app/' + applicationTemplate.id"
-                :disabled="mainProgress > 0 || !metadata.can_update"
-                :checked="isEnabled(applicationTemplate.id)"
-                :class="
-                  mainProgress > 0 || !metadata.can_update
-                    ? 'cursor-not-allowed bg-gray-100 text-primary-300 focus:ring-primary-300'
-                    : 'cursor-pointer text-primary-600 focus:ring-primary-500'
-                "
-                type="checkbox"
-                class="my-1 rounded"
-                @change="onChange($event, applicationTemplate.id)"
-              />
-              <div class="flex flex-col">
-                <div class="flex flex-row items-center gap-1">
-                  <WithApplicationTemplateDocument :id="applicationTemplate.id" name="Application">
-                    <template #default="{ doc, metadata: meta, url }">
-                      <label
-                        :for="'app/' + applicationTemplate.id"
-                        class="leading-none"
-                        :class="mainProgress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                        :data-url="url"
-                        >{{ doc.name }}</label
-                      >
-                      <label
-                        v-if="meta.can_update"
-                        :for="'app/' + applicationTemplate.id"
-                        class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none"
-                        :class="mainProgress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                        >admin</label
-                      >
-                    </template>
-                  </WithApplicationTemplateDocument>
-                  <router-link :to="{ name: 'ApplicationTemplate', params: { id: applicationTemplate.id } }" class="link"
-                    ><ArrowTopRightOnSquareIcon alt="Link" class="inline h-5 w-5 align-text-top"
-                  /></router-link>
+          <div v-else-if="applicationsUpdated" class="text-success-600">Added applications updated successfully.</div>
+          <form class="flex flex-col" novalidate @submit.prevent="onApplicationsSubmit">
+            <ul>
+              <li v-for="(application, i) in applications" :key="application.id || i" class="flex flex-col mb-4">
+                <WithApplicationTemplateDocument :id="application.applicationTemplate.id" name="ApplicationTemplate">
+                  <template #default="{ metadata: meta, url }">
+                    <h3 class="text-lg flex flex-row items-center gap-1">
+                      <router-link :to="{ name: 'ApplicationTemplate', params: { id: application.applicationTemplate.id } }" :data-url="url" class="link">{{
+                        application.applicationTemplate.name
+                      }}</router-link>
+                      <span v-if="meta.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">admin</span>
+                    </h3>
+                  </template>
+                </WithApplicationTemplateDocument>
+                <div class="mt-4 ml-6">
+                  <div v-if="application.applicationTemplate.description">{{ application.applicationTemplate.description }}</div>
+                  <fieldset class="mt-4">
+                    <legend class="font-bold">Configuration</legend>
+                    <ol>
+                      <li v-for="value in application.values" :key="value.name" class="flex flex-col mt-4">
+                        <code>{{ value.name }}</code>
+                        <div v-if="getValueDescription(application, value.name)" class="ml-6">{{ getValueDescription(application, value.name) }}</div>
+                        <InputText v-model="value.value" class="flex-grow flex-auto min-w-0 ml-6 mt-1" :readonly="mainProgress > 0 || !metadata.can_update" required />
+                      </li>
+                    </ol>
+                  </fieldset>
+                  <h4 v-if="application.clientsPublic.length" class="font-bold mt-4">Public clients</h4>
+                  <ol v-if="application.clientsPublic.length">
+                    <li v-for="(client, j) in application.clientsPublic" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
+                      <div>{{ j + 1 }}.</div>
+                      <div class="flex flex-col gap-4">
+                        <div v-if="getPublicClientDescription(application, client.client.id)">{{ getPublicClientDescription(application, client.client.id) }}</div>
+                        <div v-if="client.id">
+                          Client ID: <code>{{ client.id }}</code>
+                        </div>
+                        <div v-else>Client ID: <span class="italic">conclude update to allocate</span></div>
+                      </div>
+                    </li>
+                  </ol>
+                  <h4 v-if="application.clientsBackend.length" class="font-bold mt-4">Backend clients</h4>
+                  <ol v-if="application.clientsBackend.length">
+                    <li v-for="(client, j) in application.clientsBackend" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
+                      <div>{{ j + 1 }}.</div>
+                      <div class="flex flex-col gap-4">
+                        <div v-if="getBackendClientDescription(application, client.client.id)">{{ getBackendClientDescription(application, client.client.id) }}</div>
+                        <div v-if="client.id">
+                          Client ID: <code>{{ client.id }}</code>
+                        </div>
+                        <div v-else>Client ID: <span class="italic">conclude update to allocate</span></div>
+                        <div v-if="client.id && generatedSecrets.has(client.client.id)">
+                          Client secret: <code>{{ generatedSecrets.get(client.client.id) }}</code>
+                        </div>
+                      </div>
+                    </li>
+                  </ol>
+                  <h4 v-if="application.clientsService.length" class="font-bold mt-4">Service clients</h4>
+                  <ol v-if="application.clientsService.length">
+                    <li v-for="(client, j) in application.clientsService" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
+                      <div>{{ j + 1 }}.</div>
+                      <div class="flex flex-col gap-4">
+                        <div v-if="getServiceClientDescription(application, client.client.id)">{{ getServiceClientDescription(application, client.client.id) }}</div>
+                        <div v-if="client.id">
+                          Client ID: <code>{{ client.id }}</code>
+                        </div>
+                        <div v-else>Client ID: <span class="italic">conclude update to allocate</span></div>
+                        <div v-if="client.id && generatedSecrets.has(client.client.id)">
+                          Client secret: <code>{{ generatedSecrets.get(client.client.id) }}</code>
+                        </div>
+                      </div>
+                    </li>
+                  </ol>
+                  <div v-if="application.active" class="flex flew-row justify-between items-center gap-4 mt-4">
+                    <div>Status: <strong>active</strong></div>
+                    <div v-if="metadata.can_update" class="flex flex-row gap-4">
+                      <Button type="button" :disabled="mainProgress > 0" @click.prevent="application.active = false">Disable</Button>
+                      <Button type="button" :disabled="mainProgress > 0" @click.prevent="applications.splice(i, 1)">Remove</Button>
+                    </div>
+                  </div>
+                  <div v-else class="flex flew-row justify-between items-center gap-4 mt-4">
+                    <div>Status: <strong>disabled</strong></div>
+                    <div v-if="metadata.can_update" class="flex flex-row gap-4">
+                      <Button type="button" :disabled="mainProgress > 0" @click.prevent="application.active = true">Activate</Button>
+                      <Button type="button" :disabled="mainProgress > 0" @click.prevent="applications.splice(i, 1)">Remove</Button>
+                    </div>
+                  </div>
                 </div>
-                <!-- Client ID is not sensitive any anyone can compute it themselves, but we still hide it to not introduce confusion. -->
-                <div v-if="metadata.can_update && getOrganizationApplicationID(applicationTemplate.id)">
-                  Client ID: {{ getOrganizationApplicationID(applicationTemplate.id) }}
-                </div>
-                <div v-if="generatedSecrets.has(applicationTemplate.id)">Client secret: {{ generatedSecrets.get(applicationTemplate.id) }}</div>
-              </div>
+              </li>
+            </ul>
+            <div v-if="metadata.can_update" class="flex flex-row justify-end">
+              <!--
+                Button is on purpose not disabled on unexpectedError so that user can retry.
+              -->
+              <Button type="submit" primary :disabled="!canApplicationsSubmit() || mainProgress > 0">Update</Button>
+            </div>
+          </form>
+          <h2 v-if="metadata.can_update" class="text-xl font-bold">Available applications</h2>
+          <ul v-if="metadata.can_update" class="flex flex-col gap-4">
+            <li v-for="applicationTemplate in availableApplicationTemplates" :key="applicationTemplate.id" class="flex flex-col gap-4">
+              <WithApplicationTemplateDocument :id="applicationTemplate.id" name="ApplicationTemplate">
+                <template #default="{ doc, metadata: meta, url }">
+                  <div class="flex flex-row justify-between items-center gap-4">
+                    <h3 class="text-lg flex flex-row items-center gap-1">
+                      <router-link :to="{ name: 'ApplicationTemplate', params: { id: applicationTemplate.id } }" :data-url="url" class="link">{{ doc.name }}</router-link>
+                      <span v-if="meta.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">admin</span>
+                    </h3>
+                    <Button type="button" :disabled="mainProgress > 0" primary @click.prevent="onEnableApplicationTemplate(doc)">Add</Button>
+                  </div>
+                  <div v-if="doc.description" class="ml-4">{{ doc.description }}</div>
+                </template>
+              </WithApplicationTemplateDocument>
             </li>
           </ul>
         </template>
