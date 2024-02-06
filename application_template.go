@@ -94,13 +94,13 @@ func validateRedirectURIsTemplate(template string, values map[string]string) err
 	// The following two checks are the same as what we configured fosite to check.
 
 	if !fosite.IsValidRedirectURI(u) {
-		errE := errors.Wrap(err, "resulting URI is not a valid redirect URI")
+		errE := errors.New("resulting URI is not a valid redirect URI")
 		errors.Details(errE)["template"] = template
 		return errE
 	}
 
 	if !fosite.IsRedirectURISecureStrict(u) {
-		errE := errors.Wrap(err, "resulting URI is not secure")
+		errE := errors.New("resulting URI is not secure")
 		errors.Details(errE)["template"] = template
 		return errE
 	}
