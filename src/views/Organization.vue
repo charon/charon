@@ -323,6 +323,10 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
           <form class="flex flex-col" novalidate @submit.prevent="onApplicationsSubmit">
             <ul>
               <li v-for="(application, i) in applications" :key="application.id || i" class="flex flex-col mb-4">
+                <!--
+                  Embedded application template does not contain list of admins so we have fetch
+                  the current list. But we can just check the metadata.
+                -->
                 <WithApplicationTemplateDocument :id="application.applicationTemplate.id" name="ApplicationTemplate">
                   <template #default="{ metadata: meta, url }">
                     <h3 class="text-lg flex flex-row items-center gap-1">
