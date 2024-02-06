@@ -41,11 +41,9 @@ const v = computed({
     v-model="v"
     :disabled="progress > 0 || disabled"
     type="radio"
-    class="rounded border-0 shadow ring-2 ring-neutral-300 focus:ring-2"
     :class="{
-      'cursor-not-allowed': progress > 0 || disabled,
-      'bg-gray-100 text-gray-800 hover:ring-neutral-300 focus:border-primary-300 focus:ring-primary-300': progress > 0 || disabled,
-      'bg-white hover:ring-neutral-400 focus:ring-primary-500': progress === 0 && !disabled,
+      'cursor-not-allowed bg-gray-100 text-primary-300': progress > 0 || disabled,
+      'cursor-pointer text-primary-600 focus:ring-primary-500': progress === 0 && !disabled,
     }"
   />
 </template>

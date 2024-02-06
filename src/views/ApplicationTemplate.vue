@@ -635,18 +635,28 @@ function onAddClientService() {
                           :id="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_post`"
                           v-model="client.tokenEndpointAuthMethod"
                           value="client_secret_post"
+                          :disabled="mainProgress > 0 || !metadata.can_update"
                           class="mx-2"
                         />
-                        <label :for="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_post`"><code>client_secret_post</code></label>
+                        <label
+                          :for="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_post`"
+                          :class="mainProgress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                          ><code>client_secret_post</code></label
+                        >
                       </div>
                       <div>
                         <RadioButton
                           :id="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_basic`"
                           v-model="client.tokenEndpointAuthMethod"
                           value="client_secret_basic"
+                          :disabled="mainProgress > 0 || !metadata.can_update"
                           class="mx-2"
                         />
-                        <label :for="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_basic`"><code>client_secret_basic</code></label>
+                        <label
+                          :for="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_basic`"
+                          :class="mainProgress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                          ><code>client_secret_basic</code></label
+                        >
                       </div>
                     </div>
                   </fieldset>
@@ -701,18 +711,28 @@ function onAddClientService() {
                           :id="`client-service-${i}-tokenEndpointAuthMethod-client_secret_post`"
                           v-model="client.tokenEndpointAuthMethod"
                           value="client_secret_post"
+                          :disabled="mainProgress > 0 || !metadata.can_update"
                           class="mx-2"
                         />
-                        <label :for="`client-service-${i}-tokenEndpointAuthMethod-client_secret_post`"><code>client_secret_post</code></label>
+                        <label
+                          :for="`client-service-${i}-tokenEndpointAuthMethod-client_secret_post`"
+                          :class="mainProgress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                          ><code>client_secret_post</code></label
+                        >
                       </div>
                       <div>
                         <RadioButton
                           :id="`client-service-${i}-tokenEndpointAuthMethod-client_secret_basic`"
                           v-model="client.tokenEndpointAuthMethod"
                           value="client_secret_basic"
+                          :disabled="mainProgress > 0 || !metadata.can_update"
                           class="mx-2"
                         />
-                        <label :for="`client-service-${i}-tokenEndpointAuthMethod-client_secret_basic`"><code>client_secret_basic</code></label>
+                        <label
+                          :for="`client-service-${i}-tokenEndpointAuthMethod-client_secret_basic`"
+                          :class="mainProgress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                          ><code>client_secret_basic</code></label
+                        >
                       </div>
                     </div>
                   </fieldset>
