@@ -8,7 +8,6 @@ import { GlobeAltIcon } from "@heroicons/vue/24/outline"
 import Button from "@/components/Button.vue"
 import { useNavbar } from "@/navbar"
 import { deleteURL } from "@/api"
-import { locationRedirect } from "@/utils"
 
 const { ref: navbar, attrs: navbarAttrs } = useNavbar()
 
