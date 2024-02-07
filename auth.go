@@ -11,6 +11,11 @@ type AccountRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
+type AuthSignoutResponse struct {
+	URL     string `json:"url"`
+	Replace bool   `json:"replace"`
+}
+
 // TODO: Allow specifying target to redirect to?
 //       How to do that in a way that we do not enable open redirect?
 
@@ -29,17 +34,8 @@ func (s *Service) AuthDelete(w http.ResponseWriter, req *http.Request, _ waf.Par
 
 	http.SetCookie(w, &cookie)
 
-	s.WriteJSON(w, req, AuthFlowResponse{
-		Name:            "",
-		Provider:        "",
-		EmailOrUsername: "",
-		Error:           "",
-		Completed:       "",
-		Location: &AuthFlowResponseLocation{
-			URL:     "/",
-			Replace: false,
-		},
-		Passkey:  nil,
-		Password: nil,
+	s.WriteJSON(w, req, AuthSignoutResponse{
+		URL:     "/",
+		Replace: false,
 	}, nil)
 }

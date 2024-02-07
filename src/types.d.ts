@@ -140,6 +140,11 @@ export type AuthFlowRequest =
       }
     }
 
+export type AuthSignoutResponse = {
+  url: string
+  replace: boolean
+}
+
 export type Provider = {
   key: string
   name: string

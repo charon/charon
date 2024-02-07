@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AuthFlowResponse } from "@/types"
+import type { AuthSignoutResponse } from "@/types"
 
 import { onUnmounted, ref } from "vue"
 import { useRouter } from "vue-router"
@@ -25,19 +25,21 @@ onUnmounted(() => {
 async function onSignOut() {
   mainProgress.value += 1
   try {
-    const response = await deleteURL<AuthFlowResponse>(router.apiResolve({ name: "Auth" }).href, abortController.signal, mainProgress)
+    const response = await deleteURL<AuthSignoutResponse>(router.apiResolve({ name: "Auth" }).href, abortController.signal, mainProgress)
     if (abortController.signal.aborted) {
       return
     }
-    if (locationRedirect(response)) {
-      if (browserSupportsWebAuthn()) {
-        navigator.credentials.preventSilentAccess()
-      }
-      // We increase the progress and never decrease it to wait for browser to do the redirect.
-      mainProgress.value += 1
-      return
+    if (response.replace) {
+      window.location.replace(response.url)
+    } else {
+      window.location.assign(response.url)
     }
-    throw new Error("unexpected response")
+    if (browserSupportsWebAuthn()) {
+      navigator.credentials.preventSilentAccess()
+    }
+    // We increase the progress and never decrease it to wait for browser to do the redirect.
+    mainProgress.value += 1
+    return
   } catch (error) {
     if (abortController.signal.aborted) {
       return
