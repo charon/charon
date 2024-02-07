@@ -278,6 +278,11 @@ function canClientsPublicSubmit(): boolean {
     if (!client.redirectUriTemplates.length) {
       return false
     }
+    for (const template of client.redirectUriTemplates) {
+      if (!template) {
+        return false
+      }
+    }
   }
 
   // Anything changed?
@@ -340,6 +345,11 @@ function canClientsBackendSubmit(): boolean {
   for (const client of clientsBackend.value) {
     if (!client.redirectUriTemplates.length) {
       return false
+    }
+    for (const template of client.redirectUriTemplates) {
+      if (!template) {
+        return false
+      }
     }
   }
 
