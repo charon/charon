@@ -5,6 +5,7 @@ import type { Organization, Metadata, ApplicationTemplates, ApplicationTemplate,
 import { computed, nextTick, onBeforeMount, onUnmounted, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import InputText from "@/components/InputText.vue"
+import TextArea from "@/components/TextArea.vue"
 import Button from "@/components/Button.vue"
 import WithDocument from "@/components/WithDocument.vue"
 import NavBar from "@/components/NavBar.vue"
@@ -31,6 +32,7 @@ const generatedSecrets = ref(new Map<string, string>())
 const basicUnexpectedError = ref("")
 const basicUpdated = ref(false)
 const name = ref("")
+const description = ref("")
 
 const applicationsUnexpectedError = ref("")
 const applicationsUpdated = ref(false)
@@ -67,7 +69,7 @@ function resetOnInteraction() {
 
 let watchInteractionStop: (() => void) | null = null
 function initWatchInteraction() {
-  const stop = watch([name, applications], resetOnInteraction, { deep: true })
+  const stop = watch([name, description, applications], resetOnInteraction, { deep: true })
   if (watchInteractionStop !== null) {
     throw new Error("watchInteractionStop already set")
   }
@@ -99,6 +101,7 @@ async function loadData(update: "init" | "basic" | "applications" | null) {
     // We have to make copies so that we break reactivity link with data.doc.
     if (update === "init" || update === "basic") {
       name.value = data.doc.name
+      description.value = data.doc.description
     }
     if (update === "init" || update === "applications") {
       applications.value = clone(data.doc.applications)
@@ -170,6 +173,9 @@ function canBasicSubmit(): boolean {
   if (organization.value!.name !== name.value) {
     return true
   }
+  if (organization.value!.description !== description.value) {
+    return true
+  }
 
   return false
 }
@@ -179,6 +185,7 @@ async function onBasicSubmit() {
     // We update only basic fields.
     id: props.id,
     name: name.value,
+    description: description.value,
     applications: organization.value!.applications,
   }
   await onSubmit(payload, "basic", basicUpdated, basicUnexpectedError)
@@ -207,6 +214,7 @@ async function onApplicationsSubmit() {
     // We update only applications.
     id: props.id,
     name: organization.value!.name,
+    description: organization.value!.description,
     applications: applications.value,
   }
   await onSubmit(payload, "applications", applicationsUpdated, applicationsUnexpectedError)
@@ -317,6 +325,8 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
           <form class="flex flex-col" novalidate @submit.prevent="onBasicSubmit">
             <label for="name" class="mb-1">Organization name</label>
             <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0 || !metadata.can_update" required />
+            <label for="description" class="mb-1 mt-4">Description<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label>
+            <TextArea id="description" v-model="description" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0 || !metadata.can_update" />
             <div v-if="basicUnexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
             <div v-else-if="basicUpdated" class="mt-4 text-success-600">Organization updated successfully.</div>
             <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">

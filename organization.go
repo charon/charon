@@ -372,6 +372,7 @@ type Organization struct {
 	Admins []AccountRef `json:"admins"`
 
 	Name         string                    `json:"name"`
+	Description  string                    `json:"description"`
 	Applications []OrganizationApplication `json:"applications"`
 }
 

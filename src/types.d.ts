@@ -275,6 +275,7 @@ export type OrganizationApplication = {
 export type Organization = {
   id: string
   name: string
+  description: string
   applications: OrganizationApplication[]
 }
 
