@@ -301,7 +301,7 @@ type OIDCClient struct {
 	ID                      identifier.Identifier
 	AppID                   identifier.Identifier
 	TargetName              string
-	TargetOrganization      string
+	TargetOrganization      identifier.Identifier
 	Type                    ClientType
 	TokenEndpointAuthMethod string
 	Scopes                  []string

@@ -146,7 +146,7 @@ func (s *Service) startPasskeyGet(w http.ResponseWriter, req *http.Request, flow
 	s.WriteJSON(w, req, AuthFlowResponse{
 		Target:          flow.Target,
 		Name:            flow.TargetName,
-		Organization:    flow.TargetOrganization,
+		OrganizationID:  flow.GetTargetOrganization(),
 		Provider:        flow.Provider,
 		EmailOrUsername: flow.EmailOrUsername,
 		Error:           "",
@@ -269,7 +269,7 @@ func (s *Service) startPasskeyCreate(w http.ResponseWriter, req *http.Request, f
 	s.WriteJSON(w, req, AuthFlowResponse{
 		Target:          flow.Target,
 		Name:            flow.TargetName,
-		Organization:    flow.TargetOrganization,
+		OrganizationID:  flow.GetTargetOrganization(),
 		Provider:        flow.Provider,
 		EmailOrUsername: flow.EmailOrUsername,
 		Error:           "",

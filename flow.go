@@ -66,7 +66,7 @@ type Flow struct {
 	Target             Target
 	TargetLocation     string
 	TargetName         string
-	TargetOrganization string
+	TargetOrganization *identifier.Identifier
 	Provider           Provider
 	EmailOrUsername    string
 	Attempts           int
@@ -129,6 +129,13 @@ func (f *Flow) IsCompleted() bool {
 		errors.Details(errE)["target"] = f.Target
 		panic(errE)
 	}
+}
+
+func (f *Flow) GetTargetOrganization() string {
+	if f.TargetOrganization == nil {
+		return ""
+	}
+	return f.TargetOrganization.String()
 }
 
 func GetFlow(ctx context.Context, id identifier.Identifier) (*Flow, errors.E) { //nolint:revive

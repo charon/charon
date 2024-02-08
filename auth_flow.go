@@ -35,7 +35,7 @@ type AuthFlowResponseLocation struct {
 type AuthFlowResponse struct {
 	Target          Target                    `json:"target"`
 	Name            string                    `json:"name,omitempty"`
-	Organization    string                    `json:"organization,omitempty"`
+	OrganizationID  string                    `json:"organizationId,omitempty"`
 	Provider        Provider                  `json:"provider,omitempty"`
 	EmailOrUsername string                    `json:"emailOrUsername,omitempty"`
 	Error           string                    `json:"error,omitempty"`
@@ -57,7 +57,7 @@ func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *Flow
 	response := AuthFlowResponse{
 		Target:          flow.Target,
 		Name:            flow.TargetName,
-		Organization:    flow.TargetOrganization,
+		OrganizationID:  flow.GetTargetOrganization(),
 		Provider:        flow.Provider,
 		EmailOrUsername: "",
 		Error:           code,
@@ -112,7 +112,7 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 	response := AuthFlowResponse{
 		Target:          flow.Target,
 		Name:            flow.TargetName,
-		Organization:    flow.TargetOrganization,
+		OrganizationID:  flow.GetTargetOrganization(),
 		Provider:        flow.Provider,
 		EmailOrUsername: flow.EmailOrUsername,
 		Error:           "",
@@ -315,7 +315,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 		response := AuthFlowResponse{
 			Target:          flow.Target,
 			Name:            flow.TargetName,
-			Organization:    flow.TargetOrganization,
+			OrganizationID:  flow.GetTargetOrganization(),
 			Provider:        flow.Provider,
 			EmailOrUsername: "",
 			Error:           "",
@@ -389,7 +389,7 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 		response := AuthFlowResponse{
 			Target:          flow.Target,
 			Name:            flow.TargetName,
-			Organization:    flow.TargetOrganization,
+			OrganizationID:  flow.GetTargetOrganization(),
 			Provider:        flow.Provider,
 			EmailOrUsername: "",
 			Error:           "",

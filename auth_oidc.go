@@ -141,7 +141,7 @@ func (s *Service) startOIDCProvider(w http.ResponseWriter, req *http.Request, fl
 	s.WriteJSON(w, req, AuthFlowResponse{
 		Target:          flow.Target,
 		Name:            flow.TargetName,
-		Organization:    flow.TargetOrganization,
+		OrganizationID:  flow.GetTargetOrganization(),
 		Provider:        flow.Provider,
 		EmailOrUsername: flow.EmailOrUsername,
 		Error:           "",
