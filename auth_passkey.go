@@ -134,7 +134,7 @@ func (s *Service) startPasskeyGet(w http.ResponseWriter, req *http.Request, flow
 		return
 	}
 
-	flow.Clear("")
+	flow.ClearAuthStep("")
 	flow.Provider = PasskeyProvider
 	flow.Passkey = session
 	errE := SetFlow(req.Context(), flow)
@@ -144,7 +144,9 @@ func (s *Service) startPasskeyGet(w http.ResponseWriter, req *http.Request, flow
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
+		Target:          flow.Target,
 		Name:            flow.TargetName,
+		Organization:    flow.TargetOrganization,
 		Provider:        flow.Provider,
 		EmailOrUsername: flow.EmailOrUsername,
 		Error:           "",
@@ -255,7 +257,7 @@ func (s *Service) startPasskeyCreate(w http.ResponseWriter, req *http.Request, f
 		return
 	}
 
-	flow.Clear("")
+	flow.ClearAuthStep("")
 	flow.Provider = PasskeyProvider
 	flow.Passkey = session
 	errE := SetFlow(req.Context(), flow)
@@ -265,7 +267,9 @@ func (s *Service) startPasskeyCreate(w http.ResponseWriter, req *http.Request, f
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
+		Target:          flow.Target,
 		Name:            flow.TargetName,
+		Organization:    flow.TargetOrganization,
 		Provider:        flow.Provider,
 		EmailOrUsername: flow.EmailOrUsername,
 		Error:           "",

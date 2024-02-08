@@ -115,18 +115,21 @@ func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request,
 
 	id := identifier.New()
 	errE = SetFlow(req.Context(), &Flow{
-		ID:              id,
-		Session:         nil,
-		Completed:       "",
-		TargetLocation:  req.URL.String(),
-		TargetName:      targetName,
-		Provider:        "",
-		EmailOrUsername: "",
-		Attempts:        0,
-		OIDCProvider:    nil,
-		Passkey:         nil,
-		Password:        nil,
-		Code:            nil,
+		ID:                   id,
+		Session:              nil,
+		Completed:            "",
+		Target:               TargetSession,
+		TargetLocation:       req.URL.String(),
+		TargetName:           targetName,
+		TargetOrganization:   "",
+		Provider:             "",
+		EmailOrUsername:      "",
+		Attempts:             0,
+		OIDCAuthorizeRequest: nil,
+		OIDCProvider:         nil,
+		Passkey:              nil,
+		Password:             nil,
+		Code:                 nil,
 	})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)

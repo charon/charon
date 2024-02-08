@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/go-webauthn/webauthn/webauthn"
+	"github.com/ory/fosite"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
@@ -20,9 +21,26 @@ var (
 type Completed string
 
 const (
+	// Auth step completed with sign in.
 	CompletedSignin Completed = "signin"
+	// Auth step completed with sign up.
 	CompletedSignup Completed = "signup"
+	// Auth step failed (3rd party authentication failed, too many attempts, etc.).
 	CompletedFailed Completed = "failed"
+
+	// OIDC organization joined.
+	CompletedOrganization Completed = "organization"
+	// OIDC identity picked.
+	CompletedIdentity Completed = "identity"
+	// OIDC redirect was made back to the OIDC client.
+	CompletedRedirect Completed = "redirect"
+)
+
+type Target string
+
+const (
+	TargetSession Target = "session"
+	TargetOIDC    Target = "oidc"
 )
 
 type FlowOIDCProvider struct {
@@ -42,14 +60,18 @@ type FlowCode struct {
 }
 
 type Flow struct {
-	ID              identifier.Identifier
-	Session         *identifier.Identifier
-	Completed       Completed
-	TargetLocation  string
-	TargetName      string
-	Provider        Provider
-	EmailOrUsername string
-	Attempts        int
+	ID                 identifier.Identifier
+	Session            *identifier.Identifier
+	Completed          Completed
+	Target             Target
+	TargetLocation     string
+	TargetName         string
+	TargetOrganization string
+	Provider           Provider
+	EmailOrUsername    string
+	Attempts           int
+
+	OIDCAuthorizeRequest *fosite.AuthorizeRequest
 
 	OIDCProvider *FlowOIDCProvider
 	Passkey      *webauthn.SessionData
@@ -57,7 +79,7 @@ type Flow struct {
 	Code         *FlowCode
 }
 
-func (f *Flow) Clear(emailOrUsername string) {
+func (f *Flow) ClearAuthStep(emailOrUsername string) {
 	f.OIDCProvider = nil
 	f.Passkey = nil
 	f.Password = nil
@@ -70,10 +92,43 @@ func (f *Flow) Clear(emailOrUsername string) {
 	}
 }
 
-func (f *Flow) ClearAll() {
-	f.Clear("")
+func (f *Flow) ClearAuthStepAll() {
+	f.ClearAuthStep("")
 	f.Code = nil
 	f.EmailOrUsername = ""
+}
+
+func (f *Flow) IsCompleted() bool {
+	switch f.Target {
+	case TargetSession:
+		switch f.Completed {
+		case CompletedSignin, CompletedSignup, CompletedFailed:
+			return true
+		case CompletedOrganization, CompletedIdentity, CompletedRedirect:
+			fallthrough
+		default:
+			errE := errors.New("invalid flow completed state for target")
+			errors.Details(errE)["target"] = f.Target
+			errors.Details(errE)["completed"] = f.Completed
+			panic(errE)
+		}
+	case TargetOIDC:
+		switch f.Completed {
+		case CompletedRedirect:
+			return true
+		case CompletedSignin, CompletedSignup, CompletedFailed, CompletedOrganization, CompletedIdentity:
+			return false
+		default:
+			errE := errors.New("invalid flow completed state for target")
+			errors.Details(errE)["target"] = f.Target
+			errors.Details(errE)["completed"] = f.Completed
+			panic(errE)
+		}
+	default:
+		errE := errors.New("invalid flow target")
+		errors.Details(errE)["target"] = f.Target
+		panic(errE)
+	}
 }
 
 func GetFlow(ctx context.Context, id identifier.Identifier) (*Flow, errors.E) { //nolint:revive
@@ -85,16 +140,36 @@ func GetFlow(ctx context.Context, id identifier.Identifier) (*Flow, errors.E) { 
 		return nil, errors.WithDetails(ErrFlowNotFound, "id", id)
 	}
 	var flow Flow
+	// We set interface fields so that unmarshal has structs to use.
+	flow.OIDCAuthorizeRequest = new(fosite.AuthorizeRequest)
+	flow.OIDCAuthorizeRequest.Client = new(OIDCClient)
+	flow.OIDCAuthorizeRequest.Session = new(OIDCSession)
 	errE := x.UnmarshalWithoutUnknownFields(data, &flow)
 	if errE != nil {
 		errors.Details(errE)["id"] = id
 		return nil, errE
 	}
+	// If ResponseTypes is still nil, then OIDCAuthorizeRequest was not really set
+	// in the flow, so we set it to nil explicitly to clear interface fields we set.
+	// This can happen when OIDCAuthorizeRequest is used with omitempty, then
+	// Unmarshal does not set it to nil if it is not present in JSON.
+	if flow.OIDCAuthorizeRequest != nil && flow.OIDCAuthorizeRequest.ResponseTypes == nil {
+		flow.OIDCAuthorizeRequest = nil
+	}
 	return &flow, nil
 }
 
 func SetFlow(ctx context.Context, flow *Flow) errors.E { //nolint:revive
-	data, errE := x.MarshalWithoutEscapeHTML(flow)
+	sanitizedFlow := flow
+	if flow.OIDCAuthorizeRequest != nil {
+		// We make a copy of the flow.
+		sanitizedFlow = new(Flow)
+		*sanitizedFlow = *flow
+		// And sanitize OIDCAuthorizeRequest.
+		sanitizedFlow.OIDCAuthorizeRequest = sanitizeAuthorizeRequest(sanitizedFlow.OIDCAuthorizeRequest)
+	}
+
+	data, errE := x.MarshalWithoutEscapeHTML(sanitizedFlow)
 	if errE != nil {
 		errors.Details(errE)["id"] = flow.ID
 		return errE

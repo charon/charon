@@ -188,13 +188,13 @@ func (s *Service) sendCodeForExistingAccount(
 		}
 
 		if len(emails) == 0 {
-			var msg string
+			var code string
 			if passwordFlow {
-				msg = "wrongPassword"
+				code = "wrongPassword"
 			} else {
-				msg = "noEmails"
+				code = "noEmails"
 			}
-			s.flowError(w, req, msg, nil)
+			s.flowError(w, req, flow, code, nil)
 			return
 		}
 	}
@@ -226,7 +226,7 @@ func (s *Service) sendCode(
 	// without really having access to bar@example.com. To prevent that, we clear code provider state if flow.EmailOrUsername changes.
 	// This means that if user starts with bar@example.com, tries foo@example.com, and then go back to bar@example.com, all inside
 	// the same flow, code(s) from the first bar@example.com attempt will not work anymore. That is probably fine and rare.
-	flow.Clear(preservedEmailOrUsername)
+	flow.ClearAuthStep(preservedEmailOrUsername)
 	flow.Provider = CodeProvider
 	// Or flow.Code was never set or it was cleared by flow.Clear because flow.EmailOrUsername changed.
 	// Or account ID has changed (this is an edge case and sanity check because flow.Clear should already
@@ -278,7 +278,9 @@ func (s *Service) sendCode(
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
+		Target:          flow.Target,
 		Name:            flow.TargetName,
+		Organization:    flow.TargetOrganization,
 		Provider:        flow.Provider,
 		EmailOrUsername: preservedEmailOrUsername,
 		Error:           "",
@@ -292,7 +294,7 @@ func (s *Service) sendCode(
 func (s *Service) startCode(w http.ResponseWriter, req *http.Request, flow *Flow, codeStart *AuthFlowRequestCodeStart) {
 	ctx := req.Context()
 
-	preservedEmailOrUsername := s.normalizeEmailOrUsername(w, req, codeStart.EmailOrUsername)
+	preservedEmailOrUsername := s.normalizeEmailOrUsername(w, req, flow, codeStart.EmailOrUsername)
 	if preservedEmailOrUsername == "" {
 		return
 	}
@@ -323,7 +325,7 @@ func (s *Service) startCode(w http.ResponseWriter, req *http.Request, flow *Flow
 
 	// We can send a code only if we have an e-mail address.
 	if !strings.Contains(mappedEmailOrUsername, "@") {
-		s.flowError(w, req, "noAccount", nil)
+		s.flowError(w, req, flow, "noAccount", nil)
 		return
 	}
 
@@ -365,7 +367,7 @@ func (s *Service) completeCode(w http.ResponseWriter, req *http.Request, flow *F
 		if !s.increaseAttempts(w, req, flow) {
 			return
 		}
-		s.flowError(w, req, "invalidCode", nil)
+		s.flowError(w, req, flow, "invalidCode", nil)
 		return
 	}
 

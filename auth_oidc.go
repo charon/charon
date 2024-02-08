@@ -118,7 +118,7 @@ func (s *Service) startOIDCProvider(w http.ResponseWriter, req *http.Request, fl
 
 	opts := []oauth2.AuthCodeOption{}
 
-	flow.Clear("")
+	flow.ClearAuthStep("")
 	flow.Provider = providerName
 	flow.OIDCProvider = &FlowOIDCProvider{
 		Verifier: "",
@@ -139,7 +139,9 @@ func (s *Service) startOIDCProvider(w http.ResponseWriter, req *http.Request, fl
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
+		Target:          flow.Target,
 		Name:            flow.TargetName,
+		Organization:    flow.TargetOrganization,
 		Provider:        flow.Provider,
 		EmailOrUsername: flow.EmailOrUsername,
 		Error:           "",
@@ -173,9 +175,9 @@ func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, par
 		return
 	}
 
-	// Has flow already completed?
+	// Has flow already completed auth step?
 	if flow.Completed != "" {
-		s.BadRequestWithError(w, req, errors.New("flow already completed"))
+		s.BadRequestWithError(w, req, errors.New("flow already completed auth step"))
 		return
 	}
 

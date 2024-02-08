@@ -77,6 +77,8 @@ func (s *OIDCStore) GetClient(_ context.Context, strID string) (fosite.Client, e
 				return &OIDCClient{
 					ID:                      id,
 					AppID:                   *app.ID,
+					TargetName:              app.ApplicationTemplate.Name,
+					TargetOrganization:      organization.Name,
 					Type:                    ClientPublic,
 					TokenEndpointAuthMethod: "none",
 					Scopes:                  scopes,
@@ -117,6 +119,8 @@ func (s *OIDCStore) GetClient(_ context.Context, strID string) (fosite.Client, e
 				return &OIDCClient{
 					ID:                      id,
 					AppID:                   *app.ID,
+					TargetName:              app.ApplicationTemplate.Name,
+					TargetOrganization:      organization.Name,
 					Type:                    ClientBackend,
 					TokenEndpointAuthMethod: templateClientBackend.TokenEndpointAuthMethod,
 					Scopes:                  scopes,
@@ -143,6 +147,8 @@ func (s *OIDCStore) GetClient(_ context.Context, strID string) (fosite.Client, e
 				return &OIDCClient{
 					ID:                      id,
 					AppID:                   *app.ID,
+					TargetName:              app.ApplicationTemplate.Name,
+					TargetOrganization:      organization.Name,
 					Type:                    ClientService,
 					TokenEndpointAuthMethod: templateClientService.TokenEndpointAuthMethod,
 					Scopes:                  scopes,

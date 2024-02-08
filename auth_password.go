@@ -89,15 +89,15 @@ type usernameCredential struct {
 	Username string `json:"username"`
 }
 
-func (s *Service) normalizeEmailOrUsername(w http.ResponseWriter, req *http.Request, emailOrUsername string) string {
+func (s *Service) normalizeEmailOrUsername(w http.ResponseWriter, req *http.Request, flow *Flow, emailOrUsername string) string {
 	preservedEmailOrUsername, errE := normalizeUsernameCasePreserved(emailOrUsername)
 	if errE != nil {
-		s.flowError(w, req, "invalidEmailOrUsername", errE)
+		s.flowError(w, req, flow, "invalidEmailOrUsername", errE)
 		return ""
 	}
 
 	if len(preservedEmailOrUsername) < emailOrUsernameMinLength {
-		s.flowError(w, req, "shortEmailOrUsername", nil)
+		s.flowError(w, req, flow, "shortEmailOrUsername", nil)
 		return ""
 	}
 
@@ -105,7 +105,7 @@ func (s *Service) normalizeEmailOrUsername(w http.ResponseWriter, req *http.Requ
 }
 
 func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *Flow, passwordStart *AuthFlowRequestPasswordStart) {
-	preservedEmailOrUsername := s.normalizeEmailOrUsername(w, req, passwordStart.EmailOrUsername)
+	preservedEmailOrUsername := s.normalizeEmailOrUsername(w, req, flow, passwordStart.EmailOrUsername)
 	if preservedEmailOrUsername == "" {
 		return
 	}
@@ -136,7 +136,7 @@ func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *
 		return
 	}
 
-	flow.Clear(preservedEmailOrUsername)
+	flow.ClearAuthStep(preservedEmailOrUsername)
 	flow.Provider = PasswordProvider
 	flow.Password = &FlowPassword{
 		PrivateKey: privateKey.Bytes(),
@@ -149,7 +149,9 @@ func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
+		Target:          flow.Target,
 		Name:            flow.TargetName,
+		Organization:    flow.TargetOrganization,
 		Provider:        flow.Provider,
 		EmailOrUsername: flow.EmailOrUsername,
 		Error:           "",
@@ -238,12 +240,12 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 
 	plainPassword, errE = normalizePassword(plainPassword)
 	if errE != nil {
-		s.flowError(w, req, "invalidPassword", errE)
+		s.flowError(w, req, flow, "invalidPassword", errE)
 		return
 	}
 
 	if len(plainPassword) < passwordMinLength {
-		s.flowError(w, req, "shortPassword", nil)
+		s.flowError(w, req, flow, "shortPassword", nil)
 		return
 	}
 

@@ -33,7 +33,9 @@ type AuthFlowResponseLocation struct {
 }
 
 type AuthFlowResponse struct {
+	Target          Target                    `json:"target"`
 	Name            string                    `json:"name,omitempty"`
+	Organization    string                    `json:"organization,omitempty"`
 	Provider        Provider                  `json:"provider,omitempty"`
 	EmailOrUsername string                    `json:"emailOrUsername,omitempty"`
 	Error           string                    `json:"error,omitempty"`
@@ -43,18 +45,20 @@ type AuthFlowResponse struct {
 	Password        *AuthFlowResponsePassword `json:"password,omitempty"`
 }
 
-func (s *Service) flowError(w http.ResponseWriter, req *http.Request, code string, err errors.E) {
+func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *Flow, code string, failureErr errors.E) {
 	ctx := req.Context()
 
-	if err == nil {
-		err = errors.New("flow error")
+	if failureErr == nil {
+		failureErr = errors.New("flow error")
 	}
-	errors.Details(err)["code"] = code
-	s.WithError(ctx, err)
+	errors.Details(failureErr)["code"] = code
+	s.WithError(ctx, failureErr)
 
 	response := AuthFlowResponse{
-		Name:            "",
-		Provider:        "",
+		Target:          flow.Target,
+		Name:            flow.TargetName,
+		Organization:    flow.TargetOrganization,
+		Provider:        flow.Provider,
 		EmailOrUsername: "",
 		Error:           code,
 		Completed:       "",
@@ -97,25 +101,30 @@ func (s *Service) AuthFlow(w http.ResponseWriter, req *http.Request, params waf.
 }
 
 func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	// This is similar to API case in completeAuthStep and failAuthStep,
+	// but fetches also the flow and checks the session.
+
 	flow := s.GetActiveFlow(w, req, params["id"])
 	if flow == nil {
 		return
 	}
 
 	response := AuthFlowResponse{
+		Target:          flow.Target,
 		Name:            flow.TargetName,
+		Organization:    flow.TargetOrganization,
 		Provider:        flow.Provider,
 		EmailOrUsername: flow.EmailOrUsername,
 		Error:           "",
-		Completed:       "",
+		Completed:       flow.Completed,
 		Location:        nil,
 		Passkey:         nil,
 		Password:        nil,
 	}
 
-	// Has flow already completed?
+	// Has flow already completed auth step?
 	if flow.Completed != "" {
-		// If the active flow was successful, then we require that the session matches the one made by the flow.
+		// If auth step was successful, then we require that the session matches the one made by the flow.
 		if flow.Completed != CompletedFailed {
 			session, errE := getSessionFromRequest(req)
 			if errors.Is(errE, ErrSessionNotFound) {
@@ -132,10 +141,12 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 			}
 		}
 
-		response.Completed = flow.Completed
-		response.Location = &AuthFlowResponseLocation{
-			URL:     flow.TargetLocation,
-			Replace: true,
+		if flow.Target == TargetSession {
+			// For session target we provide the target location.
+			response.Location = &AuthFlowResponseLocation{
+				URL:     flow.TargetLocation,
+				Replace: true,
+			}
 		}
 	}
 
@@ -152,7 +163,7 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 	}
 
 	// Has flow already completed?
-	if flow.Completed != "" {
+	if flow.IsCompleted() {
 		s.BadRequestWithError(w, req, errors.New("flow already completed"))
 		return
 	}
@@ -275,7 +286,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	flow.Completed = completed
 
 	// Everything should already be set to nil at this point, but just to make sure.
-	flow.ClearAll()
+	flow.ClearAuthStepAll()
 
 	errE = SetFlow(ctx, flow)
 	if errE != nil {
@@ -298,24 +309,37 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	http.SetCookie(w, &cookie)
 
 	if api {
-		s.WriteJSON(w, req, AuthFlowResponse{
+		// This is similar to AuthFlowGet, only without fetching the flow and checking the session.
+		// It is similar to failAuthStep as well.
+
+		response := AuthFlowResponse{
+			Target:          flow.Target,
 			Name:            flow.TargetName,
+			Organization:    flow.TargetOrganization,
 			Provider:        flow.Provider,
-			EmailOrUsername: flow.EmailOrUsername,
+			EmailOrUsername: "",
 			Error:           "",
 			Completed:       flow.Completed,
-			Location: &AuthFlowResponseLocation{
+			Location:        nil,
+			Passkey:         nil,
+			Password:        nil,
+		}
+
+		if flow.Target == TargetSession {
+			// For session target we provide the target location.
+			response.Location = &AuthFlowResponseLocation{
 				URL:     flow.TargetLocation,
 				Replace: true,
-			},
-			Passkey:  nil,
-			Password: nil,
-		}, nil)
+			}
+		}
+
+		s.WriteJSON(w, req, response, nil)
 		return
 	}
 
-	// We redirect back to the flow which then redirects to the target location on the frontend,
-	// after showing the message about successful sign-in or sign-up.
+	// We redirect back to the flow which then for session target redirects to the target location on
+	// the frontend, after showing the message about successful sign-in or sign-up. For OIDC target
+	// the frontend continues with the organization joining confirmation.
 	l, errE := s.Reverse("AuthFlow", waf.Params{"id": flow.ID.String()}, nil)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -342,13 +366,13 @@ func (s *Service) increaseAttempts(w http.ResponseWriter, req *http.Request, flo
 	return true
 }
 
-func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *Flow, err errors.E) {
+func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *Flow, failureErr errors.E) {
 	ctx := req.Context()
 
 	flow.Completed = CompletedFailed
 
 	// Everything should already be set to nil at this point, but just to make sure.
-	flow.ClearAll()
+	flow.ClearAuthStepAll()
 
 	errE := SetFlow(ctx, flow)
 	if errE != nil {
@@ -356,22 +380,34 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 		return
 	}
 
-	s.WithError(ctx, err)
+	s.WithError(ctx, failureErr)
 
 	if api {
-		encoded := s.PrepareJSON(w, req, AuthFlowResponse{
+		// This is similar to AuthFlowGet, only without fetching the flow and checking the session.
+		// It is similar to completeAuthStep as well.
+
+		response := AuthFlowResponse{
+			Target:          flow.Target,
 			Name:            flow.TargetName,
+			Organization:    flow.TargetOrganization,
 			Provider:        flow.Provider,
-			EmailOrUsername: flow.EmailOrUsername,
+			EmailOrUsername: "",
 			Error:           "",
 			Completed:       flow.Completed,
-			Location: &AuthFlowResponseLocation{
+			Location:        nil,
+			Passkey:         nil,
+			Password:        nil,
+		}
+
+		if flow.Target == TargetSession {
+			// For session target we provide the target location.
+			response.Location = &AuthFlowResponseLocation{
 				URL:     flow.TargetLocation,
 				Replace: true,
-			},
-			Passkey:  nil,
-			Password: nil,
-		}, nil)
+			}
+		}
+
+		encoded := s.PrepareJSON(w, req, response, nil)
 		if encoded == nil {
 			return
 		}
