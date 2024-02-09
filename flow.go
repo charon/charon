@@ -30,6 +30,8 @@ const (
 
 	// OIDC organization joined.
 	CompletedOrganization Completed = "organization"
+	// OIDC organization declined.
+	CompletedDeclined Completed = "declined"
 	// OIDC identity picked.
 	CompletedIdentity Completed = "identity"
 	// OIDC redirect was made back to the OIDC client.
@@ -104,7 +106,7 @@ func (f *Flow) IsCompleted() bool {
 		switch f.Completed {
 		case CompletedSignin, CompletedSignup, CompletedFailed:
 			return true
-		case CompletedOrganization, CompletedIdentity, CompletedRedirect:
+		case CompletedOrganization, CompletedDeclined, CompletedIdentity, CompletedRedirect:
 			fallthrough
 		default:
 			errE := errors.New("invalid flow completed state for target")
@@ -116,7 +118,7 @@ func (f *Flow) IsCompleted() bool {
 		switch f.Completed {
 		case CompletedRedirect:
 			return true
-		case CompletedSignin, CompletedSignup, CompletedFailed, CompletedOrganization, CompletedIdentity:
+		case CompletedSignin, CompletedSignup, CompletedFailed, CompletedOrganization, CompletedDeclined, CompletedIdentity:
 			return false
 		default:
 			errE := errors.New("invalid flow completed state for target")

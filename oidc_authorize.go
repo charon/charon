@@ -3,6 +3,7 @@ package charon
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/ory/fosite"
 	"gitlab.com/tozd/go/errors"
@@ -38,7 +39,8 @@ func grantAllScopes(request fosite.Requester) {
 
 // OIDCAuthorize handler does not really do the whole handling of the authorization request,
 // but stores the request into a flow, and then redirects to our authentication page
-// (GET request), which is expected to conclude handling the authorization request eventually.
+// (GET request), which is expected to conclude handling the authorization request eventually
+// with call to completeOIDCAuthorize.
 func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	ctx := req.Context()
 	oidc := s.oidc()
@@ -95,4 +97,72 @@ func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.
 		return
 	}
 	s.TemporaryRedirectGetMethod(w, req, location)
+}
+
+func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request, flow *Flow) bool {
+	ctx := req.Context()
+	oidc := s.oidc()
+
+	session, errE := getSessionFromRequest(req)
+	if errors.Is(errE, ErrSessionNotFound) {
+		// We return false and leave to frontend to load the flow using API to show the error.
+		return false
+	} else if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return true
+	}
+
+	if *flow.Session != session.ID {
+		// We return false and leave to frontend to load the flow using API to show the error.
+		return false
+	}
+
+	authorizeRequest := flow.OIDCAuthorizeRequest
+
+	// We always grant all requested scopes because user can pick an identity with values they want
+	// for all requested scopes. This works because currently we support only ID token scopes and
+	// additional scopes for the app itself. If we add scopes for calling into Charon API, we will
+	// have to provide a way for the user to approve those and change call here.
+	grantAllScopes(authorizeRequest)
+
+	now := time.Now().UTC()
+	oidcSession := &OIDCSession{ //nolint:forcetypeassert
+		// TODO: Make subject be unique per organization and identity picked.
+		Subject:     session.Account,
+		ExpiresAt:   nil,
+		RequestedAt: now,
+		// TODO: Store auth time (or local or from 3rd party provider) into Session and use it here.
+		AuthTime:               now,
+		Client:                 authorizeRequest.GetClient().(*OIDCClient).ID,
+		JWTClaims:              nil,
+		JWTHeaders:             nil,
+		IDTokenClaimsInternal:  nil,
+		IDTokenHeadersInternal: nil,
+		Extra:                  nil,
+	}
+
+	// TODO: Add to oidcSession.IDTokenClaimsInternal claims based on ID token scopes requested and granted found in authorizeRequest.GetGrantedScopes().
+
+	response, err := oidc.NewAuthorizeResponse(ctx, authorizeRequest, oidcSession)
+	if err != nil {
+		errE = errors.WithStack(err)
+		s.WithError(ctx, errE)
+		oidc.WriteAuthorizeError(ctx, w, authorizeRequest, errE)
+		return true
+	}
+
+	flow.Completed = CompletedRedirect
+
+	// Clear authorize request.
+	flow.OIDCAuthorizeRequest = nil
+
+	errE = SetFlow(ctx, flow)
+	if errE != nil {
+		// Because this can fail, store's CreateAuthorizeCodeSession, CreateOpenIDConnectSession, and CreatePKCERequestSession should be idempotent
+		s.InternalServerErrorWithError(w, req, errE)
+		return true
+	}
+
+	oidc.WriteAuthorizeResponse(ctx, w, authorizeRequest, response)
+	return true
 }

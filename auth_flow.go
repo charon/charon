@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"time"
 
 	"gitlab.com/tozd/go/errors"
@@ -21,7 +22,7 @@ const (
 
 type AuthFlowRequest struct {
 	Step     string                   `json:"step"`
-	Provider Provider                 `json:"provider"`
+	Provider Provider                 `json:"provider,omitempty"`
 	Passkey  *AuthFlowRequestPasskey  `json:"passkey,omitempty"`
 	Password *AuthFlowRequestPassword `json:"password,omitempty"`
 	Code     *AuthFlowRequestCode     `json:"code,omitempty"`
@@ -82,6 +83,13 @@ func (s *Service) AuthFlow(w http.ResponseWriter, req *http.Request, params waf.
 		return
 	}
 
+	// Is the flow ready for a redirect to the OIDC client?
+	if flow.Target == TargetOIDC &&
+		(flow.Completed == CompletedFailed || flow.Completed == CompletedDeclined || flow.Completed == CompletedIdentity) &&
+		s.completeOIDCAuthorize(w, req, flow) {
+		return
+	}
+
 	l, errE := s.ReverseAPI("AuthFlow", waf.Params{"id": flow.ID.String()}, nil)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -125,20 +133,8 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 	// Has flow already completed auth step?
 	if flow.Completed != "" {
 		// If auth step was successful, then we require that the session matches the one made by the flow.
-		if flow.Completed != CompletedFailed {
-			session, errE := getSessionFromRequest(req)
-			if errors.Is(errE, ErrSessionNotFound) {
-				waf.Error(w, req, http.StatusGone)
-				return
-			} else if errE != nil {
-				s.InternalServerErrorWithError(w, req, errE)
-				return
-			}
-
-			if *flow.Session != session.ID {
-				waf.Error(w, req, http.StatusGone)
-				return
-			}
+		if flow.Completed != CompletedFailed && !s.validateSession(w, req, flow) {
+			return
 		}
 
 		if flow.Target == TargetSession {
@@ -164,7 +160,7 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 
 	// Has flow already completed?
 	if flow.IsCompleted() {
-		s.BadRequestWithError(w, req, errors.New("flow already completed"))
+		waf.Error(w, req, http.StatusGone)
 		return
 	}
 
@@ -175,69 +171,113 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 		return
 	}
 
-	if _, ok := s.oidcProviders()[authFlowRequest.Provider]; ok {
-		if authFlowRequest.Step == StepStart {
-			if authFlowRequest.Provider != "" {
-				s.startOIDCProvider(w, req, flow, authFlowRequest.Provider)
-				return
+	// Auth step has not yet been completed.
+	if flow.Completed == "" { //nolint:nestif
+		if _, ok := s.oidcProviders()[authFlowRequest.Provider]; ok {
+			if authFlowRequest.Step == StepStart {
+				if authFlowRequest.Provider != "" {
+					s.startOIDCProvider(w, req, flow, authFlowRequest.Provider)
+					return
+				}
 			}
 		}
-	}
 
-	if authFlowRequest.Provider == PasskeyProvider {
-		switch authFlowRequest.Step {
-		case "getStart":
-			s.startPasskeyGet(w, req, flow)
+		if authFlowRequest.Provider == PasskeyProvider {
+			switch authFlowRequest.Step {
+			case "getStart":
+				s.startPasskeyGet(w, req, flow)
+				return
+			case "getComplete":
+				if authFlowRequest.Passkey != nil && authFlowRequest.Passkey.GetResponse != nil {
+					s.completePasskeyGet(w, req, flow, authFlowRequest.Passkey.GetResponse)
+					return
+				}
+			case "createStart":
+				s.startPasskeyCreate(w, req, flow)
+				return
+			case "createComplete":
+				if authFlowRequest.Passkey != nil && authFlowRequest.Passkey.CreateResponse != nil {
+					s.completePasskeyCreate(w, req, flow, authFlowRequest.Passkey.CreateResponse)
+					return
+				}
+			}
+		}
+
+		if authFlowRequest.Provider == PasswordProvider {
+			switch authFlowRequest.Step {
+			case StepStart:
+				if authFlowRequest.Password != nil && authFlowRequest.Password.Start != nil {
+					s.startPassword(w, req, flow, authFlowRequest.Password.Start)
+					return
+				}
+			case StepComplete:
+				if authFlowRequest.Password != nil && authFlowRequest.Password.Complete != nil {
+					s.completePassword(w, req, flow, authFlowRequest.Password.Complete)
+					return
+				}
+			}
+		}
+
+		if authFlowRequest.Provider == CodeProvider {
+			switch authFlowRequest.Step {
+			case StepStart:
+				if authFlowRequest.Code != nil && authFlowRequest.Code.Start != nil {
+					s.startCode(w, req, flow, authFlowRequest.Code.Start)
+					return
+				}
+			case StepComplete:
+				if authFlowRequest.Code != nil && authFlowRequest.Code.Complete != nil {
+					s.completeCode(w, req, flow, authFlowRequest.Code.Complete)
+					return
+				}
+			}
+		}
+	} else if authFlowRequest.Provider == "" {
+		// Flow already completed auth step (but not the others for the OIDC target),
+		// provider should not be provided.
+
+		// Current session should match the session in the flow.
+		if !s.validateSession(w, req, flow) {
 			return
-		case "getComplete":
-			if authFlowRequest.Passkey != nil && authFlowRequest.Passkey.GetResponse != nil {
-				s.completePasskeyGet(w, req, flow, authFlowRequest.Passkey.GetResponse)
-				return
-			}
-		case "createStart":
-			s.startPasskeyCreate(w, req, flow)
+		}
+
+		switch authFlowRequest.Step {
+		case "restartAuth":
+			s.restartAuth(w, req, flow)
 			return
-		case "createComplete":
-			if authFlowRequest.Passkey != nil && authFlowRequest.Passkey.CreateResponse != nil {
-				s.completePasskeyCreate(w, req, flow, authFlowRequest.Passkey.CreateResponse)
-				return
-			}
-		}
-	}
-
-	if authFlowRequest.Provider == PasswordProvider {
-		switch authFlowRequest.Step {
-		case StepStart:
-			if authFlowRequest.Password != nil && authFlowRequest.Password.Start != nil {
-				s.startPassword(w, req, flow, authFlowRequest.Password.Start)
-				return
-			}
-		case StepComplete:
-			if authFlowRequest.Password != nil && authFlowRequest.Password.Complete != nil {
-				s.completePassword(w, req, flow, authFlowRequest.Password.Complete)
-				return
-			}
-		}
-	}
-
-	if authFlowRequest.Provider == CodeProvider {
-		switch authFlowRequest.Step {
-		case StepStart:
-			if authFlowRequest.Code != nil && authFlowRequest.Code.Start != nil {
-				s.startCode(w, req, flow, authFlowRequest.Code.Start)
-				return
-			}
-		case StepComplete:
-			if authFlowRequest.Code != nil && authFlowRequest.Code.Complete != nil {
-				s.completeCode(w, req, flow, authFlowRequest.Code.Complete)
-				return
-			}
+		case "joinOrganization":
+			s.joinOrganization(w, req, flow)
+			return
+		case "declineOrganization":
+			s.declineOrganization(w, req, flow)
+			return
+		case "pickIdentity":
+			s.pickIdentity(w, req, flow)
+			return
 		}
 	}
 
 	errE = errors.New("invalid auth request")
 	errors.Details(errE)["request"] = authFlowRequest
 	s.BadRequestWithError(w, req, errE)
+}
+
+func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, flow *Flow) bool {
+	session, errE := getSessionFromRequest(req)
+	if errors.Is(errE, ErrSessionNotFound) {
+		waf.Error(w, req, http.StatusGone)
+		return false
+	} else if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return false
+	}
+
+	if *flow.Session != session.ID {
+		waf.Error(w, req, http.StatusGone)
+		return false
+	}
+
+	return true
 }
 
 func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *Flow, account *Account, credentials []Credential) {
@@ -248,8 +288,9 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 		// Sign-up. Create new account.
 		completed = CompletedSignup
 		account = &Account{
-			ID:          identifier.New(),
-			Credentials: map[Provider][]Credential{},
+			ID:            identifier.New(),
+			Credentials:   map[Provider][]Credential{},
+			Organizations: []identifier.Identifier{},
 		}
 		for _, credential := range credentials {
 			account.Credentials[credential.Provider] = append(account.Credentials[credential.Provider], credential)
@@ -424,4 +465,138 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 		return
 	}
 	s.TemporaryRedirectGetMethod(w, req, l)
+}
+
+func (s *Service) restartAuth(w http.ResponseWriter, req *http.Request, flow *Flow) {
+	ctx := req.Context()
+
+	flow.Session = nil
+	flow.Completed = ""
+
+	// Everything should already be set to nil at this point, but just to make sure.
+	flow.ClearAuthStepAll()
+
+	// We do not clear flow.Attempts because otherwise somebody with an account on the
+	// system could try up to MaxAuthAttempts - 1, then sign in, then restart, and repeat
+	// attempts. We want them to fail the whole flow and to have to restart it (it is easier
+	// to count failed flows and detect attacks this way).
+
+	errE := SetFlow(ctx, flow)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	s.WriteJSON(w, req, AuthFlowResponse{
+		Target:          flow.Target,
+		Name:            flow.TargetName,
+		OrganizationID:  flow.GetTargetOrganization(),
+		Provider:        "",
+		EmailOrUsername: "",
+		Error:           "",
+		Completed:       "",
+		Location:        nil,
+		Passkey:         nil,
+		Password:        nil,
+	}, nil)
+}
+
+func (s *Service) joinOrganization(w http.ResponseWriter, req *http.Request, flow *Flow) {
+	ctx := req.Context()
+
+	// Current request session is the same as flow.Session, that is checked in AuthFlowPost.
+	session, errE := GetSession(ctx, *flow.Session)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	account, errE := GetAccount(ctx, session.Account)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	if !slices.Contains(account.Organizations, *flow.TargetOrganization) {
+		account.Organizations = append(account.Organizations, *flow.TargetOrganization)
+
+		errE = SetAccount(ctx, account)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+	}
+
+	flow.Completed = CompletedOrganization
+
+	errE = SetFlow(ctx, flow)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	s.WriteJSON(w, req, AuthFlowResponse{
+		Target:          flow.Target,
+		Name:            flow.TargetName,
+		OrganizationID:  flow.GetTargetOrganization(),
+		Provider:        "",
+		EmailOrUsername: "",
+		Error:           "",
+		Completed:       flow.Completed,
+		Location:        nil,
+		Passkey:         nil,
+		Password:        nil,
+	}, nil)
+}
+
+func (s *Service) declineOrganization(w http.ResponseWriter, req *http.Request, flow *Flow) {
+	ctx := req.Context()
+
+	flow.Completed = CompletedDeclined
+
+	errE := SetFlow(ctx, flow)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	s.WriteJSON(w, req, AuthFlowResponse{
+		Target:          flow.Target,
+		Name:            flow.TargetName,
+		OrganizationID:  flow.GetTargetOrganization(),
+		Provider:        "",
+		EmailOrUsername: "",
+		Error:           "",
+		Completed:       flow.Completed,
+		Location:        nil,
+		Passkey:         nil,
+		Password:        nil,
+	}, nil)
+}
+
+func (s *Service) pickIdentity(w http.ResponseWriter, req *http.Request, flow *Flow) {
+	ctx := req.Context()
+
+	// TODO: Store picked identity.
+
+	flow.Completed = CompletedIdentity
+
+	errE := SetFlow(ctx, flow)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	s.WriteJSON(w, req, AuthFlowResponse{
+		Target:          flow.Target,
+		Name:            flow.TargetName,
+		OrganizationID:  flow.GetTargetOrganization(),
+		Provider:        "",
+		EmailOrUsername: "",
+		Error:           "",
+		Completed:       flow.Completed,
+		Location:        nil,
+		Passkey:         nil,
+		Password:        nil,
+	}, nil)
 }

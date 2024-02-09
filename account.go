@@ -40,6 +40,8 @@ type Account struct {
 	ID identifier.Identifier
 
 	Credentials map[Provider][]Credential
+
+	Organizations []identifier.Identifier
 }
 
 func (a *Account) HasCredential(provider Provider, credentialID string) bool {
