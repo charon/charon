@@ -158,7 +158,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 
 	errE = SetFlow(ctx, flow)
 	if errE != nil {
-		// Because this can fail, store's CreateAuthorizeCodeSession, CreateOpenIDConnectSession, and CreatePKCERequestSession should be idempotent
+		// Because this can fail, store's CreateAuthorizeCodeSession, CreateOpenIDConnectSession, and CreatePKCERequestSession should be idempotent.
 		s.InternalServerErrorWithError(w, req, errE)
 		return true
 	}
