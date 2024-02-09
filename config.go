@@ -356,6 +356,10 @@ func (config *Config) Run() errors.E { //nolint:maintidx
 		service.Middleware = append(service.Middleware, service.RedirectToMainSite(domain))
 	}
 
+	// TODO: Do not use sync.OnceValue (but just a function getter) if port is known in advance.
+	//       The reason why we have sync.OnceValue here is that if config.Serve.Addr is configured with port 0 we do not know until
+	//       the server starts to which port the server is bound. But that configuration should be rare (primarily used only in tests).
+
 	service.oidc = sync.OnceValue(initOIDC(config, service, domain, secret))
 
 	service.oidcProviders = sync.OnceValue(initOIDCProviders(config, service, domain, providers))
