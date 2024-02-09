@@ -140,12 +140,19 @@ func initOIDC(config *Config, service *Service, domain string, secret []byte) fu
 
 // sanitizeAuthorizeRequest sanitizes the authorization request so that it does not contain any sensitive
 // data before it is stored into the database. It must still contain enough information to be able to
-// complete the OIDC flow. Upstream implementation primarily removes all provided form data.
+// complete the OIDC flow. We do that by removing fields from submitted form data.
 func sanitizeAuthorizeRequest(request *fosite.AuthorizeRequest) *fosite.AuthorizeRequest {
 	sanitized := new(fosite.AuthorizeRequest)
 	*sanitized = *request
 	sanitized.Request = *request.Request.Sanitize( //nolint:forcetypeassert
-		[]string{"nonce", "display", "prompt", "max_age", "ui_locales", "id_token_hint", "login_hint", "acr_values", "code_challenge", "code_challenge_method"},
+		[]string{
+			// OIDC parameters (same as fosite.handler.openid.oidcParameters).
+			"max_age", "prompt", "acr_values", "id_token_hint", "nonce",
+			// PCRE.
+			"code_challenge", "code_challenge_method",
+			// Other fields.
+			"display", "ui_locales", "login_hint",
+		},
 	).(*fosite.Request)
 	return sanitized
 }
