@@ -577,7 +577,7 @@ func (s *Service) declineOrganization(w http.ResponseWriter, req *http.Request, 
 func (s *Service) chooseIdentity(w http.ResponseWriter, req *http.Request, flow *Flow) {
 	ctx := req.Context()
 
-	// TODO: Store chosed identity.
+	// TODO: Store chosen identity.
 
 	flow.Completed = CompletedIdentity
 
