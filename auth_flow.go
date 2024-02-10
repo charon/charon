@@ -251,8 +251,8 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 		case "declineOrganization":
 			s.declineOrganization(w, req, flow)
 			return
-		case "pickIdentity":
-			s.pickIdentity(w, req, flow)
+		case "chooseIdentity":
+			s.chooseIdentity(w, req, flow)
 			return
 		}
 	}
@@ -574,10 +574,10 @@ func (s *Service) declineOrganization(w http.ResponseWriter, req *http.Request, 
 	}, nil)
 }
 
-func (s *Service) pickIdentity(w http.ResponseWriter, req *http.Request, flow *Flow) {
+func (s *Service) chooseIdentity(w http.ResponseWriter, req *http.Request, flow *Flow) {
 	ctx := req.Context()
 
-	// TODO: Store picked identity.
+	// TODO: Store chosed identity.
 
 	flow.Completed = CompletedIdentity
 

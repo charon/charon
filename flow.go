@@ -32,7 +32,7 @@ const (
 	CompletedOrganization Completed = "organization"
 	// OIDC organization declined.
 	CompletedDeclined Completed = "declined"
-	// OIDC identity picked.
+	// OIDC identity chosed.
 	CompletedIdentity Completed = "identity"
 	// OIDC redirect was made back to the OIDC client.
 	CompletedRedirect Completed = "redirect"

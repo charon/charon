@@ -119,7 +119,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 
 	authorizeRequest := flow.OIDCAuthorizeRequest
 
-	// We always grant all requested scopes because user can pick an identity with values they want
+	// We always grant all requested scopes because user can choose an identity with values they want
 	// for all requested scopes. This works because currently we support only ID token scopes and
 	// additional scopes for the app itself. If we add scopes for calling into Charon API, we will
 	// have to provide a way for the user to approve those and change call here.
@@ -127,7 +127,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 
 	now := time.Now().UTC()
 	oidcSession := &OIDCSession{ //nolint:forcetypeassert
-		// TODO: Make subject be unique per organization and identity picked.
+		// TODO: Make subject be unique per organization and identity chosed.
 		Subject:     session.Account,
 		ExpiresAt:   nil,
 		RequestedAt: now,
