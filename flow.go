@@ -74,6 +74,7 @@ type Flow struct {
 	Attempts           int
 
 	OIDCAuthorizeRequest *fosite.AuthorizeRequest
+	OIDCRedirectReady    bool
 
 	OIDCProvider *FlowOIDCProvider
 	Passkey      *webauthn.SessionData

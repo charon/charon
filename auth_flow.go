@@ -84,9 +84,7 @@ func (s *Service) AuthFlow(w http.ResponseWriter, req *http.Request, params waf.
 	}
 
 	// Is the flow ready for a redirect to the OIDC client?
-	if flow.Target == TargetOIDC &&
-		(flow.Completed == CompletedFailed || flow.Completed == CompletedDeclined || flow.Completed == CompletedIdentity) &&
-		s.completeOIDCAuthorize(w, req, flow) {
+	if flow.Target == TargetOIDC && flow.OIDCRedirectReady && s.completeOIDCAuthorize(w, req, flow) {
 		return
 	}
 
@@ -232,9 +230,9 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 				}
 			}
 		}
-	} else if authFlowRequest.Provider == "" {
-		// Flow already completed auth step (but not the others for the OIDC target),
-		// provider should not be provided.
+	} else if flow.Target == TargetOIDC && flow.Session != nil && authFlowRequest.Provider == "" {
+		// Flow already successfully (session is not nil) completed auth step (but not the others
+		// for the OIDC target), provider should not be provided.
 
 		// Current session should match the session in the flow.
 		if !s.validateSession(w, req, flow) {
@@ -254,6 +252,18 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 		case "chooseIdentity":
 			s.chooseIdentity(w, req, flow)
 			return
+		case "redirect":
+			if flow.Completed == CompletedDeclined || flow.Completed == CompletedIdentity {
+				s.oidcRedirect(w, req, flow)
+				return
+			}
+		}
+	} else if flow.Target == TargetOIDC && flow.Completed == CompletedFailed && authFlowRequest.Provider == "" {
+		// OIDC target flow did not successfully completed auth step, provider should not be provided.
+
+		if authFlowRequest.Step == "redirect" {
+			s.oidcRedirect(w, req, flow)
+			return
 		}
 	}
 
@@ -272,6 +282,7 @@ func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, flow
 		return false
 	}
 
+	// Caller should call validateSession only when flow.Session is set.
 	if *flow.Session != session.ID {
 		waf.Error(w, req, http.StatusGone)
 		return false
@@ -527,6 +538,7 @@ func (s *Service) joinOrganization(w http.ResponseWriter, req *http.Request, flo
 		}
 	}
 
+	// We do not really care about the order of steps at the API level, until the client calls into oidcRedirect.
 	flow.Completed = CompletedOrganization
 
 	errE = SetFlow(ctx, flow)
@@ -552,6 +564,7 @@ func (s *Service) joinOrganization(w http.ResponseWriter, req *http.Request, flo
 func (s *Service) declineOrganization(w http.ResponseWriter, req *http.Request, flow *Flow) {
 	ctx := req.Context()
 
+	// We do not really care about the order of steps at the API level, until the client calls into oidcRedirect.
 	flow.Completed = CompletedDeclined
 
 	errE := SetFlow(ctx, flow)
@@ -579,7 +592,34 @@ func (s *Service) chooseIdentity(w http.ResponseWriter, req *http.Request, flow 
 
 	// TODO: Store chosen identity.
 
+	// We do not really care about the order of steps at the API level, until the client calls into oidcRedirect.
 	flow.Completed = CompletedIdentity
+
+	errE := SetFlow(ctx, flow)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	s.WriteJSON(w, req, AuthFlowResponse{
+		Target:          flow.Target,
+		Name:            flow.TargetName,
+		OrganizationID:  flow.GetTargetOrganization(),
+		Provider:        "",
+		EmailOrUsername: "",
+		Error:           "",
+		Completed:       flow.Completed,
+		Location:        nil,
+		Passkey:         nil,
+		Password:        nil,
+	}, nil)
+}
+
+func (s *Service) oidcRedirect(w http.ResponseWriter, req *http.Request, flow *Flow) {
+	ctx := req.Context()
+
+	// It is already checked that flow.Completed is one of CompletedDeclined, CompletedIdentity, or CompletedFailed.
+	flow.OIDCRedirectReady = true
 
 	errE := SetFlow(ctx, flow)
 	if errE != nil {

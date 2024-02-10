@@ -79,6 +79,7 @@ func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.
 		EmailOrUsername:      "",
 		Attempts:             0,
 		OIDCAuthorizeRequest: ar,
+		OIDCRedirectReady:    false,
 		OIDCProvider:         nil,
 		Passkey:              nil,
 		Password:             nil,
@@ -103,6 +104,25 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 	ctx := req.Context()
 	oidc := s.oidc()
 
+	authorizeRequest := flow.OIDCAuthorizeRequest
+
+	if flow.Completed == CompletedFailed {
+		flow.Completed = CompletedRedirect
+
+		// Clear authorize request.
+		flow.OIDCAuthorizeRequest = nil
+
+		errE := SetFlow(ctx, flow)
+		if errE != nil {
+			// Because this can fail, store's CreateAuthorizeCodeSession, CreateOpenIDConnectSession, and CreatePKCERequestSession should be idempotent.
+			s.InternalServerErrorWithError(w, req, errE)
+			return true
+		}
+
+		oidc.WriteAuthorizeError(ctx, w, authorizeRequest, errors.New("authentication failed"))
+		return true
+	}
+
 	session, errE := getSessionFromRequest(req)
 	if errors.Is(errE, ErrSessionNotFound) {
 		// We return false and leave to frontend to load the flow using API to show the error.
@@ -112,12 +132,29 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 		return true
 	}
 
+	// It should not be possible to get to OIDCRedirectReady state with flow.Session being nil,
+	// unless flow.Completed == CompletedFailed, which we checked above.
 	if *flow.Session != session.ID {
 		// We return false and leave to frontend to load the flow using API to show the error.
 		return false
 	}
 
-	authorizeRequest := flow.OIDCAuthorizeRequest
+	if flow.Completed == CompletedDeclined {
+		flow.Completed = CompletedRedirect
+
+		// Clear authorize request.
+		flow.OIDCAuthorizeRequest = nil
+
+		errE = SetFlow(ctx, flow)
+		if errE != nil {
+			// Because this can fail, store's CreateAuthorizeCodeSession, CreateOpenIDConnectSession, and CreatePKCERequestSession should be idempotent.
+			s.InternalServerErrorWithError(w, req, errE)
+			return true
+		}
+
+		oidc.WriteAuthorizeError(ctx, w, authorizeRequest, errors.New("joining organization declined"))
+		return true
+	}
 
 	// We always grant all requested scopes because user can choose an identity with values they want
 	// for all requested scopes. This works because currently we support only ID token scopes and
