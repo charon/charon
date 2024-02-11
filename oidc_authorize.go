@@ -108,6 +108,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 
 	if flow.Completed == CompletedFailed {
 		flow.Completed = CompletedRedirect
+		flow.OIDCRedirectReady = false
 
 		// Clear authorize request.
 		flow.OIDCAuthorizeRequest = nil
@@ -141,6 +142,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 
 	if flow.Completed == CompletedDeclined {
 		flow.Completed = CompletedRedirect
+		flow.OIDCRedirectReady = false
 
 		// Clear authorize request.
 		flow.OIDCAuthorizeRequest = nil
@@ -189,6 +191,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 	}
 
 	flow.Completed = CompletedRedirect
+	flow.OIDCRedirectReady = false
 
 	// Clear authorize request.
 	flow.OIDCAuthorizeRequest = nil

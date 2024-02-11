@@ -336,6 +336,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 
 	flow.Session = &sessionID
 	flow.Completed = completed
+	flow.OIDCRedirectReady = false
 
 	// Everything should already be set to nil at this point, but just to make sure.
 	flow.ClearAuthStepAll()
@@ -422,6 +423,7 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 	ctx := req.Context()
 
 	flow.Completed = CompletedFailed
+	flow.OIDCRedirectReady = false
 
 	// Everything should already be set to nil at this point, but just to make sure.
 	flow.ClearAuthStepAll()
@@ -483,6 +485,7 @@ func (s *Service) restartAuth(w http.ResponseWriter, req *http.Request, flow *Fl
 
 	flow.Session = nil
 	flow.Completed = ""
+	flow.OIDCRedirectReady = false
 
 	// Everything should already be set to nil at this point, but just to make sure.
 	flow.ClearAuthStepAll()
@@ -540,6 +543,7 @@ func (s *Service) joinOrganization(w http.ResponseWriter, req *http.Request, flo
 
 	// We do not really care about the order of steps at the API level, until the client calls into oidcRedirect.
 	flow.Completed = CompletedOrganization
+	flow.OIDCRedirectReady = false
 
 	errE = SetFlow(ctx, flow)
 	if errE != nil {
@@ -566,6 +570,7 @@ func (s *Service) declineOrganization(w http.ResponseWriter, req *http.Request, 
 
 	// We do not really care about the order of steps at the API level, until the client calls into oidcRedirect.
 	flow.Completed = CompletedDeclined
+	flow.OIDCRedirectReady = false
 
 	errE := SetFlow(ctx, flow)
 	if errE != nil {
@@ -594,6 +599,7 @@ func (s *Service) chooseIdentity(w http.ResponseWriter, req *http.Request, flow 
 
 	// We do not really care about the order of steps at the API level, until the client calls into oidcRedirect.
 	flow.Completed = CompletedIdentity
+	flow.OIDCRedirectReady = false
 
 	errE := SetFlow(ctx, flow)
 	if errE != nil {
