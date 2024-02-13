@@ -537,8 +537,8 @@ function onAddClientService() {
             <div v-else-if="basicUpdated" class="mt-4 text-success-600">Application template updated successfully.</div>
             <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
               <!--
-              Button is on purpose not disabled on unexpectedError so that user can retry.
-            -->
+                Button is on purpose not disabled on unexpectedError so that user can retry.
+              -->
               <Button type="submit" primary :disabled="!canBasicSubmit() || mainProgress > 0">Update</Button>
             </div>
           </form>
