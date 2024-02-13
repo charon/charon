@@ -9,7 +9,7 @@ import type {
   Variable,
 } from "@/types"
 
-import { nextTick, onBeforeMount, onUnmounted, ref, watch } from "vue"
+import { nextTick, onBeforeMount, onUnmounted, ref, watch, inject } from "vue"
 import { useRouter } from "vue-router"
 import InputText from "@/components/InputText.vue"
 import TextArea from "@/components/TextArea.vue"
@@ -19,6 +19,7 @@ import NavBar from "@/components/NavBar.vue"
 import Footer from "@/components/Footer.vue"
 import { getURL, postURL } from "@/api"
 import { clone, equals } from "@/utils"
+import { progressKey } from "@/progress"
 
 const props = defineProps<{
   id: string
@@ -26,7 +27,8 @@ const props = defineProps<{
 
 const router = useRouter()
 
-const mainProgress = ref(0)
+const mainProgress = inject(progressKey, ref(0))
+
 const abortController = new AbortController()
 const dataLoading = ref(true)
 const dataLoadingError = ref("")

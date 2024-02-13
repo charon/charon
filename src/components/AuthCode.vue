@@ -6,8 +6,9 @@ import { useRoute, useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import InputCode from "@/components/InputCode.vue"
 import { postURL } from "@/api"
-import { locationRedirect, isEmail } from "@/utils"
+import { processCompletedAndLocationRedirect, isEmail } from "@/utils"
 import { flowKey } from "@/flow"
+import { progressKey } from "@/progress"
 
 const props = defineProps<{
   id: string
@@ -19,10 +20,11 @@ const router = useRouter()
 const route = useRoute()
 
 const flow = inject(flowKey)
+const mainProgress = inject(progressKey, ref(0))
+
+const abortController = new AbortController()
 
 const code = ref("")
-const mainProgress = ref(0)
-const abortController = new AbortController()
 const sendCounter = ref(1)
 const codeError = ref("")
 const unexpectedError = ref("")
@@ -92,6 +94,10 @@ async function onRedo() {
   if (abortController.signal.aborted) {
     return
   }
+  // We disable this event handler because this event handler is called from a link.
+  if (mainProgress.value > 0) {
+    return
+  }
 
   abortController.abort()
   flow!.backward("start")
@@ -130,9 +136,7 @@ async function onNext() {
     if (abortController.signal.aborted) {
       return
     }
-    if (locationRedirect(response, flow)) {
-      // We increase the progress and never decrease it to wait for browser to do the redirect.
-      mainProgress.value += 1
+    if (processCompletedAndLocationRedirect(response, flow, mainProgress)) {
       return
     }
     if ("error" in response && ["invalidCode"].includes(response.error)) {
@@ -186,9 +190,7 @@ async function onResend() {
     if (abortController.signal.aborted) {
       return
     }
-    if (locationRedirect(response, flow)) {
-      // We increase the progress and never decrease it to wait for browser to do the redirect.
-      mainProgress.value += 1
+    if (processCompletedAndLocationRedirect(response, flow, mainProgress)) {
       return
     }
     // No error is expected in the response because code has already been generated in the past

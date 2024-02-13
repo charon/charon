@@ -5,8 +5,9 @@ import { ref, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import { postURL } from "@/api"
-import { locationRedirect } from "@/utils"
+import { processCompletedAndLocationRedirect } from "@/utils"
 import { flowKey, providerName } from "@/flow"
+import { progressKey } from "@/progress"
 
 const props = defineProps<{
   id: string
@@ -16,9 +17,10 @@ const props = defineProps<{
 const router = useRouter()
 
 const flow = inject(flowKey)
+const mainProgress = inject(progressKey, ref(0))
 
-const mainProgress = ref(0)
 const abortController = new AbortController()
+
 const unexpectedError = ref("")
 const paused = ref(false)
 const seconds = ref(3)
@@ -125,9 +127,7 @@ async function onRedirect() {
     if (abortController.signal.aborted) {
       return
     }
-    if (locationRedirect(response, flow)) {
-      // We increase the progress and never decrease it to wait for browser to do the redirect.
-      mainProgress.value += 1
+    if (processCompletedAndLocationRedirect(response, flow, mainProgress)) {
       return
     }
     throw new Error("unexpected response")
@@ -149,7 +149,8 @@ function onPause(event: KeyboardEvent) {
   if (abortController.signal.aborted) {
     return
   }
-
+  // We disable this event handler because it is a keyboard event handler and
+  // disabling UI elements do not disable keyboard events.
   if (mainProgress.value > 0) {
     return
   }

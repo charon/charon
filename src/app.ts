@@ -1,7 +1,8 @@
-import { createApp } from "vue"
+import { createApp, ref } from "vue"
 import { createRouter, createWebHistory } from "vue-router"
 import App from "@/App.vue"
 import { replaceLocationHash } from "./utils"
+import { progressKey } from "./progress"
 import { routes } from "@/../routes.json"
 import "./app.css"
 
@@ -41,4 +42,4 @@ const apiRouter = createRouter({
 
 router.apiResolve = apiRouter.resolve.bind(apiRouter)
 
-createApp(App).use(router).mount("main")
+createApp(App).use(router).provide(progressKey, ref(0)).mount("main")

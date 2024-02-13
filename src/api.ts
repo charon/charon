@@ -2,7 +2,7 @@ import type { Ref } from "vue"
 import type { Router } from "vue-router"
 import type { AuthFlowRequest, AuthFlowResponse, Flow, Metadata, PasswordResponse } from "@/types"
 
-import { fromBase64, locationRedirect } from "@/utils"
+import { fromBase64, processCompletedAndLocationRedirect } from "@/utils"
 import { decodeMetadata } from "./metadata"
 
 export class FetchError extends Error {
@@ -130,7 +130,7 @@ export async function deleteURL<T>(url: string, abortSignal: AbortSignal, progre
 
 export async function startPassword(
   router: Router,
-  flowID: string,
+  flowId: string,
   emailOrUsername: string,
   flow: Flow,
   abortSignal: AbortSignal,
@@ -142,7 +142,7 @@ export async function startPassword(
     const url = router.apiResolve({
       name: "AuthFlow",
       params: {
-        id: flowID,
+        id: flowId,
       },
     }).href
 
@@ -160,9 +160,10 @@ export async function startPassword(
       abortSignal,
       progress,
     )
-    if (locationRedirect(response, flow)) {
-      // We increase the progress and never decrease it to wait for browser to do the redirect.
-      mainProgress.value += 1
+    if (abortSignal.aborted) {
+      return null
+    }
+    if (processCompletedAndLocationRedirect(response, flow, mainProgress)) {
       return null
     }
     if ("error" in response && ["invalidEmailOrUsername", "shortEmailOrUsername"].includes(response.error)) {
@@ -184,5 +185,43 @@ export async function startPassword(
     throw new Error("unexpected response")
   } finally {
     progress.value -= 1
+  }
+}
+
+export async function restartAuth(router: Router, flowId: string, flow: Flow, abortSignal: AbortSignal, mainProgress: Ref<number>) {
+  if (flow.getCompleted() === "failed") {
+    throw new Error(`cannot restart failed auth`)
+  }
+
+  mainProgress.value += 1
+  try {
+    const url = router.apiResolve({
+      name: "AuthFlow",
+      params: {
+        id: flowId,
+      },
+    }).href
+
+    const response = await postURL<AuthFlowResponse>(
+      url,
+      {
+        step: "restartAuth",
+      } as AuthFlowRequest,
+      abortSignal,
+      mainProgress,
+    )
+    if (abortSignal.aborted) {
+      return
+    }
+    if (processCompletedAndLocationRedirect(response, flow, mainProgress)) {
+      return
+    }
+    if (!("error" in response) && !("provider" in response) && !("completed" in response)) {
+      flow.backward("start")
+      return
+    }
+    throw new Error("unexpected response")
+  } finally {
+    mainProgress.value -= 1
   }
 }

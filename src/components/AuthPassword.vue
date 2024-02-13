@@ -7,8 +7,9 @@ import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import InputTextButton from "@/components/InputTextButton.vue"
 import { postURL, startPassword } from "@/api"
-import { locationRedirect, toBase64, isEmail } from "@/utils"
+import { processCompletedAndLocationRedirect, toBase64, isEmail } from "@/utils"
 import { flowKey, updateStepsNoCode } from "@/flow"
+import { progressKey } from "@/progress"
 
 const props = defineProps<{
   id: string
@@ -21,11 +22,12 @@ const props = defineProps<{
 const router = useRouter()
 
 const flow = inject(flowKey)
+const mainProgress = inject(progressKey, ref(0))
+
+const abortController = new AbortController()
 
 const password = ref("")
-const mainProgress = ref(0)
 const keyProgress = ref(0)
-const abortController = new AbortController()
 const passwordError = ref("")
 const codeError = ref("")
 const codeErrorOnce = ref(false)
@@ -124,6 +126,10 @@ async function onRedo() {
   if (abortController.signal.aborted) {
     return
   }
+  // We disable this event handler because this event handler is called from a link.
+  if (mainProgress.value > 0) {
+    return
+  }
 
   abortController.abort()
   flow!.backward("start")
@@ -213,10 +219,8 @@ async function onNext() {
     if (abortController.signal.aborted) {
       return
     }
-    if (locationRedirect(response, flow)) {
+    if (processCompletedAndLocationRedirect(response, flow, mainProgress)) {
       updateStepsNoCode(flow!)
-      // We increase the progress and never decrease it to wait for browser to do the redirect.
-      mainProgress.value += 1
       return
     }
     if ("error" in response && ["wrongPassword", "invalidPassword", "shortPassword"].includes(response.error)) {
@@ -287,9 +291,7 @@ async function onCode() {
     if (abortController.signal.aborted) {
       return
     }
-    if (locationRedirect(response, flow)) {
-      // We increase the progress and never decrease it to wait for browser to do the redirect.
-      mainProgress.value += 1
+    if (processCompletedAndLocationRedirect(response, flow, mainProgress)) {
       return
     }
     if ("error" in response && ["noAccount", "noEmails"].includes(response.error)) {

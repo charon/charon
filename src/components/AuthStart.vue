@@ -7,6 +7,7 @@ import InputText from "@/components/InputText.vue"
 import { startPassword } from "@/api"
 import { isEmail } from "@/utils"
 import { flowKey } from "@/flow"
+import { progressKey } from "@/progress"
 import siteContext from "@/context"
 
 const props = defineProps<{
@@ -17,9 +18,10 @@ const props = defineProps<{
 const router = useRouter()
 
 const flow = inject(flowKey)
+const mainProgress = inject(progressKey, ref(0))
 
-const mainProgress = ref(0)
 const abortController = new AbortController()
+
 const passwordError = ref("")
 const unexpectedError = ref("")
 

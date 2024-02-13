@@ -1,17 +1,20 @@
 <script setup lang="ts">
-import type { LocationResponse } from "@/types"
+import type { Completed, LocationResponse } from "@/types"
 
-import { ref, onUnmounted, onMounted, getCurrentInstance } from "vue"
+import { ref, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
 import Button from "@/components/Button.vue"
+import { progressKey } from "@/progress"
 
 const props = defineProps<{
   name: string
-  completed: "signin" | "signup"
+  completed: Completed
   location: LocationResponse
 }>()
 
-const mainProgress = ref(0)
+const mainProgress = inject(progressKey, ref(0))
+
 const abortController = new AbortController()
+
 const paused = ref(false)
 const seconds = ref(3)
 

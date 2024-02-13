@@ -6,8 +6,9 @@ import { useRouter } from "vue-router"
 import { startRegistration, WebAuthnAbortService } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
 import { postURL } from "@/api"
-import { locationRedirect } from "@/utils"
+import { processCompletedAndLocationRedirect } from "@/utils"
 import { flowKey } from "@/flow"
+import { progressKey } from "@/progress"
 
 const props = defineProps<{
   id: string
@@ -16,9 +17,10 @@ const props = defineProps<{
 const router = useRouter()
 
 const flow = inject(flowKey)
+const mainProgress = inject(progressKey, ref(0))
 
-const mainProgress = ref(0)
 const abortController = new AbortController()
+
 const signupAttempted = ref(false)
 const signupFailed = ref(false)
 const signupFailedAtLeastOnce = ref(false)
@@ -85,9 +87,7 @@ async function onPasskeySignup() {
     if (abortController.signal.aborted) {
       return
     }
-    if (locationRedirect(start, flow)) {
-      // We increase the progress and never decrease it to wait for browser to do the redirect.
-      mainProgress.value += 1
+    if (processCompletedAndLocationRedirect(start, flow, mainProgress)) {
       return
     }
     if (!("passkey" in start && "createOptions" in start.passkey)) {
@@ -129,9 +129,7 @@ async function onPasskeySignup() {
     if (abortController.signal.aborted) {
       return
     }
-    if (locationRedirect(complete, flow)) {
-      // We increase the progress and never decrease it to wait for browser to do the redirect.
-      mainProgress.value += 1
+    if (processCompletedAndLocationRedirect(complete, flow, mainProgress)) {
       return
     }
     throw new Error("unexpected response")

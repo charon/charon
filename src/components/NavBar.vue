@@ -1,20 +1,21 @@
 <script setup lang="ts">
 import type { AuthSignoutResponse } from "@/types"
 
-import { onUnmounted, ref } from "vue"
+import { onUnmounted, ref, inject } from "vue"
 import { useRouter } from "vue-router"
 import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
 import { GlobeAltIcon } from "@heroicons/vue/24/outline"
 import Button from "@/components/Button.vue"
 import { useNavbar } from "@/navbar"
 import { deleteURL } from "@/api"
+import { progressKey } from "@/progress"
 
 const { ref: navbar, attrs: navbarAttrs } = useNavbar()
 
 const router = useRouter()
 
-// TODO: This should be some global progress to disable all buttons in other components.
-const mainProgress = ref(0)
+const mainProgress = inject(progressKey, ref(0))
+
 const abortController = new AbortController()
 
 onUnmounted(() => {
@@ -28,16 +29,22 @@ async function onSignOut() {
     if (abortController.signal.aborted) {
       return
     }
+
+    // We increase the progress and never decrease it to wait for browser to do the redirect.
+    mainProgress.value += 1
+
+    // We do not use Vue Router to force a server-side request which might return updated cookies
+    // or redirect on its own somewhere because of new (or lack thereof) cookies.
     if (response.replace) {
       window.location.replace(response.url)
     } else {
       window.location.assign(response.url)
     }
+
     if (browserSupportsWebAuthn()) {
       navigator.credentials.preventSilentAccess()
     }
-    // We increase the progress and never decrease it to wait for browser to do the redirect.
-    mainProgress.value += 1
+
     return
   } catch (error) {
     if (abortController.signal.aborted) {

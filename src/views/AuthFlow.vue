@@ -16,10 +16,11 @@ elements and links but that should not change how components look.
 -->
 
 <script setup lang="ts">
-import type { AuthFlowResponse, AuthFlowStep, DeriveOptions, EncryptOptions, LocationResponse } from "@/types"
+import type { AuthFlowResponse, AuthFlowStep, Completed, DeriveOptions, EncryptOptions, LocationResponse, Organization } from "@/types"
 
-import { onBeforeMount, onBeforeUnmount, onMounted, onUnmounted, provide, ref, watch } from "vue"
+import { inject, onBeforeMount, onBeforeUnmount, onMounted, onUnmounted, provide, ref, watch } from "vue"
 import { useRouter } from "vue-router"
+import WithDocument from "@/components/WithDocument.vue"
 import Footer from "@/components/Footer.vue"
 import Stepper from "@/components/Stepper.vue"
 import AuthStart from "@/components/AuthStart.vue"
@@ -28,13 +29,15 @@ import AuthPassword from "@/components/AuthPassword.vue"
 import AuthPasskeySignin from "@/components/AuthPasskeySignin.vue"
 import AuthPasskeySignup from "@/components/AuthPasskeySignup.vue"
 import AuthCode from "@/components/AuthCode.vue"
-import AuthComplete from "@/components/AuthComplete.vue"
+import AuthIdentity from "@/components/AuthIdentity.vue"
+import AuthSuccess from "@/components/AuthSuccess.vue"
 import AuthFailed from "@/components/AuthFailed.vue"
-import { getURL } from "@/api"
+import { getURL, restartAuth } from "@/api"
 // Importing "@/flow" also fetches siteContext which we have to fetch because
 // the server sends the preload header for it. Generally this is already cached.
 import { getProvider, updateSteps, flowKey, updateStepsNoCode } from "@/flow"
 import { processCompleted } from "@/utils"
+import { progressKey } from "@/progress"
 
 const props = defineProps<{
   id: string
@@ -42,7 +45,10 @@ const props = defineProps<{
 
 const router = useRouter()
 
+const mainProgress = inject(progressKey, ref(0))
+
 const abortController = new AbortController()
+
 const dataLoading = ref(true)
 const unexpectedError = ref("")
 const steps = ref<AuthFlowStep[]>([])
@@ -54,8 +60,10 @@ const deriveOptions = ref<DeriveOptions>()
 const encryptOptions = ref<EncryptOptions>()
 const provider = ref("")
 const location = ref<LocationResponse>({ url: "", replace: false })
+const target = ref<"session" | "oidc">("session")
 const name = ref("")
-const completed = ref<"signin" | "signup">("signin")
+const organizationId = ref("")
+const completed = ref<Completed>("")
 
 onUnmounted(() => {
   abortController.abort()
@@ -92,6 +100,12 @@ const flow = {
   updateProvider(value: string) {
     provider.value = value
   },
+  getTarget(): "session" | "oidc" {
+    return target.value
+  },
+  updateTarget(value: "session" | "oidc") {
+    target.value = value
+  },
   updateLocation(value: LocationResponse) {
     location.value = value
   },
@@ -101,13 +115,19 @@ const flow = {
   updateName(value: string) {
     name.value = value
   },
+  updateOrganizationId(value: string) {
+    organizationId.value = value
+  },
   getSteps(): AuthFlowStep[] {
     return steps.value
   },
   updateSteps(value: AuthFlowStep[]) {
     steps.value = value
   },
-  updateCompleted(value: "signin" | "signup") {
+  getCompleted(): Completed {
+    return completed.value
+  },
+  updateCompleted(value: Completed) {
     completed.value = value
   },
 }
@@ -122,6 +142,7 @@ onBeforeMount(async () => {
       },
     }).href
     const flowResponse = (await getURL<AuthFlowResponse>(url, null, abortController.signal, null)).doc
+    target.value = flowResponse.target
     if (flowResponse.name) {
       name.value = flowResponse.name
       steps.value = [
@@ -129,8 +150,11 @@ onBeforeMount(async () => {
           key: "start",
           name: "Charon sign-in or sign-up",
         },
-        { key: "complete", name: `Redirect to ${flowResponse.name}` },
+        { key: "success", name: `Redirect to ${flowResponse.name}` },
       ]
+    }
+    if ("organizationId" in flowResponse) {
+      organizationId.value = flowResponse.organizationId
     }
     if (flowResponse.emailOrUsername) {
       emailOrUsername.value = flowResponse.emailOrUsername
@@ -145,7 +169,7 @@ onBeforeMount(async () => {
       } else if (getProvider(flowResponse.provider)) {
         provider.value = flowResponse.provider
         // We call updateSteps but the flow is probably completed so
-        // we will set currentStep to "complete" (or "failure") below.
+        // we will set currentStep to "success" (or "failure") below.
         // Still, we want steps to be updated for the "oidcProvider" first.
         updateSteps(flow, "oidcProvider")
         currentStep.value = "oidcProvider"
@@ -157,7 +181,16 @@ onBeforeMount(async () => {
       if (flowResponse.provider === "password") {
         updateStepsNoCode(flow)
       }
-      processCompleted(flow, flowResponse.location, flowResponse.name, flowResponse.completed)
+      // "location" and "completed" are provided together only for session target,
+      // so there is no organization ID.
+      processCompleted(flow, flowResponse.target, flowResponse.location, flowResponse.name, "", flowResponse.completed)
+    } else if ("completed" in flowResponse) {
+      if (flowResponse.provider === "password") {
+        updateStepsNoCode(flow)
+      }
+      // If "completed" is provided, but "location" is not, we are in oidc target,
+      // so we pass an empty location response as it is not really used.
+      processCompleted(flow, flowResponse.target, { url: "", replace: false }, flowResponse.name, flowResponse.organizationId, flowResponse.completed)
     }
     if ("error" in flowResponse && flowResponse.error) {
       throw new Error(`unexpected error "${flowResponse.error}"`)
@@ -174,7 +207,11 @@ onBeforeMount(async () => {
 })
 
 async function onPreviousStep(step: string) {
-  flow.backward(step)
+  if (completed.value !== "" && step === "start") {
+    await restartAuth(router, props.id, flow, abortController.signal, mainProgress)
+  } else {
+    flow.backward(step)
+  }
 }
 
 const component = ref()
@@ -203,12 +240,16 @@ function onBeforeLeave(el: Element) {
   callHook(el, "onBeforeLeave")
 
   // We make all form elements be disabled.
-  // Event handlers should be disabled by components themselves.
+  // Event handlers should be disabled by components themselves which is
+  // generally done by having an abortController which gets aborted in
+  // onBeforeLeave hook and which is checked in event handlers.
   for (const e of el.querySelectorAll("button, input, select, textarea")) {
     ;(e as HTMLInputElement).disabled = true
   }
   // We make all links be disabled.
-  // Links with existing event handlers should be disabled by components themselves.
+  // Links with existing event handlers should be disabled by components themselves
+  // which is generally done by having an abortController which gets aborted in
+  // onBeforeLeave hook and which is checked in event handlers.
   for (const l of el.querySelectorAll("a")) {
     l.onclick = function () {
       return false
@@ -253,6 +294,8 @@ onBeforeUnmount(() => {
     component.value.onBeforeLeave()
   }
 })
+
+const WithOrganizationDocument = WithDocument<Organization>
 </script>
 
 <template>
@@ -275,8 +318,19 @@ onBeforeUnmount(() => {
       <template v-else>
         <div class="w-full rounded border bg-white p-4 shadow">
           <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>
-          <div class="mb-4">
+          <div v-if="target === 'session'" class="mb-4">
             <strong>{{ name }}</strong> is asking you to sign-in or sign-up. Please follow the steps below to do so.
+          </div>
+          <div v-else class="mb-4">
+            <strong>{{ name }}</strong> from organization
+            <WithOrganizationDocument :id="organizationId" name="Organization">
+              <template #default="{ doc, url }">
+                <router-link :to="{ name: 'Organization', params: { id: organizationId } }" :data-url="url" class="link"
+                  ><strong>{{ doc.name }}</strong></router-link
+                >
+              </template>
+            </WithOrganizationDocument>
+            is using Charon to ask you to sign-in or sign-up. Please follow the steps below to do so, or to decline.
           </div>
           <Stepper v-if="steps.length" v-slot="{ step, active, beforeActive }" :steps="steps" :current-step="currentStep">
             <!--
@@ -286,9 +340,18 @@ onBeforeUnmount(() => {
             -->
             <li class="text-center text-balance">
               <strong v-if="active">{{ step.name }}</strong>
-              <a v-else-if="beforeActive && currentStep !== 'complete' && currentStep !== 'failure'" href="" class="link" @click.prevent="onPreviousStep(step.key)">{{
-                step.name
-              }}</a>
+              <a
+                v-else-if="
+                  beforeActive &&
+                  completed !== 'failed' &&
+                  (completed === '' ||
+                    (step.key != 'password' && step.key != 'oidcProvider' && step.key != 'passkeySignin' && step.key != 'passkeySignup' && step.key != 'code'))
+                "
+                href=""
+                class="link"
+                @click.prevent="onPreviousStep(step.key)"
+                >{{ step.name }}</a
+              >
               <template v-else>{{ step.name }}</template>
             </li>
           </Stepper>
@@ -317,7 +380,8 @@ onBeforeUnmount(() => {
               :encrypt-options="encryptOptions"
             />
             <AuthCode v-else-if="currentStep === 'code'" :id="id" ref="component" :name="name" :email-or-username="emailOrUsername" />
-            <AuthComplete v-else-if="currentStep === 'complete'" ref="component" :name="name" :completed="completed" :location="location" />
+            <AuthIdentity v-else-if="currentStep === 'identity'" :id="id" ref="component" :name="name" :organization-id="organizationId" />
+            <AuthSuccess v-else-if="currentStep === 'success'" ref="component" :name="name" :completed="completed" :location="location" />
             <AuthFailed v-else-if="currentStep === 'failure'" ref="component" :name="name" :location="location" />
           </Transition>
         </div>

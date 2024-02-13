@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import type { ApplicationTemplateCreate, ApplicationTemplateRef } from "@/types"
 
-import { onMounted, onUnmounted, ref } from "vue"
+import { onMounted, onUnmounted, ref, inject } from "vue"
 import { useRouter } from "vue-router"
 import InputText from "@/components/InputText.vue"
 import Button from "@/components/Button.vue"
 import NavBar from "@/components/NavBar.vue"
 import Footer from "@/components/Footer.vue"
 import { postURL } from "@/api"
+import { progressKey } from "@/progress"
 
 const router = useRouter()
 
-const mainProgress = ref(0)
+const mainProgress = inject(progressKey, ref(0))
+
 const abortController = new AbortController()
 
 const unexpectedError = ref("")
@@ -39,7 +41,8 @@ async function onSubmit() {
     const applicationTemplate = await postURL<ApplicationTemplateRef>(url, payload, abortController.signal, mainProgress)
 
     router.push({ name: "ApplicationTemplate", params: { id: applicationTemplate.id } })
-    // We increase the progress and never decrease it to wait for browser to do the redirect.
+    // We increase the progress and never decrease it to wait for browser
+    // to change the component for updated current step or do the redirect.
     mainProgress.value += 1
   } catch (error) {
     if (abortController.signal.aborted) {

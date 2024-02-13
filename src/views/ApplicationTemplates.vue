@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import type { ApplicationTemplate, ApplicationTemplates } from "@/types"
 
-import { onBeforeMount, onUnmounted, ref } from "vue"
+import { onBeforeMount, onUnmounted, ref, inject } from "vue"
 import { useRouter } from "vue-router"
 import ButtonLink from "@/components/ButtonLink.vue"
 import WithDocument from "@/components/WithDocument.vue"
 import NavBar from "@/components/NavBar.vue"
 import Footer from "@/components/Footer.vue"
 import { getURL } from "@/api"
+import { progressKey } from "@/progress"
 
 const router = useRouter()
 
-const mainProgress = ref(0)
+const mainProgress = inject(progressKey, ref(0))
+
 const abortController = new AbortController()
 const dataLoading = ref(true)
 const dataLoadingError = ref("")

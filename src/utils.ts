@@ -1,31 +1,62 @@
-import type { AuthFlowResponse, Flow, LocationResponse } from "@/types"
+import type { Ref } from "vue"
+import type { AuthFlowResponse, Completed, Flow, LocationResponse } from "@/types"
 
 import { cloneDeep, isEqual } from "lodash-es"
 import { toRaw } from "vue"
 
-export function processCompleted(flow: Flow, location: LocationResponse, name: string, completed: "signin" | "signup" | "failed") {
+export function processCompleted(flow: Flow, target: "session" | "oidc", location: LocationResponse, name: string, organizationId: string, completed: Completed) {
+  flow.updateTarget(target)
   flow.updateLocation(location)
   flow.updateName(name)
-  if (completed === "failed") {
-    flow.forward("failure")
-  } else {
-    // "completed" on the front-end is used only when not a failure.
-    flow.updateCompleted(completed)
-    flow.forward("complete")
+  flow.updateOrganizationId(organizationId)
+  flow.updateCompleted(completed)
+  switch (completed) {
+    case "failed":
+    case "declined":
+      flow.forward("failure")
+      break
+    case "signin":
+    case "signup":
+      if (target === "session") {
+        flow.forward("success")
+      } else {
+        flow.forward("identity")
+      }
+      break
+    case "identity":
+    case "redirect":
+      flow.forward("success")
+      break
+    default:
+      throw new Error(`unknown completed "${completed}"`)
   }
 }
 
-export function locationRedirect(response: AuthFlowResponse, flow?: Flow): boolean {
+export function processCompletedAndLocationRedirect(response: AuthFlowResponse, flow: Flow | undefined, mainProgress: Ref<number>): boolean {
   // We do not use Vue Router to force a server-side request which might return updated cookies
   // or redirect on its own somewhere because of new (or lack thereof) cookies.
   if ("location" in response) {
     if ("completed" in response && flow) {
-      processCompleted(flow, response.location, response.name, response.completed)
-    } else if (response.location.replace) {
-      window.location.replace(response.location.url)
+      // "location" and "completed" are provided together only for session target,
+      // so there is no organization ID.
+      processCompleted(flow, response.target, response.location, response.name, "", response.completed)
     } else {
-      window.location.assign(response.location.url)
+      // We increase the progress and never decrease it to wait for browser to do the redirect.
+      mainProgress.value += 1
+
+      // We do not use Vue Router to force a server-side request which might return updated cookies
+      // or redirect on its own somewhere because of new (or lack thereof) cookies.
+      if (response.location.replace) {
+        window.location.replace(response.location.url)
+      } else {
+        window.location.assign(response.location.url)
+      }
     }
+    return true
+  } else if ("completed" in response && flow && flow.getCompleted() !== response.completed) {
+    // If "completed" is provided, but "location" is not, we are in oidc target,
+    // so we pass an empty location response as it is not really used.
+    processCompleted(flow, response.target, { url: "", replace: false }, response.name, response.organizationId, response.completed)
     return true
   }
   return false
