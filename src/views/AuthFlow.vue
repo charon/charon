@@ -62,6 +62,7 @@ const provider = ref("")
 const location = ref<LocationResponse>({ url: "", replace: false })
 const target = ref<"session" | "oidc">("session")
 const name = ref("")
+const homepage = ref("")
 const organizationId = ref("")
 const completed = ref<Completed>("")
 
@@ -115,6 +116,9 @@ const flow = {
   updateName(value: string) {
     name.value = value
   },
+  updateHomepage(value: string) {
+    homepage.value = value
+  },
   updateOrganizationId(value: string) {
     organizationId.value = value
   },
@@ -159,6 +163,9 @@ onBeforeMount(async () => {
         { key: "success", name: `Redirect to ${flowResponse.name}` },
       ]
     }
+    if ("homepage" in flowResponse) {
+      homepage.value = flowResponse.homepage
+    }
     if ("organizationId" in flowResponse) {
       organizationId.value = flowResponse.organizationId
     }
@@ -189,14 +196,22 @@ onBeforeMount(async () => {
       }
       // "location" and "completed" are provided together only for session target,
       // so there is no organization ID.
-      processCompleted(flow, flowResponse.target, flowResponse.location, flowResponse.name, "", flowResponse.completed)
+      processCompleted(flow, flowResponse.target, flowResponse.location, flowResponse.name, "", "", flowResponse.completed)
     } else if ("completed" in flowResponse) {
       if (flowResponse.provider === "password") {
         updateStepsNoCode(flow)
       }
       // If "completed" is provided, but "location" is not, we are in oidc target,
       // so we pass an empty location response as it is not really used.
-      processCompleted(flow, flowResponse.target, { url: "", replace: false }, flowResponse.name, flowResponse.organizationId, flowResponse.completed)
+      processCompleted(
+        flow,
+        flowResponse.target,
+        { url: "", replace: false },
+        flowResponse.name,
+        flowResponse.homepage,
+        flowResponse.organizationId,
+        flowResponse.completed,
+      )
     }
     if ("error" in flowResponse && flowResponse.error) {
       throw new Error(`unexpected error "${flowResponse.error}"`)
@@ -332,7 +347,10 @@ const WithOrganizationDocument = WithDocument<Organization>
             <strong>{{ name }}</strong> is asking you to sign-in or sign-up. Please follow the steps below to do so.
           </div>
           <div v-else class="mb-4">
-            <strong>{{ name }}</strong> from organization
+            <a :href="homepage" class="link"
+              ><strong>{{ name }}</strong></a
+            >
+            from organization
             <WithOrganizationDocument :id="organizationId" name="Organization">
               <template #default="{ doc, url }">
                 <router-link :to="{ name: 'Organization', params: { id: organizationId } }" :data-url="url" class="link"

@@ -280,6 +280,7 @@ func (s *Service) sendCode(
 	s.WriteJSON(w, req, AuthFlowResponse{
 		Target:          flow.Target,
 		Name:            flow.TargetName,
+		Homepage:        flow.GetTargetHomepage(),
 		OrganizationID:  flow.GetTargetOrganization(),
 		Provider:        flow.Provider,
 		EmailOrUsername: preservedEmailOrUsername,

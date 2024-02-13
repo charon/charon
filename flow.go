@@ -141,6 +141,13 @@ func (f *Flow) GetTargetOrganization() string {
 	return f.TargetOrganization.String()
 }
 
+func (f *Flow) GetTargetHomepage() string {
+	if f.Target == TargetOIDC {
+		return f.TargetLocation
+	}
+	return ""
+}
+
 func GetFlow(ctx context.Context, id identifier.Identifier) (*Flow, errors.E) { //nolint:revive
 	flowsMu.RLock()
 	defer flowsMu.RUnlock()

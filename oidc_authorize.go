@@ -72,7 +72,7 @@ func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.
 		Session:              nil,
 		Completed:            "",
 		Target:               TargetOIDC,
-		TargetLocation:       "",
+		TargetLocation:       client.AppHomepage,
 		TargetName:           client.TargetName,
 		TargetOrganization:   &client.TargetOrganization,
 		Provider:             "",

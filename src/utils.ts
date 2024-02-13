@@ -4,10 +4,19 @@ import type { AuthFlowResponse, Completed, Flow, LocationResponse } from "@/type
 import { cloneDeep, isEqual } from "lodash-es"
 import { toRaw } from "vue"
 
-export function processCompleted(flow: Flow, target: "session" | "oidc", location: LocationResponse, name: string, organizationId: string, completed: Completed) {
+export function processCompleted(
+  flow: Flow,
+  target: "session" | "oidc",
+  location: LocationResponse,
+  name: string,
+  homepage: string,
+  organizationId: string,
+  completed: Completed,
+) {
   flow.updateTarget(target)
   flow.updateLocation(location)
   flow.updateName(name)
+  flow.updateHomepage(homepage)
   flow.updateOrganizationId(organizationId)
   flow.updateCompleted(completed)
   switch (completed) {
@@ -39,7 +48,7 @@ export function processCompletedAndLocationRedirect(response: AuthFlowResponse, 
     if ("completed" in response && flow) {
       // "location" and "completed" are provided together only for session target,
       // so there is no organization ID.
-      processCompleted(flow, response.target, response.location, response.name, "", response.completed)
+      processCompleted(flow, response.target, response.location, response.name, "", "", response.completed)
     } else {
       redirectServerSide(response.location.url, response.location.replace, mainProgress)
     }
@@ -47,7 +56,7 @@ export function processCompletedAndLocationRedirect(response: AuthFlowResponse, 
   } else if ("completed" in response && flow && flow.getCompleted() !== response.completed) {
     // If "completed" is provided, but "location" is not, we are in oidc target,
     // so we pass an empty location response as it is not really used.
-    processCompleted(flow, response.target, { url: "", replace: false }, response.name, response.organizationId, response.completed)
+    processCompleted(flow, response.target, { url: "", replace: false }, response.name, response.homepage, response.organizationId, response.completed)
     return true
   }
   return false

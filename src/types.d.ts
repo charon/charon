@@ -55,6 +55,7 @@ export type AuthFlowResponse = (
   | {
       target: "oidc"
       name: string
+      homepage: string
       organizationId: string
       completed: Completed
     }
@@ -199,6 +200,7 @@ export type Flow = {
   updateLocation(value: LocationResponse): void
   getName(): string
   updateName(value: string): void
+  updateHomepage(value: string): void
   updateOrganizationId(value: string): void
   getSteps(): AuthFlowStep[]
   updateSteps(value: AuthFlowStep[]): void

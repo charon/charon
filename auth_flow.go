@@ -35,6 +35,7 @@ type AuthFlowResponseLocation struct {
 type AuthFlowResponse struct {
 	Target          Target                    `json:"target"`
 	Name            string                    `json:"name,omitempty"`
+	Homepage        string                    `json:"homepage,omitempty"`
 	OrganizationID  string                    `json:"organizationId,omitempty"`
 	Provider        Provider                  `json:"provider,omitempty"`
 	EmailOrUsername string                    `json:"emailOrUsername,omitempty"`
@@ -57,6 +58,7 @@ func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *Flow
 	response := AuthFlowResponse{
 		Target:          flow.Target,
 		Name:            flow.TargetName,
+		Homepage:        flow.GetTargetHomepage(),
 		OrganizationID:  flow.GetTargetOrganization(),
 		Provider:        flow.Provider,
 		EmailOrUsername: "",
@@ -117,6 +119,7 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 	response := AuthFlowResponse{
 		Target:          flow.Target,
 		Name:            flow.TargetName,
+		Homepage:        flow.GetTargetHomepage(),
 		OrganizationID:  flow.GetTargetOrganization(),
 		Provider:        flow.Provider,
 		EmailOrUsername: flow.EmailOrUsername,
@@ -363,6 +366,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 		response := AuthFlowResponse{
 			Target:          flow.Target,
 			Name:            flow.TargetName,
+			Homepage:        flow.GetTargetHomepage(),
 			OrganizationID:  flow.GetTargetOrganization(),
 			Provider:        flow.Provider,
 			EmailOrUsername: "",
@@ -438,6 +442,7 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 		response := AuthFlowResponse{
 			Target:          flow.Target,
 			Name:            flow.TargetName,
+			Homepage:        flow.GetTargetHomepage(),
 			OrganizationID:  flow.GetTargetOrganization(),
 			Provider:        flow.Provider,
 			EmailOrUsername: "",
@@ -514,6 +519,7 @@ func (s *Service) restartAuth(w http.ResponseWriter, req *http.Request, flow *Fl
 	s.WriteJSON(w, req, AuthFlowResponse{
 		Target:          flow.Target,
 		Name:            flow.TargetName,
+		Homepage:        flow.GetTargetHomepage(),
 		OrganizationID:  flow.GetTargetOrganization(),
 		Provider:        "",
 		EmailOrUsername: "",
@@ -542,6 +548,7 @@ func (s *Service) oidcDecline(w http.ResponseWriter, req *http.Request, flow *Fl
 	s.WriteJSON(w, req, AuthFlowResponse{
 		Target:          flow.Target,
 		Name:            flow.TargetName,
+		Homepage:        flow.GetTargetHomepage(),
 		OrganizationID:  flow.GetTargetOrganization(),
 		Provider:        "",
 		EmailOrUsername: "",
@@ -570,6 +577,7 @@ func (s *Service) chooseIdentity(w http.ResponseWriter, req *http.Request, flow 
 	s.WriteJSON(w, req, AuthFlowResponse{
 		Target:          flow.Target,
 		Name:            flow.TargetName,
+		Homepage:        flow.GetTargetHomepage(),
 		OrganizationID:  flow.GetTargetOrganization(),
 		Provider:        "",
 		EmailOrUsername: "",
@@ -596,6 +604,7 @@ func (s *Service) oidcRedirect(w http.ResponseWriter, req *http.Request, flow *F
 	s.WriteJSON(w, req, AuthFlowResponse{
 		Target:          flow.Target,
 		Name:            flow.TargetName,
+		Homepage:        flow.GetTargetHomepage(),
 		OrganizationID:  flow.GetTargetOrganization(),
 		Provider:        "",
 		EmailOrUsername: "",

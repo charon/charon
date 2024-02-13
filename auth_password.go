@@ -151,6 +151,7 @@ func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *
 	s.WriteJSON(w, req, AuthFlowResponse{
 		Target:          flow.Target,
 		Name:            flow.TargetName,
+		Homepage:        flow.GetTargetHomepage(),
 		OrganizationID:  flow.GetTargetOrganization(),
 		Provider:        flow.Provider,
 		EmailOrUsername: flow.EmailOrUsername,
