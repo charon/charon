@@ -4,6 +4,7 @@ import type { LocationResponse } from "@/types"
 import { ref, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
 import Button from "@/components/Button.vue"
 import { progressKey } from "@/progress"
+import { redirectServerSide } from "@/utils"
 
 const props = defineProps<{
   name: string
@@ -41,16 +42,7 @@ async function onRedirect() {
     return
   }
 
-  // We increase the progress and never decrease it to wait for browser to do the redirect.
-  mainProgress.value += 1
-
-  // We do not use Vue Router to force a server-side request which might return updated cookies
-  // or redirect on its own somewhere because of new (or lack thereof) cookies.
-  if (props.location.replace) {
-    window.location.replace(props.location.url)
-  } else {
-    window.location.assign(props.location.url)
-  }
+  redirectServerSide(props.location.url, props.location.replace, mainProgress)
 }
 </script>
 

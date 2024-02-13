@@ -9,6 +9,7 @@ import Button from "@/components/Button.vue"
 import { useNavbar } from "@/navbar"
 import { deleteURL } from "@/api"
 import { progressKey } from "@/progress"
+import { redirectServerSide } from "@/utils"
 
 const { ref: navbar, attrs: navbarAttrs } = useNavbar()
 
@@ -30,16 +31,7 @@ async function onSignOut() {
       return
     }
 
-    // We increase the progress and never decrease it to wait for browser to do the redirect.
-    mainProgress.value += 1
-
-    // We do not use Vue Router to force a server-side request which might return updated cookies
-    // or redirect on its own somewhere because of new (or lack thereof) cookies.
-    if (response.replace) {
-      window.location.replace(response.url)
-    } else {
-      window.location.assign(response.url)
-    }
+    redirectServerSide(response.url, response.replace, mainProgress)
 
     if (browserSupportsWebAuthn()) {
       navigator.credentials.preventSilentAccess()

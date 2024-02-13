@@ -28,6 +28,10 @@ onMounted(() => {
 })
 
 async function onSubmit() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   mainProgress.value += 1
   try {
     unexpectedError.value = ""
@@ -39,11 +43,11 @@ async function onSubmit() {
     }).href
 
     const organization = await postURL<OrganizationRef>(url, payload, abortController.signal, mainProgress)
+    if (abortController.signal.aborted) {
+      return
+    }
 
     router.push({ name: "Organization", params: { id: organization.id } })
-    // We increase the progress and never decrease it to wait for browser
-    // to change the component for updated current step or do the redirect.
-    mainProgress.value += 1
   } catch (error) {
     if (abortController.signal.aborted) {
       return

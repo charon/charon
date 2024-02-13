@@ -75,6 +75,10 @@ function resetOnInteraction() {
 
 let watchInteractionStop: (() => void) | null = null
 function initWatchInteraction() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   const stop = watch([name, description, idScopes, variables, clientsPublic, clientsBackend, clientsService], resetOnInteraction, { deep: true })
   if (watchInteractionStop !== null) {
     throw new Error("watchInteractionStop already set")
@@ -91,8 +95,12 @@ onUnmounted(() => {
 })
 
 async function loadData(update: "init" | "basic" | "variables" | "clientsPublic" | "clientsBackend" | "clientsService" | null) {
-  mainProgress.value += 1
+  if (abortController.signal.aborted) {
+    return
+  }
+
   watchInteractionStop!()
+  mainProgress.value += 1
   try {
     const url = router.apiResolve({
       name: "ApplicationTemplate",
@@ -100,27 +108,32 @@ async function loadData(update: "init" | "basic" | "variables" | "clientsPublic"
         id: props.id,
       },
     }).href
-    const data = await getURL<ApplicationTemplate>(url, null, abortController.signal, mainProgress)
-    applicationTemplate.value = data.doc
-    metadata.value = data.metadata
+
+    const response = await getURL<ApplicationTemplate>(url, null, abortController.signal, mainProgress)
+    if (abortController.signal.aborted) {
+      return
+    }
+
+    applicationTemplate.value = response.doc
+    metadata.value = response.metadata
 
     // We have to make copies so that we break reactivity link with data.doc.
     if (update === "init" || update === "basic") {
-      name.value = data.doc.name
-      description.value = data.doc.description
-      idScopes.value = clone(data.doc.idScopes)
+      name.value = response.doc.name
+      description.value = response.doc.description
+      idScopes.value = clone(response.doc.idScopes)
     }
     if (update === "init" || update === "variables") {
-      variables.value = clone(data.doc.variables)
+      variables.value = clone(response.doc.variables)
     }
     if (update === "init" || update === "clientsPublic") {
-      clientsPublic.value = clone(data.doc.clientsPublic)
+      clientsPublic.value = clone(response.doc.clientsPublic)
     }
     if (update === "init" || update === "clientsBackend") {
-      clientsBackend.value = clone(data.doc.clientsBackend)
+      clientsBackend.value = clone(response.doc.clientsBackend)
     }
     if (update === "init" || update === "clientsService") {
-      clientsService.value = clone(data.doc.clientsService)
+      clientsService.value = clone(response.doc.clientsService)
     }
   } catch (error) {
     if (abortController.signal.aborted) {
@@ -131,8 +144,8 @@ async function loadData(update: "init" | "basic" | "variables" | "clientsPublic"
     dataLoadingError.value = `${error}`
   } finally {
     dataLoading.value = false
-    initWatchInteraction()
     mainProgress.value -= 1
+    initWatchInteraction()
   }
 }
 
@@ -146,6 +159,10 @@ async function onSubmit(
   updated: Ref<boolean>,
   unexpectedError: Ref<string>,
 ) {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   resetOnInteraction()
 
   mainProgress.value += 1
@@ -260,6 +277,10 @@ async function onVariablesSubmit() {
 }
 
 function onAddVariable() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   // No need to call resetOnInteraction here because we modify variables
   // which we watch to call resetOnInteraction.
 
@@ -311,6 +332,10 @@ async function onClientsPublicSubmit() {
 }
 
 function onAddClientPublic() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   // No need to call resetOnInteraction here because we modify variables
   // which we watch to call resetOnInteraction.
 
@@ -379,6 +404,10 @@ async function onClientsBackendSubmit() {
 }
 
 function onAddClientBackend() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   // No need to call resetOnInteraction here because we modify variables
   // which we watch to call resetOnInteraction.
 
@@ -437,6 +466,10 @@ async function onClientsServiceSubmit() {
 }
 
 function onAddClientService() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   // No need to call resetOnInteraction here because we modify variables
   // which we watch to call resetOnInteraction.
 

@@ -41,16 +41,7 @@ export function processCompletedAndLocationRedirect(response: AuthFlowResponse, 
       // so there is no organization ID.
       processCompleted(flow, response.target, response.location, response.name, "", response.completed)
     } else {
-      // We increase the progress and never decrease it to wait for browser to do the redirect.
-      mainProgress.value += 1
-
-      // We do not use Vue Router to force a server-side request which might return updated cookies
-      // or redirect on its own somewhere because of new (or lack thereof) cookies.
-      if (response.location.replace) {
-        window.location.replace(response.location.url)
-      } else {
-        window.location.assign(response.location.url)
-      }
+      redirectServerSide(response.location.url, response.location.replace, mainProgress)
     }
     return true
   } else if ("completed" in response && flow && flow.getCompleted() !== response.completed) {
@@ -60,6 +51,19 @@ export function processCompletedAndLocationRedirect(response: AuthFlowResponse, 
     return true
   }
   return false
+}
+
+export function redirectServerSide(url: string, replace: boolean, mainProgress: Ref<number>) {
+  // We increase the progress and never decrease it to wait for browser to do the redirect.
+  mainProgress.value += 1
+
+  // We do not use Vue Router to force a server-side request which might return updated cookies
+  // or redirect on its own somewhere because of new (or lack thereof) cookies.
+  if (replace) {
+    window.location.replace(url)
+  } else {
+    window.location.assign(url)
+  }
 }
 
 export function fromBase64(input: string): Uint8Array {

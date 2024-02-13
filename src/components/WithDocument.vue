@@ -59,9 +59,13 @@ watch(
     _error.value = null
 
     try {
-      const data = await getURL<T>(newURL, el, abortController.signal, null)
-      _doc.value = data.doc
-      _metadata.value = data.metadata
+      const response = await getURL<T>(newURL, el, abortController.signal, null)
+      if (abortController.signal.aborted) {
+        return
+      }
+
+      _doc.value = response.doc
+      _metadata.value = response.metadata
     } catch (error) {
       if (abortController.signal.aborted) {
         return

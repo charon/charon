@@ -121,6 +121,10 @@ async function onAfterEnter() {
 }
 
 async function onRetry() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   unexpectedError.value = ""
   await onAfterEnter()
 }

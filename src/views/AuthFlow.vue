@@ -141,7 +141,13 @@ onBeforeMount(async () => {
         id: props.id,
       },
     }).href
-    const flowResponse = (await getURL<AuthFlowResponse>(url, null, abortController.signal, null)).doc
+
+    const response = await getURL<AuthFlowResponse>(url, null, abortController.signal, null)
+    if (abortController.signal.aborted) {
+      return
+    }
+
+    const flowResponse = response.doc
     target.value = flowResponse.target
     if (flowResponse.name) {
       name.value = flowResponse.name
@@ -207,6 +213,10 @@ onBeforeMount(async () => {
 })
 
 async function onPreviousStep(step: string) {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   if (completed.value !== "" && step === "start") {
     await restartAuth(router, props.id, flow, abortController.signal, mainProgress)
   } else {

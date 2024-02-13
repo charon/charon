@@ -71,6 +71,10 @@ function resetOnInteraction() {
 
 let watchInteractionStop: (() => void) | null = null
 function initWatchInteraction() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   const stop = watch([name, description, applications], resetOnInteraction, { deep: true })
   if (watchInteractionStop !== null) {
     throw new Error("watchInteractionStop already set")
@@ -87,8 +91,12 @@ onUnmounted(() => {
 })
 
 async function loadData(update: "init" | "basic" | "applications" | null) {
-  mainProgress.value += 1
+  if (abortController.signal.aborted) {
+    return
+  }
+
   watchInteractionStop!()
+  mainProgress.value += 1
   try {
     const organizationURL = router.apiResolve({
       name: "Organization",
@@ -96,24 +104,35 @@ async function loadData(update: "init" | "basic" | "applications" | null) {
         id: props.id,
       },
     }).href
-    const data = await getURL<Organization>(organizationURL, null, abortController.signal, mainProgress)
-    organization.value = data.doc
-    metadata.value = data.metadata
+
+    const response = await getURL<Organization>(organizationURL, null, abortController.signal, mainProgress)
+    if (abortController.signal.aborted) {
+      return
+    }
+
+    organization.value = response.doc
+    metadata.value = response.metadata
 
     // We have to make copies so that we break reactivity link with data.doc.
     if (update === "init" || update === "basic") {
-      name.value = data.doc.name
-      description.value = data.doc.description
+      name.value = response.doc.name
+      description.value = response.doc.description
     }
     if (update === "init" || update === "applications") {
-      applications.value = clone(data.doc.applications)
+      applications.value = clone(response.doc.applications)
     }
 
     if (update === "init") {
       const applicationsURL = router.apiResolve({
         name: "ApplicationTemplates",
       }).href
-      applicationTemplates.value = (await getURL<ApplicationTemplates>(applicationsURL, null, abortController.signal, mainProgress)).doc
+
+      const resp = await getURL<ApplicationTemplates>(applicationsURL, null, abortController.signal, mainProgress)
+      if (abortController.signal.aborted) {
+        return
+      }
+
+      applicationTemplates.value = resp.doc
     }
   } catch (error) {
     if (abortController.signal.aborted) {
@@ -124,8 +143,8 @@ async function loadData(update: "init" | "basic" | "applications" | null) {
     dataLoadingError.value = `${error}`
   } finally {
     dataLoading.value = false
-    initWatchInteraction()
     mainProgress.value -= 1
+    initWatchInteraction()
   }
 }
 
@@ -134,6 +153,10 @@ onBeforeMount(async () => {
 })
 
 async function onSubmit(payload: Organization, update: "basic" | "applications", updated: Ref<boolean>, unexpectedError: Ref<string>) {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   resetOnInteraction()
 
   mainProgress.value += 1
@@ -156,7 +179,7 @@ async function onSubmit(payload: Organization, update: "basic" | "applications",
       console.error(error)
       unexpectedError.value = `${error}`
     } finally {
-      // We update applicationTemplate state even on errors,
+      // We update organization state even on errors,
       // but do not update individual fields on errors.
       await loadData(unexpectedError.value ? null : update)
     }
@@ -223,6 +246,10 @@ async function onApplicationsSubmit() {
 }
 
 async function onEnableApplicationTemplate(applicationTemplate: DeepReadonly<ApplicationTemplate>) {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   applications.value.push({
     active: false,
     applicationTemplate: applicationTemplate,

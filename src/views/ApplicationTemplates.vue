@@ -29,7 +29,13 @@ onBeforeMount(async () => {
     const url = router.apiResolve({
       name: "ApplicationTemplates",
     }).href
-    applicationTemplates.value = (await getURL<ApplicationTemplates>(url, null, abortController.signal, mainProgress)).doc
+
+    const response = await getURL<ApplicationTemplates>(url, null, abortController.signal, mainProgress)
+    if (abortController.signal.aborted) {
+      return
+    }
+
+    applicationTemplates.value = response.doc
   } catch (error) {
     if (abortController.signal.aborted) {
       return
