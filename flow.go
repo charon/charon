@@ -105,7 +105,9 @@ func (f *Flow) IsCompleted() bool {
 		switch f.Completed {
 		case CompletedSignin, CompletedSignup, CompletedFailed:
 			return true
-		case CompletedOrganization, CompletedDeclined, CompletedIdentity, CompletedRedirect:
+		case "":
+			return false
+		case CompletedDeclined, CompletedIdentity, CompletedRedirect:
 			fallthrough
 		default:
 			errE := errors.New("invalid flow completed state for target")
@@ -117,7 +119,7 @@ func (f *Flow) IsCompleted() bool {
 		switch f.Completed {
 		case CompletedRedirect:
 			return true
-		case CompletedSignin, CompletedSignup, CompletedFailed, CompletedOrganization, CompletedDeclined, CompletedIdentity:
+		case "", CompletedSignin, CompletedSignup, CompletedFailed, CompletedDeclined, CompletedIdentity:
 			return false
 		default:
 			errE := errors.New("invalid flow completed state for target")
