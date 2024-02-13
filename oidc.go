@@ -299,6 +299,7 @@ var (
 type OIDCClient struct {
 	ID                      identifier.Identifier
 	AppID                   identifier.Identifier
+	AppHomepage             string
 	TargetName              string
 	TargetOrganization      identifier.Identifier
 	Type                    ClientType

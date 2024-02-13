@@ -40,14 +40,9 @@ var (
 // From RFC 6749: scope-token = 1*( %x21 / %x23-5B / %x5D-7E ).
 var validScopeRegexp = regexp.MustCompile(`^[\x21\x23-\x5B\x5D-\x7E]+$`)
 
-func validateRedirectURITemplates(ctx context.Context, redirectURITemplates []string, variables []Variable) ([]string, errors.E) {
+func validateRedirectURITemplates(ctx context.Context, redirectURITemplates []string, values map[string]string) ([]string, errors.E) {
 	if redirectURITemplates == nil {
 		redirectURITemplates = []string{}
-	}
-
-	values := map[string]string{}
-	for _, variable := range variables {
-		values[variable.Name] = validationValues[variable.Type]
 	}
 
 	templatesSet := mapset.NewThreadUnsafeSet[string]()
@@ -76,7 +71,7 @@ func validateRedirectURITemplates(ctx context.Context, redirectURITemplates []st
 
 func validateRedirectURIsTemplate(ctx context.Context, template string, values map[string]string) errors.E {
 	if template == "" {
-		return errors.New("cannot be empty")
+		return errors.New("is required")
 	}
 
 	value, errE := interpolateVariables(template, values)
@@ -84,7 +79,7 @@ func validateRedirectURIsTemplate(ctx context.Context, template string, values m
 		return errE
 	}
 
-	u, err := url.Parse(value)
+	u, err := url.ParseRequestURI(value)
 	if err != nil {
 		errE := errors.Wrap(err, "unable to parse resulting URI")
 		errors.Details(errE)["template"] = template
@@ -121,7 +116,7 @@ type ApplicationTemplateClientPublic struct {
 	RedirectURITemplates []string `json:"redirectUriTemplates"`
 }
 
-func (c *ApplicationTemplateClientPublic) Validate(ctx context.Context, variables []Variable) errors.E {
+func (c *ApplicationTemplateClientPublic) Validate(ctx context.Context, values map[string]string) errors.E {
 	if c.ID == nil {
 		id := identifier.New()
 		c.ID = &id
@@ -147,7 +142,7 @@ func (c *ApplicationTemplateClientPublic) Validate(ctx context.Context, variable
 		return scope == ""
 	})
 
-	redirectURIsTemplates, errE := validateRedirectURITemplates(ctx, c.RedirectURITemplates, variables)
+	redirectURIsTemplates, errE := validateRedirectURITemplates(ctx, c.RedirectURITemplates, values)
 	if errE != nil {
 		return errE
 	}
@@ -166,7 +161,7 @@ type ApplicationTemplateClientBackend struct {
 	RedirectURITemplates    []string `json:"redirectUriTemplates"`
 }
 
-func (c *ApplicationTemplateClientBackend) Validate(ctx context.Context, variables []Variable) errors.E {
+func (c *ApplicationTemplateClientBackend) Validate(ctx context.Context, values map[string]string) errors.E {
 	if c.ID == nil {
 		id := identifier.New()
 		c.ID = &id
@@ -201,7 +196,7 @@ func (c *ApplicationTemplateClientBackend) Validate(ctx context.Context, variabl
 		return errE
 	}
 
-	redirectURIsTemplates, errE := validateRedirectURITemplates(ctx, c.RedirectURITemplates, variables)
+	redirectURIsTemplates, errE := validateRedirectURITemplates(ctx, c.RedirectURITemplates, values)
 	if errE != nil {
 		return errE
 	}
@@ -219,7 +214,7 @@ type ApplicationTemplateClientService struct {
 	TokenEndpointAuthMethod string `json:"tokenEndpointAuthMethod"`
 }
 
-func (c *ApplicationTemplateClientService) Validate(_ context.Context, _ []Variable) errors.E {
+func (c *ApplicationTemplateClientService) Validate(_ context.Context, _ map[string]string) errors.E {
 	if c.ID == nil {
 		id := identifier.New()
 		c.ID = &id
@@ -320,8 +315,9 @@ type ApplicationTemplate struct {
 	// list of admins is set to nil and we do not want it to be shown as a field.
 	Admins []AccountRef `json:"admins,omitempty"`
 
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Name             string  `json:"name"`
+	Description      string  `json:"description"`
+	HomepageTemplate *string `json:"homepageTemplate"`
 
 	IDScopes []string `json:"idScopes"`
 
@@ -418,6 +414,7 @@ func (a *ApplicationTemplate) Validate(ctx context.Context) errors.E {
 		}}
 	}
 
+	values := map[string]string{}
 	variablesSet := mapset.NewThreadUnsafeSet[string]()
 	for i, variable := range a.Variables {
 		errE := variable.Validate(ctx)
@@ -437,6 +434,7 @@ func (a *ApplicationTemplate) Validate(ctx context.Context) errors.E {
 			return errE
 		}
 		variablesSet.Add(variable.Name)
+		values[variable.Name] = validationValues[variable.Type]
 
 		// Variable might have been changed by Validate, so we assign it back.
 		a.Variables[i] = variable
@@ -457,7 +455,7 @@ func (a *ApplicationTemplate) Validate(ctx context.Context) errors.E {
 	clientsSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
 
 	for i, client := range a.ClientsPublic {
-		errE := client.Validate(ctx, a.Variables)
+		errE := client.Validate(ctx, values)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "public client")
 			errors.Details(errE)["i"] = i
@@ -480,7 +478,7 @@ func (a *ApplicationTemplate) Validate(ctx context.Context) errors.E {
 	}
 
 	for i, client := range a.ClientsBackend {
-		errE := client.Validate(ctx, a.Variables)
+		errE := client.Validate(ctx, values)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "backend client")
 			errors.Details(errE)["i"] = i
@@ -504,7 +502,7 @@ func (a *ApplicationTemplate) Validate(ctx context.Context) errors.E {
 	}
 
 	for i, client := range a.ClientsService {
-		errE := client.Validate(ctx, a.Variables)
+		errE := client.Validate(ctx, values)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "service client")
 			errors.Details(errE)["i"] = i
@@ -524,6 +522,34 @@ func (a *ApplicationTemplate) Validate(ctx context.Context) errors.E {
 
 		// Client might have been changed by Validate, so we assign it back.
 		a.ClientsService[i] = client
+	}
+
+	// If there is standard uriBase variable, we populate with default homepage.
+	if a.HomepageTemplate == nil && slices.ContainsFunc(a.Variables, func(v Variable) bool { return v.Name == "uriBase" }) {
+		u := "{uriBase}"
+		a.HomepageTemplate = &u
+	}
+
+	if a.HomepageTemplate == nil || *a.HomepageTemplate == "" {
+		return errors.New("homepage template is required")
+	}
+
+	homepage, errE := interpolateVariables(*a.HomepageTemplate, values)
+	if errE != nil {
+		return errE
+	}
+
+	u, err := url.ParseRequestURI(homepage)
+	if err != nil {
+		errE := errors.Wrap(err, "unable to parse resulting URI")
+		errors.Details(errE)["template"] = *a.HomepageTemplate
+		return errE
+	}
+
+	if !fosite.IsRedirectURISecureStrict(ctx, u) {
+		errE := errors.New("resulting URI is not secure")
+		errors.Details(errE)["template"] = *a.HomepageTemplate
+		return errE
 	}
 
 	return nil

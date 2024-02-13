@@ -39,6 +39,7 @@ const basicUnexpectedError = ref("")
 const basicUpdated = ref(false)
 const name = ref("")
 const description = ref("")
+const homepageTemplate = ref("")
 const idScopes = ref<string[]>([])
 
 const variablesUnexpectedError = ref("")
@@ -79,7 +80,7 @@ function initWatchInteraction() {
     return
   }
 
-  const stop = watch([name, description, idScopes, variables, clientsPublic, clientsBackend, clientsService], resetOnInteraction, { deep: true })
+  const stop = watch([name, description, homepageTemplate, idScopes, variables, clientsPublic, clientsBackend, clientsService], resetOnInteraction, { deep: true })
   if (watchInteractionStop !== null) {
     throw new Error("watchInteractionStop already set")
   }
@@ -121,6 +122,7 @@ async function loadData(update: "init" | "basic" | "variables" | "clientsPublic"
     if (update === "init" || update === "basic") {
       name.value = response.doc.name
       description.value = response.doc.description
+      homepageTemplate.value = response.doc.homepageTemplate
       idScopes.value = clone(response.doc.idScopes)
     }
     if (update === "init" || update === "variables") {
@@ -223,6 +225,9 @@ function canBasicSubmit(): boolean {
   if (applicationTemplate.value!.description !== description.value) {
     return true
   }
+  if (applicationTemplate.value!.homepageTemplate !== homepageTemplate.value) {
+    return true
+  }
   if (!equals(applicationTemplate.value!.idScopes, idScopes.value)) {
     return true
   }
@@ -236,6 +241,7 @@ async function onBasicSubmit() {
     id: props.id,
     name: name.value,
     description: description.value,
+    homepageTemplate: homepageTemplate.value,
     idScopes: idScopes.value,
     variables: applicationTemplate.value!.variables,
     clientsPublic: applicationTemplate.value!.clientsPublic,
@@ -267,6 +273,7 @@ async function onVariablesSubmit() {
     id: props.id,
     name: applicationTemplate.value!.name,
     description: applicationTemplate.value!.description,
+    homepageTemplate: applicationTemplate.value!.homepageTemplate,
     idScopes: applicationTemplate.value!.idScopes,
     variables: variables.value,
     clientsPublic: applicationTemplate.value!.clientsPublic,
@@ -322,6 +329,7 @@ async function onClientsPublicSubmit() {
     id: props.id,
     name: applicationTemplate.value!.name,
     description: applicationTemplate.value!.description,
+    homepageTemplate: applicationTemplate.value!.homepageTemplate,
     idScopes: applicationTemplate.value!.idScopes,
     variables: applicationTemplate.value!.variables,
     clientsPublic: clientsPublic.value,
@@ -394,6 +402,7 @@ async function onClientsBackendSubmit() {
     id: props.id,
     name: applicationTemplate.value!.name,
     description: applicationTemplate.value!.description,
+    homepageTemplate: applicationTemplate.value!.homepageTemplate,
     idScopes: applicationTemplate.value!.idScopes,
     variables: applicationTemplate.value!.variables,
     clientsPublic: applicationTemplate.value!.clientsPublic,
@@ -456,6 +465,7 @@ async function onClientsServiceSubmit() {
     id: props.id,
     name: applicationTemplate.value!.name,
     description: applicationTemplate.value!.description,
+    homepageTemplate: applicationTemplate.value!.homepageTemplate,
     idScopes: applicationTemplate.value!.idScopes,
     variables: applicationTemplate.value!.variables,
     clientsPublic: applicationTemplate.value!.clientsPublic,
@@ -503,6 +513,14 @@ function onAddClientService() {
             <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0 || !metadata.can_update" required />
             <label for="description" class="mb-1 mt-4">Description<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label>
             <TextArea id="description" v-model="description" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0 || !metadata.can_update" />
+            <label for="homepageTemplate" class="mb-1 mt-4">Homepage template</label>
+            <InputText
+              id="homepageTemplate"
+              v-model="homepageTemplate"
+              class="flex-grow flex-auto min-w-0"
+              :readonly="mainProgress > 0 || !metadata.can_update"
+              required
+            />
             <label for="idScopes" class="mb-1 mt-4"
               >Space-separated Charon ID scopes the application might request<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">
                 (optional)</span

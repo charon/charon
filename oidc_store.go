@@ -74,9 +74,17 @@ func (s *OIDCStore) GetClient(_ context.Context, strID string) (fosite.Client, e
 				slices.Sort(redirectURIs)
 				slices.Compact(redirectURIs)
 
+				homepage, errE := interpolateVariables(*app.ApplicationTemplate.HomepageTemplate, values)
+				if errE != nil {
+					// This should not happen. We have validated it.
+					errors.Details(errE)["template"] = app.ApplicationTemplate.HomepageTemplate
+					return nil, errE
+				}
+
 				return &OIDCClient{
 					ID:                      id,
 					AppID:                   *app.ID,
+					AppHomepage:             homepage,
 					TargetName:              app.ApplicationTemplate.Name,
 					TargetOrganization:      *organization.ID,
 					Type:                    ClientPublic,
@@ -116,9 +124,17 @@ func (s *OIDCStore) GetClient(_ context.Context, strID string) (fosite.Client, e
 				slices.Sort(redirectURIs)
 				slices.Compact(redirectURIs)
 
+				homepage, errE := interpolateVariables(*app.ApplicationTemplate.HomepageTemplate, values)
+				if errE != nil {
+					// This should not happen. We have validated it.
+					errors.Details(errE)["template"] = app.ApplicationTemplate.HomepageTemplate
+					return nil, errE
+				}
+
 				return &OIDCClient{
 					ID:                      id,
 					AppID:                   *app.ID,
+					AppHomepage:             homepage,
 					TargetName:              app.ApplicationTemplate.Name,
 					TargetOrganization:      *organization.ID,
 					Type:                    ClientBackend,
@@ -144,9 +160,17 @@ func (s *OIDCStore) GetClient(_ context.Context, strID string) (fosite.Client, e
 					values[value.Name] = value.Value
 				}
 
+				homepage, errE := interpolateVariables(*app.ApplicationTemplate.HomepageTemplate, values)
+				if errE != nil {
+					// This should not happen. We have validated it.
+					errors.Details(errE)["template"] = app.ApplicationTemplate.HomepageTemplate
+					return nil, errE
+				}
+
 				return &OIDCClient{
 					ID:                      id,
 					AppID:                   *app.ID,
+					AppHomepage:             homepage,
 					TargetName:              app.ApplicationTemplate.Name,
 					TargetOrganization:      *organization.ID,
 					Type:                    ClientService,

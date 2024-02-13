@@ -251,6 +251,7 @@ export type ApplicationTemplate = {
   id: string
   name: string
   description: string
+  homepageTemplate: string
   idScopes: string[]
   variables: Variable[]
   clientsPublic: ApplicationTemplateClientPublic[]
