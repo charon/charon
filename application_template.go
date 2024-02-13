@@ -361,7 +361,7 @@ type ApplicationTemplateRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
-func (a *ApplicationTemplate) Validate(ctx context.Context) errors.E {
+func (a *ApplicationTemplate) Validate(ctx context.Context) errors.E { //nolint:maintidx
 	if a.ID == nil {
 		id := identifier.New()
 		a.ID = &id
