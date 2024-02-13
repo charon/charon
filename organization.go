@@ -49,7 +49,7 @@ type OrganizationApplicationClientPublic struct {
 	Client ClientRef              `json:"client"`
 }
 
-func (c *OrganizationApplicationClientPublic) Validate(_ context.Context, applicationTemplate *ApplicationTemplate, values map[string]string) errors.E {
+func (c *OrganizationApplicationClientPublic) Validate(ctx context.Context, applicationTemplate *ApplicationTemplate, values map[string]string) errors.E {
 	if c.ID == nil {
 		id := identifier.New()
 		c.ID = &id
@@ -66,7 +66,7 @@ func (c *OrganizationApplicationClientPublic) Validate(_ context.Context, applic
 	// This would be hard to fix for the user of the application template anyway.
 	for i, template := range client.RedirectURITemplates {
 		// TODO: We could store interpolated redirect URIs somewhere after this point so that we do not have to do interpolation again and again.
-		errE := validateRedirectURIsTemplate(template, values)
+		errE := validateRedirectURIsTemplate(ctx, template, values)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "redirect URI")
 			errors.Details(errE)["i"] = i
@@ -89,7 +89,7 @@ type OrganizationApplicationClientBackend struct {
 	Secret string `json:"secret"`
 }
 
-func (c *OrganizationApplicationClientBackend) Validate(_ context.Context, applicationTemplate *ApplicationTemplate, values map[string]string) errors.E {
+func (c *OrganizationApplicationClientBackend) Validate(ctx context.Context, applicationTemplate *ApplicationTemplate, values map[string]string) errors.E {
 	if c.ID == nil {
 		id := identifier.New()
 		c.ID = &id
@@ -120,7 +120,7 @@ func (c *OrganizationApplicationClientBackend) Validate(_ context.Context, appli
 	// This would be hard to fix for the user of the application template anyway.
 	for i, template := range client.RedirectURITemplates {
 		// TODO: We could store interpolated redirect URIs somewhere after this point so that we do not have to do interpolation again and again.
-		errE := validateRedirectURIsTemplate(template, values)
+		errE := validateRedirectURIsTemplate(ctx, template, values)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "redirect URI")
 			errors.Details(errE)["i"] = i

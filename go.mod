@@ -7,7 +7,7 @@ require (
 	github.com/alexedwards/argon2id v1.0.0
 	github.com/go-jose/go-jose/v3 v3.0.1
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
-	github.com/ory/fosite v0.46.0
+	github.com/ory/fosite v0.46.1-0.20240213123944-f38352921f22
 	github.com/wneessen/go-mail v0.4.0
 	gitlab.com/tozd/go/cli v0.2.2
 	gitlab.com/tozd/go/errors v0.8.1

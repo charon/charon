@@ -40,7 +40,7 @@ var (
 // From RFC 6749: scope-token = 1*( %x21 / %x23-5B / %x5D-7E ).
 var validScopeRegexp = regexp.MustCompile(`^[\x21\x23-\x5B\x5D-\x7E]+$`)
 
-func validateRedirectURITemplates(redirectURITemplates []string, variables []Variable) ([]string, errors.E) {
+func validateRedirectURITemplates(ctx context.Context, redirectURITemplates []string, variables []Variable) ([]string, errors.E) {
 	if redirectURITemplates == nil {
 		redirectURITemplates = []string{}
 	}
@@ -52,7 +52,7 @@ func validateRedirectURITemplates(redirectURITemplates []string, variables []Var
 
 	templatesSet := mapset.NewThreadUnsafeSet[string]()
 	for i, template := range redirectURITemplates {
-		errE := validateRedirectURIsTemplate(template, values)
+		errE := validateRedirectURIsTemplate(ctx, template, values)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "redirect URI template")
 			errors.Details(errE)["i"] = i
@@ -74,7 +74,7 @@ func validateRedirectURITemplates(redirectURITemplates []string, variables []Var
 	return redirectURITemplates, nil
 }
 
-func validateRedirectURIsTemplate(template string, values map[string]string) errors.E {
+func validateRedirectURIsTemplate(ctx context.Context, template string, values map[string]string) errors.E {
 	if template == "" {
 		return errors.New("cannot be empty")
 	}
@@ -99,7 +99,7 @@ func validateRedirectURIsTemplate(template string, values map[string]string) err
 		return errE
 	}
 
-	if !fosite.IsRedirectURISecureStrict(u) {
+	if !fosite.IsRedirectURISecureStrict(ctx, u) {
 		errE := errors.New("resulting URI is not secure")
 		errors.Details(errE)["template"] = template
 		return errE
@@ -121,7 +121,7 @@ type ApplicationTemplateClientPublic struct {
 	RedirectURITemplates []string `json:"redirectUriTemplates"`
 }
 
-func (c *ApplicationTemplateClientPublic) Validate(_ context.Context, variables []Variable) errors.E {
+func (c *ApplicationTemplateClientPublic) Validate(ctx context.Context, variables []Variable) errors.E {
 	if c.ID == nil {
 		id := identifier.New()
 		c.ID = &id
@@ -147,7 +147,7 @@ func (c *ApplicationTemplateClientPublic) Validate(_ context.Context, variables 
 		return scope == ""
 	})
 
-	redirectURIsTemplates, errE := validateRedirectURITemplates(c.RedirectURITemplates, variables)
+	redirectURIsTemplates, errE := validateRedirectURITemplates(ctx, c.RedirectURITemplates, variables)
 	if errE != nil {
 		return errE
 	}
@@ -166,7 +166,7 @@ type ApplicationTemplateClientBackend struct {
 	RedirectURITemplates    []string `json:"redirectUriTemplates"`
 }
 
-func (c *ApplicationTemplateClientBackend) Validate(_ context.Context, variables []Variable) errors.E {
+func (c *ApplicationTemplateClientBackend) Validate(ctx context.Context, variables []Variable) errors.E {
 	if c.ID == nil {
 		id := identifier.New()
 		c.ID = &id
@@ -201,7 +201,7 @@ func (c *ApplicationTemplateClientBackend) Validate(_ context.Context, variables
 		return errE
 	}
 
-	redirectURIsTemplates, errE := validateRedirectURITemplates(c.RedirectURITemplates, variables)
+	redirectURIsTemplates, errE := validateRedirectURITemplates(ctx, c.RedirectURITemplates, variables)
 	if errE != nil {
 		return errE
 	}

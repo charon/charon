@@ -3,7 +3,6 @@ package charon
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"time"
 
 	"github.com/alexedwards/argon2id"
@@ -48,13 +47,6 @@ func (argon2idHasher) Hash(_ context.Context, data []byte) ([]byte, error) {
 	return []byte(hashedPassword), nil
 }
 
-// TODO: Remove once it is merged upstream.
-//       See: https://github.com/ory/fosite/pull/785
-
-func isRedirectURISecureStrict(_ context.Context, redirectURI *url.URL) bool {
-	return fosite.IsRedirectURISecureStrict(redirectURI)
-}
-
 func initOIDC(config *Config, service *Service, domain string, secret []byte) func() *fosite.Fosite {
 	return func() *fosite.Fosite {
 		host, errE := getHost(config, domain)
@@ -86,7 +78,7 @@ func initOIDC(config *Config, service *Service, domain string, secret []byte) fu
 			// We do not want to allow potentially insecure custom schemes but require only https (and localhost http).
 			// This means that for mobile native apps one has to use app-claimed https redirects instead of custom schemes.
 			// Custom schemes are not secure because they can be registered by multiple apps.
-			RedirectSecureChecker: isRedirectURISecureStrict,
+			RedirectSecureChecker: fosite.IsRedirectURISecureStrict,
 			// We provide a refresh token if client asks for "offline_access" scope.
 			// We further control which clients can  use refresh tokens by allowing
 			// or not "refresh_token" grant type.
