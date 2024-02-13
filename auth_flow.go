@@ -496,6 +496,21 @@ func (s *Service) restartAuth(w http.ResponseWriter, req *http.Request, flow *Fl
 		return
 	}
 
+	// We clear the session cookie. It might otherwise be a surprise to the user that they
+	// restarted auth but still stay signed in if they do not complete new authentication.
+	// It is better that they have to sign in again.
+	cookie := http.Cookie{ //nolint:exhaustruct
+		Name:     SessionCookieName,
+		Path:     "/",
+		Domain:   "",
+		MaxAge:   -1,
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	}
+
+	http.SetCookie(w, &cookie)
+
 	s.WriteJSON(w, req, AuthFlowResponse{
 		Target:          flow.Target,
 		Name:            flow.TargetName,
