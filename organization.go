@@ -17,9 +17,10 @@ import (
 )
 
 var (
-	ErrOrganizationNotFound      = errors.Base("organization not found")
-	ErrOrganizationAlreadyExists = errors.Base("organization already exists")
-	ErrOrganizationUnauthorized  = errors.Base("organization change unauthorized")
+	ErrOrganizationNotFound         = errors.Base("organization not found")
+	ErrOrganizationAlreadyExists    = errors.Base("organization already exists")
+	ErrOrganizationUnauthorized     = errors.Base("organization change unauthorized")
+	ErrOrganizationValidationFailed = errors.Base("organization validation failed")
 )
 
 var (
@@ -456,7 +457,7 @@ func GetOrganization(ctx context.Context, id identifier.Identifier) (*Organizati
 func CreateOrganization(ctx context.Context, organization *Organization) errors.E {
 	errE := organization.Validate(ctx)
 	if errE != nil {
-		return errE
+		return errors.WrapWith(errE, ErrOrganizationValidationFailed)
 	}
 
 	data, errE := x.MarshalWithoutEscapeHTML(organization)
@@ -474,7 +475,7 @@ func CreateOrganization(ctx context.Context, organization *Organization) errors.
 func UpdateOrganization(ctx context.Context, organization *Organization) errors.E {
 	errE := organization.Validate(ctx)
 	if errE != nil {
-		return errE
+		return errors.WrapWith(errE, ErrOrganizationValidationFailed)
 	}
 
 	data, errE := x.MarshalWithoutEscapeHTML(organization)
@@ -641,6 +642,9 @@ func (s *Service) OrganizationUpdatePost(w http.ResponseWriter, req *http.Reques
 	} else if errors.Is(errE, ErrOrganizationNotFound) {
 		waf.Error(w, req, http.StatusNotFound)
 		return
+	} else if errors.Is(errE, ErrOrganizationValidationFailed) {
+		s.BadRequestWithError(w, req, errE)
+		return
 	} else if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -671,7 +675,10 @@ func (s *Service) OrganizationCreatePost(w http.ResponseWriter, req *http.Reques
 	}
 
 	errE = CreateOrganization(ctx, &organization)
-	if errE != nil {
+	if errors.Is(errE, ErrOrganizationValidationFailed) {
+		s.BadRequestWithError(w, req, errE)
+		return
+	} else if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}

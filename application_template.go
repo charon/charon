@@ -19,9 +19,10 @@ import (
 )
 
 var (
-	ErrApplicationTemplateNotFound      = errors.Base("application template not found")
-	ErrApplicationTemplateAlreadyExists = errors.Base("application template already exists")
-	ErrApplicationTemplateUnauthorized  = errors.Base("application template change unauthorized")
+	ErrApplicationTemplateNotFound         = errors.Base("application template not found")
+	ErrApplicationTemplateAlreadyExists    = errors.Base("application template already exists")
+	ErrApplicationTemplateUnauthorized     = errors.Base("application template change unauthorized")
+	ErrApplicationTemplateValidationFailed = errors.Base("application template validation failed")
 )
 
 type ClientType string
@@ -575,7 +576,7 @@ func GetApplicationTemplate(ctx context.Context, id identifier.Identifier) (*App
 func CreateApplicationTemplate(ctx context.Context, applicationTemplate *ApplicationTemplate) errors.E {
 	errE := applicationTemplate.Validate(ctx)
 	if errE != nil {
-		return errE
+		return errors.WrapWith(errE, ErrApplicationTemplateValidationFailed)
 	}
 
 	data, errE := x.MarshalWithoutEscapeHTML(applicationTemplate)
@@ -593,7 +594,7 @@ func CreateApplicationTemplate(ctx context.Context, applicationTemplate *Applica
 func UpdateApplicationTemplate(ctx context.Context, applicationTemplate *ApplicationTemplate) errors.E {
 	errE := applicationTemplate.Validate(ctx)
 	if errE != nil {
-		return errE
+		return errors.WrapWith(errE, ErrApplicationTemplateValidationFailed)
 	}
 
 	data, errE := x.MarshalWithoutEscapeHTML(applicationTemplate)
@@ -760,6 +761,9 @@ func (s *Service) ApplicationTemplateUpdatePost(w http.ResponseWriter, req *http
 	} else if errors.Is(errE, ErrApplicationTemplateNotFound) {
 		waf.Error(w, req, http.StatusNotFound)
 		return
+	} else if errors.Is(errE, ErrApplicationTemplateValidationFailed) {
+		s.BadRequestWithError(w, req, errE)
+		return
 	} else if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -790,7 +794,10 @@ func (s *Service) ApplicationTemplateCreatePost(w http.ResponseWriter, req *http
 	}
 
 	errE = CreateApplicationTemplate(ctx, &applicationTemplate)
-	if errE != nil {
+	if errors.Is(errE, ErrApplicationTemplateValidationFailed) {
+		s.BadRequestWithError(w, req, errE)
+		return
+	} else if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
