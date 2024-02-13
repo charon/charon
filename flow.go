@@ -28,12 +28,10 @@ const (
 	// Auth step failed (3rd party authentication failed, too many attempts, etc.).
 	CompletedFailed Completed = "failed"
 
-	// OIDC organization joined.
-	CompletedOrganization Completed = "organization"
-	// OIDC organization declined.
-	CompletedDeclined Completed = "declined"
 	// OIDC identity chosen.
 	CompletedIdentity Completed = "identity"
+	// OIDC flow declined.
+	CompletedDeclined Completed = "declined"
 	// OIDC redirect was made back to the OIDC client.
 	CompletedRedirect Completed = "redirect"
 )

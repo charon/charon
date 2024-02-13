@@ -154,7 +154,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 			return true
 		}
 
-		oidc.WriteAuthorizeError(ctx, w, authorizeRequest, errors.New("joining organization declined"))
+		oidc.WriteAuthorizeError(ctx, w, authorizeRequest, errors.New("user declined"))
 		return true
 	}
 

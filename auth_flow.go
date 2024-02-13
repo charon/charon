@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"slices"
 	"time"
 
 	"gitlab.com/tozd/go/errors"
@@ -243,11 +242,8 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 		case "restartAuth":
 			s.restartAuth(w, req, flow)
 			return
-		case "joinOrganization":
-			s.joinOrganization(w, req, flow)
-			return
-		case "declineOrganization":
-			s.declineOrganization(w, req, flow)
+		case "decline":
+			s.oidcDecline(w, req, flow)
 			return
 		case "chooseIdentity":
 			s.chooseIdentity(w, req, flow)
@@ -299,9 +295,8 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 		// Sign-up. Create new account.
 		completed = CompletedSignup
 		account = &Account{
-			ID:            identifier.New(),
-			Credentials:   map[Provider][]Credential{},
-			Organizations: []identifier.Identifier{},
+			ID:          identifier.New(),
+			Credentials: map[Provider][]Credential{},
 		}
 		for _, credential := range credentials {
 			account.Credentials[credential.Provider] = append(account.Credentials[credential.Provider], credential)
@@ -392,7 +387,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 
 	// We redirect back to the flow which then for session target redirects to the target location on
 	// the frontend, after showing the message about successful sign-in or sign-up. For OIDC target
-	// the frontend continues with the organization joining confirmation.
+	// the frontend continues with choosing the identity.
 	l, errE := s.Reverse("AuthFlow", waf.Params{"id": flow.ID.String()}, nil)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -515,60 +510,11 @@ func (s *Service) restartAuth(w http.ResponseWriter, req *http.Request, flow *Fl
 	}, nil)
 }
 
-func (s *Service) joinOrganization(w http.ResponseWriter, req *http.Request, flow *Flow) {
+func (s *Service) oidcDecline(w http.ResponseWriter, req *http.Request, flow *Flow) {
 	ctx := req.Context()
 
-	// Current request session is the same as flow.Session, that is checked in AuthFlowPost.
-	session, errE := GetSession(ctx, *flow.Session)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
+	// TODO: Store decline.
 
-	account, errE := GetAccount(ctx, session.Account)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	if !slices.Contains(account.Organizations, *flow.TargetOrganization) {
-		account.Organizations = append(account.Organizations, *flow.TargetOrganization)
-
-		errE = SetAccount(ctx, account)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-	}
-
-	// We do not really care about the order of steps at the API level, until the client calls into oidcRedirect.
-	flow.Completed = CompletedOrganization
-	flow.OIDCRedirectReady = false
-
-	errE = SetFlow(ctx, flow)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	s.WriteJSON(w, req, AuthFlowResponse{
-		Target:          flow.Target,
-		Name:            flow.TargetName,
-		OrganizationID:  flow.GetTargetOrganization(),
-		Provider:        "",
-		EmailOrUsername: "",
-		Error:           "",
-		Completed:       flow.Completed,
-		Location:        nil,
-		Passkey:         nil,
-		Password:        nil,
-	}, nil)
-}
-
-func (s *Service) declineOrganization(w http.ResponseWriter, req *http.Request, flow *Flow) {
-	ctx := req.Context()
-
-	// We do not really care about the order of steps at the API level, until the client calls into oidcRedirect.
 	flow.Completed = CompletedDeclined
 	flow.OIDCRedirectReady = false
 
@@ -597,7 +543,6 @@ func (s *Service) chooseIdentity(w http.ResponseWriter, req *http.Request, flow 
 
 	// TODO: Store chosen identity.
 
-	// We do not really care about the order of steps at the API level, until the client calls into oidcRedirect.
 	flow.Completed = CompletedIdentity
 	flow.OIDCRedirectReady = false
 
