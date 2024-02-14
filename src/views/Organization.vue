@@ -250,6 +250,15 @@ async function onEnableApplicationTemplate(applicationTemplate: DeepReadonly<App
     return
   }
 
+  // applicationTemplate can contain an "admins" field (if user is an admin of the application template)
+  // but organization applications do not have this field, so we have to delete it.
+  if ("admins" in applicationTemplate) {
+    // We have to copy because input is read-only.
+    const ap = clone(applicationTemplate)
+    delete ap.admins
+    applicationTemplate = ap
+  }
+
   applications.value.push({
     active: false,
     applicationTemplate: applicationTemplate,

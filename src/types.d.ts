@@ -259,6 +259,7 @@ export type ApplicationTemplate = {
   clientsPublic: ApplicationTemplateClientPublic[]
   clientsBackend: ApplicationTemplateClientBackend[]
   clientsService: ApplicationTemplateClientService[]
+  admins?: AccountRef[]
 }
 
 export type ApplicationTemplateCreate = {
@@ -277,6 +278,10 @@ export type Value = {
 }
 
 export type ClientRef = {
+  id: string
+}
+
+export type AccountRef = {
   id: string
 }
 
@@ -311,9 +316,15 @@ export type Organization = {
   id: string
   name: string
   description: string
-  applications: OrganizationApplication[]
+  admins?: AccountRef[]
+  applications?: OrganizationApplication[]
 }
 
 export type OrganizationCreate = {
   name: string
+}
+
+// It is recursive.
+export type Mutable<T> = {
+  -readonly [k in keyof T]: Mutable<T[k]>
 }

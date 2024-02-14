@@ -375,7 +375,7 @@ type OrganizationPublic struct {
 	Description string                 `json:"description"`
 }
 
-func (o *OrganizationPublic) Validate(ctx context.Context) errors.E {
+func (o *OrganizationPublic) Validate(_ context.Context) errors.E {
 	if o.ID == nil {
 		id := identifier.New()
 		o.ID = &id
@@ -552,14 +552,6 @@ func getOrganizationFromID(ctx context.Context, value string) (*Organization, er
 	return GetOrganization(ctx, id)
 }
 
-func (s *Service) returnOrganization(ctx context.Context, w http.ResponseWriter, req *http.Request, organization *Organization) {
-	account := mustGetAccount(ctx)
-
-	s.WriteJSON(w, req, organization, map[string]interface{}{
-		"can_update": slices.Contains(organization.Admins, AccountRef{account}),
-	})
-}
-
 func (s *Service) returnOrganizationRef(_ context.Context, w http.ResponseWriter, req *http.Request, organization *Organization) {
 	s.WriteJSON(w, req, OrganizationRef{ID: *organization.ID}, nil)
 }
@@ -584,8 +576,10 @@ func (s *Service) OrganizationGet(w http.ResponseWriter, req *http.Request, para
 		return
 	}
 
-	if session != nil {
-		s.returnOrganization(ctx, w, req, organization)
+	if session != nil && slices.Contains(organization.Admins, AccountRef{session.Account}) {
+		s.WriteJSON(w, req, organization, map[string]interface{}{
+			"can_update": true,
+		})
 		return
 	}
 

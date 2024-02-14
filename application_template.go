@@ -675,14 +675,6 @@ func getApplicationTemplateFromID(ctx context.Context, value string) (*Applicati
 	return GetApplicationTemplate(ctx, id)
 }
 
-func (s *Service) returnApplicationTemplate(ctx context.Context, w http.ResponseWriter, req *http.Request, applicationTemplate *ApplicationTemplate) {
-	account := mustGetAccount(ctx)
-
-	s.WriteJSON(w, req, applicationTemplate, map[string]interface{}{
-		"can_update": slices.Contains(applicationTemplate.Admins, AccountRef{account}),
-	})
-}
-
 func (s *Service) returnApplicationTemplateRef(_ context.Context, w http.ResponseWriter, req *http.Request, applicationTemplate *ApplicationTemplate) {
 	s.WriteJSON(w, req, ApplicationTemplateRef{ID: *applicationTemplate.ID}, nil)
 }
@@ -707,8 +699,10 @@ func (s *Service) ApplicationTemplateGet(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	if session != nil {
-		s.returnApplicationTemplate(ctx, w, req, applicationTemplate)
+	if session != nil && slices.Contains(applicationTemplate.Admins, AccountRef{session.Account}) {
+		s.WriteJSON(w, req, applicationTemplate, map[string]interface{}{
+			"can_update": true,
+		})
 		return
 	}
 

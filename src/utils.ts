@@ -1,5 +1,5 @@
 import type { Ref } from "vue"
-import type { AuthFlowResponse, Completed, Flow, LocationResponse } from "@/types"
+import type { Mutable, AuthFlowResponse, Completed, Flow, LocationResponse } from "@/types"
 
 import { cloneDeep, isEqual } from "lodash-es"
 import { toRaw } from "vue"
@@ -109,7 +109,7 @@ export function replaceLocationHash(hash: string) {
   }
 }
 
-export function clone<T>(input: T): T {
+export function clone<T>(input: T): Mutable<T> {
   return cloneDeep(toRaw(input))
 }
 
