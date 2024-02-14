@@ -411,7 +411,7 @@ const WithOrganizationDocument = WithDocument<Organization>
             />
             <AuthCode v-else-if="currentStep === 'code'" :id="id" ref="component" :name="name" :email-or-username="emailOrUsername" />
             <AuthIdentity v-else-if="currentStep === 'identity'" :id="id" ref="component" :name="name" :organization-id="organizationId" />
-            <AuthRedirect v-else-if="currentStep === 'redirect'" ref="component" :name="name" :completed="completed" :location="location" />
+            <AuthRedirect v-else-if="currentStep === 'redirect'" :id="id" ref="component" :name="name" :completed="completed" :location="location" :target="target" />
             <AuthFailed v-else-if="currentStep === 'failed'" ref="component" :name="name" :location="location" />
           </Transition>
         </div>
