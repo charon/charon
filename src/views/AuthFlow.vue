@@ -155,13 +155,6 @@ onBeforeMount(async () => {
     target.value = flowResponse.target
     if (flowResponse.name) {
       name.value = flowResponse.name
-      steps.value = [
-        {
-          key: "start",
-          name: "Charon sign-in or sign-up",
-        },
-        { key: "success", name: `Redirect to ${flowResponse.name}` },
-      ]
     }
     if ("homepage" in flowResponse) {
       homepage.value = flowResponse.homepage
@@ -189,6 +182,8 @@ onBeforeMount(async () => {
       } else {
         throw new Error(`unknown provider "${flowResponse.provider}"`)
       }
+    } else {
+      updateSteps(flow, "start", true)
     }
     if ("location" in flowResponse && "completed" in flowResponse) {
       if (flowResponse.provider === "password") {

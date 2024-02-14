@@ -4,6 +4,7 @@ import type { AuthFlowRequest, AuthFlowResponse, Flow, Metadata, PasswordRespons
 
 import { fromBase64, processCompletedAndLocationRedirect } from "@/utils"
 import { decodeMetadata } from "./metadata"
+import { updateSteps } from "./flow"
 
 export class FetchError extends Error {
   cause?: Error
@@ -217,6 +218,8 @@ export async function restartAuth(router: Router, flowId: string, flow: Flow, ab
       return
     }
     if (!("error" in response) && !("provider" in response) && !("completed" in response)) {
+      flow.updateCompleted("")
+      updateSteps(flow, "start", true)
       flow.backward("start")
       return
     }

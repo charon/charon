@@ -38,7 +38,7 @@ export function providerName(provider: string): string {
   throw new Error(`provider "${provider}" not found among providers`)
 }
 
-export function updateSteps(flow: Flow, targetStep: string) {
+export function updateSteps(flow: Flow, targetStep: string, force?: boolean) {
   if (!flow.getTarget()) {
     throw new Error("target is missing")
   }
@@ -65,8 +65,8 @@ export function updateSteps(flow: Flow, targetStep: string) {
 
   // We update steps only if additional steps were generated above.
   // This effectively means that we update steps only for target steps above,
-  // while for other target steps we do not update steps.
-  if (newSteps.length > 1) {
+  // while for other target steps we do not update steps (unless "force" is set).
+  if (newSteps.length > 1 || force) {
     if (flow.getTarget() === "oidc") {
       newSteps.push({ key: "identity", name: "Choose identity or decline" })
     }
