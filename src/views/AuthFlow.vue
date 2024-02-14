@@ -368,7 +368,13 @@ const WithOrganizationDocument = WithDocument<Organization>
                   beforeActive &&
                   completed !== 'failed' &&
                   (completed === '' ||
-                    (step.key != 'password' && step.key != 'oidcProvider' && step.key != 'passkeySignin' && step.key != 'passkeySignup' && step.key != 'code'))
+                    (target === 'oidc' &&
+                      completed !== 'redirect' &&
+                      step.key != 'password' &&
+                      step.key != 'oidcProvider' &&
+                      step.key != 'passkeySignin' &&
+                      step.key != 'passkeySignup' &&
+                      step.key != 'code'))
                 "
                 href=""
                 class="link"

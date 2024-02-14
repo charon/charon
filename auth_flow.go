@@ -236,6 +236,8 @@ func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params 
 		// Flow already successfully (session is not nil) completed auth step (but not the others
 		// for the OIDC target), provider should not be provided.
 
+		// We checked that flow.Completed != CompletedRedirect in flow.IsCompleted() check above.
+
 		// Current session should match the session in the flow.
 		if !s.validateSession(w, req, flow) {
 			return
@@ -480,7 +482,22 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 	s.TemporaryRedirectGetMethod(w, req, l)
 }
 
+// restartAuth is not possible in session target because you could then open the flow later on,
+// after you already completed the flow and was redirected to target location, and reauthenticate.
+// In other words, session target flow is completed (flow.IsCompleted() returns true) after auth
+// step is completed and it makes no sense to allow restarting of completed flows.
+//
+// For OIDC target it is similar, after redirect, we do not allow restarting anymore.
+// In other words, after redirect, OIDC target flow is also completed.
 func (s *Service) restartAuth(w http.ResponseWriter, req *http.Request, flow *Flow) {
+	if flow.IsCompleted() {
+		// Sanity check. This should never happen and we check it already in AuthFlowPost but
+		// we want to check it again here because restarting authentication for completed
+		// flows should really not be possible.
+		s.InternalServerErrorWithError(w, req, errors.New("restarting auth for completed flow"))
+		return
+	}
+
 	ctx := req.Context()
 
 	flow.Session = nil
