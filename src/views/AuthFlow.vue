@@ -30,8 +30,8 @@ import AuthPasskeySignin from "@/components/AuthPasskeySignin.vue"
 import AuthPasskeySignup from "@/components/AuthPasskeySignup.vue"
 import AuthCode from "@/components/AuthCode.vue"
 import AuthIdentity from "@/components/AuthIdentity.vue"
-import AuthRedirect from "@/components/AuthRedirect.vue"
-import AuthFailed from "@/components/AuthFailed.vue"
+import AuthAutoRedirect from "@/components/AuthAutoRedirect.vue"
+import AuthManualRedirect from "@/components/AuthManualRedirect.vue"
 import { getURL, restartAuth } from "@/api"
 // Importing "@/flow" also fetches siteContext which we have to fetch because
 // the server sends the preload header for it. Generally this is already cached.
@@ -175,7 +175,7 @@ onBeforeMount(async () => {
       } else if (getProvider(flowResponse.provider)) {
         provider.value = flowResponse.provider
         // We call updateSteps but the flow is probably completed so
-        // we will set currentStep to "redirect" (or "failed") below.
+        // we will set currentStep to "autoRedirect" (or "manualRedirect") below.
         // Still, we want steps to be updated for the "oidcProvider" first.
         updateSteps(flow, "oidcProvider")
         currentStep.value = "oidcProvider"
@@ -411,8 +411,16 @@ const WithOrganizationDocument = WithDocument<Organization>
             />
             <AuthCode v-else-if="currentStep === 'code'" :id="id" ref="component" :name="name" :email-or-username="emailOrUsername" />
             <AuthIdentity v-else-if="currentStep === 'identity'" :id="id" ref="component" :name="name" :organization-id="organizationId" />
-            <AuthRedirect v-else-if="currentStep === 'redirect'" :id="id" ref="component" :name="name" :completed="completed" :location="location" :target="target" />
-            <AuthFailed v-else-if="currentStep === 'failed'" ref="component" :name="name" :location="location" />
+            <AuthAutoRedirect
+              v-else-if="currentStep === 'autoRedirect'"
+              :id="id"
+              ref="component"
+              :name="name"
+              :completed="completed"
+              :location="location"
+              :target="target"
+            />
+            <AuthManualRedirect v-else-if="currentStep === 'manualRedirect'" ref="component" :name="name" :location="location" />
           </Transition>
         </div>
       </template>

@@ -20,21 +20,21 @@ export function processCompleted(
   flow.updateOrganizationId(organizationId)
   flow.updateCompleted(completed)
   switch (completed) {
+    case "redirect":
     case "failed":
-      flow.forward("failed")
+      flow.forward("manualRedirect")
       break
     case "signin":
     case "signup":
       if (target === "session") {
-        flow.forward("redirect")
+        flow.forward("autoRedirect")
       } else {
         flow.forward("identity")
       }
       break
     case "declined":
     case "identity":
-    case "redirect":
-      flow.forward("redirect")
+      flow.forward("autoRedirect")
       break
     default:
       throw new Error(`unknown completed "${completed}"`)
