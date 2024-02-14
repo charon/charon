@@ -119,7 +119,7 @@ async function loadData(update: "init" | "basic" | "applications" | null) {
       description.value = response.doc.description
     }
     if (update === "init" || update === "applications") {
-      applications.value = clone(response.doc.applications)
+      applications.value = clone(response.doc.applications || [])
     }
 
     if (update === "init") {
@@ -374,10 +374,10 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
               <Button type="submit" primary :disabled="!canBasicSubmit() || mainProgress > 0">Update</Button>
             </div>
           </form>
-          <h2 class="text-xl font-bold">Added applications</h2>
+          <h2 v-if="applications.length" class="text-xl font-bold">Added applications</h2>
           <div v-if="applicationsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
           <div v-else-if="applicationsUpdated" class="text-success-600">Added applications updated successfully.</div>
-          <form class="flex flex-col" novalidate @submit.prevent="onApplicationsSubmit">
+          <form v-if="applications.length" class="flex flex-col" novalidate @submit.prevent="onApplicationsSubmit">
             <ul>
               <li v-for="(application, i) in applications" :key="application.id || i" class="flex flex-col mb-4">
                 <!--
