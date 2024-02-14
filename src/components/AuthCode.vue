@@ -136,7 +136,7 @@ async function onNext() {
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(response, flow, mainProgress)) {
+    if (processCompletedAndLocationRedirect(response, flow, mainProgress, abortController)) {
       return
     }
     if ("error" in response && ["invalidCode"].includes(response.error)) {
@@ -190,7 +190,7 @@ async function onResend() {
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(response, flow, mainProgress)) {
+    if (processCompletedAndLocationRedirect(response, flow, mainProgress, abortController)) {
       return
     }
     // No error is expected in the response because code has already been generated in the past

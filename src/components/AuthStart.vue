@@ -74,7 +74,7 @@ async function onNext() {
 
   mainProgress.value += 1
   try {
-    const response = await startPassword(router, props.id, props.emailOrUsername, flow!, abortController.signal, mainProgress, mainProgress)
+    const response = await startPassword(router, props.id, props.emailOrUsername, flow!, abortController, mainProgress, mainProgress)
     if (abortController.signal.aborted) {
       return
     }

@@ -170,6 +170,9 @@ async function onSubmit(payload: Organization, update: "basic" | "applications",
       }).href
 
       await postURL(url, payload, abortController.signal, mainProgress)
+      if (abortController.signal.aborted) {
+        return
+      }
 
       updated.value = true
     } catch (error) {

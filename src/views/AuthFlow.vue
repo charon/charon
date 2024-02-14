@@ -30,7 +30,7 @@ import AuthPasskeySignin from "@/components/AuthPasskeySignin.vue"
 import AuthPasskeySignup from "@/components/AuthPasskeySignup.vue"
 import AuthCode from "@/components/AuthCode.vue"
 import AuthIdentity from "@/components/AuthIdentity.vue"
-import AuthSuccess from "@/components/AuthSuccess.vue"
+import AuthRedirect from "@/components/AuthRedirect.vue"
 import AuthFailed from "@/components/AuthFailed.vue"
 import { getURL, restartAuth } from "@/api"
 // Importing "@/flow" also fetches siteContext which we have to fetch because
@@ -175,7 +175,7 @@ onBeforeMount(async () => {
       } else if (getProvider(flowResponse.provider)) {
         provider.value = flowResponse.provider
         // We call updateSteps but the flow is probably completed so
-        // we will set currentStep to "success" (or "failure") below.
+        // we will set currentStep to "redirect" (or "failed") below.
         // Still, we want steps to be updated for the "oidcProvider" first.
         updateSteps(flow, "oidcProvider")
         currentStep.value = "oidcProvider"
@@ -196,7 +196,7 @@ onBeforeMount(async () => {
       if (flowResponse.provider === "password") {
         updateStepsNoCode(flow)
       }
-      // If "completed" is provided, but "location" is not, we are in oidc target,
+      // If "completed" is provided, but "location" is not, we are in OIDC target,
       // so we pass an empty location response as it is not really used.
       processCompleted(
         flow,
@@ -228,6 +228,7 @@ async function onPreviousStep(step: string) {
   }
 
   if (completed.value !== "" && step === "start") {
+    // TODO: What to do if unexpected error happens?
     await restartAuth(router, props.id, flow, abortController.signal, mainProgress)
   } else {
     flow.backward(step)
@@ -410,8 +411,8 @@ const WithOrganizationDocument = WithDocument<Organization>
             />
             <AuthCode v-else-if="currentStep === 'code'" :id="id" ref="component" :name="name" :email-or-username="emailOrUsername" />
             <AuthIdentity v-else-if="currentStep === 'identity'" :id="id" ref="component" :name="name" :organization-id="organizationId" />
-            <AuthSuccess v-else-if="currentStep === 'success'" ref="component" :name="name" :completed="completed" :location="location" />
-            <AuthFailed v-else-if="currentStep === 'failure'" ref="component" :name="name" :location="location" />
+            <AuthRedirect v-else-if="currentStep === 'redirect'" ref="component" :name="name" :completed="completed" :location="location" />
+            <AuthFailed v-else-if="currentStep === 'failed'" ref="component" :name="name" :location="location" />
           </Transition>
         </div>
       </template>

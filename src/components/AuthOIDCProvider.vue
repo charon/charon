@@ -127,7 +127,7 @@ async function onRedirect() {
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(response, flow, mainProgress)) {
+    if (processCompletedAndLocationRedirect(response, flow, mainProgress, abortController)) {
       return
     }
     throw new Error("unexpected response")

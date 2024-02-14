@@ -64,7 +64,7 @@ async function onAfterEnter() {
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(start, flow, mainProgress)) {
+    if (processCompletedAndLocationRedirect(start, flow, mainProgress, abortController)) {
       return
     }
     if (!("passkey" in start && "getOptions" in start.passkey)) {
@@ -104,7 +104,7 @@ async function onAfterEnter() {
       if (abortController.signal.aborted) {
         return
       }
-      if (processCompletedAndLocationRedirect(complete, flow, mainProgress)) {
+      if (processCompletedAndLocationRedirect(complete, flow, mainProgress, abortController)) {
         return
       }
       throw new Error("unexpected response")

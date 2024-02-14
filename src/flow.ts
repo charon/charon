@@ -70,18 +70,18 @@ export function updateSteps(flow: Flow, targetStep: string, force?: boolean) {
     if (flow.getTarget() === "oidc") {
       newSteps.push({ key: "identity", name: "Choose identity or decline" })
     }
-    newSteps.push({ key: "success", name: `Redirect to ${flow.getName()}` })
+    newSteps.push({ key: "redirect", name: `Redirect to ${flow.getName()}` })
     flow.updateSteps(newSteps)
     return
   }
 
-  // For failure target step we keep the steps, we just change the key/component
+  // For failed target step we keep the steps, we just change the key/component
   // used for the last step.
-  if (targetStep === "failure") {
+  if (targetStep === "failed") {
     const steps = flow.getSteps()
     if (!steps.length) {
       throw new Error("steps are missing")
     }
-    steps[steps.length - 1].key = "failure"
+    steps[steps.length - 1].key = "failed"
   }
 }

@@ -134,7 +134,7 @@ export async function startPassword(
   flowId: string,
   emailOrUsername: string,
   flow: Flow,
-  abortSignal: AbortSignal,
+  abortController: AbortController,
   progress: Ref<number>,
   mainProgress: Ref<number>,
 ): Promise<(PasswordResponse & { emailOrUsername: string }) | { error: string } | null> {
@@ -158,13 +158,13 @@ export async function startPassword(
           },
         },
       } as AuthFlowRequest,
-      abortSignal,
+      abortController.signal,
       progress,
     )
-    if (abortSignal.aborted) {
+    if (abortController.signal.aborted) {
       return null
     }
-    if (processCompletedAndLocationRedirect(response, flow, mainProgress)) {
+    if (processCompletedAndLocationRedirect(response, flow, mainProgress, abortController)) {
       return null
     }
     if ("error" in response && ["invalidEmailOrUsername", "shortEmailOrUsername"].includes(response.error)) {
@@ -189,10 +189,18 @@ export async function startPassword(
   }
 }
 
-export async function restartAuth(router: Router, flowId: string, flow: Flow, abortSignal: AbortSignal, mainProgress: Ref<number>) {
+export async function restartAuth(router: Router, flowId: string, flow: Flow, abort: AbortSignal | AbortController, mainProgress: Ref<number>) {
+  if (flow.getTarget() === "session") {
+    throw new Error(`cannot restart session target`)
+  }
   if (flow.getCompleted() === "failed") {
     throw new Error(`cannot restart failed auth`)
   }
+  if (flow.getCompleted() === "redirect") {
+    throw new Error(`cannot restart completed flow`)
+  }
+
+  const abortSignal = abort instanceof AbortController ? abort.signal : abort
 
   mainProgress.value += 1
   try {
@@ -214,7 +222,7 @@ export async function restartAuth(router: Router, flowId: string, flow: Flow, ab
     if (abortSignal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(response, flow, mainProgress)) {
+    if (processCompletedAndLocationRedirect(response, flow, mainProgress, abort instanceof AbortController ? abort : null)) {
       return
     }
     if (!("error" in response) && !("provider" in response) && !("completed" in response)) {

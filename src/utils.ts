@@ -21,27 +21,32 @@ export function processCompleted(
   flow.updateCompleted(completed)
   switch (completed) {
     case "failed":
-    case "declined":
-      flow.forward("failure")
+      flow.forward("failed")
       break
     case "signin":
     case "signup":
       if (target === "session") {
-        flow.forward("success")
+        flow.forward("redirect")
       } else {
         flow.forward("identity")
       }
       break
+    case "declined":
     case "identity":
     case "redirect":
-      flow.forward("success")
+      flow.forward("redirect")
       break
     default:
       throw new Error(`unknown completed "${completed}"`)
   }
 }
 
-export function processCompletedAndLocationRedirect(response: AuthFlowResponse, flow: Flow | undefined, mainProgress: Ref<number>): boolean {
+export function processCompletedAndLocationRedirect(
+  response: AuthFlowResponse,
+  flow: Flow | undefined,
+  mainProgress: Ref<number>,
+  abortController: AbortController | null,
+): boolean {
   // We do not use Vue Router to force a server-side request which might return updated cookies
   // or redirect on its own somewhere because of new (or lack thereof) cookies.
   if ("location" in response) {
@@ -49,14 +54,20 @@ export function processCompletedAndLocationRedirect(response: AuthFlowResponse, 
       // "location" and "completed" are provided together only for session target,
       // so there is no organization ID.
       processCompleted(flow, response.target, response.location, response.name, "", "", response.completed)
+      if (abortController) {
+        abortController.abort()
+      }
     } else {
       redirectServerSide(response.location.url, response.location.replace, mainProgress)
     }
     return true
   } else if ("completed" in response && flow && flow.getCompleted() !== response.completed) {
-    // If "completed" is provided, but "location" is not, we are in oidc target,
+    // If "completed" is provided, but "location" is not, we are in OIDC target,
     // so we pass an empty location response as it is not really used.
     processCompleted(flow, response.target, { url: "", replace: false }, response.name, response.homepage, response.organizationId, response.completed)
+    if (abortController) {
+      abortController.abort()
+    }
     return true
   }
   return false

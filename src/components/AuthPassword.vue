@@ -81,7 +81,7 @@ async function getKey(): Promise<boolean> {
 
   keyProgress.value += 1
   try {
-    const response = await startPassword(router, props.id, props.emailOrUsername, flow!, abortController.signal, keyProgress, mainProgress)
+    const response = await startPassword(router, props.id, props.emailOrUsername, flow!, abortController, keyProgress, mainProgress)
     if (abortController.signal.aborted) {
       return false
     }
@@ -219,7 +219,7 @@ async function onNext() {
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(response, flow, mainProgress)) {
+    if (processCompletedAndLocationRedirect(response, flow, mainProgress, abortController)) {
       updateStepsNoCode(flow!)
       return
     }
@@ -291,7 +291,7 @@ async function onCode() {
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(response, flow, mainProgress)) {
+    if (processCompletedAndLocationRedirect(response, flow, mainProgress, abortController)) {
       return
     }
     if ("error" in response && ["noAccount", "noEmails"].includes(response.error)) {
