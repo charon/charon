@@ -310,11 +310,13 @@ func interpolateVariables(template string, values map[string]string) (string, er
 
 // ApplicationTemplate is an application template which can be deployed multiple times.
 type ApplicationTemplate struct {
-	ID *identifier.Identifier `json:"id"`
+	ApplicationTemplatePublic
 
-	// When this application template is embedded into OrganizationApplication, the
-	// list of admins is set to nil and we do not want it to be shown as a field.
 	Admins []AccountRef `json:"admins,omitempty"`
+}
+
+type ApplicationTemplatePublic struct {
+	ID *identifier.Identifier `json:"id"`
 
 	Name             string  `json:"name"`
 	Description      string  `json:"description"`
@@ -328,7 +330,7 @@ type ApplicationTemplate struct {
 	ClientsService []ApplicationTemplateClientService `json:"clientsService"`
 }
 
-func (a *ApplicationTemplate) GetClientPublic(id identifier.Identifier) *ApplicationTemplateClientPublic {
+func (a *ApplicationTemplatePublic) GetClientPublic(id identifier.Identifier) *ApplicationTemplateClientPublic {
 	for _, client := range a.ClientsPublic {
 		if client.ID != nil && *client.ID == id {
 			return &client
@@ -338,7 +340,7 @@ func (a *ApplicationTemplate) GetClientPublic(id identifier.Identifier) *Applica
 	return nil
 }
 
-func (a *ApplicationTemplate) GetClientBackend(id identifier.Identifier) *ApplicationTemplateClientBackend {
+func (a *ApplicationTemplatePublic) GetClientBackend(id identifier.Identifier) *ApplicationTemplateClientBackend {
 	for _, client := range a.ClientsBackend {
 		if client.ID != nil && *client.ID == id {
 			return &client
@@ -348,7 +350,7 @@ func (a *ApplicationTemplate) GetClientBackend(id identifier.Identifier) *Applic
 	return nil
 }
 
-func (a *ApplicationTemplate) GetClientService(id identifier.Identifier) *ApplicationTemplateClientService {
+func (a *ApplicationTemplatePublic) GetClientService(id identifier.Identifier) *ApplicationTemplateClientService {
 	for _, client := range a.ClientsService {
 		if client.ID != nil && *client.ID == id {
 			return &client
@@ -362,23 +364,11 @@ type ApplicationTemplateRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
-func (a *ApplicationTemplate) Validate(ctx context.Context) errors.E { //nolint:maintidx
+func (a *ApplicationTemplatePublic) Validate(ctx context.Context) errors.E {
 	if a.ID == nil {
 		id := identifier.New()
 		a.ID = &id
 	}
-
-	account := mustGetAccount(ctx)
-	accountRef := AccountRef{account}
-	if !slices.Contains(a.Admins, accountRef) {
-		a.Admins = append(a.Admins, accountRef)
-	}
-
-	// We sort and remove duplicates.
-	slices.SortFunc(a.Admins, func(a AccountRef, b AccountRef) int {
-		return bytes.Compare(a.ID[:], b.ID[:])
-	})
-	a.Admins = slices.Compact(a.Admins)
 
 	if a.Name == "" {
 		return errors.New("name is required")
@@ -556,6 +546,27 @@ func (a *ApplicationTemplate) Validate(ctx context.Context) errors.E { //nolint:
 	return nil
 }
 
+func (a *ApplicationTemplate) Validate(ctx context.Context) errors.E {
+	errE := a.ApplicationTemplatePublic.Validate(ctx)
+	if errE != nil {
+		return errE
+	}
+
+	account := mustGetAccount(ctx)
+	accountRef := AccountRef{account}
+	if !slices.Contains(a.Admins, accountRef) {
+		a.Admins = append(a.Admins, accountRef)
+	}
+
+	// We sort and remove duplicates.
+	slices.SortFunc(a.Admins, func(a AccountRef, b AccountRef) int {
+		return bytes.Compare(a.ID[:], b.ID[:])
+	})
+	a.Admins = slices.Compact(a.Admins)
+
+	return nil
+}
+
 func GetApplicationTemplate(ctx context.Context, id identifier.Identifier) (*ApplicationTemplate, errors.E) { //nolint:revive
 	applicationTemplatesMu.RLock()
 	defer applicationTemplatesMu.RUnlock()
@@ -628,10 +639,6 @@ func UpdateApplicationTemplate(ctx context.Context, applicationTemplate *Applica
 }
 
 func (s *Service) ApplicationTemplate(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	if s.RequireAuthenticated(w, req, false, "Charon Dashboard") == nil {
-		return
-	}
-
 	if s.Development != "" {
 		s.Proxy(w, req)
 	} else {
@@ -652,10 +659,6 @@ func (s *Service) ApplicationTemplateCreate(w http.ResponseWriter, req *http.Req
 }
 
 func (s *Service) ApplicationTemplates(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	if s.RequireAuthenticated(w, req, false, "Charon Dashboard") == nil {
-		return
-	}
-
 	if s.Development != "" {
 		s.Proxy(w, req)
 	} else {
@@ -685,8 +688,13 @@ func (s *Service) returnApplicationTemplateRef(_ context.Context, w http.Respons
 }
 
 func (s *Service) ApplicationTemplateGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	ctx := s.RequireAuthenticated(w, req, true, "Charon Dashboard")
-	if ctx == nil {
+	ctx := req.Context()
+
+	session, errE := getSessionFromRequest(req)
+	if errE == nil {
+		ctx = context.WithValue(ctx, accountContextKey, session.Account)
+	} else if !errors.Is(errE, ErrSessionNotFound) {
+		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
@@ -699,15 +707,15 @@ func (s *Service) ApplicationTemplateGet(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	s.returnApplicationTemplate(ctx, w, req, applicationTemplate)
-}
-
-func (s *Service) ApplicationTemplatesGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	ctx := s.RequireAuthenticated(w, req, true, "Charon Dashboard")
-	if ctx == nil {
+	if session != nil {
+		s.returnApplicationTemplate(ctx, w, req, applicationTemplate)
 		return
 	}
 
+	s.WriteJSON(w, req, applicationTemplate.ApplicationTemplatePublic, nil)
+}
+
+func (s *Service) ApplicationTemplatesGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	result := []ApplicationTemplateRef{}
 
 	applicationTemplatesMu.RLock()

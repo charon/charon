@@ -50,7 +50,7 @@ type OrganizationApplicationClientPublic struct {
 	Client ClientRef              `json:"client"`
 }
 
-func (c *OrganizationApplicationClientPublic) Validate(ctx context.Context, applicationTemplate *ApplicationTemplate, values map[string]string) errors.E {
+func (c *OrganizationApplicationClientPublic) Validate(ctx context.Context, applicationTemplate *ApplicationTemplatePublic, values map[string]string) errors.E {
 	if c.ID == nil {
 		id := identifier.New()
 		c.ID = &id
@@ -90,7 +90,7 @@ type OrganizationApplicationClientBackend struct {
 	Secret string `json:"secret"`
 }
 
-func (c *OrganizationApplicationClientBackend) Validate(ctx context.Context, applicationTemplate *ApplicationTemplate, values map[string]string) errors.E {
+func (c *OrganizationApplicationClientBackend) Validate(ctx context.Context, applicationTemplate *ApplicationTemplatePublic, values map[string]string) errors.E {
 	if c.ID == nil {
 		id := identifier.New()
 		c.ID = &id
@@ -144,7 +144,7 @@ type OrganizationApplicationClientService struct {
 	Secret string `json:"secret"`
 }
 
-func (c *OrganizationApplicationClientService) Validate(_ context.Context, applicationTemplate *ApplicationTemplate, _ map[string]string) errors.E {
+func (c *OrganizationApplicationClientService) Validate(_ context.Context, applicationTemplate *ApplicationTemplatePublic, _ map[string]string) errors.E {
 	if c.ID == nil {
 		id := identifier.New()
 		c.ID = &id
@@ -183,7 +183,7 @@ type OrganizationApplication struct {
 	// application template changes, this one continues to be consistent.
 	// It can in fact be even a template which has not been published at all.
 	// TODO: Show to the organization admin that upstream template changed and invite them to update their template.
-	ApplicationTemplate ApplicationTemplate `json:"applicationTemplate"`
+	ApplicationTemplate ApplicationTemplatePublic `json:"applicationTemplate"`
 
 	Values         []Value                                `json:"values"`
 	ClientsPublic  []OrganizationApplicationClientPublic  `json:"clientsPublic"`
@@ -227,16 +227,10 @@ func (a *OrganizationApplication) Validate(ctx context.Context) errors.E {
 		a.ID = &id
 	}
 
-	// This validation adds current user to admins of the embedded application template
-	// (the admin of the original application template might be somebody else). This is
-	// fine because we in the next step set admins to nil anyway.
 	errE := a.ApplicationTemplate.Validate(ctx)
 	if errE != nil {
 		return errE
 	}
-
-	// When we embed a copy of the application template, we set admin always to nil.
-	a.ApplicationTemplate.Admins = nil
 
 	if a.Values == nil {
 		a.Values = []Value{}
@@ -368,13 +362,30 @@ func (a *OrganizationApplication) Validate(ctx context.Context) errors.E {
 }
 
 type Organization struct {
-	ID *identifier.Identifier `json:"id"`
+	OrganizationPublic
 
 	Admins []AccountRef `json:"admins"`
 
-	Name         string                    `json:"name"`
-	Description  string                    `json:"description"`
 	Applications []OrganizationApplication `json:"applications"`
+}
+
+type OrganizationPublic struct {
+	ID          *identifier.Identifier `json:"id"`
+	Name        string                 `json:"name"`
+	Description string                 `json:"description"`
+}
+
+func (o *OrganizationPublic) Validate(ctx context.Context) errors.E {
+	if o.ID == nil {
+		id := identifier.New()
+		o.ID = &id
+	}
+
+	if o.Name == "" {
+		return errors.New("name is required")
+	}
+
+	return nil
 }
 
 type OrganizationRef struct {
@@ -382,9 +393,9 @@ type OrganizationRef struct {
 }
 
 func (o *Organization) Validate(ctx context.Context) errors.E {
-	if o.ID == nil {
-		id := identifier.New()
-		o.ID = &id
+	errE := o.OrganizationPublic.Validate(ctx)
+	if errE != nil {
+		return errE
 	}
 
 	account := mustGetAccount(ctx)
@@ -398,10 +409,6 @@ func (o *Organization) Validate(ctx context.Context) errors.E {
 		return bytes.Compare(a.ID[:], b.ID[:])
 	})
 	o.Admins = slices.Compact(o.Admins)
-
-	if o.Name == "" {
-		return errors.New("name is required")
-	}
 
 	if o.Applications == nil {
 		o.Applications = []OrganizationApplication{}
@@ -428,7 +435,7 @@ func (o *Organization) Validate(ctx context.Context) errors.E {
 		appsSet.Add(*orgApp.ID)
 
 		// We on purpose allow that organization can use same application template multiple
-		// times so we do not check if orgApp.Application.ID are repeated.
+		// times so we do not check if orgApp.ApplicationTemplate.ID are repeated.
 
 		// OrganizationApplication might have been changed by Validate, so we assign it back.
 		o.Applications[i] = orgApp
@@ -509,10 +516,6 @@ func UpdateOrganization(ctx context.Context, organization *Organization) errors.
 }
 
 func (s *Service) Organization(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	if s.RequireAuthenticated(w, req, false, "Charon Dashboard") == nil {
-		return
-	}
-
 	if s.Development != "" {
 		s.Proxy(w, req)
 	} else {
@@ -533,10 +536,6 @@ func (s *Service) OrganizationCreate(w http.ResponseWriter, req *http.Request, _
 }
 
 func (s *Service) Organizations(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	if s.RequireAuthenticated(w, req, false, "Charon Dashboard") == nil {
-		return
-	}
-
 	if s.Development != "" {
 		s.Proxy(w, req)
 	} else {
@@ -566,8 +565,13 @@ func (s *Service) returnOrganizationRef(_ context.Context, w http.ResponseWriter
 }
 
 func (s *Service) OrganizationGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	ctx := s.RequireAuthenticated(w, req, true, "Charon Dashboard")
-	if ctx == nil {
+	ctx := req.Context()
+
+	session, errE := getSessionFromRequest(req)
+	if errE == nil {
+		ctx = context.WithValue(ctx, accountContextKey, session.Account)
+	} else if !errors.Is(errE, ErrSessionNotFound) {
+		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
@@ -580,15 +584,15 @@ func (s *Service) OrganizationGet(w http.ResponseWriter, req *http.Request, para
 		return
 	}
 
-	s.returnOrganization(ctx, w, req, organization)
-}
-
-func (s *Service) OrganizationsGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	ctx := s.RequireAuthenticated(w, req, true, "Charon Dashboard")
-	if ctx == nil {
+	if session != nil {
+		s.returnOrganization(ctx, w, req, organization)
 		return
 	}
 
+	s.WriteJSON(w, req, organization.OrganizationPublic, nil)
+}
+
+func (s *Service) OrganizationsGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	result := []OrganizationRef{}
 
 	organizationsMu.RLock()
