@@ -485,6 +485,7 @@ func (s *Service) restartAuth(w http.ResponseWriter, req *http.Request, flow *Fl
 
 	flow.Session = nil
 	flow.Completed = ""
+	flow.Provider = ""
 	flow.OIDCRedirectReady = false
 
 	// Everything should already be set to nil at this point, but just to make sure.
