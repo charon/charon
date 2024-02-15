@@ -7,8 +7,12 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
-// TODO: Support introspecting ID tokens.
+// TODO: Add support for tokeninfo endpoint to introspect ID tokens.
 //       See: https://github.com/ory/fosite/issues/410
+//       See: https://developers.google.com/identity/sign-in/web/backend-auth#calling-the-tokeninfo-endpoint
+
+// TODO: Add support for specifying expected audience to be available in introspected access tokens.
+//       See: https://github.com/ory/fosite/issues/410#issuecomment-948393832
 
 // OIDCIntrospectPost handler handles requests to introspect a token. This also validates the token for the caller.
 func (s *Service) OIDCIntrospectPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
