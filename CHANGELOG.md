@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- First public release.
+- Users are able to authenticate themselves to Charon.
+- Developers are able to create application templates.
+- Admins are able to create organizations and enable applications in them.
+- Users are able to authenticate to applications in organizations.
 
 <!-- markdownlint-disable-file MD024 -->
