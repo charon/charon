@@ -104,10 +104,10 @@ async function onRedirect() {
 
   clearInterval(interval)
   interval = 0
+  resetOnInteraction()
 
   mainProgress.value += 1
   try {
-    unexpectedError.value = ""
     const url = router.apiResolve({
       name: "AuthFlow",
       params: {
