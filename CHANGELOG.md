@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Admins are able to create organizations and enable applications in them.
 - Users are able to authenticate to applications in organizations.
 
-<!-- markdownlint-disable-file MD024 -->
-
 [unreleased]: https://gitlab.com/charon/charon/-/compare/v0.1.0...main
 [0.1.0]: https://gitlab.com/charon/charon/-/tags/v0.1.0
+
+<!-- markdownlint-disable-file MD024 -->
