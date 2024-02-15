@@ -23,7 +23,7 @@ plugins:
       versionUrl: "{repositoryUrl}/-/compare/{previousTag}...{tagName}"
       firstVersionUrl: "{repositoryUrl}/-/tags/{tagName}"
 npm:
-  publish: true
+  publish: false
 github:
   release: false
 gitlab:
