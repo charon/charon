@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import type { Completed, LocationResponse } from "@/types"
+import type { AuthFlowRequest, AuthFlowResponse, Completed, LocationResponse } from "@/types"
 
 import { ref, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
+import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import { progressKey } from "@/progress"
-import { redirectServerSide } from "@/utils"
+import { processCompletedAndLocationRedirect, redirectServerSide } from "@/utils"
 import { flowKey } from "@/flow"
+import { postURL } from "@/api"
 
 const props = defineProps<{
   id: string
@@ -15,13 +17,21 @@ const props = defineProps<{
   target: "session" | "oidc"
 }>()
 
+const router = useRouter()
+
 const flow = inject(flowKey)
 const mainProgress = inject(progressKey, ref(0))
 
 const abortController = new AbortController()
 
+const unexpectedError = ref("")
 const paused = ref(false)
 const seconds = ref(3)
+
+function resetOnInteraction() {
+  // We reset the error on interaction.
+  unexpectedError.value = ""
+}
 
 let interval: number
 function initInterval() {
@@ -78,6 +88,8 @@ async function onPauseResume() {
     return
   }
 
+  resetOnInteraction()
+
   if (paused.value) {
     initInterval()
     paused.value = false
@@ -95,8 +107,67 @@ async function onRedirect() {
 
   clearInterval(interval)
   interval = 0
+  resetOnInteraction()
 
+  if (props.target === "session") {
+    await onRedirectSession()
+  } else {
+    await onRedirectOIDC()
+  }
+}
+
+async function onRedirectSession() {
   redirectServerSide(props.location.url, props.location.replace, mainProgress)
+}
+
+async function onRedirectOIDC() {
+  mainProgress.value += 1
+  try {
+    const url = router.apiResolve({
+      name: "AuthFlow",
+      params: {
+        id: props.id,
+      },
+    }).href
+    const redirectUrl = router.resolve({
+      name: "AuthFlow",
+      params: {
+        id: props.id,
+      },
+    }).href
+
+    const response = await postURL<AuthFlowResponse>(
+      url,
+      {
+        step: "redirect",
+      } as AuthFlowRequest,
+      abortController.signal,
+      mainProgress,
+    )
+    if (abortController.signal.aborted) {
+      return
+    }
+    if (processCompletedAndLocationRedirect(response, flow, mainProgress, abortController)) {
+      return
+    }
+    if (!("error" in response) && !("provider" in response)) {
+      // Flow is marked as ready for redirect, so we reload it again for redirect to happen.
+      redirectServerSide(redirectUrl, true, mainProgress)
+      return
+    }
+    throw new Error("unexpected response")
+  } catch (error) {
+    if (abortController.signal.aborted) {
+      return
+    }
+    console.error(error)
+    unexpectedError.value = `${error}`
+    // We reset the counter and pause it on an error.
+    seconds.value = 3
+    paused.value = true
+  } finally {
+    mainProgress.value -= 1
+  }
 }
 
 function onPause(event: KeyboardEvent) {
@@ -110,6 +181,8 @@ function onPause(event: KeyboardEvent) {
   }
 
   if (event.key === "Escape") {
+    resetOnInteraction()
+
     clearInterval(interval)
     interval = 0
     paused.value = true
@@ -129,11 +202,14 @@ onUnmounted(() => {
 
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
-    <div v-if="completed === 'signin'"><strong>Congratulations.</strong> You successfully signed in.</div>
-    <div v-else-if="completed === 'signup'"><strong>Congratulations.</strong> You successfully signed up.</div>
-    <div v-else-if="completed === 'identity'"><strong>Congratulations.</strong> You successfully used Charon to chose your identity for {{ name }}.</div>
-    <div v-else-if="completed === 'declined'">You decided to <strong>decline sign-in or sign-up</strong> using Charon for {{ name }}.</div>
-    <div class="mt-4">You will be now redirected to {{ name }} in {{ seconds === 1 ? "1 second" : `${seconds} seconds` }}{{ paused ? " (paused)" : "" }}.</div>
+    <div v-if="completed === 'signin'" class="mb-4"><strong>Congratulations.</strong> You successfully signed in.</div>
+    <div v-else-if="completed === 'signup'" class="mb-4"><strong>Congratulations.</strong> You successfully signed up.</div>
+    <div v-else-if="completed === 'identity'" class="mb-4">
+      <strong>Congratulations.</strong> Everything is ready to sign you in or sign you up into {{ name }} using the identity you chose.
+    </div>
+    <div v-else-if="completed === 'declined'" class="mb-4">You decided to <strong>decline sign-in or sign-up</strong> into {{ name }} using Charon.</div>
+    <div>You will be now redirected to {{ name }} in {{ seconds === 1 ? "1 second" : `${seconds} seconds` }}{{ paused ? " (paused)" : "" }}.</div>
+    <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
     <div
       class="mt-4 flex flex-row gap-4"
       :class="{

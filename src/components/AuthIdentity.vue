@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AuthFlowRequest, AuthFlowResponse } from "@/types"
+import type { AuthFlowRequest, AuthFlowResponse, Completed } from "@/types"
 
 import { ref, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
@@ -12,6 +12,7 @@ import { processCompletedAndLocationRedirect } from "@/utils"
 const props = defineProps<{
   id: string
   name: string
+  completed: Completed
   organizationId: string
 }>()
 
@@ -161,6 +162,8 @@ async function onDecline() {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div class="flex flex-col">
+      <div v-if="completed === 'signin'" class="mb-4"><strong>Congratulations.</strong> You successfully signed in into Charon.</div>
+      <div v-else-if="completed === 'signup'" class="mb-4"><strong>Congratulations.</strong> You successfully signed up into Charon.</div>
       <div class="flex flew-row items-start gap-4">
         <div>TODO: Choose between existing identities or create a new identity for this organization.</div>
         <Button id="choose-identity" primary type="button" tabindex="1" :disabled="mainProgress > 0" @click.prevent="onNext">Next</Button>

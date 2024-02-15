@@ -410,7 +410,7 @@ const WithOrganizationDocument = WithDocument<Organization>
               :encrypt-options="encryptOptions"
             />
             <AuthCode v-else-if="currentStep === 'code'" :id="id" ref="component" :name="name" :email-or-username="emailOrUsername" />
-            <AuthIdentity v-else-if="currentStep === 'identity'" :id="id" ref="component" :name="name" :organization-id="organizationId" />
+            <AuthIdentity v-else-if="currentStep === 'identity'" :id="id" ref="component" :name="name" :completed="completed" :organization-id="organizationId" />
             <AuthAutoRedirect
               v-else-if="currentStep === 'autoRedirect'"
               :id="id"
