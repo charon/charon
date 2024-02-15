@@ -62,6 +62,98 @@ Goals:
 - Internationalization and localization.
 - E-mail proxying.
 
+## Installation
+
+You can run Charon behind a reverse proxy (which should support HTTP2), or simply run it directly
+(it is safe to do so). Charon is compiled into one backend binary which has frontend files embedded
+and they are served by the backend as well.
+
+Currently, Charon is under development and you have to build the binary yourself. After cloning
+the repository, run:
+
+```sh
+make
+```
+
+This will create `charon` binary.
+
+## Usage
+
+To run Charon you need a HTTPS TLS certificate (as required by HTTP2). When running locally
+you can use [mkcert](https://github.com/FiloSottile/mkcert), a tool to create a local CA
+keypair which is then used to create a TLS certificate. Use Go 1.19 or newer.
+
+```sh
+go install filippo.io/mkcert@latest
+mkcert -install
+mkcert localhost 127.0.0.1 ::1
+```
+
+This creates two files, `localhost+2.pem` and `localhost+2-key.pem`, which you can provide to Charon as:
+
+```sh
+./charon -k localhost+2.pem -K localhost+2-key.pem ...
+```
+
+Temporary accepted self-signed certificates are not recommended because
+[not all browser features work](https://stackoverflow.com/questions/74161355/are-any-web-features-not-available-in-browsers-when-using-self-signed-certificat).
+If you want to use a self-signed certificate instead of `mkcert`, add the certificate to
+your browser's certificate store.
+
+## Development
+
+During Charon development run backend and frontend as separate processes. During development the backend
+proxies frontend requests to Vite, which in turn compiles frontend files and serves them, hot-reloading
+the frontend as necessary.
+
+### Backend
+
+The backend is implemented in [Go](https://golang.org/) (requires 1.21 or newer)
+and provides a HTTP2 API. Node 16 or newer is required as well.
+
+Then clone the repository and run:
+
+```sh
+make
+./charon -d -O -k localhost+2.pem -K localhost+2-key.pem --mail.from noreply@example.com
+```
+
+`localhost+2.pem` and `localhost+2-key.pem` are files of a TLS certificate
+generated as described in the [Usage section](#usage).
+Backend listens at [https://localhost:8080/](https://localhost:8080/).
+
+`-d` CLI flag makes the backend proxy unknown requests (non-API requests)
+to the frontend. In this mode any placeholders in HTML files are not rendered.
+
+Charon also expects OIDC secret and private keys to use. During development, you can use self-generated ones
+using the `-O` CLI flag.
+
+Because SMTP is not configured during development, e-mails (with codes) will be printed out to the console instead.
+
+You can also run `make watch` to reload the backend on file changes. You have to install
+[CompileDaemon](https://github.com/githubnemo/CompileDaemon) first:
+
+```sh
+go install github.com/githubnemo/CompileDaemon@latest
+```
+
+### Frontend
+
+The frontend is implemented in [TypeScript](https://www.typescriptlang.org/) and
+[Vue](https://vuejs.org/) and during development we use [Vite](https://vitejs.dev/).
+Vite compiles frontend files and serves them. It also watches for changes in frontend files,
+recompiles them, and hot-reloads the frontend as necessary. Node 16 or newer is required.
+
+To install all dependencies and run frontend for development:
+
+```sh
+npm install
+npm run serve
+```
+
+Open [https://localhost:8080/](https://localhost:8080/) in your browser, which will connect
+you to the backend which then proxies unknown requests (non-API requests) to the frontend.
+
 ## Related projects
 
 - [Keycloak](https://www.keycloak.org) – enterprise grade, very similar to goals of this project, but: this project
