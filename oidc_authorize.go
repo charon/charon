@@ -105,8 +105,9 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 	oidc := s.oidc()
 
 	authorizeRequest := flow.OIDCAuthorizeRequest
+	completed := flow.Completed
 
-	if flow.Completed == CompletedFailed {
+	if completed == CompletedFailed {
 		flow.Completed = CompletedRedirect
 		flow.OIDCRedirectReady = false
 
@@ -120,7 +121,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 			return true
 		}
 
-		oidc.WriteAuthorizeError(ctx, w, authorizeRequest, errors.New("authentication failed"))
+		oidc.WriteAuthorizeError(ctx, w, authorizeRequest, errors.Wrap(fosite.ErrAccessDenied, "user authentication failed"))
 		return true
 	}
 
@@ -140,21 +141,21 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 		return false
 	}
 
-	if flow.Completed == CompletedDeclined {
-		flow.Completed = CompletedRedirect
-		flow.OIDCRedirectReady = false
+	flow.Completed = CompletedRedirect
+	flow.OIDCRedirectReady = false
 
-		// Clear authorize request.
-		flow.OIDCAuthorizeRequest = nil
+	// Clear authorize request.
+	flow.OIDCAuthorizeRequest = nil
 
-		errE = SetFlow(ctx, flow)
-		if errE != nil {
-			// Because this can fail, store's CreateAuthorizeCodeSession, CreateOpenIDConnectSession, and CreatePKCERequestSession should be idempotent.
-			s.InternalServerErrorWithError(w, req, errE)
-			return true
-		}
+	errE = SetFlow(ctx, flow)
+	if errE != nil {
+		// Because this can fail, store's CreateAuthorizeCodeSession, CreateOpenIDConnectSession, and CreatePKCERequestSession should be idempotent.
+		s.InternalServerErrorWithError(w, req, errE)
+		return true
+	}
 
-		oidc.WriteAuthorizeError(ctx, w, authorizeRequest, errors.New("user declined"))
+	if completed == CompletedDeclined {
+		oidc.WriteAuthorizeError(ctx, w, authorizeRequest, errors.Wrap(fosite.ErrAccessDenied, "user declined"))
 		return true
 	}
 
@@ -187,19 +188,6 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 		errE = errors.WithStack(err)
 		s.WithError(ctx, errE)
 		oidc.WriteAuthorizeError(ctx, w, authorizeRequest, errE)
-		return true
-	}
-
-	flow.Completed = CompletedRedirect
-	flow.OIDCRedirectReady = false
-
-	// Clear authorize request.
-	flow.OIDCAuthorizeRequest = nil
-
-	errE = SetFlow(ctx, flow)
-	if errE != nil {
-		// Because this can fail, store's CreateAuthorizeCodeSession, CreateOpenIDConnectSession, and CreatePKCERequestSession should be idempotent.
-		s.InternalServerErrorWithError(w, req, errE)
 		return true
 	}
 
