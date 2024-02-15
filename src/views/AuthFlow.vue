@@ -420,7 +420,16 @@ const WithOrganizationDocument = WithDocument<Organization>
               :location="location"
               :target="target"
             />
-            <AuthManualRedirect v-else-if="currentStep === 'manualRedirect'" ref="component" :name="name" :location="location" />
+            <AuthManualRedirect
+              v-else-if="currentStep === 'manualRedirect'"
+              :id="id"
+              ref="component"
+              :name="name"
+              :completed="completed"
+              :location="location"
+              :target="target"
+              :homepage="homepage"
+            />
           </Transition>
         </div>
       </template>

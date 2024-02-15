@@ -2,7 +2,7 @@ import type { Ref } from "vue"
 import type { Router } from "vue-router"
 import type { AuthFlowRequest, AuthFlowResponse, Flow, Metadata, PasswordResponse } from "@/types"
 
-import { fromBase64, processCompletedAndLocationRedirect } from "@/utils"
+import { fromBase64, processCompletedAndLocationRedirect, redirectServerSide } from "@/utils"
 import { decodeMetadata } from "./metadata"
 import { updateSteps } from "./flow"
 
@@ -229,6 +229,47 @@ export async function restartAuth(router: Router, flowId: string, flow: Flow, ab
       flow.updateCompleted("")
       updateSteps(flow, "start", true)
       flow.backward("start")
+      return
+    }
+    throw new Error("unexpected response")
+  } finally {
+    mainProgress.value -= 1
+  }
+}
+
+export async function redirectOIDC(router: Router, flowId: string, flow: Flow, abortController: AbortController, mainProgress: Ref<number>) {
+  mainProgress.value += 1
+  try {
+    const url = router.apiResolve({
+      name: "AuthFlow",
+      params: {
+        id: flowId,
+      },
+    }).href
+    const redirectUrl = router.resolve({
+      name: "AuthFlow",
+      params: {
+        id: flowId,
+      },
+    }).href
+
+    const response = await postURL<AuthFlowResponse>(
+      url,
+      {
+        step: "redirect",
+      } as AuthFlowRequest,
+      abortController.signal,
+      mainProgress,
+    )
+    if (abortController.signal.aborted) {
+      return
+    }
+    if (processCompletedAndLocationRedirect(response, flow, mainProgress, abortController)) {
+      return
+    }
+    if (!("error" in response) && !("provider" in response)) {
+      // Flow is marked as ready for redirect, so we reload it again for redirect to happen.
+      redirectServerSide(redirectUrl, true, mainProgress)
       return
     }
     throw new Error("unexpected response")

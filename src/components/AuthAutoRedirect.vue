@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import type { AuthFlowRequest, AuthFlowResponse, Completed, LocationResponse } from "@/types"
+import type { Completed, LocationResponse } from "@/types"
 
 import { ref, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import { progressKey } from "@/progress"
-import { processCompletedAndLocationRedirect, redirectServerSide } from "@/utils"
+import { redirectServerSide } from "@/utils"
 import { flowKey } from "@/flow"
-import { postURL } from "@/api"
+import { redirectOIDC } from "@/api"
 
 const props = defineProps<{
   id: string
@@ -121,41 +121,8 @@ async function onRedirectSession() {
 }
 
 async function onRedirectOIDC() {
-  mainProgress.value += 1
   try {
-    const url = router.apiResolve({
-      name: "AuthFlow",
-      params: {
-        id: props.id,
-      },
-    }).href
-    const redirectUrl = router.resolve({
-      name: "AuthFlow",
-      params: {
-        id: props.id,
-      },
-    }).href
-
-    const response = await postURL<AuthFlowResponse>(
-      url,
-      {
-        step: "redirect",
-      } as AuthFlowRequest,
-      abortController.signal,
-      mainProgress,
-    )
-    if (abortController.signal.aborted) {
-      return
-    }
-    if (processCompletedAndLocationRedirect(response, flow, mainProgress, abortController)) {
-      return
-    }
-    if (!("error" in response) && !("provider" in response)) {
-      // Flow is marked as ready for redirect, so we reload it again for redirect to happen.
-      redirectServerSide(redirectUrl, true, mainProgress)
-      return
-    }
-    throw new Error("unexpected response")
+    await redirectOIDC(router, props.id, flow!, abortController, mainProgress)
   } catch (error) {
     if (abortController.signal.aborted) {
       return
@@ -165,8 +132,6 @@ async function onRedirectOIDC() {
     // We reset the counter and pause it on an error.
     seconds.value = 3
     paused.value = true
-  } finally {
-    mainProgress.value -= 1
   }
 }
 
@@ -205,7 +170,7 @@ onUnmounted(() => {
     <div v-if="completed === 'signin'" class="mb-4"><strong>Congratulations.</strong> You successfully signed in.</div>
     <div v-else-if="completed === 'signup'" class="mb-4"><strong>Congratulations.</strong> You successfully signed up.</div>
     <div v-else-if="completed === 'identity'" class="mb-4">
-      <strong>Congratulations.</strong> Everything is ready to sign you in or sign you up into {{ name }} using the identity you chose.
+      <strong>Congratulations.</strong> Everything is ready to sign you in or sign you up into {{ name }} using the identity you have chosen.
     </div>
     <div v-else-if="completed === 'declined'" class="mb-4">You decided to <strong>decline sign-in or sign-up</strong> into {{ name }} using Charon.</div>
     <div>You will be now redirected to {{ name }} in {{ seconds === 1 ? "1 second" : `${seconds} seconds` }}{{ paused ? " (paused)" : "" }}.</div>

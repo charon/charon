@@ -426,7 +426,7 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                           <div v-if="client.id">
                             <code>{{ client.id }}</code>
                           </div>
-                          <div v-else><span class="italic">conclude update to allocate</span></div>
+                          <div v-else><span class="italic">confirm update to allocate</span></div>
                         </div>
                       </div>
                     </li>
@@ -442,7 +442,7 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                           <div v-if="client.id">
                             <code>{{ client.id }}</code>
                           </div>
-                          <div v-else><span class="italic">conclude update to allocate</span></div>
+                          <div v-else><span class="italic">confirm update to allocate</span></div>
                           <template v-if="client.id && generatedSecrets.has(client.client.id)">
                             <div>Client secret:</div>
                             <div>
@@ -464,7 +464,7 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                           <div v-if="client.id">
                             <code>{{ client.id }}</code>
                           </div>
-                          <div v-else><span class="italic">conclude update to allocate</span></div>
+                          <div v-else><span class="italic">confirm update to allocate</span></div>
                           <template v-if="client.id && generatedSecrets.has(client.client.id)">
                             <div>Client secret:</div>
                             <div>
