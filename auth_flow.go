@@ -132,8 +132,8 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 
 	// Has flow already completed auth step?
 	if flow.Completed != "" {
-		// If auth step was successful, then we require that the session matches the one made by the flow.
-		if flow.Completed != CompletedFailed && !s.validateSession(w, req, flow) {
+		// If auth step was successful (session is not nil), then we require that the session matches the one made by the flow.
+		if flow.Session != nil && !s.validateSession(w, req, flow) {
 			return
 		}
 
