@@ -169,11 +169,11 @@ export type AuthSignoutResponse = {
   replace: boolean
 }
 
-export type AuthCreateRequest = {
+export type AuthFlowCreateRequest = {
   location: string
 }
 
-export type AuthCreateResponse =
+export type AuthFlowCreateResponse =
   | {
       id: string
     }

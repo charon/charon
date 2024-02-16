@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
 
 	"gitlab.com/tozd/go/errors"
@@ -632,4 +633,86 @@ func (s *Service) oidcRedirect(w http.ResponseWriter, req *http.Request, flow *F
 		Passkey:         nil,
 		Password:        nil,
 	}, nil)
+}
+
+type AuthFlowCreateRequest struct {
+	Location string `json:"location"`
+}
+
+type AuthFlowCreateResponse struct {
+	ID identifier.Identifier `json:"id"`
+}
+
+func (s *Service) AuthFlowCreatePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	defer req.Body.Close()
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	var authCreatePostRequest AuthFlowCreateRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &authCreatePostRequest)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	if authCreatePostRequest.Location == "" {
+		s.BadRequestWithError(w, req, errors.New("invalid location"))
+		return
+	}
+
+	u, err := url.Parse(authCreatePostRequest.Location)
+	if err != nil {
+		s.BadRequestWithError(w, req, errors.WithMessage(err, "invalid location"))
+		return
+	}
+
+	if u.Scheme != "" || u.Host != "" || u.Opaque != "" || u.User != nil {
+		s.BadRequestWithError(w, req, errors.New("invalid location"))
+		return
+	}
+
+	_, errE = s.GetRoute(u.Path, http.MethodGet)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errors.WithMessage(errE, "invalid location"))
+		return
+	}
+
+	_, errE = getSessionFromRequest(req)
+	if errE == nil {
+		encoded := s.PrepareJSON(w, req, []byte(`{"error":"alreadyAuthenticated"}`), nil)
+		if encoded == nil {
+			return
+		}
+		w.WriteHeader(http.StatusConflict)
+		_, _ = w.Write(encoded)
+		return
+	} else if !errors.Is(errE, ErrSessionNotFound) {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	id := identifier.New()
+	errE = SetFlow(req.Context(), &Flow{
+		ID:                   id,
+		Session:              nil,
+		Completed:            "",
+		Target:               TargetSession,
+		TargetLocation:       u.String(),
+		TargetName:           "Charon Dashboard",
+		TargetOrganization:   nil,
+		Provider:             "",
+		EmailOrUsername:      "",
+		Attempts:             0,
+		OIDCAuthorizeRequest: nil,
+		OIDCRedirectReady:    false,
+		OIDCProvider:         nil,
+		Passkey:              nil,
+		Password:             nil,
+		Code:                 nil,
+	})
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	s.WriteJSON(w, req, AuthFlowCreateResponse{ID: id}, nil)
 }

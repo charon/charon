@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AuthCreateRequest, AuthCreateResponse, AuthSignoutResponse } from "@/types"
+import type { AuthFlowCreateRequest, AuthFlowCreateResponse, AuthSignoutResponse } from "@/types"
 
 import { onUnmounted, ref, inject } from "vue"
 import { useRouter } from "vue-router"
@@ -60,15 +60,15 @@ async function onSignIn() {
 
   mainProgress.value += 1
   try {
-    const payload: AuthCreateRequest = {
+    const payload: AuthFlowCreateRequest = {
       // We remove origin prefix from full URL to get absolute URL.
       location: document.location.href.slice(document.location.origin.length),
     }
     const url = router.apiResolve({
-      name: "AuthCreate",
+      name: "AuthFlowCreate",
     }).href
 
-    const response = await postURL<AuthCreateResponse>(url, payload, abortController.signal, mainProgress)
+    const response = await postURL<AuthFlowCreateResponse>(url, payload, abortController.signal, mainProgress)
     if (abortController.signal.aborted) {
       return
     }

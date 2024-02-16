@@ -25,7 +25,7 @@
       "get": false
     },
     {
-      "name": "AuthCreate",
+      "name": "AuthFlowCreate",
       "path": "/auth/create",
       "api": true,
       "get": false
