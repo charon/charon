@@ -26,7 +26,7 @@ const abortController = new AbortController()
 const unexpectedError = ref("")
 
 function resetOnInteraction() {
-  // We reset errors on interaction.
+  // We reset the error on interaction.
   unexpectedError.value = ""
 }
 

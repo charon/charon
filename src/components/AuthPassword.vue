@@ -35,7 +35,7 @@ const unexpectedPasswordError = ref("")
 const unexpectedCodeError = ref("")
 
 function resetOnInteraction() {
-  // We reset errors on interaction.
+  // We reset flags and errors on interaction.
   passwordError.value = ""
   // codeError is not reset on purpose, once it is set it stays set.
   codeErrorOnce.value = false
@@ -43,7 +43,7 @@ function resetOnInteraction() {
   unexpectedCodeError.value = ""
 }
 
-watch(password, resetOnInteraction)
+watch([password], resetOnInteraction)
 
 // Define transition hooks to be called by the parent component.
 // See: https://github.com/vuejs/rfcs/discussions/613

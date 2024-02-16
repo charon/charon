@@ -36,7 +36,7 @@ function resetOnInteraction() {
   unexpectedError.value = ""
 }
 
-watch(code, resetOnInteraction)
+watch([code], resetOnInteraction)
 
 watch(
   () => route.hash,

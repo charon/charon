@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ApplicationTemplateCreate, ApplicationTemplateRef } from "@/types"
 
-import { onMounted, onUnmounted, ref, inject } from "vue"
+import { onMounted, onUnmounted, ref, inject, watch } from "vue"
 import { useRouter } from "vue-router"
 import InputText from "@/components/InputText.vue"
 import Button from "@/components/Button.vue"
@@ -19,6 +19,13 @@ const abortController = new AbortController()
 const unexpectedError = ref("")
 const name = ref("")
 
+function resetOnInteraction() {
+  // We reset the error on interaction.
+  unexpectedError.value = ""
+}
+
+watch([name], resetOnInteraction)
+
 onUnmounted(() => {
   abortController.abort()
 })
@@ -32,9 +39,10 @@ async function onSubmit() {
     return
   }
 
+  resetOnInteraction()
+
   mainProgress.value += 1
   try {
-    unexpectedError.value = ""
     const payload: ApplicationTemplateCreate = {
       name: name.value,
     }
