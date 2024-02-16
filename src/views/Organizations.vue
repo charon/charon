@@ -9,6 +9,7 @@ import NavBar from "@/components/NavBar.vue"
 import Footer from "@/components/Footer.vue"
 import { getURL } from "@/api"
 import { progressKey } from "@/progress"
+import me from "@/me"
 
 const router = useRouter()
 
@@ -60,12 +61,15 @@ const WithOrganizationDocument = WithDocument<Organization>
       <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
         <div class="flex flex-row justify-between items-center gap-4">
           <h1 class="text-2xl font-bold">Organizations</h1>
-          <ButtonLink :to="{ name: 'OrganizationCreate' }" :disabled="mainProgress > 0" primary>Create</ButtonLink>
+          <ButtonLink v-if="me.success" :to="{ name: 'OrganizationCreate' }" :disabled="mainProgress > 0" primary>Create</ButtonLink>
         </div>
       </div>
       <div v-if="dataLoading" class="w-full rounded border bg-white p-4 shadow">Loading...</div>
       <div v-else-if="dataLoadingError" class="w-full rounded border bg-white p-4 shadow text-error-600">Unexpected error. Please try again.</div>
       <template v-else>
+        <div v-if="!organizations.length" class="w-full rounded border bg-white p-4 shadow grid grid-cols-1 gap-4 italic">
+          There are no organizations. {{ me.success ? "Create the first one." : "Sign-in or sign-up to create the first one." }}
+        </div>
         <div v-for="organization of organizations" :key="organization.id" class="w-full rounded border bg-white p-4 shadow grid grid-cols-1 gap-4">
           <WithOrganizationDocument :id="organization.id" name="Organization">
             <template #default="{ doc, metadata, url }">

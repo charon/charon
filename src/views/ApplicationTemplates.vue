@@ -9,6 +9,7 @@ import NavBar from "@/components/NavBar.vue"
 import Footer from "@/components/Footer.vue"
 import { getURL } from "@/api"
 import { progressKey } from "@/progress"
+import me from "@/me"
 
 const router = useRouter()
 
@@ -60,12 +61,15 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
       <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
         <div class="flex flex-row justify-between items-center gap-4">
           <h1 class="text-2xl font-bold">Application templates</h1>
-          <ButtonLink :to="{ name: 'ApplicationTemplateCreate' }" :disabled="mainProgress > 0" primary>Create</ButtonLink>
+          <ButtonLink v-if="me.success" :to="{ name: 'ApplicationTemplateCreate' }" :disabled="mainProgress > 0" primary>Create</ButtonLink>
         </div>
       </div>
       <div v-if="dataLoading" class="w-full rounded border bg-white p-4 shadow">Loading...</div>
       <div v-else-if="dataLoadingError" class="w-full rounded border bg-white p-4 shadow text-error-600">Unexpected error. Please try again.</div>
       <template v-else>
+        <div v-if="!applicationTemplates.length" class="w-full rounded border bg-white p-4 shadow grid grid-cols-1 gap-4 italic">
+          There are no aplication templates. {{ me.success ? "Create the first one." : "Sign-in or sign-up to create the first one." }}
+        </div>
         <div v-for="applicationTemplate of applicationTemplates" :key="applicationTemplate.id" class="w-full rounded border bg-white p-4 shadow grid grid-cols-1 gap-4">
           <WithApplicationTemplateDocument :id="applicationTemplate.id" name="ApplicationTemplate">
             <template #default="{ doc, metadata, url }">
