@@ -524,7 +524,7 @@ func (s *Service) Organization(w http.ResponseWriter, req *http.Request, _ waf.P
 }
 
 func (s *Service) OrganizationCreate(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	if s.RequireAuthenticated(w, req, false, "Charon Dashboard") == nil {
+	if s.RequireAuthenticated(w, req, false) == nil {
 		return
 	}
 
@@ -607,7 +607,7 @@ func (s *Service) OrganizationUpdatePost(w http.ResponseWriter, req *http.Reques
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	ctx := s.RequireAuthenticated(w, req, true, "Charon Dashboard")
+	ctx := s.RequireAuthenticated(w, req, true)
 	if ctx == nil {
 		return
 	}
@@ -655,7 +655,7 @@ func (s *Service) OrganizationCreatePost(w http.ResponseWriter, req *http.Reques
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	ctx := s.RequireAuthenticated(w, req, true, "Charon Dashboard")
+	ctx := s.RequireAuthenticated(w, req, true)
 	if ctx == nil {
 		return
 	}

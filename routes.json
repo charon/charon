@@ -7,6 +7,12 @@
       "get": true
     },
     {
+      "name": "Me",
+      "path": "/me",
+      "api": true,
+      "get": false
+    },
+    {
       "name": "AuthOIDCProvider",
       "path": "/auth/provider/:provider",
       "api": false,
@@ -15,6 +21,12 @@
     {
       "name": "Auth",
       "path": "/auth",
+      "api": true,
+      "get": false
+    },
+    {
+      "name": "AuthCreate",
+      "path": "/auth/create",
       "api": true,
       "get": false
     },

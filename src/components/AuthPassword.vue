@@ -76,6 +76,10 @@ function onBeforeLeave() {
 }
 
 async function getKey(): Promise<boolean> {
+  if (abortController.signal.aborted) {
+    return false
+  }
+
   // TODO: If getKey is already running at this point, we should just wait for the other one to finish.
   //       And then return here with the same return value as the other one.
 

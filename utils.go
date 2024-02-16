@@ -99,7 +99,7 @@ func mustGetAccount(ctx context.Context) identifier.Identifier {
 	return a
 }
 
-func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request, api bool, targetName string) context.Context {
+func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request, api bool) context.Context {
 	session, errE := getSessionFromRequest(req)
 	if errE == nil {
 		return context.WithValue(req.Context(), accountContextKey, session.Account)
@@ -120,7 +120,7 @@ func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request,
 		Completed:            "",
 		Target:               TargetSession,
 		TargetLocation:       req.URL.String(),
-		TargetName:           targetName,
+		TargetName:           "Charon Dashboard",
 		TargetOrganization:   nil,
 		Provider:             "",
 		EmailOrUsername:      "",

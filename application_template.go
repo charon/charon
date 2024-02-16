@@ -647,7 +647,7 @@ func (s *Service) ApplicationTemplate(w http.ResponseWriter, req *http.Request, 
 }
 
 func (s *Service) ApplicationTemplateCreate(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	if s.RequireAuthenticated(w, req, false, "Charon Dashboard") == nil {
+	if s.RequireAuthenticated(w, req, false) == nil {
 		return
 	}
 
@@ -730,7 +730,7 @@ func (s *Service) ApplicationTemplateUpdatePost(w http.ResponseWriter, req *http
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	ctx := s.RequireAuthenticated(w, req, true, "Charon Dashboard")
+	ctx := s.RequireAuthenticated(w, req, true)
 	if ctx == nil {
 		return
 	}
@@ -778,7 +778,7 @@ func (s *Service) ApplicationTemplateCreatePost(w http.ResponseWriter, req *http
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	ctx := s.RequireAuthenticated(w, req, true, "Charon Dashboard")
+	ctx := s.RequireAuthenticated(w, req, true)
 	if ctx == nil {
 		return
 	}

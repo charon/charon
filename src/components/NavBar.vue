@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AuthSignoutResponse } from "@/types"
+import type { AuthCreateRequest, AuthCreateResponse, AuthSignoutResponse } from "@/types"
 
 import { onUnmounted, ref, inject } from "vue"
 import { useRouter } from "vue-router"
@@ -7,9 +7,10 @@ import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
 import { GlobeAltIcon } from "@heroicons/vue/24/outline"
 import Button from "@/components/Button.vue"
 import { useNavbar } from "@/navbar"
-import { deleteURL } from "@/api"
+import { deleteURL, postURL } from "@/api"
 import { progressKey } from "@/progress"
 import { redirectServerSide } from "@/utils"
+import me from "@/me"
 
 const { ref: navbar, attrs: navbarAttrs } = useNavbar()
 
@@ -24,6 +25,10 @@ onUnmounted(() => {
 })
 
 async function onSignOut() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   mainProgress.value += 1
   try {
     const response = await deleteURL<AuthSignoutResponse>(router.apiResolve({ name: "Auth" }).href, abortController.signal, mainProgress)
@@ -47,6 +52,47 @@ async function onSignOut() {
     mainProgress.value -= 1
   }
 }
+
+async function onSignIn() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  mainProgress.value += 1
+  try {
+    const payload: AuthCreateRequest = {
+      // We remove origin prefix from full URL to get absolute URL.
+      location: document.location.href.slice(document.location.origin.length),
+    }
+    const url = router.apiResolve({
+      name: "AuthCreate",
+    }).href
+
+    const response = await postURL<AuthCreateResponse>(url, payload, abortController.signal, mainProgress)
+    if (abortController.signal.aborted) {
+      return
+    }
+    if ("error" in response && ["alreadyAuthenticated"].includes(response.error)) {
+      // We reload the page to get new "me" state.
+      // TODO: Can we update "me" state reactively?
+      document.location.reload()
+      return
+    }
+    if ("id" in response) {
+      router.push({ name: "AuthFlow", params: { id: response.id } })
+      return
+    }
+    throw new Error("unexpected response")
+  } catch (error) {
+    if (abortController.signal.aborted) {
+      return
+    }
+    // TODO: Can we do something better?
+    throw error
+  } finally {
+    mainProgress.value -= 1
+  }
+}
 </script>
 
 <template>
@@ -62,6 +108,7 @@ async function onSignOut() {
       <GlobeAltIcon class="m-1 sm:m-4 sm:h-10 sm:w-10 h-7 w-7 rounded group-focus:ring-2 group-focus:ring-primary-500" />
     </router-link>
     <slot><div class="flex-grow"></div></slot>
-    <Button primary type="button" :disabled="mainProgress > 0" @click.prevent="onSignOut">Sign-out</Button>
+    <Button v-if="me.success" primary type="button" :disabled="mainProgress > 0" @click.prevent="onSignOut">Sign-out</Button>
+    <Button v-else primary type="button" :disabled="mainProgress > 0" @click.prevent="onSignIn">Sign-in or sign-up</Button>
   </div>
 </template>

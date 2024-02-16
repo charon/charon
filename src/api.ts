@@ -27,7 +27,7 @@ export class FetchError extends Error {
 export async function getURL<T>(
   url: string,
   el: Ref<Element | null> | null,
-  abortSignal: AbortSignal,
+  abortSignal: AbortSignal | null,
   progress: Ref<number> | null,
 ): Promise<{ doc: T; metadata: Metadata }> {
   if (progress) {

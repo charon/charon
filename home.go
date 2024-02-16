@@ -13,10 +13,6 @@ func (s *Service) Home(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 		return
 	}
 
-	if s.RequireAuthenticated(w, req, false, "Charon Dashboard") == nil {
-		return
-	}
-
 	if s.Development != "" {
 		s.Proxy(w, req)
 	} else {

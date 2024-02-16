@@ -169,6 +169,18 @@ export type AuthSignoutResponse = {
   replace: boolean
 }
 
+export type AuthCreateRequest = {
+  location: string
+}
+
+export type AuthCreateResponse =
+  | {
+      id: string
+    }
+  | {
+      error: "alreadyAuthenticated"
+    }
+
 export type Provider = {
   key: string
   name: string
