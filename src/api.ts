@@ -97,38 +97,6 @@ export async function postURL<T>(url: string, data: object, abortSignal: AbortSi
   }
 }
 
-export async function deleteURL<T>(url: string, abortSignal: AbortSignal, progress: Ref<number> | null): Promise<T> {
-  if (progress) {
-    progress.value += 1
-  }
-  try {
-    const response = await fetch(url, {
-      method: "DELETE",
-      mode: "same-origin",
-      credentials: "same-origin",
-      redirect: "error",
-      referrer: document.location.href,
-      referrerPolicy: "strict-origin-when-cross-origin",
-      signal: abortSignal,
-    })
-    const contentType = response.headers.get("Content-Type")
-    if (!contentType || !contentType.includes("application/json")) {
-      const body = await response.text()
-      throw new FetchError(`fetch POST error ${response.status}: ${body}`, {
-        status: response.status,
-        body,
-        url,
-        requestID: response.headers.get("Request-ID"),
-      })
-    }
-    return await response.json()
-  } finally {
-    if (progress) {
-      progress.value -= 1
-    }
-  }
-}
-
 export async function startPassword(
   router: Router,
   flowId: string,

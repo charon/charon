@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"time"
 
 	"gitlab.com/tozd/go/errors"
@@ -654,25 +653,9 @@ func (s *Service) AuthFlowCreatePost(w http.ResponseWriter, req *http.Request, _
 		return
 	}
 
-	if authCreatePostRequest.Location == "" {
-		s.BadRequestWithError(w, req, errors.New("invalid location"))
-		return
-	}
-
-	u, err := url.Parse(authCreatePostRequest.Location)
-	if err != nil {
-		s.BadRequestWithError(w, req, errors.WithMessage(err, "invalid location"))
-		return
-	}
-
-	if u.Scheme != "" || u.Host != "" || u.Opaque != "" || u.User != nil {
-		s.BadRequestWithError(w, req, errors.New("invalid location"))
-		return
-	}
-
-	_, errE = s.GetRoute(u.Path, http.MethodGet)
+	location, errE := validRedirectLocation(s, authCreatePostRequest.Location)
 	if errE != nil {
-		s.BadRequestWithError(w, req, errors.WithMessage(errE, "invalid location"))
+		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
@@ -696,7 +679,7 @@ func (s *Service) AuthFlowCreatePost(w http.ResponseWriter, req *http.Request, _
 		Session:              nil,
 		Completed:            "",
 		Target:               TargetSession,
-		TargetLocation:       u.String(),
+		TargetLocation:       location,
 		TargetName:           "Charon Dashboard",
 		TargetOrganization:   nil,
 		Provider:             "",

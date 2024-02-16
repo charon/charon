@@ -164,6 +164,10 @@ export type AuthFlowRequest =
       step: "redirect"
     }
 
+export type AuthSignoutRequest = {
+  location: string
+}
+
 export type AuthSignoutResponse = {
   url: string
   replace: boolean

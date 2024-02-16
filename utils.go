@@ -16,6 +16,7 @@ import (
 	"math/big"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/go-jose/go-jose/v3"
@@ -357,4 +358,26 @@ func makeRSAKey(privateKey string) (*jose.JSONWebKey, errors.E) {
 	// TODO: This is currently hard-coded to RS256 until we can support all from signingAlgValuesSupported.
 	//       See: https://github.com/ory/fosite/issues/788
 	return makeJSONWebKey(key, "RS256")
+}
+
+func validRedirectLocation(service *Service, location string) (string, errors.E) {
+	if location == "" {
+		return "", errors.New("invalid location")
+	}
+
+	u, err := url.Parse(location)
+	if err != nil {
+		return "", errors.WithMessage(err, "invalid location")
+	}
+
+	if u.Scheme != "" || u.Host != "" || u.Opaque != "" || u.User != nil {
+		return "", errors.New("invalid location")
+	}
+
+	_, errE := service.GetRoute(u.Path, http.MethodGet)
+	if errE != nil {
+		return "", errors.WithMessage(errE, "invalid location")
+	}
+
+	return u.String(), nil
 }

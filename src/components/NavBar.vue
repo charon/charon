@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AuthFlowCreateRequest, AuthFlowCreateResponse, AuthSignoutResponse } from "@/types"
+import type { AuthFlowCreateRequest, AuthFlowCreateResponse, AuthSignoutRequest, AuthSignoutResponse } from "@/types"
 
 import { onUnmounted, ref, inject } from "vue"
 import { useRouter } from "vue-router"
@@ -7,7 +7,7 @@ import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
 import { GlobeAltIcon } from "@heroicons/vue/24/outline"
 import Button from "@/components/Button.vue"
 import { useNavbar } from "@/navbar"
-import { deleteURL, postURL } from "@/api"
+import { postURL } from "@/api"
 import { progressKey } from "@/progress"
 import { redirectServerSide } from "@/utils"
 import me from "@/me"
@@ -31,22 +31,34 @@ async function onSignOut() {
 
   mainProgress.value += 1
   try {
-    const response = await deleteURL<AuthSignoutResponse>(router.apiResolve({ name: "Auth" }).href, abortController.signal, mainProgress)
+    const payload: AuthSignoutRequest = {
+      // We remove origin prefix from full URL to get absolute URL.
+      location: document.location.href.slice(document.location.origin.length),
+    }
+    const url = router.apiResolve({
+      name: "AuthSignout",
+    }).href
+
+    const response = await postURL<AuthSignoutResponse>(url, payload, abortController.signal, mainProgress)
     if (abortController.signal.aborted) {
       return
     }
 
-    redirectServerSide(response.url, response.replace, mainProgress)
+    if ("url" in response) {
+      redirectServerSide(response.url, response.replace, mainProgress)
 
-    if (browserSupportsWebAuthn()) {
-      navigator.credentials.preventSilentAccess()
+      if (browserSupportsWebAuthn()) {
+        navigator.credentials.preventSilentAccess()
+      }
+
+      return
     }
-
-    return
+    throw new Error("unexpected response")
   } catch (error) {
     if (abortController.signal.aborted) {
       return
     }
+    // TODO: Can we do something better?
     throw error
   } finally {
     mainProgress.value -= 1
@@ -72,9 +84,13 @@ async function onSignIn() {
     if (abortController.signal.aborted) {
       return
     }
+
     if ("error" in response && ["alreadyAuthenticated"].includes(response.error)) {
-      // We reload the page to get new "me" state.
       // TODO: Can we update "me" state reactively?
+
+      // We increase the progress and never decrease it to wait for browser to do the reload.
+      mainProgress.value += 1
+      // We reload the page to get new "me" state.
       document.location.reload()
       return
     }
