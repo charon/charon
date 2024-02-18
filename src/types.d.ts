@@ -282,7 +282,7 @@ export type ApplicationTemplateCreate = {
   name: string
 }
 
-export type OrganizationList = OrganizationRef[]
+export type Organizations = OrganizationRef[]
 
 export type OrganizationRef = {
   id: string
