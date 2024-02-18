@@ -154,7 +154,7 @@
       "get": true
     },
     {
-      "name": "Organization",
+      "name": "OrganizationGet",
       "path": "/o/:id",
       "api": true,
       "get": true

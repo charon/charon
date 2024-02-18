@@ -100,7 +100,7 @@ async function loadData(update: "init" | "basic" | "applications" | null) {
   mainProgress.value += 1
   try {
     const organizationURL = router.apiResolve({
-      name: "Organization",
+      name: "OrganizationGet",
       params: {
         id: props.id,
       },

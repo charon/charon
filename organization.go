@@ -515,7 +515,7 @@ func UpdateOrganization(ctx context.Context, organization *Organization) errors.
 	return nil
 }
 
-func (s *Service) Organization(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+func (s *Service) OrganizationGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.Development != "" {
 		s.Proxy(w, req)
 	} else {
@@ -556,7 +556,7 @@ func (s *Service) returnOrganizationRef(_ context.Context, w http.ResponseWriter
 	s.WriteJSON(w, req, OrganizationRef{ID: *organization.ID}, nil)
 }
 
-func (s *Service) OrganizationGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 
 	session, errE := getSessionFromRequest(req)

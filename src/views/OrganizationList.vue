@@ -71,10 +71,10 @@ const WithOrganizationDocument = WithDocument<Organization>
           There are no organizations. {{ me.success ? "Create the first one." : "Sign-in or sign-up to create the first one." }}
         </div>
         <div v-for="organization of organizations" :key="organization.id" class="w-full rounded border bg-white p-4 shadow grid grid-cols-1 gap-4">
-          <WithOrganizationDocument :id="organization.id" name="Organization">
+          <WithOrganizationDocument :id="organization.id" name="OrganizationGet">
             <template #default="{ doc, metadata, url }">
               <h2 class="text-xl flex flex-row items-center gap-1">
-                <router-link :to="{ name: 'Organization', params: { id: organization.id } }" :data-url="url" class="link">{{ doc.name }}</router-link>
+                <router-link :to="{ name: 'OrganizationGet', params: { id: organization.id } }" :data-url="url" class="link">{{ doc.name }}</router-link>
                 <span v-if="metadata.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">admin</span>
               </h2>
             </template>
