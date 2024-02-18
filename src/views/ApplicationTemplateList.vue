@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ApplicationTemplate, ApplicationTemplateList } from "@/types"
+import type { ApplicationTemplate, ApplicationTemplates } from "@/types"
 
 import { onBeforeMount, onUnmounted, ref, inject } from "vue"
 import { useRouter } from "vue-router"
@@ -18,7 +18,7 @@ const mainProgress = inject(progressKey, ref(0))
 const abortController = new AbortController()
 const dataLoading = ref(true)
 const dataLoadingError = ref("")
-const applicationTemplates = ref<ApplicationTemplateList>([])
+const applicationTemplates = ref<ApplicationTemplates>([])
 
 onUnmounted(() => {
   abortController.abort()
@@ -31,7 +31,7 @@ onBeforeMount(async () => {
       name: "ApplicationTemplateList",
     }).href
 
-    const response = await getURL<ApplicationTemplateList>(url, null, abortController.signal, mainProgress)
+    const response = await getURL<ApplicationTemplates>(url, null, abortController.signal, mainProgress)
     if (abortController.signal.aborted) {
       return
     }

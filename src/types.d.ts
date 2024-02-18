@@ -229,7 +229,7 @@ type ItemTypes = BareItem | ItemTypes[]
 
 export type Metadata = Record<Key, ItemTypes>
 
-export type ApplicationTemplateList = ApplicationTemplateRef[]
+export type ApplicationTemplates = ApplicationTemplateRef[]
 
 export type ApplicationTemplateRef = {
   id: string

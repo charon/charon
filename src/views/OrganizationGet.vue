@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DeepReadonly, Ref } from "vue"
-import type { Organization, Metadata, ApplicationTemplateList, ApplicationTemplate, OrganizationApplication, ApplicationTemplateRef } from "@/types"
+import type { Organization, Metadata, ApplicationTemplates, ApplicationTemplate, OrganizationApplication, ApplicationTemplateRef } from "@/types"
 
 import { computed, nextTick, onBeforeMount, onUnmounted, ref, watch, inject } from "vue"
 import { useRouter } from "vue-router"
@@ -29,7 +29,7 @@ const dataLoading = ref(true)
 const dataLoadingError = ref("")
 const organization = ref<Organization | null>(null)
 const metadata = ref<Metadata>({})
-const applicationTemplates = ref<ApplicationTemplateList>([])
+const applicationTemplates = ref<ApplicationTemplates>([])
 const generatedSecrets = ref(new Map<string, string>())
 
 const basicUnexpectedError = ref("")
@@ -128,7 +128,7 @@ async function loadData(update: "init" | "basic" | "applications" | null) {
         name: "ApplicationTemplateList",
       }).href
 
-      const resp = await getURL<ApplicationTemplateList>(applicationsURL, null, abortController.signal, mainProgress)
+      const resp = await getURL<ApplicationTemplates>(applicationsURL, null, abortController.signal, mainProgress)
       if (abortController.signal.aborted) {
         return
       }
