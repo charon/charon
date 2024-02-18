@@ -118,7 +118,7 @@
       }
     },
     {
-      "name": "ApplicationTemplates",
+      "name": "ApplicationTemplateList",
       "path": "/a",
       "api": true,
       "get": true
@@ -142,7 +142,7 @@
       "get": false
     },
     {
-      "name": "Organizations",
+      "name": "OrganizationList",
       "path": "/o",
       "api": true,
       "get": true

@@ -535,7 +535,7 @@ func (s *Service) OrganizationCreate(w http.ResponseWriter, req *http.Request, _
 	}
 }
 
-func (s *Service) Organizations(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+func (s *Service) OrganizationList(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.Development != "" {
 		s.Proxy(w, req)
 	} else {
@@ -586,7 +586,7 @@ func (s *Service) OrganizationGet(w http.ResponseWriter, req *http.Request, para
 	s.WriteJSON(w, req, organization.OrganizationPublic, nil)
 }
 
-func (s *Service) OrganizationsGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+func (s *Service) OrganizationListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	result := []OrganizationRef{}
 
 	organizationsMu.RLock()

@@ -658,7 +658,7 @@ func (s *Service) ApplicationTemplateCreate(w http.ResponseWriter, req *http.Req
 	}
 }
 
-func (s *Service) ApplicationTemplates(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+func (s *Service) ApplicationTemplateList(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.Development != "" {
 		s.Proxy(w, req)
 	} else {
@@ -709,7 +709,7 @@ func (s *Service) ApplicationTemplateGet(w http.ResponseWriter, req *http.Reques
 	s.WriteJSON(w, req, applicationTemplate.ApplicationTemplatePublic, nil)
 }
 
-func (s *Service) ApplicationTemplatesGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+func (s *Service) ApplicationTemplateListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	result := []ApplicationTemplateRef{}
 
 	applicationTemplatesMu.RLock()

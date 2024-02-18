@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Organization, Organizations } from "@/types"
+import type { Organization, OrganizationList } from "@/types"
 
 import { onBeforeMount, onUnmounted, ref, inject } from "vue"
 import { useRouter } from "vue-router"
@@ -18,7 +18,7 @@ const mainProgress = inject(progressKey, ref(0))
 const abortController = new AbortController()
 const dataLoading = ref(true)
 const dataLoadingError = ref("")
-const organizations = ref<Organizations>([])
+const organizations = ref<OrganizationList>([])
 
 onUnmounted(() => {
   abortController.abort()
@@ -28,10 +28,10 @@ onBeforeMount(async () => {
   mainProgress.value += 1
   try {
     const url = router.apiResolve({
-      name: "Organizations",
+      name: "OrganizationList",
     }).href
 
-    const response = await getURL<Organizations>(url, null, abortController.signal, mainProgress)
+    const response = await getURL<OrganizationList>(url, null, abortController.signal, mainProgress)
     if (abortController.signal.aborted) {
       return
     }
