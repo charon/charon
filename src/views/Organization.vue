@@ -4,6 +4,7 @@ import type { Organization, Metadata, ApplicationTemplates, ApplicationTemplate,
 
 import { computed, nextTick, onBeforeMount, onUnmounted, ref, watch, inject } from "vue"
 import { useRouter } from "vue-router"
+import { Identifier } from "@tozd/identifier"
 import InputText from "@/components/InputText.vue"
 import TextArea from "@/components/TextArea.vue"
 import Button from "@/components/Button.vue"
@@ -297,14 +298,14 @@ async function onEnableApplicationTemplate(applicationTemplate: DeepReadonly<App
 }
 
 async function getSecret(id: string): Promise<string> {
-  // TODO: Generate a random identifier instead.
-  const secret = Array.from(crypto.getRandomValues(new Uint8Array(22))).reduce((s, b) => s + (b % 35).toString(36)[(b % 2) - 1 ? "toLowerCase" : "toUpperCase"](), "")
+  const secret = Identifier.new().toString()
   // We setup argon2id every time so that memory used by it
   // can be reclaimed when it is not used anymore.
   // See: https://github.com/openpgpjs/argon2id/issues/4
   const argon2id = await setupArgon2id()
   const hash = argon2id(new TextEncoder().encode(secret))
-  generatedSecrets.value.set(id, secret)
+  // We use a prefix to aid secret scanners.
+  generatedSecrets.value.set(id, `chc-${secret}`)
   return hash
 }
 

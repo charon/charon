@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"slices"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -139,7 +140,7 @@ func (k *Keys) Init(development bool) errors.E {
 //nolint:lll
 type OIDC struct {
 	Development bool   `                                        help:"Run OIDC in development mode: send debug messages to clients, generate secret and key if not provided. LEAKS SENSITIVE INFORMATION!"                                     short:"O" yaml:"development"`
-	Secret      string `         env:"SECRET"                   help:"Base64 (URL encoding, no padding) encoded 32 bytes used for tokens' HMAC. Environment variable: ${env}."                             placeholder:"BASE64"                          yaml:"secret"`
+	Secret      string `         env:"SECRET"                   help:"Base64 (URL encoding, no padding) encoded 32 bytes with \"chs-\" prefix used for tokens' HMAC. Environment variable: ${env}."        placeholder:"BASE64"                          yaml:"secret"`
 	Keys        Keys   `embed:""              envprefix:"KEYS_" help:"Private keys in JWK format for signing tokens. Only keys in JWKs are used, other fields are ignored."                                                     prefix:"keys."           yaml:"keys"`
 }
 
@@ -180,8 +181,12 @@ type Service struct {
 func (config *Config) Run() errors.E { //nolint:maintidx
 	var secret []byte
 	if config.OIDC.Secret != "" {
+		// We use a prefix to aid secret scanners.
+		if !strings.HasPrefix(config.OIDC.Secret, "chs-") {
+			return errors.New(`OIDC secret does not have "chs-" prefix`)
+		}
 		var err error
-		secret, err = base64.RawURLEncoding.DecodeString(config.OIDC.Secret)
+		secret, err = base64.RawURLEncoding.DecodeString(strings.TrimPrefix(config.OIDC.Secret, "chs-"))
 		if err != nil {
 			return errors.WithMessage(err, "invalid OIDC secret")
 		}

@@ -3,6 +3,7 @@ package charon
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/alexedwards/argon2id"
@@ -23,9 +24,14 @@ type argon2idHasher struct{}
 var oidcStore = NewOIDCStore() //nolint:gochecknoglobals
 
 func (argon2idHasher) Compare(_ context.Context, hash, data []byte) error {
+	strData := string(data)
+	if !strings.HasPrefix(strData, "chc-") {
+		return errors.New(`secret does not have "chc-" prefix`)
+	}
+	strData = strings.TrimPrefix(strData, "chc-")
 	// TODO: Use byte as input and not string.
 	//       See: https://github.com/alexedwards/argon2id/issues/26
-	match, err := argon2id.ComparePasswordAndHash(string(hash), string(data))
+	match, err := argon2id.ComparePasswordAndHash(string(hash), strData)
 	if err != nil {
 		return errors.WithStack(err)
 	}
