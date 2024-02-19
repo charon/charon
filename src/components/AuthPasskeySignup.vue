@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AuthFlowRequest, AuthFlowResponse } from "@/types"
+import type { AuthFlowPasskeyCreateCompleteRequest, AuthFlowResponse } from "@/types"
 
 import { getCurrentInstance, inject, nextTick, onMounted, onUnmounted, ref } from "vue"
 import { useRouter } from "vue-router"
@@ -68,22 +68,20 @@ async function onPasskeySignup() {
     signupAttempted.value = true
     signupFailed.value = false
     unexpectedError.value = ""
-    const url = router.apiResolve({
-      name: "AuthFlowGet",
+    const startUrl = router.apiResolve({
+      name: "AuthFlowPasskeyCreateStart",
+      params: {
+        id: props.id,
+      },
+    }).href
+    const completeUrl = router.apiResolve({
+      name: "AuthFlowPasskeyCreateComplete",
       params: {
         id: props.id,
       },
     }).href
 
-    const start = await postURL<AuthFlowResponse>(
-      url,
-      {
-        provider: "passkey",
-        step: "createStart",
-      } as AuthFlowRequest,
-      abortController.signal,
-      mainProgress,
-    )
+    const start = await postURL<AuthFlowResponse>(startUrl, {}, abortController.signal, mainProgress)
     if (abortController.signal.aborted) {
       return
     }
@@ -115,14 +113,10 @@ async function onPasskeySignup() {
     }
 
     const complete = await postURL<AuthFlowResponse>(
-      url,
+      completeUrl,
       {
-        provider: "passkey",
-        step: "createComplete",
-        passkey: {
-          createResponse: attestation,
-        },
-      } as AuthFlowRequest,
+        createResponse: attestation,
+      } as AuthFlowPasskeyCreateCompleteRequest,
       abortController.signal,
       mainProgress,
     )

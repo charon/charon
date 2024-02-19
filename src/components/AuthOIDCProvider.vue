@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AuthFlowRequest, AuthFlowResponse } from "@/types"
+import type { AuthFlowProviderStartRequest, AuthFlowResponse } from "@/types"
 
 import { ref, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
@@ -109,7 +109,7 @@ async function onRedirect() {
   mainProgress.value += 1
   try {
     const url = router.apiResolve({
-      name: "AuthFlowGet",
+      name: "AuthFlowProviderStart",
       params: {
         id: props.id,
       },
@@ -119,8 +119,7 @@ async function onRedirect() {
       url,
       {
         provider: props.provider,
-        step: "start",
-      } as AuthFlowRequest,
+      } as AuthFlowProviderStartRequest,
       abortController.signal,
       mainProgress,
     )

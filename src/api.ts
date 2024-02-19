@@ -1,6 +1,6 @@
 import type { Ref } from "vue"
 import type { Router } from "vue-router"
-import type { AuthFlowRequest, AuthFlowResponse, Flow, Metadata, PasswordResponse } from "@/types"
+import type { AuthFlowPasswordStartRequest, AuthFlowResponse, Flow, Metadata, PasswordResponse } from "@/types"
 
 import { fromBase64, processCompletedAndLocationRedirect, redirectServerSide } from "@/utils"
 import { decodeMetadata } from "./metadata"
@@ -109,7 +109,7 @@ export async function startPassword(
   progress.value += 1
   try {
     const url = router.apiResolve({
-      name: "AuthFlowGet",
+      name: "AuthFlowPasswordStart",
       params: {
         id: flowId,
       },
@@ -118,14 +118,8 @@ export async function startPassword(
     const response = await postURL<AuthFlowResponse>(
       url,
       {
-        provider: "password",
-        step: "start",
-        password: {
-          start: {
-            emailOrUsername,
-          },
-        },
-      } as AuthFlowRequest,
+        emailOrUsername,
+      } as AuthFlowPasswordStartRequest,
       abortController.signal,
       progress,
     )
@@ -173,20 +167,13 @@ export async function restartAuth(router: Router, flowId: string, flow: Flow, ab
   mainProgress.value += 1
   try {
     const url = router.apiResolve({
-      name: "AuthFlowGet",
+      name: "AuthFlowRestartAuth",
       params: {
         id: flowId,
       },
     }).href
 
-    const response = await postURL<AuthFlowResponse>(
-      url,
-      {
-        step: "restartAuth",
-      } as AuthFlowRequest,
-      abortSignal,
-      mainProgress,
-    )
+    const response = await postURL<AuthFlowResponse>(url, {}, abortSignal, mainProgress)
     if (abortSignal.aborted) {
       return
     }
@@ -209,7 +196,7 @@ export async function redirectOIDC(router: Router, flowId: string, flow: Flow, a
   mainProgress.value += 1
   try {
     const url = router.apiResolve({
-      name: "AuthFlowGet",
+      name: "AuthFlowRedirect",
       params: {
         id: flowId,
       },
@@ -221,14 +208,7 @@ export async function redirectOIDC(router: Router, flowId: string, flow: Flow, a
       },
     }).href
 
-    const response = await postURL<AuthFlowResponse>(
-      url,
-      {
-        step: "redirect",
-      } as AuthFlowRequest,
-      abortController.signal,
-      mainProgress,
-    )
+    const response = await postURL<AuthFlowResponse>(url, {}, abortController.signal, mainProgress)
     if (abortController.signal.aborted) {
       return
     }

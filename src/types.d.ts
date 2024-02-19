@@ -87,82 +87,34 @@ export type AuthFlowResponse = (
       }
   )
 
-export type AuthFlowRequest =
-  | {
-      provider: string
-      step: "start"
-    }
-  | {
-      provider: "passkey"
-      step: "getStart"
-    }
-  | {
-      provider: "passkey"
-      step: "getComplete"
-      passkey: {
-        getResponse: AuthenticationResponseJSON
-      }
-    }
-  | {
-      provider: "passkey"
-      step: "createStart"
-    }
-  | {
-      provider: "passkey"
-      step: "createComplete"
-      passkey: {
-        createResponse: RegistrationResponseJSON
-      }
-    }
-  | {
-      provider: "password"
-      step: "start"
-      password: {
-        start: {
-          emailOrUsername: string
-        }
-      }
-    }
-  | {
-      provider: "password"
-      step: "complete"
-      password: {
-        complete: {
-          publicKey: string
-          password: string
-        }
-      }
-    }
-  | {
-      provider: "code"
-      step: "start"
-      code: {
-        start: {
-          emailOrUsername: string
-        }
-      }
-    }
-  | {
-      provider: "code"
-      step: "complete"
-      code: {
-        complete: {
-          code: string
-        }
-      }
-    }
-  | {
-      step: "restartAuth"
-    }
-  | {
-      step: "decline"
-    }
-  | {
-      step: "chooseIdentity"
-    }
-  | {
-      step: "redirect"
-    }
+export type AuthFlowProviderStartRequest = {
+  provider: string
+}
+
+export type AuthFlowPasskeyGetCompleteRequest = {
+  getResponse: AuthenticationResponseJSON
+}
+
+export type AuthFlowPasskeyCreateCompleteRequest = {
+  createResponse: RegistrationResponseJSON
+}
+
+type AuthFlowPasswordStartRequest = {
+  emailOrUsername: string
+}
+
+export type AuthFlowPasswordCompleteRequest = {
+  publicKey: string
+  password: string
+}
+
+export type AuthFlowCodeStartRequest = {
+  emailOrUsername: string
+}
+
+export type AuthFlowCodeCompleteRequest = {
+  code: string
+}
 
 export type AuthSignoutRequest = {
   location: string

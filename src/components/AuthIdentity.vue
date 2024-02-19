@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AuthFlowRequest, AuthFlowResponse, Completed } from "@/types"
+import type { AuthFlowResponse, Completed } from "@/types"
 
 import { ref, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
@@ -62,20 +62,13 @@ async function onNext() {
   mainProgress.value += 1
   try {
     const url = router.apiResolve({
-      name: "AuthFlowGet",
+      name: "AuthFlowChooseIdentity",
       params: {
         id: props.id,
       },
     }).href
 
-    const response = await postURL<AuthFlowResponse>(
-      url,
-      {
-        step: "chooseIdentity",
-      } as AuthFlowRequest,
-      abortController.signal,
-      mainProgress,
-    )
+    const response = await postURL<AuthFlowResponse>(url, {}, abortController.signal, mainProgress)
     if (abortController.signal.aborted) {
       return
     }
@@ -126,20 +119,13 @@ async function onDecline() {
   mainProgress.value += 1
   try {
     const url = router.apiResolve({
-      name: "AuthFlowGet",
+      name: "AuthFlowDecline",
       params: {
         id: props.id,
       },
     }).href
 
-    const response = await postURL<AuthFlowResponse>(
-      url,
-      {
-        step: "decline",
-      } as AuthFlowRequest,
-      abortController.signal,
-      mainProgress,
-    )
+    const response = await postURL<AuthFlowResponse>(url, {}, abortController.signal, mainProgress)
     if (abortController.signal.aborted) {
       return
     }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AuthFlowRequest, AuthFlowResponse } from "@/types"
+import type { AuthFlowPasskeyGetCompleteRequest, AuthFlowResponse } from "@/types"
 
 import { getCurrentInstance, inject, onMounted, onUnmounted, ref } from "vue"
 import { useRouter } from "vue-router"
@@ -44,21 +44,25 @@ function onBeforeLeave() {
 
 async function onAfterEnter() {
   try {
-    const url = router.apiResolve({
-      name: "AuthFlowGet",
+    const startUrl = router.apiResolve({
+      name: "AuthFlowPasskeyGetStart",
+      params: {
+        id: props.id,
+      },
+    }).href
+    const completeUrl = router.apiResolve({
+      name: "AuthFlowPasskeyGetComplete",
       params: {
         id: props.id,
       },
     }).href
 
     const start = await postURL<AuthFlowResponse>(
-      url,
-      {
-        provider: "passkey",
-        step: "getStart",
-      } as AuthFlowRequest,
+      startUrl,
+      {},
       abortController.signal,
-      // We do not pass here progress on purpose.
+      // We do not pass here progress on purpose because we start this automatically
+      // and we user to be able to interact with buttons (e.g., cancel).
       null,
     )
     if (abortController.signal.aborted) {
@@ -90,14 +94,10 @@ async function onAfterEnter() {
     mainProgress.value += 1
     try {
       const complete = await postURL<AuthFlowResponse>(
-        url,
+        completeUrl,
         {
-          provider: "passkey",
-          step: "getComplete",
-          passkey: {
-            getResponse: assertion,
-          },
-        } as AuthFlowRequest,
+          getResponse: assertion,
+        } as AuthFlowPasskeyGetCompleteRequest,
         abortController.signal,
         mainProgress,
       )

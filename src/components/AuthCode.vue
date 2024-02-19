@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AuthFlowRequest, AuthFlowResponse } from "@/types"
+import type { AuthFlowCodeCompleteRequest, AuthFlowCodeStartRequest, AuthFlowResponse } from "@/types"
 
 import { ref, watch, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
 import { useRoute, useRouter } from "vue-router"
@@ -113,7 +113,7 @@ async function onNext() {
   mainProgress.value += 1
   try {
     const url = router.apiResolve({
-      name: "AuthFlowGet",
+      name: "AuthFlowCodeComplete",
       params: {
         id: props.id,
       },
@@ -122,14 +122,8 @@ async function onNext() {
     const response = await postURL<AuthFlowResponse>(
       url,
       {
-        provider: "code",
-        step: "complete",
-        code: {
-          complete: {
-            code: code.value,
-          },
-        },
-      } as AuthFlowRequest,
+        code: code.value,
+      } as AuthFlowCodeCompleteRequest,
       abortController.signal,
       mainProgress,
     )
@@ -167,7 +161,7 @@ async function onResend() {
     code.value = ""
     codeFromHash.value = false
     const url = router.apiResolve({
-      name: "AuthFlowGet",
+      name: "AuthFlowCodeStart",
       params: {
         id: props.id,
       },
@@ -176,14 +170,8 @@ async function onResend() {
     const response = await postURL<AuthFlowResponse>(
       url,
       {
-        provider: "code",
-        step: "start",
-        code: {
-          start: {
-            emailOrUsername: props.emailOrUsername,
-          },
-        },
-      } as AuthFlowRequest,
+        emailOrUsername: props.emailOrUsername,
+      } as AuthFlowCodeStartRequest,
       abortController.signal,
       mainProgress,
     )
