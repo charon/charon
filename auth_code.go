@@ -2,6 +2,7 @@ package charon
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"slices"
 	"strings"
@@ -292,7 +293,37 @@ func (s *Service) sendCode(
 	}, nil)
 }
 
-func (s *Service) startCode(w http.ResponseWriter, req *http.Request, flow *Flow, codeStart *AuthFlowRequestCodeStart) {
+func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	defer req.Body.Close()
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	flow := s.GetActiveFlow(w, req, params["id"])
+	if flow == nil {
+		return
+	}
+
+	// Has flow already completed?
+	if flow.IsCompleted() {
+		waf.Error(w, req, http.StatusGone)
+		return
+	}
+
+	// Has auth step already been completed?
+	if flow.Completed != "" {
+		s.BadRequestWithError(w, req, errors.New("auth step already completed"))
+		return
+	}
+
+	var authFlowRequest AuthFlowRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &authFlowRequest)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	// TODO: Check nil.
+	codeStart := authFlowRequest.Code.Start
+
 	ctx := req.Context()
 
 	preservedEmailOrUsername := s.normalizeEmailOrUsername(w, req, flow, codeStart.EmailOrUsername)
@@ -348,7 +379,37 @@ func (s *Service) startCode(w http.ResponseWriter, req *http.Request, flow *Flow
 	s.sendCode(w, req, flow, preservedEmailOrUsername, []string{preservedEmailOrUsername}, nil, credentials)
 }
 
-func (s *Service) completeCode(w http.ResponseWriter, req *http.Request, flow *Flow, codeComplete *AuthFlowRequestCodeComplete) {
+func (s *Service) AuthFlowCodeCompletePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	defer req.Body.Close()
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	flow := s.GetActiveFlow(w, req, params["id"])
+	if flow == nil {
+		return
+	}
+
+	// Has flow already completed?
+	if flow.IsCompleted() {
+		waf.Error(w, req, http.StatusGone)
+		return
+	}
+
+	// Has auth step already been completed?
+	if flow.Completed != "" {
+		s.BadRequestWithError(w, req, errors.New("auth step already completed"))
+		return
+	}
+
+	var authFlowRequest AuthFlowRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &authFlowRequest)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	// TODO: Check nil.
+	codeComplete := authFlowRequest.Code.Complete
+
 	ctx := req.Context()
 
 	if flow.Code == nil {

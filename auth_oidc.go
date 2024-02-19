@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"slices"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/hashicorp/go-cleanhttp"
 	"gitlab.com/tozd/go/errors"
+	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 	"golang.org/x/oauth2"
@@ -107,9 +109,38 @@ func initOIDCProviders(config *Config, service *Service, domain string, provider
 	}
 }
 
-func (s *Service) startOIDCProvider(w http.ResponseWriter, req *http.Request, flow *Flow, providerName Provider) {
+func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	defer req.Body.Close()
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	flow := s.GetActiveFlow(w, req, params["id"])
+	if flow == nil {
+		return
+	}
+
+	// Has flow already completed?
+	if flow.IsCompleted() {
+		waf.Error(w, req, http.StatusGone)
+		return
+	}
+
+	// Has auth step already been completed?
+	if flow.Completed != "" {
+		s.BadRequestWithError(w, req, errors.New("auth step already completed"))
+		return
+	}
+
+	var authFlowRequest AuthFlowRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &authFlowRequest)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	providerName := authFlowRequest.Provider
+
 	provider, ok := s.oidcProviders()[providerName]
-	if !ok {
+	if providerName == "" || !ok {
 		errE := errors.New("unknown provider")
 		errors.Details(errE)["provider"] = providerName
 		s.BadRequestWithError(w, req, errE)
@@ -132,7 +163,7 @@ func (s *Service) startOIDCProvider(w http.ResponseWriter, req *http.Request, fl
 		opts = append(opts, oauth2.S256ChallengeOption(verifier))
 	}
 
-	errE := SetFlow(req.Context(), flow)
+	errE = SetFlow(req.Context(), flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return

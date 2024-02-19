@@ -3,6 +3,7 @@ package charon
 import (
 	"encoding/base64"
 	"fmt"
+	"io"
 	"net/http"
 	"slices"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"github.com/rs/zerolog/hlog"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
+	"gitlab.com/tozd/waf"
 )
 
 const PasskeyProvider Provider = "passkey"
@@ -127,7 +129,27 @@ func initPasskeyProvider(config *Config, domain string) func() *webauthn.WebAuth
 	}
 }
 
-func (s *Service) startPasskeyGet(w http.ResponseWriter, req *http.Request, flow *Flow) {
+func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	defer req.Body.Close()
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	flow := s.GetActiveFlow(w, req, params["id"])
+	if flow == nil {
+		return
+	}
+
+	// Has flow already completed?
+	if flow.IsCompleted() {
+		waf.Error(w, req, http.StatusGone)
+		return
+	}
+
+	// Has auth step already been completed?
+	if flow.Completed != "" {
+		s.BadRequestWithError(w, req, errors.New("auth step already completed"))
+		return
+	}
+
 	options, session, err := s.passkeyProvider().BeginDiscoverableLogin()
 	if err != nil {
 		s.InternalServerErrorWithError(w, req, withWebauthnError(err))
@@ -181,7 +203,37 @@ func (s *Service) getFlowPasskey(w http.ResponseWriter, req *http.Request, flow 
 	return flowPasskey
 }
 
-func (s *Service) completePasskeyGet(w http.ResponseWriter, req *http.Request, flow *Flow, assertionResponse *protocol.CredentialAssertionResponse) {
+func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	defer req.Body.Close()
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	flow := s.GetActiveFlow(w, req, params["id"])
+	if flow == nil {
+		return
+	}
+
+	// Has flow already completed?
+	if flow.IsCompleted() {
+		waf.Error(w, req, http.StatusGone)
+		return
+	}
+
+	// Has auth step already been completed?
+	if flow.Completed != "" {
+		s.BadRequestWithError(w, req, errors.New("auth step already completed"))
+		return
+	}
+
+	var authFlowRequest AuthFlowRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &authFlowRequest)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	// TODO: Check nil.
+	assertionResponse := authFlowRequest.Passkey.GetResponse
+
 	ctx := req.Context()
 
 	flowPasskey := s.getFlowPasskey(w, req, flow)
@@ -235,7 +287,27 @@ func (s *Service) completePasskeyGet(w http.ResponseWriter, req *http.Request, f
 	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: credentialID, Provider: PasskeyProvider, Data: jsonData}})
 }
 
-func (s *Service) startPasskeyCreate(w http.ResponseWriter, req *http.Request, flow *Flow) {
+func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	defer req.Body.Close()
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	flow := s.GetActiveFlow(w, req, params["id"])
+	if flow == nil {
+		return
+	}
+
+	// Has flow already completed?
+	if flow.IsCompleted() {
+		waf.Error(w, req, http.StatusGone)
+		return
+	}
+
+	// Has auth step already been completed?
+	if flow.Completed != "" {
+		s.BadRequestWithError(w, req, errors.New("auth step already completed"))
+		return
+	}
+
 	options, session, err := s.passkeyProvider().BeginRegistration(
 		&charonUser{nil},
 		webauthn.WithExtensions(protocol.AuthenticationExtensions{
@@ -285,7 +357,37 @@ func (s *Service) startPasskeyCreate(w http.ResponseWriter, req *http.Request, f
 	}, nil)
 }
 
-func (s *Service) completePasskeyCreate(w http.ResponseWriter, req *http.Request, flow *Flow, createResponse *protocol.CredentialCreationResponse) {
+func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	defer req.Body.Close()
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	flow := s.GetActiveFlow(w, req, params["id"])
+	if flow == nil {
+		return
+	}
+
+	// Has flow already completed?
+	if flow.IsCompleted() {
+		waf.Error(w, req, http.StatusGone)
+		return
+	}
+
+	// Has auth step already been completed?
+	if flow.Completed != "" {
+		s.BadRequestWithError(w, req, errors.New("auth step already completed"))
+		return
+	}
+
+	var authFlowRequest AuthFlowRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &authFlowRequest)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	// TODO: Check nil.
+	createResponse := authFlowRequest.Passkey.CreateResponse
+
 	parsedResponse, err := createResponse.Parse()
 	if err != nil {
 		s.BadRequestWithError(w, req, errors.WithStack(err))

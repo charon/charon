@@ -106,6 +106,84 @@
       "get": true
     },
     {
+      "name": "AuthFlowProviderStart",
+      "path": "/auth/providerStart",
+      "api": true,
+      "get": false
+    },
+    {
+      "name": "AuthFlowPasskeyGetStart",
+      "path": "/auth/passkeyGetStart",
+      "api": true,
+      "get": false
+    },
+    {
+      "name": "AuthFlowPasskeyGetComplete",
+      "path": "/auth/passkeyGetComplete",
+      "api": true,
+      "get": false
+    },
+    {
+      "name": "AuthFlowPasskeyCreateStart",
+      "path": "/auth/passkeyCreateStart",
+      "api": true,
+      "get": false
+    },
+    {
+      "name": "AuthFlowPasskeyCreateComplete",
+      "path": "/auth/passkeyCreateComplete",
+      "api": true,
+      "get": false
+    },
+    {
+      "name": "AuthFlowPasswordStart",
+      "path": "/auth/passwordStart",
+      "api": true,
+      "get": false
+    },
+    {
+      "name": "AuthFlowPasswordComplete",
+      "path": "/auth/passwordComplete",
+      "api": true,
+      "get": false
+    },
+    {
+      "name": "AuthFlowCodeStart",
+      "path": "/auth/codeStart",
+      "api": true,
+      "get": false
+    },
+    {
+      "name": "AuthFlowCodeComplete",
+      "path": "/auth/codeComplete",
+      "api": true,
+      "get": false
+    },
+    {
+      "name": "AuthFlowRestartAuth",
+      "path": "/auth/restartAuth",
+      "api": true,
+      "get": false
+    },
+    {
+      "name": "AuthFlowDecline",
+      "path": "/auth/decline",
+      "api": true,
+      "get": false
+    },
+    {
+      "name": "AuthFlowChooseIdentity",
+      "path": "/auth/chooseIdentity",
+      "api": true,
+      "get": false
+    },
+    {
+      "name": "AuthFlowRedirect",
+      "path": "/auth/redirect",
+      "api": true,
+      "get": false
+    },
+    {
       "name": "AuthFlowCreate",
       "path": "/auth/create",
       "api": true,

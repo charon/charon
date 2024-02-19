@@ -149,130 +149,6 @@ func (s *Service) AuthFlowGetGet(w http.ResponseWriter, req *http.Request, param
 	s.WriteJSON(w, req, response, nil)
 }
 
-func (s *Service) AuthFlowGetPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	defer req.Body.Close()
-	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
-
-	flow := s.GetActiveFlow(w, req, params["id"])
-	if flow == nil {
-		return
-	}
-
-	// Has flow already completed?
-	if flow.IsCompleted() {
-		waf.Error(w, req, http.StatusGone)
-		return
-	}
-
-	var authFlowRequest AuthFlowRequest
-	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &authFlowRequest)
-	if errE != nil {
-		s.BadRequestWithError(w, req, errE)
-		return
-	}
-
-	// Auth step has not yet been completed.
-	if flow.Completed == "" { //nolint:nestif
-		if _, ok := s.oidcProviders()[authFlowRequest.Provider]; ok {
-			if authFlowRequest.Step == StepStart {
-				if authFlowRequest.Provider != "" {
-					s.startOIDCProvider(w, req, flow, authFlowRequest.Provider)
-					return
-				}
-			}
-		}
-
-		if authFlowRequest.Provider == PasskeyProvider {
-			switch authFlowRequest.Step {
-			case "getStart":
-				s.startPasskeyGet(w, req, flow)
-				return
-			case "getComplete":
-				if authFlowRequest.Passkey != nil && authFlowRequest.Passkey.GetResponse != nil {
-					s.completePasskeyGet(w, req, flow, authFlowRequest.Passkey.GetResponse)
-					return
-				}
-			case "createStart":
-				s.startPasskeyCreate(w, req, flow)
-				return
-			case "createComplete":
-				if authFlowRequest.Passkey != nil && authFlowRequest.Passkey.CreateResponse != nil {
-					s.completePasskeyCreate(w, req, flow, authFlowRequest.Passkey.CreateResponse)
-					return
-				}
-			}
-		}
-
-		if authFlowRequest.Provider == PasswordProvider {
-			switch authFlowRequest.Step {
-			case StepStart:
-				if authFlowRequest.Password != nil && authFlowRequest.Password.Start != nil {
-					s.startPassword(w, req, flow, authFlowRequest.Password.Start)
-					return
-				}
-			case StepComplete:
-				if authFlowRequest.Password != nil && authFlowRequest.Password.Complete != nil {
-					s.completePassword(w, req, flow, authFlowRequest.Password.Complete)
-					return
-				}
-			}
-		}
-
-		if authFlowRequest.Provider == CodeProvider {
-			switch authFlowRequest.Step {
-			case StepStart:
-				if authFlowRequest.Code != nil && authFlowRequest.Code.Start != nil {
-					s.startCode(w, req, flow, authFlowRequest.Code.Start)
-					return
-				}
-			case StepComplete:
-				if authFlowRequest.Code != nil && authFlowRequest.Code.Complete != nil {
-					s.completeCode(w, req, flow, authFlowRequest.Code.Complete)
-					return
-				}
-			}
-		}
-	} else if flow.Target == TargetOIDC && flow.Session != nil && authFlowRequest.Provider == "" {
-		// Flow already successfully (session is not nil) completed auth step (but not the others
-		// for the OIDC target), provider should not be provided.
-
-		// We checked that flow.Completed != CompletedRedirect in flow.IsCompleted() check above.
-
-		// Current session should match the session in the flow.
-		if !s.validateSession(w, req, flow) {
-			return
-		}
-
-		switch authFlowRequest.Step {
-		case "restartAuth":
-			s.restartAuth(w, req, flow)
-			return
-		case "decline":
-			s.oidcDecline(w, req, flow)
-			return
-		case "chooseIdentity":
-			s.chooseIdentity(w, req, flow)
-			return
-		case "redirect":
-			if flow.Completed == CompletedDeclined || flow.Completed == CompletedIdentity {
-				s.oidcRedirect(w, req, flow)
-				return
-			}
-		}
-	} else if flow.Target == TargetOIDC && flow.Completed == CompletedFailed && authFlowRequest.Provider == "" {
-		// OIDC target flow did not successfully completed auth step, provider should not be provided.
-
-		if authFlowRequest.Step == "redirect" {
-			s.oidcRedirect(w, req, flow)
-			return
-		}
-	}
-
-	errE = errors.New("invalid auth request")
-	errors.Details(errE)["request"] = authFlowRequest
-	s.BadRequestWithError(w, req, errE)
-}
-
 func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, flow *Flow) bool {
 	session, errE := getSessionFromRequest(req)
 	if errors.Is(errE, ErrSessionNotFound) {
@@ -482,19 +358,41 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 	s.TemporaryRedirectGetMethod(w, req, l)
 }
 
-// restartAuth is not possible in session target because you could then open the flow later on,
-// after you already completed the flow and was redirected to target location, and reauthenticate.
+// AuthFlowRestartAuthPost is not possible in session target because you could then open the flow later
+// on, after you already completed the flow and was redirected to target location, and reauthenticate.
 // In other words, session target flow is completed (flow.IsCompleted() returns true) after auth
 // step is completed and it makes no sense to allow restarting of completed flows.
 //
 // For OIDC target it is similar, after redirect, we do not allow restarting anymore.
 // In other words, after redirect, OIDC target flow is also completed.
-func (s *Service) restartAuth(w http.ResponseWriter, req *http.Request, flow *Flow) {
+func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	defer req.Body.Close()
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	flow := s.GetActiveFlow(w, req, params["id"])
+	if flow == nil {
+		return
+	}
+
+	// Has flow already completed?
 	if flow.IsCompleted() {
-		// Sanity check. This should never happen and we check it already in AuthFlowPost but
-		// we want to check it again here because restarting authentication for completed
-		// flows should really not be possible.
-		s.InternalServerErrorWithError(w, req, errors.New("restarting auth for completed flow"))
+		waf.Error(w, req, http.StatusGone)
+		return
+	}
+
+	if flow.Target != TargetOIDC {
+		s.BadRequestWithError(w, req, errors.New("not OIDC target"))
+		return
+	}
+	// Flow already successfully (session is not nil) completed auth step, but not the final redirect step
+	// for the OIDC target (we checked that flow.Completed != CompletedRedirect in flow.IsCompleted() check above).
+	if flow.Completed == "" || flow.Session == nil {
+		s.BadRequestWithError(w, req, errors.New("auth step not completed"))
+		return
+	}
+
+	// Current session should match the session in the flow.
+	if !s.validateSession(w, req, flow) {
 		return
 	}
 
@@ -549,7 +447,37 @@ func (s *Service) restartAuth(w http.ResponseWriter, req *http.Request, flow *Fl
 	}, nil)
 }
 
-func (s *Service) oidcDecline(w http.ResponseWriter, req *http.Request, flow *Flow) {
+func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	defer req.Body.Close()
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	flow := s.GetActiveFlow(w, req, params["id"])
+	if flow == nil {
+		return
+	}
+
+	// Has flow already completed?
+	if flow.IsCompleted() {
+		waf.Error(w, req, http.StatusGone)
+		return
+	}
+
+	if flow.Target != TargetOIDC {
+		s.BadRequestWithError(w, req, errors.New("not OIDC target"))
+		return
+	}
+	// Flow already successfully (session is not nil) completed auth step, but not the final redirect step
+	// for the OIDC target (we checked that flow.Completed != CompletedRedirect in flow.IsCompleted() check above).
+	if flow.Completed == "" || flow.Session == nil {
+		s.BadRequestWithError(w, req, errors.New("auth step not completed"))
+		return
+	}
+
+	// Current session should match the session in the flow.
+	if !s.validateSession(w, req, flow) {
+		return
+	}
+
 	ctx := req.Context()
 
 	// TODO: Store decline.
@@ -578,7 +506,37 @@ func (s *Service) oidcDecline(w http.ResponseWriter, req *http.Request, flow *Fl
 	}, nil)
 }
 
-func (s *Service) chooseIdentity(w http.ResponseWriter, req *http.Request, flow *Flow) {
+func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	defer req.Body.Close()
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	flow := s.GetActiveFlow(w, req, params["id"])
+	if flow == nil {
+		return
+	}
+
+	// Has flow already completed?
+	if flow.IsCompleted() {
+		waf.Error(w, req, http.StatusGone)
+		return
+	}
+
+	if flow.Target != TargetOIDC {
+		s.BadRequestWithError(w, req, errors.New("not OIDC target"))
+		return
+	}
+	// Flow already successfully (session is not nil) completed auth step, but not the final redirect step
+	// for the OIDC target (we checked that flow.Completed != CompletedRedirect in flow.IsCompleted() check above).
+	if flow.Completed == "" || flow.Session == nil {
+		s.BadRequestWithError(w, req, errors.New("auth step not completed"))
+		return
+	}
+
+	// Current session should match the session in the flow.
+	if !s.validateSession(w, req, flow) {
+		return
+	}
+
 	ctx := req.Context()
 
 	// TODO: Store chosen identity.
@@ -607,7 +565,40 @@ func (s *Service) chooseIdentity(w http.ResponseWriter, req *http.Request, flow 
 	}, nil)
 }
 
-func (s *Service) oidcRedirect(w http.ResponseWriter, req *http.Request, flow *Flow) {
+func (s *Service) AuthFlowRedirectPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	defer req.Body.Close()
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	flow := s.GetActiveFlow(w, req, params["id"])
+	if flow == nil {
+		return
+	}
+
+	// Has flow already completed?
+	if flow.IsCompleted() {
+		waf.Error(w, req, http.StatusGone)
+		return
+	}
+
+	if flow.Target != TargetOIDC {
+		s.BadRequestWithError(w, req, errors.New("not OIDC target"))
+		return
+	}
+	if flow.Completed == CompletedFailed {
+		// OIDC target flow did not successfully completed auth step.
+	} else if (flow.Completed == CompletedDeclined || flow.Completed == CompletedIdentity) && flow.Session != nil {
+		// Flow already successfully (session is not nil) completed auth step and additional steps for OIDC target,
+		// but not the final redirect step for the OIDC target, and is ready for redirect.
+
+		// Current session should match the session in the flow.
+		if !s.validateSession(w, req, flow) {
+			return
+		}
+	} else {
+		s.BadRequestWithError(w, req, errors.New("OIC target flow not ready for redirect"))
+		return
+	}
+
 	ctx := req.Context()
 
 	// It is already checked that flow.Completed is one of CompletedDeclined, CompletedIdentity, or CompletedFailed.

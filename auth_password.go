@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/ecdh"
 	"crypto/rand"
+	"io"
 	"net/http"
 	"strings"
 
@@ -12,6 +13,7 @@ import (
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
+	"gitlab.com/tozd/waf"
 )
 
 const (
@@ -104,7 +106,37 @@ func (s *Service) normalizeEmailOrUsername(w http.ResponseWriter, req *http.Requ
 	return preservedEmailOrUsername
 }
 
-func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *Flow, passwordStart *AuthFlowRequestPasswordStart) {
+func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	defer req.Body.Close()
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	flow := s.GetActiveFlow(w, req, params["id"])
+	if flow == nil {
+		return
+	}
+
+	// Has flow already completed?
+	if flow.IsCompleted() {
+		waf.Error(w, req, http.StatusGone)
+		return
+	}
+
+	// Has auth step already been completed?
+	if flow.Completed != "" {
+		s.BadRequestWithError(w, req, errors.New("auth step already completed"))
+		return
+	}
+
+	var authFlowRequest AuthFlowRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &authFlowRequest)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	// TODO: Check nil.
+	passwordStart := authFlowRequest.Password.Start
+
 	preservedEmailOrUsername := s.normalizeEmailOrUsername(w, req, flow, passwordStart.EmailOrUsername)
 	if preservedEmailOrUsername == "" {
 		return
@@ -142,7 +174,7 @@ func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *
 		PrivateKey: privateKey.Bytes(),
 		Nonce:      nonce,
 	}
-	errE := SetFlow(req.Context(), flow)
+	errE = SetFlow(req.Context(), flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -175,7 +207,37 @@ func (s *Service) startPassword(w http.ResponseWriter, req *http.Request, flow *
 	}, nil)
 }
 
-func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flow *Flow, passwordComplete *AuthFlowRequestPasswordComplete) { //nolint:maintidx
+func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:maintidx
+	defer req.Body.Close()
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	flow := s.GetActiveFlow(w, req, params["id"])
+	if flow == nil {
+		return
+	}
+
+	// Has flow already completed?
+	if flow.IsCompleted() {
+		waf.Error(w, req, http.StatusGone)
+		return
+	}
+
+	// Has auth step already been completed?
+	if flow.Completed != "" {
+		s.BadRequestWithError(w, req, errors.New("auth step already completed"))
+		return
+	}
+
+	var authFlowRequest AuthFlowRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &authFlowRequest)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	// TODO: Check nil.
+	passwordComplete := authFlowRequest.Password.Complete
+
 	ctx := req.Context()
 
 	if flow.Password == nil {
@@ -188,7 +250,7 @@ func (s *Service) completePassword(w http.ResponseWriter, req *http.Request, flo
 	// We reset flow.Password to nil always after this point, even if there is a failure,
 	// so that password cannot be reused.
 	flow.Password = nil
-	errE := SetFlow(ctx, flow)
+	errE = SetFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
