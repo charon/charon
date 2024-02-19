@@ -232,7 +232,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		s.BadRequestWithError(w, req, errors.WithStack(err))
 	}
 
-	credential, err := s.passkeyProvider().ValidateDiscoverableLogin(func(rawID, userHandle []byte) (webauthn.User, error) {
+	credential, err := s.passkeyProvider().ValidateDiscoverableLogin(func(rawID, _ []byte) (webauthn.User, error) {
 		id := base64.RawURLEncoding.EncodeToString(rawID)
 		account, errE := GetAccountByCredential(ctx, PasskeyProvider, id) //nolint:govet
 		if errE != nil {

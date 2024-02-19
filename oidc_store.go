@@ -53,7 +53,7 @@ func (s *OIDCStore) GetClient(_ context.Context, strID string) (fosite.Client, e
 				scopes := slices.Clone(app.ApplicationTemplate.IDScopes)
 				scopes = append(scopes, templateClientPublic.AdditionalScopes...)
 				slices.Sort(scopes)
-				slices.Compact(scopes)
+				scopes = slices.Compact(scopes)
 
 				values := map[string]string{}
 				for _, value := range app.Values {
@@ -72,7 +72,7 @@ func (s *OIDCStore) GetClient(_ context.Context, strID string) (fosite.Client, e
 				}
 
 				slices.Sort(redirectURIs)
-				slices.Compact(redirectURIs)
+				redirectURIs = slices.Compact(redirectURIs)
 
 				homepage, errE := interpolateVariables(*app.ApplicationTemplate.HomepageTemplate, values)
 				if errE != nil {
@@ -103,7 +103,7 @@ func (s *OIDCStore) GetClient(_ context.Context, strID string) (fosite.Client, e
 				scopes := slices.Clone(app.ApplicationTemplate.IDScopes)
 				scopes = append(scopes, templateClientBackend.AdditionalScopes...)
 				slices.Sort(scopes)
-				slices.Compact(scopes)
+				scopes = slices.Compact(scopes)
 
 				values := map[string]string{}
 				for _, value := range app.Values {
@@ -122,7 +122,7 @@ func (s *OIDCStore) GetClient(_ context.Context, strID string) (fosite.Client, e
 				}
 
 				slices.Sort(redirectURIs)
-				slices.Compact(redirectURIs)
+				redirectURIs = slices.Compact(redirectURIs)
 
 				homepage, errE := interpolateVariables(*app.ApplicationTemplate.HomepageTemplate, values)
 				if errE != nil {
@@ -153,7 +153,7 @@ func (s *OIDCStore) GetClient(_ context.Context, strID string) (fosite.Client, e
 				scopes := slices.Clone(app.ApplicationTemplate.IDScopes)
 				scopes = append(scopes, templateClientService.AdditionalScopes...)
 				slices.Sort(scopes)
-				slices.Compact(scopes)
+				scopes = slices.Compact(scopes)
 
 				values := map[string]string{}
 				for _, value := range app.Values {
