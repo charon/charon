@@ -14,7 +14,9 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
-var MailAuthTypes = map[string]mail.SMTPAuthType{} //nolint:gochecknoglobals
+var MailAuthTypes = map[string]mail.SMTPAuthType{ //nolint:gochecknoglobals
+	"none": "",
+}
 
 func init() { //nolint:gochecknoinits
 	for _, a := range []mail.SMTPAuthType{mail.SMTPAuthLogin, mail.SMTPAuthPlain, mail.SMTPAuthCramMD5, mail.SMTPAuthXOAUTH2} {

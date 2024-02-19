@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/alecthomas/kong"
-	"github.com/wneessen/go-mail"
 	"gitlab.com/tozd/go/cli"
 	"gitlab.com/tozd/go/errors"
 
@@ -22,7 +21,7 @@ func main() {
 	cli.Run(&config, kong.Vars{
 		"defaultProxyTo":  charon.DefaultProxyTo,
 		"defaultTLSCache": charon.DefaultTLSCache,
-		"defaultMailAuth": strings.ToLower(string(mail.SMTPAuthPlain)),
+		"defaultMailAuth": "none",
 		"mailAuthTypes":   strings.Join(mailAuthTypes, ","),
 	}, func(ctx *kong.Context) errors.E {
 		return errors.WithStack(ctx.Run())
