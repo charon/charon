@@ -237,7 +237,7 @@ func (config *Config) Run() errors.E { //nolint:maintidx
 		}
 	}
 	// If domains are not provided, sites are automatically constructed based on the certificate.
-	sites, errE = config.Server.Init(nil)
+	sites, errE = config.Server.Init(sites)
 	if errE != nil {
 		return errE
 	}
