@@ -230,8 +230,11 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		return
 	}
 
+	// We do not use DecodeJSONWithoutUnknownFields here because browsers
+	// (might and do) send extra fields.
+	// See: https://github.com/go-webauthn/webauthn/issues/221
 	var passkeyGetComplete AuthFlowPasskeyGetCompleteRequest
-	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &passkeyGetComplete)
+	errE := x.DecodeJSON(req.Body, &passkeyGetComplete)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
@@ -394,8 +397,11 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
+	// We do not use DecodeJSONWithoutUnknownFields here because browsers
+	// (might and do) send extra fields.
+	// See: https://github.com/go-webauthn/webauthn/issues/221
 	var passkeyCreateComplete AuthFlowPasskeyCreateCompleteRequest
-	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &passkeyCreateComplete)
+	errE := x.DecodeJSON(req.Body, &passkeyCreateComplete)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
