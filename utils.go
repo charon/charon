@@ -149,7 +149,7 @@ func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request,
 	return nil
 }
 
-func (s *Service) GetActiveFlow(w http.ResponseWriter, req *http.Request, value string) *Flow {
+func (s *Service) GetFlow(w http.ResponseWriter, req *http.Request, value string) *Flow {
 	flow, errE := getFlowFromID(req.Context(), value)
 	if errors.Is(errE, ErrFlowNotFound) {
 		s.WithError(req.Context(), errE)

@@ -128,7 +128,7 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.GetFlow(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -213,7 +213,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.GetFlow(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -256,7 +256,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 
 	credential, err := s.passkeyProvider().ValidateDiscoverableLogin(func(rawID, userHandle []byte) (webauthn.User, error) {
 		id := base64.RawURLEncoding.EncodeToString(rawID)
-		account, errE := GetAccountByCredential(ctx, PasskeyProvider, id)
+		account, errE := GetAccountByCredential(ctx, PasskeyProvider, id) //nolint:govet
 		if errE != nil {
 			return nil, errE
 		}
@@ -299,7 +299,7 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.GetFlow(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -380,7 +380,7 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.GetFlow(w, req, params["id"])
 	if flow == nil {
 		return
 	}

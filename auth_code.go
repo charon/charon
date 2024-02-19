@@ -288,7 +288,7 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.GetFlow(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -375,7 +375,7 @@ func (s *Service) AuthFlowCodeCompletePost(w http.ResponseWriter, req *http.Requ
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.GetFlow(w, req, params["id"])
 	if flow == nil {
 		return
 	}

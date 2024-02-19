@@ -71,7 +71,7 @@ func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *Flow
 }
 
 func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.GetFlow(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -103,7 +103,7 @@ func (s *Service) AuthFlowGetGet(w http.ResponseWriter, req *http.Request, param
 	// This is similar to API case in completeAuthStep and failAuthStep,
 	// but fetches also the flow and checks the session.
 
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.GetFlow(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -361,7 +361,7 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.GetFlow(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -450,7 +450,7 @@ func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, 
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.GetFlow(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -516,7 +516,7 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.GetFlow(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -582,7 +582,7 @@ func (s *Service) AuthFlowRedirectPost(w http.ResponseWriter, req *http.Request,
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.GetFlow(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -597,7 +597,7 @@ func (s *Service) AuthFlowRedirectPost(w http.ResponseWriter, req *http.Request,
 		s.BadRequestWithError(w, req, errors.New("not OIDC target"))
 		return
 	}
-	if flow.Completed == CompletedFailed {
+	if flow.Completed == CompletedFailed { //nolint:revive
 		// OIDC target flow did not successfully completed auth step.
 	} else if (flow.Completed == CompletedDeclined || flow.Completed == CompletedIdentity) && flow.Session != nil {
 		// Flow already successfully (session is not nil) completed auth step and additional steps for OIDC target,

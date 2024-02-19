@@ -117,7 +117,7 @@ func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Req
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.GetFlow(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -145,7 +145,7 @@ func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Req
 
 	provider, ok := s.oidcProviders()[providerName]
 	if providerName == "" || !ok {
-		errE := errors.New("unknown provider")
+		errE = errors.New("unknown provider")
 		errors.Details(errE)["provider"] = providerName
 		s.BadRequestWithError(w, req, errE)
 		return
@@ -206,7 +206,7 @@ func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, par
 	}
 
 	// State should be provided even in the case of an error.
-	flow := s.GetActiveFlow(w, req, req.Form.Get("state"))
+	flow := s.GetFlow(w, req, req.Form.Get("state"))
 	if flow == nil {
 		return
 	}
