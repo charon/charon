@@ -1,6 +1,7 @@
 package charon
 
 import (
+	"io"
 	"net/http"
 
 	"gitlab.com/tozd/go/errors"
@@ -10,6 +11,9 @@ import (
 
 // OIDCTokenPost handler handles requests to issue access and other tokens.
 func (s *Service) OIDCTokenPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	defer req.Body.Close()
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
 	ctx := req.Context()
 	oidc := s.oidc()
 

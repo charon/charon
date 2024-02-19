@@ -1,6 +1,7 @@
 package charon
 
 import (
+	"io"
 	"net/http"
 
 	"gitlab.com/tozd/go/errors"
@@ -9,6 +10,9 @@ import (
 
 // OIDCRevokePost handler handles requests to revoke a token.
 func (s *Service) OIDCRevokePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	defer req.Body.Close()
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
 	ctx := req.Context()
 	oidc := s.oidc()
 

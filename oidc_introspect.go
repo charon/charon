@@ -1,6 +1,7 @@
 package charon
 
 import (
+	"io"
 	"net/http"
 
 	"gitlab.com/tozd/go/errors"
@@ -16,6 +17,9 @@ import (
 
 // OIDCIntrospectPost handler handles requests to introspect a token. This also validates the token for the caller.
 func (s *Service) OIDCIntrospectPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	defer req.Body.Close()
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
 	ctx := req.Context()
 	oidc := s.oidc()
 

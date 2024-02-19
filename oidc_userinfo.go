@@ -2,6 +2,7 @@ package charon
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/ory/fosite"
@@ -15,6 +16,9 @@ import (
 // Based on UserinfoHandler from Hydra.
 // See: https://github.com/ory/hydra/blob/master/oauth2/handler.go
 func (s *Service) oidcCUserInfo(w http.ResponseWriter, req *http.Request) {
+	defer req.Body.Close()
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
 	ctx := req.Context()
 	oidc := s.oidc()
 
