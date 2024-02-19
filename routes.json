@@ -107,79 +107,79 @@
     },
     {
       "name": "AuthFlowProviderStart",
-      "path": "/auth/providerStart",
+      "path": "/auth/providerStart/:id",
       "api": true,
       "get": false
     },
     {
       "name": "AuthFlowPasskeyGetStart",
-      "path": "/auth/passkeyGetStart",
+      "path": "/auth/passkeyGetStart/:id",
       "api": true,
       "get": false
     },
     {
       "name": "AuthFlowPasskeyGetComplete",
-      "path": "/auth/passkeyGetComplete",
+      "path": "/auth/passkeyGetComplete/:id",
       "api": true,
       "get": false
     },
     {
       "name": "AuthFlowPasskeyCreateStart",
-      "path": "/auth/passkeyCreateStart",
+      "path": "/auth/passkeyCreateStart/:id",
       "api": true,
       "get": false
     },
     {
       "name": "AuthFlowPasskeyCreateComplete",
-      "path": "/auth/passkeyCreateComplete",
+      "path": "/auth/passkeyCreateComplete/:id",
       "api": true,
       "get": false
     },
     {
       "name": "AuthFlowPasswordStart",
-      "path": "/auth/passwordStart",
+      "path": "/auth/passwordStart/:id",
       "api": true,
       "get": false
     },
     {
       "name": "AuthFlowPasswordComplete",
-      "path": "/auth/passwordComplete",
+      "path": "/auth/passwordComplete/:id",
       "api": true,
       "get": false
     },
     {
       "name": "AuthFlowCodeStart",
-      "path": "/auth/codeStart",
+      "path": "/auth/codeStart/:id",
       "api": true,
       "get": false
     },
     {
       "name": "AuthFlowCodeComplete",
-      "path": "/auth/codeComplete",
+      "path": "/auth/codeComplete/:id",
       "api": true,
       "get": false
     },
     {
       "name": "AuthFlowRestartAuth",
-      "path": "/auth/restartAuth",
+      "path": "/auth/restartAuth/:id",
       "api": true,
       "get": false
     },
     {
       "name": "AuthFlowDecline",
-      "path": "/auth/decline",
+      "path": "/auth/decline/:id",
       "api": true,
       "get": false
     },
     {
       "name": "AuthFlowChooseIdentity",
-      "path": "/auth/chooseIdentity",
+      "path": "/auth/chooseIdentity/:id",
       "api": true,
       "get": false
     },
     {
       "name": "AuthFlowRedirect",
-      "path": "/auth/redirect",
+      "path": "/auth/redirect/:id",
       "api": true,
       "get": false
     },
