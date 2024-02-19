@@ -62,7 +62,7 @@ async function onNext() {
   mainProgress.value += 1
   try {
     const url = router.apiResolve({
-      name: "AuthFlow",
+      name: "AuthFlowGet",
       params: {
         id: props.id,
       },
@@ -126,7 +126,7 @@ async function onDecline() {
   mainProgress.value += 1
   try {
     const url = router.apiResolve({
-      name: "AuthFlow",
+      name: "AuthFlowGet",
       params: {
         id: props.id,
       },

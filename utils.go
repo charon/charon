@@ -138,7 +138,7 @@ func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request,
 		return nil
 	}
 
-	location, errE := s.Reverse("AuthFlow", waf.Params{"id": id.String()}, nil)
+	location, errE := s.Reverse("AuthFlowGet", waf.Params{"id": id.String()}, nil)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return nil

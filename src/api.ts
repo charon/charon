@@ -109,7 +109,7 @@ export async function startPassword(
   progress.value += 1
   try {
     const url = router.apiResolve({
-      name: "AuthFlow",
+      name: "AuthFlowGet",
       params: {
         id: flowId,
       },
@@ -173,7 +173,7 @@ export async function restartAuth(router: Router, flowId: string, flow: Flow, ab
   mainProgress.value += 1
   try {
     const url = router.apiResolve({
-      name: "AuthFlow",
+      name: "AuthFlowGet",
       params: {
         id: flowId,
       },
@@ -209,13 +209,13 @@ export async function redirectOIDC(router: Router, flowId: string, flow: Flow, a
   mainProgress.value += 1
   try {
     const url = router.apiResolve({
-      name: "AuthFlow",
+      name: "AuthFlowGet",
       params: {
         id: flowId,
       },
     }).href
     const redirectUrl = router.resolve({
-      name: "AuthFlow",
+      name: "AuthFlowGet",
       params: {
         id: flowId,
       },

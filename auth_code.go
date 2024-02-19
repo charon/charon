@@ -48,7 +48,7 @@ type codeProvider struct {
 }
 
 func (p *codeProvider) URL(s *Service, flow *Flow, code string) (string, errors.E) {
-	path, errE := s.Reverse("AuthFlow", waf.Params{"id": flow.ID.String()}, nil)
+	path, errE := s.Reverse("AuthFlowGet", waf.Params{"id": flow.ID.String()}, nil)
 	if errE != nil {
 		return "", errE
 	}

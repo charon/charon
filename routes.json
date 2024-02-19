@@ -112,7 +112,7 @@
       "get": false
     },
     {
-      "name": "AuthFlow",
+      "name": "AuthFlowGet",
       "path": "/auth/:id",
       "api": true,
       "get": true

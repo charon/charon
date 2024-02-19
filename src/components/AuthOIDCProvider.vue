@@ -109,7 +109,7 @@ async function onRedirect() {
   mainProgress.value += 1
   try {
     const url = router.apiResolve({
-      name: "AuthFlow",
+      name: "AuthFlowGet",
       params: {
         id: props.id,
       },

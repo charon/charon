@@ -78,7 +78,7 @@ func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *Flow
 	_, _ = w.Write(encoded)
 }
 
-func (s *Service) AuthFlow(w http.ResponseWriter, req *http.Request, params waf.Params) {
+func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	flow := s.GetActiveFlow(w, req, params["id"])
 	if flow == nil {
 		return
@@ -89,7 +89,7 @@ func (s *Service) AuthFlow(w http.ResponseWriter, req *http.Request, params waf.
 		return
 	}
 
-	l, errE := s.ReverseAPI("AuthFlow", waf.Params{"id": flow.ID.String()}, nil)
+	l, errE := s.ReverseAPI("AuthFlowGet", waf.Params{"id": flow.ID.String()}, nil)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -107,7 +107,7 @@ func (s *Service) AuthFlow(w http.ResponseWriter, req *http.Request, params waf.
 	}
 }
 
-func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+func (s *Service) AuthFlowGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	// This is similar to API case in completeAuthStep and failAuthStep,
 	// but fetches also the flow and checks the session.
 
@@ -149,7 +149,7 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 	s.WriteJSON(w, req, response, nil)
 }
 
-func (s *Service) AuthFlowPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+func (s *Service) AuthFlowGetPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -394,7 +394,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	// We redirect back to the flow which then for session target redirects to the target location on
 	// the frontend, after showing the message about successful sign-in or sign-up. For OIDC target
 	// the frontend continues with choosing the identity.
-	l, errE := s.Reverse("AuthFlow", waf.Params{"id": flow.ID.String()}, nil)
+	l, errE := s.Reverse("AuthFlowGet", waf.Params{"id": flow.ID.String()}, nil)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -474,7 +474,7 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 	}
 
 	// We redirect back to the flow which then shows the failure message.
-	l, errE := s.Reverse("AuthFlow", waf.Params{"id": flow.ID.String()}, nil)
+	l, errE := s.Reverse("AuthFlowGet", waf.Params{"id": flow.ID.String()}, nil)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return

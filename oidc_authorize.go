@@ -91,7 +91,7 @@ func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.
 		return
 	}
 
-	location, errE := s.Reverse("AuthFlow", waf.Params{"id": id.String()}, nil)
+	location, errE := s.Reverse("AuthFlowGet", waf.Params{"id": id.String()}, nil)
 	if errE != nil {
 		s.WithError(ctx, errE)
 		oidc.WriteAuthorizeError(ctx, w, authorizeRequest, errE)

@@ -95,7 +95,7 @@ async function onSignIn() {
       return
     }
     if ("id" in response) {
-      router.push({ name: "AuthFlow", params: { id: response.id } })
+      router.push({ name: "AuthFlowGet", params: { id: response.id } })
       return
     }
     throw new Error("unexpected response")

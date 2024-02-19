@@ -45,7 +45,7 @@ function onBeforeLeave() {
 async function onAfterEnter() {
   try {
     const url = router.apiResolve({
-      name: "AuthFlow",
+      name: "AuthFlowGet",
       params: {
         id: props.id,
       },

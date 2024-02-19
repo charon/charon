@@ -140,7 +140,7 @@ provide(flowKey, flow)
 onBeforeMount(async () => {
   try {
     const url = router.apiResolve({
-      name: "AuthFlow",
+      name: "AuthFlowGet",
       params: {
         id: props.id,
       },

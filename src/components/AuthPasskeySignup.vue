@@ -69,7 +69,7 @@ async function onPasskeySignup() {
     signupFailed.value = false
     unexpectedError.value = ""
     const url = router.apiResolve({
-      name: "AuthFlow",
+      name: "AuthFlowGet",
       params: {
         id: props.id,
       },
