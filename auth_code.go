@@ -288,6 +288,8 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
+	ctx := req.Context()
+
 	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
 		return
@@ -299,8 +301,6 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
-
-	ctx := req.Context()
 
 	preservedEmailOrUsername := s.normalizeEmailOrUsername(w, req, flow, codeStart.EmailOrUsername)
 	if preservedEmailOrUsername == "" {
@@ -363,8 +363,15 @@ func (s *Service) AuthFlowCodeCompletePost(w http.ResponseWriter, req *http.Requ
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
+	ctx := req.Context()
+
 	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
+		return
+	}
+
+	if flow.Code == nil {
+		s.BadRequestWithError(w, req, errors.New("code not started"))
 		return
 	}
 
@@ -372,13 +379,6 @@ func (s *Service) AuthFlowCodeCompletePost(w http.ResponseWriter, req *http.Requ
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &codeComplete)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
-		return
-	}
-
-	ctx := req.Context()
-
-	if flow.Code == nil {
-		s.BadRequestWithError(w, req, errors.New("code not started"))
 		return
 	}
 

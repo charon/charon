@@ -361,6 +361,8 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
+	ctx := req.Context()
+
 	flow := s.GetActiveFlow(w, req, params["id"])
 	if flow == nil {
 		return
@@ -388,8 +390,6 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
-
-	ctx := req.Context()
 
 	flow.Session = nil
 	flow.Completed = ""
@@ -444,6 +444,8 @@ func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, 
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
+	ctx := req.Context()
+
 	flow := s.GetActiveFlow(w, req, params["id"])
 	if flow == nil {
 		return
@@ -471,8 +473,6 @@ func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, 
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
-
-	ctx := req.Context()
 
 	// TODO: Store decline.
 
@@ -504,6 +504,8 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
+	ctx := req.Context()
+
 	flow := s.GetActiveFlow(w, req, params["id"])
 	if flow == nil {
 		return
@@ -531,8 +533,6 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
-
-	ctx := req.Context()
 
 	// TODO: Store chosen identity.
 
@@ -564,6 +564,8 @@ func (s *Service) AuthFlowRedirectPost(w http.ResponseWriter, req *http.Request,
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
+	ctx := req.Context()
+
 	flow := s.GetActiveFlow(w, req, params["id"])
 	if flow == nil {
 		return
@@ -594,8 +596,6 @@ func (s *Service) AuthFlowRedirectPost(w http.ResponseWriter, req *http.Request,
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
-
-	ctx := req.Context()
 
 	// It is already checked that flow.Completed is one of CompletedDeclined, CompletedIdentity, or CompletedFailed.
 	flow.OIDCRedirectReady = true

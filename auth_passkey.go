@@ -128,6 +128,8 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
+	ctx := req.Context()
+
 	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
 		return
@@ -149,7 +151,7 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 	flow.ClearAuthStep("")
 	flow.Provider = PasskeyProvider
 	flow.Passkey = session
-	errE = SetFlow(req.Context(), flow)
+	errE = SetFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -201,8 +203,15 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
+	ctx := req.Context()
+
 	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
+		return
+	}
+
+	flowPasskey := s.getFlowPasskey(w, req, flow)
+	if flowPasskey == nil {
 		return
 	}
 
@@ -217,13 +226,6 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 	}
 
 	assertionResponse := passkeyGetComplete.GetResponse
-
-	ctx := req.Context()
-
-	flowPasskey := s.getFlowPasskey(w, req, flow)
-	if flowPasskey == nil {
-		return
-	}
 
 	parsedResponse, err := assertionResponse.Parse()
 	if err != nil {
@@ -275,6 +277,8 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
+	ctx := req.Context()
+
 	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
 		return
@@ -312,7 +316,7 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 	flow.ClearAuthStep("")
 	flow.Provider = PasskeyProvider
 	flow.Passkey = session
-	errE = SetFlow(req.Context(), flow)
+	errE = SetFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -344,8 +348,15 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
+	ctx := req.Context()
+
 	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
+		return
+	}
+
+	flowPasskey := s.getFlowPasskey(w, req, flow)
+	if flowPasskey == nil {
 		return
 	}
 
@@ -366,11 +377,6 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 		s.BadRequestWithError(w, req, errors.WithStack(err))
 	}
 
-	flowPasskey := s.getFlowPasskey(w, req, flow)
-	if flowPasskey == nil {
-		return
-	}
-
 	credential, err := s.passkeyProvider().CreateCredential(&charonUser{nil}, *flowPasskey, parsedResponse)
 	if err != nil {
 		s.BadRequestWithError(w, req, withWebauthnError(err))
@@ -385,7 +391,7 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	account, errE := GetAccountByCredential(req.Context(), PasskeyProvider, credentialID)
+	account, errE := GetAccountByCredential(ctx, PasskeyProvider, credentialID)
 	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
 		return

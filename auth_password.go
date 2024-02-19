@@ -100,6 +100,8 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
+	ctx := req.Context()
+
 	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
 		return
@@ -149,7 +151,7 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 		PrivateKey: privateKey.Bytes(),
 		Nonce:      nonce,
 	}
-	errE = SetFlow(req.Context(), flow)
+	errE = SetFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -191,8 +193,15 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
+	ctx := req.Context()
+
 	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
+		return
+	}
+
+	if flow.Password == nil {
+		s.BadRequestWithError(w, req, errors.New("password not started"))
 		return
 	}
 
@@ -200,13 +209,6 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &passwordComplete)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
-		return
-	}
-
-	ctx := req.Context()
-
-	if flow.Password == nil {
-		s.BadRequestWithError(w, req, errors.New("password not started"))
 		return
 	}
 

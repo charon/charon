@@ -117,19 +117,21 @@ func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Req
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
+	ctx := req.Context()
+
 	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
 		return
 	}
 
-	var providerSTart AuthFlowProviderStartRequest
-	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &providerSTart)
+	var providerStart AuthFlowProviderStartRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &providerStart)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
-	providerName := providerSTart.Provider
+	providerName := providerStart.Provider
 
 	provider, ok := s.oidcProviders()[providerName]
 	if providerName == "" || !ok {
@@ -155,7 +157,7 @@ func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Req
 		opts = append(opts, oauth2.S256ChallengeOption(verifier))
 	}
 
-	errE = SetFlow(req.Context(), flow)
+	errE = SetFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -182,13 +184,13 @@ func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Req
 func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 
-	p := Provider(params["provider"])
+	providerName := Provider(params["provider"])
 
-	provider, ok := s.oidcProviders()[p]
-	if !ok {
+	provider, ok := s.oidcProviders()[providerName]
+	if providerName == "" || !ok {
 		errE := errors.New("unknown provider")
-		errors.Details(errE)["provider"] = params["provider"]
-		s.WithError(req.Context(), errE)
+		errors.Details(errE)["provider"] = providerName
+		s.WithError(ctx, errE)
 		s.NotFound(w, req)
 		return
 	}
@@ -263,11 +265,11 @@ func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, par
 		return
 	}
 
-	account, errE := GetAccountByCredential(ctx, p, idToken.Subject)
+	account, errE := GetAccountByCredential(ctx, providerName, idToken.Subject)
 	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	s.completeAuthStep(w, req, false, flow, account, []Credential{{ID: idToken.Subject, Provider: p, Data: jsonData}})
+	s.completeAuthStep(w, req, false, flow, account, []Credential{{ID: idToken.Subject, Provider: providerName, Data: jsonData}})
 }
