@@ -288,14 +288,8 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetFlow(w, req, params["id"])
+	flow := s.GetActiveFlow(w, req, params["id"])
 	if flow == nil {
-		return
-	}
-
-	// Has flow already completed?
-	if flow.IsCompleted() {
-		waf.Error(w, req, http.StatusGone)
 		return
 	}
 
@@ -375,14 +369,8 @@ func (s *Service) AuthFlowCodeCompletePost(w http.ResponseWriter, req *http.Requ
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetFlow(w, req, params["id"])
+	flow := s.GetActiveFlow(w, req, params["id"])
 	if flow == nil {
-		return
-	}
-
-	// Has flow already completed?
-	if flow.IsCompleted() {
-		waf.Error(w, req, http.StatusGone)
 		return
 	}
 

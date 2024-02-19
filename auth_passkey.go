@@ -128,14 +128,8 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetFlow(w, req, params["id"])
+	flow := s.GetActiveFlow(w, req, params["id"])
 	if flow == nil {
-		return
-	}
-
-	// Has flow already completed?
-	if flow.IsCompleted() {
-		waf.Error(w, req, http.StatusGone)
 		return
 	}
 
@@ -213,14 +207,8 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetFlow(w, req, params["id"])
+	flow := s.GetActiveFlow(w, req, params["id"])
 	if flow == nil {
-		return
-	}
-
-	// Has flow already completed?
-	if flow.IsCompleted() {
-		waf.Error(w, req, http.StatusGone)
 		return
 	}
 
@@ -299,14 +287,8 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetFlow(w, req, params["id"])
+	flow := s.GetActiveFlow(w, req, params["id"])
 	if flow == nil {
-		return
-	}
-
-	// Has flow already completed?
-	if flow.IsCompleted() {
-		waf.Error(w, req, http.StatusGone)
 		return
 	}
 
@@ -380,14 +362,8 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetFlow(w, req, params["id"])
+	flow := s.GetActiveFlow(w, req, params["id"])
 	if flow == nil {
-		return
-	}
-
-	// Has flow already completed?
-	if flow.IsCompleted() {
-		waf.Error(w, req, http.StatusGone)
 		return
 	}
 

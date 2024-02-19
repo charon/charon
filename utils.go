@@ -163,6 +163,21 @@ func (s *Service) GetFlow(w http.ResponseWriter, req *http.Request, value string
 	return flow
 }
 
+func (s *Service) GetActiveFlow(w http.ResponseWriter, req *http.Request, value string) *Flow {
+	flow := s.GetFlow(w, req, value)
+	if flow == nil {
+		return nil
+	}
+
+	// Has flow already completed?
+	if flow.IsCompleted() {
+		waf.Error(w, req, http.StatusGone)
+		return nil
+	}
+
+	return flow
+}
+
 func getHost(config *Config, domain string) (string, errors.E) {
 	// ListenAddr blocks until the server runs.
 	listenAddr := config.Server.ListenAddr()

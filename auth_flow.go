@@ -122,7 +122,7 @@ func (s *Service) AuthFlowGetGet(w http.ResponseWriter, req *http.Request, param
 		Password:        nil,
 	}
 
-	// Has flow already completed auth step?
+	// Has auth step already been completed?
 	if flow.Completed != "" {
 		// If auth step was successful (session is not nil), then we require that the session matches the one made by the flow.
 		if flow.Session != nil && !s.validateSession(w, req, flow) {
@@ -361,14 +361,8 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetFlow(w, req, params["id"])
+	flow := s.GetActiveFlow(w, req, params["id"])
 	if flow == nil {
-		return
-	}
-
-	// Has flow already completed?
-	if flow.IsCompleted() {
-		waf.Error(w, req, http.StatusGone)
 		return
 	}
 
@@ -376,8 +370,8 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 		s.BadRequestWithError(w, req, errors.New("not OIDC target"))
 		return
 	}
-	// Flow already successfully (session is not nil) completed auth step, but not the final redirect step
-	// for the OIDC target (we checked that flow.Completed != CompletedRedirect in flow.IsCompleted() check above).
+	// Flow already successfully (session is not nil) completed auth step, but not the final redirect step for the OIDC
+	// target (we checked that flow.Completed != CompletedRedirect in flow.IsCompleted() check in GetActiveFlow() above).
 	if flow.Completed == "" || flow.Session == nil {
 		s.BadRequestWithError(w, req, errors.New("auth step not completed"))
 		return
@@ -450,14 +444,8 @@ func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, 
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetFlow(w, req, params["id"])
+	flow := s.GetActiveFlow(w, req, params["id"])
 	if flow == nil {
-		return
-	}
-
-	// Has flow already completed?
-	if flow.IsCompleted() {
-		waf.Error(w, req, http.StatusGone)
 		return
 	}
 
@@ -465,8 +453,8 @@ func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, 
 		s.BadRequestWithError(w, req, errors.New("not OIDC target"))
 		return
 	}
-	// Flow already successfully (session is not nil) completed auth step, but not the final redirect step
-	// for the OIDC target (we checked that flow.Completed != CompletedRedirect in flow.IsCompleted() check above).
+	// Flow already successfully (session is not nil) completed auth step, but not the final redirect step for the OIDC
+	// target (we checked that flow.Completed != CompletedRedirect in flow.IsCompleted() check in GetActiveFlow() above).
 	if flow.Completed == "" || flow.Session == nil {
 		s.BadRequestWithError(w, req, errors.New("auth step not completed"))
 		return
@@ -516,14 +504,8 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetFlow(w, req, params["id"])
+	flow := s.GetActiveFlow(w, req, params["id"])
 	if flow == nil {
-		return
-	}
-
-	// Has flow already completed?
-	if flow.IsCompleted() {
-		waf.Error(w, req, http.StatusGone)
 		return
 	}
 
@@ -531,8 +513,8 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 		s.BadRequestWithError(w, req, errors.New("not OIDC target"))
 		return
 	}
-	// Flow already successfully (session is not nil) completed auth step, but not the final redirect step
-	// for the OIDC target (we checked that flow.Completed != CompletedRedirect in flow.IsCompleted() check above).
+	// Flow already successfully (session is not nil) completed auth step, but not the final redirect step for the OIDC
+	// target (we checked that flow.Completed != CompletedRedirect in flow.IsCompleted() check in GetActiveFlow() above).
 	if flow.Completed == "" || flow.Session == nil {
 		s.BadRequestWithError(w, req, errors.New("auth step not completed"))
 		return
@@ -582,14 +564,8 @@ func (s *Service) AuthFlowRedirectPost(w http.ResponseWriter, req *http.Request,
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetFlow(w, req, params["id"])
+	flow := s.GetActiveFlow(w, req, params["id"])
 	if flow == nil {
-		return
-	}
-
-	// Has flow already completed?
-	if flow.IsCompleted() {
-		waf.Error(w, req, http.StatusGone)
 		return
 	}
 
