@@ -128,14 +128,8 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
-		return
-	}
-
-	// Has auth step already been completed?
-	if flow.Completed != "" {
-		s.BadRequestWithError(w, req, errors.New("auth step already completed"))
 		return
 	}
 
@@ -207,14 +201,8 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
-		return
-	}
-
-	// Has auth step already been completed?
-	if flow.Completed != "" {
-		s.BadRequestWithError(w, req, errors.New("auth step already completed"))
 		return
 	}
 
@@ -287,14 +275,8 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
-		return
-	}
-
-	// Has auth step already been completed?
-	if flow.Completed != "" {
-		s.BadRequestWithError(w, req, errors.New("auth step already completed"))
 		return
 	}
 
@@ -362,14 +344,8 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
-		return
-	}
-
-	// Has auth step already been completed?
-	if flow.Completed != "" {
-		s.BadRequestWithError(w, req, errors.New("auth step already completed"))
 		return
 	}
 

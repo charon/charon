@@ -117,14 +117,8 @@ func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Req
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
-		return
-	}
-
-	// Has auth step already been completed?
-	if flow.Completed != "" {
-		s.BadRequestWithError(w, req, errors.New("auth step already completed"))
 		return
 	}
 
@@ -200,14 +194,8 @@ func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, par
 	}
 
 	// State should be provided even in the case of an error.
-	flow := s.GetActiveFlow(w, req, req.Form.Get("state"))
+	flow := s.GetActiveFlowNoAuthStep(w, req, req.Form.Get("state"))
 	if flow == nil {
-		return
-	}
-
-	// Has auth step already been completed?
-	if flow.Completed != "" {
-		s.BadRequestWithError(w, req, errors.New("auth step already completed"))
 		return
 	}
 

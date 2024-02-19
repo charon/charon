@@ -100,14 +100,8 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
-		return
-	}
-
-	// Has auth step already been completed?
-	if flow.Completed != "" {
-		s.BadRequestWithError(w, req, errors.New("auth step already completed"))
 		return
 	}
 
@@ -197,14 +191,8 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
-		return
-	}
-
-	// Has auth step already been completed?
-	if flow.Completed != "" {
-		s.BadRequestWithError(w, req, errors.New("auth step already completed"))
 		return
 	}
 

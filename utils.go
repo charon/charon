@@ -178,6 +178,21 @@ func (s *Service) GetActiveFlow(w http.ResponseWriter, req *http.Request, value 
 	return flow
 }
 
+func (s *Service) GetActiveFlowNoAuthStep(w http.ResponseWriter, req *http.Request, value string) *Flow {
+	flow := s.GetActiveFlow(w, req, value)
+	if flow == nil {
+		return nil
+	}
+
+	// Has auth step already been completed?
+	if flow.Completed != "" {
+		s.BadRequestWithError(w, req, errors.New("auth step already completed"))
+		return nil
+	}
+
+	return flow
+}
+
 func getHost(config *Config, domain string) (string, errors.E) {
 	// ListenAddr blocks until the server runs.
 	listenAddr := config.Server.ListenAddr()
