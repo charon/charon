@@ -13,30 +13,6 @@
       "get": false
     },
     {
-      "name": "AuthOIDCProvider",
-      "path": "/auth/provider/:provider",
-      "api": false,
-      "get": true
-    },
-    {
-      "name": "AuthSignout",
-      "path": "/auth/signout",
-      "api": true,
-      "get": false
-    },
-    {
-      "name": "AuthFlowCreate",
-      "path": "/auth/create",
-      "api": true,
-      "get": false
-    },
-    {
-      "name": "AuthFlow",
-      "path": "/auth/:id",
-      "api": true,
-      "get": true
-    },
-    {
       "name": "OIDCAuthorize",
       "path": "/auth/oidc/authorize",
       "api": false,
@@ -116,6 +92,30 @@
         "allowedMethods": ["GET", "HEAD"],
         "maxAge": 600
       }
+    },
+    {
+      "name": "AuthSignout",
+      "path": "/auth/signout",
+      "api": true,
+      "get": false
+    },
+    {
+      "name": "AuthOIDCProvider",
+      "path": "/auth/provider/:provider",
+      "api": false,
+      "get": true
+    },
+    {
+      "name": "AuthFlowCreate",
+      "path": "/auth/create",
+      "api": true,
+      "get": false
+    },
+    {
+      "name": "AuthFlow",
+      "path": "/auth/:id",
+      "api": true,
+      "get": true
     },
     {
       "name": "ApplicationTemplateList",
