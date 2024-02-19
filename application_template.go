@@ -638,7 +638,7 @@ func UpdateApplicationTemplate(ctx context.Context, applicationTemplate *Applica
 	return nil
 }
 
-func (s *Service) ApplicationTemplate(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+func (s *Service) ApplicationTemplateGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.Development != "" {
 		s.Proxy(w, req)
 	} else {
@@ -679,7 +679,7 @@ func (s *Service) returnApplicationTemplateRef(_ context.Context, w http.Respons
 	s.WriteJSON(w, req, ApplicationTemplateRef{ID: *applicationTemplate.ID}, nil)
 }
 
-func (s *Service) ApplicationTemplateGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 
 	session, errE := getSessionFromRequest(req)

@@ -104,7 +104,7 @@ async function loadData(update: "init" | "basic" | "variables" | "clientsPublic"
   mainProgress.value += 1
   try {
     const url = router.apiResolve({
-      name: "ApplicationTemplate",
+      name: "ApplicationTemplateGet",
       params: {
         id: props.id,
       },

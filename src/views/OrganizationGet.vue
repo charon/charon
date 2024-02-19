@@ -388,10 +388,10 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                   Embedded application template does not contain list of admins so we have fetch
                   the current list. But we can just check the metadata.
                 -->
-                <WithApplicationTemplateDocument :id="application.applicationTemplate.id" name="ApplicationTemplate">
+                <WithApplicationTemplateDocument :id="application.applicationTemplate.id" name="ApplicationTemplateGet">
                   <template #default="{ metadata: meta, url }">
                     <h3 class="text-lg flex flex-row items-center gap-1">
-                      <router-link :to="{ name: 'ApplicationTemplate', params: { id: application.applicationTemplate.id } }" :data-url="url" class="link">{{
+                      <router-link :to="{ name: 'ApplicationTemplateGet', params: { id: application.applicationTemplate.id } }" :data-url="url" class="link">{{
                         application.applicationTemplate.name
                       }}</router-link>
                       <span v-if="meta.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">admin</span>
@@ -503,11 +503,13 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
           <h2 v-if="metadata.can_update" class="text-xl font-bold">Available applications</h2>
           <ul v-if="metadata.can_update" class="flex flex-col gap-4">
             <li v-for="applicationTemplate in availableApplicationTemplates" :key="applicationTemplate.id" class="flex flex-col gap-4">
-              <WithApplicationTemplateDocument :id="applicationTemplate.id" name="ApplicationTemplate">
+              <WithApplicationTemplateDocument :id="applicationTemplate.id" name="ApplicationTemplateGet">
                 <template #default="{ doc, metadata: meta, url }">
                   <div class="flex flex-row justify-between items-center gap-4">
                     <h3 class="text-lg flex flex-row items-center gap-1">
-                      <router-link :to="{ name: 'ApplicationTemplate', params: { id: applicationTemplate.id } }" :data-url="url" class="link">{{ doc.name }}</router-link>
+                      <router-link :to="{ name: 'ApplicationTemplateGet', params: { id: applicationTemplate.id } }" :data-url="url" class="link">{{
+                        doc.name
+                      }}</router-link>
                       <span v-if="meta.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">admin</span>
                     </h3>
                     <Button type="button" :disabled="mainProgress > 0" primary @click.prevent="onEnableApplicationTemplate(doc)">Add</Button>

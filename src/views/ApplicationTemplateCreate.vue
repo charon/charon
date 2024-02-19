@@ -55,7 +55,7 @@ async function onSubmit() {
       return
     }
 
-    router.push({ name: "ApplicationTemplate", params: { id: applicationTemplate.id } })
+    router.push({ name: "ApplicationTemplateGet", params: { id: applicationTemplate.id } })
   } catch (error) {
     if (abortController.signal.aborted) {
       return

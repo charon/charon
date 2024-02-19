@@ -130,7 +130,7 @@
       "get": true
     },
     {
-      "name": "ApplicationTemplate",
+      "name": "ApplicationTemplateGet",
       "path": "/a/:id",
       "api": true,
       "get": true

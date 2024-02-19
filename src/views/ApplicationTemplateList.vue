@@ -71,10 +71,10 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
           There are no aplication templates. {{ me.success ? "Create the first one." : "Sign-in or sign-up to create the first one." }}
         </div>
         <div v-for="applicationTemplate of applicationTemplates" :key="applicationTemplate.id" class="w-full rounded border bg-white p-4 shadow grid grid-cols-1 gap-4">
-          <WithApplicationTemplateDocument :id="applicationTemplate.id" name="ApplicationTemplate">
+          <WithApplicationTemplateDocument :id="applicationTemplate.id" name="ApplicationTemplateGet">
             <template #default="{ doc, metadata, url }">
               <h2 class="text-xl flex flex-row items-center gap-1">
-                <router-link :to="{ name: 'ApplicationTemplate', params: { id: applicationTemplate.id } }" :data-url="url" class="link">{{ doc.name }}</router-link>
+                <router-link :to="{ name: 'ApplicationTemplateGet', params: { id: applicationTemplate.id } }" :data-url="url" class="link">{{ doc.name }}</router-link>
                 <span v-if="metadata.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">admin</span>
               </h2>
             </template>
