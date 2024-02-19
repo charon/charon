@@ -19,6 +19,8 @@ const (
 	MaxAuthAttempts = 10
 )
 
+type emptyRequest struct{}
+
 type AuthFlowRequest struct {
 	Step     string                   `json:"step"`
 	Provider Provider                 `json:"provider,omitempty"`
@@ -396,6 +398,13 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
+	var ea emptyRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &ea)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
 	ctx := req.Context()
 
 	flow.Session = nil
@@ -411,7 +420,7 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 	// attempts. We want them to fail the whole flow and to have to restart it (it is easier
 	// to count failed flows and detect attacks this way).
 
-	errE := SetFlow(ctx, flow)
+	errE = SetFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -478,6 +487,13 @@ func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, 
 		return
 	}
 
+	var ea emptyRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &ea)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
 	ctx := req.Context()
 
 	// TODO: Store decline.
@@ -485,7 +501,7 @@ func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, 
 	flow.Completed = CompletedDeclined
 	flow.OIDCRedirectReady = false
 
-	errE := SetFlow(ctx, flow)
+	errE = SetFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -537,6 +553,13 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 		return
 	}
 
+	var ea emptyRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &ea)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
 	ctx := req.Context()
 
 	// TODO: Store chosen identity.
@@ -544,7 +567,7 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 	flow.Completed = CompletedIdentity
 	flow.OIDCRedirectReady = false
 
-	errE := SetFlow(ctx, flow)
+	errE = SetFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -599,12 +622,19 @@ func (s *Service) AuthFlowRedirectPost(w http.ResponseWriter, req *http.Request,
 		return
 	}
 
+	var ea emptyRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &ea)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
 	ctx := req.Context()
 
 	// It is already checked that flow.Completed is one of CompletedDeclined, CompletedIdentity, or CompletedFailed.
 	flow.OIDCRedirectReady = true
 
-	errE := SetFlow(ctx, flow)
+	errE = SetFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return

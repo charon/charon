@@ -150,6 +150,13 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 		return
 	}
 
+	var ea emptyRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &ea)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
 	options, session, err := s.passkeyProvider().BeginDiscoverableLogin()
 	if err != nil {
 		s.InternalServerErrorWithError(w, req, withWebauthnError(err))
@@ -159,7 +166,7 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 	flow.ClearAuthStep("")
 	flow.Provider = PasskeyProvider
 	flow.Passkey = session
-	errE := SetFlow(req.Context(), flow)
+	errE = SetFlow(req.Context(), flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -308,6 +315,13 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 		return
 	}
 
+	var ea emptyRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &ea)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
 	options, session, err := s.passkeyProvider().BeginRegistration(
 		&charonUser{nil},
 		webauthn.WithExtensions(protocol.AuthenticationExtensions{
@@ -333,7 +347,7 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 	flow.ClearAuthStep("")
 	flow.Provider = PasskeyProvider
 	flow.Passkey = session
-	errE := SetFlow(req.Context(), flow)
+	errE = SetFlow(req.Context(), flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
