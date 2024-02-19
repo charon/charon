@@ -19,11 +19,6 @@ import (
 
 const PasskeyProvider Provider = "passkey"
 
-type AuthFlowRequestPasskey struct {
-	CreateResponse *protocol.CredentialCreationResponse  `json:"createResponse,omitempty"`
-	GetResponse    *protocol.CredentialAssertionResponse `json:"getResponse,omitempty"`
-}
-
 type AuthFlowResponsePasskey struct {
 	CreateOptions *protocol.CredentialCreation  `json:"createOptions,omitempty"`
 	GetOptions    *protocol.CredentialAssertion `json:"getOptions,omitempty"`
@@ -210,6 +205,10 @@ func (s *Service) getFlowPasskey(w http.ResponseWriter, req *http.Request, flow 
 	return flowPasskey
 }
 
+type AuthFlowPasskeyGetCompleteRequest struct {
+	GetResponse protocol.CredentialAssertionResponse `json:"getResponse"`
+}
+
 func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
@@ -231,15 +230,14 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		return
 	}
 
-	var authFlowRequest AuthFlowRequest
-	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &authFlowRequest)
+	var passkeyGetComplete AuthFlowPasskeyGetCompleteRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &passkeyGetComplete)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
-	// TODO: Check nil.
-	assertionResponse := authFlowRequest.Passkey.GetResponse
+	assertionResponse := passkeyGetComplete.GetResponse
 
 	ctx := req.Context()
 
@@ -371,6 +369,10 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 	}, nil)
 }
 
+type AuthFlowPasskeyCreateCompleteRequest struct {
+	CreateResponse protocol.CredentialCreationResponse `json:"createResponse"`
+}
+
 func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
@@ -392,15 +394,14 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	var authFlowRequest AuthFlowRequest
-	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &authFlowRequest)
+	var passkeyCreateComplete AuthFlowPasskeyCreateCompleteRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &passkeyCreateComplete)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
-	// TODO: Check nil.
-	createResponse := authFlowRequest.Passkey.CreateResponse
+	createResponse := passkeyCreateComplete.CreateResponse
 
 	parsedResponse, err := createResponse.Parse()
 	if err != nil {

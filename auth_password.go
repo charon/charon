@@ -47,20 +47,6 @@ const (
 	UsernameProvider = "username"
 )
 
-type AuthFlowRequestPasswordStart struct {
-	EmailOrUsername string `json:"emailOrUsername"`
-}
-
-type AuthFlowRequestPasswordComplete struct {
-	PublicKey []byte `json:"publicKey"`
-	Password  []byte `json:"password"`
-}
-
-type AuthFlowRequestPassword struct {
-	Start    *AuthFlowRequestPasswordStart    `json:"start,omitempty"`
-	Complete *AuthFlowRequestPasswordComplete `json:"complete,omitempty"`
-}
-
 type AuthFlowResponsePasswordDeriveOptions struct {
 	Name       string `json:"name"`
 	NamedCurve string `json:"namedCurve"`
@@ -106,6 +92,10 @@ func (s *Service) normalizeEmailOrUsername(w http.ResponseWriter, req *http.Requ
 	return preservedEmailOrUsername
 }
 
+type AuthFlowPasswordStartRequest struct {
+	EmailOrUsername string `json:"emailOrUsername"`
+}
+
 func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
@@ -127,15 +117,12 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	var authFlowRequest AuthFlowRequest
-	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &authFlowRequest)
+	var passwordStart AuthFlowPasswordStartRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &passwordStart)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
-
-	// TODO: Check nil.
-	passwordStart := authFlowRequest.Password.Start
 
 	preservedEmailOrUsername := s.normalizeEmailOrUsername(w, req, flow, passwordStart.EmailOrUsername)
 	if preservedEmailOrUsername == "" {
@@ -207,6 +194,11 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 	}, nil)
 }
 
+type AuthFlowPasswordCompleteRequest struct {
+	PublicKey []byte `json:"publicKey"`
+	Password  []byte `json:"password"`
+}
+
 func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:maintidx
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
@@ -228,15 +220,12 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 		return
 	}
 
-	var authFlowRequest AuthFlowRequest
-	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &authFlowRequest)
+	var passwordComplete AuthFlowPasswordCompleteRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &passwordComplete)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
-
-	// TODO: Check nil.
-	passwordComplete := authFlowRequest.Password.Complete
 
 	ctx := req.Context()
 

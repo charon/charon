@@ -61,6 +61,8 @@ var (
 	)
 )
 
+type emptyRequest struct{}
+
 func getSessionFromRequest(req *http.Request) (*Session, errors.E) {
 	cookie, err := req.Cookie(SessionCookieName)
 	if errors.Is(err, http.ErrNoCookie) {

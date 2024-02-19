@@ -109,6 +109,10 @@ func initOIDCProviders(config *Config, service *Service, domain string, provider
 	}
 }
 
+type AuthFlowProviderStartRequest struct {
+	Provider Provider `json:"provider"`
+}
+
 func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
@@ -130,14 +134,14 @@ func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	var authFlowRequest AuthFlowRequest
-	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &authFlowRequest)
+	var providerSTart AuthFlowProviderStartRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &providerSTart)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
-	providerName := authFlowRequest.Provider
+	providerName := providerSTart.Provider
 
 	provider, ok := s.oidcProviders()[providerName]
 	if providerName == "" || !ok {

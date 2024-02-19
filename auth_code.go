@@ -31,19 +31,6 @@ You can also open:
 `
 )
 
-type AuthFlowRequestCodeStart struct {
-	EmailOrUsername string `json:"emailOrUsername"`
-}
-
-type AuthFlowRequestCodeComplete struct {
-	Code string `json:"code"`
-}
-
-type AuthFlowRequestCode struct {
-	Start    *AuthFlowRequestCodeStart    `json:"start,omitempty"`
-	Complete *AuthFlowRequestCodeComplete `json:"complete,omitempty"`
-}
-
 type codeProvider struct {
 	origin string
 }
@@ -293,6 +280,10 @@ func (s *Service) sendCode(
 	}, nil)
 }
 
+type AuthFlowCodeStartRequest struct {
+	EmailOrUsername string `json:"emailOrUsername"`
+}
+
 func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
@@ -314,15 +305,12 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	var authFlowRequest AuthFlowRequest
-	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &authFlowRequest)
+	var codeStart AuthFlowCodeStartRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &codeStart)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
-
-	// TODO: Check nil.
-	codeStart := authFlowRequest.Code.Start
 
 	ctx := req.Context()
 
@@ -379,6 +367,10 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 	s.sendCode(w, req, flow, preservedEmailOrUsername, []string{preservedEmailOrUsername}, nil, credentials)
 }
 
+type AuthFlowCodeCompleteRequest struct {
+	Code string `json:"code"`
+}
+
 func (s *Service) AuthFlowCodeCompletePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
@@ -400,15 +392,12 @@ func (s *Service) AuthFlowCodeCompletePost(w http.ResponseWriter, req *http.Requ
 		return
 	}
 
-	var authFlowRequest AuthFlowRequest
-	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &authFlowRequest)
+	var codeComplete AuthFlowCodeCompleteRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &codeComplete)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
-
-	// TODO: Check nil.
-	codeComplete := authFlowRequest.Code.Complete
 
 	ctx := req.Context()
 

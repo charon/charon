@@ -19,16 +19,6 @@ const (
 	MaxAuthAttempts = 10
 )
 
-type emptyRequest struct{}
-
-type AuthFlowRequest struct {
-	Step     string                   `json:"step"`
-	Provider Provider                 `json:"provider,omitempty"`
-	Passkey  *AuthFlowRequestPasskey  `json:"passkey,omitempty"`
-	Password *AuthFlowRequestPassword `json:"password,omitempty"`
-	Code     *AuthFlowRequestCode     `json:"code,omitempty"`
-}
-
 type AuthFlowResponseLocation struct {
 	URL     string `json:"url"`
 	Replace bool   `json:"replace"`
