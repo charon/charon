@@ -363,24 +363,8 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 
 	ctx := req.Context()
 
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.GetActiveFlowOIDCTarget(w, req, params["id"])
 	if flow == nil {
-		return
-	}
-
-	if flow.Target != TargetOIDC {
-		s.BadRequestWithError(w, req, errors.New("not OIDC target"))
-		return
-	}
-	// Flow already successfully (session is not nil) completed auth step, but not the final redirect step for the OIDC
-	// target (we checked that flow.Completed != CompletedRedirect in flow.IsCompleted() check in GetActiveFlow() above).
-	if flow.Completed == "" || flow.Session == nil {
-		s.BadRequestWithError(w, req, errors.New("auth step not completed"))
-		return
-	}
-
-	// Current session should match the session in the flow.
-	if !s.validateSession(w, req, flow) {
 		return
 	}
 
@@ -446,24 +430,8 @@ func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, 
 
 	ctx := req.Context()
 
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.GetActiveFlowOIDCTarget(w, req, params["id"])
 	if flow == nil {
-		return
-	}
-
-	if flow.Target != TargetOIDC {
-		s.BadRequestWithError(w, req, errors.New("not OIDC target"))
-		return
-	}
-	// Flow already successfully (session is not nil) completed auth step, but not the final redirect step for the OIDC
-	// target (we checked that flow.Completed != CompletedRedirect in flow.IsCompleted() check in GetActiveFlow() above).
-	if flow.Completed == "" || flow.Session == nil {
-		s.BadRequestWithError(w, req, errors.New("auth step not completed"))
-		return
-	}
-
-	// Current session should match the session in the flow.
-	if !s.validateSession(w, req, flow) {
 		return
 	}
 
@@ -506,24 +474,8 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 
 	ctx := req.Context()
 
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.GetActiveFlowOIDCTarget(w, req, params["id"])
 	if flow == nil {
-		return
-	}
-
-	if flow.Target != TargetOIDC {
-		s.BadRequestWithError(w, req, errors.New("not OIDC target"))
-		return
-	}
-	// Flow already successfully (session is not nil) completed auth step, but not the final redirect step for the OIDC
-	// target (we checked that flow.Completed != CompletedRedirect in flow.IsCompleted() check in GetActiveFlow() above).
-	if flow.Completed == "" || flow.Session == nil {
-		s.BadRequestWithError(w, req, errors.New("auth step not completed"))
-		return
-	}
-
-	// Current session should match the session in the flow.
-	if !s.validateSession(w, req, flow) {
 		return
 	}
 

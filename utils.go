@@ -193,6 +193,31 @@ func (s *Service) GetActiveFlowNoAuthStep(w http.ResponseWriter, req *http.Reque
 	return flow
 }
 
+func (s *Service) GetActiveFlowOIDCTarget(w http.ResponseWriter, req *http.Request, value string) *Flow {
+	flow := s.GetActiveFlow(w, req, value)
+	if flow == nil {
+		return nil
+	}
+
+	if flow.Target != TargetOIDC {
+		s.BadRequestWithError(w, req, errors.New("not OIDC target"))
+		return nil
+	}
+	// Flow already successfully (session is not nil) completed auth step, but not the final redirect step for the OIDC
+	// target (we checked that flow.Completed != CompletedRedirect in flow.IsCompleted() check in GetActiveFlow() above).
+	if flow.Completed == "" || flow.Session == nil {
+		s.BadRequestWithError(w, req, errors.New("auth step not completed"))
+		return nil
+	}
+
+	// Current session should match the session in the flow.
+	if !s.validateSession(w, req, flow) {
+		return nil
+	}
+
+	return flow
+}
+
 func getHost(config *Config, domain string) (string, errors.E) {
 	// ListenAddr blocks until the server runs.
 	listenAddr := config.Server.ListenAddr()
