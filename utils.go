@@ -256,7 +256,9 @@ func initWithHost[T any](config *Config, domain string, init func(string) T) (fu
 
 	_, port, err := net.SplitHostPort(config.Server.Addr)
 	if err != nil {
-		return nil, errors.WithMessage(err, "server address")
+		errE := errors.WithMessage(err, "server address")
+		errors.Details(errE)["address"] = config.Server.Addr
+		return nil, errE
 	} else if port == "" {
 		return nil, errors.New("server address: port empty")
 	}
