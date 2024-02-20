@@ -22,7 +22,7 @@ build: dist
 build-static: dist
 	go build -trimpath -ldflags "-s -w -linkmode external -extldflags '-static' -X gitlab.com/tozd/go/cli.Version=${VERSION} -X gitlab.com/tozd/go/cli.BuildTimestamp=${BUILD_TIMESTAMP} -X gitlab.com/tozd/go/cli.Revision=${REVISION}" -o charon gitlab.com/charon/charon/cmd/charon
 
-dist: node_modules
+dist: node_modules vite.config.ts tsconfig.json tsconfig.node.json tailwind.config.js
 	npm run build
 
 node_modules:
