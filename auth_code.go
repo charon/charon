@@ -43,20 +43,12 @@ func (p *codeProvider) URL(s *Service, flow *Flow, code string) (string, errors.
 	return fmt.Sprintf("%s%s#code=%s", p.origin, path, code), nil
 }
 
-func initCodeProvider(config *Config, domain string) func() *codeProvider {
-	return func() *codeProvider {
-		host, errE := getHost(config, domain)
-		if errE != nil {
-			panic(errE)
-		}
-		if host == "" {
-			// Server failed to start. We just return in this case.
-			return nil
-		}
+func initCodeProvider(config *Config, domain string) (func() *codeProvider, errors.E) {
+	return initWithHost(config, domain, func(host string) *codeProvider {
 		return &codeProvider{
 			origin: fmt.Sprintf("https://%s", host),
 		}
-	}
+	})
 }
 
 var codeProviderTemplate = tt.Must(tt.New("CodeProviderTemplate").Parse(CodeProviderTemplate)) //nolint:gochecknoglobals

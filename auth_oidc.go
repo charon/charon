@@ -25,17 +25,8 @@ type oidcProvider struct {
 	SupportsPKCE bool
 }
 
-func initOIDCProviders(config *Config, service *Service, domain string, providers []SiteProvider) func() map[Provider]oidcProvider {
-	return func() map[Provider]oidcProvider {
-		host, errE := getHost(config, domain)
-		if errE != nil {
-			panic(errE)
-		}
-		if host == "" {
-			// Server failed to start. We just return in this case.
-			return nil
-		}
-
+func initOIDCProviders(config *Config, service *Service, domain string, providers []SiteProvider) (func() map[Provider]oidcProvider, errors.E) {
+	return initWithHost(config, domain, func(host string) map[Provider]oidcProvider {
 		oidcProviders := map[Provider]oidcProvider{}
 		for _, p := range providers {
 			config.Logger.Debug().Msgf("enabling %s provider", p.Name)
@@ -106,7 +97,7 @@ func initOIDCProviders(config *Config, service *Service, domain string, provider
 			}
 		}
 		return oidcProviders
-	}
+	})
 }
 
 type AuthFlowProviderStartRequest struct {

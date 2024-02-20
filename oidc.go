@@ -53,17 +53,8 @@ func (argon2idHasher) Hash(_ context.Context, data []byte) ([]byte, error) {
 	return []byte(hashedPassword), nil
 }
 
-func initOIDC(config *Config, service *Service, domain string, secret []byte) func() *fosite.Fosite {
-	return func() *fosite.Fosite {
-		host, errE := getHost(config, domain)
-		if errE != nil {
-			panic(errE)
-		}
-		if host == "" {
-			// Server failed to start. We just return in this case.
-			return nil
-		}
-
+func initOIDC(config *Config, service *Service, domain string, secret []byte) (func() *fosite.Fosite, errors.E) {
+	return initWithHost(config, domain, func(host string) *fosite.Fosite {
 		tokenPath, errE := service.ReverseAPI("OIDCToken", nil, nil)
 		if errE != nil {
 			panic(errE)
@@ -133,7 +124,7 @@ func initOIDC(config *Config, service *Service, domain string, secret []byte) fu
 			compose.OAuth2PKCEFactory,
 			compose.PushedAuthorizeHandlerFactory,
 		).(*fosite.Fosite)
-	}
+	})
 }
 
 // sanitizeAuthorizeRequest sanitizes the authorization request so that it does not contain any sensitive

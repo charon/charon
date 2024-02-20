@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/go-jose/go-jose/v3"
 	"gitlab.com/tozd/go/errors"
@@ -229,11 +230,49 @@ func getHost(config *Config, domain string) (string, errors.E) {
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
+	if port == "" {
+		return "", errors.New("port empty")
+	}
 	host := domain
 	if port != "443" {
 		host = net.JoinHostPort(host, port)
 	}
 	return host, nil
+}
+
+func initWithHost[T any](config *Config, domain string, init func(string) T) (func() T, errors.E) {
+	_, port, err := net.SplitHostPort(config.Server.Addr)
+	if err != nil {
+		return nil, errors.WithMessage(err, "server address")
+	} else if port == "" {
+		return nil, errors.New("server address: port empty")
+	}
+
+	// The common case: port is known in advance.
+	if port != "0" {
+		host := domain
+		if port != "443" {
+			host = net.JoinHostPort(host, port)
+		}
+		value := init(host)
+		return func() T {
+			return value
+		}, nil
+	}
+
+	return sync.OnceValue[T](func() T {
+		// This blocks until the server runs.
+		host, errE := getHost(config, domain)
+		if errE != nil {
+			panic(errE)
+		}
+		if host == "" {
+			// Server failed to start. We just return in this case.
+			return *new(T)
+		}
+
+		return init(host)
+	}), nil
 }
 
 func hasConnectionUpgrade(req *http.Request) bool {

@@ -86,16 +86,8 @@ func WithPreferredCredentialAlgorithms(preferredAlgorithms []webauthncose.COSEAl
 	}
 }
 
-func initPasskeyProvider(config *Config, domain string) func() *webauthn.WebAuthn {
-	return func() *webauthn.WebAuthn {
-		host, errE := getHost(config, domain)
-		if errE != nil {
-			panic(errE)
-		}
-		if host == "" {
-			// Server failed to start. We just return in this case.
-			return nil
-		}
+func initPasskeyProvider(config *Config, domain string) (func() *webauthn.WebAuthn, errors.E) {
+	return initWithHost(config, domain, func(host string) *webauthn.WebAuthn {
 		origin := fmt.Sprintf("https://%s", host)
 		wconfig := &webauthn.Config{ //nolint:exhaustruct
 			RPDisplayName:         "Charon",
@@ -121,7 +113,7 @@ func initPasskeyProvider(config *Config, domain string) func() *webauthn.WebAuth
 			panic(withWebauthnError(err))
 		}
 		return webAuthn
-	}
+	})
 }
 
 func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {

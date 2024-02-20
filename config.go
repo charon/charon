@@ -11,7 +11,6 @@ import (
 	"os/signal"
 	"slices"
 	"strings"
-	"sync"
 	"syscall"
 
 	"github.com/alecthomas/kong"
@@ -361,24 +360,33 @@ func (config *Config) Run() errors.E { //nolint:maintidx
 		service.Middleware = append(service.Middleware, service.RedirectToMainSite(domain))
 	}
 
-	// TODO: Do not use sync.OnceValue (but just a function getter) if port is known in advance.
-	//       The reason why we have sync.OnceValue here is that if config.Serve.Addr is configured with port 0 we do not know until
-	//       the server starts to which port the server is bound. But that configuration should be rare (primarily used only in tests).
-
-	service.oidc = sync.OnceValue(initOIDC(config, service, domain, secret))
-
-	service.oidcProviders = sync.OnceValue(initOIDCProviders(config, service, domain, providers))
-	service.passkeyProvider = sync.OnceValue(initPasskeyProvider(config, domain))
-	service.codeProvider = sync.OnceValue(initCodeProvider(config, domain))
-
 	// Construct the main handler for the service using the router.
 	handler, errE := service.RouteWith(service, new(waf.Router))
 	if errE != nil {
 		return errE
 	}
 
-	// We start initialization of OIDC and providers.
-	// Initialization will block until the server runs.
+	// We prepare initialization of OIDC and providers and in the common case
+	// (when server's bind port is not 0) immediately do the initialization.
+	service.oidc, errE = initOIDC(config, service, domain, secret)
+	if errE != nil {
+		return errE
+	}
+	service.oidcProviders, errE = initOIDCProviders(config, service, domain, providers)
+	if errE != nil {
+		return errE
+	}
+	service.passkeyProvider, errE = initPasskeyProvider(config, domain)
+	if errE != nil {
+		return errE
+	}
+	service.codeProvider, errE = initCodeProvider(config, domain)
+	if errE != nil {
+		return errE
+	}
+
+	// In the case when server's bind port is 0, we access values once to start
+	// delayed initialization (initialization will block until the server runs).
 	go service.oidc()
 	go service.oidcProviders()
 	go service.passkeyProvider()
