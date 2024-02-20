@@ -29,5 +29,8 @@ export default defineConfig({
       all: true,
     },
   },
+  esbuild: {
+    legalComments: "none",
+  },
   assetsInclude: ["**/argon2id/dist/*.wasm"],
 })
