@@ -17,6 +17,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -241,6 +242,18 @@ func getHost(config *Config, domain string) (string, errors.E) {
 }
 
 func initWithHost[T any](config *Config, domain string, init func(string) T) (func() T, errors.E) {
+	// Port is explicitly provided.
+	if config.ExternalPort != 0 {
+		host := domain
+		if config.ExternalPort != 443 { //nolint:gomnd
+			host = net.JoinHostPort(host, strconv.Itoa(config.ExternalPort))
+		}
+		value := init(host)
+		return func() T {
+			return value
+		}, nil
+	}
+
 	_, port, err := net.SplitHostPort(config.Server.Addr)
 	if err != nil {
 		return nil, errors.WithMessage(err, "server address")

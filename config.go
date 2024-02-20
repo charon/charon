@@ -151,8 +151,9 @@ type Config struct {
 	Config  cli.ConfigFlag    `         help:"Load configuration from a JSON or YAML file." name:"config" placeholder:"PATH" short:"c" yaml:"-"`
 	Server  waf.Server[*Site] `embed:""                                                                                                yaml:",inline"`
 
-	Domains    []string `help:"Domain name(s) to use. If not provided, they are determined from domain names found in TLS certificates." name:"domain" placeholder:"STRING" short:"D" yaml:"domains"`
-	MainDomain string   `help:"When using multiple domains, which one is the main one."                                                                                               yaml:"mainDomain"`
+	Domains      []string `help:"Domain name(s) to use. If not provided, they are determined from domain names found in TLS certificates." name:"domain" placeholder:"STRING" short:"D" yaml:"domains"`
+	MainDomain   string   `help:"When using multiple domains, which one is the main one."                                                                                               yaml:"mainDomain"`
+	ExternalPort int      `help:"Port on which Charon is accessible when it is different from the port on which the program listens."                    placeholder:"INT"              yaml:"externalPort"`
 
 	Providers Providers `embed:"" group:"Providers:" yaml:"providers"`
 
