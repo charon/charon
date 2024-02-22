@@ -61,7 +61,7 @@ func (s *Service) sendMail(ctx context.Context, flow *Flow, emails []string, sub
 		}
 		defer s.mailClient.Close()
 
-		// We loop over all e-mails ourselves to know if sending failed.
+		// We loop over all e-mails ourselves to know if sending failed and to have better errors structure.
 		// See: https://github.com/wneessen/go-mail/issues/166
 		errs := []error{}
 		for _, m := range ms {
