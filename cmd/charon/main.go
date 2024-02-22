@@ -26,5 +26,7 @@ func main() {
 		"mailAuthTypes":   strings.Join(mailAuthTypes, ","),
 	}, func(ctx *kong.Context) errors.E {
 		return errors.WithStack(ctx.Run())
+	}, kong.Groups{
+		"OIDC:": "OIDC:\nPrivate keys for signing tokens should be in JWK format. Only keys in JWKs are used, other fields are ignored.",
 	})
 }
