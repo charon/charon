@@ -9,16 +9,16 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/wneessen/go-mail"
+	"github.com/wneessen/go-mail/log"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 )
 
-var MailAuthTypes = map[string]mail.SMTPAuthType{ //nolint:gochecknoglobals
-	"none": "",
-}
+var MailAuthTypes = map[string]mail.SMTPAuthType{} //nolint:gochecknoglobals
 
 func init() { //nolint:gochecknoinits
+	MailAuthTypes["none"] = mail.SMTPAuthNoAuth
 	for _, a := range []mail.SMTPAuthType{mail.SMTPAuthLogin, mail.SMTPAuthPlain, mail.SMTPAuthCramMD5, mail.SMTPAuthXOAUTH2} {
 		MailAuthTypes[strings.ToLower(string(a))] = a
 	}
@@ -96,18 +96,26 @@ type loggerAdapter struct {
 	Logger zerolog.Logger
 }
 
-func (l loggerAdapter) Debugf(format string, v ...interface{}) {
-	l.Logger.Debug().Msgf(format, v...)
+func (l loggerAdapter) direction(entry log.Log) string {
+	p := "client"
+	if entry.Direction == log.DirClientToServer {
+		p = "server"
+	}
+	return p
 }
 
-func (l loggerAdapter) Errorf(format string, v ...interface{}) {
-	l.Logger.Error().Msgf(format, v...)
+func (l loggerAdapter) Debugf(entry log.Log) {
+	l.Logger.Debug().Str("to", l.direction(entry)).Msgf(entry.Format, entry.Messages...)
 }
 
-func (l loggerAdapter) Infof(format string, v ...interface{}) {
-	l.Logger.Info().Msgf(format, v...)
+func (l loggerAdapter) Errorf(entry log.Log) {
+	l.Logger.Error().Str("to", l.direction(entry)).Msgf(entry.Format, entry.Messages...)
 }
 
-func (l loggerAdapter) Warnf(format string, v ...interface{}) {
-	l.Logger.Warn().Msgf(format, v...)
+func (l loggerAdapter) Infof(entry log.Log) {
+	l.Logger.Info().Str("to", l.direction(entry)).Msgf(entry.Format, entry.Messages...)
+}
+
+func (l loggerAdapter) Warnf(entry log.Log) {
+	l.Logger.Warn().Str("to", l.direction(entry)).Msgf(entry.Format, entry.Messages...)
 }
