@@ -22,6 +22,7 @@ func main() {
 		"defaultProxyTo":  charon.DefaultProxyTo,
 		"defaultTLSCache": charon.DefaultTLSCache,
 		"defaultMailAuth": "none",
+		"defaultMailFrom": "noreply@example.com",
 		"mailAuthTypes":   strings.Join(mailAuthTypes, ","),
 	}, func(ctx *kong.Context) errors.E {
 		return errors.WithStack(ctx.Run())

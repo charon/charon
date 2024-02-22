@@ -1,6 +1,7 @@
 package charon
 
 import (
+	"bytes"
 	"context"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -40,8 +41,8 @@ var routesConfiguration []byte
 var files embed.FS
 
 type OIDCProvider struct {
-	ClientID string `env:"CLIENT_ID" help:"${provider}'s client ID. Environment variable: ${env}." yaml:"clientId"`
-	Secret   string `env:"SECRET"    help:"${provider}'s secret. Environment variable: ${env}."    yaml:"secret"`
+	ClientID string               `                  help:"${provider}'s client ID."                                                                yaml:"clientId"`
+	Secret   kong.FileContentFlag `env:"SECRET_PATH" help:"File with ${provider}'s client secret. Environment variable: ${env}." placeholder:"PATH" yaml:"secret"`
 }
 
 // TODO: Add Kong validator to OIDCProvider to validate that or both or none fields are set.
@@ -54,19 +55,19 @@ type Providers struct {
 
 //nolint:lll
 type Mail struct {
-	Host     string `                                                                    help:"Host to send e-mails to. If not set, e-mails are logged instead."                                                      yaml:"host"`
-	Port     int    `default:"25"                                                        help:"Port to send e-mails to. Default: ${default}."                                        placeholder:"INT"                yaml:"port"`
-	Username string `                                                                    help:"Username to use to send e-mails."                                                                                      yaml:"username"`
-	Password string `                                                     env:"PASSWORD" help:"Password to use to send e-mails. Environment variable: ${env}."                                                        yaml:"password"`
-	Auth     string `default:"${defaultMailAuth}" enum:"${mailAuthTypes}"                help:"Authentication type to use. Possible: ${mailAuthTypes}. Default: ${defaultMailAuth}." placeholder:"STRING"             yaml:"auth"`
-	From     string `                                                                    help:"From header for e-mails."                                                             placeholder:"EMAIL"  required:"" yaml:"from"`
+	Host     string               `                                                                         help:"Host to send e-mails to. If not set, e-mails are logged instead."                                          yaml:"host"`
+	Port     int                  `default:"25"                                                             help:"Port to send e-mails to. Default: ${default}."                                        placeholder:"INT"    yaml:"port"`
+	Username string               `                                                                         help:"Username to use to send e-mails."                                                                          yaml:"username"`
+	Password kong.FileContentFlag `                                                     env:"PASSWORD_PATH" help:"File with password to use to send e-mails. Environment variable: ${env}."             placeholder:"PATH"   yaml:"password"`
+	Auth     string               `default:"${defaultMailAuth}" enum:"${mailAuthTypes}"                     help:"Authentication type to use. Possible: ${mailAuthTypes}. Default: ${defaultMailAuth}." placeholder:"STRING" yaml:"auth"`
+	From     string               `default:"${defaultMailFrom}"                                             help:"From header for e-mails. Default: ${defaultMailFrom}."                                placeholder:"EMAIL"  yaml:"from"`
 }
 
 type Keys struct {
-	RSA  string `env:"RSA"  help:"RSA private key. Environment variable: ${env}."               placeholder:"JWK" yaml:"rsa"`
-	P256 string `env:"P256" help:"P-256 private key. Environment variable: ${env}." name:"p256" placeholder:"JWK" yaml:"p256"`
-	P384 string `env:"P384" help:"P-384 private key. Environment variable: ${env}." name:"p384" placeholder:"JWK" yaml:"p384"`
-	P521 string `env:"P521" help:"P-521 private key. Environment variable: ${env}." name:"p521" placeholder:"JWK" yaml:"p521"`
+	RSA  kong.FileContentFlag `env:"RSA_PATH"  help:"File with RSA private key. Environment variable: ${env}."               placeholder:"PATH" yaml:"rsa"`
+	P256 kong.FileContentFlag `env:"P256_PATH" help:"File with P-256 private key. Environment variable: ${env}." name:"p256" placeholder:"PATH" yaml:"p256"`
+	P384 kong.FileContentFlag `env:"P384_PATH" help:"File with P-384 private key. Environment variable: ${env}." name:"p384" placeholder:"PATH" yaml:"p384"`
+	P521 kong.FileContentFlag `env:"P521_PATH" help:"File with P-521 private key. Environment variable: ${env}." name:"p521" placeholder:"PATH" yaml:"p521"`
 
 	rsa  *jose.JSONWebKey
 	p256 *jose.JSONWebKey
@@ -75,7 +76,7 @@ type Keys struct {
 }
 
 func (k *Keys) Init(development bool) errors.E {
-	if k.RSA != "" {
+	if k.RSA != nil {
 		key, errE := makeRSAKey(k.RSA)
 		if errE != nil {
 			return errors.WithMessage(errE, "invalid RSA private key")
@@ -91,7 +92,7 @@ func (k *Keys) Init(development bool) errors.E {
 		return errors.New("OIDC RSA private key not provided")
 	}
 
-	if k.P256 != "" {
+	if k.P256 != nil {
 		key, errE := makeEllipticKey(k.P256, elliptic.P256(), "ES256")
 		if errE != nil {
 			return errors.WithMessage(errE, "invalid P256 private key")
@@ -105,7 +106,7 @@ func (k *Keys) Init(development bool) errors.E {
 		k.p256 = key
 	}
 
-	if k.P384 != "" {
+	if k.P384 != nil {
 		key, errE := makeEllipticKey(k.P384, elliptic.P384(), "ES384")
 		if errE != nil {
 			return errors.WithMessage(errE, "invalid P384 private key")
@@ -119,7 +120,7 @@ func (k *Keys) Init(development bool) errors.E {
 		k.p384 = key
 	}
 
-	if k.P521 != "" {
+	if k.P521 != nil {
 		key, errE := makeEllipticKey(k.P521, elliptic.P521(), "ES512")
 		if errE != nil {
 			return errors.WithMessage(errE, "invalid P521 private key")
@@ -138,9 +139,9 @@ func (k *Keys) Init(development bool) errors.E {
 
 //nolint:lll
 type OIDC struct {
-	Development bool   `                                        help:"Run OIDC in development mode: send debug messages to clients, generate secret and key if not provided. LEAKS SENSITIVE INFORMATION!"                                     short:"O" yaml:"development"`
-	Secret      string `         env:"SECRET"                   help:"Base64 (URL encoding, no padding) encoded 32 bytes with \"chs-\" prefix used for tokens' HMAC. Environment variable: ${env}."        placeholder:"BASE64"                          yaml:"secret"`
-	Keys        Keys   `embed:""              envprefix:"KEYS_" help:"Private keys in JWK format for signing tokens. Only keys in JWKs are used, other fields are ignored."                                                     prefix:"keys."           yaml:"keys"`
+	Development bool                 `                                             help:"Run OIDC in development mode: send debug messages to clients, generate secret and keys if not provided. LEAKS SENSITIVE INFORMATION!"                                     short:"O" yaml:"development"`
+	Secret      kong.FileContentFlag `         env:"SECRET_PATH"                   help:"File with base64 (URL encoding, no padding) encoded 32 bytes with \"chs-\" prefix used for tokens' HMAC. Environment variable: ${env}." placeholder:"PATH"                          yaml:"secret"`
+	Keys        Keys                 `embed:""                   envprefix:"KEYS_"                                                                                                                                                                  prefix:"keys."           yaml:"keys"`
 }
 
 //nolint:lll
@@ -157,9 +158,9 @@ type Config struct {
 
 	Providers Providers `embed:"" group:"Providers:" yaml:"providers"`
 
-	Mail Mail `embed:"" envprefix:"MAIL_" group:"Mail" prefix:"mail." yaml:"mail"`
+	Mail Mail `embed:"" envprefix:"MAIL_" group:"Mail:" prefix:"mail." yaml:"mail"`
 
-	OIDC OIDC `embed:"" envprefix:"OIDC_" group:"OIDC" prefix:"oidc." yaml:"oidc"`
+	OIDC OIDC `embed:"" envprefix:"OIDC_" group:"OIDC:" prefix:"oidc." yaml:"oidc"`
 }
 
 type Service struct {
@@ -180,13 +181,17 @@ type Service struct {
 
 func (config *Config) Run() errors.E { //nolint:maintidx
 	var secret []byte
-	if config.OIDC.Secret != "" {
+	if config.OIDC.Secret != nil {
 		// We use a prefix to aid secret scanners.
-		if !strings.HasPrefix(config.OIDC.Secret, "chs-") {
+		if !bytes.HasPrefix(config.OIDC.Secret, []byte("chs-")) {
 			return errors.New(`OIDC secret does not have "chs-" prefix`)
 		}
-		var err error
-		secret, err = base64.RawURLEncoding.DecodeString(strings.TrimPrefix(config.OIDC.Secret, "chs-"))
+		encodedSecret := bytes.TrimPrefix(config.OIDC.Secret, []byte("chs-"))
+		// We trim space so that the file can contain whitespace (e.g., a newline) at the end.
+		encodedSecret = bytes.TrimSpace(encodedSecret)
+		secret = make([]byte, base64.RawURLEncoding.DecodedLen(len(encodedSecret)))
+		n, err := base64.RawURLEncoding.Decode(secret, encodedSecret)
+		secret = secret[:n]
 		if err != nil {
 			return errors.WithMessage(err, "invalid OIDC secret")
 		}
@@ -254,27 +259,29 @@ func (config *Config) Run() errors.E { //nolint:maintidx
 	}
 
 	providers := []SiteProvider{}
-	if config.Providers.Google.ClientID != "" && config.Providers.Google.Secret != "" {
+	if config.Providers.Google.ClientID != "" && config.Providers.Google.Secret != nil {
 		providers = append(providers, SiteProvider{
-			Key:       "google",
-			Name:      "Google",
-			Type:      "oidc",
-			issuer:    "https://accounts.google.com",
-			clientID:  config.Providers.Google.ClientID,
-			secret:    config.Providers.Google.Secret,
+			Key:      "google",
+			Name:     "Google",
+			Type:     "oidc",
+			issuer:   "https://accounts.google.com",
+			clientID: config.Providers.Google.ClientID,
+			// We trim space so that the file can contain whitespace (e.g., a newline) at the end.
+			secret:    strings.TrimSpace(string(config.Providers.Google.Secret)),
 			forcePKCE: false,
 			authURL:   "",
 			tokenURL:  "",
 		})
 	}
-	if config.Providers.Facebook.ClientID != "" && config.Providers.Facebook.Secret != "" {
+	if config.Providers.Facebook.ClientID != "" && config.Providers.Facebook.Secret != nil {
 		providers = append(providers, SiteProvider{
-			Key:       "facebook",
-			Name:      "Facebook",
-			Type:      "oidc",
-			issuer:    "https://www.facebook.com",
-			clientID:  config.Providers.Facebook.ClientID,
-			secret:    config.Providers.Facebook.Secret,
+			Key:      "facebook",
+			Name:     "Facebook",
+			Type:     "oidc",
+			issuer:   "https://www.facebook.com",
+			clientID: config.Providers.Facebook.ClientID,
+			// We trim space so that the file can contain whitespace (e.g., a newline) at the end.
+			secret:    strings.TrimSpace(string(config.Providers.Facebook.Secret)),
 			forcePKCE: true,
 			authURL:   "",
 			tokenURL:  "https://graph.facebook.com/oauth/access_token",
@@ -348,7 +355,7 @@ func (config *Config) Run() errors.E { //nolint:maintidx
 			mail.WithPort(config.Mail.Port),
 			mail.WithSMTPAuth(MailAuthTypes[config.Mail.Auth]),
 			mail.WithUsername(config.Mail.Username),
-			mail.WithPassword(config.Mail.Password),
+			mail.WithPassword(string(config.Mail.Password)),
 			mail.WithLogger(loggerAdapter{config.Logger}),
 		)
 		if err != nil {

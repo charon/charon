@@ -115,7 +115,7 @@ Then clone the repository and run:
 
 ```sh
 make
-./charon -d -O -k localhost+2.pem -K localhost+2-key.pem --mail.from noreply@example.com
+./charon -d -O -k localhost+2.pem -K localhost+2-key.pem
 ```
 
 `localhost+2.pem` and `localhost+2-key.pem` are files of a TLS certificate

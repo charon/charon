@@ -417,9 +417,9 @@ func generateEllipticKey(c elliptic.Curve, algorithm string) (*jose.JSONWebKey, 
 	return makeJSONWebKey(privateKey, algorithm)
 }
 
-func makeEllipticKey(privateKey string, c elliptic.Curve, algorithm string) (*jose.JSONWebKey, errors.E) {
+func makeEllipticKey(privateKey []byte, c elliptic.Curve, algorithm string) (*jose.JSONWebKey, errors.E) {
 	var jwk jose.JSONWebKey
-	err := json.Unmarshal([]byte(privateKey), &jwk)
+	err := json.Unmarshal(privateKey, &jwk)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -452,9 +452,9 @@ func generateRSAKey() (*jose.JSONWebKey, errors.E) {
 	return makeJSONWebKey(privateKey, "RS256")
 }
 
-func makeRSAKey(privateKey string) (*jose.JSONWebKey, errors.E) {
+func makeRSAKey(privateKey []byte) (*jose.JSONWebKey, errors.E) {
 	var jwk jose.JSONWebKey
-	err := json.Unmarshal([]byte(privateKey), &jwk)
+	err := json.Unmarshal(privateKey, &jwk)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
