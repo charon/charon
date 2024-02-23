@@ -41,7 +41,7 @@ var routesConfiguration []byte
 var files embed.FS
 
 type OIDCProvider struct {
-	ClientID string               `                  help:"${provider}'s client ID."                                                                yaml:"clientId"`
+	ClientID string               `env:"CLIENT_ID"   help:"${provider}'s client ID. Environment variable: ${env}."                                  yaml:"clientId"`
 	Secret   kong.FileContentFlag `env:"SECRET_PATH" help:"File with ${provider}'s client secret. Environment variable: ${env}." placeholder:"PATH" yaml:"secret"`
 }
 

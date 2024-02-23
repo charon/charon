@@ -32,3 +32,4 @@ codeclimate.json
 *.pem
 /keys.txt
 *.env
+*.secret
