@@ -50,13 +50,30 @@ type OrganizationApplicationClientPublic struct {
 	Client ClientRef              `json:"client"`
 }
 
-func (c *OrganizationApplicationClientPublic) Validate(ctx context.Context, applicationTemplate *ApplicationTemplatePublic, values map[string]string) errors.E {
-	if c.ID == nil {
+func (c *OrganizationApplicationClientPublic) Validate(ctx context.Context, existing *OrganizationApplicationClientPublic, applicationTemplate *ApplicationTemplatePublic, values map[string]string) errors.E {
+	if existing == nil {
+		if c.ID != nil {
+			errE := errors.New("ID provided for new document")
+			errors.Details(errE)["id"] = *c.ID
+			return errE
+		}
 		id := identifier.New()
 		c.ID = &id
+	} else if c.ID == nil {
+		// This should not really happen because we fetch existing based on c.ID.
+		return errors.New("ID missing for existing document")
+	} else if existing.ID == nil {
+		// This should not really happen because we always store documents with ID.
+		return errors.New("ID missing for existing document")
+	} else if *c.ID != *existing.ID {
+		// This should not really happen because we fetch existing based on c.ID.
+		errE := errors.New("payload ID does not match existing ID")
+		errors.Details(errE)["payload"] = *c.ID
+		errors.Details(errE)["existing"] = *existing.ID
+		return errE
 	}
 
-	client := applicationTemplate.GetClientPublic(c.Client.ID)
+	client := applicationTemplate.GetClientPublic(&c.Client.ID)
 	if client == nil {
 		errE := errors.New("unable to find referenced public client")
 		errors.Details(errE)["id"] = c.Client.ID
@@ -90,10 +107,27 @@ type OrganizationApplicationClientBackend struct {
 	Secret string `json:"secret"`
 }
 
-func (c *OrganizationApplicationClientBackend) Validate(ctx context.Context, applicationTemplate *ApplicationTemplatePublic, values map[string]string) errors.E {
-	if c.ID == nil {
+func (c *OrganizationApplicationClientBackend) Validate(ctx context.Context, existing *OrganizationApplicationClientBackend, applicationTemplate *ApplicationTemplatePublic, values map[string]string) errors.E {
+	if existing == nil {
+		if c.ID != nil {
+			errE := errors.New("ID provided for new document")
+			errors.Details(errE)["id"] = *c.ID
+			return errE
+		}
 		id := identifier.New()
 		c.ID = &id
+	} else if c.ID == nil {
+		// This should not really happen because we fetch existing based on c.ID.
+		return errors.New("ID missing for existing document")
+	} else if existing.ID == nil {
+		// This should not really happen because we always store documents with ID.
+		return errors.New("ID missing for existing document")
+	} else if *c.ID != *existing.ID {
+		// This should not really happen because we fetch existing based on c.ID.
+		errE := errors.New("payload ID does not match existing ID")
+		errors.Details(errE)["payload"] = *c.ID
+		errors.Details(errE)["existing"] = *existing.ID
+		return errE
 	}
 
 	params, _, _, err := argon2id.DecodeHash(c.Secret)
@@ -110,7 +144,7 @@ func (c *OrganizationApplicationClientBackend) Validate(ctx context.Context, app
 		return errE
 	}
 
-	client := applicationTemplate.GetClientBackend(c.Client.ID)
+	client := applicationTemplate.GetClientBackend(&c.Client.ID)
 	if client == nil {
 		errE := errors.New("unable to find referenced backend client")
 		errors.Details(errE)["id"] = c.Client.ID
@@ -144,10 +178,27 @@ type OrganizationApplicationClientService struct {
 	Secret string `json:"secret"`
 }
 
-func (c *OrganizationApplicationClientService) Validate(_ context.Context, applicationTemplate *ApplicationTemplatePublic, _ map[string]string) errors.E {
-	if c.ID == nil {
+func (c *OrganizationApplicationClientService) Validate(_ context.Context, existing *OrganizationApplicationClientService, applicationTemplate *ApplicationTemplatePublic, _ map[string]string) errors.E {
+	if existing == nil {
+		if c.ID != nil {
+			errE := errors.New("ID provided for new document")
+			errors.Details(errE)["id"] = *c.ID
+			return errE
+		}
 		id := identifier.New()
 		c.ID = &id
+	} else if c.ID == nil {
+		// This should not really happen because we fetch existing based on c.ID.
+		return errors.New("ID missing for existing document")
+	} else if existing.ID == nil {
+		// This should not really happen because we always store documents with ID.
+		return errors.New("ID missing for existing document")
+	} else if *c.ID != *existing.ID {
+		// This should not really happen because we fetch existing based on c.ID.
+		errE := errors.New("payload ID does not match existing ID")
+		errors.Details(errE)["payload"] = *c.ID
+		errors.Details(errE)["existing"] = *existing.ID
+		return errE
 	}
 
 	params, _, _, err := argon2id.DecodeHash(c.Secret)
@@ -164,7 +215,7 @@ func (c *OrganizationApplicationClientService) Validate(_ context.Context, appli
 		return errE
 	}
 
-	client := applicationTemplate.GetClientService(c.Client.ID)
+	client := applicationTemplate.GetClientService(&c.Client.ID)
 	if client == nil {
 		errE := errors.New("unable to find referenced service client")
 		errors.Details(errE)["id"] = c.Client.ID
@@ -191,9 +242,13 @@ type OrganizationApplication struct {
 	ClientsService []OrganizationApplicationClientService `json:"clientsService"`
 }
 
-func (a *OrganizationApplication) GetClientPublic(id identifier.Identifier) *OrganizationApplicationClientPublic {
+func (a *OrganizationApplication) GetClientPublic(id *identifier.Identifier) *OrganizationApplicationClientPublic {
+	if id == nil {
+		return nil
+	}
+
 	for _, client := range a.ClientsPublic {
-		if *client.ID == id {
+		if client.ID != nil && *client.ID == *id {
 			return &client
 		}
 	}
@@ -201,9 +256,13 @@ func (a *OrganizationApplication) GetClientPublic(id identifier.Identifier) *Org
 	return nil
 }
 
-func (a *OrganizationApplication) GetClientBackend(id identifier.Identifier) *OrganizationApplicationClientBackend {
+func (a *OrganizationApplication) GetClientBackend(id *identifier.Identifier) *OrganizationApplicationClientBackend {
+	if id == nil {
+		return nil
+	}
+
 	for _, client := range a.ClientsBackend {
-		if *client.ID == id {
+		if client.ID != nil && *client.ID == *id {
 			return &client
 		}
 	}
@@ -211,9 +270,13 @@ func (a *OrganizationApplication) GetClientBackend(id identifier.Identifier) *Or
 	return nil
 }
 
-func (a *OrganizationApplication) GetClientService(id identifier.Identifier) *OrganizationApplicationClientService {
+func (a *OrganizationApplication) GetClientService(id *identifier.Identifier) *OrganizationApplicationClientService {
+	if id == nil {
+		return nil
+	}
+
 	for _, client := range a.ClientsService {
-		if *client.ID == id {
+		if client.ID != nil && *client.ID == *id {
 			return &client
 		}
 	}
@@ -221,13 +284,41 @@ func (a *OrganizationApplication) GetClientService(id identifier.Identifier) *Or
 	return nil
 }
 
-func (a *OrganizationApplication) Validate(ctx context.Context) errors.E {
-	if a.ID == nil {
+func (a *OrganizationApplication) Validate(ctx context.Context, existing *OrganizationApplication) errors.E {
+	if existing == nil {
+		if a.ID != nil {
+			errE := errors.New("ID provided for new document")
+			errors.Details(errE)["id"] = *a.ID
+			return errE
+		}
 		id := identifier.New()
 		a.ID = &id
+	} else if a.ID == nil {
+		// This should not really happen because we fetch existing based on a.ID.
+		return errors.New("ID missing for existing document")
+	} else if existing.ID == nil {
+		// This should not really happen because we always store documents with ID.
+		return errors.New("ID missing for existing document")
+	} else if *a.ID != *existing.ID {
+		// This should not really happen because we fetch existing based on a.ID.
+		errE := errors.New("payload ID does not match existing ID")
+		errors.Details(errE)["payload"] = *a.ID
+		errors.Details(errE)["existing"] = *existing.ID
+		return errE
 	}
 
-	errE := a.ApplicationTemplate.Validate(ctx)
+	var e *ApplicationTemplatePublic
+	if existing != nil {
+		e = &existing.ApplicationTemplate
+	} else if a.ApplicationTemplate.ID != nil {
+		at, errE := GetApplicationTemplate(ctx, *a.ApplicationTemplate.ID)
+		if errE == nil {
+			e = &at.ApplicationTemplatePublic
+		} else if !errors.Is(errE, ErrApplicationTemplateNotFound) {
+			return errE
+		}
+	}
+	errE := a.ApplicationTemplate.Validate(ctx, e)
 	if errE != nil {
 		return errE
 	}
@@ -296,7 +387,7 @@ func (a *OrganizationApplication) Validate(ctx context.Context) errors.E {
 	clientSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
 
 	for i, client := range a.ClientsPublic {
-		errE := client.Validate(ctx, &a.ApplicationTemplate, values)
+		errE := client.Validate(ctx, existing.GetClientPublic(client.ID), &a.ApplicationTemplate, values)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "public client")
 			errors.Details(errE)["i"] = i
@@ -317,7 +408,7 @@ func (a *OrganizationApplication) Validate(ctx context.Context) errors.E {
 	}
 
 	for i, client := range a.ClientsBackend {
-		errE := client.Validate(ctx, &a.ApplicationTemplate, values)
+		errE := client.Validate(ctx, existing.GetClientBackend(client.ID), &a.ApplicationTemplate, values)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "backend client")
 			errors.Details(errE)["i"] = i
@@ -338,7 +429,7 @@ func (a *OrganizationApplication) Validate(ctx context.Context) errors.E {
 	}
 
 	for i, client := range a.ClientsService {
-		errE := client.Validate(ctx, &a.ApplicationTemplate, values)
+		errE := client.Validate(ctx, existing.GetClientService(client.ID), &a.ApplicationTemplate, values)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "service client")
 			errors.Details(errE)["i"] = i
@@ -369,16 +460,47 @@ type Organization struct {
 	Applications []OrganizationApplication `json:"applications"`
 }
 
+func (o *Organization) GetApplication(id *identifier.Identifier) *OrganizationApplication {
+	if id == nil {
+		return nil
+	}
+
+	for _, orgApp := range o.Applications {
+		if orgApp.ID != nil && *orgApp.ID == *id {
+			return &orgApp
+		}
+	}
+
+	return nil
+}
+
 type OrganizationPublic struct {
 	ID          *identifier.Identifier `json:"id"`
 	Name        string                 `json:"name"`
 	Description string                 `json:"description"`
 }
 
-func (o *OrganizationPublic) Validate(_ context.Context) errors.E {
-	if o.ID == nil {
+func (o *OrganizationPublic) Validate(_ context.Context, existing *OrganizationPublic) errors.E {
+	if existing == nil {
+		if o.ID != nil {
+			errE := errors.New("ID provided for new document")
+			errors.Details(errE)["id"] = *o.ID
+			return errE
+		}
 		id := identifier.New()
 		o.ID = &id
+	} else if o.ID == nil {
+		// This should not really happen because we fetch existing based on o.ID.
+		return errors.New("ID missing for existing document")
+	} else if existing.ID == nil {
+		// This should not really happen because we always store documents with ID.
+		return errors.New("ID missing for existing document")
+	} else if *o.ID != *existing.ID {
+		// This should not really happen because we fetch existing based on o.ID.
+		errE := errors.New("payload ID does not match existing ID")
+		errors.Details(errE)["payload"] = *o.ID
+		errors.Details(errE)["existing"] = *existing.ID
+		return errE
 	}
 
 	if o.Name == "" {
@@ -392,8 +514,14 @@ type OrganizationRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
-func (o *Organization) Validate(ctx context.Context) errors.E {
-	errE := o.OrganizationPublic.Validate(ctx)
+func (o *Organization) Validate(ctx context.Context, existing *Organization) errors.E {
+	var e *OrganizationPublic
+	if existing == nil {
+		e = nil
+	} else {
+		e = &existing.OrganizationPublic
+	}
+	errE := o.OrganizationPublic.Validate(ctx, e)
 	if errE != nil {
 		return errE
 	}
@@ -416,7 +544,7 @@ func (o *Organization) Validate(ctx context.Context) errors.E {
 
 	appsSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
 	for i, orgApp := range o.Applications {
-		errE := orgApp.Validate(ctx)
+		errE := orgApp.Validate(ctx, existing.GetApplication(orgApp.ID))
 		if errE != nil {
 			errE = errors.WithMessage(errE, "application")
 			errors.Details(errE)["i"] = i
@@ -462,7 +590,7 @@ func GetOrganization(ctx context.Context, id identifier.Identifier) (*Organizati
 }
 
 func CreateOrganization(ctx context.Context, organization *Organization) errors.E {
-	errE := organization.Validate(ctx)
+	errE := organization.Validate(ctx, nil)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrOrganizationValidationFailed)
 	}
@@ -480,19 +608,12 @@ func CreateOrganization(ctx context.Context, organization *Organization) errors.
 }
 
 func UpdateOrganization(ctx context.Context, organization *Organization) errors.E {
-	errE := organization.Validate(ctx)
-	if errE != nil {
-		return errors.WrapWith(errE, ErrOrganizationValidationFailed)
-	}
-
-	data, errE := x.MarshalWithoutEscapeHTML(organization)
-	if errE != nil {
-		errors.Details(errE)["id"] = *organization.ID
-		return errE
-	}
-
 	organizationsMu.Lock()
 	defer organizationsMu.Unlock()
+
+	if organization.ID == nil {
+		return errors.WithMessage(ErrOrganizationValidationFailed, "ID is missing")
+	}
 
 	existingData, ok := organizations[*organization.ID]
 	if !ok {
@@ -500,7 +621,7 @@ func UpdateOrganization(ctx context.Context, organization *Organization) errors.
 	}
 
 	var existingOrganization Organization
-	errE = x.UnmarshalWithoutUnknownFields(existingData, &existingOrganization)
+	errE := x.UnmarshalWithoutUnknownFields(existingData, &existingOrganization)
 	if errE != nil {
 		errors.Details(errE)["id"] = *organization.ID
 		return errE
@@ -509,6 +630,17 @@ func UpdateOrganization(ctx context.Context, organization *Organization) errors.
 	account := mustGetAccount(ctx)
 	if !slices.Contains(existingOrganization.Admins, AccountRef{account}) {
 		return errors.WithDetails(ErrOrganizationUnauthorized, "id", organization.ID)
+	}
+
+	errE = organization.Validate(ctx, &existingOrganization)
+	if errE != nil {
+		return errors.WrapWith(errE, ErrOrganizationValidationFailed)
+	}
+
+	data, errE := x.MarshalWithoutEscapeHTML(organization)
+	if errE != nil {
+		errors.Details(errE)["id"] = *organization.ID
+		return errE
 	}
 
 	organizations[*organization.ID] = data
@@ -619,13 +751,8 @@ func (s *Service) OrganizationUpdatePost(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	if organization.ID == nil {
-		id, errE := identifier.FromString(params["id"]) //nolint:govet
-		if errE != nil {
-			s.BadRequestWithError(w, req, errE)
-		}
-		organization.ID = &id
-	} else if params["id"] != organization.ID.String() {
+	// If organization.ID == nil, UpdateOrganization returns an error.
+	if organization.ID != nil && params["id"] != organization.ID.String() {
 		errE = errors.New("params ID does not match payload ID")
 		errors.Details(errE)["params"] = params["id"]
 		errors.Details(errE)["payload"] = *organization.ID

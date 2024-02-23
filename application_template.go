@@ -117,10 +117,27 @@ type ApplicationTemplateClientPublic struct {
 	RedirectURITemplates []string `json:"redirectUriTemplates"`
 }
 
-func (c *ApplicationTemplateClientPublic) Validate(ctx context.Context, values map[string]string) errors.E {
-	if c.ID == nil {
+func (c *ApplicationTemplateClientPublic) Validate(ctx context.Context, existing *ApplicationTemplateClientPublic, values map[string]string) errors.E {
+	if existing == nil {
+		if c.ID != nil {
+			errE := errors.New("ID provided for new document")
+			errors.Details(errE)["id"] = *c.ID
+			return errE
+		}
 		id := identifier.New()
 		c.ID = &id
+	} else if c.ID == nil {
+		// This should not really happen because we fetch existing based on c.ID.
+		return errors.New("ID missing for existing document")
+	} else if existing.ID == nil {
+		// This should not really happen because we always store documents with ID.
+		return errors.New("ID missing for existing document")
+	} else if *c.ID != *existing.ID {
+		// This should not really happen because we fetch existing based on c.ID.
+		errE := errors.New("payload ID does not match existing ID")
+		errors.Details(errE)["payload"] = *c.ID
+		errors.Details(errE)["existing"] = *existing.ID
+		return errE
 	}
 
 	if c.AdditionalScopes == nil {
@@ -162,10 +179,27 @@ type ApplicationTemplateClientBackend struct {
 	RedirectURITemplates    []string `json:"redirectUriTemplates"`
 }
 
-func (c *ApplicationTemplateClientBackend) Validate(ctx context.Context, values map[string]string) errors.E {
-	if c.ID == nil {
+func (c *ApplicationTemplateClientBackend) Validate(ctx context.Context, existing *ApplicationTemplateClientBackend, values map[string]string) errors.E {
+	if existing == nil {
+		if c.ID != nil {
+			errE := errors.New("ID provided for new document")
+			errors.Details(errE)["id"] = *c.ID
+			return errE
+		}
 		id := identifier.New()
 		c.ID = &id
+	} else if c.ID == nil {
+		// This should not really happen because we fetch existing based on c.ID.
+		return errors.New("ID missing for existing document")
+	} else if existing.ID == nil {
+		// This should not really happen because we always store documents with ID.
+		return errors.New("ID missing for existing document")
+	} else if *c.ID != *existing.ID {
+		// This should not really happen because we fetch existing based on c.ID.
+		errE := errors.New("payload ID does not match existing ID")
+		errors.Details(errE)["payload"] = *c.ID
+		errors.Details(errE)["existing"] = *existing.ID
+		return errE
 	}
 
 	if c.AdditionalScopes == nil {
@@ -215,10 +249,27 @@ type ApplicationTemplateClientService struct {
 	TokenEndpointAuthMethod string `json:"tokenEndpointAuthMethod"`
 }
 
-func (c *ApplicationTemplateClientService) Validate(_ context.Context, _ map[string]string) errors.E {
-	if c.ID == nil {
+func (c *ApplicationTemplateClientService) Validate(_ context.Context, existing *ApplicationTemplateClientService, _ map[string]string) errors.E {
+	if existing == nil {
+		if c.ID != nil {
+			errE := errors.New("ID provided for new document")
+			errors.Details(errE)["id"] = *c.ID
+			return errE
+		}
 		id := identifier.New()
 		c.ID = &id
+	} else if c.ID == nil {
+		// This should not really happen because we fetch existing based on c.ID.
+		return errors.New("ID missing for existing document")
+	} else if existing.ID == nil {
+		// This should not really happen because we always store documents with ID.
+		return errors.New("ID missing for existing document")
+	} else if *c.ID != *existing.ID {
+		// This should not really happen because we fetch existing based on c.ID.
+		errE := errors.New("payload ID does not match existing ID")
+		errors.Details(errE)["payload"] = *c.ID
+		errors.Details(errE)["existing"] = *existing.ID
+		return errE
 	}
 
 	if c.AdditionalScopes == nil {
@@ -330,9 +381,13 @@ type ApplicationTemplatePublic struct {
 	ClientsService []ApplicationTemplateClientService `json:"clientsService"`
 }
 
-func (a *ApplicationTemplatePublic) GetClientPublic(id identifier.Identifier) *ApplicationTemplateClientPublic {
+func (a *ApplicationTemplatePublic) GetClientPublic(id *identifier.Identifier) *ApplicationTemplateClientPublic {
+	if id == nil {
+		return nil
+	}
+
 	for _, client := range a.ClientsPublic {
-		if client.ID != nil && *client.ID == id {
+		if client.ID != nil && *client.ID == *id {
 			return &client
 		}
 	}
@@ -340,9 +395,13 @@ func (a *ApplicationTemplatePublic) GetClientPublic(id identifier.Identifier) *A
 	return nil
 }
 
-func (a *ApplicationTemplatePublic) GetClientBackend(id identifier.Identifier) *ApplicationTemplateClientBackend {
+func (a *ApplicationTemplatePublic) GetClientBackend(id *identifier.Identifier) *ApplicationTemplateClientBackend {
+	if id == nil {
+		return nil
+	}
+
 	for _, client := range a.ClientsBackend {
-		if client.ID != nil && *client.ID == id {
+		if client.ID != nil && *client.ID == *id {
 			return &client
 		}
 	}
@@ -350,9 +409,13 @@ func (a *ApplicationTemplatePublic) GetClientBackend(id identifier.Identifier) *
 	return nil
 }
 
-func (a *ApplicationTemplatePublic) GetClientService(id identifier.Identifier) *ApplicationTemplateClientService {
+func (a *ApplicationTemplatePublic) GetClientService(id *identifier.Identifier) *ApplicationTemplateClientService {
+	if id == nil {
+		return nil
+	}
+
 	for _, client := range a.ClientsService {
-		if client.ID != nil && *client.ID == id {
+		if client.ID != nil && *client.ID == *id {
 			return &client
 		}
 	}
@@ -364,10 +427,27 @@ type ApplicationTemplateRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
-func (a *ApplicationTemplatePublic) Validate(ctx context.Context) errors.E {
-	if a.ID == nil {
+func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *ApplicationTemplatePublic) errors.E {
+	if existing == nil {
+		if a.ID != nil {
+			errE := errors.New("ID provided for new document")
+			errors.Details(errE)["id"] = *a.ID
+			return errE
+		}
 		id := identifier.New()
 		a.ID = &id
+	} else if a.ID == nil {
+		// This should not really happen because we fetch existing based on a.ID.
+		return errors.New("ID missing for existing document")
+	} else if existing.ID == nil {
+		// This should not really happen because we always store documents with ID.
+		return errors.New("ID missing for existing document")
+	} else if *a.ID != *existing.ID {
+		// This should not really happen because we fetch existing based on a.ID.
+		errE := errors.New("payload ID does not match existing ID")
+		errors.Details(errE)["payload"] = *a.ID
+		errors.Details(errE)["existing"] = *existing.ID
+		return errE
 	}
 
 	if a.Name == "" {
@@ -446,7 +526,7 @@ func (a *ApplicationTemplatePublic) Validate(ctx context.Context) errors.E {
 	clientsSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
 
 	for i, client := range a.ClientsPublic {
-		errE := client.Validate(ctx, values)
+		errE := client.Validate(ctx, existing.GetClientPublic(client.ID), values)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "public client")
 			errors.Details(errE)["i"] = i
@@ -469,7 +549,7 @@ func (a *ApplicationTemplatePublic) Validate(ctx context.Context) errors.E {
 	}
 
 	for i, client := range a.ClientsBackend {
-		errE := client.Validate(ctx, values)
+		errE := client.Validate(ctx, existing.GetClientBackend(client.ID), values)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "backend client")
 			errors.Details(errE)["i"] = i
@@ -493,7 +573,7 @@ func (a *ApplicationTemplatePublic) Validate(ctx context.Context) errors.E {
 	}
 
 	for i, client := range a.ClientsService {
-		errE := client.Validate(ctx, values)
+		errE := client.Validate(ctx, existing.GetClientService(client.ID), values)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "service client")
 			errors.Details(errE)["i"] = i
@@ -546,8 +626,14 @@ func (a *ApplicationTemplatePublic) Validate(ctx context.Context) errors.E {
 	return nil
 }
 
-func (a *ApplicationTemplate) Validate(ctx context.Context) errors.E {
-	errE := a.ApplicationTemplatePublic.Validate(ctx)
+func (a *ApplicationTemplate) Validate(ctx context.Context, existing *ApplicationTemplate) errors.E {
+	var e *ApplicationTemplatePublic
+	if existing == nil {
+		e = nil
+	} else {
+		e = &existing.ApplicationTemplatePublic
+	}
+	errE := a.ApplicationTemplatePublic.Validate(ctx, e)
 	if errE != nil {
 		return errE
 	}
@@ -585,7 +671,7 @@ func GetApplicationTemplate(ctx context.Context, id identifier.Identifier) (*App
 }
 
 func CreateApplicationTemplate(ctx context.Context, applicationTemplate *ApplicationTemplate) errors.E {
-	errE := applicationTemplate.Validate(ctx)
+	errE := applicationTemplate.Validate(ctx, nil)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrApplicationTemplateValidationFailed)
 	}
@@ -603,19 +689,12 @@ func CreateApplicationTemplate(ctx context.Context, applicationTemplate *Applica
 }
 
 func UpdateApplicationTemplate(ctx context.Context, applicationTemplate *ApplicationTemplate) errors.E {
-	errE := applicationTemplate.Validate(ctx)
-	if errE != nil {
-		return errors.WrapWith(errE, ErrApplicationTemplateValidationFailed)
-	}
-
-	data, errE := x.MarshalWithoutEscapeHTML(applicationTemplate)
-	if errE != nil {
-		errors.Details(errE)["id"] = *applicationTemplate.ID
-		return errE
-	}
-
 	applicationTemplatesMu.Lock()
 	defer applicationTemplatesMu.Unlock()
+
+	if applicationTemplate.ID == nil {
+		return errors.WithMessage(ErrApplicationTemplateValidationFailed, "ID is missing")
+	}
 
 	existingData, ok := applicationTemplates[*applicationTemplate.ID]
 	if !ok {
@@ -623,7 +702,7 @@ func UpdateApplicationTemplate(ctx context.Context, applicationTemplate *Applica
 	}
 
 	var existingApplicationTemplate ApplicationTemplate
-	errE = x.UnmarshalWithoutUnknownFields(existingData, &existingApplicationTemplate)
+	errE := x.UnmarshalWithoutUnknownFields(existingData, &existingApplicationTemplate)
 	if errE != nil {
 		errors.Details(errE)["id"] = *applicationTemplate.ID
 		return errE
@@ -632,6 +711,17 @@ func UpdateApplicationTemplate(ctx context.Context, applicationTemplate *Applica
 	account := mustGetAccount(ctx)
 	if !slices.Contains(existingApplicationTemplate.Admins, AccountRef{account}) {
 		return errors.WithDetails(ErrApplicationTemplateUnauthorized, "id", *applicationTemplate.ID)
+	}
+
+	errE = applicationTemplate.Validate(ctx, &existingApplicationTemplate)
+	if errE != nil {
+		return errors.WrapWith(errE, ErrApplicationTemplateValidationFailed)
+	}
+
+	data, errE := x.MarshalWithoutEscapeHTML(applicationTemplate)
+	if errE != nil {
+		errors.Details(errE)["id"] = *applicationTemplate.ID
+		return errE
 	}
 
 	applicationTemplates[*applicationTemplate.ID] = data
@@ -742,13 +832,8 @@ func (s *Service) ApplicationTemplateUpdatePost(w http.ResponseWriter, req *http
 		return
 	}
 
-	if applicationTemplate.ID == nil {
-		id, errE := identifier.FromString(params["id"]) //nolint:govet
-		if errE != nil {
-			s.BadRequestWithError(w, req, errE)
-		}
-		applicationTemplate.ID = &id
-	} else if params["id"] != applicationTemplate.ID.String() {
+	// If applicationTemplate.ID == nil, UpdateApplicationTemplate returns an error.
+	if applicationTemplate.ID != nil && params["id"] != applicationTemplate.ID.String() {
 		errE = errors.New("params ID does not match payload ID")
 		errors.Details(errE)["params"] = params["id"]
 		errors.Details(errE)["payload"] = *applicationTemplate.ID

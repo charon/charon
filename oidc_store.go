@@ -45,10 +45,10 @@ func (s *OIDCStore) GetClient(_ context.Context, strID string) (fosite.Client, e
 				continue
 			}
 
-			clientPublic := app.GetClientPublic(id)
+			clientPublic := app.GetClientPublic(&id)
 			if clientPublic != nil {
 				// We should always find template client because we check for this during validation.
-				templateClientPublic := app.ApplicationTemplate.GetClientPublic(clientPublic.Client.ID)
+				templateClientPublic := app.ApplicationTemplate.GetClientPublic(&clientPublic.Client.ID)
 
 				scopes := slices.Clone(app.ApplicationTemplate.IDScopes)
 				scopes = append(scopes, templateClientPublic.AdditionalScopes...)
@@ -95,10 +95,10 @@ func (s *OIDCStore) GetClient(_ context.Context, strID string) (fosite.Client, e
 				}, nil
 			}
 
-			clientBackend := app.GetClientBackend(id)
+			clientBackend := app.GetClientBackend(&id)
 			if clientBackend != nil {
 				// We should always find template client because we check for this during validation.
-				templateClientBackend := app.ApplicationTemplate.GetClientBackend(clientBackend.Client.ID)
+				templateClientBackend := app.ApplicationTemplate.GetClientBackend(&clientBackend.Client.ID)
 
 				scopes := slices.Clone(app.ApplicationTemplate.IDScopes)
 				scopes = append(scopes, templateClientBackend.AdditionalScopes...)
@@ -145,10 +145,10 @@ func (s *OIDCStore) GetClient(_ context.Context, strID string) (fosite.Client, e
 				}, nil
 			}
 
-			clientService := app.GetClientService(id)
+			clientService := app.GetClientService(&id)
 			if clientService != nil {
 				// We should always find template client because we check for this during validation.
-				templateClientService := app.ApplicationTemplate.GetClientService(clientService.Client.ID)
+				templateClientService := app.ApplicationTemplate.GetClientService(&clientService.Client.ID)
 
 				scopes := slices.Clone(app.ApplicationTemplate.IDScopes)
 				scopes = append(scopes, templateClientService.AdditionalScopes...)
