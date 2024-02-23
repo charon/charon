@@ -50,7 +50,10 @@ type OrganizationApplicationClientPublic struct {
 	Client ClientRef              `json:"client"`
 }
 
-func (c *OrganizationApplicationClientPublic) Validate(ctx context.Context, existing *OrganizationApplicationClientPublic, applicationTemplate *ApplicationTemplatePublic, values map[string]string) errors.E {
+func (c *OrganizationApplicationClientPublic) Validate(
+	ctx context.Context, existing *OrganizationApplicationClientPublic,
+	applicationTemplate *ApplicationTemplatePublic, values map[string]string,
+) errors.E {
 	if existing == nil {
 		if c.ID != nil {
 			errE := errors.New("ID provided for new document")
@@ -107,7 +110,10 @@ type OrganizationApplicationClientBackend struct {
 	Secret string `json:"secret"`
 }
 
-func (c *OrganizationApplicationClientBackend) Validate(ctx context.Context, existing *OrganizationApplicationClientBackend, applicationTemplate *ApplicationTemplatePublic, values map[string]string) errors.E {
+func (c *OrganizationApplicationClientBackend) Validate(
+	ctx context.Context, existing *OrganizationApplicationClientBackend,
+	applicationTemplate *ApplicationTemplatePublic, values map[string]string,
+) errors.E {
 	if existing == nil {
 		if c.ID != nil {
 			errE := errors.New("ID provided for new document")
@@ -178,7 +184,10 @@ type OrganizationApplicationClientService struct {
 	Secret string `json:"secret"`
 }
 
-func (c *OrganizationApplicationClientService) Validate(_ context.Context, existing *OrganizationApplicationClientService, applicationTemplate *ApplicationTemplatePublic, _ map[string]string) errors.E {
+func (c *OrganizationApplicationClientService) Validate(
+	_ context.Context, existing *OrganizationApplicationClientService,
+	applicationTemplate *ApplicationTemplatePublic, _ map[string]string,
+) errors.E {
 	if existing == nil {
 		if c.ID != nil {
 			errE := errors.New("ID provided for new document")
