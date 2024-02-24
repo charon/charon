@@ -378,10 +378,10 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
               <Button type="submit" primary :disabled="!canBasicSubmit() || mainProgress > 0">Update</Button>
             </div>
           </form>
-          <h2 v-if="applications.length" class="text-xl font-bold">Added applications</h2>
+          <h2 v-if="applications.length || canApplicationsSubmit()" class="text-xl font-bold">Added applications</h2>
           <div v-if="applicationsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
           <div v-else-if="applicationsUpdated" class="text-success-600">Added applications updated successfully.</div>
-          <form v-if="applications.length" class="flex flex-col" novalidate @submit.prevent="onApplicationsSubmit">
+          <form v-if="applications.length || canApplicationsSubmit()" class="flex flex-col" novalidate @submit.prevent="onApplicationsSubmit">
             <ul>
               <li v-for="(application, i) in applications" :key="application.id || i" class="flex flex-col mb-4">
                 <!--
