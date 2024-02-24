@@ -368,10 +368,10 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
               <Button type="submit" primary :disabled="!canBasicSubmit() || mainProgress > 0">Update</Button>
             </div>
           </form>
-          <h2 v-if="applications.length || canApplicationsSubmit()" class="text-xl font-bold">Added applications</h2>
+          <h2 v-if="metadata.can_update && (applications.length || canApplicationsSubmit())" class="text-xl font-bold">Added applications</h2>
           <div v-if="applicationsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
           <div v-else-if="applicationsUpdated" class="text-success-600">Added applications updated successfully.</div>
-          <form v-if="applications.length || canApplicationsSubmit()" class="flex flex-col" novalidate @submit.prevent="onApplicationsSubmit">
+          <form v-if="metadata.can_update && (applications.length || canApplicationsSubmit())" class="flex flex-col" novalidate @submit.prevent="onApplicationsSubmit">
             <ul>
               <li v-for="(application, i) in applications" :key="application.id || i" class="flex flex-col mb-4">
                 <!--
@@ -400,7 +400,7 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                           :id="`application-${i}-values-${j}`"
                           v-model="value.value"
                           class="flex-grow flex-auto min-w-0 ml-6 mt-1"
-                          :readonly="mainProgress > 0 || !metadata.can_update"
+                          :readonly="mainProgress > 0"
                           required
                         />
                       </li>
@@ -468,14 +468,14 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                   </ol>
                   <div v-if="application.active" class="flex flew-row justify-between items-center gap-4 mt-4">
                     <div>Status: <strong>active</strong></div>
-                    <div v-if="metadata.can_update" class="flex flex-row gap-4">
+                    <div class="flex flex-row gap-4">
                       <Button type="button" :disabled="mainProgress > 0" @click.prevent="application.active = false">Disable</Button>
                       <Button type="button" :disabled="mainProgress > 0" @click.prevent="applications.splice(i, 1)">Remove</Button>
                     </div>
                   </div>
                   <div v-else class="flex flew-row justify-between items-center gap-4 mt-4">
                     <div>Status: <strong>disabled</strong></div>
-                    <div v-if="metadata.can_update" class="flex flex-row gap-4">
+                    <div class="flex flex-row gap-4">
                       <Button type="button" :disabled="mainProgress > 0" @click.prevent="application.active = true">Activate</Button>
                       <Button type="button" :disabled="mainProgress > 0" @click.prevent="applications.splice(i, 1)">Remove</Button>
                     </div>
@@ -483,7 +483,7 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                 </div>
               </li>
             </ul>
-            <div v-if="metadata.can_update" class="flex flex-row justify-end">
+            <div class="flex flex-row justify-end">
               <!--
                 Button is on purpose not disabled on unexpectedError so that user can retry.
               -->
