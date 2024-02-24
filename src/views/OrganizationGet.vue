@@ -41,7 +41,7 @@ const applicationsUnexpectedError = ref("")
 const applicationsUpdated = ref(false)
 const applications = ref<OrganizationApplication[]>([])
 
-function isApplicationEnabled(applicationTemplate: ApplicationTemplateRef): boolean {
+function isApplicationAdded(applicationTemplate: ApplicationTemplateRef): boolean {
   for (const application of applications.value) {
     if (application.applicationTemplate.id === applicationTemplate.id) {
       return true
@@ -49,16 +49,6 @@ function isApplicationEnabled(applicationTemplate: ApplicationTemplateRef): bool
   }
   return false
 }
-
-const availableApplicationTemplates = computed(() => {
-  const apps = []
-  for (const applicationTemplate of applicationTemplates.value) {
-    if (!isApplicationEnabled(applicationTemplate)) {
-      apps.push(applicationTemplate)
-    }
-  }
-  return apps
-})
 
 function resetOnInteraction() {
   // We reset flags and errors on interaction.
@@ -249,7 +239,7 @@ async function onApplicationsSubmit() {
   await onSubmit(payload, "applications", applicationsUpdated, applicationsUnexpectedError)
 }
 
-async function onEnableApplicationTemplate(applicationTemplate: DeepReadonly<ApplicationTemplate>) {
+async function onAddApplicationTemplate(applicationTemplate: DeepReadonly<ApplicationTemplate>) {
   if (abortController.signal.aborted) {
     return
   }
@@ -502,7 +492,7 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
           </form>
           <h2 v-if="metadata.can_update" class="text-xl font-bold">Available applications</h2>
           <ul v-if="metadata.can_update" class="flex flex-col gap-4">
-            <li v-for="applicationTemplate in availableApplicationTemplates" :key="applicationTemplate.id" class="flex flex-col gap-4">
+            <li v-for="applicationTemplate in applicationTemplates" :key="applicationTemplate.id" class="flex flex-col gap-4">
               <WithApplicationTemplateDocument :id="applicationTemplate.id" name="ApplicationTemplateGet">
                 <template #default="{ doc, metadata: meta, url }">
                   <div class="flex flex-row justify-between items-center gap-4">
@@ -511,8 +501,11 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                         doc.name
                       }}</router-link>
                       <span v-if="meta.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">admin</span>
+                      <span v-if="isApplicationAdded(applicationTemplate)" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none"
+                        >added</span
+                      >
                     </h3>
-                    <Button type="button" :disabled="mainProgress > 0" primary @click.prevent="onEnableApplicationTemplate(doc)">Add</Button>
+                    <Button type="button" :disabled="mainProgress > 0" primary @click.prevent="onAddApplicationTemplate(doc)">Add</Button>
                   </div>
                   <div v-if="doc.description" class="ml-4">{{ doc.description }}</div>
                 </template>
