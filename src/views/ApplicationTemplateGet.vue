@@ -618,7 +618,7 @@ function onAddClientService() {
                       type="button"
                       :disabled="mainProgress > 0"
                       @click.prevent="addRedirectUriTemplate(client, `client-public-${i}-redirectUriTemplates-`)"
-                      >Add template</Button
+                      >Add redirect URI</Button
                     >
                   </div>
                   <label :for="`client-public-${i}-description`" class="mb-1 mt-4"
@@ -690,7 +690,7 @@ function onAddClientService() {
                       type="button"
                       :disabled="mainProgress > 0"
                       @click.prevent="addRedirectUriTemplate(client, `client-backend-${i}-redirectUriTemplates-`)"
-                      >Add template</Button
+                      >Add redirect URI</Button
                     >
                   </div>
                   <fieldset class="mt-4">
