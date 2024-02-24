@@ -2,7 +2,7 @@
 import type { DeepReadonly, Ref } from "vue"
 import type { Organization, Metadata, ApplicationTemplates, ApplicationTemplate, OrganizationApplication, ApplicationTemplateRef } from "@/types"
 
-import { computed, nextTick, onBeforeMount, onUnmounted, ref, watch, inject } from "vue"
+import { nextTick, onBeforeMount, onUnmounted, ref, watch, inject } from "vue"
 import { useRouter } from "vue-router"
 import { Identifier } from "@tozd/identifier"
 import InputText from "@/components/InputText.vue"
