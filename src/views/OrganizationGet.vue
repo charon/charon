@@ -500,10 +500,10 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                       <router-link :to="{ name: 'ApplicationTemplateGet', params: { id: applicationTemplate.id } }" :data-url="url" class="link">{{
                         doc.name
                       }}</router-link>
-                      <span v-if="meta.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">admin</span>
                       <span v-if="isApplicationAdded(applicationTemplate)" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none"
                         >added</span
                       >
+                      <span v-if="meta.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">admin</span>
                     </h3>
                     <Button type="button" :disabled="mainProgress > 0" primary @click.prevent="onAddApplicationTemplate(doc)">Add</Button>
                   </div>
