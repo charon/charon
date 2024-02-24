@@ -125,20 +125,11 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 		return true
 	}
 
-	session, errE := getSessionFromRequest(req)
-	if errors.Is(errE, ErrSessionNotFound) {
-		// We return false and leave to frontend to load the flow using API to show the error.
-		return false
-	} else if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return true
-	}
-
 	// It should not be possible to get to OIDCRedirectReady state with flow.Session being nil,
 	// unless flow.Completed == CompletedFailed, which we checked above.
-	if *flow.Session != session.ID {
-		// We return false and leave to frontend to load the flow using API to show the error.
-		return false
+	session, handled := s.validateSession(w, req, false, flow)
+	if session == nil {
+		return handled
 	}
 
 	flow.Completed = CompletedRedirect
@@ -147,7 +138,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 	// Clear authorize request.
 	flow.OIDCAuthorizeRequest = nil
 
-	errE = SetFlow(ctx, flow)
+	errE := SetFlow(ctx, flow)
 	if errE != nil {
 		// Because this can fail, store's CreateAuthorizeCodeSession, CreateOpenIDConnectSession, and CreatePKCERequestSession should be idempotent.
 		s.InternalServerErrorWithError(w, req, errE)

@@ -213,7 +213,7 @@ func (s *Service) GetActiveFlowOIDCTarget(w http.ResponseWriter, req *http.Reque
 	}
 
 	// Current session should match the session in the flow.
-	if !s.validateSession(w, req, flow) {
+	if _, handled := s.validateSession(w, req, true, flow); handled {
 		return nil
 	}
 

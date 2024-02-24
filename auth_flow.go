@@ -125,8 +125,10 @@ func (s *Service) AuthFlowGetGet(w http.ResponseWriter, req *http.Request, param
 	// Has auth step already been completed?
 	if flow.Completed != "" {
 		// If auth step was successful (session is not nil), then we require that the session matches the one made by the flow.
-		if flow.Session != nil && !s.validateSession(w, req, flow) {
-			return
+		if flow.Session != nil {
+			if _, handled := s.validateSession(w, req, true, flow); handled {
+				return
+			}
 		}
 
 		if flow.Target == TargetSession {
@@ -141,23 +143,32 @@ func (s *Service) AuthFlowGetGet(w http.ResponseWriter, req *http.Request, param
 	s.WriteJSON(w, req, response, nil)
 }
 
-func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, flow *Flow) bool {
+// validateSession returns session only if current session matches one made by the flow.
+func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api bool, flow *Flow) (*Session, bool) {
 	session, errE := getSessionFromRequest(req)
 	if errors.Is(errE, ErrSessionNotFound) {
-		waf.Error(w, req, http.StatusGone)
-		return false
+		if api {
+			waf.Error(w, req, http.StatusGone)
+			return nil, true
+		}
+		// We return false and leave to frontend to load the flow using API to show the error.
+		return nil, false
 	} else if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
-		return false
+		return nil, true
 	}
 
 	// Caller should call validateSession only when flow.Session is set.
 	if *flow.Session != session.ID {
-		waf.Error(w, req, http.StatusGone)
-		return false
+		if api {
+			waf.Error(w, req, http.StatusGone)
+			return nil, true
+		}
+		// We return false and leave to frontend to load the flow using API to show the error.
+		return nil, false
 	}
 
-	return true
+	return session, false
 }
 
 func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *Flow, account *Account, credentials []Credential) {
@@ -534,7 +545,7 @@ func (s *Service) AuthFlowRedirectPost(w http.ResponseWriter, req *http.Request,
 		// but not the final redirect step for the OIDC target, and is ready for redirect.
 
 		// Current session should match the session in the flow.
-		if !s.validateSession(w, req, flow) {
+		if _, handled := s.validateSession(w, req, true, flow); handled {
 			return
 		}
 	} else {
