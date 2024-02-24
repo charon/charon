@@ -159,7 +159,26 @@ func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api 
 	}
 
 	// Caller should call validateSession only when flow.Session is set.
-	if *flow.Session != session.ID {
+	if *flow.Session == session.ID {
+		// Fast path so that we do not have to fetch another session if it is the same session.
+		return session, false
+	}
+
+	flowSession, errE := GetSession(req.Context(), *flow.Session)
+	if errors.Is(errE, ErrSessionNotFound) {
+		if api {
+			waf.Error(w, req, http.StatusGone)
+			return nil, true
+		}
+		// We return false and leave to frontend to load the flow using API to show the error.
+		return nil, false
+	} else if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return nil, true
+	}
+
+	// Session might have changed, but is it still the same account?
+	if flowSession.Account != session.Account {
 		if api {
 			waf.Error(w, req, http.StatusGone)
 			return nil, true
