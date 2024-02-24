@@ -43,7 +43,9 @@ export type LocationResponse = {
   replace: boolean
 }
 
-export type Completed = "" | "signin" | "signup" | "failed" | "identity" | "declined" | "redirect"
+// "signinOrSignup" is frontend only addition where we have to move back to choose the identity, but we do not know
+// anymore if it was "signin" or "signup". We cannot use "" because that means that the user is not yet authenticated.
+export type Completed = "" | "signin" | "signup" | "failed" | "identity" | "declined" | "redirect" | "signinOrSignup"
 
 export type AuthFlowStep = { key: string; name: string }
 

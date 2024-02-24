@@ -80,6 +80,7 @@ async function onBack() {
   clearInterval(interval)
   interval = 0
   abortController.abort()
+  flow!.updateCompleted("signinOrSignup")
   flow!.backward("identity")
 }
 

@@ -230,6 +230,9 @@ async function onPreviousStep(step: string) {
   if (completed.value !== "" && step === "start") {
     // TODO: What to do if unexpected error happens?
     await restartAuth(router, props.id, flow, abortController.signal, mainProgress)
+  } else if (completed.value !== "" && step === "identity") {
+    flow.updateCompleted("signinOrSignup")
+    flow.backward(step)
   } else {
     flow.backward(step)
   }
