@@ -347,9 +347,9 @@ const WithOrganizationDocument = WithDocument<Organization>
               ><strong>{{ name }}</strong></a
             >
             from organization
-            <WithOrganizationDocument :id="organizationId" name="Organization">
+            <WithOrganizationDocument :id="organizationId" name="OrganizationGet">
               <template #default="{ doc, url }">
-                <router-link :to="{ name: 'Organization', params: { id: organizationId } }" :data-url="url" class="link"
+                <router-link :to="{ name: 'OrganizationGet', params: { id: organizationId } }" :data-url="url" class="link"
                   ><strong>{{ doc.name }}</strong></router-link
                 >
               </template>
