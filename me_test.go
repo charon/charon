@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/tozd/go/x"
+	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 
 	"gitlab.com/charon/charon"
@@ -42,7 +43,7 @@ func TestRouteMeAndSignOut(t *testing.T) {
 		assert.Equal(t, `{"error":"unauthorized"}`, string(out))
 	}
 
-	signinUser(t, ts, service)
+	flowID := signinUser(t, ts, service)
 
 	// After sign-in, GET should return success.
 	resp, err = ts.Client().Get(ts.URL + path) //nolint:noctx,bodyclose
@@ -74,16 +75,29 @@ func TestRouteMeAndSignOut(t *testing.T) {
 	resp, err = ts.Client().Get(ts.URL + path) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
 		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		out, err := io.ReadAll(resp.Body)
+		out, err := io.ReadAll(resp.Body) //nolint:govet
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
 		assert.Equal(t, `{"error":"unauthorized"}`, string(out))
 	}
+
+	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
+	if assert.NoError(t, err) {
+		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+		_, err := io.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusGone, resp.StatusCode)
+		assert.Equal(t, 2, resp.ProtoMajor)
+		// TODO: This should return JSON with some error payload.
+	}
 }
 
-func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service) {
+func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service) identifier.Identifier {
 	t.Helper()
 
 	authFlowCreate, errE := service.ReverseAPI("AuthFlowCreate", nil, nil)
@@ -98,6 +112,20 @@ func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service) {
 	var authFlowCreateResponse charon.AuthFlowCreateResponse
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowCreateResponse)
 	require.NoError(t, errE, "% -+#.1v", errE)
+
+	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": authFlowCreateResponse.ID.String()}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
+	if assert.NoError(t, err) {
+		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+		out, err := io.ReadAll(resp.Body) //nolint:govet
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, 2, resp.ProtoMajor)
+		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+		assert.Equal(t, `{"target":"session","name":"Charon Dashboard"}`, string(out))
+	}
 
 	authFlowPasswordStart, errE := service.ReverseAPI("AuthFlowPasswordStart", waf.Params{"id": authFlowCreateResponse.ID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -151,4 +179,20 @@ func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service) {
 	for _, cookie := range resp.Cookies() {
 		assert.Equal(t, charon.SessionCookieName, cookie.Name)
 	}
+
+	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
+	if assert.NoError(t, err) {
+		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+		out, err := io.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, 2, resp.ProtoMajor)
+		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+		assert.Contains(t, []string{
+			`{"target":"session","name":"Charon Dashboard","provider":"password","completed":"signin","location":{"url":"/","replace":true}}`,
+			`{"target":"session","name":"Charon Dashboard","provider":"password","completed":"signup","location":{"url":"/","replace":true}}`,
+		}, string(out))
+	}
+
+	return authFlowCreateResponse.ID
 }
