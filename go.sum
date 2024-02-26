@@ -418,6 +418,8 @@ github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyua
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/mitchellh/reflectwalk v1.0.2 h1:G2LzWKi524PWgd3mLHV8Y5k7s6XUvT0Gef6zxSIeXaQ=
 github.com/mitchellh/reflectwalk v1.0.2/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx0jmZXqmk4esnw=
+github.com/mocktools/go-smtp-mock/v2 v2.2.1 h1:G9oG+0PnhyyzfP/swyd2x6taGkTwc9u07VzqJL5RQUo=
+github.com/mocktools/go-smtp-mock/v2 v2.2.1/go.mod h1:n8aNpDYncZHH/cZHtJKzQyeYT/Dut00RghVM+J1Ed94=
 github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 h1:RWengNIwukTxcDr9M+97sNutRR1RKhG96O6jWumTTnw=
 github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826/go.mod h1:TaXosZuwdSHYgviHp1DAtfrULt5eUgsSMsZf+YrPgl8=
 github.com/nyaruka/phonenumbers v1.1.1 h1:fyoZmpLN2VCmAnc51XcrNOUVP2wT1ZzQl348ggIaXII=
@@ -560,8 +562,8 @@ gitlab.com/tozd/go/zerolog v0.6.0 h1:+nR1D6w2afK6nXId64untH8J9cd4catcK0i0m4j//m4
 gitlab.com/tozd/go/zerolog v0.6.0/go.mod h1:my9jXGUOlH2Ln9PHPutHmUXZmExm3JO69vlcU3QKjto=
 gitlab.com/tozd/identifier v0.1.0 h1:+XX7yRwUzbq1nf/+N/F+A0BpZyby77CuCOkbngkut/4=
 gitlab.com/tozd/identifier v0.1.0/go.mod h1:gq8Gs7n/c5Qo97QBi7sYDEbqqaj5D3bvujA/c2Linq4=
-gitlab.com/tozd/waf v0.9.1 h1:/4GQMrmwuHEwxosb22Y4jh4Dwfb9yOYOZRWq3B34w7o=
-gitlab.com/tozd/waf v0.9.1/go.mod h1:F1Tv6v2JjX9tszdKqQ7Wfl0lYqjEQJTTByTBcpPEa2A=
+gitlab.com/tozd/waf v0.9.2 h1:X8cSswvYfnzEkPMTLZR57JF8+JSefYAXlWx3v8g2Bv4=
+gitlab.com/tozd/waf v0.9.2/go.mod h1:F1Tv6v2JjX9tszdKqQ7Wfl0lYqjEQJTTByTBcpPEa2A=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=
 go.opencensus.io v0.22.2/go.mod h1:yxeiOL68Rb0Xd1ddK5vPZ/oVn4vY4Ynel7k9FzqtOIw=

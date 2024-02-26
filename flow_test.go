@@ -14,7 +14,7 @@ func TestStore(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	f := &charon.Flow{ //nolint:exhaustruct
+	f := &charon.Flow{
 		ID: identifier.New(),
 	}
 	errE := charon.SetFlow(ctx, f)

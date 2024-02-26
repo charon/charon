@@ -8,6 +8,7 @@ import (
 	"embed"
 	"encoding/base64"
 	"io/fs"
+	"net/http"
 	"os"
 	"os/signal"
 	"slices"
@@ -179,12 +180,13 @@ type Service struct {
 	mailFrom   string
 }
 
-func (config *Config) Run() errors.E { //nolint:maintidx
+// Init is used primarily in tests. Use Run otherwise.
+func (config *Config) Init() (http.Handler, *Service, errors.E) { //nolint:maintidx
 	var secret []byte
 	if config.OIDC.Secret != nil {
 		// We use a prefix to aid secret scanners.
 		if !bytes.HasPrefix(config.OIDC.Secret, []byte("chs-")) {
-			return errors.New(`OIDC secret does not have "chs-" prefix`)
+			return nil, nil, errors.New(`OIDC secret does not have "chs-" prefix`)
 		}
 		encodedSecret := bytes.TrimPrefix(config.OIDC.Secret, []byte("chs-"))
 		// We trim space so that the file can contain whitespace (e.g., a newline) at the end.
@@ -193,27 +195,27 @@ func (config *Config) Run() errors.E { //nolint:maintidx
 		n, err := base64.RawURLEncoding.Decode(secret, encodedSecret)
 		secret = secret[:n]
 		if err != nil {
-			return errors.WithMessage(err, "invalid OIDC secret")
+			return nil, nil, errors.WithMessage(err, "invalid OIDC secret")
 		}
 		if len(secret) != oidcCSecretSize {
 			errE := errors.New("OIDC secret does not have valid length")
 			errors.Details(errE)["got"] = len(secret)
 			errors.Details(errE)["expected"] = 32
-			return errE
+			return nil, nil, errE
 		}
 	} else if config.OIDC.Development {
 		secret = make([]byte, oidcCSecretSize)
 		_, err := rand.Read(secret)
 		if err != nil {
-			return errors.WithStack(err)
+			return nil, nil, errors.WithStack(err)
 		}
 	} else {
-		return errors.New("OIDC secret not provided")
+		return nil, nil, errors.New("OIDC secret not provided")
 	}
 
 	errE := config.OIDC.Keys.Init(config.OIDC.Development)
 	if errE != nil {
-		return errE
+		return nil, nil, errE
 	}
 
 	// Routes come from a single source of truth, e.g., a file.
@@ -222,7 +224,7 @@ func (config *Config) Run() errors.E { //nolint:maintidx
 	}
 	errE = x.UnmarshalWithoutUnknownFields(routesConfiguration, &routesConfig)
 	if errE != nil {
-		return errE
+		return nil, nil, errE
 	}
 
 	config.Server.Logger = config.Logger
@@ -244,7 +246,7 @@ func (config *Config) Run() errors.E { //nolint:maintidx
 	// If domains are not provided, sites are automatically constructed based on the certificate.
 	sites, errE = config.Server.Init(sites)
 	if errE != nil {
-		return errE
+		return nil, nil, errE
 	}
 
 	// We set build information on sites.
@@ -294,13 +296,13 @@ func (config *Config) Run() errors.E { //nolint:maintidx
 	// We remove "dist" prefix.
 	f, err := fs.Sub(files, "dist")
 	if err != nil {
-		return errors.WithStack(err)
+		return nil, nil, errors.WithStack(err)
 	}
 
 	var domain string
 	if len(sites) > 1 {
 		if config.MainDomain == "" {
-			return errors.New("main domain is not configured, but multiple domains are used")
+			return nil, nil, errors.New("main domain is not configured, but multiple domains are used")
 		}
 		if _, ok := sites[config.MainDomain]; !ok {
 			errE = errors.New("main domain is not among domains")
@@ -311,7 +313,7 @@ func (config *Config) Run() errors.E { //nolint:maintidx
 			}
 			slices.Sort(domains)
 			errors.Details(errE)["domains"] = domains
-			return errE
+			return nil, nil, errE
 		}
 
 		domain = config.MainDomain
@@ -359,7 +361,7 @@ func (config *Config) Run() errors.E { //nolint:maintidx
 			mail.WithLogger(loggerAdapter{config.Logger}),
 		)
 		if err != nil {
-			return errors.WithStack(err)
+			return nil, nil, errors.WithStack(err)
 		}
 		service.mailClient = c
 	}
@@ -368,27 +370,38 @@ func (config *Config) Run() errors.E { //nolint:maintidx
 		service.Middleware = append(service.Middleware, service.RedirectToMainSite(domain))
 	}
 
+	router := new(waf.Router)
+
 	// Construct the main handler for the service using the router.
-	handler, errE := service.RouteWith(service, new(waf.Router))
+	handler, errE := service.RouteWith(service, router)
 	if errE != nil {
-		return errE
+		return nil, nil, errE
 	}
 
 	// We prepare initialization of OIDC and providers and in the common case
 	// (when server's bind port is not 0) immediately do the initialization.
 	service.oidc, errE = initOIDC(config, service, domain, secret)
 	if errE != nil {
-		return errE
+		return nil, nil, errE
 	}
 	service.oidcProviders, errE = initOIDCProviders(config, service, domain, providers)
 	if errE != nil {
-		return errE
+		return nil, nil, errE
 	}
 	service.passkeyProvider, errE = initPasskeyProvider(config, domain)
 	if errE != nil {
-		return errE
+		return nil, nil, errE
 	}
 	service.codeProvider, errE = initCodeProvider(config, domain)
+	if errE != nil {
+		return nil, nil, errE
+	}
+
+	return handler, service, nil
+}
+
+func (config *Config) Run() errors.E {
+	handler, service, errE := config.Init()
 	if errE != nil {
 		return errE
 	}
