@@ -29,8 +29,6 @@ test_go:
     - (cd /go; go install github.com/boumenot/gocover-cobertura@v1.2.0)
 
   script:
-    - mkdir -p dist
-    - echo "dummy contents" > dist/index.html
     - make test-ci
 
   artifacts:
@@ -82,8 +80,6 @@ lint_go:
     - wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.56.2
 
   script:
-    - mkdir -p dist
-    - echo "dummy contents" > dist/index.html
     - make lint-ci
 
   artifacts:
@@ -166,8 +162,6 @@ audit_go:
     - go install github.com/sonatype-nexus-community/nancy@v1.0.42
 
   script:
-    - mkdir -p dist
-    - echo "dummy contents" > dist/index.html
     - make audit
 
 audit_node:

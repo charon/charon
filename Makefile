@@ -28,18 +28,22 @@ dist: node_modules vite.config.ts tsconfig.json tsconfig.node.json tailwind.conf
 node_modules:
 	npm install
 
-test:
+dist/index.html:
+	mkdir -p dist
+	if [ ! -e dist/index.html ]; then echo "dummy contents" > dist/index.html; fi
+
+test: dist/index.html
 	gotestsum --format pkgname --packages ./... -- -race -timeout 10m -cover -covermode atomic
 
-test-ci:
+test-ci: dist/index.html
 	gotestsum --format pkgname --packages ./... --junitfile tests.xml -- -race -timeout 10m -coverprofile=coverage.txt -covermode atomic
 	gocover-cobertura < coverage.txt > coverage.xml
 	go tool cover -html=coverage.txt -o coverage.html
 
-lint:
+lint: dist/index.html
 	golangci-lint run --timeout 4m --color always --allow-parallel-runners --fix
 
-lint-ci:
+lint-ci: dist/index.html
 	golangci-lint run --timeout 4m --out-format colored-line-number,code-climate:codeclimate.json
 
 fmt:
@@ -59,7 +63,7 @@ release:
 lint-docs:
 	npx --yes --package 'markdownlint-cli@~0.34.0' -- markdownlint --ignore-path .gitignore --ignore testdata/ '**/*.md'
 
-audit:
+audit: dist/index.html
 	go list -json -deps ./... | nancy sleuth --skip-update-check
 
 watch:
