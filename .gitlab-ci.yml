@@ -30,7 +30,7 @@ test_go:
 
   script:
     - mkdir -p dist
-    - touch dist/dummy
+    - touch dist/index.html
     - make test-ci
 
   artifacts:
@@ -83,7 +83,7 @@ lint_go:
 
   script:
     - mkdir -p dist
-    - touch dist/dummy
+    - touch dist/index.html
     - make lint-ci
 
   artifacts:
@@ -167,7 +167,7 @@ audit_go:
 
   script:
     - mkdir -p dist
-    - touch dist/dummy
+    - touch dist/index.html
     - make audit
 
 audit_node:
