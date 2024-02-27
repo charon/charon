@@ -91,7 +91,7 @@ func TestRouteMeAndSignOut(t *testing.T) {
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
 		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		_, err := io.ReadAll(resp.Body)
+		_, err := io.ReadAll(resp.Body) //nolint:govet
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusGone, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
@@ -104,7 +104,7 @@ func TestRouteMeAndSignOut(t *testing.T) {
 	resp, err = ts.Client().Get(ts.URL + path) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
 		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		out, err := io.ReadAll(resp.Body) //nolint:govet
+		out, err := io.ReadAll(resp.Body)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)

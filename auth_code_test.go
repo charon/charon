@@ -54,7 +54,7 @@ func TestAuthFlowCode(t *testing.T) {
 	resp, err = ts.Client().Post(ts.URL+authFlowCodeStart, "application/json", strings.NewReader(`{"emailOrUsername":"test@example.com"}`)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-	out, err := io.ReadAll(resp.Body) //nolint:govet
+	out, err := io.ReadAll(resp.Body)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)

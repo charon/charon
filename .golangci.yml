@@ -147,4 +147,5 @@ issues:
     - path: .*_test\.go
       linters:
         - exhaustruct
+        - lll
         - wrapcheck
