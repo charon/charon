@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/tozd/go/x"
+	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 
 	"gitlab.com/charon/charon"
@@ -21,12 +22,18 @@ import (
 func TestAuthFlowCodeOnly(t *testing.T) {
 	t.Parallel()
 
+	user := identifier.New().String()
+
 	ts, service, smtpServer := startTestServer(t)
 
-	signinUserCode(t, ts, service, smtpServer, "test@example.com", charon.CompletedSignup)
+	signinUserCode(t, ts, service, smtpServer, user+"@example.com", charon.CompletedSignup, 1)
+
+	signoutUser(t, ts, service)
+
+	signinUserCode(t, ts, service, smtpServer, user+"@example.com", charon.CompletedSignin, 2)
 }
 
-func signinUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, smtpServer *smtpmock.Server, emailOrUsername string, signinOrSignout charon.Completed) {
+func signinUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, smtpServer *smtpmock.Server, emailOrUsername string, signinOrSignout charon.Completed, expectedMessages int) {
 	t.Helper()
 
 	authFlowCreate, errE := service.ReverseAPI("AuthFlowCreate", nil, nil)
@@ -74,7 +81,7 @@ func signinUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, 
 
 	messages := smtpServer.Messages()
 
-	require.Len(t, messages, 1)
+	require.Len(t, messages, expectedMessages)
 
 	// Flow is available, current provider is code.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
@@ -94,7 +101,7 @@ func signinUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	r, err := regexp.Compile(regexp.QuoteMeta(fmt.Sprintf("%s%s#code=3D", ts.URL, nonAPIAuthFlowGet)) + `(\d+)`)
 	require.NoError(t, err)
 
-	match := r.FindStringSubmatch(messages[0].MsgRequest())
+	match := r.FindStringSubmatch(messages[len(messages)-1].MsgRequest())
 	require.NotNil(t, match)
 
 	authFlowCodeComplete, errE := service.ReverseAPI("AuthFlowCodeComplete", waf.Params{"id": authFlowCreateResponse.ID.String()}, nil)
@@ -111,7 +118,7 @@ func signinUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	var authFlowResponse charon.AuthFlowResponse
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
 	require.NoError(t, errE, "% -+#.1v", errE)
-	require.Equal(t, charon.CompletedSignup, authFlowResponse.Completed)
+	require.Equal(t, signinOrSignout, authFlowResponse.Completed)
 	assert.Len(t, resp.Cookies(), 1)
 	for _, cookie := range resp.Cookies() {
 		assert.Equal(t, charon.SessionCookieName, cookie.Name)
@@ -127,6 +134,6 @@ func signinUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, 
 		assert.Equal(t, 2, resp.ProtoMajor)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
 		// There is no username or e-mail address in the response after the flow completes.
-		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"code","completed":"`+string(charon.CompletedSignup)+`","location":{"url":"/","replace":true}}`, string(out))
+		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"code","completed":"`+string(signinOrSignout)+`","location":{"url":"/","replace":true}}`, string(out))
 	}
 }
