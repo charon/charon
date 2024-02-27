@@ -67,7 +67,10 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 
 	logger := zerolog.New(zerolog.NewTestWriter(t))
 
-	smtpServer := smtpmock.New(smtpmock.ConfigurationAttr{})
+	smtpServer := smtpmock.New(smtpmock.ConfigurationAttr{
+		// See: https://github.com/mocktools/go-smtp-mock/issues/172
+		MultipleMessageReceiving: true,
+	})
 	err = smtpServer.Start()
 	require.NoError(t, err)
 	t.Cleanup(func() { smtpServer.Stop() }) //nolint:errcheck
@@ -81,11 +84,17 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 				CertFile: certPath,
 				KeyFile:  keyPath,
 			},
+			// httptest.Server allocates a random port for its listener (but does not use config.Server.Addr to do so).
+			// Having 0 for port here makes the rest of the codebase expect a random port and wait for its assignment.
+			Addr: "localhost:0",
 		},
 		Mail: charon.Mail{
 			Host: "127.0.0.1",
 			Port: smtpServer.PortNumber(),
 			From: "noreply@example.com",
+			// go-smtp-mock does not support STARTTLS.
+			// See: https://github.com/mocktools/go-smtp-mock/issues/76
+			NotRequiredTLS: true,
 		},
 		OIDC: charon.OIDC{
 			Development: true,

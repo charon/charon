@@ -62,6 +62,9 @@ type Mail struct {
 	Password kong.FileContentFlag `                                                     env:"PASSWORD_PATH" help:"File with password to use to send e-mails. Environment variable: ${env}."             placeholder:"PATH"   yaml:"password"`
 	Auth     string               `default:"${defaultMailAuth}" enum:"${mailAuthTypes}"                     help:"Authentication type to use. Possible: ${mailAuthTypes}. Default: ${defaultMailAuth}." placeholder:"STRING" yaml:"auth"`
 	From     string               `default:"${defaultMailFrom}"                                             help:"From header for e-mails. Default: ${defaultMailFrom}."                                placeholder:"EMAIL"  yaml:"from"`
+
+	// Exposed primarily for use in tests.
+	NotRequiredTLS bool `json:"-" kong:"-" yaml:"-"`
 }
 
 type Keys struct {
@@ -354,6 +357,7 @@ func (config *Config) Init() (http.Handler, *Service, errors.E) { //nolint:maint
 	if config.Mail.Host != "" {
 		c, err := mail.NewClient(
 			config.Mail.Host,
+			mail.WithHELO(domain),
 			mail.WithPort(config.Mail.Port),
 			mail.WithSMTPAuth(MailAuthTypes[config.Mail.Auth]),
 			mail.WithUsername(config.Mail.Username),
@@ -362,6 +366,11 @@ func (config *Config) Init() (http.Handler, *Service, errors.E) { //nolint:maint
 		)
 		if err != nil {
 			return nil, nil, errors.WithStack(err)
+		}
+		if config.Mail.NotRequiredTLS {
+			// go-smtp-mock does not support STARTTLS.
+			// See: https://github.com/mocktools/go-smtp-mock/issues/76
+			c.SetTLSPolicy(mail.TLSOpportunistic)
 		}
 		service.mailClient = c
 	}

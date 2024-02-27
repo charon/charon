@@ -49,7 +49,11 @@ func (s *Service) sendMail(ctx context.Context, flow *Flow, emails []string, sub
 		// similar e-mails into one thread.
 		m.SetGenHeader("X-Entity-Ref-ID", id.String())
 		site := waf.MustGetSite[*Site](ctx)
-		m.SetUserAgent(fmt.Sprintf("Charon version %s (build on %s, git revision %s)", site.Build.Version, site.Build.BuildTimestamp, site.Build.Revision))
+		if site.Build != nil {
+			m.SetUserAgent(fmt.Sprintf("Charon version %s (build on %s, git revision %s)", site.Build.Version, site.Build.BuildTimestamp, site.Build.Revision))
+		} else {
+			m.SetUserAgent("Charon")
+		}
 		ms = append(ms, m)
 	}
 

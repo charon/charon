@@ -43,7 +43,7 @@ func TestRouteMeAndSignOut(t *testing.T) {
 		assert.Equal(t, `{"error":"unauthorized"}`, string(out))
 	}
 
-	flowID := signinUser(t, ts, service)
+	flowID := signinUser(t, ts, service, charon.CompletedSignup)
 
 	// After sign-in, GET should return success.
 	resp, err = ts.Client().Get(ts.URL + path) //nolint:noctx,bodyclose
@@ -97,7 +97,7 @@ func TestRouteMeAndSignOut(t *testing.T) {
 	}
 }
 
-func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service) identifier.Identifier {
+func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, signinOrSignout charon.Completed) identifier.Identifier {
 	t.Helper()
 
 	authFlowCreate, errE := service.ReverseAPI("AuthFlowCreate", nil, nil)
@@ -142,6 +142,17 @@ func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service) iden
 	assert.Equal(t, charon.TargetSession, authFlowResponse.Target)
 	require.NotNil(t, authFlowResponse.Password)
 
+	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
+	if assert.NoError(t, err) {
+		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+		out, err := io.ReadAll(resp.Body) //nolint:govet
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, 2, resp.ProtoMajor)
+		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"password","emailOrUsername":"testuser"}`, string(out))
+	}
+
 	privateKey, err := ecdh.P256().GenerateKey(rand.Reader)
 	require.NoError(t, err)
 	remotePublicKey, err := ecdh.P256().NewPublicKey(authFlowResponse.Password.PublicKey)
@@ -174,8 +185,8 @@ func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service) iden
 	authFlowResponse = charon.AuthFlowResponse{}
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
 	require.NoError(t, errE, "% -+#.1v", errE)
-	require.Contains(t, []charon.Completed{charon.CompletedSignin, charon.CompletedSignup}, authFlowResponse.Completed)
-	assert.NotEmpty(t, resp.Cookies())
+	require.Equal(t, signinOrSignout, authFlowResponse.Completed)
+	assert.Len(t, resp.Cookies(), 1)
 	for _, cookie := range resp.Cookies() {
 		assert.Equal(t, charon.SessionCookieName, cookie.Name)
 	}
@@ -188,10 +199,7 @@ func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service) iden
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Contains(t, []string{
-			`{"target":"session","name":"Charon Dashboard","provider":"password","completed":"signin","location":{"url":"/","replace":true}}`,
-			`{"target":"session","name":"Charon Dashboard","provider":"password","completed":"signup","location":{"url":"/","replace":true}}`,
-		}, string(out))
+		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"password","completed":"`+string(signinOrSignout)+`","location":{"url":"/","replace":true}}`, string(out))
 	}
 
 	return authFlowCreateResponse.ID
