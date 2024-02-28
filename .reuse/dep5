@@ -4,13 +4,13 @@ Upstream-Contact: <https://gitlab.com/charon/charon>
 Source: https://gitlab.com/charon/charon
 
 Files: *
-Copyright: 2020 Charon contributors <https://gitlab.com/charon/charon>
+Copyright: © 2020 Charon contributors <https://gitlab.com/charon/charon>
 License: Apache-2.0
 
 Files: *.md
-Copyright: 2020 Charon contributors <https://gitlab.com/charon/charon>
+Copyright: © 2020 Charon contributors <https://gitlab.com/charon/charon>
 License: CC0-1.0
 
 Files: *.txt
-Copyright: 2020 Charon contributors <https://gitlab.com/charon/charon>
+Copyright: © 2020 Charon contributors <https://gitlab.com/charon/charon>
 License: CC0-1.0
