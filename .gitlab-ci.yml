@@ -187,6 +187,16 @@ commits:
   script:
     - '! git log --oneline "-G^(<<<<<<<|=======|>>>>>>>)" | grep "^"'
 
+reuse:
+  stage: test
+
+  image:
+    name: fsfe/reuse:latest
+    entrypoint: [""]
+
+  script:
+    - reuse lint
+
 docker:
   stage: build
 
