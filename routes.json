@@ -19,6 +19,12 @@
       "get": true
     },
     {
+      "name": "Robots",
+      "path": "/robots.txt",
+      "api": false,
+      "get": true
+    },
+    {
       "name": "Me",
       "path": "/me",
       "api": true,
