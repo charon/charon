@@ -12,6 +12,11 @@ export default defineConfig({
     license({
       sourcemap: true,
       thirdParty: {
+        allow: {
+          test: "(Apache-2.0 OR MIT OR BSD-2-Clause OR BSD-3-Clause OR ISC)",
+          failOnUnlicensed: true,
+          failOnViolation: true,
+        },
         output: {
           file: path.join(__dirname, "dist", "NOTICE.txt"),
         },
