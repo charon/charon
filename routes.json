@@ -7,6 +7,18 @@
       "get": true
     },
     {
+      "name": "License",
+      "path": "/LICENSE",
+      "api": false,
+      "get": true
+    },
+    {
+      "name": "Notice",
+      "path": "/NOTICE",
+      "api": false,
+      "get": true
+    },
+    {
       "name": "Me",
       "path": "/me",
       "api": true,

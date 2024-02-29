@@ -1,11 +1,23 @@
 /// <reference types="vitest" />
 import { defineConfig } from "vite"
 import vue from "@vitejs/plugin-vue"
+import license from "rollup-plugin-license"
+import path from "path"
 
 // https://vitejs.dev/config/
 // https://vitest.dev/config/
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    vue(),
+    license({
+      sourcemap: true,
+      thirdParty: {
+        output: {
+          file: path.join(__dirname, "dist", "NOTICE.txt"),
+        },
+      },
+    }),
+  ],
   server: {
     strictPort: true,
     hmr: {
@@ -20,6 +32,7 @@ export default defineConfig({
     },
   },
   build: {
+    sourcemap: true,
     target: ["esnext"],
   },
   test: {

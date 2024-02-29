@@ -3,6 +3,19 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "description": "Privacy-enabling account management and SSO solution.",
+  "license": "Apache-2.0",
+  "author": {
+    "name": "Charon contributors",
+    "url": "https://gitlab.com/charon/charon"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.com/charon/charon.git"
+  },
   "scripts": {
     "serve": "vite serve",
     "build": "vite build",
@@ -46,6 +59,7 @@
     "postcss-html": "^1.5.0",
     "prettier": "^3.1.1",
     "prettier-plugin-tailwindcss": "^0.5.9",
+    "rollup-plugin-license": "^3.2.0",
     "stylelint": "^16.0.2",
     "stylelint-config-standard": "^35.0.0",
     "stylelint-config-standard-vue": "^1.0.0",
