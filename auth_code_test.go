@@ -26,14 +26,14 @@ func TestAuthFlowCodeOnly(t *testing.T) {
 
 	ts, service, smtpServer := startTestServer(t)
 
-	signinUserCode(t, ts, service, smtpServer, user+"@example.com", charon.CompletedSignup, 1)
+	signinUserCode(t, ts, service, smtpServer, user+"@example.com", charon.CompletedSignup)
 
 	signoutUser(t, ts, service)
 
-	signinUserCode(t, ts, service, smtpServer, user+"@example.com", charon.CompletedSignin, 2)
+	signinUserCode(t, ts, service, smtpServer, user+"@example.com", charon.CompletedSignin)
 }
 
-func signinUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, smtpServer *smtpmock.Server, emailOrUsername string, signinOrSignout charon.Completed, expectedMessages int) {
+func signinUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, smtpServer *smtpmock.Server, emailOrUsername string, signinOrSignout charon.Completed) {
 	t.Helper()
 
 	authFlowCreate, errE := service.ReverseAPI("AuthFlowCreate", nil, nil)
@@ -79,9 +79,9 @@ func signinUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
 	assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"code","emailOrUsername":"`+emailOrUsername+`"}`, string(out))
 
-	messages := smtpServer.Messages()
+	messages := smtpServer.MessagesAndPurge()
 
-	require.Len(t, messages, expectedMessages)
+	require.Len(t, messages, 1)
 
 	// Flow is available, current provider is code.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose

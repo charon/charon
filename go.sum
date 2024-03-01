@@ -418,8 +418,8 @@ github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyua
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/mitchellh/reflectwalk v1.0.2 h1:G2LzWKi524PWgd3mLHV8Y5k7s6XUvT0Gef6zxSIeXaQ=
 github.com/mitchellh/reflectwalk v1.0.2/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx0jmZXqmk4esnw=
-github.com/mocktools/go-smtp-mock/v2 v2.2.1 h1:G9oG+0PnhyyzfP/swyd2x6taGkTwc9u07VzqJL5RQUo=
-github.com/mocktools/go-smtp-mock/v2 v2.2.1/go.mod h1:n8aNpDYncZHH/cZHtJKzQyeYT/Dut00RghVM+J1Ed94=
+github.com/mocktools/go-smtp-mock/v2 v2.2.2-0.20240301121032-be35e5a60f11 h1:kvfDpoQ3XeKTvYD6mFc7oBa49BDSkA/85Y9jWTEWR1U=
+github.com/mocktools/go-smtp-mock/v2 v2.2.2-0.20240301121032-be35e5a60f11/go.mod h1:n8aNpDYncZHH/cZHtJKzQyeYT/Dut00RghVM+J1Ed94=
 github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 h1:RWengNIwukTxcDr9M+97sNutRR1RKhG96O6jWumTTnw=
 github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826/go.mod h1:TaXosZuwdSHYgviHp1DAtfrULt5eUgsSMsZf+YrPgl8=
 github.com/nyaruka/phonenumbers v1.1.1 h1:fyoZmpLN2VCmAnc51XcrNOUVP2wT1ZzQl348ggIaXII=
