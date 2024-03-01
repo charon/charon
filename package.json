@@ -34,7 +34,7 @@
     "@tozd/identifier": "^0.2.0",
     "argon2id": "^1.0.1",
     "lodash-es": "^4.17.21",
-    "structured-field-values": "^2.0.2",
+    "structured-field-values": "^2.0.4",
     "vue": "^3.3.13",
     "vue-router": "^4.2.5"
   },
