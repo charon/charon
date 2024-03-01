@@ -339,9 +339,22 @@ func (config *Config) Init() (http.Handler, *Service, errors.E) { //nolint:maint
 			SiteContextPath: "/context.json",
 			Development:     config.Server.InDevelopment(),
 			SkipServingFile: func(path string) bool {
-				// We want the file to be served by Home route at / and not be
-				// available at index.html (as well).
-				return path == "/index.html"
+				switch path {
+				case "/index.html":
+					// We want the file to be served by Home route at / and not be
+					// available at index.html (as well).
+					return true
+				case "/LICENSE.txt":
+					// We want the file to be served by License route at /LICENSE and not be
+					// available at LICENSE.txt (as well).
+					return true
+				case "/NOTICE.txt":
+					// We want the file to be served by Notice route at /NOTICE and not be
+					// available at NOTICE.txt (as well).
+					return true
+				default:
+					return false
+				}
 			},
 		},
 		oidc:            nil,

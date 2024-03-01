@@ -12,7 +12,7 @@ func (s *Service) License(w http.ResponseWriter, req *http.Request, _ waf.Params
 		// but that is fine, they are the same (they are symlinked).
 		s.Proxy(w, req)
 	} else {
-		s.ServeStaticFile(w, req, "/LICENSE")
+		s.ServeStaticFile(w, req, "/LICENSE.txt")
 	}
 }
 
@@ -22,6 +22,6 @@ func (s *Service) Notice(w http.ResponseWriter, req *http.Request, _ waf.Params)
 		// so we just return empty response.
 		w.WriteHeader(http.StatusOK)
 	} else {
-		s.ServeStaticFile(w, req, "/NOTICE")
+		s.ServeStaticFile(w, req, "/NOTICE.txt")
 	}
 }
