@@ -17,6 +17,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -65,7 +66,14 @@ var (
 
 type emptyRequest struct{}
 
-func getSessionFromRequest(req *http.Request) (*Session, errors.E) {
+func getSessionFromRequest(w http.ResponseWriter, req *http.Request) (*Session, errors.E) {
+	// We use this header so responses might depend on it.
+	if !slices.Contains(w.Header().Values("Vary"), "Cookie") {
+		// This function might have been called multiple times, but
+		// we want to add this header with this value only once.
+		w.Header().Add("Vary", "Cookie")
+	}
+
 	cookie, err := req.Cookie(SessionCookieName)
 	if errors.Is(err, http.ErrNoCookie) {
 		return nil, errors.WithStack(ErrSessionNotFound)
@@ -105,7 +113,7 @@ func mustGetAccount(ctx context.Context) identifier.Identifier {
 }
 
 func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request, api bool) context.Context {
-	session, errE := getSessionFromRequest(req)
+	session, errE := getSessionFromRequest(w, req)
 	if errE == nil {
 		return context.WithValue(req.Context(), accountContextKey, session.Account)
 	} else if !errors.Is(errE, ErrSessionNotFound) {

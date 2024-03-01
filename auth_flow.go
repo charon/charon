@@ -145,7 +145,7 @@ func (s *Service) AuthFlowGetGet(w http.ResponseWriter, req *http.Request, param
 
 // validateSession returns session only if current session matches one made by the flow.
 func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api bool, flow *Flow) (*Session, bool) {
-	session, errE := getSessionFromRequest(req)
+	session, errE := getSessionFromRequest(w, req)
 	if errors.Is(errE, ErrSessionNotFound) {
 		if api {
 			waf.Error(w, req, http.StatusGone)
@@ -628,7 +628,7 @@ func (s *Service) AuthFlowCreatePost(w http.ResponseWriter, req *http.Request, _
 		return
 	}
 
-	_, errE = getSessionFromRequest(req)
+	_, errE = getSessionFromRequest(w, req)
 	if errE == nil {
 		encoded := s.PrepareJSON(w, req, []byte(`{"error":"alreadyAuthenticated"}`), nil)
 		if encoded == nil {

@@ -700,7 +700,7 @@ func (s *Service) returnOrganizationRef(_ context.Context, w http.ResponseWriter
 func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 
-	session, errE := getSessionFromRequest(req)
+	session, errE := getSessionFromRequest(w, req)
 	if errE == nil {
 		ctx = context.WithValue(ctx, accountContextKey, session.Account)
 	} else if !errors.Is(errE, ErrSessionNotFound) {
