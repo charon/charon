@@ -25,7 +25,8 @@
     "fmt": "prettier src --write",
     "test": "vitest",
     "coverage": "vitest --coverage",
-    "test-ci": "vitest run --reporter junit --reporter default --outputFile tests.xml --coverage"
+    "test-ci": "vitest run --reporter junit --reporter default --outputFile tests.xml --coverage",
+    "upgrade": "ncu -u"
   },
   "dependencies": {
     "@headlessui/vue": "^1.7.19",
@@ -55,6 +56,7 @@
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-vue": "^9.22.0",
+    "npm-check-updates": "^16.14.15",
     "postcss": "^8.4.35",
     "postcss-html": "^1.6.0",
     "prettier": "^3.2.5",
