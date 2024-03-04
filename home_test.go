@@ -98,7 +98,6 @@ func testStaticFile(t *testing.T, route, filePath, contentType string) {
 	expected, err := testFiles.ReadFile(filePath)
 	require.NoError(t, err)
 
-	// Regular GET should just return the SPA index page.
 	resp, err := ts.Client().Get(ts.URL + path) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
 		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
@@ -114,6 +113,7 @@ func testStaticFile(t *testing.T, route, filePath, contentType string) {
 func TestRouteHome(t *testing.T) {
 	t.Parallel()
 
+	// Regular GET should just return the SPA index page.
 	testStaticFile(t, "Home", "dist/index.html", "text/html; charset=utf-8")
 }
 

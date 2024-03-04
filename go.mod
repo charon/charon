@@ -9,6 +9,7 @@ require (
 	github.com/mocktools/go-smtp-mock/v2 v2.2.2-0.20240301121032-be35e5a60f11
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/ory/fosite v0.46.1-0.20240213123944-f38352921f22
+	github.com/temoto/robotstxt v1.1.2
 	github.com/wneessen/go-mail v0.4.2-0.20240222144916-68e6284e4e23
 	gitlab.com/tozd/go/cli v0.3.0
 	gitlab.com/tozd/go/errors v0.8.1
