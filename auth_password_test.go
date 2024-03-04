@@ -21,14 +21,14 @@ import (
 	"gitlab.com/charon/charon"
 )
 
-func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emailOrUsername string, signinOrSignout charon.Completed) identifier.Identifier {
+func startPasswordSignin(t *testing.T, ts *httptest.Server, service *charon.Service, emailOrUsername string) (identifier.Identifier, *http.Response) {
 	t.Helper()
 
 	authFlowCreate, errE := service.ReverseAPI("AuthFlowCreate", nil, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	// Start the session target auth flow.
-	resp, err := ts.Client().Post(ts.URL+authFlowCreate, "application/json", strings.NewReader(`{"location":"/"}`)) //nolint:noctx,bodyclose
+	resp, err := ts.Client().Post(ts.URL+authFlowCreate, "application/json", strings.NewReader(`{"location":"/"}`)) //nolint:noctx
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -42,7 +42,7 @@ func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emai
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	// Flow is available in initial state.
-	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
+	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx
 	if assert.NoError(t, err) {
 		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 		out, err := io.ReadAll(resp.Body) //nolint:govet
@@ -57,7 +57,7 @@ func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emai
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	// Start password authentication.
-	resp, err = ts.Client().Post(ts.URL+authFlowPasswordStart, "application/json", strings.NewReader(`{"emailOrUsername":"`+emailOrUsername+`"}`)) //nolint:noctx,bodyclose
+	resp, err = ts.Client().Post(ts.URL+authFlowPasswordStart, "application/json", strings.NewReader(`{"emailOrUsername":"`+emailOrUsername+`"}`)) //nolint:noctx
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -70,7 +70,7 @@ func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emai
 	require.NotNil(t, authFlowResponse.Password)
 
 	// Flow is available, current provider is password.
-	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
+	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx
 	if assert.NoError(t, err) {
 		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 		out, err := io.ReadAll(resp.Body) //nolint:govet
@@ -105,14 +105,22 @@ func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emai
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	// Complete password authentication.
-	resp, err = ts.Client().Post(ts.URL+authFlowPasswordComplete, "application/json", bytes.NewReader(data)) //nolint:noctx,bodyclose
+	resp, err = ts.Client().Post(ts.URL+authFlowPasswordComplete, "application/json", bytes.NewReader(data)) //nolint:noctx
 	require.NoError(t, err)
+
+	return authFlowCreateResponse.ID, resp
+}
+
+func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emailOrUsername string, signinOrSignout charon.Completed) identifier.Identifier {
+	t.Helper()
+
+	flowID, resp := startPasswordSignin(t, ts, service, emailOrUsername) //nolint:bodyclose
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-	authFlowResponse = charon.AuthFlowResponse{}
-	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
+	authFlowResponse := charon.AuthFlowResponse{}
+	errE := x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
 	require.NoError(t, errE, "% -+#.1v", errE)
 	require.Equal(t, signinOrSignout, authFlowResponse.Completed)
 	assert.Len(t, resp.Cookies(), 1)
@@ -120,8 +128,11 @@ func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emai
 		assert.Equal(t, charon.SessionCookieName, cookie.Name)
 	}
 
+	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
 	// Flow is available and is completed.
-	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
+	resp, err := ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
 		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 		out, err := io.ReadAll(resp.Body)
@@ -133,5 +144,5 @@ func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emai
 		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"password","completed":"`+string(signinOrSignout)+`","location":{"url":"/","replace":true}}`, string(out))
 	}
 
-	return authFlowCreateResponse.ID
+	return flowID
 }

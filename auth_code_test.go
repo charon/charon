@@ -23,14 +23,40 @@ func TestAuthFlowCodeOnly(t *testing.T) {
 	t.Parallel()
 
 	user := identifier.New().String()
+	email := user + "@example.com"
 
 	ts, service, smtpServer := startTestServer(t)
 
-	signinUserCode(t, ts, service, smtpServer, user+"@example.com", charon.CompletedSignup)
+	signinUserCode(t, ts, service, smtpServer, email, charon.CompletedSignup)
 
 	signoutUser(t, ts, service)
 
-	signinUserCode(t, ts, service, smtpServer, user+"@example.com", charon.CompletedSignin)
+	signinUserCode(t, ts, service, smtpServer, email, charon.CompletedSignin)
+}
+
+func TestAuthFlowPasswordAndCode(t *testing.T) {
+	t.Parallel()
+
+	user := identifier.New().String()
+	email := user + "@example.com"
+
+	ts, service, smtpServer := startTestServer(t)
+
+	// Start password authentication with e-mail address.
+	flowID, resp := startPasswordSignin(t, ts, service, email) //nolint:bodyclose
+
+	// Complete with user code.
+	completeUserCode(t, ts, service, smtpServer, resp, email, charon.CompletedSignup, flowID)
+
+	signoutUser(t, ts, service)
+
+	// Signed-up user can authenticate with code only.
+	signinUserCode(t, ts, service, smtpServer, email, charon.CompletedSignin)
+
+	signoutUser(t, ts, service)
+
+	// Signed-up user can authenticate with password only.
+	signinUser(t, ts, service, email, charon.CompletedSignin)
 }
 
 func signinUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, smtpServer *smtpmock.Server, emailOrUsername string, signinOrSignout charon.Completed) {
@@ -71,6 +97,13 @@ func signinUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	// Start code authentication.
 	resp, err = ts.Client().Post(ts.URL+authFlowCodeStart, "application/json", strings.NewReader(`{"emailOrUsername":"`+emailOrUsername+`"}`)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
+
+	completeUserCode(t, ts, service, smtpServer, resp, emailOrUsername, signinOrSignout, authFlowCreateResponse.ID)
+}
+
+func completeUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, smtpServer *smtpmock.Server, resp *http.Response, emailOrUsername string, signinOrSignout charon.Completed, flowID identifier.Identifier) {
+	t.Helper()
+
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	out, err := io.ReadAll(resp.Body)
 	assert.NoError(t, err)
@@ -82,6 +115,9 @@ func signinUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	messages := smtpServer.MessagesAndPurge()
 
 	require.Len(t, messages, 1)
+
+	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
 
 	// Flow is available, current provider is code.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
@@ -95,7 +131,7 @@ func signinUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, 
 		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"code","emailOrUsername":"`+emailOrUsername+`"}`, string(out))
 	}
 
-	nonAPIAuthFlowGet, errE := service.Reverse("AuthFlowGet", waf.Params{"id": authFlowCreateResponse.ID.String()}, nil)
+	nonAPIAuthFlowGet, errE := service.Reverse("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	r, err := regexp.Compile(regexp.QuoteMeta(fmt.Sprintf("%s%s#code=3D", ts.URL, nonAPIAuthFlowGet)) + `(\d+)`)
@@ -104,7 +140,7 @@ func signinUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	match := r.FindStringSubmatch(messages[len(messages)-1].MsgRequest())
 	require.NotNil(t, match)
 
-	authFlowCodeComplete, errE := service.ReverseAPI("AuthFlowCodeComplete", waf.Params{"id": authFlowCreateResponse.ID.String()}, nil)
+	authFlowCodeComplete, errE := service.ReverseAPI("AuthFlowCodeComplete", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	// Complete code authentication.
