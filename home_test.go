@@ -87,15 +87,15 @@ func init() { //nolint:gochecknoinits
 	}
 }
 
-func TestRouteHome(t *testing.T) {
-	t.Parallel()
+func testStaticFile(t *testing.T, route, filePath, contentType string) {
+	t.Helper()
 
 	ts, service, _ := startTestServer(t)
 
-	path, errE := service.Reverse("Home", nil, nil)
+	path, errE := service.Reverse(route, nil, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	expected, err := testFiles.ReadFile("dist/index.html")
+	expected, err := testFiles.ReadFile(filePath)
 	require.NoError(t, err)
 
 	// Regular GET should just return the SPA index page.
@@ -106,9 +106,15 @@ func TestRouteHome(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
-		assert.Equal(t, "text/html; charset=utf-8", resp.Header.Get("Content-Type"))
+		assert.Equal(t, contentType, resp.Header.Get("Content-Type"))
 		assert.Equal(t, string(expected), string(out))
 	}
+}
+
+func TestRouteHome(t *testing.T) {
+	t.Parallel()
+
+	testStaticFile(t, "Home", "dist/index.html", "text/html; charset=utf-8")
 }
 
 func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock.Server) {
