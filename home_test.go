@@ -7,9 +7,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	_ "embed"
+	"embed"
 	"encoding/pem"
 	"io"
+	"io/fs"
 	"math/big"
 	"net/http"
 	"net/http/cookiejar"
@@ -18,6 +19,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"testing/fstest"
 	"time"
 
 	smtpmock "github.com/mocktools/go-smtp-mock/v2"
@@ -31,8 +33,59 @@ import (
 	"gitlab.com/charon/charon"
 )
 
-//go:embed dist/index.html
-var indexFile string
+//go:embed public
+var publicFiles embed.FS
+
+var testFiles = fstest.MapFS{ //nolint:gochecknoglobals
+	"dist/index.html": &fstest.MapFile{
+		Data: []byte("<html><body>dummy test content</body></html>"),
+	},
+	// Symlinks are not included in publicFiles.
+	"dist/LICENSE.txt": &fstest.MapFile{
+		Data: []byte("test license file"),
+	},
+	"dist/NOTICE.txt": &fstest.MapFile{
+		Data: []byte("test notice file"),
+	},
+}
+
+func init() { //nolint:gochecknoinits
+	f, err := fs.Sub(publicFiles, "public")
+	if err != nil {
+		panic(err)
+	}
+
+	err = fs.WalkDir(f, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+
+		data, err := f.(fs.ReadFileFS).ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		info, err := d.Info()
+		if err != nil {
+			return err
+		}
+
+		testFiles[filepath.Join("dist", path)] = &fstest.MapFile{
+			Data:    data,
+			Mode:    info.Mode(),
+			ModTime: info.ModTime(),
+			Sys:     info.Sys(),
+		}
+
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+}
 
 func TestRouteHome(t *testing.T) {
 	t.Parallel()
@@ -41,6 +94,9 @@ func TestRouteHome(t *testing.T) {
 
 	path, errE := service.Reverse("Home", nil, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
+
+	expected, err := testFiles.ReadFile("dist/index.html")
+	require.NoError(t, err)
 
 	// Regular GET should just return the SPA index page.
 	resp, err := ts.Client().Get(ts.URL + path) //nolint:noctx,bodyclose
@@ -51,7 +107,7 @@ func TestRouteHome(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
 		assert.Equal(t, "text/html; charset=utf-8", resp.Header.Get("Content-Type"))
-		assert.Equal(t, indexFile, string(out))
+		assert.Equal(t, string(expected), string(out))
 	}
 }
 
@@ -101,7 +157,7 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 		},
 	}
 
-	handler, service, errE := config.Init()
+	handler, service, errE := config.Init(testFiles)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	ts := httptest.NewUnstartedServer(nil)
@@ -136,7 +192,7 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 }
 
 // Same as in waf package.
-// TODO: Move it to tozd/go/x package?
+// TODO: Move it to tozd/go/x package? It is used also in waf package.
 func createTempCertificateFiles(certPath, keyPath string, domains []string) error {
 	// Generate a new ECDSA private key.
 	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)

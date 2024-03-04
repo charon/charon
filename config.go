@@ -184,7 +184,7 @@ type Service struct {
 }
 
 // Init is used primarily in tests. Use Run otherwise.
-func (config *Config) Init() (http.Handler, *Service, errors.E) { //nolint:maintidx
+func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.E) { //nolint:maintidx
 	var secret []byte
 	if config.OIDC.Secret != nil {
 		// We use a prefix to aid secret scanners.
@@ -423,7 +423,7 @@ func (config *Config) Init() (http.Handler, *Service, errors.E) { //nolint:maint
 }
 
 func (config *Config) Run() errors.E {
-	handler, service, errE := config.Init()
+	handler, service, errE := config.Init(files)
 	if errE != nil {
 		return errE
 	}

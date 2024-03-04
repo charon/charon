@@ -30,7 +30,7 @@ node_modules:
 
 dist/index.html:
 	mkdir -p dist
-	if [ ! -e dist/index.html ]; then echo "dummy contents" > dist/index.html; fi
+	if [ ! -e dist/index.html ]; then echo "<html><body>dummy content</body></html>" > dist/index.html; fi
 
 test: dist/index.html
 	gotestsum --format pkgname --packages ./... -- -race -timeout 10m -cover -covermode atomic
