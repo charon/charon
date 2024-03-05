@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/tozd/go/x"
+	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 
 	"gitlab.com/charon/charon"
@@ -84,7 +85,8 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 	publicKeyBytes, err := webauthncbor.Marshal(rsaPublicKeyData)
 	require.NoError(t, err)
 
-	credentialID := []byte("foobarPublicKey")
+	id := identifier.New()
+	credentialID := id[:]
 	publicKeyID := base64.RawURLEncoding.EncodeToString(credentialID)
 
 	clientData := protocol.CollectedClientData{
