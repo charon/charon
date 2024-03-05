@@ -77,6 +77,14 @@ make
 
 This will create `charon` binary.
 
+It requires [Go](https://golang.org/) 1.21 or newer.
+Node 20 or newer is required as well.
+
+Automatic media type detection uses file extensions and a file extension database has to be available
+on the system.
+On Alpine this can be `mailcap` package.
+On Debina/Ubuntu `media-types` package.
+
 ## Usage
 
 To run Charon you need a HTTPS TLS certificate (as required by HTTP2). When running locally
