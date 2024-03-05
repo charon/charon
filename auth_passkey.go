@@ -222,6 +222,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 	parsedResponse, err := assertionResponse.Parse()
 	if err != nil {
 		s.BadRequestWithError(w, req, errors.WithStack(err))
+		return
 	}
 
 	credential, err := s.passkeyProvider().ValidateDiscoverableLogin(func(rawID, _ []byte) (webauthn.User, error) {
@@ -367,6 +368,7 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 	parsedResponse, err := createResponse.Parse()
 	if err != nil {
 		s.BadRequestWithError(w, req, errors.WithStack(err))
+		return
 	}
 
 	credential, err := s.passkeyProvider().CreateCredential(&charonUser{nil}, *flowPasskey, parsedResponse)

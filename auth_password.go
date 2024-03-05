@@ -42,9 +42,9 @@ var argon2idParams = argon2id.Params{ //nolint:gochecknoglobals
 }
 
 const (
-	PasswordProvider = "password"
-	EmailProvider    = "email"
-	UsernameProvider = "username"
+	PasswordProvider Provider = "password"
+	EmailProvider    Provider = "email"
+	UsernameProvider Provider = "username"
 )
 
 type AuthFlowResponsePasswordDeriveOptions struct {

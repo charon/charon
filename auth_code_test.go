@@ -62,43 +62,16 @@ func TestAuthFlowPasswordAndCode(t *testing.T) {
 func signinUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, smtpServer *smtpmock.Server, emailOrUsername string, signinOrSignout charon.Completed) {
 	t.Helper()
 
-	authFlowCreate, errE := service.ReverseAPI("AuthFlowCreate", nil, nil)
-	require.NoError(t, errE, "% -+#.1v", errE)
+	flowID := createAuthFlow(t, ts, service)
 
-	// Start the session target auth flow.
-	resp, err := ts.Client().Post(ts.URL+authFlowCreate, "application/json", strings.NewReader(`{"location":"/"}`)) //nolint:noctx,bodyclose
-	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, 2, resp.ProtoMajor)
-	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-	var authFlowCreateResponse charon.AuthFlowCreateResponse
-	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowCreateResponse)
-	require.NoError(t, errE, "% -+#.1v", errE)
-
-	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": authFlowCreateResponse.ID.String()}, nil)
-	require.NoError(t, errE, "% -+#.1v", errE)
-
-	// Flow is available in initial state.
-	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
-	if assert.NoError(t, err) {
-		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		out, err := io.ReadAll(resp.Body) //nolint:govet
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		assert.Equal(t, 2, resp.ProtoMajor)
-		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"target":"session","name":"Charon Dashboard"}`, string(out))
-	}
-
-	authFlowCodeStart, errE := service.ReverseAPI("AuthFlowCodeStart", waf.Params{"id": authFlowCreateResponse.ID.String()}, nil)
+	authFlowCodeStart, errE := service.ReverseAPI("AuthFlowCodeStart", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	// Start code authentication.
-	resp, err = ts.Client().Post(ts.URL+authFlowCodeStart, "application/json", strings.NewReader(`{"emailOrUsername":"`+emailOrUsername+`"}`)) //nolint:noctx,bodyclose
+	resp, err := ts.Client().Post(ts.URL+authFlowCodeStart, "application/json", strings.NewReader(`{"emailOrUsername":"`+emailOrUsername+`"}`)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
 
-	completeUserCode(t, ts, service, smtpServer, resp, emailOrUsername, signinOrSignout, authFlowCreateResponse.ID)
+	completeUserCode(t, ts, service, smtpServer, resp, emailOrUsername, signinOrSignout, flowID)
 }
 
 func completeUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, smtpServer *smtpmock.Server, resp *http.Response, emailOrUsername string, signinOrSignout charon.Completed, flowID identifier.Identifier) {
