@@ -24,7 +24,7 @@ test_go:
   image: golang:1.21-alpine3.18
 
   before_script:
-    - apk --update add make bash gcc musl-dev
+    - apk --update add make bash gcc musl-dev mailcap
     - (cd /go; go install gotest.tools/gotestsum@v1.10.1)
     - (cd /go; go install github.com/boumenot/gocover-cobertura@v1.2.0)
 
