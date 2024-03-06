@@ -25,7 +25,7 @@ func TestAuthFlowCodeOnly(t *testing.T) {
 	user := identifier.New().String()
 	email := user + "@example.com"
 
-	ts, service, smtpServer := startTestServer(t)
+	ts, service, smtpServer, _ := startTestServer(t)
 
 	signinUserCode(t, ts, service, smtpServer, email, charon.CompletedSignup)
 
@@ -40,7 +40,7 @@ func TestAuthFlowPasswordAndCode(t *testing.T) {
 	user := identifier.New().String()
 	email := user + "@example.com"
 
-	ts, service, smtpServer := startTestServer(t)
+	ts, service, smtpServer, _ := startTestServer(t)
 
 	// Start password authentication with e-mail address.
 	flowID, resp := startPasswordSignin(t, ts, service, email) //nolint:bodyclose

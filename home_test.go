@@ -23,6 +23,7 @@ import (
 	"time"
 
 	smtpmock "github.com/mocktools/go-smtp-mock/v2"
+	"github.com/ory/fosite"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -90,7 +91,7 @@ func init() { //nolint:gochecknoinits
 func testStaticFile(t *testing.T, route, filePath, contentType string) {
 	t.Helper()
 
-	ts, service, _ := startTestServer(t)
+	ts, service, _, _ := startTestServer(t)
 
 	path, errE := service.Reverse(route, nil, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -117,7 +118,7 @@ func TestRouteHome(t *testing.T) {
 	testStaticFile(t, "Home", "dist/index.html", "text/html; charset=utf-8")
 }
 
-func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock.Server) {
+func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock.Server, *httptest.Server) {
 	t.Helper()
 
 	tempDir := t.TempDir()
@@ -136,6 +137,8 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 	err = smtpServer.Start()
 	require.NoError(t, err)
 	t.Cleanup(func() { smtpServer.Stop() }) //nolint:errcheck
+
+	oidcTS, oidcStore := startOIDCTestServer(t)
 
 	config := charon.Config{
 		LoggingConfig: z.LoggingConfig{
@@ -160,6 +163,15 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 		},
 		OIDC: charon.OIDC{
 			Development: true,
+		},
+		Providers: charon.Providers{
+			Testing: charon.GenericOIDCProvider{
+				OIDCProvider: charon.OIDCProvider{
+					ClientID: oidcTestingClientID,
+					Secret:   []byte(oidcTestingSecret),
+				},
+				Issuer: oidcTS.URL,
+			},
 		},
 	}
 
@@ -194,7 +206,13 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 
 	ts.Client().Jar = jar
 
-	return ts, service, smtpServer
+	authOIDCProvider, errE := service.Reverse("AuthOIDCProvider", waf.Params{"provider": "testing"}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	// We have the location testing server listens on now, so we can set the redirect URI.
+	oidcStore.Clients[oidcTestingClientID].(*fosite.DefaultClient).RedirectURIs = []string{ts.URL + authOIDCProvider} //nolint:forcetypeassert
+
+	return ts, service, smtpServer, oidcTS
 }
 
 // Same as in waf package.

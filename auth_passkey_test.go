@@ -28,7 +28,7 @@ import (
 func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 	t.Parallel()
 
-	ts, service, _ := startTestServer(t)
+	ts, service, _, _ := startTestServer(t)
 
 	flowID := createAuthFlow(t, ts, service)
 

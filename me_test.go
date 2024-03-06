@@ -20,7 +20,7 @@ func TestRouteMeAndSignOut(t *testing.T) {
 
 	username := identifier.New().String()
 
-	ts, service, _ := startTestServer(t)
+	ts, service, _, _ := startTestServer(t)
 
 	me, errE := service.ReverseAPI("Me", nil, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)

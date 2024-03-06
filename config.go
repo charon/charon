@@ -46,12 +46,24 @@ type OIDCProvider struct {
 	Secret   kong.FileContentFlag `env:"SECRET_PATH" help:"File with ${provider}'s client secret. Environment variable: ${env}." placeholder:"PATH" yaml:"secret"`
 }
 
+type GenericOIDCProvider struct {
+	OIDCProvider
+
+	Issuer    string
+	ForcePKCE bool
+	AuthURL   string
+	TokenURL  string
+}
+
 // TODO: Add Kong validator to OIDCProvider to validate that or both or none fields are set.
 //       See: https://github.com/alecthomas/kong/issues/90
 
 type Providers struct {
 	Google   OIDCProvider `embed:"" envprefix:"GOOGLE_"   prefix:"google."   set:"provider=Google"   yaml:"google"`
 	Facebook OIDCProvider `embed:"" envprefix:"FACEBOOK_" prefix:"facebook." set:"provider=Facebook" yaml:"facebook"`
+
+	// Exposed primarily for use in tests.
+	Testing GenericOIDCProvider `json:"-" kong:"-" yaml:"-"`
 }
 
 //nolint:lll
@@ -81,13 +93,13 @@ type Keys struct {
 
 func (k *Keys) Init(development bool) errors.E {
 	if k.RSA != nil {
-		key, errE := makeRSAKey(k.RSA)
+		key, errE := MakeRSAKey(k.RSA)
 		if errE != nil {
 			return errors.WithMessage(errE, "invalid RSA private key")
 		}
 		k.rsa = key
 	} else if development {
-		key, errE := generateRSAKey()
+		key, errE := GenerateRSAKey()
 		if errE != nil {
 			return errE
 		}
@@ -103,7 +115,7 @@ func (k *Keys) Init(development bool) errors.E {
 		}
 		k.p256 = key
 	} else if development {
-		key, errE := generateEllipticKey(elliptic.P256(), "ES256")
+		key, errE := GenerateEllipticKey(elliptic.P256(), "ES256")
 		if errE != nil {
 			return errE
 		}
@@ -117,7 +129,7 @@ func (k *Keys) Init(development bool) errors.E {
 		}
 		k.p384 = key
 	} else if development {
-		key, errE := generateEllipticKey(elliptic.P384(), "ES384")
+		key, errE := GenerateEllipticKey(elliptic.P384(), "ES384")
 		if errE != nil {
 			return errE
 		}
@@ -131,7 +143,7 @@ func (k *Keys) Init(development bool) errors.E {
 		}
 		k.p521 = key
 	} else if development {
-		key, errE := generateEllipticKey(elliptic.P521(), "ES512")
+		key, errE := GenerateEllipticKey(elliptic.P521(), "ES512")
 		if errE != nil {
 			return errE
 		}
@@ -290,6 +302,20 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			forcePKCE: true,
 			authURL:   "",
 			tokenURL:  "https://graph.facebook.com/oauth/access_token",
+		})
+	}
+	if config.Providers.Testing.ClientID != "" && config.Providers.Testing.Secret != nil && config.Providers.Testing.Issuer != "" {
+		providers = append(providers, SiteProvider{
+			Key:      "testing",
+			Name:     "Testing",
+			Type:     "oidc",
+			issuer:   config.Providers.Testing.Issuer,
+			clientID: config.Providers.Testing.ClientID,
+			// We trim space so that the file can contain whitespace (e.g., a newline) at the end.
+			secret:    strings.TrimSpace(string(config.Providers.Testing.Secret)),
+			forcePKCE: config.Providers.Testing.ForcePKCE,
+			authURL:   config.Providers.Testing.AuthURL,
+			tokenURL:  config.Providers.Testing.TokenURL,
 		})
 	}
 	for _, site := range sites {
