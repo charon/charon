@@ -218,7 +218,13 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	out, err = io.ReadAll(resp.Body)
 	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, resp.StatusCode, string(out))
+	assert.Equal(t, http.StatusSeeOther, resp.StatusCode, string(out))
+	location = resp.Header.Get("Location")
+	assert.NotEmpty(t, location)
+
+	route, errE := service.GetRoute(location, http.MethodGet)
+	assert.NoError(t, errE, "% -+#.1v", errE)
+	assert.Equal(t, "AuthFlowGet", route.Name)
 
 	// Flow is available and is completed.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose

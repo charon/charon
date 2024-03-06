@@ -61,6 +61,7 @@ func TestOIDCAuthorize(t *testing.T) {
 
 	route, errE := service.GetRoute(location, http.MethodGet)
 	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Equal(t, "AuthFlowGet", route.Name)
 
 	flowID, errE = identifier.FromString(route.Params["id"])
 	require.NoError(t, errE, "% -+#.1v", errE)
