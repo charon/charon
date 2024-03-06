@@ -31,7 +31,7 @@ func (argon2idHasher) Compare(_ context.Context, hash, data []byte) error {
 	strData = strings.TrimPrefix(strData, "chc-")
 	// TODO: Use byte as input and not string.
 	//       See: https://github.com/alexedwards/argon2id/issues/26
-	match, err := argon2id.ComparePasswordAndHash(string(hash), strData)
+	match, err := argon2id.ComparePasswordAndHash(strData, string(hash))
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -139,6 +139,9 @@ func sanitizeAuthorizeRequest(request *fosite.AuthorizeRequest) *fosite.Authoriz
 			"max_age", "prompt", "acr_values", "id_token_hint", "nonce",
 			// PCRE.
 			"code_challenge", "code_challenge_method",
+			// Required so that it is possible to validate if it is passed to the token
+			// endpoint as well, if it was first passed to the authorization endpoint.
+			"redirect_uri",
 			// Other fields.
 			"display", "ui_locales", "login_hint",
 		},

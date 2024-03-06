@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,7 +17,7 @@ import (
 	"gitlab.com/charon/charon"
 )
 
-func TestOIDCAuthorize(t *testing.T) {
+func TestOIDCAuthorizeAndToken(t *testing.T) {
 	t.Parallel()
 
 	ts, service, _, _ := startTestServer(t)
@@ -56,6 +57,7 @@ func TestOIDCAuthorize(t *testing.T) {
 	out, err := io.ReadAll(resp.Body)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusSeeOther, resp.StatusCode, string(out))
+	assert.Equal(t, 2, resp.ProtoMajor)
 	location := resp.Header.Get("Location")
 	assert.NotEmpty(t, location)
 
@@ -84,4 +86,41 @@ func TestOIDCAuthorize(t *testing.T) {
 	signinUser(t, ts, service, username, charon.CompletedSignin, organization.ID, flowID, charon.TargetOIDC)
 
 	chooseIdentity(t, ts, service, *organization.ID, flowID)
+
+	doRedirect(t, ts, service, *organization.ID, flowID)
+
+	nonAPIAuthFlowGet, errE := service.Reverse("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	resp, err = ts.Client().Get(ts.URL + nonAPIAuthFlowGet) //nolint:noctx,bodyclose
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	out, err = io.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusSeeOther, resp.StatusCode, string(out))
+	assert.Equal(t, 2, resp.ProtoMajor)
+	location = resp.Header.Get("Location")
+	assert.NotEmpty(t, location)
+	assert.True(t, strings.HasPrefix(location, "https://example.com/redirect?"), location)
+
+	// Flow is available and is completed.
+	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
+	if assert.NoError(t, err) {
+		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+		out, err := io.ReadAll(resp.Body) //nolint:govet
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, 2, resp.ProtoMajor)
+		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+		assert.Equal(t, `{"target":"oidc","name":"Test application","homepage":"https://example.com","organizationId":"`+organization.ID.String()+`","provider":"password","completed":"redirect"}`, string(out))
+	}
+
+	parsedLocation, err := url.Parse(location)
+	require.NoError(t, err)
+	locationQuery := parsedLocation.Query()
+	code := locationQuery.Get("code")
+	locationQuery.Del("code")
+	assert.NotEmpty(t, code)
+	assert.Equal(t, url.Values{"scope": []string{"openid"}, "state": []string{state}}, locationQuery)
+
+	exchangeCodeForToken(t, ts, service, organization, code, challenge)
 }

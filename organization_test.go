@@ -9,9 +9,10 @@ import (
 	"github.com/alexedwards/argon2id"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gitlab.com/charon/charon"
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/waf"
+
+	"gitlab.com/charon/charon"
 )
 
 const applicationClientSecret = "client-secret"
