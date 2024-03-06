@@ -238,12 +238,6 @@ func TestAuthFlowOIDC(t *testing.T) {
 
 	ts, service, _, oidcTS := startTestServer(t)
 
-	oidcClient := oidcTS.Client()
-	// We do not follow redirects automatically.
-	oidcClient.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
-		return http.ErrUseLastResponse
-	}
-
 	// Signup with OIDC.
 	oidcSignin(t, ts, service, oidcTS, charon.CompletedSignup)
 

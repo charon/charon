@@ -206,6 +206,14 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 
 	ts.Client().Jar = jar
 
+	// We do not follow redirects automatically.
+	ts.Client().CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+	oidcTS.Client().CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+
 	authOIDCProvider, errE := service.Reverse("AuthOIDCProvider", waf.Params{"provider": "testing"}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 

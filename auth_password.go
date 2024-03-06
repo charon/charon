@@ -33,7 +33,7 @@ const (
 	passwordMinLength        = 8
 )
 
-var argon2idParams = argon2id.Params{ //nolint:gochecknoglobals
+var Argon2idParams = argon2id.Params{ //nolint:gochecknoglobals
 	Memory:      argon2idMemory,
 	Iterations:  argon2idTime,
 	Parallelism: argon2idThreads,
@@ -311,10 +311,10 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 				// Correct password.
 				jsonData := credential.Data
 				// If options are different, we migrate the password to new options.
-				if *options != argon2idParams {
+				if *options != Argon2idParams {
 					// TODO: Use byte as input and not string.
 					//       See: https://github.com/alexedwards/argon2id/issues/26
-					hashedPassword, err := argon2id.CreateHash(string(plainPassword), &argon2idParams)
+					hashedPassword, err := argon2id.CreateHash(string(plainPassword), &Argon2idParams)
 					if err != nil {
 						s.InternalServerErrorWithError(w, req, errors.WithStack(err))
 						return
@@ -380,7 +380,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 
 	// TODO: Use byte as input and not string.
 	//       See: https://github.com/alexedwards/argon2id/issues/26
-	hashedPassword, err := argon2id.CreateHash(string(plainPassword), &argon2idParams)
+	hashedPassword, err := argon2id.CreateHash(string(plainPassword), &Argon2idParams)
 	if err != nil {
 		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
 		return

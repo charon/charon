@@ -46,7 +46,7 @@ func (argon2idHasher) Compare(_ context.Context, hash, data []byte) error {
 func (argon2idHasher) Hash(_ context.Context, data []byte) ([]byte, error) {
 	// TODO: Use byte as input and not string.
 	//       See: https://github.com/alexedwards/argon2id/issues/26
-	hashedPassword, err := argon2id.CreateHash(string(data), &argon2idParams)
+	hashedPassword, err := argon2id.CreateHash(string(data), &Argon2idParams)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

@@ -140,11 +140,11 @@ func (c *OrganizationApplicationClientBackend) Validate(
 	// TODO: What is a workflow to make these params stricter in the future?
 	//       API calls will start failing with existing secrets on unrelated updates.
 	if err != nil ||
-		params.Memory < argon2idParams.Memory ||
-		params.Iterations < argon2idParams.Iterations ||
-		params.Parallelism < argon2idParams.Parallelism ||
-		params.SaltLength < argon2idParams.SaltLength ||
-		params.KeyLength < argon2idParams.KeyLength {
+		params.Memory < Argon2idParams.Memory ||
+		params.Iterations < Argon2idParams.Iterations ||
+		params.Parallelism < Argon2idParams.Parallelism ||
+		params.SaltLength < Argon2idParams.SaltLength ||
+		params.KeyLength < Argon2idParams.KeyLength {
 		errE := errors.WithMessage(err, "invalid client secret")
 		errors.Details(errE)["id"] = *c.ID
 		return errE
@@ -214,11 +214,11 @@ func (c *OrganizationApplicationClientService) Validate(
 	// TODO: What is a workflow to make these params stricter in the future?
 	//       API calls will start failing with existing secrets on unrelated updates.
 	if err != nil ||
-		params.Memory < argon2idParams.Memory ||
-		params.Iterations < argon2idParams.Iterations ||
-		params.Parallelism < argon2idParams.Parallelism ||
-		params.SaltLength < argon2idParams.SaltLength ||
-		params.KeyLength < argon2idParams.KeyLength {
+		params.Memory < Argon2idParams.Memory ||
+		params.Iterations < Argon2idParams.Iterations ||
+		params.Parallelism < Argon2idParams.Parallelism ||
+		params.SaltLength < Argon2idParams.SaltLength ||
+		params.KeyLength < Argon2idParams.KeyLength {
 		errE := errors.WithMessage(err, "invalid client secret")
 		errors.Details(errE)["id"] = *c.ID
 		return errE

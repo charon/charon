@@ -50,3 +50,34 @@ func createAuthFlow(t *testing.T, ts *httptest.Server, service *charon.Service) 
 
 	return authFlowCreateResponse.ID
 }
+
+func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, organizationID, flowID identifier.Identifier) {
+	t.Helper()
+
+	authFlowChooseIdentity, errE := service.ReverseAPI("AuthFlowChooseIdentity", waf.Params{"id": flowID.String()}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	resp, err := ts.Client().Post(ts.URL+authFlowChooseIdentity, "application/json", strings.NewReader(`{}`)) //nolint:noctx,bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	out, err := io.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, 2, resp.ProtoMajor)
+	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+	assert.Equal(t, `{"target":"oidc","name":"Test application","homepage":"https://example.com","organizationId":"`+organizationID.String()+`","provider":"password","completed":"identity"}`, string(out))
+
+	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
+	if assert.NoError(t, err) {
+		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+		out, err := io.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, 2, resp.ProtoMajor)
+		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+		assert.Equal(t, `{"target":"oidc","name":"Test application","homepage":"https://example.com","organizationId":"`+organizationID.String()+`","provider":"password","completed":"identity"}`, string(out))
+	}
+}

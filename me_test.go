@@ -37,7 +37,8 @@ func TestRouteMeAndSignOut(t *testing.T) {
 		assert.Equal(t, `{"error":"unauthorized"}`, string(out))
 	}
 
-	flowID := signinUser(t, ts, service, username, charon.CompletedSignup)
+	flowID := createAuthFlow(t, ts, service)
+	signinUser(t, ts, service, username, charon.CompletedSignup, nil, flowID, charon.TargetSession)
 
 	// After sign-up, GET should return success.
 	resp, err = ts.Client().Get(ts.URL + me) //nolint:noctx,bodyclose
@@ -79,7 +80,8 @@ func TestRouteMeAndSignOut(t *testing.T) {
 		// TODO: This should return JSON with some error payload.
 	}
 
-	signinUser(t, ts, service, username, charon.CompletedSignin)
+	flowID = createAuthFlow(t, ts, service)
+	signinUser(t, ts, service, username, charon.CompletedSignin, nil, flowID, charon.TargetSession)
 
 	// After sign-in, GET should again return success.
 	resp, err = ts.Client().Get(ts.URL + me) //nolint:noctx,bodyclose

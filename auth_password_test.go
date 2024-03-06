@@ -21,10 +21,8 @@ import (
 	"gitlab.com/charon/charon"
 )
 
-func startPasswordSignin(t *testing.T, ts *httptest.Server, service *charon.Service, emailOrUsername string) (identifier.Identifier, *http.Response) {
+func startPasswordSignin(t *testing.T, ts *httptest.Server, service *charon.Service, emailOrUsername string, organizationId *identifier.Identifier, flowID identifier.Identifier, target charon.Target) *http.Response {
 	t.Helper()
-
-	flowID := createAuthFlow(t, ts, service)
 
 	authFlowPasswordStart, errE := service.ReverseAPI("AuthFlowPasswordStart", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -39,7 +37,7 @@ func startPasswordSignin(t *testing.T, ts *httptest.Server, service *charon.Serv
 	var authFlowResponse charon.AuthFlowResponse
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
 	require.NoError(t, errE, "% -+#.1v", errE)
-	assert.Equal(t, charon.TargetSession, authFlowResponse.Target)
+	assert.Equal(t, target, authFlowResponse.Target)
 	assert.Equal(t, charon.PasswordProvider, authFlowResponse.Provider)
 	require.NotNil(t, authFlowResponse.Password)
 
@@ -55,7 +53,11 @@ func startPasswordSignin(t *testing.T, ts *httptest.Server, service *charon.Serv
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"password","emailOrUsername":"`+emailOrUsername+`"}`, string(out))
+		if target == charon.TargetSession {
+			assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"password","emailOrUsername":"`+emailOrUsername+`"}`, string(out))
+		} else {
+			assert.Equal(t, `{"target":"oidc","name":"Test application","homepage":"https://example.com","organizationId":"`+organizationId.String()+`","provider":"password","emailOrUsername":"`+emailOrUsername+`"}`, string(out))
+		}
 	}
 
 	privateKey, err := ecdh.P256().GenerateKey(rand.Reader)
@@ -85,13 +87,13 @@ func startPasswordSignin(t *testing.T, ts *httptest.Server, service *charon.Serv
 	resp, err = ts.Client().Post(ts.URL+authFlowPasswordComplete, "application/json", bytes.NewReader(data)) //nolint:noctx
 	require.NoError(t, err)
 
-	return flowID, resp
+	return resp
 }
 
-func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emailOrUsername string, signinOrSignout charon.Completed) identifier.Identifier {
+func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emailOrUsername string, signinOrSignout charon.Completed, organizationId *identifier.Identifier, flowID identifier.Identifier, target charon.Target) {
 	t.Helper()
 
-	flowID, resp := startPasswordSignin(t, ts, service, emailOrUsername) //nolint:bodyclose
+	resp := startPasswordSignin(t, ts, service, emailOrUsername, organizationId, flowID, target) //nolint:bodyclose
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
@@ -118,8 +120,10 @@ func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emai
 		assert.Equal(t, 2, resp.ProtoMajor)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
 		// There is no username or e-mail address in the response after the flow completes.
-		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"password","completed":"`+string(signinOrSignout)+`","location":{"url":"/","replace":true}}`, string(out))
+		if target == charon.TargetSession {
+			assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"password","completed":"`+string(signinOrSignout)+`","location":{"url":"/","replace":true}}`, string(out))
+		} else {
+			assert.Equal(t, `{"target":"oidc","name":"Test application","homepage":"https://example.com","organizationId":"`+organizationId.String()+`","provider":"password","completed":"`+string(signinOrSignout)+`"}`, string(out))
+		}
 	}
-
-	return flowID
 }
