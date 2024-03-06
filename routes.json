@@ -3,257 +3,263 @@
     {
       "name": "Home",
       "path": "/",
-      "api": false,
-      "get": true
+      "api": null,
+      "get": {}
     },
     {
       "name": "License",
       "path": "/LICENSE",
-      "api": false,
-      "get": true
+      "api": null,
+      "get": {}
     },
     {
       "name": "Notice",
       "path": "/NOTICE",
-      "api": false,
-      "get": true
+      "api": null,
+      "get": {}
     },
     {
       "name": "Me",
       "path": "/me",
-      "api": true,
-      "get": false
+      "api": {},
+      "get": null
     },
     {
       "name": "OIDCAuthorize",
       "path": "/auth/oidc/authorize",
-      "api": false,
-      "get": true
+      "api": null,
+      "get": {}
     },
     {
       "name": "OIDCToken",
       "path": "/auth/oidc/token",
-      "api": true,
-      "get": false,
-      "apiCors": {
-        "allowedOrigins": ["*"],
-        "allowedMethods": ["POST"],
-        "allowedHeaders": ["Authorization"],
-        "maxAge": 600
-      }
+      "api": {
+        "cors": {
+          "allowedOrigins": ["*"],
+          "allowedMethods": ["POST"],
+          "allowedHeaders": ["Authorization"],
+          "maxAge": 600
+        }
+      },
+      "get": null
     },
     {
       "name": "OIDCRevoke",
       "path": "/auth/oidc/revoke",
-      "api": true,
-      "get": false,
-      "apiCors": {
-        "allowedOrigins": ["*"],
-        "allowedMethods": ["POST"],
-        "allowedHeaders": ["Authorization"],
-        "maxAge": 600
-      }
+      "api": {
+        "cors": {
+          "allowedOrigins": ["*"],
+          "allowedMethods": ["POST"],
+          "allowedHeaders": ["Authorization"],
+          "maxAge": 600
+        }
+      },
+      "get": null
     },
     {
       "name": "OIDCIntrospect",
       "path": "/auth/oidc/introspect",
-      "api": true,
-      "get": false
+      "api": {},
+      "get": null
     },
     {
       "name": "OIDCUserInfo",
       "path": "/auth/oidc/userinfo",
-      "api": true,
-      "get": false,
-      "apiCors": {
-        "allowedOrigins": ["*"],
-        "allowedMethods": ["GET", "HEAD", "POST"],
-        "allowedHeaders": ["Authorization"],
-        "maxAge": 600
-      }
+      "api": {
+        "cors": {
+          "allowedOrigins": ["*"],
+          "allowedMethods": ["GET", "HEAD", "POST"],
+          "allowedHeaders": ["Authorization"],
+          "maxAge": 600
+        }
+      },
+      "get": null
     },
     {
       "name": "OIDCKeys",
       "path": "/.well-known/jwks.json",
-      "api": false,
-      "get": true,
-      "getCors": {
-        "allowedOrigins": ["*"],
-        "allowedMethods": ["GET", "HEAD"],
-        "maxAge": 600
+      "api": null,
+      "get": {
+        "cors": {
+          "allowedOrigins": ["*"],
+          "allowedMethods": ["GET", "HEAD"],
+          "maxAge": 600
+        }
       }
     },
     {
       "name": "OIDCDiscovery1",
       "path": "/.well-known/oauth-authorization-server",
-      "api": false,
-      "get": true,
-      "getCors": {
-        "allowedOrigins": ["*"],
-        "allowedMethods": ["GET", "HEAD"],
-        "maxAge": 600
+      "api": null,
+      "get": {
+        "cors": {
+          "allowedOrigins": ["*"],
+          "allowedMethods": ["GET", "HEAD"],
+          "maxAge": 600
+        }
       }
     },
     {
       "name": "OIDCDiscovery2",
       "path": "/.well-known/openid-configuration",
-      "api": false,
-      "get": true,
-      "getCors": {
-        "allowedOrigins": ["*"],
-        "allowedMethods": ["GET", "HEAD"],
-        "maxAge": 600
+      "api": null,
+      "get": {
+        "cors": {
+          "allowedOrigins": ["*"],
+          "allowedMethods": ["GET", "HEAD"],
+          "maxAge": 600
+        }
       }
     },
     {
       "name": "AuthSignout",
       "path": "/auth/signout",
-      "api": true,
-      "get": false
+      "api": {},
+      "get": null
     },
     {
       "name": "AuthOIDCProvider",
       "path": "/auth/provider/:provider",
-      "api": false,
-      "get": true
+      "api": null,
+      "get": {}
     },
     {
       "name": "AuthFlowProviderStart",
       "path": "/auth/providerStart/:id",
-      "api": true,
-      "get": false
+      "api": {},
+      "get": null
     },
     {
       "name": "AuthFlowPasskeyGetStart",
       "path": "/auth/passkeyGetStart/:id",
-      "api": true,
-      "get": false
+      "api": {},
+      "get": null
     },
     {
       "name": "AuthFlowPasskeyGetComplete",
       "path": "/auth/passkeyGetComplete/:id",
-      "api": true,
-      "get": false
+      "api": {},
+      "get": null
     },
     {
       "name": "AuthFlowPasskeyCreateStart",
       "path": "/auth/passkeyCreateStart/:id",
-      "api": true,
-      "get": false
+      "api": {},
+      "get": null
     },
     {
       "name": "AuthFlowPasskeyCreateComplete",
       "path": "/auth/passkeyCreateComplete/:id",
-      "api": true,
-      "get": false
+      "api": {},
+      "get": null
     },
     {
       "name": "AuthFlowPasswordStart",
       "path": "/auth/passwordStart/:id",
-      "api": true,
-      "get": false
+      "api": {},
+      "get": null
     },
     {
       "name": "AuthFlowPasswordComplete",
       "path": "/auth/passwordComplete/:id",
-      "api": true,
-      "get": false
+      "api": {},
+      "get": null
     },
     {
       "name": "AuthFlowCodeStart",
       "path": "/auth/codeStart/:id",
-      "api": true,
-      "get": false
+      "api": {},
+      "get": null
     },
     {
       "name": "AuthFlowCodeComplete",
       "path": "/auth/codeComplete/:id",
-      "api": true,
-      "get": false
+      "api": {},
+      "get": null
     },
     {
       "name": "AuthFlowRestartAuth",
       "path": "/auth/restartAuth/:id",
-      "api": true,
-      "get": false
+      "api": {},
+      "get": null
     },
     {
       "name": "AuthFlowDecline",
       "path": "/auth/decline/:id",
-      "api": true,
-      "get": false
+      "api": {},
+      "get": null
     },
     {
       "name": "AuthFlowChooseIdentity",
       "path": "/auth/chooseIdentity/:id",
-      "api": true,
-      "get": false
+      "api": {},
+      "get": null
     },
     {
       "name": "AuthFlowRedirect",
       "path": "/auth/redirect/:id",
-      "api": true,
-      "get": false
+      "api": {},
+      "get": null
     },
     {
       "name": "AuthFlowCreate",
       "path": "/auth/create",
-      "api": true,
-      "get": false
+      "api": {},
+      "get": null
     },
     {
       "name": "AuthFlowGet",
       "path": "/auth/:id",
-      "api": true,
-      "get": true
+      "api": {},
+      "get": {}
     },
     {
       "name": "ApplicationTemplateList",
       "path": "/a",
-      "api": true,
-      "get": true
+      "api": {},
+      "get": {}
     },
     {
       "name": "ApplicationTemplateCreate",
       "path": "/a/create",
-      "api": true,
-      "get": true
+      "api": {},
+      "get": {}
     },
     {
       "name": "ApplicationTemplateGet",
       "path": "/a/:id",
-      "api": true,
-      "get": true
+      "api": {},
+      "get": {}
     },
     {
       "name": "ApplicationTemplateUpdate",
       "path": "/a/update/:id",
-      "api": true,
-      "get": false
+      "api": {},
+      "get": null
     },
     {
       "name": "OrganizationList",
       "path": "/o",
-      "api": true,
-      "get": true
+      "api": {},
+      "get": {}
     },
     {
       "name": "OrganizationCreate",
       "path": "/o/create",
-      "api": true,
-      "get": true
+      "api": {},
+      "get": {}
     },
     {
       "name": "OrganizationGet",
       "path": "/o/:id",
-      "api": true,
-      "get": true
+      "api": {},
+      "get": {}
     },
     {
       "name": "OrganizationUpdate",
       "path": "/o/update/:id",
-      "api": true,
-      "get": false
+      "api": {},
+      "get": null
     }
   ]
 }
