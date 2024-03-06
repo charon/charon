@@ -51,7 +51,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	oidcAuthorize, errE := service.Reverse("OIDCAuthorize", nil, qs)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	resp, err := ts.Client().Get(ts.URL + oidcAuthorize)
+	resp, err := ts.Client().Get(ts.URL + oidcAuthorize) //nolint:noctx,bodyclose
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	out, err := io.ReadAll(resp.Body)
@@ -93,6 +93,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	resp, err = ts.Client().Get(ts.URL + nonAPIAuthFlowGet) //nolint:noctx,bodyclose
+	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	out, err = io.ReadAll(resp.Body)
 	assert.NoError(t, err)

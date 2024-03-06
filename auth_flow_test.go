@@ -51,7 +51,7 @@ func createAuthFlow(t *testing.T, ts *httptest.Server, service *charon.Service) 
 	return authFlowCreateResponse.ID
 }
 
-func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, organizationID, flowID identifier.Identifier) {
+func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, organizationID, flowID identifier.Identifier) { //nolint:dupl
 	t.Helper()
 
 	authFlowChooseIdentity, errE := service.ReverseAPI("AuthFlowChooseIdentity", waf.Params{"id": flowID.String()}, nil)
@@ -82,7 +82,7 @@ func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	}
 }
 
-func doRedirect(t *testing.T, ts *httptest.Server, service *charon.Service, organizationID, flowID identifier.Identifier) {
+func doRedirect(t *testing.T, ts *httptest.Server, service *charon.Service, organizationID, flowID identifier.Identifier) { //nolint:dupl
 	t.Helper()
 
 	authFlowRedirect, errE := service.ReverseAPI("AuthFlowRedirect", waf.Params{"id": flowID.String()}, nil)

@@ -21,7 +21,7 @@ import (
 	"gitlab.com/charon/charon"
 )
 
-func startPasswordSignin(t *testing.T, ts *httptest.Server, service *charon.Service, emailOrUsername string, organizationId *identifier.Identifier, flowID identifier.Identifier, target charon.Target) *http.Response {
+func startPasswordSignin(t *testing.T, ts *httptest.Server, service *charon.Service, emailOrUsername string, organizationID *identifier.Identifier, flowID identifier.Identifier, target charon.Target) *http.Response {
 	t.Helper()
 
 	authFlowPasswordStart, errE := service.ReverseAPI("AuthFlowPasswordStart", waf.Params{"id": flowID.String()}, nil)
@@ -56,7 +56,7 @@ func startPasswordSignin(t *testing.T, ts *httptest.Server, service *charon.Serv
 		if target == charon.TargetSession {
 			assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"password","emailOrUsername":"`+emailOrUsername+`"}`, string(out))
 		} else {
-			assert.Equal(t, `{"target":"oidc","name":"Test application","homepage":"https://example.com","organizationId":"`+organizationId.String()+`","provider":"password","emailOrUsername":"`+emailOrUsername+`"}`, string(out))
+			assert.Equal(t, `{"target":"oidc","name":"Test application","homepage":"https://example.com","organizationId":"`+organizationID.String()+`","provider":"password","emailOrUsername":"`+emailOrUsername+`"}`, string(out))
 		}
 	}
 
@@ -90,10 +90,10 @@ func startPasswordSignin(t *testing.T, ts *httptest.Server, service *charon.Serv
 	return resp
 }
 
-func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emailOrUsername string, signinOrSignout charon.Completed, organizationId *identifier.Identifier, flowID identifier.Identifier, target charon.Target) {
+func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emailOrUsername string, signinOrSignout charon.Completed, organizationID *identifier.Identifier, flowID identifier.Identifier, target charon.Target) {
 	t.Helper()
 
-	resp := startPasswordSignin(t, ts, service, emailOrUsername, organizationId, flowID, target) //nolint:bodyclose
+	resp := startPasswordSignin(t, ts, service, emailOrUsername, organizationID, flowID, target) //nolint:bodyclose
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
@@ -123,7 +123,7 @@ func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emai
 		if target == charon.TargetSession {
 			assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"password","completed":"`+string(signinOrSignout)+`","location":{"url":"/","replace":true}}`, string(out))
 		} else {
-			assert.Equal(t, `{"target":"oidc","name":"Test application","homepage":"https://example.com","organizationId":"`+organizationId.String()+`","provider":"password","completed":"`+string(signinOrSignout)+`"}`, string(out))
+			assert.Equal(t, `{"target":"oidc","name":"Test application","homepage":"https://example.com","organizationId":"`+organizationID.String()+`","provider":"password","completed":"`+string(signinOrSignout)+`"}`, string(out))
 		}
 	}
 }
