@@ -31,6 +31,10 @@ func (s *Service) OIDCTokenPost(w http.ResponseWriter, req *http.Request, _ waf.
 		return
 	}
 
+	// Use our identifiers.
+	id := identifier.New()
+	accessRequest.SetID(id.String())
+
 	if accessRequest.GetGrantTypes().ExactOne("client_credentials") {
 		// This is used by the client credentials grant type. For implicit
 		// and explicit flows this is done in the authorization handler.

@@ -50,6 +50,7 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 		ClientID         string   `json:"client_id"`
 		ExpirationTime   int      `json:"exp"`
 		IssueTime        int      `json:"iat"`
+		NotBeforeTime    int      `json:"nbf"`
 		Scope            string   `json:"scope"`
 		Subject          string   `json:"sub"`
 		Audience         []string `json:"aud"`
@@ -67,6 +68,7 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 	assert.Equal(t, clientID, response.ClientID)
 	assert.InDelta(t, now.Unix()+int64((60*time.Minute).Seconds()), response.ExpirationTime, leeway.Seconds())
 	assert.InDelta(t, now.Unix(), response.IssueTime, leeway.Seconds())
+	assert.InDelta(t, now.Unix(), response.NotBeforeTime, leeway.Seconds())
 	assert.Equal(t, "openid", response.Scope)
 	// TODO: Check exact value of the subject.
 	assert.NotEmpty(t, response.Subject)
@@ -125,6 +127,8 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 	delete(all, "exp")
 	assert.Contains(t, all, "iat")
 	delete(all, "iat")
+	assert.Contains(t, all, "nbf")
+	delete(all, "nbf")
 	assert.NotEmpty(t, all["jti"])
 	_, errE = identifier.FromString(all["jti"].(string))
 	require.NoError(t, errE, "% -+#.1v", errE)

@@ -186,6 +186,8 @@ func (s *OIDCSession) GetJWTClaims() jwt.JWTClaimsContainer { //nolint:ireturn
 
 		s.JWTClaims.JTI = identifier.New().String()
 		s.JWTClaims.Subject = s.Subject.String()
+		// We use "requested at" time as "not before" for access tokens.
+		s.JWTClaims.NotBefore = s.RequestedAt
 		s.JWTClaims.Add("client_id", s.Client.String())
 	}
 
@@ -284,6 +286,7 @@ func (s *OIDCSession) GetExtraClaims() map[string]interface{} {
 		if s.JWTClaims != nil {
 			s.Extra["iss"] = s.JWTClaims.Issuer
 			s.Extra["jti"] = s.JWTClaims.JTI
+			s.Extra["nbf"] = s.JWTClaims.NotBefore.Unix()
 		}
 	}
 

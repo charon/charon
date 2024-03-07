@@ -60,6 +60,10 @@ func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.
 		return
 	}
 
+	// We link authorization request with the flow by reusing ID.
+	id := identifier.New()
+	authorizeRequest.SetID(id.String())
+
 	ar, ok := authorizeRequest.(*fosite.AuthorizeRequest)
 	if !ok {
 		errE := errors.New("invalid AuthorizeRequester type")
@@ -71,7 +75,6 @@ func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.
 
 	client := ar.Client.(*OIDCClient) //nolint:errcheck,forcetypeassert
 
-	id := identifier.New()
 	errE := SetFlow(req.Context(), &Flow{
 		ID:                   id,
 		Session:              nil,
@@ -166,8 +169,9 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 	now := time.Now().UTC()
 	oidcSession := &OIDCSession{ //nolint:forcetypeassert
 		// TODO: Make subject be unique per organization and identity chosen.
-		Subject:     session.Account,
-		ExpiresAt:   nil,
+		Subject:   session.Account,
+		ExpiresAt: nil,
+		// TODO: Set to the time the flow was created and not to "now".
 		RequestedAt: now,
 		// TODO: Store auth time (or local or from 3rd party provider) into Session and use it here.
 		AuthTime:               now,
