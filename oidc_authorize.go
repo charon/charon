@@ -12,10 +12,17 @@ import (
 )
 
 // grantAllAudiences copies requested audiences to request (and thus to tokens).
+// If no audience was requested, all allowed audiences are granted.
 func grantAllAudiences(request fosite.Requester) {
-	// Set all requested audiences (they are already validated that they are a subset of allowed ones for the client).
-	for _, audience := range request.GetRequestedAudience() {
-		request.GrantAudience(audience)
+	if len(request.GetRequestedAudience()) > 0 {
+		// Set all requested audiences (they are already validated that they are a subset of allowed ones for the client).
+		for _, audience := range request.GetRequestedAudience() {
+			request.GrantAudience(audience)
+		}
+	} else {
+		for _, audience := range request.GetClient().GetAudience() {
+			request.GrantAudience(audience)
+		}
 	}
 }
 
@@ -52,8 +59,6 @@ func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.
 		oidc.WriteAuthorizeError(ctx, w, authorizeRequest, errE)
 		return
 	}
-
-	grantAllAudiences(authorizeRequest)
 
 	ar, ok := authorizeRequest.(*fosite.AuthorizeRequest)
 	if !ok {
@@ -149,6 +154,8 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 		oidc.WriteAuthorizeError(ctx, w, authorizeRequest, errors.Wrap(fosite.ErrAccessDenied, "user declined"))
 		return true
 	}
+
+	grantAllAudiences(authorizeRequest)
 
 	// We always grant all requested scopes because user can choose an identity with values they want
 	// for all requested scopes. This works because currently we support only ID token scopes and

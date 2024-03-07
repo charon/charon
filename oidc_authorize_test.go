@@ -37,8 +37,11 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 
 	organization := createOrganization(t, ts, service, applicationTemplate)
 
+	applicationID := organization.Applications[0].ID.String()
+	clientID := organization.Applications[0].ClientsBackend[0].ID.String()
+
 	qs := url.Values{
-		"client_id":             []string{organization.Applications[0].ClientsBackend[0].ID.String()},
+		"client_id":             []string{clientID},
 		"redirect_uri":          []string{"https://example.com/redirect"},
 		"scope":                 []string{"openid"},
 		"response_type":         []string{"code"},
@@ -123,5 +126,8 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	assert.NotEmpty(t, code)
 	assert.Equal(t, url.Values{"scope": []string{"openid"}, "state": []string{state}}, locationQuery)
 
-	exchangeCodeForToken(t, ts, service, organization, code, challenge)
+	accessToken, idToken := exchangeCodeForToken(t, ts, service, clientID, code, challenge)
+
+	validateAccessToken(t, ts, service, clientID, applicationID, accessToken)
+	validateIDToken(t, idToken)
 }

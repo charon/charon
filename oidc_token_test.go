@@ -15,14 +15,14 @@ import (
 	"gitlab.com/charon/charon"
 )
 
-func exchangeCodeForToken(t *testing.T, ts *httptest.Server, service *charon.Service, organization *charon.Organization, code, codeVerifier string) (string, string) {
+func exchangeCodeForToken(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, code, codeVerifier string) (string, string) {
 	t.Helper()
 
 	oidcToken, errE := service.ReverseAPI("OIDCToken", nil, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	data := url.Values{
-		"client_id":     []string{organization.Applications[0].ClientsBackend[0].ID.String()},
+		"client_id":     []string{clientID},
 		"client_secret": []string{"chc-" + applicationClientSecret},
 		"grant_type":    []string{"authorization_code"},
 		"code":          []string{code},
@@ -49,7 +49,7 @@ func exchangeCodeForToken(t *testing.T, ts *httptest.Server, service *charon.Ser
 
 	assert.NotEmpty(t, response.AccessToken)
 	assert.NotEmpty(t, response.IDToken)
-	assert.Equal(t, 3600, response.ExpiresIn)
+	assert.InDelta(t, 3599, response.ExpiresIn, 1)
 	assert.Equal(t, "openid", response.Scope)
 	assert.Equal(t, "bearer", response.TokenType)
 

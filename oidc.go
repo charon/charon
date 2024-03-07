@@ -352,7 +352,7 @@ func (*OIDCClient) GetTokenEndpointAuthSigningAlgorithm() string {
 
 // GetAudience implements fosite.Client.
 func (c *OIDCClient) GetAudience() fosite.Arguments {
-	return fosite.Arguments{c.GetID(), c.AppID.String()}
+	return fosite.Arguments{c.AppID.String()}
 }
 
 // GetGrantTypes implements fosite.Client.
