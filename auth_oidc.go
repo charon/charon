@@ -7,8 +7,10 @@ import (
 	"io"
 	"net/http"
 	"slices"
+	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/hashicorp/go-cleanhttp"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
@@ -256,11 +258,26 @@ func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, par
 		return
 	}
 
+	//nolint:tagliatelle
+	var claims struct {
+		AuthTime *jwt.NumericDate `json:"auth_time"`
+	}
+	err = idToken.Claims(&claims)
+	if err != nil {
+		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
+		return
+	}
+
 	account, errE := GetAccountByCredential(ctx, providerName, idToken.Subject)
 	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	s.completeAuthStep(w, req, false, flow, account, []Credential{{ID: idToken.Subject, Provider: providerName, Data: jsonData}})
+	var authTime *time.Time
+	if claims.AuthTime != nil {
+		t := claims.AuthTime.Time()
+		authTime = &t
+	}
+	s.completeAuthStep(w, req, false, flow, account, []Credential{{ID: idToken.Subject, Provider: providerName, Data: jsonData}}, authTime)
 }

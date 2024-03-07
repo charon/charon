@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/alexedwards/argon2id"
 	"gitlab.com/tozd/go/errors"
@@ -327,11 +328,12 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 						return
 					}
 				}
+				now := time.Now().UTC()
 				s.completeAuthStep(w, req, true, flow, account, []Credential{{
 					ID:       credential.ID,
 					Provider: PasswordProvider,
 					Data:     jsonData,
-				}})
+				}}, &now)
 				return
 			}
 		}
@@ -409,5 +411,6 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 
 	// Account does not exist and we do not have an e-mail address.
 	// We create a new username-only account.
-	s.completeAuthStep(w, req, true, flow, nil, credentials)
+	now := time.Now().UTC()
+	s.completeAuthStep(w, req, true, flow, nil, credentials, &now)
 }

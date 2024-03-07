@@ -80,6 +80,7 @@ func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.
 		CreatedAt:            time.Now().UTC(),
 		Session:              nil,
 		Completed:            "",
+		AuthTime:             nil,
 		Target:               TargetOIDC,
 		TargetLocation:       client.AppHomepage,
 		TargetName:           client.TargetName,
@@ -169,12 +170,11 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 
 	oidcSession := &OIDCSession{ //nolint:forcetypeassert
 		// TODO: Make subject be unique per organization and identity chosen.
-		Subject:     session.Account,
-		Session:     session.ID,
-		ExpiresAt:   nil,
-		RequestedAt: flow.CreatedAt,
-		// TODO: Store auth time (or local or from 3rd party provider) into Session and use it here.
-		AuthTime:               time.Now().UTC(),
+		Subject:                session.Account,
+		Session:                session.ID,
+		ExpiresAt:              nil,
+		RequestedAt:            flow.CreatedAt,
+		AuthTime:               flow.AuthTime,
 		Client:                 authorizeRequest.GetClient().(*OIDCClient).ID,
 		JWTClaims:              nil,
 		JWTHeaders:             nil,

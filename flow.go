@@ -65,6 +65,7 @@ type Flow struct {
 	CreatedAt          time.Time
 	Session            *identifier.Identifier
 	Completed          Completed
+	AuthTime           *time.Time
 	Target             Target
 	TargetLocation     string
 	TargetName         string

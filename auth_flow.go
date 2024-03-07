@@ -190,7 +190,7 @@ func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api 
 	return session, false
 }
 
-func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *Flow, account *Account, credentials []Credential) {
+func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *Flow, account *Account, credentials []Credential, authTime *time.Time) {
 	ctx := req.Context()
 
 	var completed Completed
@@ -235,6 +235,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	flow.Session = &sessionID
 	flow.Completed = completed
 	flow.OIDCRedirectReady = false
+	flow.AuthTime = authTime
 
 	// Everything should already be set to nil at this point, but just to make sure.
 	flow.ClearAuthStepAll()
@@ -648,6 +649,7 @@ func (s *Service) AuthFlowCreatePost(w http.ResponseWriter, req *http.Request, _
 		CreatedAt:            time.Now().UTC(),
 		Session:              nil,
 		Completed:            "",
+		AuthTime:             nil,
 		Target:               TargetSession,
 		TargetLocation:       location,
 		TargetName:           "Charon Dashboard",

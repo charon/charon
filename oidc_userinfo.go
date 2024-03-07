@@ -45,7 +45,7 @@ func (s *Service) oidcCUserInfo(w http.ResponseWriter, req *http.Request) {
 	}
 
 	interim := ar.GetSession().(openid.Session).IDTokenClaims().ToMap() //nolint:forcetypeassert
-	keysToDelete := []string{"aud", "auth_time", "exp", "gau", "iat", "iss", "jti", "nonce", "rat", "at_hash", "c_hash", "sid"}
+	keysToDelete := []string{"aud", "auth_time", "exp", "iat", "iss", "jti", "nonce", "rat", "at_hash", "c_hash", "sid"}
 	for _, key := range keysToDelete {
 		delete(interim, key)
 	}

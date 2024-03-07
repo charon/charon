@@ -58,19 +58,19 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 	assert.Equal(t, "application/json;charset=UTF-8", resp.Header.Get("Content-Type"))
 	//nolint:tagliatelle
 	var response struct {
-		Error            string   `json:"error"`
-		ErrorDescription string   `json:"error_description"`
-		Active           bool     `json:"active"`
-		ClientID         string   `json:"client_id"`
-		ExpirationTime   int      `json:"exp"`
-		IssueTime        int      `json:"iat"`
-		NotBeforeTime    int      `json:"nbf"`
-		Scope            string   `json:"scope"`
-		Subject          string   `json:"sub"`
-		Audience         []string `json:"aud"`
-		Issuer           string   `json:"iss"`
-		JTI              string   `json:"jti"`
-		Session          string   `json:"sid"`
+		Error            string          `json:"error"`
+		ErrorDescription string          `json:"error_description"`
+		Active           bool            `json:"active"`
+		ClientID         string          `json:"client_id"`
+		ExpirationTime   jwt.NumericDate `json:"exp"`
+		IssueTime        jwt.NumericDate `json:"iat"`
+		NotBeforeTime    jwt.NumericDate `json:"nbf"`
+		Scope            string          `json:"scope"`
+		Subject          string          `json:"sub"`
+		Audience         []string        `json:"aud"`
+		Issuer           string          `json:"iss"`
+		JTI              string          `json:"jti"`
+		Session          string          `json:"sid"`
 	}
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &response)
 	require.NoError(t, errE, "% -+#.1v", errE)
