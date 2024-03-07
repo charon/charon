@@ -14,6 +14,8 @@ import (
 )
 
 func getKeys(t *testing.T, ts *httptest.Server, service *charon.Service) jose.JSONWebKeySet {
+	t.Helper()
+
 	oidcKeys, errE := service.Reverse("OIDCKeys", nil, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 

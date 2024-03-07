@@ -1,6 +1,7 @@
 package charon_test
 
 import (
+	"context"
 	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
@@ -46,11 +47,11 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 		"scope":           []string{"openid"},
 	}
 
-	req, err := http.NewRequest(http.MethodPost, ts.URL+oidcIntrospect, strings.NewReader(data.Encode()))
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, ts.URL+oidcIntrospect, strings.NewReader(data.Encode()))
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(clientID+":chc-"+applicationClientSecret)))
-	resp, err := ts.Client().Do(req)
+	resp, err := ts.Client().Do(req) //nolint:bodyclose
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -81,9 +82,9 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 	assert.Empty(t, response.ErrorDescription)
 	assert.True(t, response.Active)
 	assert.Equal(t, clientID, response.ClientID)
-	assert.InDelta(t, now.Unix()+int64((60*time.Minute).Seconds()), response.ExpirationTime, leeway.Seconds())
-	assert.InDelta(t, now.Unix(), response.IssueTime, leeway.Seconds())
-	assert.InDelta(t, now.Unix(), response.NotBeforeTime, leeway.Seconds())
+	assert.WithinDuration(t, now.Add(60*time.Minute), response.ExpirationTime.Time(), leeway)
+	assert.WithinDuration(t, now, response.IssueTime.Time(), leeway)
+	assert.WithinDuration(t, now, response.NotBeforeTime.Time(), leeway)
 	assert.Equal(t, "openid", response.Scope)
 	// TODO: Check exact value of the subject.
 	assert.NotEmpty(t, response.Subject)
