@@ -166,6 +166,7 @@ type OIDCSession struct {
 	RequestedAt time.Time                      `json:"requestedAt"`
 	AuthTime    time.Time                      `json:"authTime"`
 	Client      identifier.Identifier          `json:"client"`
+	Issuer      string                         `json:"issuer"`
 	// Fosite modifies these structs in-place and we have to keep a pointer
 	// to them so that we return always the same struct between calls.
 	JWTClaims  *jwt.JWTClaims `json:"jwtClaims"`
@@ -182,10 +183,11 @@ type OIDCSession struct {
 func (s *OIDCSession) GetJWTClaims() jwt.JWTClaimsContainer { //nolint:ireturn
 	if s.JWTClaims == nil {
 		s.JWTClaims = new(jwt.JWTClaims)
-	}
 
-	s.JWTClaims.Subject = s.Subject.String()
-	s.JWTClaims.Add("client_id", s.Client.String())
+		s.JWTClaims.JTI = identifier.New().String()
+		s.JWTClaims.Subject = s.Subject.String()
+		s.JWTClaims.Add("client_id", s.Client.String())
+	}
 
 	return s.JWTClaims
 }
@@ -276,6 +278,13 @@ func (s *OIDCSession) GetExtraClaims() map[string]interface{} {
 
 	if s.Extra == nil {
 		s.Extra = make(map[string]interface{})
+
+		// We expose extra claims for the introspect endpoint.
+		// We want introspect endpoint to return all claims found in a JWT.
+		if s.JWTClaims != nil {
+			s.Extra["iss"] = s.JWTClaims.Issuer
+			s.Extra["jti"] = s.JWTClaims.JTI
+		}
 	}
 
 	return s.Extra

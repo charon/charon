@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gitlab.com/charon/charon"
 	"gitlab.com/tozd/go/x"
+	"gitlab.com/tozd/identifier"
 )
 
 func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, applicationID, accessToken string) {
@@ -52,6 +53,8 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 		Scope            string   `json:"scope"`
 		Subject          string   `json:"sub"`
 		Audience         []string `json:"aud"`
+		Issuer           string   `json:"iss"`
+		JTI              string   `json:"jti"`
 	}
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &response)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -68,6 +71,10 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 	// TODO: Check exact value of the subject.
 	assert.NotEmpty(t, response.Subject)
 	assert.Equal(t, []string{applicationID}, response.Audience)
+	assert.Equal(t, ts.URL, response.Issuer)
+	assert.NotEmpty(t, response.JTI)
+	_, errE = identifier.FromString(response.JTI)
+	require.NoError(t, errE, "% -+#.1v", errE)
 
 	keySet := getKeys(t, ts, service)
 
@@ -118,10 +125,13 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 	delete(all, "exp")
 	assert.Contains(t, all, "iat")
 	delete(all, "iat")
-	assert.Contains(t, all, "jti")
+	assert.NotEmpty(t, all["jti"])
+	_, errE = identifier.FromString(all["jti"].(string))
+	require.NoError(t, errE, "% -+#.1v", errE)
 	delete(all, "jti")
 
 	// TODO: Check exact value of the subject.
+	assert.NotEmpty(t, all["sub"])
 	delete(all, "sub")
 
 	assert.Equal(t, map[string]interface{}{
