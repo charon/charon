@@ -72,7 +72,7 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 	assert.Equal(t, "openid", response.Scope)
 	// TODO: Check exact value of the subject.
 	assert.NotEmpty(t, response.Subject)
-	assert.Equal(t, []string{applicationID}, response.Audience)
+	assert.Equal(t, []string{applicationID, clientID}, response.Audience)
 	assert.Equal(t, ts.URL, response.Issuer)
 	assert.NotEmpty(t, response.JTI)
 	_, errE = identifier.FromString(response.JTI)
@@ -118,7 +118,7 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 		// TODO: Check exact value of the subject.
 		Subject:     "",
 		Issuer:      ts.URL,
-		AnyAudience: []string{applicationID},
+		AnyAudience: []string{applicationID, clientID},
 		Time:        now,
 	}, leeway)
 	assert.NoError(t, err, claims)
@@ -139,7 +139,7 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 	delete(all, "sub")
 
 	assert.Equal(t, map[string]interface{}{
-		"aud":       []interface{}{applicationID},
+		"aud":       []interface{}{applicationID, clientID},
 		"client_id": clientID,
 		"iss":       ts.URL,
 		"scope":     "openid",
