@@ -167,7 +167,6 @@ type OIDCSession struct {
 	RequestedAt time.Time                      `json:"requestedAt"`
 	AuthTime    time.Time                      `json:"authTime"`
 	Client      identifier.Identifier          `json:"client"`
-	Issuer      string                         `json:"issuer"`
 	// Fosite modifies these structs in-place and we have to keep a pointer
 	// to them so that we return always the same struct between calls.
 	JWTClaims  *jwt.JWTClaims `json:"jwtClaims"`
