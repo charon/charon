@@ -184,9 +184,6 @@ onUnmounted(() => {
       You might have to sign-in into {{ providerName(provider) }} first. You might be redirected back by {{ providerName(provider) }} immediately, without showing you
       anything.
     </div>
-    <div class="mt-4">
-      {{ providerName(provider) }} might say Charon will obtain your name, your e-mail address, and/or your picture, but Charon does not use nor store any of that.
-    </div>
     <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="3" @click.prevent="onBack">Back</Button>
