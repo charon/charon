@@ -170,6 +170,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 	oidcSession := &OIDCSession{ //nolint:forcetypeassert
 		// TODO: Make subject be unique per organization and identity chosen.
 		Subject:   session.Account,
+		Session:   session.ID,
 		ExpiresAt: nil,
 		// TODO: Set to the time the flow was created and not to "now".
 		RequestedAt: now,

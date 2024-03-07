@@ -8,8 +8,9 @@ import (
 	"github.com/go-jose/go-jose/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gitlab.com/charon/charon"
 	"gitlab.com/tozd/go/x"
+
+	"gitlab.com/charon/charon"
 )
 
 func getKeys(t *testing.T, ts *httptest.Server, service *charon.Service) jose.JSONWebKeySet {

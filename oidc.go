@@ -162,6 +162,7 @@ var (
 // We use JSON marshaling when persisting sessions in the store.
 type OIDCSession struct {
 	Subject     identifier.Identifier          `json:"subject"`
+	Session     identifier.Identifier          `json:"session"`
 	ExpiresAt   map[fosite.TokenType]time.Time `json:"expiresAt"`
 	RequestedAt time.Time                      `json:"requestedAt"`
 	AuthTime    time.Time                      `json:"authTime"`
@@ -189,6 +190,7 @@ func (s *OIDCSession) GetJWTClaims() jwt.JWTClaimsContainer { //nolint:ireturn
 		// We use "requested at" time as "not before" for access tokens.
 		s.JWTClaims.NotBefore = s.RequestedAt
 		s.JWTClaims.Add("client_id", s.Client.String())
+		s.JWTClaims.Add("sid", s.Session.String())
 	}
 
 	return s.JWTClaims
@@ -207,12 +209,13 @@ func (s *OIDCSession) GetJWTHeader() *jwt.Headers {
 func (s *OIDCSession) IDTokenClaims() *jwt.IDTokenClaims {
 	if s.IDTokenClaimsInternal == nil {
 		s.IDTokenClaimsInternal = new(jwt.IDTokenClaims)
-	}
 
-	s.IDTokenClaimsInternal.Subject = s.Subject.String()
-	s.IDTokenClaimsInternal.RequestedAt = s.RequestedAt
-	s.IDTokenClaimsInternal.AuthTime = s.AuthTime
-	s.IDTokenClaimsInternal.Add("client_id", s.Client.String())
+		s.IDTokenClaimsInternal.Subject = s.Subject.String()
+		s.IDTokenClaimsInternal.RequestedAt = s.RequestedAt
+		s.IDTokenClaimsInternal.AuthTime = s.AuthTime
+		s.IDTokenClaimsInternal.Add("client_id", s.Client.String())
+		s.IDTokenClaimsInternal.Add("sid", s.Session.String())
+	}
 
 	return s.IDTokenClaimsInternal
 }
@@ -287,6 +290,7 @@ func (s *OIDCSession) GetExtraClaims() map[string]interface{} {
 			s.Extra["iss"] = s.JWTClaims.Issuer
 			s.Extra["jti"] = s.JWTClaims.JTI
 			s.Extra["nbf"] = s.JWTClaims.NotBefore.Unix()
+			s.Extra["sid"] = s.JWTClaims.Get("sid")
 		}
 	}
 

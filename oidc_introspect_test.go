@@ -13,15 +13,29 @@ import (
 	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gitlab.com/charon/charon"
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
+
+	"gitlab.com/charon/charon"
 )
 
 func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, applicationID, accessToken string) {
 	t.Helper()
 
 	const leeway = time.Minute
+
+	u, err := url.Parse(ts.URL)
+	require.NoError(t, err)
+	cookies := ts.Client().Jar.Cookies(u)
+
+	var session string
+	for _, cookie := range cookies {
+		if cookie.Name == charon.SessionCookieName {
+			session = cookie.Value
+			break
+		}
+	}
+	require.NotEmpty(t, session)
 
 	oidcIntrospect, errE := service.ReverseAPI("OIDCIntrospect", nil, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -56,6 +70,7 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 		Audience         []string `json:"aud"`
 		Issuer           string   `json:"iss"`
 		JTI              string   `json:"jti"`
+		Session          string   `json:"sid"`
 	}
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &response)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -74,9 +89,11 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 	assert.NotEmpty(t, response.Subject)
 	assert.Equal(t, []string{applicationID, clientID}, response.Audience)
 	assert.Equal(t, ts.URL, response.Issuer)
-	assert.NotEmpty(t, response.JTI)
-	_, errE = identifier.FromString(response.JTI)
-	require.NoError(t, errE, "% -+#.1v", errE)
+	if assert.NotEmpty(t, response.JTI) {
+		_, errE = identifier.FromString(response.JTI)
+		assert.NoError(t, errE, "% -+#.1v", errE)
+	}
+	assert.Equal(t, session, response.Session)
 
 	keySet := getKeys(t, ts, service)
 
@@ -129,9 +146,10 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 	delete(all, "iat")
 	assert.Contains(t, all, "nbf")
 	delete(all, "nbf")
-	assert.NotEmpty(t, all["jti"])
-	_, errE = identifier.FromString(all["jti"].(string))
-	require.NoError(t, errE, "% -+#.1v", errE)
+	if assert.NotEmpty(t, all["jti"]) {
+		_, errE = identifier.FromString(all["jti"].(string))
+		assert.NoError(t, errE, "% -+#.1v", errE)
+	}
 	delete(all, "jti")
 
 	// TODO: Check exact value of the subject.
@@ -143,5 +161,6 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 		"client_id": clientID,
 		"iss":       ts.URL,
 		"scope":     "openid",
+		"sid":       session,
 	}, all)
 }
