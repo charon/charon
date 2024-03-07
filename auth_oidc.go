@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"slices"
+	"strconv"
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -26,6 +27,8 @@ type oidcProvider struct {
 	Client       *http.Client
 	SupportsPKCE bool
 }
+
+var oidcMaxAge = strconv.Itoa(365 * 24 * 60 * 60)
 
 func initOIDCProviders(config *Config, service *Service, domain string, providers []SiteProvider) (func() map[Provider]oidcProvider, errors.E) {
 	return initWithHost(config, domain, func(host string) map[Provider]oidcProvider {
@@ -134,7 +137,10 @@ func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	opts := []oauth2.AuthCodeOption{}
+	opts := []oauth2.AuthCodeOption{
+		// We always use "max_age" so that we force getting "auth_time" claim value.
+		oauth2.SetAuthURLParam("max_age", oidcMaxAge),
+	}
 
 	flow.ClearAuthStep("")
 	flow.Provider = providerName
