@@ -3,6 +3,7 @@ package charon
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/ory/fosite"
@@ -61,6 +62,7 @@ type FlowCode struct {
 
 type Flow struct {
 	ID                 identifier.Identifier
+	CreatedAt          time.Time
 	Session            *identifier.Identifier
 	Completed          Completed
 	Target             Target

@@ -645,6 +645,7 @@ func (s *Service) AuthFlowCreatePost(w http.ResponseWriter, req *http.Request, _
 	id := identifier.New()
 	errE = SetFlow(req.Context(), &Flow{
 		ID:                   id,
+		CreatedAt:            time.Now().UTC(),
 		Session:              nil,
 		Completed:            "",
 		Target:               TargetSession,

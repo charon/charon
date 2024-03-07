@@ -77,6 +77,7 @@ func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.
 
 	errE := SetFlow(req.Context(), &Flow{
 		ID:                   id,
+		CreatedAt:            time.Now().UTC(),
 		Session:              nil,
 		Completed:            "",
 		Target:               TargetOIDC,
@@ -166,16 +167,14 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 	// have to provide a way for the user to approve those and change call here.
 	grantAllScopes(authorizeRequest)
 
-	now := time.Now().UTC()
 	oidcSession := &OIDCSession{ //nolint:forcetypeassert
 		// TODO: Make subject be unique per organization and identity chosen.
-		Subject:   session.Account,
-		Session:   session.ID,
-		ExpiresAt: nil,
-		// TODO: Set to the time the flow was created and not to "now".
-		RequestedAt: now,
+		Subject:     session.Account,
+		Session:     session.ID,
+		ExpiresAt:   nil,
+		RequestedAt: flow.CreatedAt,
 		// TODO: Store auth time (or local or from 3rd party provider) into Session and use it here.
-		AuthTime:               now,
+		AuthTime:               time.Now().UTC(),
 		Client:                 authorizeRequest.GetClient().(*OIDCClient).ID,
 		JWTClaims:              nil,
 		JWTHeaders:             nil,

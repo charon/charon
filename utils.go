@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/go-jose/go-jose/v3"
 	"gitlab.com/tozd/go/errors"
@@ -129,6 +130,7 @@ func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request,
 	id := identifier.New()
 	errE = SetFlow(req.Context(), &Flow{
 		ID:                   id,
+		CreatedAt:            time.Now().UTC(),
 		Session:              nil,
 		Completed:            "",
 		Target:               TargetSession,
