@@ -28,6 +28,7 @@ type oidcProvider struct {
 	SupportsPKCE bool
 }
 
+//nolint:gochecknoglobals,gomnd
 var oidcMaxAge = strconv.Itoa(365 * 24 * 60 * 60)
 
 func initOIDCProviders(config *Config, service *Service, domain string, providers []SiteProvider) (func() map[Provider]oidcProvider, errors.E) {

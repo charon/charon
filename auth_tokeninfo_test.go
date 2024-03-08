@@ -10,8 +10,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gitlab.com/charon/charon"
 	"gitlab.com/tozd/identifier"
+
+	"gitlab.com/charon/charon"
 )
 
 func validateIDToken(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, applicationID, nonce, accessToken, idToken string) {
