@@ -68,10 +68,9 @@ func validateIDToken(t *testing.T, ts *httptest.Server, service *charon.Service,
 	delete(all, "sub")
 
 	assert.Equal(t, map[string]interface{}{
-		"aud":       []interface{}{applicationID, clientID},
+		"aud":       []interface{}{clientID},
 		"client_id": clientID,
 		"iss":       ts.URL,
-		"scope":     "openid",
 		"sid":       session,
 		"nonce":     nonce,
 		"at_hash":   accessTokenHash,

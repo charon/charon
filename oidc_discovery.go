@@ -281,7 +281,7 @@ func (s *Service) oidcDiscovery(w http.ResponseWriter, req *http.Request) {
 		UserinfoEndpoint:      issuer + userinfoPath,
 		JWKSURI:               issuer + keysPath,
 		// TODO: Extend ScopesSupported with common scopes across all apps.
-		ScopesSupported:        []string{"openid", "offline_access"},
+		ScopesSupported:        []string{"openid", "offline"},
 		ResponseTypesSupported: []string{"id_token", "code", "code id_token"},
 		ResponseModesSupported: responseModesSupportedStrings,
 		GrantTypesSupported:    []string{"client_credentials", "authorization_code", "refresh_token"},

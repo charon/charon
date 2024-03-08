@@ -76,10 +76,10 @@ func initOIDC(config *Config, service *Service, domain string, secret []byte) (f
 			// This means that for mobile native apps one has to use app-claimed https redirects instead of custom schemes.
 			// Custom schemes are not secure because they can be registered by multiple apps.
 			RedirectSecureChecker: fosite.IsRedirectURISecureStrict,
-			// We provide a refresh token if client asks for "offline_access" scope.
-			// We further control which clients can  use refresh tokens by allowing
+			// We provide a refresh token if client asks for "offline" scope.
+			// We further control which clients can use refresh tokens by allowing
 			// or not "refresh_token" grant type.
-			RefreshTokenScopes:  []string{"offline_access"},
+			RefreshTokenScopes:  []string{"offline"},
 			JWTScopeClaimKey:    jwt.JWTScopeFieldString,
 			AccessTokenIssuer:   issuer,
 			ClientSecretsHasher: argon2idHasher{},
