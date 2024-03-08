@@ -95,7 +95,7 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 	data := url.Values{
 		"token":           []string{accessToken},
 		"token_type_hint": []string{"access_token"},
-		"scope":           []string{"openid offline"},
+		"scope":           []string{"openid offline_access"},
 	}
 
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, ts.URL+oidcIntrospect, strings.NewReader(data.Encode()))
@@ -136,7 +136,7 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 	assert.WithinDuration(t, now.Add(60*time.Minute), response.ExpirationTime.Time(), leeway)
 	assert.WithinDuration(t, now, response.IssueTime.Time(), leeway)
 	assert.WithinDuration(t, now, response.NotBeforeTime.Time(), leeway)
-	assert.Equal(t, "openid offline", response.Scope)
+	assert.Equal(t, "openid offline_access", response.Scope)
 	// TODO: Check exact value of the subject.
 	assert.NotEmpty(t, response.Subject)
 	assert.Equal(t, []string{applicationID, clientID}, response.Audience)
@@ -169,7 +169,7 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 		"aud":       []interface{}{applicationID, clientID},
 		"client_id": clientID,
 		"iss":       ts.URL,
-		"scope":     "openid offline",
+		"scope":     "openid offline_access",
 		"sid":       session,
 	}, all)
 }
