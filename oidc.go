@@ -176,7 +176,6 @@ type OIDCSession struct {
 	// We use "Internal" suffix because names would otherwise overlap with getters.
 	IDTokenClaimsInternal  *jwt.IDTokenClaims `json:"idTokenClaims"`
 	IDTokenHeadersInternal *jwt.Headers       `json:"idTokenHeaders"`
-	Extra                  map[string]interface{}
 }
 
 // GetJWTClaims returns the claims of the JWT access token.
@@ -184,13 +183,15 @@ func (s *OIDCSession) GetJWTClaims() jwt.JWTClaimsContainer { //nolint:ireturn
 	if s.JWTClaims == nil {
 		s.JWTClaims = new(jwt.JWTClaims)
 
-		s.JWTClaims.JTI = identifier.New().String()
 		s.JWTClaims.Subject = s.Subject.String()
 		// We use "requested at" time as "not before" for access tokens.
 		s.JWTClaims.NotBefore = s.RequestedAt
 		s.JWTClaims.Add("client_id", s.Client.String())
 		s.JWTClaims.Add("sid", s.Session.String())
 	}
+
+	// We reset JTI every time.
+	s.JWTClaims.JTI = identifier.New().String()
 
 	return s.JWTClaims
 }
@@ -209,13 +210,15 @@ func (s *OIDCSession) IDTokenClaims() *jwt.IDTokenClaims {
 	if s.IDTokenClaimsInternal == nil {
 		s.IDTokenClaimsInternal = new(jwt.IDTokenClaims)
 
-		s.IDTokenClaimsInternal.JTI = identifier.New().String()
 		s.IDTokenClaimsInternal.Subject = s.Subject.String()
 		s.IDTokenClaimsInternal.RequestedAt = s.RequestedAt
 		s.IDTokenClaimsInternal.AuthTime = s.AuthTime
 		s.IDTokenClaimsInternal.Add("client_id", s.Client.String())
 		s.IDTokenClaimsInternal.Add("sid", s.Session.String())
 	}
+
+	// We reset JTI every time.
+	s.IDTokenClaimsInternal.JTI = identifier.New().String()
 
 	return s.IDTokenClaimsInternal
 }
@@ -275,26 +278,16 @@ func (s *OIDCSession) Clone() fosite.Session { //nolint:ireturn
 	return deepcopy.Copy(s).(fosite.Session) //nolint:forcetypeassert
 }
 
-// GetExtraClaims implements fosite.ExtraClaimsSession.
+// GetExtraClaims implements fosite.ExtraClaimsSession and claims
+// are used to populate the response of the introspection endpoint.
+// The returned value is a copy of JWTClaims.
 func (s *OIDCSession) GetExtraClaims() map[string]interface{} {
 	if s == nil {
 		return nil
 	}
 
-	if s.Extra == nil {
-		s.Extra = make(map[string]interface{})
-
-		// We expose extra claims for the introspect endpoint.
-		// We want introspect endpoint to return all claims found in a JWT.
-		if s.JWTClaims != nil {
-			s.Extra["iss"] = s.JWTClaims.Issuer
-			s.Extra["jti"] = s.JWTClaims.JTI
-			s.Extra["nbf"] = s.JWTClaims.NotBefore.Unix()
-			s.Extra["sid"] = s.JWTClaims.Get("sid")
-		}
-	}
-
-	return s.Extra
+	// We make a clone so that WithScopeField does not change the original value.
+	return s.Clone().(*OIDCSession).JWTClaims.WithScopeField(jwt.JWTScopeFieldString).ToMapClaims() //nolint:forcetypeassert
 }
 
 // SetSubject implements rfc7523.Session.

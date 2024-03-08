@@ -15,7 +15,7 @@ import (
 	"gitlab.com/charon/charon"
 )
 
-func validateIDToken(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, applicationID, nonce, accessToken, idToken string) {
+func validateIDToken(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, applicationID, nonce, accessToken, idToken string) string {
 	t.Helper()
 
 	const leeway = time.Minute
@@ -46,10 +46,11 @@ func validateIDToken(t *testing.T, ts *httptest.Server, service *charon.Service,
 	delete(all, "exp")
 	assert.Contains(t, all, "iat")
 	delete(all, "iat")
-	if assert.NotEmpty(t, all["jti"]) {
-		_, errE := identifier.FromString(all["jti"].(string))
-		assert.NoError(t, errE, "% -+#.1v", errE)
-	}
+	require.Contains(t, all, "jti")
+	jti, ok := all["jti"].(string)
+	assert.True(t, ok, all["jti"])
+	_, errE := identifier.FromString(jti)
+	assert.NoError(t, errE, "% -+#.1v", errE)
 	delete(all, "jti")
 
 	for _, claim := range []string{"auth_time", "rat"} {
@@ -76,4 +77,6 @@ func validateIDToken(t *testing.T, ts *httptest.Server, service *charon.Service,
 		"nonce":     nonce,
 		"at_hash":   accessTokenHash,
 	}, all)
+
+	return jti
 }

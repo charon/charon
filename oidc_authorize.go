@@ -180,7 +180,6 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 		JWTHeaders:             nil,
 		IDTokenClaimsInternal:  nil,
 		IDTokenHeadersInternal: nil,
-		Extra:                  nil,
 	}
 
 	// TODO: Add to oidcSession.IDTokenClaimsInternal claims based on ID token scopes requested and granted found in authorizeRequest.GetGrantedScopes().

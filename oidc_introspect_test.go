@@ -71,7 +71,7 @@ func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now
 	return all
 }
 
-func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, applicationID, accessToken string) {
+func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, applicationID, accessToken string) string {
 	t.Helper()
 
 	const leeway = time.Minute
@@ -141,10 +141,7 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 	assert.NotEmpty(t, response.Subject)
 	assert.Equal(t, []string{applicationID, clientID}, response.Audience)
 	assert.Equal(t, ts.URL, response.Issuer)
-	if assert.NotEmpty(t, response.JTI) {
-		_, errE = identifier.FromString(response.JTI)
-		assert.NoError(t, errE, "% -+#.1v", errE)
-	}
+	// We assert response.JTI at the end.
 	assert.Equal(t, session, response.Session)
 
 	all := validateJWT(t, ts, service, now, leeway, clientID, applicationID, accessToken)
@@ -155,10 +152,11 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 	delete(all, "iat")
 	assert.Contains(t, all, "nbf")
 	delete(all, "nbf")
-	if assert.NotEmpty(t, all["jti"]) {
-		_, errE = identifier.FromString(all["jti"].(string))
-		assert.NoError(t, errE, "% -+#.1v", errE)
-	}
+	require.Contains(t, all, "jti")
+	jti, ok := all["jti"].(string)
+	assert.True(t, ok, all["jti"])
+	_, errE = identifier.FromString(jti)
+	assert.NoError(t, errE, "% -+#.1v", errE)
 	delete(all, "jti")
 
 	// TODO: Check exact value of the subject.
@@ -172,4 +170,8 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 		"scope":     "openid offline_access",
 		"sid":       session,
 	}, all)
+
+	assert.Equal(t, jti, response.JTI)
+
+	return jti
 }

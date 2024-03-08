@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/tozd/identifier"
@@ -126,8 +127,16 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	assert.NotEmpty(t, code)
 	assert.Equal(t, url.Values{"scope": []string{"openid offline_access"}, "state": []string{state}}, locationQuery)
 
-	accessToken, idToken, _ := exchangeCodeForTokens(t, ts, service, clientID, code, challenge)
+	accessToken, idToken, refreshToken := exchangeCodeForTokens(t, ts, service, clientID, code, challenge)
 
-	validateAccessToken(t, ts, service, clientID, applicationID, accessToken)
-	validateIDToken(t, ts, service, clientID, applicationID, nonce, accessToken, idToken)
+	uniqueStrings := mapset.NewThreadUnsafeSet[string]()
+	assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, clientID, applicationID, accessToken)))
+	assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, clientID, applicationID, nonce, accessToken, idToken)))
+
+	for i := 0; i < 10; i++ {
+		accessToken, idToken, refreshToken = exchangeRefreshTokenForTokens(t, ts, service, clientID, refreshToken)
+
+		assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, clientID, applicationID, accessToken)))
+		assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, clientID, applicationID, nonce, accessToken, idToken)))
+	}
 }
