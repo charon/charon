@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-jose/go-jose/v3"
 	"github.com/ory/fosite"
@@ -86,6 +87,7 @@ func startOIDCTestServer(t *testing.T) (*httptest.Server, *storage.MemoryStore) 
 		session := openid.NewDefaultSession()
 		session.SetSubject(subject)
 		session.IDTokenClaims().Subject = subject
+		session.IDTokenClaims().AuthTime = time.Now().UTC()
 
 		response, err := oauth2Provider.NewAuthorizeResponse(ctx, ar, session)
 		if err != nil {
