@@ -129,5 +129,5 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	accessToken, idToken := exchangeCodeForToken(t, ts, service, clientID, code, challenge)
 
 	validateAccessToken(t, ts, service, clientID, applicationID, accessToken)
-	validateIDToken(t, idToken)
+	validateIDToken(t, ts, service, clientID, applicationID, nonce, accessToken, idToken)
 }

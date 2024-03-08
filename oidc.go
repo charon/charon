@@ -165,7 +165,7 @@ type OIDCSession struct {
 	Session     identifier.Identifier          `json:"session"`
 	ExpiresAt   map[fosite.TokenType]time.Time `json:"expiresAt"`
 	RequestedAt time.Time                      `json:"requestedAt"`
-	AuthTime    *time.Time                     `json:"authTime"`
+	AuthTime    time.Time                      `json:"authTime"`
 	Client      identifier.Identifier          `json:"client"`
 	// Fosite modifies these structs in-place and we have to keep a pointer
 	// to them so that we return always the same struct between calls.
@@ -209,11 +209,10 @@ func (s *OIDCSession) IDTokenClaims() *jwt.IDTokenClaims {
 	if s.IDTokenClaimsInternal == nil {
 		s.IDTokenClaimsInternal = new(jwt.IDTokenClaims)
 
+		s.IDTokenClaimsInternal.JTI = identifier.New().String()
 		s.IDTokenClaimsInternal.Subject = s.Subject.String()
 		s.IDTokenClaimsInternal.RequestedAt = s.RequestedAt
-		if s.AuthTime != nil {
-			s.IDTokenClaimsInternal.AuthTime = *s.AuthTime
-		}
+		s.IDTokenClaimsInternal.AuthTime = s.AuthTime
 		s.IDTokenClaimsInternal.Add("client_id", s.Client.String())
 		s.IDTokenClaimsInternal.Add("sid", s.Session.String())
 	}

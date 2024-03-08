@@ -222,6 +222,7 @@ func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, par
 		errE = errors.New("authorization error")
 		errors.Details(errE)["code"] = errorCode
 		errors.Details(errE)["description"] = errorDescription
+		errors.Details(errE)["provider"] = providerName
 		s.failAuthStep(w, req, false, flow, errE)
 		return
 	}
@@ -236,31 +237,41 @@ func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, par
 
 	oauth2Token, err := provider.Config.Exchange(ctx, req.Form.Get("code"), opts...)
 	if err != nil {
-		s.BadRequestWithError(w, req, errors.WithStack(err))
+		errE = errors.WithStack(err)
+		errors.Details(errE)["provider"] = providerName
+		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
 	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
 	if !ok {
-		s.BadRequestWithError(w, req, errors.New("ID token missing"))
+		errE = errors.New("ID token missing")
+		errors.Details(errE)["provider"] = providerName
+		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
 	idToken, err := provider.Verifier.Verify(ctx, rawIDToken)
 	if !ok {
-		s.BadRequestWithError(w, req, errors.WithStack(err))
+		errE = errors.WithStack(err)
+		errors.Details(errE)["provider"] = providerName
+		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
 	if idToken.Nonce != flowOIDC.Nonce {
-		s.BadRequestWithError(w, req, errors.New("nonce mismatch"))
+		errE = errors.New("nonce mismatch")
+		errors.Details(errE)["provider"] = providerName
+		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
 	var jsonData json.RawMessage
 	err = idToken.Claims(&jsonData)
 	if err != nil {
-		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
+		errE = errors.WithStack(err)
+		errors.Details(errE)["provider"] = providerName
+		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
@@ -270,20 +281,28 @@ func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, par
 	}
 	err = idToken.Claims(&claims)
 	if err != nil {
-		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
+		errE = errors.WithStack(err)
+		errors.Details(errE)["provider"] = providerName
+		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
 	account, errE := GetAccountByCredential(ctx, providerName, idToken.Subject)
 	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
+		errors.Details(errE)["provider"] = providerName
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	var authTime *time.Time
+	var authTime time.Time
 	if claims.AuthTime != nil {
-		t := claims.AuthTime.Time()
-		authTime = &t
+		// We inherit authentication time from the provider if it provides it.
+		authTime = claims.AuthTime.Time()
+	} else {
+		errE = errors.New("provider did not provide authentication time")
+		errors.Details(errE)["provider"] = providerName
+		s.InternalServerErrorWithError(w, req, errE)
+		return
 	}
 	s.completeAuthStep(w, req, false, flow, account, []Credential{{ID: idToken.Subject, Provider: providerName, Data: jsonData}}, authTime)
 }

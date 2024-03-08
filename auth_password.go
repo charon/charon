@@ -328,12 +328,11 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 						return
 					}
 				}
-				now := time.Now().UTC()
 				s.completeAuthStep(w, req, true, flow, account, []Credential{{
 					ID:       credential.ID,
 					Provider: PasswordProvider,
 					Data:     jsonData,
-				}}, &now)
+				}}, time.Now().UTC())
 				return
 			}
 		}
@@ -411,6 +410,5 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 
 	// Account does not exist and we do not have an e-mail address.
 	// We create a new username-only account.
-	now := time.Now().UTC()
-	s.completeAuthStep(w, req, true, flow, nil, credentials, &now)
+	s.completeAuthStep(w, req, true, flow, nil, credentials, time.Now().UTC())
 }

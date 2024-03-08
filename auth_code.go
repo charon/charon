@@ -404,6 +404,5 @@ func (s *Service) AuthFlowCodeCompletePost(w http.ResponseWriter, req *http.Requ
 		}
 	}
 
-	now := time.Now().UTC()
-	s.completeAuthStep(w, req, true, flow, account, flow.Code.Credentials, &now)
+	s.completeAuthStep(w, req, true, flow, account, flow.Code.Credentials, time.Now().UTC())
 }
