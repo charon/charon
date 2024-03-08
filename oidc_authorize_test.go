@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/stretchr/testify/assert"
@@ -129,14 +130,29 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 
 	accessToken, idToken, refreshToken := exchangeCodeForTokens(t, ts, service, clientID, code, challenge)
 
+	u, err := url.Parse(ts.URL)
+	require.NoError(t, err)
+	cookies := ts.Client().Jar.Cookies(u)
+
+	var session string
+	for _, cookie := range cookies {
+		if cookie.Name == charon.SessionCookieName {
+			session = cookie.Value
+			break
+		}
+	}
+	require.NotEmpty(t, session)
+
 	uniqueStrings := mapset.NewThreadUnsafeSet[string]()
-	assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, clientID, applicationID, accessToken)))
+	assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, clientID, applicationID, session, accessToken)))
 	assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, clientID, applicationID, nonce, accessToken, idToken)))
+	validateIntrospect(t, ts, service, time.Now(), time.Minute, clientID, applicationID, session, refreshToken, "refresh_token")
 
 	for i := 0; i < 10; i++ {
 		accessToken, idToken, refreshToken = exchangeRefreshTokenForTokens(t, ts, service, clientID, refreshToken)
 
-		assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, clientID, applicationID, accessToken)))
+		assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, clientID, applicationID, session, accessToken)))
 		assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, clientID, applicationID, nonce, accessToken, idToken)))
+		validateIntrospect(t, ts, service, time.Now(), time.Minute, clientID, applicationID, session, refreshToken, "refresh_token")
 	}
 }

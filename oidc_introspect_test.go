@@ -20,6 +20,23 @@ import (
 	"gitlab.com/charon/charon"
 )
 
+//nolint:tagliatelle
+type introspectResponse struct {
+	Error            string          `json:"error"`
+	ErrorDescription string          `json:"error_description"`
+	Active           bool            `json:"active"`
+	ClientID         string          `json:"client_id"`
+	ExpirationTime   jwt.NumericDate `json:"exp"`
+	IssueTime        jwt.NumericDate `json:"iat"`
+	NotBeforeTime    jwt.NumericDate `json:"nbf"`
+	Scope            string          `json:"scope"`
+	Subject          string          `json:"sub"`
+	Audience         []string        `json:"aud"`
+	Issuer           string          `json:"iss"`
+	JTI              string          `json:"jti"`
+	Session          string          `json:"sid"`
+}
+
 func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, leeway time.Duration, clientID, applicationID, token string) map[string]interface{} {
 	t.Helper()
 
@@ -71,30 +88,15 @@ func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now
 	return all
 }
 
-func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, applicationID, accessToken string) string {
+func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, leeway time.Duration, clientID, applicationID, session, token, typeHint string) introspectResponse {
 	t.Helper()
-
-	const leeway = time.Minute
-
-	u, err := url.Parse(ts.URL)
-	require.NoError(t, err)
-	cookies := ts.Client().Jar.Cookies(u)
-
-	var session string
-	for _, cookie := range cookies {
-		if cookie.Name == charon.SessionCookieName {
-			session = cookie.Value
-			break
-		}
-	}
-	require.NotEmpty(t, session)
 
 	oidcIntrospect, errE := service.ReverseAPI("OIDCIntrospect", nil, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	data := url.Values{
-		"token":           []string{accessToken},
-		"token_type_hint": []string{"access_token"},
+		"token":           []string{token},
+		"token_type_hint": []string{typeHint},
 		"scope":           []string{"openid offline_access"},
 	}
 
@@ -108,26 +110,9 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json;charset=UTF-8", resp.Header.Get("Content-Type"))
-	//nolint:tagliatelle
-	var response struct {
-		Error            string          `json:"error"`
-		ErrorDescription string          `json:"error_description"`
-		Active           bool            `json:"active"`
-		ClientID         string          `json:"client_id"`
-		ExpirationTime   jwt.NumericDate `json:"exp"`
-		IssueTime        jwt.NumericDate `json:"iat"`
-		NotBeforeTime    jwt.NumericDate `json:"nbf"`
-		Scope            string          `json:"scope"`
-		Subject          string          `json:"sub"`
-		Audience         []string        `json:"aud"`
-		Issuer           string          `json:"iss"`
-		JTI              string          `json:"jti"`
-		Session          string          `json:"sid"`
-	}
+	var response introspectResponse
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &response)
 	require.NoError(t, errE, "% -+#.1v", errE)
-
-	now := time.Now()
 
 	assert.Empty(t, response.Error)
 	assert.Empty(t, response.ErrorDescription)
@@ -141,8 +126,21 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 	assert.NotEmpty(t, response.Subject)
 	assert.Equal(t, []string{applicationID, clientID}, response.Audience)
 	assert.Equal(t, ts.URL, response.Issuer)
-	// We assert response.JTI at the end.
+	_, errE = identifier.FromString(response.JTI)
+	assert.NoError(t, errE, "% -+#.1v", errE)
 	assert.Equal(t, session, response.Session)
+
+	return response
+}
+
+func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, applicationID, session, accessToken string) string {
+	t.Helper()
+
+	const leeway = time.Minute
+
+	now := time.Now()
+
+	response := validateIntrospect(t, ts, service, now, leeway, clientID, applicationID, session, accessToken, "access_token")
 
 	all := validateJWT(t, ts, service, now, leeway, clientID, applicationID, accessToken)
 
@@ -155,7 +153,7 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 	require.Contains(t, all, "jti")
 	jti, ok := all["jti"].(string)
 	assert.True(t, ok, all["jti"])
-	_, errE = identifier.FromString(jti)
+	_, errE := identifier.FromString(jti)
 	assert.NoError(t, errE, "% -+#.1v", errE)
 	delete(all, "jti")
 
