@@ -15,7 +15,7 @@ import (
 	"gitlab.com/charon/charon"
 )
 
-func exchangeCodeForToken(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, code, codeVerifier string) (string, string) {
+func exchangeCodeForTokens(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, code, codeVerifier string) (string, string, string) {
 	t.Helper()
 
 	oidcToken, errE := service.ReverseAPI("OIDCToken", nil, nil)
@@ -38,20 +38,22 @@ func exchangeCodeForToken(t *testing.T, ts *httptest.Server, service *charon.Ser
 	assert.Equal(t, "application/json;charset=UTF-8", resp.Header.Get("Content-Type"))
 	//nolint:tagliatelle
 	var response struct {
-		AccessToken string `json:"access_token"`
-		IDToken     string `json:"id_token"`
-		ExpiresIn   int    `json:"expires_in"`
-		Scope       string `json:"scope"`
-		TokenType   string `json:"token_type"`
+		AccessToken  string `json:"access_token"`
+		IDToken      string `json:"id_token"`
+		RefreshToken string `json:"refresh_token"`
+		ExpiresIn    int    `json:"expires_in"`
+		Scope        string `json:"scope"`
+		TokenType    string `json:"token_type"`
 	}
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &response)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	assert.NotEmpty(t, response.AccessToken)
 	assert.NotEmpty(t, response.IDToken)
+	assert.NotEmpty(t, response.RefreshToken)
 	assert.InDelta(t, 3599, response.ExpiresIn, 1)
-	assert.Equal(t, "openid", response.Scope)
+	assert.Equal(t, "openid offline", response.Scope)
 	assert.Equal(t, "bearer", response.TokenType)
 
-	return response.AccessToken, response.IDToken
+	return response.AccessToken, response.IDToken, response.RefreshToken
 }
