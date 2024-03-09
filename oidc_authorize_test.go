@@ -143,18 +143,24 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	}
 	require.NotEmpty(t, session)
 
+	accessTokenLastTimestamps := map[string]time.Time{}
+	idTokenLastTimestamps := map[string]time.Time{}
+
 	uniqueStrings := mapset.NewThreadUnsafeSet[string]()
-	assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, clientID, applicationID, session, accessToken)))
-	assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, clientID, applicationID, nonce, accessToken, idToken)))
+	assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, clientID, applicationID, session, accessToken, accessTokenLastTimestamps)))
+	assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, clientID, applicationID, nonce, accessToken, idToken, idTokenLastTimestamps)))
 	// TODO: Introspection of refresh tokens should return their expiration.
 	//       See: https://github.com/ory/fosite/issues/801
 	validateIntrospect(t, ts, service, time.Now(), time.Minute, clientID, applicationID, session, refreshToken, "refresh_token")
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 3; i++ {
+		// We sleep for a second so that all timestamps increase at second granularity.
+		time.Sleep(time.Second)
+
 		accessToken, idToken, refreshToken = exchangeRefreshTokenForTokens(t, ts, service, clientID, refreshToken)
 
-		assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, clientID, applicationID, session, accessToken)))
-		assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, clientID, applicationID, nonce, accessToken, idToken)))
+		assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, clientID, applicationID, session, accessToken, accessTokenLastTimestamps)))
+		assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, clientID, applicationID, nonce, accessToken, idToken, idTokenLastTimestamps)))
 		// TODO: Introspection of refresh tokens should return their expiration.
 		//       See: https://github.com/ory/fosite/issues/801
 		validateIntrospect(t, ts, service, time.Now(), time.Minute, clientID, applicationID, session, refreshToken, "refresh_token")

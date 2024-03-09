@@ -28,7 +28,6 @@ type introspectResponse struct {
 	ClientID         string          `json:"client_id"`
 	ExpirationTime   jwt.NumericDate `json:"exp"`
 	IssueTime        jwt.NumericDate `json:"iat"`
-	NotBeforeTime    jwt.NumericDate `json:"nbf"`
 	Scope            string          `json:"scope"`
 	Subject          string          `json:"sub"`
 	Audience         []string        `json:"aud"`
@@ -120,7 +119,6 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 	assert.Equal(t, clientID, response.ClientID)
 	assert.WithinDuration(t, now.Add(60*time.Minute), response.ExpirationTime.Time(), leeway)
 	assert.WithinDuration(t, now, response.IssueTime.Time(), leeway)
-	assert.WithinDuration(t, now, response.NotBeforeTime.Time(), leeway)
 	assert.Equal(t, "openid offline_access", response.Scope)
 	// TODO: Check exact value of the subject.
 	assert.NotEmpty(t, response.Subject)
@@ -133,7 +131,11 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 	return response
 }
 
-func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, applicationID, session, accessToken string) string {
+func validateAccessToken(
+	t *testing.T, ts *httptest.Server, service *charon.Service,
+	clientID, applicationID, session, accessToken string,
+	lastTimestamps map[string]time.Time,
+) string {
 	t.Helper()
 
 	const leeway = time.Minute
@@ -144,12 +146,21 @@ func validateAccessToken(t *testing.T, ts *httptest.Server, service *charon.Serv
 
 	all := validateJWT(t, ts, service, now, leeway, clientID, applicationID, accessToken)
 
-	assert.Contains(t, all, "exp")
-	delete(all, "exp")
-	assert.Contains(t, all, "iat")
-	delete(all, "iat")
-	assert.Contains(t, all, "nbf")
-	delete(all, "nbf")
+	for _, claim := range []string{"exp", "iat"} {
+		if assert.Contains(t, all, claim) {
+			claimTimeFloat, ok := all[claim].(float64)
+			if assert.True(t, ok, all[claim]) {
+				claimTime := time.Unix(int64(claimTimeFloat), 0)
+				if !lastTimestamps[claim].IsZero() {
+					// New timestamp should be after the last timestamps.
+					assert.True(t, claimTime.After(lastTimestamps[claim]), claim)
+				}
+				lastTimestamps[claim] = claimTime
+			}
+			delete(all, claim)
+		}
+	}
+
 	require.Contains(t, all, "jti")
 	jti, ok := all["jti"].(string)
 	assert.True(t, ok, all["jti"])

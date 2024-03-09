@@ -184,14 +184,16 @@ func (s *OIDCSession) GetJWTClaims() jwt.JWTClaimsContainer { //nolint:ireturn
 		s.JWTClaims = new(jwt.JWTClaims)
 
 		s.JWTClaims.Subject = s.Subject.String()
-		// We use "requested at" time as "not before" for access tokens.
-		s.JWTClaims.NotBefore = s.RequestedAt
 		s.JWTClaims.Add("client_id", s.Client.String())
 		s.JWTClaims.Add("sid", s.Session.String())
 	}
 
 	// We reset JTI every time.
 	s.JWTClaims.JTI = identifier.New().String()
+
+	// We reset IssuedAt every time.
+	// See: https://github.com/ory/fosite/issues/774
+	s.JWTClaims.IssuedAt = time.Now().UTC()
 
 	return s.JWTClaims
 }
@@ -211,14 +213,20 @@ func (s *OIDCSession) IDTokenClaims() *jwt.IDTokenClaims {
 		s.IDTokenClaimsInternal = new(jwt.IDTokenClaims)
 
 		s.IDTokenClaimsInternal.Subject = s.Subject.String()
-		s.IDTokenClaimsInternal.RequestedAt = s.RequestedAt
-		s.IDTokenClaimsInternal.AuthTime = s.AuthTime
 		s.IDTokenClaimsInternal.Add("client_id", s.Client.String())
 		s.IDTokenClaimsInternal.Add("sid", s.Session.String())
+
+		// For ID tokens, these two timestamps are not reset
+		// but are kept to their initial values.
+		s.IDTokenClaimsInternal.RequestedAt = s.RequestedAt
+		s.IDTokenClaimsInternal.AuthTime = s.AuthTime
 	}
 
 	// We reset JTI every time.
 	s.IDTokenClaimsInternal.JTI = identifier.New().String()
+
+	// We do not reset IssuedAt every time here because it is already done by fosite.
+	// See: https://github.com/ory/fosite/issues/774
 
 	return s.IDTokenClaimsInternal
 }
