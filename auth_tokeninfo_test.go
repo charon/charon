@@ -16,7 +16,7 @@ import (
 )
 
 func validateIDToken(
-	t *testing.T, ts *httptest.Server, service *charon.Service,
+	t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time,
 	clientID, applicationID, nonce, accessToken, idToken string,
 	lastTimestamps map[string]time.Time,
 ) string {
@@ -39,8 +39,6 @@ func validateIDToken(
 	accessTokenHash := base64.RawURLEncoding.EncodeToString(hash[:len(hash)/2])
 
 	// TODO: Validate using tokeninfo endpoint when it will be available.
-
-	now := time.Now()
 
 	all := validateJWT(t, ts, service, now, clientID, applicationID, idToken)
 

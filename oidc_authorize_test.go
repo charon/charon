@@ -143,13 +143,14 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	}
 	require.NotEmpty(t, session)
 
-	now := time.Now()
 	accessTokenLastTimestamps := map[string]time.Time{}
 	idTokenLastTimestamps := map[string]time.Time{}
 
+	now := time.Now().UTC()
+
 	uniqueStrings := mapset.NewThreadUnsafeSet[string]()
-	assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, clientID, applicationID, session, accessToken, accessTokenLastTimestamps)))
-	assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, clientID, applicationID, nonce, accessToken, idToken, idTokenLastTimestamps)))
+	assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, applicationID, session, accessToken, accessTokenLastTimestamps)))
+	assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, applicationID, nonce, accessToken, idToken, idTokenLastTimestamps)))
 	validateIntrospect(t, ts, service, now, clientID, applicationID, session, refreshToken, "refresh_token")
 
 	for i := 0; i < 3; i++ {
@@ -158,8 +159,10 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 
 		accessToken, idToken, refreshToken = exchangeRefreshTokenForTokens(t, ts, service, clientID, refreshToken, accessToken)
 
-		assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, clientID, applicationID, session, accessToken, accessTokenLastTimestamps)))
-		assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, clientID, applicationID, nonce, accessToken, idToken, idTokenLastTimestamps)))
+		now := time.Now().UTC()
+
+		assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, applicationID, session, accessToken, accessTokenLastTimestamps)))
+		assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, applicationID, nonce, accessToken, idToken, idTokenLastTimestamps)))
 		validateIntrospect(t, ts, service, now, clientID, applicationID, session, refreshToken, "refresh_token")
 	}
 }

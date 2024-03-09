@@ -236,8 +236,8 @@ func createTempCertificateFiles(certPath, keyPath string, domains []string) erro
 	template := x509.Certificate{
 		SerialNumber:          big.NewInt(1),
 		Subject:               pkix.Name{Organization: []string{"Test"}},
-		NotBefore:             time.Now(),
-		NotAfter:              time.Now().Add(24 * time.Hour), // Set an expiration time.
+		NotBefore:             time.Now().UTC(),
+		NotAfter:              time.Now().UTC().Add(24 * time.Hour), // Set an expiration time.
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,

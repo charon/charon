@@ -187,14 +187,11 @@ func validateNotValidIntrospect(t *testing.T, ts *httptest.Server, service *char
 }
 
 func validateAccessToken(
-	t *testing.T, ts *httptest.Server, service *charon.Service,
+	t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time,
 	clientID, applicationID, session, accessToken string,
 	lastTimestamps map[string]time.Time,
 ) string {
 	t.Helper()
-
-	now := time.Now()
-
 	response := validateIntrospect(t, ts, service, now, clientID, applicationID, session, accessToken, "access_token")
 
 	all := validateJWT(t, ts, service, now, clientID, applicationID, accessToken)
