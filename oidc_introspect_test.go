@@ -36,7 +36,7 @@ type introspectResponse struct {
 	Session          string          `json:"sid"`
 }
 
-func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, leeway time.Duration, clientID, applicationID, token string) map[string]interface{} {
+func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, applicationID, token string) map[string]interface{} {
 	t.Helper()
 
 	keySet := getKeys(t, ts, service)
@@ -81,13 +81,13 @@ func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now
 		Issuer:      ts.URL,
 		AnyAudience: []string{applicationID, clientID},
 		Time:        now,
-	}, leeway)
+	}, 0)
 	assert.NoError(t, err, claims)
 
 	return all
 }
 
-func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, leeway time.Duration, clientID, applicationID, session, token, typeHint string) introspectResponse {
+func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, applicationID, session, token, typeHint string) introspectResponse {
 	t.Helper()
 
 	oidcIntrospect, errE := service.ReverseAPI("OIDCIntrospect", nil, nil)
@@ -117,8 +117,8 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 	assert.Empty(t, response.ErrorDescription)
 	assert.True(t, response.Active)
 	assert.Equal(t, clientID, response.ClientID)
-	assert.WithinDuration(t, now.Add(60*time.Minute), response.ExpirationTime.Time(), leeway)
-	assert.WithinDuration(t, now, response.IssueTime.Time(), leeway)
+	assert.WithinDuration(t, now.Add(60*time.Minute), response.ExpirationTime.Time(), 5*time.Second)
+	assert.WithinDuration(t, now, response.IssueTime.Time(), 5*time.Second)
 	assert.Equal(t, "openid offline_access", response.Scope)
 	// TODO: Check exact value of the subject.
 	assert.NotEmpty(t, response.Subject)
@@ -138,13 +138,11 @@ func validateAccessToken(
 ) string {
 	t.Helper()
 
-	const leeway = time.Minute
-
 	now := time.Now()
 
-	response := validateIntrospect(t, ts, service, now, leeway, clientID, applicationID, session, accessToken, "access_token")
+	response := validateIntrospect(t, ts, service, now, clientID, applicationID, session, accessToken, "access_token")
 
-	all := validateJWT(t, ts, service, now, leeway, clientID, applicationID, accessToken)
+	all := validateJWT(t, ts, service, now, clientID, applicationID, accessToken)
 
 	for _, claim := range []string{"exp", "iat"} {
 		if assert.Contains(t, all, claim) {

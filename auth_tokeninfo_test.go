@@ -22,8 +22,6 @@ func validateIDToken(
 ) string {
 	t.Helper()
 
-	const leeway = time.Minute
-
 	u, err := url.Parse(ts.URL)
 	require.NoError(t, err)
 	cookies := ts.Client().Jar.Cookies(u)
@@ -44,7 +42,7 @@ func validateIDToken(
 
 	now := time.Now()
 
-	all := validateJWT(t, ts, service, now, leeway, clientID, applicationID, idToken)
+	all := validateJWT(t, ts, service, now, clientID, applicationID, idToken)
 
 	for _, claim := range []string{"exp", "iat"} {
 		if assert.Contains(t, all, claim) {
@@ -72,7 +70,7 @@ func validateIDToken(
 				}
 				lastTimestamps[claim] = claimTime
 				// Cannot be in the future.
-				assert.False(t, now.Add(leeway).Before(claimTime), claim)
+				assert.False(t, now.Before(claimTime), claim)
 			}
 			delete(all, claim)
 		}
