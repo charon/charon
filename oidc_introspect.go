@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/ory/fosite"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/waf"
 )
@@ -33,6 +34,12 @@ func (s *Service) OIDCIntrospectPost(w http.ResponseWriter, req *http.Request, _
 		oidc.WriteIntrospectionError(ctx, w, errE)
 		return
 	}
+
+	// We have to fix RequestedAt timestamp to match the IssuedAt timestamp
+	// because RequestedAt is used as IssuedAt in WriteIntrospectionResponse.
+	// See: https://github.com/ory/fosite/issues/774
+	ar := ir.GetAccessRequester().(*fosite.AccessRequest)
+	ar.RequestedAt = ar.GetSession().(*OIDCSession).JWTClaims.IssuedAt
 
 	oidc.WriteIntrospectionResponse(ctx, w, ir)
 }
