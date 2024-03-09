@@ -58,7 +58,7 @@ func exchangeCodeForTokens(t *testing.T, ts *httptest.Server, service *charon.Se
 	return response.AccessToken, response.IDToken, response.RefreshToken
 }
 
-func exchangeRefreshTokenForTokens(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, refreshToken string) (string, string, string) {
+func exchangeRefreshTokenForTokens(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, refreshToken, accessToken string) (string, string, string) {
 	t.Helper()
 
 	oidcToken, errE := service.ReverseAPI("OIDCToken", nil, nil)
@@ -96,6 +96,10 @@ func exchangeRefreshTokenForTokens(t *testing.T, ts *httptest.Server, service *c
 	assert.InDelta(t, 3599, response.ExpiresIn, 1)
 	assert.Equal(t, "openid offline_access", response.Scope)
 	assert.Equal(t, "bearer", response.TokenType)
+
+	// Previous tokens should not be valid anymore.
+	validateNotValidIntrospect(t, ts, service, clientID, refreshToken, "refresh_token")
+	validateNotValidIntrospect(t, ts, service, clientID, accessToken, "access_token")
 
 	return response.AccessToken, response.IDToken, response.RefreshToken
 }

@@ -131,6 +131,39 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 	return response
 }
 
+func validateNotValidIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, token, typeHint string) introspectResponse {
+	t.Helper()
+
+	oidcIntrospect, errE := service.ReverseAPI("OIDCIntrospect", nil, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	data := url.Values{
+		"token":           []string{token},
+		"token_type_hint": []string{typeHint},
+		"scope":           []string{"openid offline_access"},
+	}
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, ts.URL+oidcIntrospect, strings.NewReader(data.Encode()))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(clientID+":chc-"+applicationClientSecret)))
+	resp, err := ts.Client().Do(req) //nolint:bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, 2, resp.ProtoMajor)
+	assert.Equal(t, "application/json;charset=UTF-8", resp.Header.Get("Content-Type"))
+	var response introspectResponse
+	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &response)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	assert.Empty(t, response.Error)
+	assert.Empty(t, response.ErrorDescription)
+	assert.False(t, response.Active)
+
+	return response
+}
+
 func validateAccessToken(
 	t *testing.T, ts *httptest.Server, service *charon.Service,
 	clientID, applicationID, session, accessToken string,
