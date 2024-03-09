@@ -154,7 +154,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	validateIntrospect(t, ts, service, time.Now(), clientID, applicationID, session, refreshToken, "refresh_token")
 
 	for i := 0; i < 3; i++ {
-		// We sleep for a second so that all timestamps increase at second granularity.
+		// We sleep for a second so that all timestamps increase (they are at second granularity).
 		time.Sleep(time.Second)
 
 		accessToken, idToken, refreshToken = exchangeRefreshTokenForTokens(t, ts, service, clientID, refreshToken)
