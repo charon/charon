@@ -144,11 +144,15 @@ func validateAccessToken(
 
 	all := validateJWT(t, ts, service, now, clientID, applicationID, accessToken)
 
+	timestamps := map[string]int64{}
+
 	for _, claim := range []string{"exp", "iat"} {
 		if assert.Contains(t, all, claim) {
 			claimTimeFloat, ok := all[claim].(float64)
 			if assert.True(t, ok, all[claim]) {
-				claimTime := time.Unix(int64(claimTimeFloat), 0)
+				timestamp := int64(claimTimeFloat)
+				timestamps[claim] = timestamp
+				claimTime := time.Unix(timestamp, 0)
 				if !lastTimestamps[claim].IsZero() {
 					// New timestamp should be after the last timestamps.
 					assert.True(t, claimTime.After(lastTimestamps[claim]), claim)
@@ -179,6 +183,8 @@ func validateAccessToken(
 	}, all)
 
 	assert.Equal(t, jti, response.JTI)
+	assert.Equal(t, timestamps["exp"], int64(response.ExpirationTime))
+	assert.Equal(t, timestamps["iat"], int64(response.IssueTime))
 
 	return jti
 }
