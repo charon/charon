@@ -109,20 +109,15 @@ func initOIDC(config *Config, service *Service, domain string, secret []byte) (f
 			},
 
 			compose.OAuth2AuthorizeExplicitFactory,
-			compose.OAuth2AuthorizeImplicitFactory,
 			compose.OAuth2ClientCredentialsGrantFactory,
 			compose.OAuth2RefreshTokenGrantFactory,
 			compose.OAuth2TokenIntrospectionFactory,
 			compose.OAuth2TokenRevocationFactory,
-			compose.RFC7523AssertionGrantFactory,
 
 			compose.OpenIDConnectExplicitFactory,
-			compose.OpenIDConnectImplicitFactory,
-			compose.OpenIDConnectHybridFactory,
 			compose.OpenIDConnectRefreshFactory,
 
 			compose.OAuth2PKCEFactory,
-			compose.PushedAuthorizeHandlerFactory,
 		).(*fosite.Fosite)
 	})
 }
