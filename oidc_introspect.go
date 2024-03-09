@@ -1,6 +1,7 @@
 package charon
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 
@@ -40,6 +41,33 @@ func (s *Service) OIDCIntrospectPost(w http.ResponseWriter, req *http.Request, _
 	// See: https://github.com/ory/fosite/issues/774
 	ar := ir.GetAccessRequester().(*fosite.AccessRequest)
 	ar.RequestedAt = ar.GetSession().(*OIDCSession).JWTClaims.IssuedAt
+
+	if ir.GetTokenUse() == "refresh_token" {
+		// We want to handle refresh tokens differently and output refresh token expiration time.
+		// See: https://github.com/ory/fosite/issues/801
+
+		w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+		w.Header().Set("Cache-Control", "no-store")
+		w.Header().Set("Pragma", "no-cache")
+
+		if !ir.IsActive() {
+			_ = json.NewEncoder(w).Encode(&struct {
+				Active bool `json:"active"`
+			}{Active: false})
+			return
+		}
+
+		response := map[string]interface{}{
+			"active": true,
+		}
+
+		if !ir.GetAccessRequester().GetSession().GetExpiresAt(fosite.RefreshToken).IsZero() {
+			response["exp"] = ir.GetAccessRequester().GetSession().GetExpiresAt(fosite.RefreshToken).Unix()
+		}
+
+		_ = json.NewEncoder(w).Encode(response)
+		return
+	}
 
 	oidc.WriteIntrospectionResponse(ctx, w, ir)
 }

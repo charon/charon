@@ -143,15 +143,14 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	}
 	require.NotEmpty(t, session)
 
+	now := time.Now()
 	accessTokenLastTimestamps := map[string]time.Time{}
 	idTokenLastTimestamps := map[string]time.Time{}
 
 	uniqueStrings := mapset.NewThreadUnsafeSet[string]()
 	assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, clientID, applicationID, session, accessToken, accessTokenLastTimestamps)))
 	assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, clientID, applicationID, nonce, accessToken, idToken, idTokenLastTimestamps)))
-	// TODO: Introspection of refresh tokens should return their expiration.
-	//       See: https://github.com/ory/fosite/issues/801
-	validateIntrospect(t, ts, service, time.Now(), clientID, applicationID, session, refreshToken, "refresh_token")
+	validateIntrospect(t, ts, service, now, clientID, applicationID, session, refreshToken, "refresh_token")
 
 	for i := 0; i < 3; i++ {
 		// We sleep for a second so that all timestamps increase (they are at second granularity).
@@ -161,8 +160,6 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 
 		assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, clientID, applicationID, session, accessToken, accessTokenLastTimestamps)))
 		assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, clientID, applicationID, nonce, accessToken, idToken, idTokenLastTimestamps)))
-		// TODO: Introspection of refresh tokens should return their expiration.
-		//       See: https://github.com/ory/fosite/issues/801
-		validateIntrospect(t, ts, service, time.Now(), clientID, applicationID, session, refreshToken, "refresh_token")
+		validateIntrospect(t, ts, service, now, clientID, applicationID, session, refreshToken, "refresh_token")
 	}
 }

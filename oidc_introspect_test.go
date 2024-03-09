@@ -21,7 +21,7 @@ import (
 )
 
 //nolint:tagliatelle
-type introspectResponse struct {
+type introspectAccessTokenResponse struct {
 	Error            string          `json:"error"`
 	ErrorDescription string          `json:"error_description"`
 	Active           bool            `json:"active"`
@@ -34,6 +34,14 @@ type introspectResponse struct {
 	Issuer           string          `json:"iss"`
 	JTI              string          `json:"jti"`
 	Session          string          `json:"sid"`
+}
+
+//nolint:tagliatelle
+type introspectRefreshTokenResponse struct {
+	Error            string          `json:"error"`
+	ErrorDescription string          `json:"error_description"`
+	Active           bool            `json:"active"`
+	ExpirationTime   jwt.NumericDate `json:"exp"`
 }
 
 func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, applicationID, token string) map[string]interface{} {
@@ -87,7 +95,7 @@ func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now
 	return all
 }
 
-func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, applicationID, session, token, typeHint string) introspectResponse {
+func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, applicationID, session, token, typeHint string) *introspectAccessTokenResponse {
 	t.Helper()
 
 	oidcIntrospect, errE := service.ReverseAPI("OIDCIntrospect", nil, nil)
@@ -109,7 +117,21 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json;charset=UTF-8", resp.Header.Get("Content-Type"))
-	var response introspectResponse
+
+	if typeHint == "refresh_token" {
+		var response introspectRefreshTokenResponse
+		errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &response)
+		require.NoError(t, errE, "% -+#.1v", errE)
+
+		assert.Empty(t, response.Error)
+		assert.Empty(t, response.ErrorDescription)
+		assert.True(t, response.Active)
+		assert.WithinDuration(t, now.Add(30*24*60*time.Minute), response.ExpirationTime.Time(), time.Second)
+
+		return nil
+	}
+
+	var response introspectAccessTokenResponse
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &response)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
@@ -117,8 +139,8 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 	assert.Empty(t, response.ErrorDescription)
 	assert.True(t, response.Active)
 	assert.Equal(t, clientID, response.ClientID)
-	assert.WithinDuration(t, now.Add(60*time.Minute), response.ExpirationTime.Time(), 5*time.Second)
-	assert.WithinDuration(t, now, response.IssueTime.Time(), 5*time.Second)
+	assert.WithinDuration(t, now.Add(60*time.Minute), response.ExpirationTime.Time(), time.Second)
+	assert.WithinDuration(t, now, response.IssueTime.Time(), time.Second)
 	assert.Equal(t, "openid offline_access", response.Scope)
 	// TODO: Check exact value of the subject.
 	assert.NotEmpty(t, response.Subject)
@@ -128,10 +150,10 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 	assert.NoError(t, errE, "% -+#.1v", errE)
 	assert.Equal(t, session, response.Session)
 
-	return response
+	return &response
 }
 
-func validateNotValidIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, token, typeHint string) introspectResponse {
+func validateNotValidIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, token, typeHint string) introspectAccessTokenResponse {
 	t.Helper()
 
 	oidcIntrospect, errE := service.ReverseAPI("OIDCIntrospect", nil, nil)
@@ -153,7 +175,7 @@ func validateNotValidIntrospect(t *testing.T, ts *httptest.Server, service *char
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json;charset=UTF-8", resp.Header.Get("Content-Type"))
-	var response introspectResponse
+	var response introspectAccessTokenResponse
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &response)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
