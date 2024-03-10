@@ -147,7 +147,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	split := strings.Split(sessionToken, ".")
 	require.Len(t, split, 2)
 
-	secretID, err := base64.RawStdEncoding.DecodeString(split[1])
+	secretID, err := base64.RawURLEncoding.DecodeString(split[1])
 	require.NoError(t, err)
 	session, errE := charon.GetSessionBySecretID(context.Background(), [32]byte(secretID))
 	require.NoError(t, errE, "% -+#.1v", errE)
