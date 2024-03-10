@@ -1,6 +1,7 @@
 package charon_test
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"io"
@@ -134,22 +135,32 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	require.NoError(t, err)
 	cookies := ts.Client().Jar.Cookies(u)
 
-	var session string
+	var sessionToken string
 	for _, cookie := range cookies {
 		if cookie.Name == charon.SessionCookieName {
-			session = cookie.Value
+			sessionToken = cookie.Value
 			break
 		}
 	}
-	require.NotEmpty(t, session)
+	require.NotEmpty(t, sessionToken)
+
+	split := strings.Split(sessionToken, ".")
+	require.Len(t, split, 2)
+
+	secretID, err := base64.RawStdEncoding.DecodeString(split[1])
+	require.NoError(t, err)
+	session, errE := charon.GetSessionBySecretID(context.Background(), [32]byte(secretID))
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	sessionID := session.ID.String()
 
 	accessTokenLastTimestamps := map[string]time.Time{}
 	idTokenLastTimestamps := map[string]time.Time{}
 
 	uniqueStrings := mapset.NewThreadUnsafeSet[string]()
-	assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, applicationID, session, accessToken, accessTokenLastTimestamps)))
-	assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, applicationID, nonce, accessToken, idToken, idTokenLastTimestamps)))
-	validateIntrospect(t, ts, service, now, clientID, applicationID, session, refreshToken, "refresh_token")
+	assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, applicationID, sessionID, accessToken, accessTokenLastTimestamps)))
+	assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, applicationID, sessionID, nonce, accessToken, idToken, idTokenLastTimestamps)))
+	validateIntrospect(t, ts, service, now, clientID, applicationID, sessionID, refreshToken, "refresh_token")
 
 	// We use assert.WithinDuration with 2 seconds allowed delta, so in 10 iterations every
 	// second we should still catch if any timestamp is not progressing as expected.
@@ -159,8 +170,8 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 
 		accessToken, idToken, refreshToken, now = exchangeRefreshTokenForTokens(t, ts, service, clientID, refreshToken, accessToken)
 
-		assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, applicationID, session, accessToken, accessTokenLastTimestamps)))
-		assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, applicationID, nonce, accessToken, idToken, idTokenLastTimestamps)))
-		validateIntrospect(t, ts, service, now, clientID, applicationID, session, refreshToken, "refresh_token")
+		assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, applicationID, sessionID, accessToken, accessTokenLastTimestamps)))
+		assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, applicationID, sessionID, nonce, accessToken, idToken, idTokenLastTimestamps)))
+		validateIntrospect(t, ts, service, now, clientID, applicationID, sessionID, refreshToken, "refresh_token")
 	}
 }

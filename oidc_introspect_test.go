@@ -95,7 +95,7 @@ func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now
 	return all
 }
 
-func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, applicationID, session, token, typeHint string) *introspectAccessTokenResponse {
+func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, applicationID, sessionID, token, typeHint string) *introspectAccessTokenResponse {
 	t.Helper()
 
 	oidcIntrospect, errE := service.ReverseAPI("OIDCIntrospect", nil, nil)
@@ -148,7 +148,7 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 	assert.Equal(t, ts.URL, response.Issuer)
 	_, errE = identifier.FromString(response.JTI)
 	assert.NoError(t, errE, "% -+#.1v", errE)
-	assert.Equal(t, session, response.Session)
+	assert.Equal(t, sessionID, response.Session)
 
 	return &response
 }
@@ -186,11 +186,11 @@ func validateNotValidIntrospect(t *testing.T, ts *httptest.Server, service *char
 
 func validateAccessToken(
 	t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time,
-	clientID, applicationID, session, accessToken string,
+	clientID, applicationID, sessionID, accessToken string,
 	lastTimestamps map[string]time.Time,
 ) string {
 	t.Helper()
-	response := validateIntrospect(t, ts, service, now, clientID, applicationID, session, accessToken, "access_token")
+	response := validateIntrospect(t, ts, service, now, clientID, applicationID, sessionID, accessToken, "access_token")
 
 	all := validateJWT(t, ts, service, now, clientID, applicationID, accessToken)
 
@@ -229,7 +229,7 @@ func validateAccessToken(
 		"client_id": clientID,
 		"iss":       ts.URL,
 		"scope":     "openid offline_access",
-		"sid":       session,
+		"sid":       sessionID,
 	}, all)
 
 	assert.Equal(t, jti, response.JTI)

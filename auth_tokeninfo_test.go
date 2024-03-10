@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"net/http/httptest"
-	"net/url"
 	"testing"
 	"time"
 
@@ -17,23 +16,10 @@ import (
 
 func validateIDToken(
 	t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time,
-	clientID, applicationID, nonce, accessToken, idToken string,
+	clientID, applicationID, sessionID, nonce, accessToken, idToken string,
 	lastTimestamps map[string]time.Time,
 ) string {
 	t.Helper()
-
-	u, err := url.Parse(ts.URL)
-	require.NoError(t, err)
-	cookies := ts.Client().Jar.Cookies(u)
-
-	var session string
-	for _, cookie := range cookies {
-		if cookie.Name == charon.SessionCookieName {
-			session = cookie.Value
-			break
-		}
-	}
-	require.NotEmpty(t, session)
 
 	hash := sha256.Sum256([]byte(accessToken))
 	accessTokenHash := base64.RawURLEncoding.EncodeToString(hash[:len(hash)/2])
@@ -89,7 +75,7 @@ func validateIDToken(
 		"aud":       []interface{}{clientID},
 		"client_id": clientID,
 		"iss":       ts.URL,
-		"sid":       session,
+		"sid":       sessionID,
 		"nonce":     nonce,
 		"at_hash":   accessTokenHash,
 	}, all)
