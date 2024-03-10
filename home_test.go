@@ -128,7 +128,7 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 	err := createTempCertificateFiles(certPath, keyPath, []string{"localhost"})
 	require.NoError(t, err)
 
-	logger := zerolog.New(zerolog.NewTestWriter(t))
+	logger := zerolog.New(zerolog.NewTestWriter(t)).With().Timestamp().Logger()
 
 	smtpServer := smtpmock.New(smtpmock.ConfigurationAttr{
 		// See: https://github.com/mocktools/go-smtp-mock/issues/172

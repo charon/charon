@@ -128,7 +128,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	assert.NotEmpty(t, code)
 	assert.Equal(t, url.Values{"scope": []string{"openid offline_access"}, "state": []string{state}}, locationQuery)
 
-	accessToken, idToken, refreshToken := exchangeCodeForTokens(t, ts, service, clientID, code, challenge)
+	accessToken, idToken, refreshToken, now := exchangeCodeForTokens(t, ts, service, clientID, code, challenge)
 
 	u, err := url.Parse(ts.URL)
 	require.NoError(t, err)
@@ -146,20 +146,18 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	accessTokenLastTimestamps := map[string]time.Time{}
 	idTokenLastTimestamps := map[string]time.Time{}
 
-	now := time.Now().UTC()
-
 	uniqueStrings := mapset.NewThreadUnsafeSet[string]()
 	assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, applicationID, session, accessToken, accessTokenLastTimestamps)))
 	assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, applicationID, nonce, accessToken, idToken, idTokenLastTimestamps)))
 	validateIntrospect(t, ts, service, now, clientID, applicationID, session, refreshToken, "refresh_token")
 
-	for i := 0; i < 3; i++ {
+	// We use assert.WithinDuration with 2 seconds allowed delta, so in 10 iterations every
+	// second we should still catch if any timestamp is not progressing as expected.
+	for i := 0; i < 10; i++ {
 		// We sleep for a second so that all timestamps increase (they are at second granularity).
 		time.Sleep(time.Second)
 
-		accessToken, idToken, refreshToken = exchangeRefreshTokenForTokens(t, ts, service, clientID, refreshToken, accessToken)
-
-		now := time.Now().UTC()
+		accessToken, idToken, refreshToken, now = exchangeRefreshTokenForTokens(t, ts, service, clientID, refreshToken, accessToken)
 
 		assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, applicationID, session, accessToken, accessTokenLastTimestamps)))
 		assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, applicationID, nonce, accessToken, idToken, idTokenLastTimestamps)))

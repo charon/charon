@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	smtpmock "github.com/mocktools/go-smtp-mock/v2"
 	"github.com/stretchr/testify/assert"
@@ -87,6 +88,9 @@ func completeUserCode(t *testing.T, ts *httptest.Server, service *charon.Service
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
 	assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"code","emailOrUsername":"`+emailOrUsername+`"}`, string(out))
+
+	// To make sure the message is delivered.
+	time.Sleep(time.Second)
 
 	messages := smtpServer.MessagesAndPurge()
 

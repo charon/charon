@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,7 +16,7 @@ import (
 	"gitlab.com/charon/charon"
 )
 
-func exchangeCodeForTokens(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, code, codeVerifier string) (string, string, string) {
+func exchangeCodeForTokens(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, code, codeVerifier string) (string, string, string, time.Time) {
 	t.Helper()
 
 	oidcToken, errE := service.ReverseAPI("OIDCToken", nil, nil)
@@ -36,6 +37,9 @@ func exchangeCodeForTokens(t *testing.T, ts *httptest.Server, service *charon.Se
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json;charset=UTF-8", resp.Header.Get("Content-Type"))
+
+	now := time.Now().UTC()
+
 	//nolint:tagliatelle
 	var response struct {
 		AccessToken  string `json:"access_token"`
@@ -55,10 +59,10 @@ func exchangeCodeForTokens(t *testing.T, ts *httptest.Server, service *charon.Se
 	assert.Equal(t, "openid offline_access", response.Scope)
 	assert.Equal(t, "bearer", response.TokenType)
 
-	return response.AccessToken, response.IDToken, response.RefreshToken
+	return response.AccessToken, response.IDToken, response.RefreshToken, now
 }
 
-func exchangeRefreshTokenForTokens(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, refreshToken, accessToken string) (string, string, string) {
+func exchangeRefreshTokenForTokens(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, refreshToken, accessToken string) (string, string, string, time.Time) {
 	t.Helper()
 
 	oidcToken, errE := service.ReverseAPI("OIDCToken", nil, nil)
@@ -78,6 +82,9 @@ func exchangeRefreshTokenForTokens(t *testing.T, ts *httptest.Server, service *c
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json;charset=UTF-8", resp.Header.Get("Content-Type"))
+
+	now := time.Now().UTC()
+
 	//nolint:tagliatelle
 	var response struct {
 		AccessToken  string `json:"access_token"`
@@ -101,5 +108,5 @@ func exchangeRefreshTokenForTokens(t *testing.T, ts *httptest.Server, service *c
 	validateNotValidIntrospect(t, ts, service, clientID, refreshToken, "refresh_token")
 	validateNotValidIntrospect(t, ts, service, clientID, accessToken, "access_token")
 
-	return response.AccessToken, response.IDToken, response.RefreshToken
+	return response.AccessToken, response.IDToken, response.RefreshToken, now
 }

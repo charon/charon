@@ -298,7 +298,7 @@ func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, par
 	var authTime time.Time
 	if claims.AuthTime != nil {
 		// We inherit authentication time from the provider if it provides it.
-		authTime = claims.AuthTime.Time()
+		authTime = claims.AuthTime.Time().UTC()
 	} else {
 		errE = errors.New("provider did not provide authentication time")
 		errors.Details(errE)["provider"] = providerName

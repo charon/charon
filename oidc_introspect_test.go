@@ -126,7 +126,7 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 		assert.Empty(t, response.Error)
 		assert.Empty(t, response.ErrorDescription)
 		assert.True(t, response.Active)
-		assert.WithinDuration(t, now.Add(30*24*60*time.Minute), response.ExpirationTime.Time(), time.Second)
+		assert.WithinDuration(t, now.Add(30*24*60*time.Minute), response.ExpirationTime.Time().UTC(), 2*time.Second)
 
 		return nil
 	}
@@ -139,8 +139,8 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 	assert.Empty(t, response.ErrorDescription)
 	assert.True(t, response.Active)
 	assert.Equal(t, clientID, response.ClientID)
-	assert.WithinDuration(t, now.Add(60*time.Minute), response.ExpirationTime.Time(), time.Second)
-	assert.WithinDuration(t, now, response.IssueTime.Time(), time.Second)
+	assert.WithinDuration(t, now.Add(60*time.Minute), response.ExpirationTime.Time().UTC(), 2*time.Second)
+	assert.WithinDuration(t, now, response.IssueTime.Time().UTC(), 2*time.Second)
 	assert.Equal(t, "openid offline_access", response.Scope)
 	// TODO: Check exact value of the subject.
 	assert.NotEmpty(t, response.Subject)
