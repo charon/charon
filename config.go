@@ -5,10 +5,8 @@ import (
 	"context"
 	"crypto/elliptic"
 	"crypto/rand"
-	"crypto/sha512"
 	"embed"
 	"encoding/base64"
-	"hash"
 	"io/fs"
 	"net/http"
 	"os"
@@ -203,33 +201,6 @@ type Service struct {
 	mailClient *mail.Client
 	mailFrom   string
 }
-
-type hmacStrategyConfigurator struct {
-	Secret []byte
-}
-
-// GetGlobalSecret implements hmac.HMACStrategyConfigurator.
-func (h *hmacStrategyConfigurator) GetGlobalSecret(_ context.Context) ([]byte, error) {
-	return h.Secret, nil
-}
-
-// GetHMACHasher implements hmac.HMACStrategyConfigurator.
-func (h *hmacStrategyConfigurator) GetHMACHasher(_ context.Context) func() hash.Hash {
-	return sha512.New512_256
-}
-
-// GetRotatedGlobalSecrets implements hmac.HMACStrategyConfigurator.
-func (h *hmacStrategyConfigurator) GetRotatedGlobalSecrets(_ context.Context) ([][]byte, error) {
-	// TODO: Support RotatedGlobalSecrets.
-	return nil, nil
-}
-
-// GetTokenEntropy implements hmac.HMACStrategyConfigurator.
-func (h *hmacStrategyConfigurator) GetTokenEntropy(_ context.Context) int {
-	return 32 //nolint:gomnd
-}
-
-var _ hmac.HMACStrategyConfigurator = (*hmacStrategyConfigurator)(nil)
 
 // Init is used primarily in tests. Use Run otherwise.
 func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.E) { //nolint:maintidx
