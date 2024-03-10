@@ -38,7 +38,7 @@ const (
 	SecretPrefixCharonConfig = "chs-"
 )
 
-const oidcCSecretSize = 32
+const expectedSecretSize = 32
 
 //go:embed routes.json
 var routesConfiguration []byte
@@ -158,10 +158,9 @@ func (k *Keys) Init(development bool) errors.E {
 	return nil
 }
 
-//nolint:lll
+
 type OIDC struct {
-	Secret kong.FileContentFlag `         env:"SECRET_PATH"                   help:"File with base64 (URL encoding, no padding) encoded 32 bytes with \"${secretPrefixCharonConfig}\" prefix used for tokens' HMAC. Environment variable: ${env}." placeholder:"PATH"                yaml:"secret"`
-	Keys   Keys                 `embed:""                   envprefix:"KEYS_"                                                                                                                                                                                         prefix:"keys." yaml:"keys"`
+	Keys Keys `embed:"" envprefix:"KEYS_" prefix:"keys." yaml:"keys"`
 }
 
 //nolint:lll
@@ -172,9 +171,10 @@ type Config struct {
 	Config  cli.ConfigFlag    `         help:"Load configuration from a JSON or YAML file." name:"config" placeholder:"PATH" short:"c" yaml:"-"`
 	Server  waf.Server[*Site] `embed:""                                                                                                yaml:",inline"`
 
-	Domains      []string `help:"Domain name(s) to use. If not provided, they are determined from domain names found in TLS certificates." name:"domain" placeholder:"STRING" short:"D" yaml:"domains"`
-	MainDomain   string   `help:"When using multiple domains, which one is the main one."                                                                                               yaml:"mainDomain"`
-	ExternalPort int      `help:"Port on which Charon is accessible when it is different from the port on which the program listens."                    placeholder:"INT"              yaml:"externalPort"`
+	Domains      []string             `                  help:"Domain name(s) to use. If not provided, they are determined from domain names found in TLS certificates."                                                               name:"domain" placeholder:"STRING" short:"D" yaml:"domains"`
+	MainDomain   string               `                  help:"When using multiple domains, which one is the main one."                                                                                                                                                             yaml:"mainDomain"`
+	ExternalPort int                  `                  help:"Port on which Charon is accessible when it is different from the port on which the program listens."                                                                                  placeholder:"INT"              yaml:"externalPort"`
+	Secret       kong.FileContentFlag `env:"SECRET_PATH" help:"File with base64 (URL encoding, no padding) encoded 32 bytes with \"${secretPrefixCharonConfig}\" prefix used for session and OIDC HMAC. Environment variable: ${env}."               placeholder:"PATH"             yaml:"secret"`
 
 	Providers Providers `embed:"" group:"Providers:" yaml:"providers"`
 
@@ -202,34 +202,34 @@ type Service struct {
 // Init is used primarily in tests. Use Run otherwise.
 func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.E) { //nolint:maintidx
 	var secret []byte
-	if config.OIDC.Secret != nil {
+	if config.Secret != nil {
 		// We use a prefix to aid secret scanners.
-		if !bytes.HasPrefix(config.OIDC.Secret, []byte(SecretPrefixCharonConfig)) {
-			return nil, nil, errors.Errorf(`OIDC secret does not have "%s" prefix`, SecretPrefixCharonConfig)
+		if !bytes.HasPrefix(config.Secret, []byte(SecretPrefixCharonConfig)) {
+			return nil, nil, errors.Errorf(`secret does not have "%s" prefix`, SecretPrefixCharonConfig)
 		}
-		encodedSecret := bytes.TrimPrefix(config.OIDC.Secret, []byte(SecretPrefixCharonConfig))
+		encodedSecret := bytes.TrimPrefix(config.Secret, []byte(SecretPrefixCharonConfig))
 		// We trim space so that the file can contain whitespace (e.g., a newline) at the end.
 		encodedSecret = bytes.TrimSpace(encodedSecret)
 		secret = make([]byte, base64.RawURLEncoding.DecodedLen(len(encodedSecret)))
 		n, err := base64.RawURLEncoding.Decode(secret, encodedSecret)
 		secret = secret[:n]
 		if err != nil {
-			return nil, nil, errors.WithMessage(err, "invalid OIDC secret")
+			return nil, nil, errors.WithMessage(err, "invalid secret")
 		}
-		if len(secret) != oidcCSecretSize {
-			errE := errors.New("OIDC secret does not have valid length")
+		if len(secret) != expectedSecretSize {
+			errE := errors.New("secret does not have valid length")
 			errors.Details(errE)["got"] = len(secret)
 			errors.Details(errE)["expected"] = 32
 			return nil, nil, errE
 		}
 	} else if config.Server.Development {
-		secret = make([]byte, oidcCSecretSize)
+		secret = make([]byte, expectedSecretSize)
 		_, err := rand.Read(secret)
 		if err != nil {
 			return nil, nil, errors.WithStack(err)
 		}
 	} else {
-		return nil, nil, errors.New("OIDC secret not provided")
+		return nil, nil, errors.New("secret not provided")
 	}
 
 	errE := config.OIDC.Keys.Init(config.Server.Development)
