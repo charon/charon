@@ -161,6 +161,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, applicationID, sessionID, accessToken, accessTokenLastTimestamps)))
 	assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, applicationID, sessionID, nonce, accessToken, idToken, idTokenLastTimestamps)))
 	validateIntrospect(t, ts, service, now, clientID, applicationID, sessionID, refreshToken, "refresh_token")
+	validateUserInfo(t, ts, service, accessToken)
 
 	// We use assert.WithinDuration with 2 seconds allowed delta, so in 10 iterations every
 	// second we should still catch if any timestamp is not progressing as expected.
@@ -173,5 +174,6 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 		assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, applicationID, sessionID, accessToken, accessTokenLastTimestamps)))
 		assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, applicationID, sessionID, nonce, accessToken, idToken, idTokenLastTimestamps)))
 		validateIntrospect(t, ts, service, now, clientID, applicationID, sessionID, refreshToken, "refresh_token")
+		validateUserInfo(t, ts, service, accessToken)
 	}
 }

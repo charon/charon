@@ -6,16 +6,15 @@ import (
 	"net/http"
 
 	"github.com/ory/fosite"
-	"github.com/ory/fosite/handler/openid"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/waf"
 )
 
-// oidcCUserInfo provides ID token contents based on provided access token.
+// oidcUserInfo provides ID token contents based on provided access token.
 //
-// Based on UserinfoHandler from Hydra.
+// Based on getOidcUserInfo handler from Hydra.
 // See: https://github.com/ory/hydra/blob/master/oauth2/handler.go
-func (s *Service) oidcCUserInfo(w http.ResponseWriter, req *http.Request) {
+func (s *Service) oidcUserInfo(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -44,8 +43,8 @@ func (s *Service) oidcCUserInfo(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	interim := ar.GetSession().(openid.Session).IDTokenClaims().ToMap() //nolint:forcetypeassert
-	keysToDelete := []string{"aud", "auth_time", "exp", "iat", "iss", "jti", "nonce", "rat", "at_hash", "c_hash", "sid"}
+	interim := ar.GetSession().(*OIDCSession).IDTokenClaims().ToMap() //nolint:forcetypeassert
+	keysToDelete := []string{"aud", "auth_time", "exp", "iat", "iss", "jti", "nonce", "rat", "at_hash", "c_hash", "sid", "client_id"}
 	for _, key := range keysToDelete {
 		delete(interim, key)
 	}
@@ -54,9 +53,9 @@ func (s *Service) oidcCUserInfo(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s *Service) OIDCUserInfoGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	s.oidcCUserInfo(w, req)
+	s.oidcUserInfo(w, req)
 }
 
 func (s *Service) OIDCUserInfoPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	s.oidcCUserInfo(w, req)
+	s.oidcUserInfo(w, req)
 }
