@@ -25,10 +25,10 @@ var oidcStore = NewOIDCStore() //nolint:gochecknoglobals
 
 func (argon2idHasher) Compare(_ context.Context, hash, data []byte) error {
 	strData := string(data)
-	if !strings.HasPrefix(strData, "chc-") {
-		return errors.New(`secret does not have "chc-" prefix`)
+	if !strings.HasPrefix(strData, SecretPrefixClientSecret) {
+		return errors.Errorf(`secret does not have "%s" prefix`, SecretPrefixClientSecret)
 	}
-	strData = strings.TrimPrefix(strData, "chc-")
+	strData = strings.TrimPrefix(strData, SecretPrefixClientSecret)
 	// TODO: Use byte as input and not string.
 	//       See: https://github.com/alexedwards/argon2id/issues/26
 	match, err := argon2id.ComparePasswordAndHash(strData, string(hash))

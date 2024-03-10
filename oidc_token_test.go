@@ -24,7 +24,7 @@ func exchangeCodeForTokens(t *testing.T, ts *httptest.Server, service *charon.Se
 
 	data := url.Values{
 		"client_id":     []string{clientID},
-		"client_secret": []string{"chc-" + applicationClientSecret},
+		"client_secret": []string{charon.SecretPrefixClientSecret + applicationClientSecret},
 		"grant_type":    []string{"authorization_code"},
 		"code":          []string{code},
 		"code_verifier": []string{codeVerifier},
@@ -70,7 +70,7 @@ func exchangeRefreshTokenForTokens(t *testing.T, ts *httptest.Server, service *c
 
 	data := url.Values{
 		"client_id":     []string{clientID},
-		"client_secret": []string{"chc-" + applicationClientSecret},
+		"client_secret": []string{charon.SecretPrefixClientSecret + applicationClientSecret},
 		"grant_type":    []string{"refresh_token"},
 		"refresh_token": []string{refreshToken},
 		// "redirect_uri":  []string{"https://example.com/redirect"},

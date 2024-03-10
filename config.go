@@ -33,6 +33,11 @@ const (
 	DefaultTLSCache = "letsencrypt"
 )
 
+const (
+	SecretPrefixClientSecret = "chc-"
+	SecretPrefixCharonConfig = "chs-"
+)
+
 const oidcCSecretSize = 32
 
 //go:embed routes.json
@@ -156,7 +161,7 @@ func (k *Keys) Init(development bool) errors.E {
 //nolint:lll
 type OIDC struct {
 	Development bool                 `                                             help:"Run OIDC in development mode: send debug messages to clients, generate secret and keys if not provided. LEAKS SENSITIVE INFORMATION!"                                     short:"O" yaml:"development"`
-	Secret      kong.FileContentFlag `         env:"SECRET_PATH"                   help:"File with base64 (URL encoding, no padding) encoded 32 bytes with \"chs-\" prefix used for tokens' HMAC. Environment variable: ${env}." placeholder:"PATH"                          yaml:"secret"`
+	Secret      kong.FileContentFlag `         env:"SECRET_PATH"                   help:"File with base64 (URL encoding, no padding) encoded 32 bytes with \"${secretPrefixCharonConfig}\" prefix used for tokens' HMAC. Environment variable: ${env}." placeholder:"PATH"                          yaml:"secret"`
 	Keys        Keys                 `embed:""                   envprefix:"KEYS_"                                                                                                                                                                  prefix:"keys."           yaml:"keys"`
 }
 
@@ -200,10 +205,10 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 	var secret []byte
 	if config.OIDC.Secret != nil {
 		// We use a prefix to aid secret scanners.
-		if !bytes.HasPrefix(config.OIDC.Secret, []byte("chs-")) {
-			return nil, nil, errors.New(`OIDC secret does not have "chs-" prefix`)
+		if !bytes.HasPrefix(config.OIDC.Secret, []byte(SecretPrefixCharonConfig)) {
+			return nil, nil, errors.Errorf(`OIDC secret does not have "%s" prefix`, SecretPrefixCharonConfig)
 		}
-		encodedSecret := bytes.TrimPrefix(config.OIDC.Secret, []byte("chs-"))
+		encodedSecret := bytes.TrimPrefix(config.OIDC.Secret, []byte(SecretPrefixCharonConfig))
 		// We trim space so that the file can contain whitespace (e.g., a newline) at the end.
 		encodedSecret = bytes.TrimSpace(encodedSecret)
 		secret = make([]byte, base64.RawURLEncoding.DecodedLen(len(encodedSecret)))

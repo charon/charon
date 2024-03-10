@@ -19,11 +19,12 @@ func main() {
 	slices.Sort(mailAuthTypes)
 	var config charon.Config
 	cli.Run(&config, kong.Vars{
-		"defaultProxyTo":  charon.DefaultProxyTo,
-		"defaultTLSCache": charon.DefaultTLSCache,
-		"defaultMailAuth": "none",
-		"defaultMailFrom": "noreply@example.com",
-		"mailAuthTypes":   strings.Join(mailAuthTypes, ","),
+		"defaultProxyTo":           charon.DefaultProxyTo,
+		"defaultTLSCache":          charon.DefaultTLSCache,
+		"defaultMailAuth":          "none",
+		"defaultMailFrom":          "noreply@example.com",
+		"mailAuthTypes":            strings.Join(mailAuthTypes, ","),
+		"secretPrefixCharonConfig": charon.SecretPrefixCharonConfig,
 	}, func(ctx *kong.Context) errors.E {
 		return errors.WithStack(ctx.Run())
 	}, kong.Groups{
