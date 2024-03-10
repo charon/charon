@@ -132,7 +132,7 @@ Backend listens at [https://localhost:8080/](https://localhost:8080/).
 
 `-d` CLI flag makes the backend proxy unknown requests (non-API requests)
 to the frontend. In this mode any placeholders in HTML files are not rendered.
-Charon also expects OIDC secret and private keys to use. During development, you can
+Charon also expects a secret and private keys to use. During development, you can
 use self-generated ones with the `-d` CLI flag.
 
 Because SMTP is not configured during development, e-mails (with codes) will be printed out to the console instead.

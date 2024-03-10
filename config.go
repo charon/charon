@@ -160,8 +160,8 @@ func (k *Keys) Init(development bool) errors.E {
 
 //nolint:lll
 type OIDC struct {
-	Secret kong.FileContentFlag `         env:"SECRET_PATH"                   help:"File with base64 (URL encoding, no padding) encoded 32 bytes with \"${secretPrefixCharonConfig}\" prefix used for tokens' HMAC. Environment variable: ${env}." placeholder:"PATH"                          yaml:"secret"`
-	Keys   Keys                 `embed:""                   envprefix:"KEYS_"                                                                                                                                                                  prefix:"keys."           yaml:"keys"`
+	Secret kong.FileContentFlag `         env:"SECRET_PATH"                   help:"File with base64 (URL encoding, no padding) encoded 32 bytes with \"${secretPrefixCharonConfig}\" prefix used for tokens' HMAC. Environment variable: ${env}." placeholder:"PATH"                yaml:"secret"`
+	Keys   Keys                 `embed:""                   envprefix:"KEYS_"                                                                                                                                                                                         prefix:"keys." yaml:"keys"`
 }
 
 //nolint:lll
