@@ -65,7 +65,7 @@ func initOIDC(config *Config, service *Service, domain string, secret []byte) (f
 		config := &fosite.Config{ //nolint:exhaustruct
 			IDTokenIssuer: issuer,
 			// Send some debug messages to clients?
-			SendDebugMessagesToClients: config.OIDC.Development,
+			SendDebugMessagesToClients: config.Server.Development,
 			ScopeStrategy:              fosite.ExactScopeStrategy,
 			AudienceMatchingStrategy:   fosite.ExactAudienceMatchingStrategy,
 			EnforcePKCE:                true,

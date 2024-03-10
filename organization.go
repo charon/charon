@@ -657,7 +657,7 @@ func UpdateOrganization(ctx context.Context, organization *Organization) errors.
 }
 
 func (s *Service) OrganizationGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	if s.Development != "" {
+	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
 		s.ServeStaticFile(w, req, "/index.html")
@@ -669,7 +669,7 @@ func (s *Service) OrganizationCreate(w http.ResponseWriter, req *http.Request, _
 		return
 	}
 
-	if s.Development != "" {
+	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
 		s.ServeStaticFile(w, req, "/index.html")
@@ -677,7 +677,7 @@ func (s *Service) OrganizationCreate(w http.ResponseWriter, req *http.Request, _
 }
 
 func (s *Service) OrganizationList(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	if s.Development != "" {
+	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
 		s.ServeStaticFile(w, req, "/index.html")

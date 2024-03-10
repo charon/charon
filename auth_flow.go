@@ -92,7 +92,7 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 	w.Header().Add("Link", fmt.Sprintf("<%s>; rel=preload; as=fetch; crossorigin=anonymous", l))
 	w.WriteHeader(http.StatusEarlyHints)
 
-	if s.Development != "" {
+	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
 		s.ServeStaticFile(w, req, "/index.html")

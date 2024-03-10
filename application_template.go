@@ -729,7 +729,7 @@ func UpdateApplicationTemplate(ctx context.Context, applicationTemplate *Applica
 }
 
 func (s *Service) ApplicationTemplateGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	if s.Development != "" {
+	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
 		s.ServeStaticFile(w, req, "/index.html")
@@ -741,7 +741,7 @@ func (s *Service) ApplicationTemplateCreate(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	if s.Development != "" {
+	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
 		s.ServeStaticFile(w, req, "/index.html")
@@ -749,7 +749,7 @@ func (s *Service) ApplicationTemplateCreate(w http.ResponseWriter, req *http.Req
 }
 
 func (s *Service) ApplicationTemplateList(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	if s.Development != "" {
+	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
 		s.ServeStaticFile(w, req, "/index.html")

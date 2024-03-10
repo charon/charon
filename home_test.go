@@ -149,6 +149,7 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 				CertFile: certPath,
 				KeyFile:  keyPath,
 			},
+			Development: true,
 			// httptest.Server allocates a random port for its listener (but does not use config.Server.Addr to do so).
 			// Having 0 for port here makes the rest of the codebase expect a random port and wait for its assignment.
 			Addr: "localhost:0",
@@ -160,9 +161,6 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 			// go-smtp-mock does not support STARTTLS.
 			// See: https://github.com/mocktools/go-smtp-mock/issues/76
 			NotRequiredTLS: true,
-		},
-		OIDC: charon.OIDC{
-			Development: true,
 		},
 		Providers: charon.Providers{
 			Testing: charon.GenericOIDCProvider{

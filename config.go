@@ -160,9 +160,8 @@ func (k *Keys) Init(development bool) errors.E {
 
 //nolint:lll
 type OIDC struct {
-	Development bool                 `                                             help:"Run OIDC in development mode: send debug messages to clients, generate secret and keys if not provided. LEAKS SENSITIVE INFORMATION!"                                     short:"O" yaml:"development"`
-	Secret      kong.FileContentFlag `         env:"SECRET_PATH"                   help:"File with base64 (URL encoding, no padding) encoded 32 bytes with \"${secretPrefixCharonConfig}\" prefix used for tokens' HMAC. Environment variable: ${env}." placeholder:"PATH"                          yaml:"secret"`
-	Keys        Keys                 `embed:""                   envprefix:"KEYS_"                                                                                                                                                                  prefix:"keys."           yaml:"keys"`
+	Secret kong.FileContentFlag `         env:"SECRET_PATH"                   help:"File with base64 (URL encoding, no padding) encoded 32 bytes with \"${secretPrefixCharonConfig}\" prefix used for tokens' HMAC. Environment variable: ${env}." placeholder:"PATH"                          yaml:"secret"`
+	Keys   Keys                 `embed:""                   envprefix:"KEYS_"                                                                                                                                                                  prefix:"keys."           yaml:"keys"`
 }
 
 //nolint:lll
@@ -223,7 +222,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			errors.Details(errE)["expected"] = 32
 			return nil, nil, errE
 		}
-	} else if config.OIDC.Development {
+	} else if config.Server.Development {
 		secret = make([]byte, oidcCSecretSize)
 		_, err := rand.Read(secret)
 		if err != nil {
@@ -233,7 +232,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		return nil, nil, errors.New("OIDC secret not provided")
 	}
 
-	errE := config.OIDC.Keys.Init(config.OIDC.Development)
+	errE := config.OIDC.Keys.Init(config.Server.Development)
 	if errE != nil {
 		return nil, nil, errE
 	}
@@ -368,7 +367,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			Routes:          routesConfig.Routes,
 			Sites:           sites,
 			SiteContextPath: "/context.json",
-			Development:     config.Server.InDevelopment(),
+			ProxyStaticTo:   config.Server.ProxyToInDevelopment(),
 			SkipServingFile: func(path string) bool {
 				switch path {
 				case "/index.html":
