@@ -39,8 +39,8 @@ func (s *Service) OIDCIntrospectPost(w http.ResponseWriter, req *http.Request, _
 	// We have to fix RequestedAt timestamp to match the IssuedAt timestamp
 	// because RequestedAt is used as IssuedAt in WriteIntrospectionResponse.
 	// See: https://github.com/ory/fosite/issues/774
-	ar := ir.GetAccessRequester().(*fosite.AccessRequest)
-	ar.RequestedAt = ar.GetSession().(*OIDCSession).JWTClaims.IssuedAt
+	ar := ir.GetAccessRequester().(*fosite.AccessRequest)              //nolint:errcheck,forcetypeassert
+	ar.RequestedAt = ar.GetSession().(*OIDCSession).JWTClaims.IssuedAt //nolint:forcetypeassert
 
 	if ir.GetTokenUse() == "refresh_token" {
 		// We want to handle refresh tokens differently and output refresh token expiration time.

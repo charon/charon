@@ -153,7 +153,7 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 	return &response
 }
 
-func validateNotValidIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, token, typeHint string) introspectAccessTokenResponse {
+func validateNotValidIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, token, typeHint string) {
 	t.Helper()
 
 	oidcIntrospect, errE := service.ReverseAPI("OIDCIntrospect", nil, nil)
@@ -182,8 +182,6 @@ func validateNotValidIntrospect(t *testing.T, ts *httptest.Server, service *char
 	assert.Empty(t, response.Error)
 	assert.Empty(t, response.ErrorDescription)
 	assert.False(t, response.Active)
-
-	return response
 }
 
 func validateAccessToken(
