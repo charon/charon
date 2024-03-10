@@ -17,7 +17,8 @@ var (
 )
 
 type Session struct {
-	ID identifier.Identifier
+	ID       identifier.Identifier
+	SecretID [32]byte
 
 	Account identifier.Identifier
 }
@@ -37,6 +38,25 @@ func GetSession(ctx context.Context, id identifier.Identifier) (*Session, errors
 		return nil, errE
 	}
 	return &session, nil
+}
+
+func GetSessionBySecretID(ctx context.Context, secretID [32]byte) (*Session, errors.E) { //nolint:revive
+	sessionsMu.RLock()
+	defer sessionsMu.RUnlock()
+
+	for id, data := range sessions {
+		var session Session
+		errE := x.UnmarshalWithoutUnknownFields(data, &session)
+		if errE != nil {
+			errors.Details(errE)["id"] = id
+			return nil, errE
+		}
+		if session.SecretID == secretID {
+			return &session, nil
+		}
+	}
+
+	return nil, errors.WithStack(ErrSessionNotFound)
 }
 
 func SetSession(ctx context.Context, session *Session) errors.E { //nolint:revive

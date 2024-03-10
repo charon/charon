@@ -1,6 +1,7 @@
 package charon
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -145,7 +146,7 @@ func (s *Service) AuthFlowGetGet(w http.ResponseWriter, req *http.Request, param
 
 // validateSession returns session only if current session matches one made by the flow.
 func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api bool, flow *Flow) (*Session, bool) {
-	session, errE := getSessionFromRequest(w, req)
+	session, errE := s.getSessionFromRequest(w, req)
 	if errors.Is(errE, ErrSessionNotFound) {
 		if api {
 			waf.Error(w, req, http.StatusGone)
@@ -222,10 +223,24 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 		}
 	}
 
+	token, signature, err := s.hmac.Generate(ctx)
+	if err != nil {
+		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
+		return
+	}
+
+	secretID, err := base64.RawURLEncoding.DecodeString(signature)
+	if err != nil {
+		// This should not happen.
+		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
+		return
+	}
+
 	sessionID := identifier.New()
 	errE := SetSession(ctx, &Session{
-		ID:      sessionID,
-		Account: account.ID,
+		ID:       sessionID,
+		SecretID: [32]byte(secretID),
+		Account:  account.ID,
 	})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -248,7 +263,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 
 	cookie := http.Cookie{ //nolint:exhaustruct
 		Name:     SessionCookieName,
-		Value:    sessionID.String(),
+		Value:    SecretPrefixSession + token,
 		Path:     "/",
 		Domain:   "",
 		Expires:  time.Now().Add(7 * 24 * time.Hour),
@@ -629,7 +644,7 @@ func (s *Service) AuthFlowCreatePost(w http.ResponseWriter, req *http.Request, _
 		return
 	}
 
-	_, errE = getSessionFromRequest(w, req)
+	_, errE = s.getSessionFromRequest(w, req)
 	if errE == nil {
 		encoded := s.PrepareJSON(w, req, []byte(`{"error":"alreadyAuthenticated"}`), nil)
 		if encoded == nil {

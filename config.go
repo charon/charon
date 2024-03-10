@@ -38,6 +38,7 @@ const (
 const (
 	SecretPrefixClientSecret = "chc-"
 	SecretPrefixCharonConfig = "chs-"
+	SecretPrefixSession      = "chse-"
 )
 
 const expectedSecretSize = 32

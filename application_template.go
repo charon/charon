@@ -772,7 +772,7 @@ func (s *Service) returnApplicationTemplateRef(_ context.Context, w http.Respons
 func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 
-	session, errE := getSessionFromRequest(w, req)
+	session, errE := s.getSessionFromRequest(w, req)
 	if errE == nil {
 		ctx = context.WithValue(ctx, accountContextKey, session.Account)
 	} else if !errors.Is(errE, ErrSessionNotFound) {

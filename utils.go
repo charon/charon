@@ -67,7 +67,9 @@ var (
 
 type emptyRequest struct{}
 
-func getSessionFromRequest(w http.ResponseWriter, req *http.Request) (*Session, errors.E) {
+func (s *Service) getSessionFromRequest(w http.ResponseWriter, req *http.Request) (*Session, errors.E) {
+	ctx := req.Context()
+
 	// We use this header so responses might depend on it.
 	if !slices.Contains(w.Header().Values("Vary"), "Cookie") {
 		// This function might have been called multiple times, but
@@ -82,12 +84,25 @@ func getSessionFromRequest(w http.ResponseWriter, req *http.Request) (*Session, 
 		return nil, errors.WithStack(err)
 	}
 
-	id, errE := identifier.FromString(cookie.Value)
-	if errE != nil {
-		return nil, errors.WrapWith(errE, ErrSessionNotFound)
+	// We use a prefix to aid secret scanners.
+	if !strings.HasPrefix(cookie.Value, SecretPrefixSession) {
+		return nil, errors.Wrapf(ErrSessionNotFound, `cookie value does not have "%s" prefix`, SecretPrefixSession)
 	}
 
-	return GetSession(req.Context(), id)
+	token := strings.TrimPrefix(cookie.Value, SecretPrefixSession)
+
+	err = s.hmac.Validate(ctx, token)
+	if err != nil {
+		return nil, errors.WrapWith(err, ErrSessionNotFound)
+	}
+
+	secretID, err := base64.RawURLEncoding.DecodeString(s.hmac.Signature(token))
+	if err != nil {
+		// This should not happen as we validated the token.
+		return nil, errors.WithStack(err)
+	}
+
+	return GetSessionBySecretID(ctx, [32]byte(secretID))
 }
 
 // getFlowFromID obtains Flow from its string ID.
@@ -114,7 +129,7 @@ func mustGetAccount(ctx context.Context) identifier.Identifier {
 }
 
 func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request, api bool) context.Context {
-	session, errE := getSessionFromRequest(w, req)
+	session, errE := s.getSessionFromRequest(w, req)
 	if errE == nil {
 		return context.WithValue(req.Context(), accountContextKey, session.Account)
 	} else if !errors.Is(errE, ErrSessionNotFound) {
