@@ -51,7 +51,7 @@ func (s *Service) OIDCIntrospectPost(w http.ResponseWriter, req *http.Request, _
 		w.Header().Set("Pragma", "no-cache")
 
 		if !ir.IsActive() {
-			_ = json.NewEncoder(w).Encode(&struct {
+			_ = json.NewEncoder(w).Encode(&struct { //nolint:errchkjson
 				Active bool `json:"active"`
 			}{Active: false})
 			return
@@ -65,7 +65,7 @@ func (s *Service) OIDCIntrospectPost(w http.ResponseWriter, req *http.Request, _
 			response["exp"] = ir.GetAccessRequester().GetSession().GetExpiresAt(fosite.RefreshToken).Unix()
 		}
 
-		_ = json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response) //nolint:errchkjson
 		return
 	}
 
