@@ -14,6 +14,7 @@ import (
 	"github.com/ory/fosite/handler/oauth2"
 	"github.com/ory/fosite/handler/openid"
 	"github.com/ory/fosite/handler/rfc7523"
+	"github.com/ory/fosite/token/hmac"
 	"github.com/ory/fosite/token/jwt"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/identifier"
@@ -53,7 +54,7 @@ func (argon2idHasher) Hash(_ context.Context, data []byte) ([]byte, error) {
 	return []byte(hashedPassword), nil
 }
 
-func initOIDC(config *Config, service *Service, domain string, secret []byte) (func() *fosite.Fosite, errors.E) {
+func initOIDC(config *Config, service *Service, domain string, hmacStrategy *hmac.HMACStrategy) (func() *fosite.Fosite, errors.E) {
 	return initWithHost(config, domain, func(host string) *fosite.Fosite {
 		tokenPath, errE := service.ReverseAPI("OIDCToken", nil, nil)
 		if errE != nil {
@@ -83,8 +84,6 @@ func initOIDC(config *Config, service *Service, domain string, secret []byte) (f
 			JWTScopeClaimKey:    jwt.JWTScopeFieldString,
 			AccessTokenIssuer:   issuer,
 			ClientSecretsHasher: argon2idHasher{},
-			GlobalSecret:        secret,
-			// TODO: Support and set also RotatedGlobalSecrets.
 		}
 
 		// TODO: Support rotating private keys.
@@ -95,13 +94,18 @@ func initOIDC(config *Config, service *Service, domain string, secret []byte) (f
 			return service.oidcKeys.rsa, nil
 		}
 
+		// TODO: Make HMACSHAStrategy use "charon" prefix instead of "ory" prefix.
+		//       See: https://github.com/ory/fosite/issues/789
+		oAuth2HMACStrategy := &oauth2.HMACSHAStrategy{
+			Enigma: hmacStrategy,
+			Config: config,
+		}
+
 		return compose.Compose( //nolint:forcetypeassert
 			config,
 			oidcStore,
 			&compose.CommonStrategy{
-				// TODO: Make HMACSHAStrategy use "charon" prefix instead of "ory" prefix.
-				//       See: https://github.com/ory/fosite/issues/789
-				CoreStrategy:               compose.NewOAuth2JWTStrategy(getPrivateKey, compose.NewOAuth2HMACStrategy(config), config),
+				CoreStrategy:               compose.NewOAuth2JWTStrategy(getPrivateKey, oAuth2HMACStrategy, config),
 				OpenIDConnectTokenStrategy: compose.NewOpenIDConnectStrategy(getPrivateKey, config),
 				Signer: &jwt.DefaultSigner{
 					GetPrivateKey: getPrivateKey,

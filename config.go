@@ -5,20 +5,24 @@ import (
 	"context"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/sha512"
 	"embed"
 	"encoding/base64"
+	"hash"
 	"io/fs"
 	"net/http"
 	"os"
 	"os/signal"
 	"slices"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/alecthomas/kong"
 	"github.com/go-jose/go-jose/v3"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/ory/fosite"
+	"github.com/ory/fosite/token/hmac"
 	"github.com/wneessen/go-mail"
 	"gitlab.com/tozd/go/cli"
 	"gitlab.com/tozd/go/errors"
@@ -158,7 +162,6 @@ func (k *Keys) Init(development bool) errors.E {
 	return nil
 }
 
-
 type OIDC struct {
 	Keys Keys `embed:"" envprefix:"KEYS_" prefix:"keys." yaml:"keys"`
 }
@@ -186,6 +189,8 @@ type Config struct {
 type Service struct {
 	waf.Service[*Site]
 
+	hmac *hmac.HMACStrategy
+
 	oidc     func() *fosite.Fosite
 	oidcKeys *Keys
 
@@ -198,6 +203,33 @@ type Service struct {
 	mailClient *mail.Client
 	mailFrom   string
 }
+
+type hmacStrategyConfigurator struct {
+	Secret []byte
+}
+
+// GetGlobalSecret implements hmac.HMACStrategyConfigurator.
+func (h *hmacStrategyConfigurator) GetGlobalSecret(_ context.Context) ([]byte, error) {
+	return h.Secret, nil
+}
+
+// GetHMACHasher implements hmac.HMACStrategyConfigurator.
+func (h *hmacStrategyConfigurator) GetHMACHasher(_ context.Context) func() hash.Hash {
+	return sha512.New512_256
+}
+
+// GetRotatedGlobalSecrets implements hmac.HMACStrategyConfigurator.
+func (h *hmacStrategyConfigurator) GetRotatedGlobalSecrets(_ context.Context) ([][]byte, error) {
+	// TODO: Support RotatedGlobalSecrets.
+	return nil, nil
+}
+
+// GetTokenEntropy implements hmac.HMACStrategyConfigurator.
+func (h *hmacStrategyConfigurator) GetTokenEntropy(_ context.Context) int {
+	return 32 //nolint:gomnd
+}
+
+var _ hmac.HMACStrategyConfigurator = (*hmacStrategyConfigurator)(nil)
 
 // Init is used primarily in tests. Use Run otherwise.
 func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.E) { //nolint:maintidx
@@ -358,6 +390,11 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		}
 	}
 
+	hmacStrategy := &hmac.HMACStrategy{
+		Mutex:  sync.Mutex{},
+		Config: &hmacStrategyConfigurator{Secret: secret},
+	}
+
 	service := &Service{ //nolint:forcetypeassert
 		Service: waf.Service[*Site]{
 			Logger:          config.Logger,
@@ -387,6 +424,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 				}
 			},
 		},
+		hmac:            hmacStrategy,
 		oidc:            nil,
 		oidcKeys:        &config.OIDC.Keys,
 		oidcProviders:   nil,
@@ -432,7 +470,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 
 	// We prepare initialization of OIDC and providers and in the common case
 	// (when server's bind port is not 0) immediately do the initialization.
-	service.oidc, errE = initOIDC(config, service, domain, secret)
+	service.oidc, errE = initOIDC(config, service, domain, hmacStrategy)
 	if errE != nil {
 		return nil, nil, errE
 	}
