@@ -21,7 +21,7 @@ import (
 	"gitlab.com/charon/charon"
 )
 
-func startPasswordSignin(t *testing.T, ts *httptest.Server, service *charon.Service, emailOrUsername string, organizationID *identifier.Identifier, flowID identifier.Identifier, target charon.Target) *http.Response {
+func startPasswordSignin(t *testing.T, ts *httptest.Server, service *charon.Service, emailOrUsername string, password []byte, organizationID *identifier.Identifier, flowID identifier.Identifier, target charon.Target) *http.Response {
 	t.Helper()
 
 	authFlowPasswordStart, errE := service.ReverseAPI("AuthFlowPasswordStart", waf.Params{"id": flowID.String()}, nil)
@@ -70,7 +70,7 @@ func startPasswordSignin(t *testing.T, ts *httptest.Server, service *charon.Serv
 	require.NoError(t, err)
 	aesgcm, err := cipher.NewGCM(block)
 	require.NoError(t, err)
-	sealedPassword := aesgcm.Seal(nil, authFlowResponse.Password.EncryptOptions.Nonce, []byte("test1234"), nil)
+	sealedPassword := aesgcm.Seal(nil, authFlowResponse.Password.EncryptOptions.Nonce, password, nil)
 
 	authFlowPasswordComplete, errE := service.ReverseAPI("AuthFlowPasswordComplete", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -93,7 +93,7 @@ func startPasswordSignin(t *testing.T, ts *httptest.Server, service *charon.Serv
 func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emailOrUsername string, signinOrSignout charon.Completed, organizationID *identifier.Identifier, flowID identifier.Identifier, target charon.Target) {
 	t.Helper()
 
-	resp := startPasswordSignin(t, ts, service, emailOrUsername, organizationID, flowID, target) //nolint:bodyclose
+	resp := startPasswordSignin(t, ts, service, emailOrUsername, []byte("test1234"), organizationID, flowID, target) //nolint:bodyclose
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)

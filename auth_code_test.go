@@ -46,7 +46,7 @@ func TestAuthFlowPasswordAndCode(t *testing.T) {
 	flowID := createAuthFlow(t, ts, service)
 
 	// Start password authentication with e-mail address.
-	resp := startPasswordSignin(t, ts, service, email, nil, flowID, charon.TargetSession) //nolint:bodyclose
+	resp := startPasswordSignin(t, ts, service, email, []byte("test1234"), nil, flowID, charon.TargetSession) //nolint:bodyclose
 
 	// Complete with user code.
 	completeUserCode(t, ts, service, smtpServer, resp, email, charon.CompletedSignup, flowID)
@@ -61,6 +61,15 @@ func TestAuthFlowPasswordAndCode(t *testing.T) {
 	// Signed-up user can authenticate with password only.
 	flowID = createAuthFlow(t, ts, service)
 	signinUser(t, ts, service, email, charon.CompletedSignin, nil, flowID, charon.TargetSession)
+
+	signoutUser(t, ts, service)
+
+	// Sign-in with invalid password is the same as sign-up.
+	flowID = createAuthFlow(t, ts, service)
+	resp = startPasswordSignin(t, ts, service, email, []byte("test4321"), nil, flowID, charon.TargetSession) //nolint:bodyclose
+
+	// Complete with user code.
+	completeUserCode(t, ts, service, smtpServer, resp, email, charon.CompletedSignin, flowID)
 }
 
 func signinUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, smtpServer *smtpmock.Server, emailOrUsername string, signinOrSignout charon.Completed) {
