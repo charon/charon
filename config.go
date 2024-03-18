@@ -54,6 +54,18 @@ type OIDCProvider struct {
 	Secret   kong.FileContentFlag `env:"SECRET_PATH" help:"File with ${provider}'s client secret. Environment variable: ${env}." placeholder:"PATH" yaml:"secret"`
 }
 
+func (p *OIDCProvider) Validate() error {
+	if p.ClientID != "" || p.Secret != nil {
+		if p.ClientID == "" {
+			return errors.New("missing client ID for provided secret")
+		}
+		if p.Secret == nil {
+			return errors.New("missing client ID's matching secret")
+		}
+	}
+	return nil
+}
+
 type GenericOIDCProvider struct {
 	OIDCProvider
 
@@ -63,15 +75,27 @@ type GenericOIDCProvider struct {
 	TokenURL  string
 }
 
-// TODO: Add Kong validator to OIDCProvider to validate that or both or none fields are set.
-//       See: https://github.com/alecthomas/kong/issues/90
-
 type Providers struct {
 	Google   OIDCProvider `embed:"" envprefix:"GOOGLE_"   prefix:"google."   set:"provider=Google"   yaml:"google"`
 	Facebook OIDCProvider `embed:"" envprefix:"FACEBOOK_" prefix:"facebook." set:"provider=Facebook" yaml:"facebook"`
 
 	// Exposed primarily for use in tests.
 	Testing GenericOIDCProvider `json:"-" kong:"-" yaml:"-"`
+}
+
+// We have to call Validate on kong-embedded structs ourselves.
+// See: https://github.com/alecthomas/kong/issues/90
+func (p *Providers) Validate() error {
+	if err := p.Google.Validate(); err != nil {
+		return err
+	}
+	if err := p.Facebook.Validate(); err != nil {
+		return err
+	}
+	if err := p.Testing.Validate(); err != nil {
+		return err
+	}
+	return nil
 }
 
 //nolint:lll
@@ -183,6 +207,18 @@ type Config struct {
 	Mail Mail `embed:"" envprefix:"MAIL_" group:"Mail:" prefix:"mail." yaml:"mail"`
 
 	OIDC OIDC `embed:"" envprefix:"OIDC_" group:"OIDC:" prefix:"oidc." yaml:"oidc"`
+}
+
+// We have to call Validate on kong-embedded structs ourselves.
+// See: https://github.com/alecthomas/kong/issues/90
+func (c *Config) Validate() error {
+	if err := c.Server.TLS.Validate(); err != nil {
+		return err
+	}
+	if err := c.Providers.Validate(); err != nil {
+		return err
+	}
+	return nil
 }
 
 type Service struct {
