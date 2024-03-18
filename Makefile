@@ -12,7 +12,7 @@ ifeq ($(REVISION),)
  REVISION = `git rev-parse HEAD`
 endif
 
-.PHONY: build build-static test test-ci lint lint-ci fmt fmt-ci clean release lint-docs audit serve watch
+.PHONY: build build-static test test-ci lint lint-ci fmt fmt-ci clean release lint-docs audit watch
 
 # dist is build only if it is missing. Use "make clean" to remove it to build it again.
 build: dist
