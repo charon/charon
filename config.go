@@ -211,11 +211,11 @@ type Config struct {
 
 // We have to call Validate on kong-embedded structs ourselves.
 // See: https://github.com/alecthomas/kong/issues/90
-func (c *Config) Validate() error {
-	if err := c.Server.TLS.Validate(); err != nil {
-		return err
+func (config *Config) Validate() error {
+	if err := config.Server.TLS.Validate(); err != nil {
+		return err //nolint:wrapcheck
 	}
-	if err := c.Providers.Validate(); err != nil {
+	if err := config.Providers.Validate(); err != nil {
 		return err
 	}
 	return nil
