@@ -5,8 +5,8 @@ go 1.21
 require (
 	github.com/alecthomas/kong v0.8.1
 	github.com/alexedwards/argon2id v1.0.0
-	github.com/go-jose/go-jose/v3 v3.0.1
-	github.com/go-jose/go-jose/v4 v4.0.0
+	github.com/go-jose/go-jose/v3 v3.0.3
+	github.com/go-jose/go-jose/v4 v4.0.1
 	github.com/mocktools/go-smtp-mock/v2 v2.2.2-0.20240301121032-be35e5a60f11
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/ory/fosite v0.46.1-0.20240213123944-f38352921f22
