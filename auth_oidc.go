@@ -190,8 +190,7 @@ func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, par
 	if providerName == "" || !ok {
 		errE := errors.New("unknown provider")
 		errors.Details(errE)["provider"] = providerName
-		s.WithError(ctx, errE)
-		s.NotFound(w, req)
+		s.NotFoundWithError(w, req, errE)
 		return
 	}
 

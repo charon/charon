@@ -180,8 +180,7 @@ func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request,
 func (s *Service) GetFlow(w http.ResponseWriter, req *http.Request, value string) *Flow {
 	flow, errE := getFlowFromID(req.Context(), value)
 	if errors.Is(errE, ErrFlowNotFound) {
-		s.WithError(req.Context(), errE)
-		s.NotFound(w, req)
+		s.NotFoundWithError(w, req, errE)
 		return nil
 	} else if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
