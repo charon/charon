@@ -14,7 +14,7 @@ require (
 	github.com/wneessen/go-mail v0.4.2-0.20240222144916-68e6284e4e23
 	gitlab.com/tozd/go/cli v0.3.0
 	gitlab.com/tozd/go/errors v0.8.1
-	gitlab.com/tozd/go/x v0.0.0-20231203095540-41b15b78555f
+	gitlab.com/tozd/go/x v0.0.0-20240319120849-eb6a32121198
 	gitlab.com/tozd/go/zerolog v0.6.0
 	gitlab.com/tozd/identifier v0.1.0
 	gitlab.com/tozd/waf v0.14.0
@@ -129,9 +129,9 @@ require (
 	github.com/tozd/go-server-timing v0.0.0-20231113225037-9110c404323f // indirect
 	github.com/whilp/git-urls v1.0.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
-	golang.org/x/crypto v0.19.0 // indirect
+	golang.org/x/crypto v0.20.0 // indirect
 	golang.org/x/mod v0.14.0 // indirect
-	golang.org/x/net v0.19.0
+	golang.org/x/net v0.21.0
 	golang.org/x/sync v0.5.0 // indirect
 	golang.org/x/sys v0.17.0 // indirect
 	golang.org/x/text v0.14.0
