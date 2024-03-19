@@ -185,7 +185,7 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 	// By setting Certificates, we force testing server and testing client to use our certificate.
 	ts.TLS.Certificates = []tls.Certificate{*cert}
 
-	// This does not start server.server's managers, but that is OK for this test.
+	// This does not start server's managers, but that is OK for this test.
 	ts.StartTLS()
 
 	// Our certificate is for localhost domain and not 127.0.0.1 IP.
