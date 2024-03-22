@@ -18,7 +18,7 @@ elements and links but that should not change how components look.
 <script setup lang="ts">
 import type { AuthFlowResponse, AuthFlowStep, Completed, DeriveOptions, EncryptOptions, LocationResponse, Organization } from "@/types"
 
-import { onBeforeMount, onBeforeUnmount, onMounted, onBeforeUnmount, provide, ref, watch } from "vue"
+import { onBeforeMount, onBeforeUnmount, onMounted, provide, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import WithDocument from "@/components/WithDocument.vue"
 import Footer from "@/components/Footer.vue"
