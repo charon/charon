@@ -7,7 +7,7 @@ import Button from "@/components/Button.vue"
 import { postURL } from "@/api"
 import { processCompletedAndLocationRedirect } from "@/utils"
 import { flowKey, providerName } from "@/flow"
-import { progressKey } from "@/progress"
+import { injectProgress } from "@/progress"
 
 const props = defineProps<{
   id: string
@@ -17,7 +17,7 @@ const props = defineProps<{
 const router = useRouter()
 
 const flow = inject(flowKey)
-const mainProgress = inject(progressKey, ref(0))
+const progress = injectProgress()
 
 const abortController = new AbortController()
 
@@ -106,7 +106,7 @@ async function onRedirect() {
   interval = 0
   resetOnInteraction()
 
-  mainProgress.value += 1
+  progress.value += 1
   try {
     const url = router.apiResolve({
       name: "AuthFlowProviderStart",
@@ -121,12 +121,12 @@ async function onRedirect() {
         provider: props.provider,
       } as AuthFlowProviderStartRequest,
       abortController.signal,
-      mainProgress,
+      progress,
     )
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(response, flow, mainProgress, abortController)) {
+    if (processCompletedAndLocationRedirect(response, flow, progress, abortController)) {
       return
     }
     throw new Error("unexpected response")
@@ -140,7 +140,7 @@ async function onRedirect() {
     seconds.value = 3
     paused.value = true
   } finally {
-    mainProgress.value -= 1
+    progress.value -= 1
   }
 }
 
@@ -150,7 +150,7 @@ function onPause(event: KeyboardEvent) {
   }
   // We disable this event handler because it is a keyboard event handler and
   // disabling UI elements do not disable keyboard events.
-  if (mainProgress.value > 0) {
+  if (progress.value > 0) {
     return
   }
 
@@ -188,8 +188,8 @@ onUnmounted(() => {
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="3" @click.prevent="onBack">Back</Button>
       <div class="flex flex-row gap-4">
-        <Button type="button" tabindex="2" :disabled="mainProgress > 0" @click.prevent="onPauseResume">{{ paused ? "Resume" : "Pause" }}</Button>
-        <Button id="redirect" primary type="button" tabindex="1" :disabled="mainProgress > 0" @click.prevent="onRedirect">Redirect</Button>
+        <Button type="button" tabindex="2" :progress="progress" @click.prevent="onPauseResume">{{ paused ? "Resume" : "Pause" }}</Button>
+        <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">Redirect</Button>
       </div>
     </div>
   </div>

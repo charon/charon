@@ -18,7 +18,7 @@ elements and links but that should not change how components look.
 <script setup lang="ts">
 import type { AuthFlowResponse, AuthFlowStep, Completed, DeriveOptions, EncryptOptions, LocationResponse, Organization } from "@/types"
 
-import { inject, onBeforeMount, onBeforeUnmount, onMounted, onUnmounted, provide, ref, watch } from "vue"
+import { onBeforeMount, onBeforeUnmount, onMounted, onUnmounted, provide, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import WithDocument from "@/components/WithDocument.vue"
 import Footer from "@/components/Footer.vue"
@@ -37,7 +37,7 @@ import { getURL, restartAuth } from "@/api"
 // the server sends the preload header for it. Generally this is already cached.
 import { getProvider, updateSteps, flowKey, updateStepsNoCode } from "@/flow"
 import { processCompleted } from "@/utils"
-import { progressKey } from "@/progress"
+import { injectProgress } from "@/progress"
 
 const props = defineProps<{
   id: string
@@ -45,7 +45,7 @@ const props = defineProps<{
 
 const router = useRouter()
 
-const mainProgress = inject(progressKey, ref(0))
+const progress = injectProgress()
 
 const abortController = new AbortController()
 
@@ -146,7 +146,7 @@ onBeforeMount(async () => {
       },
     }).href
 
-    const response = await getURL<AuthFlowResponse>(url, null, abortController.signal, null)
+    const response = await getURL<AuthFlowResponse>(url, null, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }
@@ -229,7 +229,7 @@ async function onPreviousStep(step: string) {
 
   if (completed.value !== "" && step === "start") {
     // TODO: What to do if unexpected error happens?
-    await restartAuth(router, props.id, flow, abortController.signal, mainProgress)
+    await restartAuth(router, props.id, flow, abortController.signal, progress)
   } else if (completed.value !== "" && step === "identity") {
     flow.updateCompleted("signinOrSignup")
     flow.backward(step)

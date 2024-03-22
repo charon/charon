@@ -44,7 +44,7 @@ export function processCompleted(
 export function processCompletedAndLocationRedirect(
   response: AuthFlowResponse,
   flow: Flow | undefined,
-  mainProgress: Ref<number>,
+  progress: Ref<number>,
   abortController: AbortController | null,
 ): boolean {
   // We do not use Vue Router to force a server-side request which might return updated cookies
@@ -58,7 +58,7 @@ export function processCompletedAndLocationRedirect(
         abortController.abort()
       }
     } else {
-      redirectServerSide(response.location.url, response.location.replace, mainProgress)
+      redirectServerSide(response.location.url, response.location.replace, progress)
     }
     return true
   } else if ("completed" in response && flow && flow.getCompleted() !== response.completed) {
@@ -73,9 +73,9 @@ export function processCompletedAndLocationRedirect(
   return false
 }
 
-export function redirectServerSide(url: string, replace: boolean, mainProgress: Ref<number>) {
+export function redirectServerSide(url: string, replace: boolean, progress: Ref<number>) {
   // We increase the progress and never decrease it to wait for browser to do the redirect.
-  mainProgress.value += 1
+  progress.value += 1
 
   // We do not use Vue Router to force a server-side request which might return updated cookies
   // or redirect on its own somewhere because of new (or lack thereof) cookies.

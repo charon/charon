@@ -8,7 +8,7 @@ import Button from "@/components/Button.vue"
 import { postURL } from "@/api"
 import { processCompletedAndLocationRedirect } from "@/utils"
 import { flowKey } from "@/flow"
-import { progressKey } from "@/progress"
+import { injectProgress } from "@/progress"
 
 const props = defineProps<{
   id: string
@@ -17,7 +17,7 @@ const props = defineProps<{
 const router = useRouter()
 
 const flow = inject(flowKey)
-const mainProgress = inject(progressKey, ref(0))
+const progress = injectProgress()
 
 const abortController = new AbortController()
 
@@ -68,7 +68,7 @@ async function onAfterEnter() {
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(start, flow, mainProgress, abortController)) {
+    if (processCompletedAndLocationRedirect(start, flow, progress, abortController)) {
       return
     }
     if (!("passkey" in start && "getOptions" in start.passkey)) {
@@ -91,7 +91,7 @@ async function onAfterEnter() {
     }
 
     // We do not allow cancel after this point.
-    mainProgress.value += 1
+    progress.value += 1
     try {
       const complete = await postURL<AuthFlowResponse>(
         completeUrl,
@@ -99,17 +99,17 @@ async function onAfterEnter() {
           getResponse: assertion,
         } as AuthFlowPasskeyGetCompleteRequest,
         abortController.signal,
-        mainProgress,
+        progress,
       )
       if (abortController.signal.aborted) {
         return
       }
-      if (processCompletedAndLocationRedirect(complete, flow, mainProgress, abortController)) {
+      if (processCompletedAndLocationRedirect(complete, flow, progress, abortController)) {
         return
       }
       throw new Error("unexpected response")
     } finally {
-      mainProgress.value -= 1
+      progress.value -= 1
     }
   } catch (error) {
     if (abortController.signal.aborted) {
@@ -158,7 +158,7 @@ async function onCancel() {
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="2" @click.prevent="onBack">Back</Button>
       <Button v-if="unexpectedError" primary type="button" tabindex="1" @click.prevent="onRetry">Retry</Button>
-      <Button v-else type="button" tabindex="1" :disabled="mainProgress > 0" @click.prevent="onCancel">Cancel</Button>
+      <Button v-else type="button" tabindex="1" :progress="progress" @click.prevent="onCancel">Cancel</Button>
     </div>
   </div>
 </template>

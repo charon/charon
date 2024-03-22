@@ -7,7 +7,7 @@ import InputText from "@/components/InputText.vue"
 import { startPassword } from "@/api"
 import { isEmail } from "@/utils"
 import { flowKey } from "@/flow"
-import { progressKey } from "@/progress"
+import { injectProgress } from "@/progress"
 import siteContext from "@/context"
 
 const props = defineProps<{
@@ -18,7 +18,7 @@ const props = defineProps<{
 const router = useRouter()
 
 const flow = inject(flowKey)
-const mainProgress = inject(progressKey, ref(0))
+const progress = injectProgress()
 
 const abortController = new AbortController()
 
@@ -72,9 +72,9 @@ async function onNext() {
 
   resetOnInteraction()
 
-  mainProgress.value += 1
+  progress.value += 1
   try {
-    const response = await startPassword(router, props.id, props.emailOrUsername, flow!, abortController, mainProgress, mainProgress)
+    const response = await startPassword(router, props.id, props.emailOrUsername, flow!, abortController, progress, progress)
     if (abortController.signal.aborted) {
       return
     }
@@ -98,7 +98,7 @@ async function onNext() {
     console.error(error)
     unexpectedError.value = `${error}`
   } finally {
-    mainProgress.value -= 1
+    progress.value -= 1
   }
 }
 
@@ -134,7 +134,7 @@ async function onOIDCProvider(provider: string) {
           v-model="emailOrUsernameProxy"
           name="email"
           class="flex-grow flex-auto min-w-0"
-          :readonly="mainProgress > 0"
+          :progress="progress"
           :invalid="!!passwordError"
           autocomplete="username"
           autocorrect="off"
@@ -152,7 +152,7 @@ async function onOIDCProvider(provider: string) {
           client side so we might be counting characters differently here, leading to confusion.
           Button is on purpose not disabled on unexpectedError so that user can retry.
         -->
-        <Button primary type="submit" :disabled="!emailOrUsername.trim() || mainProgress > 0 || !!passwordError">Next</Button>
+        <Button primary type="submit" :disabled="!emailOrUsername.trim() || !!passwordError" :progress="progress">Next</Button>
       </form>
       <div v-if="passwordError === 'invalidEmailOrUsername' && isEmail(emailOrUsername)" class="mt-4 text-error-600">Invalid e-mail address.</div>
       <div v-else-if="passwordError === 'invalidEmailOrUsername' && !isEmail(emailOrUsername)" class="mt-4 text-error-600">Invalid username.</div>
@@ -163,8 +163,8 @@ async function onOIDCProvider(provider: string) {
       <div v-else-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
     </div>
     <h2 class="text-center m-4 text-xl font-bold uppercase">Or use</h2>
-    <Button primary type="button" :disabled="!browserSupportsWebAuthn() || mainProgress > 0" @click.prevent="onPasskey">Passkey</Button>
-    <Button v-for="p of siteContext.providers" :key="p.key" primary type="button" class="mt-4" :disabled="mainProgress > 0" @click.prevent="onOIDCProvider(p.key)">{{
+    <Button primary type="button" :disabled="!browserSupportsWebAuthn()" :progress="progress" @click.prevent="onPasskey">Passkey</Button>
+    <Button v-for="p of siteContext.providers" :key="p.key" primary type="button" class="mt-4" :progress="progress" @click.prevent="onOIDCProvider(p.key)">{{
       p.name
     }}</Button>
   </div>

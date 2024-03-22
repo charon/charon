@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import type { ApplicationTemplate, ApplicationTemplates } from "@/types"
 
-import { onBeforeMount, onUnmounted, ref, inject } from "vue"
+import { onBeforeMount, onUnmounted, ref } from "vue"
 import { useRouter } from "vue-router"
 import ButtonLink from "@/components/ButtonLink.vue"
 import WithDocument from "@/components/WithDocument.vue"
 import NavBar from "@/components/NavBar.vue"
 import Footer from "@/components/Footer.vue"
 import { getURL } from "@/api"
-import { progressKey } from "@/progress"
+import { injectProgress } from "@/progress"
 import me from "@/me"
 
 const router = useRouter()
 
-const mainProgress = inject(progressKey, ref(0))
+const progress = injectProgress()
 
 const abortController = new AbortController()
 const dataLoading = ref(true)
@@ -25,13 +25,13 @@ onUnmounted(() => {
 })
 
 onBeforeMount(async () => {
-  mainProgress.value += 1
+  progress.value += 1
   try {
     const url = router.apiResolve({
       name: "ApplicationTemplateList",
     }).href
 
-    const response = await getURL<ApplicationTemplates>(url, null, abortController.signal, mainProgress)
+    const response = await getURL<ApplicationTemplates>(url, null, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }
@@ -45,7 +45,7 @@ onBeforeMount(async () => {
     dataLoadingError.value = `${error}`
   } finally {
     dataLoading.value = false
-    mainProgress.value -= 1
+    progress.value -= 1
   }
 })
 
@@ -61,7 +61,7 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
       <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
         <div class="flex flex-row justify-between items-center gap-4">
           <h1 class="text-2xl font-bold">Application templates</h1>
-          <ButtonLink v-if="me.success" :to="{ name: 'ApplicationTemplateCreate' }" :disabled="mainProgress > 0" primary>Create</ButtonLink>
+          <ButtonLink v-if="me.success" :to="{ name: 'ApplicationTemplateCreate' }" :progress="progress" primary>Create</ButtonLink>
         </div>
       </div>
       <div v-if="dataLoading" class="w-full rounded border bg-white p-4 shadow">Loading...</div>

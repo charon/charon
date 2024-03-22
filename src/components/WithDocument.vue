@@ -4,6 +4,7 @@ import type { Metadata } from "@/types"
 import { ref, watch, readonly, onMounted, onUpdated, onUnmounted, getCurrentInstance, Ref, DeepReadonly } from "vue"
 import { useRouter } from "vue-router"
 import { getURL } from "@/api"
+import { injectProgress } from "@/progress"
 
 const props = defineProps<{
   id: string
@@ -11,6 +12,8 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+
+const progress = injectProgress()
 
 const _doc = ref<T | null>(null) as Ref<T | null>
 const _metadata = ref<Metadata>({})
@@ -59,7 +62,7 @@ watch(
     _error.value = null
 
     try {
-      const response = await getURL<T>(newURL, el, abortController.signal, null)
+      const response = await getURL<T>(newURL, el, abortController.signal, progress)
       if (abortController.signal.aborted) {
         return
       }

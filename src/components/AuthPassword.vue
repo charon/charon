@@ -9,7 +9,7 @@ import InputTextButton from "@/components/InputTextButton.vue"
 import { postURL, startPassword } from "@/api"
 import { processCompletedAndLocationRedirect, toBase64, isEmail } from "@/utils"
 import { flowKey, updateStepsNoCode } from "@/flow"
-import { progressKey } from "@/progress"
+import { injectProgress } from "@/progress"
 
 const props = defineProps<{
   id: string
@@ -22,7 +22,7 @@ const props = defineProps<{
 const router = useRouter()
 
 const flow = inject(flowKey)
-const mainProgress = inject(progressKey, ref(0))
+const progress = injectProgress()
 
 const abortController = new AbortController()
 
@@ -85,7 +85,7 @@ async function getKey(): Promise<boolean> {
 
   keyProgress.value += 1
   try {
-    const response = await startPassword(router, props.id, props.emailOrUsername, flow!, abortController, keyProgress, mainProgress)
+    const response = await startPassword(router, props.id, props.emailOrUsername, flow!, abortController, keyProgress, progress)
     if (abortController.signal.aborted) {
       return false
     }
@@ -131,7 +131,7 @@ async function onRedo() {
     return
   }
   // We disable this event handler because this event handler is called from a link.
-  if (mainProgress.value > 0) {
+  if (progress.value > 0) {
     return
   }
 
@@ -146,7 +146,7 @@ async function onNext() {
 
   resetOnInteraction()
 
-  mainProgress.value += 1
+  progress.value += 1
   try {
     const url = router.apiResolve({
       name: "AuthFlowPasswordComplete",
@@ -212,12 +212,12 @@ async function onNext() {
         password: toBase64(new Uint8Array(ciphertext)),
       } as AuthFlowPasswordCompleteRequest,
       abortController.signal,
-      mainProgress,
+      progress,
     )
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(response, flow, mainProgress, abortController)) {
+    if (processCompletedAndLocationRedirect(response, flow, progress, abortController)) {
       updateStepsNoCode(flow!)
       return
     }
@@ -246,7 +246,7 @@ async function onNext() {
     console.error(error)
     unexpectedPasswordError.value = `${error}`
   } finally {
-    mainProgress.value -= 1
+    progress.value -= 1
   }
 }
 
@@ -257,7 +257,7 @@ async function onCode() {
 
   resetOnInteraction()
 
-  mainProgress.value += 1
+  progress.value += 1
   try {
     const url = router.apiResolve({
       name: "AuthFlowCodeStart",
@@ -278,12 +278,12 @@ async function onCode() {
         emailOrUsername: props.emailOrUsername,
       } as AuthFlowCodeStartRequest,
       abortController.signal,
-      mainProgress,
+      progress,
     )
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(response, flow, mainProgress, abortController)) {
+    if (processCompletedAndLocationRedirect(response, flow, progress, abortController)) {
       return
     }
     if ("error" in response && ["noAccount", "noEmails"].includes(response.error)) {
@@ -304,7 +304,7 @@ async function onCode() {
     console.error(error)
     unexpectedCodeError.value = `${error}`
   } finally {
-    mainProgress.value -= 1
+    progress.value -= 1
   }
 }
 </script>
@@ -348,7 +348,7 @@ async function onCode() {
           tabindex="1"
           :invalid="!!passwordError"
           class="flex-grow flex-auto min-w-0"
-          :readonly="mainProgress > 0"
+          :progress="progress"
           autocomplete="current-password"
           autocorrect="off"
           autocapitalize="none"
@@ -363,7 +363,7 @@ async function onCode() {
           client side so we might be counting characters differently here, leading to confusion.
           Button is on purpose not disabled on unexpectedPasswordError so that user can retry.
         -->
-        <Button primary type="submit" tabindex="2" :disabled="!password || mainProgress + keyProgress > 0 || !!passwordError">Next</Button>
+        <Button primary type="submit" tabindex="2" :disabled="!password || keyProgress > 0 || !!passwordError" :progress="progress">Next</Button>
       </form>
     </div>
     <template v-if="passwordError">
@@ -398,7 +398,7 @@ async function onCode() {
       <!--
         Button is on purpose not disabled on unexpectedCodeError so that user can retry.
       -->
-      <Button type="button" primary tabindex="3" :disabled="!!codeError || mainProgress > 0" @click.prevent="onCode">Send code</Button>
+      <Button type="button" primary tabindex="3" :disabled="!!codeError" :progress="progress" @click.prevent="onCode">Send code</Button>
     </div>
   </div>
 </template>

@@ -9,7 +9,7 @@ import type {
   Variable,
 } from "@/types"
 
-import { nextTick, onBeforeMount, onUnmounted, ref, watch, inject } from "vue"
+import { nextTick, onBeforeMount, onUnmounted, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import InputText from "@/components/InputText.vue"
 import TextArea from "@/components/TextArea.vue"
@@ -19,7 +19,7 @@ import NavBar from "@/components/NavBar.vue"
 import Footer from "@/components/Footer.vue"
 import { getURL, postURL } from "@/api"
 import { clone, equals } from "@/utils"
-import { progressKey } from "@/progress"
+import { injectProgress } from "@/progress"
 
 const props = defineProps<{
   id: string
@@ -27,7 +27,7 @@ const props = defineProps<{
 
 const router = useRouter()
 
-const mainProgress = inject(progressKey, ref(0))
+const progress = injectProgress()
 
 const abortController = new AbortController()
 const dataLoading = ref(true)
@@ -101,7 +101,7 @@ async function loadData(update: "init" | "basic" | "variables" | "clientsPublic"
   }
 
   watchInteractionStop!()
-  mainProgress.value += 1
+  progress.value += 1
   try {
     const url = router.apiResolve({
       name: "ApplicationTemplateGet",
@@ -110,7 +110,7 @@ async function loadData(update: "init" | "basic" | "variables" | "clientsPublic"
       },
     }).href
 
-    const response = await getURL<ApplicationTemplate>(url, null, abortController.signal, mainProgress)
+    const response = await getURL<ApplicationTemplate>(url, null, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }
@@ -146,7 +146,7 @@ async function loadData(update: "init" | "basic" | "variables" | "clientsPublic"
     dataLoadingError.value = `${error}`
   } finally {
     dataLoading.value = false
-    mainProgress.value -= 1
+    progress.value -= 1
     initWatchInteraction()
   }
 }
@@ -167,7 +167,7 @@ async function onSubmit(
 
   resetOnInteraction()
 
-  mainProgress.value += 1
+  progress.value += 1
   try {
     try {
       const url = router.apiResolve({
@@ -177,7 +177,7 @@ async function onSubmit(
         },
       }).href
 
-      await postURL(url, payload, abortController.signal, mainProgress)
+      await postURL(url, payload, abortController.signal, progress)
       if (abortController.signal.aborted) {
         return
       }
@@ -195,7 +195,7 @@ async function onSubmit(
       await loadData(unexpectedError.value ? null : update)
     }
   } finally {
-    mainProgress.value -= 1
+    progress.value -= 1
   }
 }
 
@@ -513,15 +513,16 @@ function onAddClientService() {
         <template v-else>
           <form class="flex flex-col" novalidate @submit.prevent="onBasicSubmit">
             <label for="name" class="mb-1">Application template name</label>
-            <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0 || !metadata.can_update" required />
+            <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" required />
             <label for="description" class="mb-1 mt-4">Description<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label>
-            <TextArea id="description" v-model="description" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0 || !metadata.can_update" />
+            <TextArea id="description" v-model="description" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <label for="homepageTemplate" class="mb-1 mt-4">Homepage template</label>
             <InputText
               id="homepageTemplate"
               v-model="homepageTemplate"
               class="flex-grow flex-auto min-w-0"
-              :readonly="mainProgress > 0 || !metadata.can_update"
+              :readonly="!metadata.can_update"
+              :progress="progress"
               required
             />
             <label for="idScopes" class="mb-1 mt-4"
@@ -533,7 +534,8 @@ function onAddClientService() {
               id="idScopes"
               :model-value="idScopes.join(' ')"
               class="flex-grow flex-auto min-w-0"
-              :readonly="mainProgress > 0 || !metadata.can_update"
+              :readonly="!metadata.can_update"
+              :progress="progress"
               @update:model-value="(v) => (idScopes = splitSpace(v))"
             />
             <div v-if="basicUnexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
@@ -542,7 +544,7 @@ function onAddClientService() {
               <!--
                 Button is on purpose not disabled on unexpectedError so that user can retry.
               -->
-              <Button type="submit" primary :disabled="!canBasicSubmit() || mainProgress > 0">Update</Button>
+              <Button type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">Update</Button>
             </div>
           </form>
           <h2 class="text-xl font-bold">Variables</h2>
@@ -558,7 +560,8 @@ function onAddClientService() {
                     :id="`variable-${i}-name`"
                     v-model="variable.name"
                     class="flex-grow flex-auto min-w-0"
-                    :readonly="mainProgress > 0 || !metadata.can_update"
+                    :readonly="!metadata.can_update"
+                    :progress="progress"
                     required
                   />
                   <label :for="`variable-${i}-description`" class="mb-1 mt-4"
@@ -568,10 +571,11 @@ function onAddClientService() {
                     :id="`variable-${i}-description`"
                     v-model="variable.description"
                     class="flex-grow flex-auto min-w-0"
-                    :readonly="mainProgress > 0 || !metadata.can_update"
+                    :readonly="!metadata.can_update"
+                    :progress="progress"
                   />
                   <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
-                    <Button type="button" :disabled="mainProgress > 0" @click.prevent="variables.splice(i, 1)">Remove</Button>
+                    <Button type="button" :progress="progress" @click.prevent="variables.splice(i, 1)">Remove</Button>
                   </div>
                 </div>
               </li>
@@ -581,7 +585,7 @@ function onAddClientService() {
               <!--
                 Button is on purpose not disabled on unexpectedError so that user can retry.
               -->
-              <Button type="submit" primary :disabled="!canVariablesSubmit() || mainProgress > 0">Update</Button>
+              <Button type="submit" primary :disabled="!canVariablesSubmit()" :progress="progress">Update</Button>
             </div>
           </form>
           <h2 class="text-xl font-bold">Public clients</h2>
@@ -602,12 +606,11 @@ function onAddClientService() {
                             :id="`client-public-${i}-redirectUriTemplates-${j}`"
                             v-model="client.redirectUriTemplates[j]"
                             class="flex-grow flex-auto min-w-0"
-                            :readonly="mainProgress > 0 || !metadata.can_update"
+                            :readonly="!metadata.can_update"
+                            :progress="progress"
                             required
                           />
-                          <Button v-if="metadata.can_update" type="button" :disabled="mainProgress > 0" @click.prevent="client.redirectUriTemplates.splice(j, 1)"
-                            >Remove</Button
-                          >
+                          <Button v-if="metadata.can_update" type="button" :progress="progress" @click.prevent="client.redirectUriTemplates.splice(j, 1)">Remove</Button>
                         </div>
                       </li>
                     </ol>
@@ -616,7 +619,7 @@ function onAddClientService() {
                     <Button
                       :id="`client-public-${i}-addTemplate`"
                       type="button"
-                      :disabled="mainProgress > 0"
+                      :progress="progress"
                       @click.prevent="addRedirectUriTemplate(client, `client-public-${i}-redirectUriTemplates-`)"
                       >Add redirect URI</Button
                     >
@@ -628,7 +631,8 @@ function onAddClientService() {
                     :id="`client-public-${i}-description`"
                     v-model="client.description"
                     class="flex-grow flex-auto min-w-0"
-                    :readonly="mainProgress > 0 || !metadata.can_update"
+                    :readonly="!metadata.can_update"
+                    :progress="progress"
                   />
                   <label :for="`client-public-${i}-additionalScopes`" class="mb-1 mt-4"
                     >Space-separated additional scopes the application might request<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">
@@ -639,11 +643,12 @@ function onAddClientService() {
                     :id="`client-public-${i}-additionalScopes`"
                     :model-value="client.additionalScopes.join(' ')"
                     class="flex-grow flex-auto min-w-0"
-                    :readonly="mainProgress > 0 || !metadata.can_update"
+                    :readonly="!metadata.can_update"
+                    :progress="progress"
                     @update:model-value="(v) => (client.additionalScopes = splitSpace(v))"
                   />
                   <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
-                    <Button type="button" :disabled="mainProgress > 0" @click.prevent="clientsPublic.splice(i, 1)">Remove</Button>
+                    <Button type="button" :progress="progress" @click.prevent="clientsPublic.splice(i, 1)">Remove</Button>
                   </div>
                 </div>
               </li>
@@ -653,7 +658,7 @@ function onAddClientService() {
               <!--
                 Button is on purpose not disabled on unexpectedError so that user can retry.
               -->
-              <Button type="submit" primary :disabled="!canClientsPublicSubmit() || mainProgress > 0">Update</Button>
+              <Button type="submit" primary :disabled="!canClientsPublicSubmit()" :progress="progress">Update</Button>
             </div>
           </form>
           <h2 class="text-xl font-bold">Backend clients</h2>
@@ -674,12 +679,11 @@ function onAddClientService() {
                             :id="`client-backend-${i}-redirectUriTemplates-${j}`"
                             v-model="client.redirectUriTemplates[j]"
                             class="flex-grow flex-auto min-w-0"
-                            :readonly="mainProgress > 0 || !metadata.can_update"
+                            :readonly="!metadata.can_update"
+                            :progress="progress"
                             required
                           />
-                          <Button v-if="metadata.can_update" type="button" :disabled="mainProgress > 0" @click.prevent="client.redirectUriTemplates.splice(j, 1)"
-                            >Remove</Button
-                          >
+                          <Button v-if="metadata.can_update" type="button" :progress="progress" @click.prevent="client.redirectUriTemplates.splice(j, 1)">Remove</Button>
                         </div>
                       </li>
                     </ol>
@@ -688,7 +692,7 @@ function onAddClientService() {
                     <Button
                       :id="`client-backend-${i}-addTemplate`"
                       type="button"
-                      :disabled="mainProgress > 0"
+                      :progress="progress"
                       @click.prevent="addRedirectUriTemplate(client, `client-backend-${i}-redirectUriTemplates-`)"
                       >Add redirect URI</Button
                     >
@@ -701,12 +705,13 @@ function onAddClientService() {
                           :id="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_post`"
                           v-model="client.tokenEndpointAuthMethod"
                           value="client_secret_post"
-                          :disabled="mainProgress > 0 || !metadata.can_update"
+                          :disabled="!metadata.can_update"
+                          :progress="progress"
                           class="mx-2"
                         />
                         <label
                           :for="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_post`"
-                          :class="mainProgress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                          :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
                           ><code>client_secret_post</code></label
                         >
                       </div>
@@ -715,12 +720,13 @@ function onAddClientService() {
                           :id="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_basic`"
                           v-model="client.tokenEndpointAuthMethod"
                           value="client_secret_basic"
-                          :disabled="mainProgress > 0 || !metadata.can_update"
+                          :disabled="!metadata.can_update"
+                          :progress="progress"
                           class="mx-2"
                         />
                         <label
                           :for="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_basic`"
-                          :class="mainProgress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                          :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
                           ><code>client_secret_basic</code></label
                         >
                       </div>
@@ -733,7 +739,8 @@ function onAddClientService() {
                     :id="`client-backend-${i}-description`"
                     v-model="client.description"
                     class="flex-grow flex-auto min-w-0"
-                    :readonly="mainProgress > 0 || !metadata.can_update"
+                    :readonly="!metadata.can_update"
+                    :progress="progress"
                   />
                   <label :for="`client-backend-${i}-additionalScopes`" class="mb-1 mt-4"
                     >Space-separated additional scopes the application might request<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">
@@ -744,11 +751,12 @@ function onAddClientService() {
                     :id="`client-backend-${i}-additionalScopes`"
                     :model-value="client.additionalScopes.join(' ')"
                     class="flex-grow flex-auto min-w-0"
-                    :readonly="mainProgress > 0 || !metadata.can_update"
+                    :readonly="!metadata.can_update"
+                    :progress="progress"
                     @update:model-value="(v) => (client.additionalScopes = splitSpace(v))"
                   />
                   <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
-                    <Button type="button" :disabled="mainProgress > 0" @click.prevent="clientsBackend.splice(i, 1)">Remove</Button>
+                    <Button type="button" :progress="progress" @click.prevent="clientsBackend.splice(i, 1)">Remove</Button>
                   </div>
                 </div>
               </li>
@@ -758,7 +766,7 @@ function onAddClientService() {
               <!--
                 Button is on purpose not disabled on unexpectedError so that user can retry.
               -->
-              <Button type="submit" primary :disabled="!canClientsBackendSubmit() || mainProgress > 0">Update</Button>
+              <Button type="submit" primary :disabled="!canClientsBackendSubmit()" :progress="progress">Update</Button>
             </div>
           </form>
           <h2 class="text-xl font-bold">Service clients</h2>
@@ -777,12 +785,13 @@ function onAddClientService() {
                           :id="`client-service-${i}-tokenEndpointAuthMethod-client_secret_post`"
                           v-model="client.tokenEndpointAuthMethod"
                           value="client_secret_post"
-                          :disabled="mainProgress > 0 || !metadata.can_update"
+                          :disabled="!metadata.can_update"
+                          :progress="progress"
                           class="mx-2"
                         />
                         <label
                           :for="`client-service-${i}-tokenEndpointAuthMethod-client_secret_post`"
-                          :class="mainProgress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                          :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
                           ><code>client_secret_post</code></label
                         >
                       </div>
@@ -791,12 +800,13 @@ function onAddClientService() {
                           :id="`client-service-${i}-tokenEndpointAuthMethod-client_secret_basic`"
                           v-model="client.tokenEndpointAuthMethod"
                           value="client_secret_basic"
-                          :disabled="mainProgress > 0 || !metadata.can_update"
+                          :disabled="!metadata.can_update"
+                          :progress="progress"
                           class="mx-2"
                         />
                         <label
                           :for="`client-service-${i}-tokenEndpointAuthMethod-client_secret_basic`"
-                          :class="mainProgress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                          :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
                           ><code>client_secret_basic</code></label
                         >
                       </div>
@@ -809,7 +819,8 @@ function onAddClientService() {
                     :id="`client-service-${i}-description`"
                     v-model="client.description"
                     class="flex-grow flex-auto min-w-0"
-                    :readonly="mainProgress > 0 || !metadata.can_update"
+                    :readonly="!metadata.can_update"
+                    :progress="progress"
                   />
                   <label :for="`client-service-${i}-additionalScopes`" class="mb-1 mt-4"
                     >Space-separated additional scopes the application might request<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">
@@ -820,11 +831,12 @@ function onAddClientService() {
                     :id="`client-service-${i}-additionalScopes`"
                     :model-value="client.additionalScopes.join(' ')"
                     class="flex-grow flex-auto min-w-0"
-                    :readonly="mainProgress > 0 || !metadata.can_update"
+                    :readonly="!metadata.can_update"
+                    :progress="progress"
                     @update:model-value="(v) => (client.additionalScopes = splitSpace(v))"
                   />
                   <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
-                    <Button type="button" :disabled="mainProgress > 0" @click.prevent="clientsService.splice(i, 1)">Remove</Button>
+                    <Button type="button" :progress="progress" @click.prevent="clientsService.splice(i, 1)">Remove</Button>
                   </div>
                 </div>
               </li>
@@ -834,7 +846,7 @@ function onAddClientService() {
               <!--
                 Button is on purpose not disabled on unexpectedError so that user can retry.
               -->
-              <Button type="submit" primary :disabled="!canClientsServiceSubmit() || mainProgress > 0">Update</Button>
+              <Button type="submit" primary :disabled="!canClientsServiceSubmit()" :progress="progress">Update</Button>
             </div>
           </form>
         </template>

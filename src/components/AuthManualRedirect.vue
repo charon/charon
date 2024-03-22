@@ -4,7 +4,7 @@ import type { Completed, LocationResponse } from "@/types"
 import { ref, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
-import { progressKey } from "@/progress"
+import { injectProgress } from "@/progress"
 import { redirectServerSide } from "@/utils"
 import { flowKey } from "@/flow"
 import { redirectOIDC } from "@/api"
@@ -21,7 +21,7 @@ const props = defineProps<{
 const router = useRouter()
 
 const flow = inject(flowKey)
-const mainProgress = inject(progressKey, ref(0))
+const progress = injectProgress()
 
 const abortController = new AbortController()
 
@@ -71,12 +71,12 @@ async function onRedirect() {
 }
 
 async function onRedirectSession() {
-  redirectServerSide(props.location.url, props.location.replace, mainProgress)
+  redirectServerSide(props.location.url, props.location.replace, progress)
 }
 
 async function onRedirectOIDC() {
   try {
-    await redirectOIDC(router, props.id, flow!, abortController, mainProgress)
+    await redirectOIDC(router, props.id, flow!, abortController, progress)
   } catch (error) {
     if (abortController.signal.aborted) {
       return
@@ -87,7 +87,7 @@ async function onRedirectOIDC() {
 }
 
 async function onRedirectHomepage() {
-  redirectServerSide(props.homepage, true, mainProgress)
+  redirectServerSide(props.homepage, true, progress)
 }
 </script>
 
@@ -102,7 +102,7 @@ async function onRedirectHomepage() {
     </div>
     <div v-if="unexpectedError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
     <div class="flex flex-row justify-end gap-4">
-      <Button id="redirect" primary type="button" tabindex="1" :disabled="mainProgress > 0" @click.prevent="onRedirect">{{
+      <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">{{
         completed === "redirect" ? "Homepage" : "Return"
       }}</Button>
     </div>

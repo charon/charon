@@ -8,7 +8,7 @@ import InputCode from "@/components/InputCode.vue"
 import { postURL } from "@/api"
 import { processCompletedAndLocationRedirect, isEmail } from "@/utils"
 import { flowKey } from "@/flow"
-import { progressKey } from "@/progress"
+import { injectProgress } from "@/progress"
 
 const props = defineProps<{
   id: string
@@ -20,7 +20,7 @@ const router = useRouter()
 const route = useRoute()
 
 const flow = inject(flowKey)
-const mainProgress = inject(progressKey, ref(0))
+const progress = injectProgress()
 
 const abortController = new AbortController()
 
@@ -95,7 +95,7 @@ async function onRedo() {
     return
   }
   // We disable this event handler because this event handler is called from a link.
-  if (mainProgress.value > 0) {
+  if (progress.value > 0) {
     return
   }
 
@@ -110,7 +110,7 @@ async function onNext() {
 
   resetOnInteraction()
 
-  mainProgress.value += 1
+  progress.value += 1
   try {
     const url = router.apiResolve({
       name: "AuthFlowCodeComplete",
@@ -125,12 +125,12 @@ async function onNext() {
         code: code.value,
       } as AuthFlowCodeCompleteRequest,
       abortController.signal,
-      mainProgress,
+      progress,
     )
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(response, flow, mainProgress, abortController)) {
+    if (processCompletedAndLocationRedirect(response, flow, progress, abortController)) {
       return
     }
     if ("error" in response && ["invalidCode"].includes(response.error)) {
@@ -145,7 +145,7 @@ async function onNext() {
     console.error(error)
     unexpectedError.value = `${error}`
   } finally {
-    mainProgress.value -= 1
+    progress.value -= 1
   }
 }
 
@@ -156,7 +156,7 @@ async function onResend() {
 
   resetOnInteraction()
 
-  mainProgress.value += 1
+  progress.value += 1
   try {
     code.value = ""
     codeFromHash.value = false
@@ -173,12 +173,12 @@ async function onResend() {
         emailOrUsername: props.emailOrUsername,
       } as AuthFlowCodeStartRequest,
       abortController.signal,
-      mainProgress,
+      progress,
     )
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(response, flow, mainProgress, abortController)) {
+    if (processCompletedAndLocationRedirect(response, flow, progress, abortController)) {
       return
     }
     // No error is expected in the response because code has already been generated in the past
@@ -196,7 +196,7 @@ async function onResend() {
     console.error(error)
     unexpectedError.value = `${error}`
   } finally {
-    mainProgress.value -= 1
+    progress.value -= 1
   }
 }
 </script>
@@ -232,7 +232,7 @@ async function onResend() {
           v-model="code"
           tabindex="1"
           class="flex-grow flex-auto min-w-0"
-          :readonly="mainProgress > 0"
+          :progress="progress"
           inputmode="numeric"
           pattern="[0-9]*"
           :code-length="6"
@@ -244,7 +244,7 @@ async function onResend() {
           is not enabled.
           Button is on purpose not disabled on unexpectedError so that user can retry.
         -->
-        <Button id="submit-code" primary type="submit" tabindex="2" :disabled="!code.replaceAll(/\s/g, '') || mainProgress > 0 || !!codeError">Next</Button>
+        <Button id="submit-code" primary type="submit" tabindex="2" :disabled="!code.replaceAll(/\s/g, '') || !!codeError" :progress="progress">Next</Button>
       </form>
     </div>
     <div v-if="codeError === 'invalidCode'" class="mt-4 text-error-600">Code is invalid. Please try again.</div>
@@ -260,7 +260,7 @@ async function onResend() {
     </div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="4" @click.prevent="onBack">Back</Button>
-      <Button type="button" tabindex="3" :disabled="mainProgress > 0" @click.prevent="onResend">Resend code</Button>
+      <Button type="button" tabindex="3" :progress="progress" @click.prevent="onResend">Resend code</Button>
     </div>
   </div>
 </template>

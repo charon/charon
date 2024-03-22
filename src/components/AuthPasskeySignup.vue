@@ -8,7 +8,7 @@ import Button from "@/components/Button.vue"
 import { postURL } from "@/api"
 import { processCompletedAndLocationRedirect } from "@/utils"
 import { flowKey } from "@/flow"
-import { progressKey } from "@/progress"
+import { injectProgress } from "@/progress"
 
 const props = defineProps<{
   id: string
@@ -17,7 +17,7 @@ const props = defineProps<{
 const router = useRouter()
 
 const flow = inject(flowKey)
-const mainProgress = inject(progressKey, ref(0))
+const progress = injectProgress()
 
 const abortController = new AbortController()
 
@@ -63,7 +63,7 @@ async function onPasskeySignup() {
     return
   }
 
-  mainProgress.value += 1
+  progress.value += 1
   try {
     signupAttempted.value = true
     signupFailed.value = false
@@ -81,11 +81,11 @@ async function onPasskeySignup() {
       },
     }).href
 
-    const start = await postURL<AuthFlowResponse>(startUrl, {}, abortController.signal, mainProgress)
+    const start = await postURL<AuthFlowResponse>(startUrl, {}, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(start, flow, mainProgress, abortController)) {
+    if (processCompletedAndLocationRedirect(start, flow, progress, abortController)) {
       return
     }
     if (!("passkey" in start && "createOptions" in start.passkey)) {
@@ -118,12 +118,12 @@ async function onPasskeySignup() {
         createResponse: attestation,
       } as AuthFlowPasskeyCreateCompleteRequest,
       abortController.signal,
-      mainProgress,
+      progress,
     )
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(complete, flow, mainProgress, abortController)) {
+    if (processCompletedAndLocationRedirect(complete, flow, progress, abortController)) {
       return
     }
     throw new Error("unexpected response")
@@ -135,7 +135,7 @@ async function onPasskeySignup() {
     unexpectedError.value = `${error}`
     signupFailedAtLeastOnce.value = true
   } finally {
-    mainProgress.value -= 1
+    progress.value -= 1
   }
 }
 </script>
@@ -148,7 +148,7 @@ async function onPasskeySignup() {
     <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="2" @click.prevent="onBack">Retry sign-in</Button>
-      <Button id="passkey-signup" primary type="button" tabindex="1" :disabled="mainProgress > 0" @click.prevent="onPasskeySignup">{{
+      <Button id="passkey-signup" primary type="button" tabindex="1" :progress="progress" @click.prevent="onPasskeySignup">{{
         signupFailedAtLeastOnce ? "Retry sign-up" : "Passkey sign-up"
       }}</Button>
     </div>

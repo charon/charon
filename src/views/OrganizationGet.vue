@@ -2,7 +2,7 @@
 import type { DeepReadonly, Ref } from "vue"
 import type { Organization, Metadata, ApplicationTemplates, ApplicationTemplate, OrganizationApplication, ApplicationTemplateRef } from "@/types"
 
-import { nextTick, onBeforeMount, onUnmounted, ref, watch, inject } from "vue"
+import { nextTick, onBeforeMount, onUnmounted, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import { Identifier } from "@tozd/identifier"
 import InputText from "@/components/InputText.vue"
@@ -14,7 +14,7 @@ import Footer from "@/components/Footer.vue"
 import { getURL, postURL } from "@/api"
 import { setupArgon2id } from "@/argon2id"
 import { clone, equals } from "@/utils"
-import { progressKey } from "@/progress"
+import { injectProgress } from "@/progress"
 
 const props = defineProps<{
   id: string
@@ -22,7 +22,7 @@ const props = defineProps<{
 
 const router = useRouter()
 
-const mainProgress = inject(progressKey, ref(0))
+const progress = injectProgress()
 
 const abortController = new AbortController()
 const dataLoading = ref(true)
@@ -87,7 +87,7 @@ async function loadData(update: "init" | "basic" | "applications" | null) {
   }
 
   watchInteractionStop!()
-  mainProgress.value += 1
+  progress.value += 1
   try {
     const organizationURL = router.apiResolve({
       name: "OrganizationGet",
@@ -96,7 +96,7 @@ async function loadData(update: "init" | "basic" | "applications" | null) {
       },
     }).href
 
-    const response = await getURL<Organization>(organizationURL, null, abortController.signal, mainProgress)
+    const response = await getURL<Organization>(organizationURL, null, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }
@@ -118,7 +118,7 @@ async function loadData(update: "init" | "basic" | "applications" | null) {
         name: "ApplicationTemplateList",
       }).href
 
-      const resp = await getURL<ApplicationTemplates>(applicationsURL, null, abortController.signal, mainProgress)
+      const resp = await getURL<ApplicationTemplates>(applicationsURL, null, abortController.signal, progress)
       if (abortController.signal.aborted) {
         return
       }
@@ -134,7 +134,7 @@ async function loadData(update: "init" | "basic" | "applications" | null) {
     dataLoadingError.value = `${error}`
   } finally {
     dataLoading.value = false
-    mainProgress.value -= 1
+    progress.value -= 1
     initWatchInteraction()
   }
 }
@@ -150,7 +150,7 @@ async function onSubmit(payload: Organization, update: "basic" | "applications",
 
   resetOnInteraction()
 
-  mainProgress.value += 1
+  progress.value += 1
   try {
     try {
       const url = router.apiResolve({
@@ -160,7 +160,7 @@ async function onSubmit(payload: Organization, update: "basic" | "applications",
         },
       }).href
 
-      await postURL(url, payload, abortController.signal, mainProgress)
+      await postURL(url, payload, abortController.signal, progress)
       if (abortController.signal.aborted) {
         return
       }
@@ -178,7 +178,7 @@ async function onSubmit(payload: Organization, update: "basic" | "applications",
       await loadData(unexpectedError.value ? null : update)
     }
   } finally {
-    mainProgress.value -= 1
+    progress.value -= 1
   }
 }
 
@@ -356,16 +356,16 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
         <template v-else>
           <form class="flex flex-col" novalidate @submit.prevent="onBasicSubmit">
             <label for="name" class="mb-1">Organization name</label>
-            <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0 || !metadata.can_update" required />
+            <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" required />
             <label for="description" class="mb-1 mt-4">Description<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label>
-            <TextArea id="description" v-model="description" class="flex-grow flex-auto min-w-0" :readonly="mainProgress > 0 || !metadata.can_update" />
+            <TextArea id="description" v-model="description" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <div v-if="basicUnexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
             <div v-else-if="basicUpdated" class="mt-4 text-success-600">Organization updated successfully.</div>
             <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
               <!--
                 Button is on purpose not disabled on unexpectedError so that user can retry.
               -->
-              <Button type="submit" primary :disabled="!canBasicSubmit() || mainProgress > 0">Update</Button>
+              <Button type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">Update</Button>
             </div>
           </form>
           <h2 v-if="metadata.can_update && (applications.length || canApplicationsSubmit())" class="text-xl font-bold">Added applications</h2>
@@ -400,7 +400,7 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                           :id="`application-${i}-values-${j}`"
                           v-model="value.value"
                           class="flex-grow flex-auto min-w-0 ml-6 mt-1"
-                          :readonly="mainProgress > 0"
+                          :progress="progress"
                           required
                         />
                       </li>
@@ -469,15 +469,15 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                   <div v-if="application.active" class="flex flew-row justify-between items-center gap-4 mt-4">
                     <div>Status: <strong>active</strong></div>
                     <div class="flex flex-row gap-4">
-                      <Button type="button" :disabled="mainProgress > 0" @click.prevent="application.active = false">Disable</Button>
-                      <Button type="button" :disabled="mainProgress > 0" @click.prevent="applications.splice(i, 1)">Remove</Button>
+                      <Button type="button" :progress="progress" @click.prevent="application.active = false">Disable</Button>
+                      <Button type="button" :progress="progress" @click.prevent="applications.splice(i, 1)">Remove</Button>
                     </div>
                   </div>
                   <div v-else class="flex flew-row justify-between items-center gap-4 mt-4">
                     <div>Status: <strong>disabled</strong></div>
                     <div class="flex flex-row gap-4">
-                      <Button type="button" :disabled="mainProgress > 0" @click.prevent="application.active = true">Activate</Button>
-                      <Button type="button" :disabled="mainProgress > 0" @click.prevent="applications.splice(i, 1)">Remove</Button>
+                      <Button type="button" :progress="progress" @click.prevent="application.active = true">Activate</Button>
+                      <Button type="button" :progress="progress" @click.prevent="applications.splice(i, 1)">Remove</Button>
                     </div>
                   </div>
                 </div>
@@ -487,7 +487,7 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
               <!--
                 Button is on purpose not disabled on unexpectedError so that user can retry.
               -->
-              <Button id="applications-update" type="submit" primary :disabled="!canApplicationsSubmit() || mainProgress > 0">Update</Button>
+              <Button id="applications-update" type="submit" primary :disabled="!canApplicationsSubmit()" :progress="progress">Update</Button>
             </div>
           </form>
           <h2 v-if="metadata.can_update" class="text-xl font-bold">Available applications</h2>
@@ -505,7 +505,7 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                       >
                       <span v-if="meta.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">admin</span>
                     </h3>
-                    <Button type="button" :disabled="mainProgress > 0" primary @click.prevent="onAddApplicationTemplate(doc)">Add</Button>
+                    <Button type="button" :progress="progress" primary @click.prevent="onAddApplicationTemplate(doc)">Add</Button>
                   </div>
                   <div v-if="doc.description" class="ml-4">{{ doc.description }}</div>
                 </template>
