@@ -18,6 +18,10 @@
 }
 
 @layer components {
+  a:has(img) {
+    @apply outline-none;
+  }
+
   .link {
     @apply rounded-sm font-medium text-primary-600 outline-none drop-shadow-sm;
 
@@ -26,10 +30,6 @@
 
   .link.disabled {
     @apply text-primary-300 cursor-not-allowed;
-  }
-
-  a:has(img) {
-    @apply outline-none;
   }
 
   a > img {
