@@ -13,6 +13,10 @@ func (s *Service) Home(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 		return
 	}
 
+	// We have it hard-coded here because we have it hard-coded on the frontend as well.
+	w.Header().Add("Link", "</context.json>; rel=preload; as=fetch; crossorigin=anonymous")
+	w.WriteHeader(http.StatusEarlyHints)
+
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
