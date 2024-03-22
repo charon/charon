@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AuthFlowCodeCompleteRequest, AuthFlowCodeStartRequest, AuthFlowResponse } from "@/types"
 
-import { ref, watch, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
+import { ref, watch, onBeforeUnmount, onMounted, getCurrentInstance, inject } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import InputCode from "@/components/InputCode.vue"
@@ -67,7 +67,7 @@ defineExpose({
   onBeforeLeave,
 })
 
-onUnmounted(onBeforeLeave)
+onBeforeUnmount(onBeforeLeave)
 
 function onAfterEnter() {
   if (codeFromHash.value) {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ApplicationTemplate, ApplicationTemplates } from "@/types"
 
-import { onBeforeMount, onUnmounted, ref } from "vue"
+import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useRouter } from "vue-router"
 import ButtonLink from "@/components/ButtonLink.vue"
 import WithDocument from "@/components/WithDocument.vue"
@@ -20,7 +20,7 @@ const dataLoading = ref(true)
 const dataLoadingError = ref("")
 const applicationTemplates = ref<ApplicationTemplates>([])
 
-onUnmounted(() => {
+onBeforeUnmount(() => {
   abortController.abort()
 })
 

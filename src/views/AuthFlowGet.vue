@@ -3,7 +3,7 @@ For flow step components:
 
 Define transition hooks to be called by the parent component through onMounted
 and defineExpose. Use onBeforeLeave to abort the abort controller. Call
-onBeforeLeave as both the transition hook and onUnmounted.
+onBeforeLeave as both the transition hook and onBeforeUnmount.
 
 Use abort controller for async operations. After every await check if it is aborted.
 At the beginning of every event handler check if it is aborted. This allows us to
@@ -18,7 +18,7 @@ elements and links but that should not change how components look.
 <script setup lang="ts">
 import type { AuthFlowResponse, AuthFlowStep, Completed, DeriveOptions, EncryptOptions, LocationResponse, Organization } from "@/types"
 
-import { onBeforeMount, onBeforeUnmount, onMounted, onUnmounted, provide, ref, watch } from "vue"
+import { onBeforeMount, onBeforeUnmount, onMounted, onBeforeUnmount, provide, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import WithDocument from "@/components/WithDocument.vue"
 import Footer from "@/components/Footer.vue"
@@ -66,7 +66,7 @@ const homepage = ref("")
 const organizationId = ref("")
 const completed = ref<Completed>("")
 
-onUnmounted(() => {
+onBeforeUnmount(() => {
   abortController.abort()
 })
 

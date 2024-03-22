@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AuthFlowPasskeyCreateCompleteRequest, AuthFlowResponse } from "@/types"
 
-import { getCurrentInstance, inject, nextTick, onMounted, onUnmounted, ref } from "vue"
+import { getCurrentInstance, inject, nextTick, onMounted, onBeforeUnmount, ref } from "vue"
 import { useRouter } from "vue-router"
 import { startRegistration, WebAuthnAbortService } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
@@ -38,7 +38,7 @@ defineExpose({
   onBeforeLeave,
 })
 
-onUnmounted(onBeforeLeave)
+onBeforeUnmount(onBeforeLeave)
 
 function onAfterEnter() {
   document.getElementById("passkey-signup")?.focus()

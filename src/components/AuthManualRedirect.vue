@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Completed, LocationResponse } from "@/types"
 
-import { ref, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
+import { ref, onBeforeUnmount, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import { injectProgress } from "@/progress"
@@ -44,7 +44,7 @@ defineExpose({
   onBeforeLeave,
 })
 
-onUnmounted(onBeforeLeave)
+onBeforeUnmount(onBeforeLeave)
 
 function onAfterEnter() {
   document.getElementById("redirect")?.focus()

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted, onMounted, getCurrentInstance, inject } from "vue"
+import { ref, computed, watch, onBeforeUnmount, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
 import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
@@ -55,7 +55,7 @@ defineExpose({
   onBeforeLeave,
 })
 
-onUnmounted(onBeforeLeave)
+onBeforeUnmount(onBeforeLeave)
 
 function onAfterEnter() {
   document.getElementById("email")?.focus()

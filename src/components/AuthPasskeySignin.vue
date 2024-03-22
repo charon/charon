@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AuthFlowPasskeyGetCompleteRequest, AuthFlowResponse } from "@/types"
 
-import { getCurrentInstance, inject, onMounted, onUnmounted, ref } from "vue"
+import { getCurrentInstance, inject, onMounted, onBeforeUnmount, ref } from "vue"
 import { useRouter } from "vue-router"
 import { startAuthentication, WebAuthnAbortService } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
@@ -35,7 +35,7 @@ defineExpose({
   onBeforeLeave,
 })
 
-onUnmounted(onBeforeLeave)
+onBeforeUnmount(onBeforeLeave)
 
 function onBeforeLeave() {
   abortController.abort()

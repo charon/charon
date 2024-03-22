@@ -9,7 +9,7 @@ import type {
   Variable,
 } from "@/types"
 
-import { nextTick, onBeforeMount, onUnmounted, ref, watch } from "vue"
+import { nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import InputText from "@/components/InputText.vue"
 import TextArea from "@/components/TextArea.vue"
@@ -91,7 +91,7 @@ function initWatchInteraction() {
 }
 initWatchInteraction()
 
-onUnmounted(() => {
+onBeforeUnmount(() => {
   abortController.abort()
 })
 

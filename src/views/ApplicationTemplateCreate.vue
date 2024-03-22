@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ApplicationTemplateCreate, ApplicationTemplateRef } from "@/types"
 
-import { onMounted, onUnmounted, ref, watch } from "vue"
+import { onMounted, onBeforeUnmount, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import InputText from "@/components/InputText.vue"
 import Button from "@/components/Button.vue"
@@ -26,7 +26,7 @@ function resetOnInteraction() {
 
 watch([name], resetOnInteraction)
 
-onUnmounted(() => {
+onBeforeUnmount(() => {
   abortController.abort()
 })
 

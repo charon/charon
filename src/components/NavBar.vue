@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AuthFlowCreateRequest, AuthFlowCreateResponse, AuthSignoutRequest, AuthSignoutResponse } from "@/types"
 
-import { onUnmounted } from "vue"
+import { onBeforeUnmount } from "vue"
 import { useRouter } from "vue-router"
 import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
 import { GlobeAltIcon } from "@heroicons/vue/24/outline"
@@ -20,7 +20,7 @@ const progress = injectProgress()
 
 const abortController = new AbortController()
 
-onUnmounted(() => {
+onBeforeUnmount(() => {
   abortController.abort()
 })
 
