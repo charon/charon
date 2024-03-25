@@ -34,6 +34,6 @@ withDefaults(
       'bg-white hover:ring-neutral-400 focus:ring-primary-500': !disabled, // InputText.vue non-readonly style.
     }"
   >
-    <slot></slot>
+    <slot />
   </button>
 </template>

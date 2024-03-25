@@ -36,6 +36,6 @@ withDefaults(
         !primary && progress === 0 && !disabled,
     }"
   >
-    <slot></slot>
+    <slot />
   </button>
 </template>
