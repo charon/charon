@@ -142,7 +142,7 @@ async function onNext() {
     if (abortController.signal.aborted) {
       return
     }
-    console.error(error)
+    console.error("AuthCode.onNext", error)
     unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1
@@ -193,7 +193,7 @@ async function onResend() {
     if (abortController.signal.aborted) {
       return
     }
-    console.error(error)
+    console.error("AuthCode.onResend", error)
     unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1

@@ -81,7 +81,7 @@ async function doRedirectOIDC() {
     if (abortController.signal.aborted) {
       return
     }
-    console.error(error)
+    console.error("AuthManualRedirect.doRedirectOIDC", error)
     unexpectedError.value = `${error}`
   }
 }

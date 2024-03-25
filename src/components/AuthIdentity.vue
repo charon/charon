@@ -80,7 +80,7 @@ async function onNext() {
     if (abortController.signal.aborted) {
       return
     }
-    console.error(error)
+    console.error("AuthIdentity.onNext", error)
     unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1
@@ -102,7 +102,7 @@ async function onBack() {
     if (abortController.signal.aborted) {
       return
     }
-    console.error(error)
+    console.error("AuthIdentity.onBack", error)
     unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1
@@ -137,7 +137,7 @@ async function onDecline() {
     if (abortController.signal.aborted) {
       return
     }
-    console.error(error)
+    console.error("AuthIdentity.onDecline", error)
     unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1

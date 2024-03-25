@@ -95,7 +95,7 @@ async function onNext() {
     if (abortController.signal.aborted) {
       return
     }
-    console.error(error)
+    console.error("AuthStart.onBeforeLeave", error)
     unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1

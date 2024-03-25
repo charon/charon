@@ -130,7 +130,7 @@ async function loadData(update: "init" | "basic" | "applications" | null) {
       return
     }
     // TODO: 404 should be shown differently, but probably in the same way for all 404.
-    console.error(error)
+    console.error("OrganizationGet.loadData", error)
     dataLoadingError.value = `${error}`
   } finally {
     dataLoading.value = false
@@ -170,7 +170,7 @@ async function onSubmit(payload: Organization, update: "basic" | "applications",
       if (abortController.signal.aborted) {
         return
       }
-      console.error(error)
+      console.error("OrganizationGet.onSubmit", error)
       unexpectedError.value = `${error}`
     } finally {
       // We update organization state even on errors,

@@ -115,7 +115,7 @@ async function onAfterEnter() {
     if (abortController.signal.aborted) {
       return
     }
-    console.error(error)
+    console.error("AuthPasskeySignin.onAfterEnter", error)
     unexpectedError.value = `${error}`
   }
 }

@@ -134,7 +134,7 @@ async function onRedirect() {
     if (abortController.signal.aborted) {
       return
     }
-    console.error(error)
+    console.error("AuthOIDCProvider.onRedirect", error)
     unexpectedError.value = `${error}`
     // We reset the counter and pause it on an error.
     seconds.value = 3

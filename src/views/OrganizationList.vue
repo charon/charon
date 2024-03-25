@@ -41,7 +41,7 @@ onBeforeMount(async () => {
     if (abortController.signal.aborted) {
       return
     }
-    console.error(error)
+    console.error("OrganizationList.onBeforeMount", error)
     dataLoadingError.value = `${error}`
   } finally {
     dataLoading.value = false

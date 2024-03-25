@@ -131,7 +131,7 @@ async function onPasskeySignup() {
     if (abortController.signal.aborted) {
       return
     }
-    console.error(error)
+    console.error("AuthPasskeySignup.onPasskeySignup", error)
     unexpectedError.value = `${error}`
     signupFailedAtLeastOnce.value = true
   } finally {

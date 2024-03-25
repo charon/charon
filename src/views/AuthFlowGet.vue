@@ -215,7 +215,7 @@ onBeforeMount(async () => {
     if (abortController.signal.aborted) {
       return
     }
-    console.error(error)
+    console.error("AuthFLowGet.onBeforeMount", error)
     unexpectedError.value = `${error}`
   } finally {
     dataLoading.value = false

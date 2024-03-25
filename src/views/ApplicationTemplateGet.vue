@@ -142,7 +142,7 @@ async function loadData(update: "init" | "basic" | "variables" | "clientsPublic"
       return
     }
     // TODO: 404 should be shown differently, but probably in the same way for all 404.
-    console.error(error)
+    console.error("ApplicationTemplateGet.loadData", error)
     dataLoadingError.value = `${error}`
   } finally {
     dataLoading.value = false
@@ -187,7 +187,7 @@ async function onSubmit(
       if (abortController.signal.aborted) {
         return
       }
-      console.error(error)
+      console.error("ApplicationTemplateGet.onSubmit", error)
       unexpectedError.value = `${error}`
     } finally {
       // We update applicationTemplate state even on errors,

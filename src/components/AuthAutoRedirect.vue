@@ -128,7 +128,7 @@ async function doRedirectOIDC() {
     if (abortController.signal.aborted) {
       return
     }
-    console.error(error)
+    console.error("AuthAutoRedirect.doRedirectOIDC", error)
     unexpectedError.value = `${error}`
     // We reset the counter and pause it on an error.
     seconds.value = 3

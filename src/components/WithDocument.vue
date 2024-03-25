@@ -73,7 +73,7 @@ watch(
       if (abortController.signal.aborted) {
         return
       }
-      console.error(error)
+      console.error("WithDocument", error)
       _error.value = `${error}`
       return
     }

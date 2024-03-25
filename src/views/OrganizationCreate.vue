@@ -60,7 +60,7 @@ async function onSubmit() {
     if (abortController.signal.aborted) {
       return
     }
-    console.error(error)
+    console.error("OrganizationCreate.onSubmit", error)
     unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1
