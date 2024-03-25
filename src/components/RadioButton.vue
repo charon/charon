@@ -6,31 +6,33 @@ This is used during transitions/animations to disable the component by directly 
 its DOM attributes without flickering how the component looks.
 -->
 
-<script setup lang="ts">
+<script setup lang="ts" generic="T">
 import { computed } from "vue"
 
 const props = withDefaults(
   defineProps<{
     progress?: number
     disabled?: boolean
-    modelValue?: string
+    modelValue?: T
   }>(),
   {
     progress: 0,
     disabled: false,
-    modelValue: "",
+    modelValue: undefined,
   },
 )
 
 const $emit = defineEmits<{
-  "update:modelValue": [value: string]
+  "update:modelValue": [value: T]
 }>()
 
 const v = computed({
   get() {
-    return props.modelValue
+    // We use ! operator here to satisfy type constraints and assert that modelValue cannot be undefined,
+    // but in fact modelValue can be undefined, but that is handled correctly by Vue's v-model on <input>.
+    return props.modelValue!
   },
-  set(value: string) {
+  set(value: T) {
     $emit("update:modelValue", value)
   },
 })
