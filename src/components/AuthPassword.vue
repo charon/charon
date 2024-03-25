@@ -3,9 +3,9 @@ import type { AuthFlowCodeStartRequest, AuthFlowPasswordCompleteRequest, AuthFlo
 
 import { ref, watch, onBeforeUnmount, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
-import Button from "@/components/Button.vue"
-import InputText from "@/components/InputText.vue"
-import InputTextButton from "@/components/InputTextButton.vue"
+import Button from "@/general/Button.vue"
+import InputText from "@/general/InputText.vue"
+import InputTextButton from "@/general/InputTextButton.vue"
 import { postURL, startPassword } from "@/api"
 import { processCompletedAndLocationRedirect, toBase64, isEmail } from "@/utils"
 import { flowKey, updateStepsNoCode } from "@/flow"

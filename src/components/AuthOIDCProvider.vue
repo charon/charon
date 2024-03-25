@@ -3,7 +3,7 @@ import type { AuthFlowProviderStartRequest, AuthFlowResponse } from "@/types"
 
 import { ref, onBeforeUnmount, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
-import Button from "@/components/Button.vue"
+import Button from "@/general/Button.vue"
 import { postURL } from "@/api"
 import { processCompletedAndLocationRedirect } from "@/utils"
 import { flowKey, providerName } from "@/flow"

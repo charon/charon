@@ -4,7 +4,7 @@ import type { AuthFlowPasskeyGetCompleteRequest, AuthFlowResponse } from "@/type
 import { getCurrentInstance, inject, onMounted, onBeforeUnmount, ref } from "vue"
 import { useRouter } from "vue-router"
 import { startAuthentication, WebAuthnAbortService } from "@simplewebauthn/browser"
-import Button from "@/components/Button.vue"
+import Button from "@/general/Button.vue"
 import { postURL } from "@/api"
 import { processCompletedAndLocationRedirect } from "@/utils"
 import { flowKey } from "@/flow"

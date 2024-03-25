@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ButtonLink from "@/components/ButtonLink.vue"
+import ButtonLink from "@/general/ButtonLink.vue"
 import NavBar from "@/components/NavBar.vue"
 import Footer from "@/components/Footer.vue"
 </script>

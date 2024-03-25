@@ -20,9 +20,9 @@ import type { AuthFlowResponse, AuthFlowStep, Completed, DeriveOptions, EncryptO
 
 import { onBeforeMount, onBeforeUnmount, onMounted, provide, ref, watch } from "vue"
 import { useRouter } from "vue-router"
-import WithDocument from "@/components/WithDocument.vue"
+import WithDocument from "@/general/WithDocument.vue"
 import Footer from "@/components/Footer.vue"
-import Stepper from "@/components/Stepper.vue"
+import Stepper from "@/general/Stepper.vue"
 import AuthStart from "@/components/AuthStart.vue"
 import AuthOIDCProvider from "@/components/AuthOIDCProvider.vue"
 import AuthPassword from "@/components/AuthPassword.vue"
