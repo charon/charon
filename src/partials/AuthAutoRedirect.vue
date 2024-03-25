@@ -1,17 +1,20 @@
 <script setup lang="ts">
-import type { AuthFlowProviderStartRequest, AuthFlowResponse } from "@/types"
+import type { Completed, LocationResponse } from "@/types"
 
 import { ref, onBeforeUnmount, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
-import Button from "@/general/Button.vue"
-import { postURL } from "@/api"
-import { processCompletedAndLocationRedirect } from "@/utils"
-import { flowKey, providerName } from "@/flow"
+import Button from "@/components/Button.vue"
 import { injectProgress } from "@/progress"
+import { redirectServerSide } from "@/utils"
+import { flowKey } from "@/flow"
+import { redirectOIDC } from "@/api"
 
 const props = defineProps<{
   id: string
-  provider: string
+  name: string
+  completed: Completed
+  location: LocationResponse
+  target: "session" | "oidc"
 }>()
 
 const router = useRouter()
@@ -77,7 +80,8 @@ async function onBack() {
   clearInterval(interval)
   interval = 0
   abortController.abort()
-  flow!.backward("start")
+  flow!.updateCompleted("signinOrSignup")
+  flow!.backward("identity")
 }
 
 async function onPauseResume() {
@@ -106,41 +110,29 @@ async function onRedirect() {
   interval = 0
   resetOnInteraction()
 
-  progress.value += 1
-  try {
-    const url = router.apiResolve({
-      name: "AuthFlowProviderStart",
-      params: {
-        id: props.id,
-      },
-    }).href
+  if (props.target === "session") {
+    await doRedirectSession()
+  } else {
+    await doRedirectOIDC()
+  }
+}
 
-    const response = await postURL<AuthFlowResponse>(
-      url,
-      {
-        provider: props.provider,
-      } as AuthFlowProviderStartRequest,
-      abortController.signal,
-      progress,
-    )
-    if (abortController.signal.aborted) {
-      return
-    }
-    if (processCompletedAndLocationRedirect(response, flow, progress, abortController)) {
-      return
-    }
-    throw new Error("unexpected response")
+async function doRedirectSession() {
+  redirectServerSide(props.location.url, props.location.replace, progress)
+}
+
+async function doRedirectOIDC() {
+  try {
+    await redirectOIDC(router, props.id, flow!, abortController, progress)
   } catch (error) {
     if (abortController.signal.aborted) {
       return
     }
-    console.error("AuthOIDCProvider.onRedirect", error)
+    console.error("AuthAutoRedirect.doRedirectOIDC", error)
     unexpectedError.value = `${error}`
     // We reset the counter and pause it on an error.
     seconds.value = 3
     paused.value = true
-  } finally {
-    progress.value -= 1
   }
 }
 
@@ -176,17 +168,22 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
-    <div>
-      You will be redirected to <strong>{{ providerName(provider) }}</strong> in {{ seconds === 1 ? "1 second" : `${seconds} seconds` }}{{ paused ? " (paused)" : "" }}.
+    <div v-if="completed === 'signin'" class="mb-4"><strong>Congratulations.</strong> You successfully signed in.</div>
+    <div v-else-if="completed === 'signup'" class="mb-4"><strong>Congratulations.</strong> You successfully signed up.</div>
+    <div v-else-if="completed === 'identity'" class="mb-4">
+      <strong>Congratulations.</strong> Everything is ready to sign you in or sign you up into {{ name }} using the identity you have chosen.
     </div>
-    <div class="mt-4">Please follow instructions there to sign-in into Charon. Afterwards, you will be redirected back here.</div>
-    <div class="mt-4">
-      You might have to sign-in into {{ providerName(provider) }} first. You might be redirected back by {{ providerName(provider) }} immediately, without showing you
-      anything.
-    </div>
+    <div v-else-if="completed === 'declined'" class="mb-4">You decided to <strong>decline sign-in or sign-up</strong> into {{ name }} using Charon.</div>
+    <div>You will be now redirected to {{ name }} in {{ seconds === 1 ? "1 second" : `${seconds} seconds` }}{{ paused ? " (paused)" : "" }}.</div>
     <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
-    <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" tabindex="3" @click.prevent="onBack">Back</Button>
+    <div
+      class="mt-4 flex flex-row gap-4"
+      :class="{
+        'justify-between': target === 'oidc',
+        'justify-end': target === 'session',
+      }"
+    >
+      <Button v-if="target === 'oidc'" type="button" tabindex="3" @click.prevent="onBack">Back</Button>
       <div class="flex flex-row gap-4">
         <Button type="button" tabindex="2" :progress="progress" @click.prevent="onPauseResume">{{ paused ? "Resume" : "Pause" }}</Button>
         <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">Redirect</Button>

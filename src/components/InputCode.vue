@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import InputText from "@/general/InputText.vue"
+import InputText from "@/components/InputText.vue"
 import { onMounted, ref } from "vue"
 
 defineProps<{

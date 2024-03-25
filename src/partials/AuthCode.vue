@@ -3,8 +3,8 @@ import type { AuthFlowCodeCompleteRequest, AuthFlowCodeStartRequest, AuthFlowRes
 
 import { ref, watch, onBeforeUnmount, onMounted, getCurrentInstance, inject } from "vue"
 import { useRoute, useRouter } from "vue-router"
-import Button from "@/general/Button.vue"
-import InputCode from "@/general/InputCode.vue"
+import Button from "@/components/Button.vue"
+import InputCode from "@/components/InputCode.vue"
 import { postURL } from "@/api"
 import { processCompletedAndLocationRedirect, isEmail } from "@/utils"
 import { flowKey } from "@/flow"

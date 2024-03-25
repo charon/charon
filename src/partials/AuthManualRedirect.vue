@@ -3,7 +3,7 @@ import type { Completed, LocationResponse } from "@/types"
 
 import { ref, onBeforeUnmount, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
-import Button from "@/general/Button.vue"
+import Button from "@/components/Button.vue"
 import { injectProgress } from "@/progress"
 import { redirectServerSide } from "@/utils"
 import { flowKey } from "@/flow"
