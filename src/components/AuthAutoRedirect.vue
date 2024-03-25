@@ -111,17 +111,17 @@ async function onRedirect() {
   resetOnInteraction()
 
   if (props.target === "session") {
-    await onRedirectSession()
+    await doRedirectSession()
   } else {
-    await onRedirectOIDC()
+    await doRedirectOIDC()
   }
 }
 
-async function onRedirectSession() {
+async function doRedirectSession() {
   redirectServerSide(props.location.url, props.location.replace, progress)
 }
 
-async function onRedirectOIDC() {
+async function doRedirectOIDC() {
   try {
     await redirectOIDC(router, props.id, flow!, abortController, progress)
   } catch (error) {

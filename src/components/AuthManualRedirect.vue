@@ -64,9 +64,9 @@ async function onRedirect() {
   if (props.target === "session") {
     await onRedirectSession()
   } else if (props.completed === "failed") {
-    await onRedirectOIDC()
+    await doRedirectOIDC()
   } else {
-    await onRedirectHomepage()
+    await doRedirectHomepage()
   }
 }
 
@@ -74,7 +74,7 @@ async function onRedirectSession() {
   redirectServerSide(props.location.url, props.location.replace, progress)
 }
 
-async function onRedirectOIDC() {
+async function doRedirectOIDC() {
   try {
     await redirectOIDC(router, props.id, flow!, abortController, progress)
   } catch (error) {
@@ -86,7 +86,7 @@ async function onRedirectOIDC() {
   }
 }
 
-async function onRedirectHomepage() {
+async function doRedirectHomepage() {
   redirectServerSide(props.homepage, true, progress)
 }
 </script>
