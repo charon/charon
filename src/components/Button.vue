@@ -6,10 +6,6 @@ This is used during transitions/animations to disable the component by directly 
 its DOM attributes without flickering how the component looks.
 -->
 
-<!--
-TODO: Primary button and non-primary button should have the same size (especially height).
--->
-
 <script setup lang="ts">
 withDefaults(
   defineProps<{
