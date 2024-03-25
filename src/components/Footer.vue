@@ -4,7 +4,7 @@
       <!-- <li><router-link :to="{ name: 'Home' }" class="link">About</router-link></li>
       <li><router-link :to="{ name: 'Home' }" class="link">Help</router-link></li>
       <li><router-link :to="{ name: 'Home' }" class="link">Privacy</router-link></li>
-      <li><router-link :to="{ name: 'Home }" class="link">Terms</router-link></li> -->
+      <li><router-link :to="{ name: 'Home' }" class="link">Terms</router-link></li> -->
     </ul>
     <ul class="flex gap-x-2 sm:gap-x-4">
       <li class="text-neutral-500">Powered by <a href="https://gitlab.com/charon/charon" class="link">Charon</a></li>
