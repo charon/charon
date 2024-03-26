@@ -39,6 +39,14 @@ const emailOrUsernameProxy = computed({
     return props.emailOrUsername
   },
   set(v: string) {
+    if (abortController.signal.aborted) {
+      return
+    }
+
+    // We do not call resetOnInteraction here because we are using watch to
+    // watch props.emailOrUsername which does so, which is the same pattern
+    // we are using elsewhere (even when not using writable computed refs).
+
     flow!.updateEmailOrUsername(v)
   },
 })
