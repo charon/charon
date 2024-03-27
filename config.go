@@ -197,10 +197,10 @@ type Config struct {
 	Config  cli.ConfigFlag    `         help:"Load configuration from a JSON or YAML file." name:"config" placeholder:"PATH" short:"c" yaml:"-"`
 	Server  waf.Server[*Site] `embed:""                                                                                                yaml:",inline"`
 
-	Domains      []string             `                  help:"Domain name(s) to use. If not provided, they are determined from domain names found in TLS certificates."                                                               name:"domain" placeholder:"STRING"  yaml:"domains"`
-	MainDomain   string               `                  help:"When using multiple domains, which one is the main one."                                                                                                                                                             yaml:"mainDomain"`
-	ExternalPort int                  `                  help:"Port on which Charon is accessible when it is different from the port on which the program listens."                                                                                  placeholder:"INT"              yaml:"externalPort"`
-	Secret       kong.FileContentFlag `env:"SECRET_PATH" help:"File with base64 (URL encoding, no padding) encoded 32 bytes with \"${secretPrefixCharonConfig}\" prefix used for session and OIDC HMAC. Environment variable: ${env}."               placeholder:"PATH"             yaml:"secret"`
+	Domains      []string             `                  help:"Domain name(s) to use. If not provided, they are determined from domain names found in TLS certificates."                                                               name:"domain" placeholder:"STRING" yaml:"domains"`
+	MainDomain   string               `                  help:"When using multiple domains, which one is the main one."                                                                                                                                                   yaml:"mainDomain"`
+	ExternalPort int                  `                  help:"Port on which Charon is accessible when it is different from the port on which the program listens."                                                                                  placeholder:"INT"    yaml:"externalPort"`
+	Secret       kong.FileContentFlag `env:"SECRET_PATH" help:"File with base64 (URL encoding, no padding) encoded 32 bytes with \"${secretPrefixCharonConfig}\" prefix used for session and OIDC HMAC. Environment variable: ${env}."               placeholder:"PATH"   yaml:"secret"`
 
 	Providers Providers `embed:"" group:"Providers:" yaml:"providers"`
 
