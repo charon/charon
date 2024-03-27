@@ -67,4 +67,4 @@ audit: dist/index.html
 	go list -json -deps ./... | nancy sleuth --skip-update-check
 
 watch:
-	CompileDaemon -build="make --silent build" -command="./charon -d -k localhost+2.pem -K localhost+2-key.pem" -include="*.json" -include="go.mod" -include="go.sum" -exclude-dir=.git -graceful-kill=true -log-prefix=false -color=true
+	CompileDaemon -build="make --silent build" -command="./charon -D -k localhost+2.pem -K localhost+2-key.pem" -include="*.json" -include="go.mod" -include="go.sum" -exclude-dir=.git -graceful-kill=true -log-prefix=false -color=true

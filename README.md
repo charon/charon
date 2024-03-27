@@ -123,17 +123,17 @@ Then clone the repository and run:
 
 ```sh
 make
-./charon -d -k localhost+2.pem -K localhost+2-key.pem
+./charon -D -k localhost+2.pem -K localhost+2-key.pem
 ```
 
 `localhost+2.pem` and `localhost+2-key.pem` are files of a TLS certificate
 generated as described in the [Usage section](#usage).
 Backend listens at [https://localhost:8080/](https://localhost:8080/).
 
-`-d` CLI flag makes the backend proxy unknown requests (non-API requests)
+`-D` CLI flag makes the backend proxy unknown requests (non-API requests)
 to the frontend. In this mode any placeholders in HTML files are not rendered.
 Charon also expects a secret and private keys to use. During development, you can
-use self-generated ones with the `-d` CLI flag.
+use self-generated ones with the `-D` CLI flag.
 
 Because SMTP is not configured during development, e-mails (with codes) will be printed out to the console instead.
 

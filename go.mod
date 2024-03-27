@@ -17,7 +17,7 @@ require (
 	gitlab.com/tozd/go/x v0.0.0-20240319120849-eb6a32121198
 	gitlab.com/tozd/go/zerolog v0.6.0
 	gitlab.com/tozd/identifier v0.1.0
-	gitlab.com/tozd/waf v0.14.0
+	gitlab.com/tozd/waf v0.17.0
 	golang.org/x/oauth2 v0.13.0
 )
 
