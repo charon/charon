@@ -11,7 +11,7 @@ import (
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/protocol/webauthncose"
 	"github.com/go-webauthn/webauthn/webauthn"
-	"github.com/rs/zerolog/hlog"
+	"github.com/rs/zerolog"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/waf"
@@ -248,7 +248,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 	credentialID := base64.RawURLEncoding.EncodeToString(credential.ID)
 
 	if credential.Authenticator.CloneWarning {
-		hlog.FromRequest(req).Warn().Str("credential", credentialID).Msg("authenticator may be cloned")
+		zerolog.Ctx(ctx).Warn().Str("credential", credentialID).Msg("authenticator may be cloned")
 	}
 
 	jsonData, errE := x.MarshalWithoutEscapeHTML(credential)
