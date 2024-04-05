@@ -17,7 +17,7 @@ require (
 	gitlab.com/tozd/go/x v0.0.0-20240319120849-eb6a32121198
 	gitlab.com/tozd/go/zerolog v0.6.0
 	gitlab.com/tozd/identifier v0.1.0
-	gitlab.com/tozd/waf v0.17.0
+	gitlab.com/tozd/waf v0.18.0
 	golang.org/x/oauth2 v0.13.0
 )
 
@@ -126,7 +126,6 @@ require (
 	github.com/sergi/go-diff v1.3.1 // indirect
 	github.com/skeema/knownhosts v1.2.1 // indirect
 	github.com/stretchr/testify v1.8.4
-	github.com/tozd/go-server-timing v0.0.0-20231113225037-9110c404323f // indirect
 	github.com/whilp/git-urls v1.0.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	golang.org/x/crypto v0.20.0 // indirect
