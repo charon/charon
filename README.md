@@ -211,7 +211,7 @@ you to the backend which then proxies unknown requests (non-API requests) to the
 There is also a [read-only GitHub mirror available](https://github.com/charon/charon),
 if you need to fork the project there.
 
-## Funding
+## Acknowledgements
 
 This project was funded through the [NGI Zero Entrust](https://nlnet.nl/entrust/), a
 fund established by NLnet with financial support from the European Commission's
