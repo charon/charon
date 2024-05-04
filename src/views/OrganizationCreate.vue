@@ -7,7 +7,7 @@ import InputText from "@/components/InputText.vue"
 import Button from "@/components/Button.vue"
 import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
-import { postURL } from "@/api"
+import { postJSON } from "@/api"
 import { injectProgress } from "@/progress"
 
 const router = useRouter()
@@ -50,7 +50,7 @@ async function onSubmit() {
       name: "OrganizationCreate",
     }).href
 
-    const organization = await postURL<OrganizationRef>(url, payload, abortController.signal, progress)
+    const organization = await postJSON<OrganizationRef>(url, payload, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }

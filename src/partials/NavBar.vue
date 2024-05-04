@@ -7,7 +7,7 @@ import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
 import { GlobeAltIcon } from "@heroicons/vue/24/outline"
 import Button from "@/components/Button.vue"
 import { useNavbar } from "@/navbar"
-import { postURL } from "@/api"
+import { postJSON } from "@/api"
 import { injectProgress } from "@/progress"
 import { redirectServerSide } from "@/utils"
 import me from "@/me"
@@ -39,7 +39,7 @@ async function onSignOut() {
       name: "AuthSignout",
     }).href
 
-    const response = await postURL<AuthSignoutResponse>(url, payload, abortController.signal, progress)
+    const response = await postJSON<AuthSignoutResponse>(url, payload, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }
@@ -80,7 +80,7 @@ async function onSignIn() {
       name: "AuthFlowCreate",
     }).href
 
-    const response = await postURL<AuthFlowCreateResponse>(url, payload, abortController.signal, progress)
+    const response = await postJSON<AuthFlowCreateResponse>(url, payload, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }

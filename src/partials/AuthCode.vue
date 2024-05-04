@@ -5,7 +5,7 @@ import { ref, watch, onBeforeUnmount, onMounted, getCurrentInstance, inject } fr
 import { useRoute, useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import InputCode from "@/components/InputCode.vue"
-import { postURL } from "@/api"
+import { postJSON } from "@/api"
 import { processCompletedAndLocationRedirect, isEmail } from "@/utils"
 import { flowKey } from "@/flow"
 import { injectProgress } from "@/progress"
@@ -119,7 +119,7 @@ async function onNext() {
       },
     }).href
 
-    const response = await postURL<AuthFlowResponse>(
+    const response = await postJSON<AuthFlowResponse>(
       url,
       {
         code: code.value,
@@ -167,7 +167,7 @@ async function onResend() {
       },
     }).href
 
-    const response = await postURL<AuthFlowResponse>(
+    const response = await postJSON<AuthFlowResponse>(
       url,
       {
         emailOrUsername: props.emailOrUsername,

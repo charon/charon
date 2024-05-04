@@ -17,7 +17,7 @@ import Button from "@/components/Button.vue"
 import RadioButton from "@/components/RadioButton.vue"
 import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
-import { getURL, postURL } from "@/api"
+import { getURL, postJSON } from "@/api"
 import { clone, equals } from "@/utils"
 import { injectProgress } from "@/progress"
 
@@ -177,7 +177,7 @@ async function onSubmit(
         },
       }).href
 
-      await postURL(url, payload, abortController.signal, progress)
+      await postJSON(url, payload, abortController.signal, progress)
       if (abortController.signal.aborted) {
         return
       }

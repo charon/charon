@@ -7,7 +7,7 @@ import InputText from "@/components/InputText.vue"
 import Button from "@/components/Button.vue"
 import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
-import { postURL } from "@/api"
+import { postJSON } from "@/api"
 import { injectProgress } from "@/progress"
 
 const router = useRouter()
@@ -50,7 +50,7 @@ async function onSubmit() {
       name: "ApplicationTemplateCreate",
     }).href
 
-    const applicationTemplate = await postURL<ApplicationTemplateRef>(url, payload, abortController.signal, progress)
+    const applicationTemplate = await postJSON<ApplicationTemplateRef>(url, payload, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }

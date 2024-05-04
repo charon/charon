@@ -5,7 +5,7 @@ import { getCurrentInstance, inject, onMounted, onBeforeUnmount, ref } from "vue
 import { useRouter } from "vue-router"
 import { startAuthentication, WebAuthnAbortService } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
-import { postURL } from "@/api"
+import { postJSON } from "@/api"
 import { processCompletedAndLocationRedirect } from "@/utils"
 import { flowKey } from "@/flow"
 import { injectProgress } from "@/progress"
@@ -57,7 +57,7 @@ async function onAfterEnter() {
       },
     }).href
 
-    const start = await postURL<AuthFlowResponse>(
+    const start = await postJSON<AuthFlowResponse>(
       startUrl,
       {},
       abortController.signal,
@@ -93,7 +93,7 @@ async function onAfterEnter() {
     // We do not allow cancel after this point.
     progress.value += 1
     try {
-      const complete = await postURL<AuthFlowResponse>(
+      const complete = await postJSON<AuthFlowResponse>(
         completeUrl,
         {
           getResponse: assertion,

@@ -5,7 +5,7 @@ import { ref, onBeforeUnmount, onMounted, getCurrentInstance, inject } from "vue
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import { injectProgress } from "@/progress"
-import { postURL, restartAuth } from "@/api"
+import { postJSON, restartAuth } from "@/api"
 import { flowKey } from "@/flow"
 import { processCompletedAndLocationRedirect } from "@/utils"
 
@@ -68,7 +68,7 @@ async function onNext() {
       },
     }).href
 
-    const response = await postURL<AuthFlowResponse>(url, {}, abortController.signal, progress)
+    const response = await postJSON<AuthFlowResponse>(url, {}, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }
@@ -125,7 +125,7 @@ async function onDecline() {
       },
     }).href
 
-    const response = await postURL<AuthFlowResponse>(url, {}, abortController.signal, progress)
+    const response = await postJSON<AuthFlowResponse>(url, {}, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }

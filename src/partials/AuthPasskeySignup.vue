@@ -5,7 +5,7 @@ import { getCurrentInstance, inject, nextTick, onMounted, onBeforeUnmount, ref }
 import { useRouter } from "vue-router"
 import { startRegistration, WebAuthnAbortService } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
-import { postURL } from "@/api"
+import { postJSON } from "@/api"
 import { processCompletedAndLocationRedirect } from "@/utils"
 import { flowKey } from "@/flow"
 import { injectProgress } from "@/progress"
@@ -81,7 +81,7 @@ async function onPasskeySignup() {
       },
     }).href
 
-    const start = await postURL<AuthFlowResponse>(startUrl, {}, abortController.signal, progress)
+    const start = await postJSON<AuthFlowResponse>(startUrl, {}, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }
@@ -112,7 +112,7 @@ async function onPasskeySignup() {
       return
     }
 
-    const complete = await postURL<AuthFlowResponse>(
+    const complete = await postJSON<AuthFlowResponse>(
       completeUrl,
       {
         createResponse: attestation,

@@ -6,7 +6,7 @@ import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import InputTextButton from "@/components/InputTextButton.vue"
-import { postURL, startPassword } from "@/api"
+import { postJSON, startPassword } from "@/api"
 import { processCompletedAndLocationRedirect, toBase64, isEmail } from "@/utils"
 import { flowKey, updateStepsNoCode } from "@/flow"
 import { injectProgress } from "@/progress"
@@ -205,7 +205,7 @@ async function onNext() {
     if (abortController.signal.aborted) {
       return
     }
-    const response = await postURL<AuthFlowResponse>(
+    const response = await postJSON<AuthFlowResponse>(
       url,
       {
         publicKey: toBase64(new Uint8Array(publicKeyBytes)),
@@ -272,7 +272,7 @@ async function onCode() {
     flow!.updateDeriveOptions()
     flow!.updateEncryptOptions()
 
-    const response = await postURL<AuthFlowResponse>(
+    const response = await postJSON<AuthFlowResponse>(
       url,
       {
         emailOrUsername: props.emailOrUsername,

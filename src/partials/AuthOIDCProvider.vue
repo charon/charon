@@ -4,7 +4,7 @@ import type { AuthFlowProviderStartRequest, AuthFlowResponse } from "@/types"
 import { ref, onBeforeUnmount, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
-import { postURL } from "@/api"
+import { postJSON } from "@/api"
 import { processCompletedAndLocationRedirect } from "@/utils"
 import { flowKey, providerName } from "@/flow"
 import { injectProgress } from "@/progress"
@@ -115,7 +115,7 @@ async function onRedirect() {
       },
     }).href
 
-    const response = await postURL<AuthFlowResponse>(
+    const response = await postJSON<AuthFlowResponse>(
       url,
       {
         provider: props.provider,

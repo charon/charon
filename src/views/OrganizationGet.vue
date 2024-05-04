@@ -11,7 +11,7 @@ import Button from "@/components/Button.vue"
 import WithDocument from "@/components/WithDocument.vue"
 import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
-import { getURL, postURL } from "@/api"
+import { getURL, postJSON } from "@/api"
 import { setupArgon2id } from "@/argon2id"
 import { clone, equals } from "@/utils"
 import { injectProgress } from "@/progress"
@@ -160,7 +160,7 @@ async function onSubmit(payload: Organization, update: "basic" | "applications",
         },
       }).href
 
-      await postURL(url, payload, abortController.signal, progress)
+      await postJSON(url, payload, abortController.signal, progress)
       if (abortController.signal.aborted) {
         return
       }

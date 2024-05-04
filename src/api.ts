@@ -61,7 +61,7 @@ export async function getURL<T>(
   }
 }
 
-export async function postURL<T>(url: string, data: object, abortSignal: AbortSignal, progress: Ref<number> | null): Promise<T> {
+export async function postJSON<T>(url: string, data: object, abortSignal: AbortSignal, progress: Ref<number> | null): Promise<T> {
   if (progress) {
     progress.value += 1
   }
@@ -115,7 +115,7 @@ export async function startPassword(
       },
     }).href
 
-    const response = await postURL<AuthFlowResponse>(
+    const response = await postJSON<AuthFlowResponse>(
       url,
       {
         emailOrUsername,
@@ -173,7 +173,7 @@ export async function restartAuth(router: Router, flowId: string, flow: Flow, ab
       },
     }).href
 
-    const response = await postURL<AuthFlowResponse>(url, {}, abortSignal, progress)
+    const response = await postJSON<AuthFlowResponse>(url, {}, abortSignal, progress)
     if (abortSignal.aborted) {
       return
     }
@@ -208,7 +208,7 @@ export async function redirectOIDC(router: Router, flowId: string, flow: Flow, a
       },
     }).href
 
-    const response = await postURL<AuthFlowResponse>(url, {}, abortController.signal, progress)
+    const response = await postJSON<AuthFlowResponse>(url, {}, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }
