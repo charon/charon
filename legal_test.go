@@ -1,5 +1,7 @@
 package charon_test
 
+// File should not be named license* or notice* so that it is not detected as legal text by various tooling.
+
 import (
 	"testing"
 )
