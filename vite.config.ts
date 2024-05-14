@@ -12,6 +12,10 @@ export default defineConfig({
     license({
       sourcemap: true,
       thirdParty: {
+        includeSelf: true,
+        // TODO: Remove includePrivate.
+        //       See: https://github.com/mjeanroy/rollup-plugin-license/issues/1685#issuecomment-2110103508
+        includePrivate: true,
         allow: {
           test: "(Apache-2.0 OR MIT OR BSD-2-Clause OR BSD-3-Clause OR ISC)",
           failOnUnlicensed: true,
