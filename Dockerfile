@@ -7,6 +7,7 @@ RUN apk --update add make bash
 COPY . /src/charon
 WORKDIR /src/charon
 RUN \
+  npm install -g npm@latest && \
   npm ci --audit=false && \
   npm audit signatures && \
   make dist
