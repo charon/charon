@@ -40,7 +40,7 @@
     "vue-router": "^4.3.2"
   },
   "devDependencies": {
-    "@babel/types": "^7.24.5",
+    "@babel/types": "^7.24.6",
     "@headlessui/tailwindcss": "^0.2.0",
     "@simplewebauthn/types": "^10.0.0",
     "@tailwindcss/forms": "^0.5.7",
@@ -62,7 +62,7 @@
     "prettier": "^3.2.5",
     "prettier-plugin-tailwindcss": "^0.5.14",
     "rollup-plugin-license": "^3.4.0",
-    "stylelint": "^16.5.0",
+    "stylelint": "^16.6.0",
     "stylelint-config-standard": "^36.0.0",
     "stylelint-config-standard-vue": "^1.0.0",
     "stylelint-config-tailwindcss": "^0.0.7",
@@ -70,6 +70,6 @@
     "typescript": "^5.4.5",
     "vite": "^5.2.11",
     "vitest": "^1.6.0",
-    "vue-tsc": "^2.0.17"
+    "vue-tsc": "^2.0.19"
   }
 }
