@@ -7,7 +7,6 @@ import (
 	"slices"
 	"strings"
 	tt "text/template"
-	"time"
 	"unicode"
 
 	"gitlab.com/tozd/go/errors"
@@ -404,5 +403,5 @@ func (s *Service) AuthFlowCodeCompletePost(w http.ResponseWriter, req *http.Requ
 		}
 	}
 
-	s.completeAuthStep(w, req, true, flow, account, flow.Code.Credentials, time.Now().UTC())
+	s.completeAuthStep(w, req, true, flow, account, flow.Code.Credentials)
 }

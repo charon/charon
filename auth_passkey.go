@@ -263,7 +263,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		return
 	}
 
-	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: credentialID, Provider: PasskeyProvider, Data: jsonData}}, time.Now().UTC())
+	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: credentialID, Provider: PasskeyProvider, Data: jsonData}})
 }
 
 func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
@@ -391,5 +391,5 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: credentialID, Provider: PasskeyProvider, Data: jsonData}}, time.Now().UTC())
+	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: credentialID, Provider: PasskeyProvider, Data: jsonData}})
 }

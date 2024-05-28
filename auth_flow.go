@@ -191,7 +191,7 @@ func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api 
 	return session, false
 }
 
-func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *Flow, account *Account, credentials []Credential, authTime time.Time) {
+func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *Flow, account *Account, credentials []Credential) {
 	ctx := req.Context()
 
 	var completed Completed
@@ -250,7 +250,8 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	flow.Session = &sessionID
 	flow.Completed = completed
 	flow.OIDCRedirectReady = false
-	flow.AuthTime = &authTime
+	now := time.Now().UTC()
+	flow.AuthTime = &now
 
 	// Everything should already be set to nil at this point, but just to make sure.
 	flow.ClearAuthStepAll()

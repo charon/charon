@@ -7,11 +7,8 @@ import (
 	"io"
 	"net/http"
 	"slices"
-	"strconv"
-	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/hashicorp/go-cleanhttp"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
@@ -27,9 +24,6 @@ type oidcProvider struct {
 	Client       *http.Client
 	SupportsPKCE bool
 }
-
-//nolint:gochecknoglobals,gomnd
-var oidcMaxAge = strconv.Itoa(365 * 24 * 60 * 60)
 
 func initOIDCProviders(config *Config, service *Service, domain string, providers []SiteProvider) (func() map[Provider]oidcProvider, errors.E) {
 	return initWithHost(config, domain, func(host string) map[Provider]oidcProvider {
@@ -138,10 +132,7 @@ func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	opts := []oauth2.AuthCodeOption{
-		// We always use "max_age" so that we force getting "auth_time" claim value.
-		oauth2.SetAuthURLParam("max_age", oidcMaxAge),
-	}
+	opts := []oauth2.AuthCodeOption{}
 
 	flow.ClearAuthStep("")
 	flow.Provider = providerName
@@ -275,18 +266,6 @@ func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, par
 		return
 	}
 
-	//nolint:tagliatelle
-	var claims struct {
-		AuthTime *jwt.NumericDate `json:"auth_time"`
-	}
-	err = idToken.Claims(&claims)
-	if err != nil {
-		errE = errors.WithStack(err)
-		errors.Details(errE)["provider"] = providerName
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
 	account, errE := GetAccountByCredential(ctx, providerName, idToken.Subject)
 	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
 		errors.Details(errE)["provider"] = providerName
@@ -294,15 +273,5 @@ func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, par
 		return
 	}
 
-	var authTime time.Time
-	if claims.AuthTime != nil {
-		// We inherit authentication time from the provider if it provides it.
-		authTime = claims.AuthTime.Time().UTC()
-	} else {
-		errE = errors.New("provider did not provide authentication time")
-		errors.Details(errE)["provider"] = providerName
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-	s.completeAuthStep(w, req, false, flow, account, []Credential{{ID: idToken.Subject, Provider: providerName, Data: jsonData}}, authTime)
+	s.completeAuthStep(w, req, false, flow, account, []Credential{{ID: idToken.Subject, Provider: providerName, Data: jsonData}})
 }
