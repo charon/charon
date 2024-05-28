@@ -37,7 +37,7 @@ func (s *Service) oidcUserInfo(w http.ResponseWriter, req *http.Request) {
 
 	if tokenType != fosite.AccessToken {
 		errE := errors.New("only access tokens are allowed in the authorization header")
-		w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Bearer error="invalid_token",error_description="%s"`, err.Error()))
+		w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Bearer error="invalid_token",error_description="%s"`, errE.Error()))
 		s.WithError(ctx, errE)
 		waf.Error(w, req, http.StatusUnauthorized)
 		return
