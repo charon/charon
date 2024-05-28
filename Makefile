@@ -12,7 +12,7 @@ ifeq ($(REVISION),)
  REVISION = `git rev-parse HEAD`
 endif
 
-.PHONY: build build-static test test-ci lint lint-ci fmt fmt-ci clean release lint-docs audit watch
+.PHONY: build build-static test test-ci lint lint-ci fmt fmt-ci upgrade clean release lint-docs audit watch
 
 # dist is build only if it is missing. Use "make clean" to remove it to build it again.
 build: dist
@@ -53,6 +53,10 @@ fmt:
 
 fmt-ci: fmt
 	git diff --exit-code --color=always
+
+upgrade:
+	go run github.com/icholy/gomajor@v0.11.0 get all
+	go mod tidy
 
 clean:
 	rm -rf coverage.* codeclimate.json tests.xml coverage dist charon
