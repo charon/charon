@@ -70,6 +70,31 @@ func validateRedirectURITemplates(ctx context.Context, redirectURITemplates []st
 	return redirectURITemplates, nil
 }
 
+func validateURI(ctx context.Context, uri string) errors.E {
+	u, err := url.ParseRequestURI(uri)
+	if err != nil {
+		errE := errors.Wrap(err, "unable to parse URI")
+		errors.Details(errE)["uri"] = uri
+		return errE
+	}
+
+	// The following two checks are the same as what we configured fosite to check.
+
+	if !fosite.IsValidRedirectURI(u) {
+		errE := errors.New("URI is not valid")
+		errors.Details(errE)["uri"] = uri
+		return errE
+	}
+
+	if !fosite.IsRedirectURISecureStrict(ctx, u) {
+		errE := errors.New("URI is not secure")
+		errors.Details(errE)["uri"] = uri
+		return errE
+	}
+
+	return nil
+}
+
 func validateRedirectURIsTemplate(ctx context.Context, template string, values map[string]string) errors.E {
 	if template == "" {
 		return errors.New("is required")
@@ -80,28 +105,7 @@ func validateRedirectURIsTemplate(ctx context.Context, template string, values m
 		return errE
 	}
 
-	u, err := url.ParseRequestURI(value)
-	if err != nil {
-		errE := errors.Wrap(err, "unable to parse resulting URI")
-		errors.Details(errE)["template"] = template
-		return errE
-	}
-
-	// The following two checks are the same as what we configured fosite to check.
-
-	if !fosite.IsValidRedirectURI(u) {
-		errE := errors.New("resulting URI is not a valid redirect URI")
-		errors.Details(errE)["template"] = template
-		return errE
-	}
-
-	if !fosite.IsRedirectURISecureStrict(ctx, u) {
-		errE := errors.New("resulting URI is not secure")
-		errors.Details(errE)["template"] = template
-		return errE
-	}
-
-	return nil
+	return validateURI(ctx, value)
 }
 
 type ClientRef struct {
@@ -602,23 +606,12 @@ func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *Appl
 	}
 
 	if a.HomepageTemplate == nil || *a.HomepageTemplate == "" {
-		return errors.New("homepage template is required")
+		return errors.New("homepage template: is required")
 	}
 
-	homepage, errE := interpolateVariables(*a.HomepageTemplate, values)
+	errE := validateRedirectURIsTemplate(ctx, *a.HomepageTemplate, values)
 	if errE != nil {
-		return errE
-	}
-
-	u, err := url.ParseRequestURI(homepage)
-	if err != nil {
-		errE := errors.Wrap(err, "unable to parse resulting URI")
-		errors.Details(errE)["template"] = *a.HomepageTemplate
-		return errE
-	}
-
-	if !fosite.IsRedirectURISecureStrict(ctx, u) {
-		errE := errors.New("resulting URI is not secure")
+		errE = errors.WithMessage(errE, "homepage template")
 		errors.Details(errE)["template"] = *a.HomepageTemplate
 		return errE
 	}
@@ -846,7 +839,7 @@ func (s *Service) ApplicationTemplateUpdatePost(w http.ResponseWriter, req *http
 		waf.Error(w, req, http.StatusUnauthorized)
 		return
 	} else if errors.Is(errE, ErrApplicationTemplateNotFound) {
-		waf.Error(w, req, http.StatusNotFound)
+		s.NotFound(w, req)
 		return
 	} else if errors.Is(errE, ErrApplicationTemplateValidationFailed) {
 		s.BadRequestWithError(w, req, errE)

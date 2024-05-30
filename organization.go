@@ -774,7 +774,7 @@ func (s *Service) OrganizationUpdatePost(w http.ResponseWriter, req *http.Reques
 		waf.Error(w, req, http.StatusUnauthorized)
 		return
 	} else if errors.Is(errE, ErrOrganizationNotFound) {
-		waf.Error(w, req, http.StatusNotFound)
+		s.NotFound(w, req)
 		return
 	} else if errors.Is(errE, ErrOrganizationValidationFailed) {
 		s.BadRequestWithError(w, req, errE)
