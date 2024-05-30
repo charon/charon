@@ -44,7 +44,7 @@ type IdentityRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
-func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E { 
+func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 	if existing == nil {
 		if i.ID != nil {
 			errE := errors.New("ID provided for new document")
@@ -127,7 +127,7 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 	return nil
 }
 
-func GetIdentity(ctx context.Context, id identifier.Identifier) (*Identity, errors.E) { 
+func GetIdentity(ctx context.Context, id identifier.Identifier) (*Identity, errors.E) {
 	identitiesMu.RLock()
 	defer identitiesMu.RUnlock()
 
@@ -166,7 +166,7 @@ func CreateIdentity(ctx context.Context, identity *Identity) errors.E {
 	return nil
 }
 
-func UpdateIdentity(ctx context.Context, identity *Identity) errors.E {
+func UpdateIdentity(ctx context.Context, identity *Identity) errors.E { //nolint:dupl
 	identitiesMu.Lock()
 	defer identitiesMu.Unlock()
 

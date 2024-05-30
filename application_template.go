@@ -681,7 +681,7 @@ func CreateApplicationTemplate(ctx context.Context, applicationTemplate *Applica
 	return nil
 }
 
-func UpdateApplicationTemplate(ctx context.Context, applicationTemplate *ApplicationTemplate) errors.E {
+func UpdateApplicationTemplate(ctx context.Context, applicationTemplate *ApplicationTemplate) errors.E { //nolint:dupl
 	applicationTemplatesMu.Lock()
 	defer applicationTemplatesMu.Unlock()
 
