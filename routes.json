@@ -260,6 +260,30 @@
       "path": "/o/update/:id",
       "api": {},
       "get": null
+    },
+    {
+      "name": "IdentityList",
+      "path": "/i",
+      "api": {},
+      "get": {}
+    },
+    {
+      "name": "IdentityCreate",
+      "path": "/i/create",
+      "api": {},
+      "get": {}
+    },
+    {
+      "name": "IdentityGet",
+      "path": "/i/:id",
+      "api": {},
+      "get": {}
+    },
+    {
+      "name": "IdentityUpdate",
+      "path": "/i/update/:id",
+      "api": {},
+      "get": null
     }
   ]
 }

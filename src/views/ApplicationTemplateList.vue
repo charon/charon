@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { ApplicationTemplate, ApplicationTemplates } from "@/types"
+import type { ApplicationTemplates } from "@/types"
 
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useRouter } from "vue-router"
 import ButtonLink from "@/components/ButtonLink.vue"
-import WithDocument from "@/components/WithDocument.vue"
+import ApplicationTemplateListItem from "@/partials/ApplicationTemplateListItem.vue"
 import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
 import { getURL } from "@/api"
@@ -48,8 +48,6 @@ onBeforeMount(async () => {
     progress.value -= 1
   }
 })
-
-const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
 </script>
 
 <template>
@@ -68,17 +66,10 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
       <div v-else-if="dataLoadingError" class="w-full rounded border bg-white p-4 shadow text-error-600">Unexpected error. Please try again.</div>
       <template v-else>
         <div v-if="!applicationTemplates.length" class="w-full rounded border bg-white p-4 shadow grid grid-cols-1 gap-4 italic">
-          There are no aplication templates. {{ me.success ? "Create the first one." : "Sign-in or sign-up to create the first one." }}
+          There are no application templates. {{ me.success ? "Create the first one." : "Sign-in or sign-up to create the first one." }}
         </div>
         <div v-for="applicationTemplate of applicationTemplates" :key="applicationTemplate.id" class="w-full rounded border bg-white p-4 shadow grid grid-cols-1 gap-4">
-          <WithApplicationTemplateDocument :id="applicationTemplate.id" name="ApplicationTemplateGet">
-            <template #default="{ doc, metadata, url }">
-              <h2 class="text-xl flex flex-row items-center gap-1">
-                <router-link :to="{ name: 'ApplicationTemplateGet', params: { id: applicationTemplate.id } }" :data-url="url" class="link">{{ doc.name }}</router-link>
-                <span v-if="metadata.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">admin</span>
-              </h2>
-            </template>
-          </WithApplicationTemplateDocument>
+          <ApplicationTemplateListItem :item="applicationTemplate" />
         </div>
       </template>
     </div>

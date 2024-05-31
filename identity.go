@@ -8,6 +8,7 @@ import (
 	"slices"
 	"sync"
 
+	mapset "github.com/deckarep/golang-set/v2"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
@@ -37,6 +38,7 @@ type Identity struct {
 
 	Description string `json:"description"`
 
+	Users  []AccountRef `json:"users,omitempty"`
 	Admins []AccountRef `json:"admins,omitempty"`
 }
 
@@ -112,6 +114,11 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 		}
 	}
 
+	// At least something is required.
+	if i.Username == "" && i.Email == "" && i.GivenName == "" && i.FullName == "" && i.PictureURL == "" {
+		return errors.New("empty identity")
+	}
+
 	account := mustGetAccount(ctx)
 	accountRef := AccountRef{account}
 	if !slices.Contains(i.Admins, accountRef) {
@@ -123,6 +130,17 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 		return bytes.Compare(a.ID[:], b.ID[:])
 	})
 	i.Admins = slices.Compact(i.Admins)
+	slices.SortFunc(i.Users, func(a AccountRef, b AccountRef) int {
+		return bytes.Compare(a.ID[:], b.ID[:])
+	})
+	i.Users = slices.Compact(i.Users)
+
+	// Admins should not be users as well.
+	adminsSet := mapset.NewThreadUnsafeSet[AccountRef]()
+	adminsSet.Append(i.Admins...)
+	i.Users = slices.DeleteFunc(i.Users, func(ar AccountRef) bool {
+		return adminsSet.Contains(ar)
+	})
 
 	return nil
 }
@@ -142,7 +160,7 @@ func GetIdentity(ctx context.Context, id identifier.Identifier) (*Identity, erro
 		return nil, errE
 	}
 	account := mustGetAccount(ctx)
-	if !slices.Contains(identity.Admins, AccountRef{account}) {
+	if !slices.Contains(identity.Users, AccountRef{account}) && !slices.Contains(identity.Admins, AccountRef{account}) {
 		return nil, errors.WithDetails(ErrIdentityUnauthorized, "id", id)
 	}
 	return &identity, nil
@@ -265,8 +283,17 @@ func (s *Service) IdentityGetGet(w http.ResponseWriter, req *http.Request, param
 		return
 	}
 
+	account := mustGetAccount(ctx)
+	if slices.Contains(identity.Admins, AccountRef{account}) {
+		s.WriteJSON(w, req, identity, map[string]interface{}{
+			"can_get":    true,
+			"can_update": true,
+		})
+		return
+	}
+
 	s.WriteJSON(w, req, identity, map[string]interface{}{
-		"can_update": true,
+		"can_get": true,
 	})
 }
 
@@ -292,7 +319,7 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 			return
 		}
 
-		if slices.Contains(identity.Admins, AccountRef{account}) {
+		if slices.Contains(identity.Users, AccountRef{account}) || slices.Contains(identity.Admins, AccountRef{account}) {
 			result = append(result, IdentityRef{ID: id})
 		}
 	}

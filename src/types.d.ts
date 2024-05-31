@@ -219,9 +219,8 @@ export type ApplicationTemplateClientService = {
   tokenEndpointAuthMethod: "client_secret_post" | "client_secret_basic"
 }
 
-export type ApplicationTemplate = {
+export type ApplicationTemplate = ApplicationTemplateCreate & {
   id: string
-  name: string
   description: string
   homepageTemplate: string
   idScopes: string[]
@@ -282,9 +281,8 @@ export type OrganizationApplication = {
   clientsService: OrganizationApplicationClientService[]
 }
 
-export type Organization = {
+export type Organization = OrganizationCreate & {
   id: string
-  name: string
   description: string
   admins?: AccountRef[]
   applications?: OrganizationApplication[]
@@ -292,6 +290,26 @@ export type Organization = {
 
 export type OrganizationCreate = {
   name: string
+}
+
+export type Identity = IdentityCreate & {
+  id: string
+  admins?: AccountRef[]
+}
+
+export type IdentityCreate = {
+  username: string
+  email: string
+  givenName: string
+  fullName: string
+  pictureUrl: string
+  description: string
+}
+
+export type Identities = IdentityRef[]
+
+export type IdentityRef = {
+  id: string
 }
 
 // It is recursive.
