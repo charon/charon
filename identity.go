@@ -39,7 +39,7 @@ type Identity struct {
 	Description string `json:"description"`
 
 	Users  []AccountRef `json:"users,omitempty"`
-	Admins []AccountRef `json:"admins,omitempty"`
+	Admins []AccountRef `json:"admins"`
 }
 
 type IdentityRef struct {

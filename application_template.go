@@ -367,7 +367,7 @@ func interpolateVariables(template string, values map[string]string) (string, er
 type ApplicationTemplate struct {
 	ApplicationTemplatePublic
 
-	Admins []AccountRef `json:"admins,omitempty"`
+	Admins []AccountRef `json:"admins"`
 }
 
 type ApplicationTemplatePublic struct {

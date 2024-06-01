@@ -228,7 +228,7 @@ export type ApplicationTemplate = ApplicationTemplateCreate & {
   clientsPublic: ApplicationTemplateClientPublic[]
   clientsBackend: ApplicationTemplateClientBackend[]
   clientsService: ApplicationTemplateClientService[]
-  admins?: AccountRef[]
+  admins: AccountRef[]
 }
 
 export type ApplicationTemplateCreate = {
@@ -284,8 +284,8 @@ export type OrganizationApplication = {
 export type Organization = OrganizationCreate & {
   id: string
   description: string
-  admins?: AccountRef[]
-  applications?: OrganizationApplication[]
+  admins: AccountRef[]
+  applications: OrganizationApplication[]
 }
 
 export type OrganizationCreate = {
@@ -294,7 +294,8 @@ export type OrganizationCreate = {
 
 export type Identity = IdentityCreate & {
   id: string
-  admins?: AccountRef[]
+  users?: AccountRef[]
+  admins: AccountRef[]
 }
 
 export type IdentityCreate = {
