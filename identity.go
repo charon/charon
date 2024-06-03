@@ -36,7 +36,7 @@ type IdentityOrganization struct {
 	Organization OrganizationRef `json:"organization"`
 }
 
-func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityOrganization) errors.E {
+func (i *IdentityOrganization) Validate(_ context.Context, existing *IdentityOrganization) errors.E {
 	if existing == nil {
 		if i.ID != nil {
 			errE := errors.New("ID provided for new document")
