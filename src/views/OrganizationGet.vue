@@ -205,6 +205,7 @@ async function onBasicSubmit() {
     id: props.id,
     name: name.value,
     description: description.value,
+    admins: [],
     applications: organization.value!.applications,
   }
   await onSubmit(payload, "basic", basicUpdated, basicUnexpectedError)
@@ -234,6 +235,7 @@ async function onApplicationsSubmit() {
     id: props.id,
     name: organization.value!.name,
     description: organization.value!.description,
+    admins: [],
     applications: applications.value,
   }
   await onSubmit(payload, "applications", applicationsUpdated, applicationsUnexpectedError)
@@ -387,20 +389,20 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                       }}</router-link>
                       <span v-if="meta.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">admin</span>
                     </h3>
+                    <div v-if="application.applicationTemplate.description" class="mt-4 ml-4 whitespace-pre-line">{{ application.applicationTemplate.description }}</div>
                   </template>
                 </WithApplicationTemplateDocument>
-                <div class="ml-6">
-                  <div v-if="application.applicationTemplate.description" class="mt-4">{{ application.applicationTemplate.description }}</div>
+                <div class="ml-4">
                   <fieldset v-if="application.values.length" class="mt-4">
                     <legend class="font-bold">Configuration</legend>
                     <ol>
                       <li v-for="(value, j) in application.values" :key="value.name" class="flex flex-col mt-4">
                         <code>{{ value.name }}</code>
-                        <div v-if="getValueDescription(application, value.name)" class="ml-6">{{ getValueDescription(application, value.name) }}</div>
+                        <div v-if="getValueDescription(application, value.name)" class="ml-4">{{ getValueDescription(application, value.name) }}</div>
                         <InputText
                           :id="`application-${i}-values-${j}`"
                           v-model="value.value"
-                          class="flex-grow flex-auto min-w-0 ml-6 mt-1"
+                          class="flex-grow flex-auto min-w-0 ml-4 mt-1"
                           :progress="progress"
                           required
                         />
@@ -507,7 +509,7 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                     </h3>
                     <Button type="button" :progress="progress" primary @click.prevent="onAddApplicationTemplate(doc)">Add</Button>
                   </div>
-                  <div v-if="doc.description" class="ml-4">{{ doc.description }}</div>
+                  <div v-if="doc.description" class="ml-4 whitespace-pre-line">{{ doc.description }}</div>
                 </template>
               </WithApplicationTemplateDocument>
             </li>

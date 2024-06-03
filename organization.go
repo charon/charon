@@ -252,6 +252,9 @@ type OrganizationApplication struct {
 }
 
 func (a *OrganizationApplication) GetClientPublic(id *identifier.Identifier) *OrganizationApplicationClientPublic {
+	if a == nil {
+		return nil
+	}
 	if id == nil {
 		return nil
 	}
@@ -266,6 +269,9 @@ func (a *OrganizationApplication) GetClientPublic(id *identifier.Identifier) *Or
 }
 
 func (a *OrganizationApplication) GetClientBackend(id *identifier.Identifier) *OrganizationApplicationClientBackend {
+	if a == nil {
+		return nil
+	}
 	if id == nil {
 		return nil
 	}
@@ -280,6 +286,9 @@ func (a *OrganizationApplication) GetClientBackend(id *identifier.Identifier) *O
 }
 
 func (a *OrganizationApplication) GetClientService(id *identifier.Identifier) *OrganizationApplicationClientService {
+	if a == nil {
+		return nil
+	}
 	if id == nil {
 		return nil
 	}
@@ -470,6 +479,9 @@ type Organization struct {
 }
 
 func (o *Organization) GetApplication(id *identifier.Identifier) *OrganizationApplication {
+	if o == nil {
+		return nil
+	}
 	if id == nil {
 		return nil
 	}

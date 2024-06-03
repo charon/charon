@@ -27,6 +27,43 @@ var (
 	identitiesMu = sync.RWMutex{}                         //nolint:gochecknoglobals
 )
 
+type IdentityOrganization struct {
+	// ID is also ID of this identity in the organization.
+	ID *identifier.Identifier `json:"id"`
+
+	Active bool `json:"active"`
+
+	Organization OrganizationRef `json:"organization"`
+}
+
+func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityOrganization) errors.E {
+	if existing == nil {
+		if i.ID != nil {
+			errE := errors.New("ID provided for new document")
+			errors.Details(errE)["id"] = *i.ID
+			return errE
+		}
+		id := identifier.New()
+		i.ID = &id
+	} else if i.ID == nil {
+		// This should not really happen because we fetch existing based on i.ID.
+		return errors.New("ID missing for existing document")
+	} else if existing.ID == nil {
+		// This should not really happen because we always store documents with ID.
+		return errors.New("ID missing for existing document")
+	} else if *i.ID != *existing.ID {
+		// This should not really happen because we fetch existing based on i.ID.
+		errE := errors.New("payload ID does not match existing ID")
+		errors.Details(errE)["payload"] = *i.ID
+		errors.Details(errE)["existing"] = *existing.ID
+		return errE
+	}
+
+	// TODO: Validate that i.Organization really exists?
+
+	return nil
+}
+
 type Identity struct {
 	ID *identifier.Identifier `json:"id"`
 
@@ -40,6 +77,25 @@ type Identity struct {
 
 	Users  []AccountRef `json:"users,omitempty"`
 	Admins []AccountRef `json:"admins"`
+
+	Organizations []IdentityOrganization `json:"organizations"`
+}
+
+func (i *Identity) GetOrganization(id *identifier.Identifier) *IdentityOrganization {
+	if i == nil {
+		return nil
+	}
+	if id == nil {
+		return nil
+	}
+
+	for _, idOrg := range i.Organizations {
+		if idOrg.ID != nil && *idOrg.ID == *id {
+			return &idOrg
+		}
+	}
+
+	return nil
 }
 
 type IdentityRef struct {
@@ -141,6 +197,43 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 	i.Users = slices.DeleteFunc(i.Users, func(ar AccountRef) bool {
 		return adminsSet.Contains(ar)
 	})
+
+	if i.Organizations == nil {
+		i.Organizations = []IdentityOrganization{}
+	}
+
+	idOrgsSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
+	organizationsSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
+	for ii, idOrg := range i.Organizations {
+		errE := idOrg.Validate(ctx, existing.GetOrganization(idOrg.ID))
+		if errE != nil {
+			errE = errors.WithMessage(errE, "organization")
+			errors.Details(errE)["i"] = ii
+			if idOrg.ID != nil {
+				errors.Details(errE)["id"] = *idOrg.ID
+			}
+			return errE
+		}
+
+		if idOrgsSet.Contains(*idOrg.ID) {
+			errE := errors.New("duplicate organization ID")
+			errors.Details(errE)["i"] = ii
+			errors.Details(errE)["id"] = *idOrg.ID
+			return errE
+		}
+		idOrgsSet.Add(*idOrg.ID)
+
+		if organizationsSet.Contains(idOrg.Organization.ID) {
+			errE := errors.New("duplicate organization")
+			errors.Details(errE)["i"] = ii
+			errors.Details(errE)["id"] = idOrg.Organization.ID
+			return errE
+		}
+		organizationsSet.Add(idOrg.Organization.ID)
+
+		// IdentityOrganization might have been changed by Validate, so we assign it back.
+		i.Organizations[ii] = idOrg
+	}
 
 	return nil
 }

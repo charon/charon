@@ -386,6 +386,9 @@ type ApplicationTemplatePublic struct {
 }
 
 func (a *ApplicationTemplatePublic) GetClientPublic(id *identifier.Identifier) *ApplicationTemplateClientPublic {
+	if a == nil {
+		return nil
+	}
 	if id == nil {
 		return nil
 	}
@@ -400,6 +403,9 @@ func (a *ApplicationTemplatePublic) GetClientPublic(id *identifier.Identifier) *
 }
 
 func (a *ApplicationTemplatePublic) GetClientBackend(id *identifier.Identifier) *ApplicationTemplateClientBackend {
+	if a == nil {
+		return nil
+	}
 	if id == nil {
 		return nil
 	}
@@ -414,6 +420,9 @@ func (a *ApplicationTemplatePublic) GetClientBackend(id *identifier.Identifier) 
 }
 
 func (a *ApplicationTemplatePublic) GetClientService(id *identifier.Identifier) *ApplicationTemplateClientService {
+	if a == nil {
+		return nil
+	}
 	if id == nil {
 		return nil
 	}

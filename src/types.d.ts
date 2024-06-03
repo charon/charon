@@ -228,7 +228,8 @@ export type ApplicationTemplate = ApplicationTemplateCreate & {
   clientsPublic: ApplicationTemplateClientPublic[]
   clientsBackend: ApplicationTemplateClientBackend[]
   clientsService: ApplicationTemplateClientService[]
-  admins: AccountRef[]
+  // Application templates in OrganizationApplication do not have this field.
+  admins?: AccountRef[]
 }
 
 export type ApplicationTemplateCreate = {
@@ -281,6 +282,12 @@ export type OrganizationApplication = {
   clientsService: OrganizationApplicationClientService[]
 }
 
+export type IdentityOrganization = {
+  id?: string
+  active: boolean
+  organization: OrganizationRef
+}
+
 export type Organization = OrganizationCreate & {
   id: string
   description: string
@@ -296,6 +303,7 @@ export type Identity = IdentityCreate & {
   id: string
   users?: AccountRef[]
   admins: AccountRef[]
+  organizations: IdentityOrganization[]
 }
 
 export type IdentityCreate = {

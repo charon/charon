@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import type { Ref } from "vue"
-import type { Identity, Metadata } from "@/types"
+import type { DeepReadonly, Ref } from "vue"
+import type { Identity, IdentityOrganization, Metadata, Organization, OrganizationRef, Organizations } from "@/types"
 
-import { onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
+import { nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import InputText from "@/components/InputText.vue"
 import TextArea from "@/components/TextArea.vue"
 import Button from "@/components/Button.vue"
+import WithDocument from "@/components/WithDocument.vue"
 import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
 import { getURL, postJSON } from "@/api"
 import { injectProgress } from "@/progress"
+import { clone, equals } from "@/utils"
 
 const props = defineProps<{
   id: string
@@ -25,6 +27,7 @@ const dataLoading = ref(true)
 const dataLoadingError = ref("")
 const identity = ref<Identity | null>(null)
 const metadata = ref<Metadata>({})
+const organizations = ref<Organizations>([])
 
 const basicUnexpectedError = ref("")
 const basicUpdated = ref(false)
@@ -35,10 +38,25 @@ const fullName = ref("")
 const pictureUrl = ref("")
 const description = ref("")
 
+const identityOrganizationsUnexpectedError = ref("")
+const identityOrganizationsUpdated = ref(false)
+const identityOrganizations = ref<IdentityOrganization[]>([])
+
+function isOrganizationAdded(organization: OrganizationRef): boolean {
+  for (const idOrg of identityOrganizations.value) {
+    if (idOrg.organization.id === organization.id) {
+      return true
+    }
+  }
+  return false
+}
+
 function resetOnInteraction() {
   // We reset flags and errors on interaction.
   basicUnexpectedError.value = ""
   basicUpdated.value = false
+  identityOrganizationsUnexpectedError.value = ""
+  identityOrganizationsUpdated.value = false
   // dataLoading and dataLoadingError are not listed here on
   // purpose because they are used only on mount.
 }
@@ -49,7 +67,7 @@ function initWatchInteraction() {
     return
   }
 
-  const stop = watch([username, email, givenName, fullName, pictureUrl, description], resetOnInteraction, { deep: true })
+  const stop = watch([username, email, givenName, fullName, pictureUrl, description, identityOrganizations], resetOnInteraction, { deep: true })
   if (watchInteractionStop !== null) {
     throw new Error("watchInteractionStop already set")
   }
@@ -64,7 +82,7 @@ onBeforeUnmount(() => {
   abortController.abort()
 })
 
-async function loadData(update: "init" | "basic" | null) {
+async function loadData(update: "init" | "basic" | "organizations" | null) {
   if (abortController.signal.aborted) {
     return
   }
@@ -96,6 +114,22 @@ async function loadData(update: "init" | "basic" | null) {
       pictureUrl.value = response.doc.pictureUrl
       description.value = response.doc.description
     }
+    if (update == "init" || update === "organizations") {
+      identityOrganizations.value = clone(response.doc.organizations || [])
+    }
+
+    if (update === "init") {
+      const organizationsURL = router.apiResolve({
+        name: "OrganizationList",
+      }).href
+
+      const resp = await getURL<Organizations>(organizationsURL, null, abortController.signal, progress)
+      if (abortController.signal.aborted) {
+        return
+      }
+
+      organizations.value = resp.doc
+    }
   } catch (error) {
     if (abortController.signal.aborted) {
       return
@@ -114,7 +148,7 @@ onBeforeMount(async () => {
   await loadData("init")
 })
 
-async function onSubmit(payload: Identity, update: "basic", updated: Ref<boolean>, unexpectedError: Ref<string>) {
+async function onSubmit(payload: Identity, update: "basic" | "organizations", updated: Ref<boolean>, unexpectedError: Ref<string>) {
   if (abortController.signal.aborted) {
     return
   }
@@ -192,9 +226,53 @@ async function onBasicSubmit() {
     fullName: fullName.value,
     pictureUrl: pictureUrl.value,
     description: description.value,
+    admins: [],
+    organizations: identity.value!.organizations,
   }
   await onSubmit(payload, "basic", basicUpdated, basicUnexpectedError)
 }
+
+function canOrganizationsSubmit(): boolean {
+  // Anything changed?
+  if (!equals(identity.value!.organizations, identityOrganizations.value)) {
+    return true
+  }
+
+  return false
+}
+
+async function onOrganizationsSubmit() {
+  const payload: Identity = {
+    // We update only organizations.
+    id: props.id,
+    username: identity.value!.username,
+    email: identity.value!.email,
+    givenName: identity.value!.givenName,
+    fullName: identity.value!.fullName,
+    pictureUrl: identity.value!.pictureUrl,
+    description: identity.value!.description,
+    admins: [],
+    organizations: identityOrganizations.value,
+  }
+  await onSubmit(payload, "organizations", identityOrganizationsUpdated, identityOrganizationsUnexpectedError)
+}
+
+async function onAddOrganization(organization: DeepReadonly<Organization>) {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  identityOrganizations.value.push({
+    active: false,
+    organization: { id: organization.id },
+  })
+
+  nextTick(() => {
+    document.getElementById("organizations-update")?.focus()
+  })
+}
+
+const WithOrganizationDocument = WithDocument<Organization>
 </script>
 
 <template>
@@ -232,6 +310,67 @@ async function onBasicSubmit() {
               <Button type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">Update</Button>
             </div>
           </form>
+          <h2 v-if="identityOrganizations.length || canOrganizationsSubmit()" class="text-xl font-bold">Added organizations</h2>
+          <div v-if="identityOrganizationsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
+          <div v-else-if="identityOrganizationsUpdated" class="text-success-600">Added organizations updated successfully.</div>
+          <form v-if="identityOrganizations.length || canOrganizationsSubmit()" class="flex flex-col" novalidate @submit.prevent="onOrganizationsSubmit">
+            <ul>
+              <li v-for="(identityOrganization, i) in identityOrganizations" :key="identityOrganization.id || i" class="flex flex-col mb-4">
+                <!-- TODO: Use OrganizationListItem partial here. -->
+                <WithOrganizationDocument :id="identityOrganization.organization.id" name="OrganizationGet">
+                  <template #default="{ doc, metadata: meta, url }">
+                    <h3 class="text-lg flex flex-row items-center gap-1" :data-url="url">
+                      <router-link :to="{ name: 'OrganizationGet', params: { id: doc.id } }" class="link">{{ doc.name }}</router-link>
+                      <span v-if="meta.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">admin</span>
+                    </h3>
+                    <div v-if="doc.description" class="mt-4 ml-4 whitespace-pre-line">{{ doc.description }}</div>
+                  </template>
+                </WithOrganizationDocument>
+                <div class="ml-4">
+                  <div v-if="identityOrganization.active" class="flex flew-row justify-between items-center gap-4 mt-4">
+                    <div>Status: <strong>active</strong></div>
+                    <div class="flex flex-row gap-4">
+                      <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = false">Disable</Button>
+                      <Button type="button" :progress="progress" @click.prevent="identityOrganizations.splice(i, 1)">Remove</Button>
+                    </div>
+                  </div>
+                  <div v-else class="flex flew-row justify-between items-center gap-4 mt-4">
+                    <div>Status: <strong>disabled</strong></div>
+                    <div class="flex flex-row gap-4">
+                      <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = true">Activate</Button>
+                      <Button type="button" :progress="progress" @click.prevent="identityOrganizations.splice(i, 1)">Remove</Button>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            </ul>
+            <div class="flex flex-row justify-end">
+              <!--
+                Button is on purpose not disabled on unexpectedError so that user can retry.
+              -->
+              <Button id="applications-update" type="submit" primary :disabled="!canOrganizationsSubmit()" :progress="progress">Update</Button>
+            </div>
+          </form>
+          <h2 v-if="metadata.can_update" class="text-xl font-bold">Available organizations</h2>
+          <ul v-if="metadata.can_update" class="flex flex-col gap-4">
+            <template v-for="organization in organizations" :key="organization.id">
+              <li v-if="!isOrganizationAdded(organization)" class="flex flex-col gap-4">
+                <!-- TODO: Use OrganizationListItem partial here. Should OrganizationListItem also show description? And provide slot for buttons? -->
+                <WithOrganizationDocument :id="organization.id" name="OrganizationGet">
+                  <template #default="{ doc, metadata: meta, url }">
+                    <div class="flex flex-row justify-between items-center gap-4" :data-url="url">
+                      <h3 class="text-lg flex flex-row items-center gap-1">
+                        <router-link :to="{ name: 'OrganizationGet', params: { id: organization.id } }" class="link">{{ doc.name }}</router-link>
+                        <span v-if="meta.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">admin</span>
+                      </h3>
+                      <Button type="button" :progress="progress" primary @click.prevent="onAddOrganization(doc)">Add</Button>
+                    </div>
+                    <div v-if="doc.description" class="ml-4 whitespace-pre-line">{{ doc.description }}</div>
+                  </template>
+                </WithOrganizationDocument>
+              </li>
+            </template>
+          </ul>
         </template>
       </div>
     </div>
