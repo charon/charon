@@ -267,11 +267,15 @@ func (s *Service) getIdentityFromCredentials(credentials []Credential) (*Identit
 		}
 		if identity.PictureURL == "" && identity.Email != "" {
 			// TODO: Generate some local picture and do not use remote Gravatar.
-			identity.PictureURL = gravatar.NewGravatarFromEmail(identity.Email).GetURL()
+			g := gravatar.NewGravatarFromEmail(identity.Email)
+			g.Default = "identicon"
+			identity.PictureURL = g.GetURL()
 		}
 		if identity.PictureURL == "" && identity.Username != "" {
 			// TODO: Generate some local picture and do not misuse username for Gravatar.
-			identity.PictureURL = gravatar.NewGravatarFromEmail(identity.Username).GetURL()
+			g := gravatar.NewGravatarFromEmail(identity.Username)
+			g.Default = "identicon"
+			identity.PictureURL = g.GetURL()
 		}
 	}
 	return identity, nil
