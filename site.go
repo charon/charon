@@ -22,6 +22,7 @@ type SiteProvider struct {
 	forcePKCE bool
 	authURL   string
 	tokenURL  string
+	scopes    []string
 }
 
 type Site struct {

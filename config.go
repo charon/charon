@@ -17,6 +17,7 @@ import (
 	"syscall"
 
 	"github.com/alecthomas/kong"
+	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/go-jose/go-jose/v3"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/ory/fosite"
@@ -332,6 +333,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			forcePKCE: false,
 			authURL:   "",
 			tokenURL:  "",
+			scopes:    []string{oidc.ScopeOpenID, "email", "profile"},
 		})
 	}
 	if config.Providers.Facebook.ClientID != "" && config.Providers.Facebook.Secret != nil {
@@ -346,6 +348,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			forcePKCE: true,
 			authURL:   "",
 			tokenURL:  "https://graph.facebook.com/oauth/access_token",
+			scopes:    []string{oidc.ScopeOpenID, "email", "public_profile"},
 		})
 	}
 	if config.Providers.Testing.ClientID != "" && config.Providers.Testing.Secret != nil && config.Providers.Testing.Issuer != "" {
@@ -360,6 +363,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			forcePKCE: config.Providers.Testing.ForcePKCE,
 			authURL:   config.Providers.Testing.AuthURL,
 			tokenURL:  config.Providers.Testing.TokenURL,
+			scopes:    []string{oidc.ScopeOpenID},
 		})
 	}
 	for _, site := range sites {

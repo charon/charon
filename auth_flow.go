@@ -1,12 +1,15 @@
 package charon
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
+	"github.com/automattic/go-gravatar"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
@@ -191,6 +194,89 @@ func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api 
 	return session, false
 }
 
+func (s *Service) getIdentityFromCredentials(credentials []Credential) (*Identity, errors.E) {
+	var identity *Identity
+	for _, credential := range credentials {
+		switch credential.Provider {
+		case CodeProvider:
+			return nil, errors.New("code provider among credentials")
+		case PasskeyProvider:
+			// Nothing available.
+		case PasswordProvider:
+			// Nothing available.
+		case EmailProvider:
+			var c emailCredential
+			errE := x.UnmarshalWithoutUnknownFields(credential.Data, &c)
+			if errE != nil {
+				return nil, errE
+			}
+			if identity == nil {
+				identity = new(Identity)
+			}
+			identity.Email = c.Email
+		case UsernameProvider:
+			var c usernameCredential
+			errE := x.UnmarshalWithoutUnknownFields(credential.Data, &c)
+			if errE != nil {
+				return nil, errE
+			}
+			if identity == nil {
+				identity = new(Identity)
+			}
+			identity.Username = c.Username
+		default:
+			var token map[string]interface{}
+			errE := x.UnmarshalWithoutUnknownFields(credential.Data, &token)
+			if errE != nil {
+				return nil, errE
+			}
+			if identity == nil {
+				identity = new(Identity)
+			}
+			givenName, _ := token["given_name"].(string)
+			if givenName != "" {
+				identity.GivenName = givenName
+			}
+			name, _ := token["name"].(string)
+			if name != "" {
+				identity.FullName = name
+			} else {
+				familyName, _ := token["family_name"].(string)
+				if givenName != "" && familyName != "" {
+					identity.FullName = fmt.Sprintf("%s %s", givenName, familyName)
+				}
+			}
+			picture, _ := token["picture"].(string)
+			if picture != "" {
+				identity.PictureURL = picture
+			}
+			email, _ := token["email"].(string)
+			if email != "" {
+				// TODO: We should verify the e-mail.
+				identity.Email = email
+			}
+			username, _ := token["preferred_username"].(string)
+			if username != "" {
+				identity.Username = username
+			}
+		}
+	}
+	if identity != nil {
+		if identity.Username == "" && identity.Email != "" {
+			identity.Username, _, _ = strings.Cut(identity.Email, "@")
+		}
+		if identity.PictureURL == "" && identity.Email != "" {
+			// TODO: Generate some local picture and do not use remote Gravatar.
+			identity.PictureURL = gravatar.NewGravatarFromEmail(identity.Email).GetURL()
+		}
+		if identity.PictureURL == "" && identity.Username != "" {
+			// TODO: Generate some local picture and do not misuse username for Gravatar.
+			identity.PictureURL = gravatar.NewGravatarFromEmail(identity.Username).GetURL()
+		}
+	}
+	return identity, nil
+}
+
 func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *Flow, account *Account, credentials []Credential) {
 	ctx := req.Context()
 
@@ -206,6 +292,16 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 			account.Credentials[credential.Provider] = append(account.Credentials[credential.Provider], credential)
 		}
 		errE := SetAccount(ctx, account)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+		identity, errE := s.getIdentityFromCredentials(credentials)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+		errE = CreateIdentity(context.WithValue(ctx, accountContextKey, account.ID), identity)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return

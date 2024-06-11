@@ -85,7 +85,7 @@ func initOIDCProviders(config *Config, service *Service, domain string, provider
 				ClientSecret: p.secret,
 				RedirectURL:  fmt.Sprintf("https://%s%s", host, path),
 				Endpoint:     endpoint,
-				Scopes:       []string{oidc.ScopeOpenID},
+				Scopes:       p.scopes,
 			}
 
 			oidcProviders[p.Key] = oidcProvider{
