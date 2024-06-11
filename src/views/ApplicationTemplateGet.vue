@@ -526,7 +526,7 @@ function onAddClientService() {
               required
             />
             <label for="idScopes" class="mb-1 mt-4"
-              >Space-separated Charon ID scopes the application might request<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">
+              >Space-separated OpenID scopes the application might request<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">
                 (optional)</span
               ></label
             >
@@ -635,7 +635,7 @@ function onAddClientService() {
                     :progress="progress"
                   />
                   <label :for="`client-public-${i}-additionalScopes`" class="mb-1 mt-4"
-                    >Space-separated additional scopes the application might request<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">
+                    >Space-separated additional scopes the client might request<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">
                       (optional)</span
                     ></label
                   >
@@ -743,7 +743,7 @@ function onAddClientService() {
                     :progress="progress"
                   />
                   <label :for="`client-backend-${i}-additionalScopes`" class="mb-1 mt-4"
-                    >Space-separated additional scopes the application might request<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">
+                    >Space-separated additional scopes the client might request<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">
                       (optional)</span
                     ></label
                   >
@@ -823,7 +823,7 @@ function onAddClientService() {
                     :progress="progress"
                   />
                   <label :for="`client-service-${i}-additionalScopes`" class="mb-1 mt-4"
-                    >Space-separated additional scopes the application might request<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">
+                    >Space-separated additional scopes the client might request<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">
                       (optional)</span
                     ></label
                   >
