@@ -183,6 +183,10 @@ type ItemTypes = BareItem | ItemTypes[]
 
 export type Metadata = Record<Key, ItemTypes>
 
+export type QueryValues = Record<string, string | string[]>
+
+export type QueryValuesWithOptional = Record<string, string | (string | null)[] | undefined | null>
+
 export type ApplicationTemplates = ApplicationTemplateRef[]
 
 export type ApplicationTemplateRef = {

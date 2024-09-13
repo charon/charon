@@ -81,7 +81,7 @@ type Identity struct {
 	Organizations []IdentityOrganization `json:"organizations"`
 }
 
-func (i *Identity) GetOrganization(id *identifier.Identifier) *IdentityOrganization {
+func (i *Identity) GetIdentityOrganization(id *identifier.Identifier) *IdentityOrganization {
 	if i == nil {
 		return nil
 	}
@@ -96,6 +96,16 @@ func (i *Identity) GetOrganization(id *identifier.Identifier) *IdentityOrganizat
 	}
 
 	return nil
+}
+
+func (i *Identity) HasOrganization(id identifier.Identifier) bool {
+	for _, idOrg := range i.Organizations {
+		if idOrg.Organization.ID == id {
+			return true
+		}
+	}
+
+	return false
 }
 
 type IdentityRef struct {
@@ -205,7 +215,7 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 	idOrgsSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
 	organizationsSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
 	for ii, idOrg := range i.Organizations {
-		errE := idOrg.Validate(ctx, existing.GetOrganization(idOrg.ID))
+		errE := idOrg.Validate(ctx, existing.GetIdentityOrganization(idOrg.ID))
 		if errE != nil {
 			errE = errors.WithMessage(errE, "organization")
 			errors.Details(errE)["i"] = ii
@@ -403,6 +413,26 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 	identitiesMu.RLock()
 	defer identitiesMu.RUnlock()
 
+	var organization *identifier.Identifier
+	if org := req.Form.Get("org"); org != "" {
+		o, errE := identifier.FromString(org)
+		if errE != nil {
+			s.BadRequestWithError(w, req, errors.WithMessage(errE, `invalid "org" parameter`))
+			return
+		}
+		organization = &o
+	}
+
+	var notOrganization *identifier.Identifier
+	if org := req.Form.Get("notorg"); org != "" {
+		o, errE := identifier.FromString(org)
+		if errE != nil {
+			s.BadRequestWithError(w, req, errors.WithMessage(errE, `invalid "notorg" parameter`))
+			return
+		}
+		notOrganization = &o
+	}
+
 	for id, data := range identities {
 		var identity Identity
 		errE := x.UnmarshalWithoutUnknownFields(data, &identity)
@@ -413,7 +443,14 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 		}
 
 		if slices.Contains(identity.Users, AccountRef{account}) || slices.Contains(identity.Admins, AccountRef{account}) {
-			result = append(result, IdentityRef{ID: id})
+			// TODO: Do not filter in list endpoint but filter in search endpoint.
+			if organization != nil && identity.HasOrganization(*organization) {
+				result = append(result, IdentityRef{ID: id})
+			} else if notOrganization != nil && !identity.HasOrganization(*notOrganization) {
+				result = append(result, IdentityRef{ID: id})
+			} else if organization == nil && notOrganization == nil {
+				result = append(result, IdentityRef{ID: id})
+			}
 		}
 	}
 

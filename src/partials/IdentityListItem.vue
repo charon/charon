@@ -50,6 +50,7 @@ const WithIdentityDocument = WithDocument<Identity>
           </div>
           <div v-if="doc.description" class="mt-1 whitespace-pre-line">{{ doc.description }}</div>
         </div>
+        <slot></slot>
       </div>
     </template>
   </WithIdentityDocument>

@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import type { AuthFlowResponse, Completed } from "@/types"
+import type { Ref } from "vue"
+import type { AuthFlowResponse, Completed, Identities } from "@/types"
 
 import { ref, onBeforeUnmount, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
+import IdentityListItem from "@/partials/IdentityListItem.vue"
 import { injectProgress } from "@/progress"
-import { postJSON, restartAuth } from "@/api"
+import { getURL, postJSON, restartAuth } from "@/api"
 import { flowKey } from "@/flow"
-import { processCompletedAndLocationRedirect } from "@/utils"
+import { encodeQuery, processCompletedAndLocationRedirect } from "@/utils"
 
 const props = defineProps<{
   id: string
@@ -22,6 +24,12 @@ const flow = inject(flowKey)
 const progress = injectProgress()
 
 const abortController = new AbortController()
+const usedIdentitiesLoading = ref(true)
+const usedIdentitiesLoadingError = ref("")
+const usedIdentities = ref<Identities>([])
+const otherIdentitiesLoading = ref(true)
+const otherIdentitiesLoadingError = ref("")
+const otherIdentities = ref<Identities>([])
 
 const unexpectedError = ref("")
 
@@ -45,14 +53,53 @@ defineExpose({
 onBeforeUnmount(onBeforeLeave)
 
 function onAfterEnter() {
-  document.getElementById("choose-identity")?.focus()
+  document.getElementById("first-identity")?.focus()
+
+  getIdentities(props.organizationId, false, usedIdentitiesLoading, usedIdentitiesLoadingError, usedIdentities)
+  getIdentities(props.organizationId, true, otherIdentitiesLoading, otherIdentitiesLoadingError, otherIdentities)
 }
 
 function onBeforeLeave() {
   abortController.abort()
 }
 
-async function onNext() {
+async function getIdentities(organizationId: string, not: boolean, loading: Ref<boolean>, loadingError: Ref<string>, identities: Ref<Identities>) {
+  if (abortController.signal.aborted) {
+    return false
+  }
+
+  progress.value += 1
+  try {
+    const q: { notorg?: string, org?: string } = {}
+    if (not) {
+      q['notorg'] = organizationId
+    } else {
+      q['org'] = organizationId
+    }
+    const url = router.apiResolve({
+      name: "IdentityList",
+      query: encodeQuery(q),
+    }).href
+
+    const response = await getURL<Identities>(url, null, abortController.signal, progress)
+    if (abortController.signal.aborted) {
+      return
+    }
+
+    identities.value = response.doc
+  } catch (error) {
+    if (abortController.signal.aborted) {
+      return
+    }
+    console.error("IdentityList.getIdentities", error)
+    loadingError.value = `${error}`
+  } finally {
+    loading.value = false
+    progress.value -= 1
+  }
+}
+
+async function onSelect(id: string) {
   if (abortController.signal.aborted) {
     return
   }
@@ -150,14 +197,47 @@ async function onDecline() {
     <div class="flex flex-col">
       <div v-if="completed === 'signin'" class="mb-4"><strong>Congratulations.</strong> You successfully signed in into Charon.</div>
       <div v-else-if="completed === 'signup'" class="mb-4"><strong>Congratulations.</strong> You successfully signed up into Charon.</div>
-      <div class="flex flew-row items-start gap-4">
-        <div>TODO: Choose between existing identities or create a new identity for this organization.</div>
-        <Button id="choose-identity" primary type="button" tabindex="1" :progress="progress" @click.prevent="onNext">Next</Button>
+      <div class="mb-4">
+        Select the identity you want to continue with. Its information will be provided to the application and the organization. You can also create a new identity or
+        decline to proceed.
       </div>
-      <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
-      <div class="mt-4 flex flex-row justify-between gap-4">
-        <Button type="button" tabindex="3" @click.prevent="onBack">Back</Button>
-        <Button type="button" tabindex="2" :progress="progress" @click.prevent="onDecline">Decline</Button>
+      <h3 class="text-l font-bold mb-4">Previously used identities</h3>
+      <div v-if="usedIdentitiesLoading" class="mb-4">Loading...</div>
+      <div v-else-if="usedIdentitiesLoadingError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
+      <template v-else>
+        <div v-if="!usedIdentities.length" class="italic mb-4">You have not yet used any identity with this organization.</div>
+        <template v-for="identity of usedIdentities" :key="identity.id">
+          <div class="grid grid-cols-1 gap-4 mb-4">
+            <IdentityListItem :item="identity">
+              <div class="flex flex-col items-start">
+                <Button id="first-identity" primary type="button" tabindex="1" :progress="progress" @click.prevent="onSelect(identity.id)">Select</Button>
+              </div>
+            </IdentityListItem>
+          </div>
+        </template>
+      </template>
+      <h3 class="text-l font-bold mb-4">Available identities</h3>
+      <div v-if="otherIdentitiesLoading" class="mb-4">Loading...</div>
+      <div v-else-if="otherIdentitiesLoadingError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
+      <template v-else>
+        <div v-if="!otherIdentities.length" class="italic mb-4">There are no identities. {{ usedIdentities.length + otherIdentities.length === 0 ? "Create the first one." : "Create another one." }}</div>
+        <template v-for="identity of otherIdentities" :key="identity.id">
+          <div class="grid grid-cols-1 gap-4 mb-4">
+            <IdentityListItem :item="identity">
+              <div class="flex flex-col items-start">
+                <Button id="first-identity" primary type="button" tabindex="1" :progress="progress" @click.prevent="onSelect(identity.id)">Select</Button>
+              </div>
+            </IdentityListItem>
+          </div>
+        </template>
+      </template>
+      <div v-if="unexpectedError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
+      <div class="flex flex-row justify-between gap-4">
+        <Button type="button" tabindex="4" @click.prevent="onBack">Back</Button>
+        <div class="flex flex-row gap-4">
+          <Button type="button" tabindex="2" :progress="progress" @click.prevent="onDecline">Decline</Button>
+          <Button type="button" tabindex="3" :progress="progress" @click.prevent="onDecline">Create</Button>
+        </div>
       </div>
     </div>
   </div>

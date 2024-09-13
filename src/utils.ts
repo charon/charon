@@ -1,5 +1,5 @@
 import type { Ref } from "vue"
-import type { Mutable, AuthFlowResponse, Completed, Flow, LocationResponse } from "@/types"
+import type { Mutable, AuthFlowResponse, Completed, Flow, LocationResponse, QueryValuesWithOptional, QueryValues } from "@/types"
 
 import { cloneDeep, isEqual } from "lodash-es"
 import { toRaw } from "vue"
@@ -126,4 +126,42 @@ export function clone<T>(input: T): Mutable<T> {
 
 export function equals<T>(a: T, b: T): boolean {
   return isEqual(a, b)
+}
+
+// encodeQuery should match implementation on the backend.
+export function encodeQuery(query: QueryValuesWithOptional): QueryValues {
+  const keys = []
+  for (const key in query) {
+    keys.push(key)
+  }
+  // We want keys in an alphabetical order (default in Go).
+  keys.sort()
+
+  const values: QueryValues = {}
+  for (const key of keys) {
+    const value = query[key]
+    if (value === undefined) {
+      continue
+    } else if (value === null) {
+      // In contrast with Vue Router, we convert null values to an empty string because Go
+      // does not support bare parameters without = and waf would then normalize them anyway.
+      values[key] = ""
+    } else if (Array.isArray(value)) {
+      const vs: string[] = []
+      for (const v in value) {
+        if (v === null) {
+          vs.push("")
+        } else {
+          vs.push(v)
+        }
+      }
+      if (vs.length > 0) {
+        values[key] = vs
+      }
+    } else {
+      values[key] = value
+    }
+  }
+
+  return values
 }
