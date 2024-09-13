@@ -208,7 +208,7 @@ async function onDecline() {
         <div v-if="!usedIdentities.length" class="italic mb-4">You have not yet used any identity with this organization.</div>
         <template v-for="identity of usedIdentities" :key="identity.id">
           <div class="grid grid-cols-1 gap-4 mb-4">
-            <IdentityListItem :item="identity">
+            <IdentityListItem :item="identity" :organization-id="organizationId">
               <div class="flex flex-col items-start">
                 <Button id="first-identity" primary type="button" tabindex="1" :progress="progress" @click.prevent="onSelect(identity.id)">Select</Button>
               </div>
