@@ -218,13 +218,13 @@ func (s *Service) sendCode(
 	// But we want to do that only if new e-mail credential matches the existing e-mail credential. That should
 	// generally be true if flow.EmailOrUsername has not changed (and if it did, flow.Clear would already clear
 	// flow.Code), but we want to be sure and do a sanity check here.
-	if flow.Code == nil || !pointerEqual(flow.Code.Account, accountID) || !emailCredentialsEqual(flow.Code.Credentials, credentials) {
+	if flow.Code == nil || !pointerEqual(flow.Code.AccountID, accountID) || !emailCredentialsEqual(flow.Code.Credentials, credentials) {
 		// flow.EmailOrUsername is set already in flow.Clear, even the first time,
 		// but we want to be sure so we set it again here.
 		flow.EmailOrUsername = preservedEmailOrUsername
 		flow.Code = &FlowCode{
 			Codes:       []string{},
-			Account:     accountID,
+			AccountID:   accountID,
 			Credentials: credentials,
 		}
 	} else if credentials != nil {
@@ -261,7 +261,7 @@ func (s *Service) sendCode(
 		Target:          flow.Target,
 		Name:            flow.TargetName,
 		Homepage:        flow.GetTargetHomepage(),
-		OrganizationID:  flow.GetTargetOrganization(),
+		OrganizationID:  flow.GetTargetOrganizationID(),
 		Provider:        flow.Provider,
 		EmailOrUsername: preservedEmailOrUsername,
 		Error:           "",
@@ -391,9 +391,9 @@ func (s *Service) AuthFlowCodeCompletePost(w http.ResponseWriter, req *http.Requ
 	}
 
 	var account *Account
-	if flow.Code.Account != nil {
+	if flow.Code.AccountID != nil {
 		var errE errors.E
-		account, errE = GetAccount(ctx, *flow.Code.Account)
+		account, errE = GetAccount(ctx, *flow.Code.AccountID)
 		if errE != nil {
 			// We return internal server error even on ErrAccountNotFound. It is unlikely that
 			// the account got deleted in meantime so there might be some logic error. In any

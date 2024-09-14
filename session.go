@@ -20,7 +20,7 @@ type Session struct {
 	ID       identifier.Identifier
 	SecretID [32]byte
 
-	Account identifier.Identifier
+	AccountID identifier.Identifier
 }
 
 func GetSession(ctx context.Context, id identifier.Identifier) (*Session, errors.E) { //nolint:revive

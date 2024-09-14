@@ -3,9 +3,11 @@ package charon
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/ory/fosite"
+	"github.com/ory/fosite/token/jwt"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
@@ -84,11 +86,12 @@ func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.
 		Target:               TargetOIDC,
 		TargetLocation:       client.AppHomepage,
 		TargetName:           client.TargetName,
-		TargetOrganization:   &client.TargetOrganization,
+		TargetOrganizationID: &client.TargetOrganization,
 		Provider:             "",
 		EmailOrUsername:      "",
 		Attempts:             0,
 		OIDCAuthorizeRequest: ar,
+		OIDCIdentity:         nil,
 		OIDCRedirectReady:    false,
 		OIDCProvider:         nil,
 		Passkey:              nil,
@@ -169,8 +172,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 	grantAllScopes(authorizeRequest)
 
 	oidcSession := &OIDCSession{ //nolint:forcetypeassert
-		// TODO: Make subject be unique per organization and identity chosen.
-		Subject:                session.Account,
+		Subject:                *flow.OIDCIdentity.ID,
 		Session:                session.ID,
 		ExpiresAt:              nil,
 		RequestedAt:            flow.CreatedAt,
@@ -178,11 +180,33 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 		Client:                 authorizeRequest.GetClient().(*OIDCClient).ID,
 		JWTClaims:              nil,
 		JWTHeaders:             nil,
-		IDTokenClaimsInternal:  nil,
+		IDTokenClaimsInternal:  new(jwt.IDTokenClaims),
 		IDTokenHeadersInternal: nil,
 	}
 
-	// TODO: Add to oidcSession.IDTokenClaimsInternal claims based on ID token scopes requested and granted found in authorizeRequest.GetGrantedScopes().
+	for _, scope := range authorizeRequest.GetGrantedScopes() {
+		switch strings.ToLower(scope) {
+		case "profile":
+			if flow.OIDCIdentity.Username != "" {
+				oidcSession.IDTokenClaimsInternal.Add("preferred_username", flow.OIDCIdentity.Username)
+			}
+			if flow.OIDCIdentity.GivenName != "" {
+				oidcSession.IDTokenClaimsInternal.Add("given_name", flow.OIDCIdentity.GivenName)
+			}
+			if flow.OIDCIdentity.FullName != "" {
+				oidcSession.IDTokenClaimsInternal.Add("name", flow.OIDCIdentity.FullName)
+			}
+			if flow.OIDCIdentity.PictureURL != "" {
+				oidcSession.IDTokenClaimsInternal.Add("picture", flow.OIDCIdentity.PictureURL)
+			}
+		case "email":
+			if flow.OIDCIdentity.Email != "" {
+				oidcSession.IDTokenClaimsInternal.Add("email", flow.OIDCIdentity.Username)
+				// TODO: We are not yet making sure only validated addressed can be set in an identity.
+				oidcSession.IDTokenClaimsInternal.Add("email", true)
+			}
+		}
+	}
 
 	response, err := oidc.NewAuthorizeResponse(ctx, authorizeRequest, oidcSession)
 	if err != nil {

@@ -139,6 +139,10 @@ export type AuthFlowCreateResponse =
       error: "alreadyAuthenticated"
     }
 
+export type AuthFlowChooseIdentityRequest = {
+  identity: IdentityRef
+}
+
 export type Provider = {
   key: string
   name: string

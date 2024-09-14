@@ -55,7 +55,7 @@ func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *Flow
 		Target:          flow.Target,
 		Name:            flow.TargetName,
 		Homepage:        flow.GetTargetHomepage(),
-		OrganizationID:  flow.GetTargetOrganization(),
+		OrganizationID:  flow.GetTargetOrganizationID(),
 		Provider:        flow.Provider,
 		EmailOrUsername: "",
 		Error:           code,
@@ -116,7 +116,7 @@ func (s *Service) AuthFlowGetGet(w http.ResponseWriter, req *http.Request, param
 		Target:          flow.Target,
 		Name:            flow.TargetName,
 		Homepage:        flow.GetTargetHomepage(),
-		OrganizationID:  flow.GetTargetOrganization(),
+		OrganizationID:  flow.GetTargetOrganizationID(),
 		Provider:        flow.Provider,
 		EmailOrUsername: flow.EmailOrUsername,
 		Error:           "",
@@ -182,7 +182,7 @@ func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api 
 	}
 
 	// Session might have changed, but is it still the same account?
-	if flowSession.Account != session.Account {
+	if flowSession.AccountID != session.AccountID {
 		if api {
 			waf.Error(w, req, http.StatusGone)
 			return nil, true
@@ -305,7 +305,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
-		errE = CreateIdentity(context.WithValue(ctx, accountContextKey, account.ID), identity)
+		errE = CreateIdentity(context.WithValue(ctx, accountIDContextKey, account.ID), identity)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
@@ -338,9 +338,9 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 
 	sessionID := identifier.New()
 	errE := SetSession(ctx, &Session{
-		ID:       sessionID,
-		SecretID: [32]byte(secretID),
-		Account:  account.ID,
+		ID:        sessionID,
+		SecretID:  [32]byte(secretID),
+		AccountID: account.ID,
 	})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -384,7 +384,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 			Target:          flow.Target,
 			Name:            flow.TargetName,
 			Homepage:        flow.GetTargetHomepage(),
-			OrganizationID:  flow.GetTargetOrganization(),
+			OrganizationID:  flow.GetTargetOrganizationID(),
 			Provider:        flow.Provider,
 			EmailOrUsername: "",
 			Error:           "",
@@ -460,7 +460,7 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 			Target:          flow.Target,
 			Name:            flow.TargetName,
 			Homepage:        flow.GetTargetHomepage(),
-			OrganizationID:  flow.GetTargetOrganization(),
+			OrganizationID:  flow.GetTargetOrganizationID(),
 			Provider:        flow.Provider,
 			EmailOrUsername: "",
 			Error:           "",
@@ -560,7 +560,7 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 		Target:          flow.Target,
 		Name:            flow.TargetName,
 		Homepage:        flow.GetTargetHomepage(),
-		OrganizationID:  flow.GetTargetOrganization(),
+		OrganizationID:  flow.GetTargetOrganizationID(),
 		Provider:        "",
 		EmailOrUsername: "",
 		Error:           "",
@@ -604,7 +604,7 @@ func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, 
 		Target:          flow.Target,
 		Name:            flow.TargetName,
 		Homepage:        flow.GetTargetHomepage(),
-		OrganizationID:  flow.GetTargetOrganization(),
+		OrganizationID:  flow.GetTargetOrganizationID(),
 		Provider:        flow.Provider,
 		EmailOrUsername: "",
 		Error:           "",
@@ -613,6 +613,10 @@ func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, 
 		Passkey:         nil,
 		Password:        nil,
 	}, nil)
+}
+
+type AuthFlowChooseIdentityRequest struct {
+	Identity IdentityRef `json:"identity"`
 }
 
 func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
@@ -626,16 +630,23 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 		return
 	}
 
-	var ea emptyRequest
-	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &ea)
+	var chooseIdentity AuthFlowChooseIdentityRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &chooseIdentity)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
-	// TODO: Store chosen identity.
+	// We know flow.TargetOrganization is not nil because we checked in
+	// GetActiveFlowOIDCTarget that Target == TargetOIDC.
+	identity, errE := selectAndActivateIdentity(ctx, chooseIdentity.Identity.ID, *flow.TargetOrganizationID)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
 
 	flow.Completed = CompletedIdentity
+	flow.OIDCIdentity = identity
 	flow.OIDCRedirectReady = false
 
 	errE = SetFlow(ctx, flow)
@@ -648,7 +659,7 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 		Target:          flow.Target,
 		Name:            flow.TargetName,
 		Homepage:        flow.GetTargetHomepage(),
-		OrganizationID:  flow.GetTargetOrganization(),
+		OrganizationID:  flow.GetTargetOrganizationID(),
 		Provider:        flow.Provider,
 		EmailOrUsername: "",
 		Error:           "",
@@ -709,7 +720,7 @@ func (s *Service) AuthFlowRedirectPost(w http.ResponseWriter, req *http.Request,
 		Target:          flow.Target,
 		Name:            flow.TargetName,
 		Homepage:        flow.GetTargetHomepage(),
-		OrganizationID:  flow.GetTargetOrganization(),
+		OrganizationID:  flow.GetTargetOrganizationID(),
 		Provider:        flow.Provider,
 		EmailOrUsername: "",
 		Error:           "",
@@ -769,11 +780,12 @@ func (s *Service) AuthFlowCreatePost(w http.ResponseWriter, req *http.Request, _
 		Target:               TargetSession,
 		TargetLocation:       location,
 		TargetName:           "Charon Dashboard",
-		TargetOrganization:   nil,
+		TargetOrganizationID: nil,
 		Provider:             "",
 		EmailOrUsername:      "",
 		Attempts:             0,
 		OIDCAuthorizeRequest: nil,
+		OIDCIdentity:         nil,
 		OIDCRedirectReady:    false,
 		OIDCProvider:         nil,
 		Passkey:              nil,

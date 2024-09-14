@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Ref } from "vue"
-import type { AuthFlowResponse, Completed, Identities } from "@/types"
+import type { AuthFlowChooseIdentityRequest, AuthFlowResponse, Completed, Identities } from "@/types"
 
 import { ref, onBeforeUnmount, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
@@ -115,7 +115,11 @@ async function onSelect(id: string) {
       },
     }).href
 
-    const response = await postJSON<AuthFlowResponse>(url, {}, abortController.signal, progress)
+    const response = await postJSON<AuthFlowResponse>(url, {
+      identity: {
+        id,
+      },
+    } as AuthFlowChooseIdentityRequest, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }

@@ -41,8 +41,8 @@ type contextKey struct {
 	name string
 }
 
-// accountContextKey provides current account ID.
-var accountContextKey = &contextKey{"account"} //nolint:gochecknoglobals
+// accountIDContextKey provides current account ID.
+var accountIDContextKey = &contextKey{"account"} //nolint:gochecknoglobals
 
 //nolint:gochecknoglobals
 var (
@@ -115,13 +115,13 @@ func getFlowFromID(ctx context.Context, value string) (*Flow, errors.E) {
 	return GetFlow(ctx, id)
 }
 
-func getAccount(ctx context.Context) (identifier.Identifier, bool) {
-	a, ok := ctx.Value(accountContextKey).(identifier.Identifier)
+func getAccountID(ctx context.Context) (identifier.Identifier, bool) {
+	a, ok := ctx.Value(accountIDContextKey).(identifier.Identifier)
 	return a, ok
 }
 
-func mustGetAccount(ctx context.Context) identifier.Identifier {
-	a, ok := getAccount(ctx)
+func mustGetAccountID(ctx context.Context) identifier.Identifier {
+	a, ok := getAccountID(ctx)
 	if !ok {
 		panic(errors.New("account not found in context"))
 	}
@@ -131,7 +131,7 @@ func mustGetAccount(ctx context.Context) identifier.Identifier {
 func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request, api bool) context.Context {
 	session, errE := s.getSessionFromRequest(w, req)
 	if errE == nil {
-		return context.WithValue(req.Context(), accountContextKey, session.Account)
+		return context.WithValue(req.Context(), accountIDContextKey, session.AccountID)
 	} else if !errors.Is(errE, ErrSessionNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
 		return nil
@@ -152,11 +152,12 @@ func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request,
 		Target:               TargetSession,
 		TargetLocation:       req.URL.String(),
 		TargetName:           "Charon Dashboard",
-		TargetOrganization:   nil,
+		TargetOrganizationID: nil,
 		Provider:             "",
 		EmailOrUsername:      "",
 		Attempts:             0,
 		OIDCAuthorizeRequest: nil,
+		OIDCIdentity:         nil,
 		OIDCRedirectReady:    false,
 		OIDCProvider:         nil,
 		Passkey:              nil,

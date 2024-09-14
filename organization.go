@@ -547,8 +547,8 @@ func (o *Organization) Validate(ctx context.Context, existing *Organization) err
 		return errE
 	}
 
-	account := mustGetAccount(ctx)
-	accountRef := AccountRef{account}
+	accountID := mustGetAccountID(ctx)
+	accountRef := AccountRef{ID: accountID}
 	if !slices.Contains(o.Admins, accountRef) {
 		o.Admins = append(o.Admins, accountRef)
 	}
@@ -648,8 +648,8 @@ func UpdateOrganization(ctx context.Context, organization *Organization) errors.
 		return errE
 	}
 
-	account := mustGetAccount(ctx)
-	if !slices.Contains(existingOrganization.Admins, AccountRef{account}) {
+	accountID := mustGetAccountID(ctx)
+	if !slices.Contains(existingOrganization.Admins, AccountRef{ID: accountID}) {
 		return errors.WithDetails(ErrOrganizationUnauthorized, "id", organization.ID)
 	}
 
@@ -714,7 +714,7 @@ func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, p
 
 	session, errE := s.getSessionFromRequest(w, req)
 	if errE == nil {
-		ctx = context.WithValue(ctx, accountContextKey, session.Account)
+		ctx = context.WithValue(ctx, accountIDContextKey, session.AccountID)
 	} else if !errors.Is(errE, ErrSessionNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -729,7 +729,7 @@ func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	if session != nil && slices.Contains(organization.Admins, AccountRef{session.Account}) {
+	if session != nil && slices.Contains(organization.Admins, AccountRef{ID: session.AccountID}) {
 		s.WriteJSON(w, req, organization, map[string]interface{}{
 			"can_update": true,
 		})

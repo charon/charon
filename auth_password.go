@@ -161,7 +161,7 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 		Target:          flow.Target,
 		Name:            flow.TargetName,
 		Homepage:        flow.GetTargetHomepage(),
-		OrganizationID:  flow.GetTargetOrganization(),
+		OrganizationID:  flow.GetTargetOrganizationID(),
 		Provider:        flow.Provider,
 		EmailOrUsername: flow.EmailOrUsername,
 		Error:           "",

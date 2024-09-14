@@ -56,25 +56,26 @@ type FlowPassword struct {
 
 type FlowCode struct {
 	Codes       []string
-	Account     *identifier.Identifier
+	AccountID   *identifier.Identifier
 	Credentials []Credential
 }
 
 type Flow struct {
-	ID                 identifier.Identifier
-	CreatedAt          time.Time
-	Session            *identifier.Identifier
-	Completed          Completed
-	AuthTime           *time.Time
-	Target             Target
-	TargetLocation     string
-	TargetName         string
-	TargetOrganization *identifier.Identifier
-	Provider           Provider
-	EmailOrUsername    string
-	Attempts           int
+	ID                   identifier.Identifier
+	CreatedAt            time.Time
+	Session              *identifier.Identifier
+	Completed            Completed
+	AuthTime             *time.Time
+	Target               Target
+	TargetLocation       string
+	TargetName           string
+	TargetOrganizationID *identifier.Identifier
+	Provider             Provider
+	EmailOrUsername      string
+	Attempts             int
 
 	OIDCAuthorizeRequest *fosite.AuthorizeRequest
+	OIDCIdentity         *Identity
 	OIDCRedirectReady    bool
 
 	OIDCProvider *FlowOIDCProvider
@@ -137,11 +138,11 @@ func (f *Flow) IsCompleted() bool {
 	}
 }
 
-func (f *Flow) GetTargetOrganization() string {
-	if f.TargetOrganization == nil {
+func (f *Flow) GetTargetOrganizationID() string {
+	if f.TargetOrganizationID == nil {
 		return ""
 	}
-	return f.TargetOrganization.String()
+	return f.TargetOrganizationID.String()
 }
 
 func (f *Flow) GetTargetHomepage() string {

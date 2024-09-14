@@ -640,8 +640,8 @@ func (a *ApplicationTemplate) Validate(ctx context.Context, existing *Applicatio
 		return errE
 	}
 
-	account := mustGetAccount(ctx)
-	accountRef := AccountRef{account}
+	accountID := mustGetAccountID(ctx)
+	accountRef := AccountRef{ID: accountID}
 	if !slices.Contains(a.Admins, accountRef) {
 		a.Admins = append(a.Admins, accountRef)
 	}
@@ -710,8 +710,8 @@ func UpdateApplicationTemplate(ctx context.Context, applicationTemplate *Applica
 		return errE
 	}
 
-	account := mustGetAccount(ctx)
-	if !slices.Contains(existingApplicationTemplate.Admins, AccountRef{account}) {
+	accountID := mustGetAccountID(ctx)
+	if !slices.Contains(existingApplicationTemplate.Admins, AccountRef{ID: accountID}) {
 		return errors.WithDetails(ErrApplicationTemplateUnauthorized, "id", *applicationTemplate.ID)
 	}
 
@@ -776,7 +776,7 @@ func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Req
 
 	session, errE := s.getSessionFromRequest(w, req)
 	if errE == nil {
-		ctx = context.WithValue(ctx, accountContextKey, session.Account)
+		ctx = context.WithValue(ctx, accountIDContextKey, session.AccountID)
 	} else if !errors.Is(errE, ErrSessionNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -791,7 +791,7 @@ func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	if session != nil && slices.Contains(applicationTemplate.Admins, AccountRef{session.Account}) {
+	if session != nil && slices.Contains(applicationTemplate.Admins, AccountRef{ID: session.AccountID}) {
 		s.WriteJSON(w, req, applicationTemplate, map[string]interface{}{
 			"can_update": true,
 		})

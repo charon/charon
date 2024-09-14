@@ -185,8 +185,8 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 		return errors.New("empty identity")
 	}
 
-	account := mustGetAccount(ctx)
-	accountRef := AccountRef{account}
+	accountID := mustGetAccountID(ctx)
+	accountRef := AccountRef{ID: accountID}
 	if !slices.Contains(i.Admins, accountRef) {
 		i.Admins = append(i.Admins, accountRef)
 	}
@@ -262,8 +262,8 @@ func GetIdentity(ctx context.Context, id identifier.Identifier) (*Identity, erro
 		errors.Details(errE)["id"] = id
 		return nil, errE
 	}
-	account := mustGetAccount(ctx)
-	if !slices.Contains(identity.Users, AccountRef{account}) && !slices.Contains(identity.Admins, AccountRef{account}) {
+	accountID := mustGetAccountID(ctx)
+	if !slices.Contains(identity.Users, AccountRef{accountID}) && !slices.Contains(identity.Admins, AccountRef{accountID}) {
 		return nil, errors.WithDetails(ErrIdentityUnauthorized, "id", id)
 	}
 	return &identity, nil
@@ -307,8 +307,8 @@ func UpdateIdentity(ctx context.Context, identity *Identity) errors.E { //nolint
 		return errE
 	}
 
-	account := mustGetAccount(ctx)
-	if !slices.Contains(existingIdentity.Admins, AccountRef{account}) {
+	accountID := mustGetAccountID(ctx)
+	if !slices.Contains(existingIdentity.Admins, AccountRef{ID: accountID}) {
 		return errors.WithDetails(ErrIdentityUnauthorized, "id", *identity.ID)
 	}
 
@@ -325,6 +325,42 @@ func UpdateIdentity(ctx context.Context, identity *Identity) errors.E { //nolint
 
 	identities[*identity.ID] = data
 	return nil
+}
+
+// TODO: This is full of races, use transactions once we use proper database to store identities.
+func selectAndActivateIdentity(ctx context.Context, identityID, organizationID identifier.Identifier) (*Identity, errors.E) {
+	identity, errE := GetIdentity(ctx, identityID)
+	if errE != nil {
+		return nil, errE
+	}
+
+	for i, idOrg := range identity.Organizations {
+		if idOrg.Organization.ID == organizationID {
+			if idOrg.Active {
+				// Organization already present and active, nothing to do.
+				return identity, nil
+			}
+
+			// Organization already present but not active, we activate it.
+			idOrg.Active = true
+			// IdentityOrganization has been changed, so we assign it back.
+			identity.Organizations[i] = idOrg
+
+			return identity, UpdateIdentity(ctx, identity)
+		}
+	}
+
+	// Organization not present, we add it (active).
+	id := identifier.New()
+	identity.Organizations = append(identity.Organizations, IdentityOrganization{
+		ID:     &id,
+		Active: true,
+		Organization: OrganizationRef{
+			ID: organizationID,
+		},
+	})
+
+	return identity, UpdateIdentity(ctx, identity)
 }
 
 func (s *Service) IdentityGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
@@ -386,8 +422,8 @@ func (s *Service) IdentityGetGet(w http.ResponseWriter, req *http.Request, param
 		return
 	}
 
-	account := mustGetAccount(ctx)
-	if slices.Contains(identity.Admins, AccountRef{account}) {
+	accountID := mustGetAccountID(ctx)
+	if slices.Contains(identity.Admins, AccountRef{ID: accountID}) {
 		s.WriteJSON(w, req, identity, map[string]interface{}{
 			"can_get":    true,
 			"can_update": true,
@@ -406,7 +442,7 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 		return
 	}
 
-	account := mustGetAccount(ctx)
+	accountID := mustGetAccountID(ctx)
 
 	result := []IdentityRef{}
 
@@ -442,7 +478,7 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 			return
 		}
 
-		if slices.Contains(identity.Users, AccountRef{account}) || slices.Contains(identity.Admins, AccountRef{account}) {
+		if slices.Contains(identity.Users, AccountRef{ID: accountID}) || slices.Contains(identity.Admins, AccountRef{ID: accountID}) {
 			// TODO: Do not filter in list endpoint but filter in search endpoint.
 			if organization != nil && identity.HasOrganization(*organization) {
 				result = append(result, IdentityRef{ID: id})
