@@ -221,29 +221,31 @@ func (s *Service) GetActiveFlowNoAuthStep(w http.ResponseWriter, req *http.Reque
 	return flow
 }
 
-func (s *Service) GetActiveFlowOIDCTarget(w http.ResponseWriter, req *http.Request, value string) *Flow {
+func (s *Service) GetActiveFlowOIDCTarget(w http.ResponseWriter, req *http.Request, value string) (identifier.Identifier, *Flow) {
 	flow := s.GetActiveFlow(w, req, value)
 	if flow == nil {
-		return nil
+		return identifier.Identifier{}, nil
 	}
 
 	if flow.Target != TargetOIDC {
 		s.BadRequestWithError(w, req, errors.New("not OIDC target"))
-		return nil
+		return identifier.Identifier{}, nil
 	}
 	// Flow already successfully (session is not nil) completed auth step, but not the final redirect step for the OIDC
 	// target (we checked that flow.Completed != CompletedRedirect in flow.IsCompleted() check in GetActiveFlow() above).
 	if flow.Completed == "" || flow.Session == nil {
 		s.BadRequestWithError(w, req, errors.New("auth step not completed"))
-		return nil
+		return identifier.Identifier{}, nil
 	}
 
 	// Current session should match the session in the flow.
-	if _, handled := s.validateSession(w, req, true, flow); handled {
-		return nil
+	accountID, handled := s.validateSession(w, req, true, flow)
+	if handled {
+		return identifier.Identifier{}, nil
 	}
 
-	return flow
+	// accountID cannot be nil because we call validateSession with api parameter set to true.
+	return *accountID, flow
 }
 
 func getHost(config *Config, domain string) (string, errors.E) {

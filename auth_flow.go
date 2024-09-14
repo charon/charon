@@ -148,7 +148,7 @@ func (s *Service) AuthFlowGetGet(w http.ResponseWriter, req *http.Request, param
 }
 
 // validateSession returns session only if current session matches one made by the flow.
-func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api bool, flow *Flow) (*Session, bool) {
+func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api bool, flow *Flow) (*identifier.Identifier, bool) {
 	session, errE := s.getSessionFromRequest(w, req)
 	if errors.Is(errE, ErrSessionNotFound) {
 		if api {
@@ -165,7 +165,7 @@ func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api 
 	// Caller should call validateSession only when flow.Session is set.
 	if *flow.Session == session.ID {
 		// Fast path so that we do not have to fetch another session if it is the same session.
-		return session, false
+		return &session.AccountID, false
 	}
 
 	flowSession, errE := GetSession(req.Context(), *flow.Session)
@@ -191,7 +191,7 @@ func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api 
 		return nil, false
 	}
 
-	return session, false
+	return &session.AccountID, false
 }
 
 func (s *Service) getIdentityFromCredentials(credentials []Credential) (*Identity, errors.E) {
@@ -510,7 +510,7 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 
 	ctx := req.Context()
 
-	flow := s.GetActiveFlowOIDCTarget(w, req, params["id"])
+	_, flow := s.GetActiveFlowOIDCTarget(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -577,7 +577,7 @@ func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, 
 
 	ctx := req.Context()
 
-	flow := s.GetActiveFlowOIDCTarget(w, req, params["id"])
+	_, flow := s.GetActiveFlowOIDCTarget(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -625,10 +625,12 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 
 	ctx := req.Context()
 
-	flow := s.GetActiveFlowOIDCTarget(w, req, params["id"])
+	accountID, flow := s.GetActiveFlowOIDCTarget(w, req, params["id"])
 	if flow == nil {
 		return
 	}
+
+	ctx = context.WithValue(ctx, accountIDContextKey, accountID)
 
 	var chooseIdentity AuthFlowChooseIdentityRequest
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &chooseIdentity)

@@ -140,8 +140,8 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 
 	// It should not be possible to get to OIDCRedirectReady state with flow.Session being nil,
 	// unless flow.Completed == CompletedFailed, which we checked above.
-	session, handled := s.validateSession(w, req, false, flow)
-	if session == nil {
+	accountID, handled := s.validateSession(w, req, false, flow)
+	if accountID == nil {
 		return handled
 	}
 
@@ -173,7 +173,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 
 	oidcSession := &OIDCSession{ //nolint:forcetypeassert
 		Subject:                *flow.OIDCIdentity.ID,
-		Session:                session.ID,
+		Session:                *accountID,
 		ExpiresAt:              nil,
 		RequestedAt:            flow.CreatedAt,
 		AuthTime:               *flow.AuthTime,
