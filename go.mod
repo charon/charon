@@ -5,6 +5,7 @@ go 1.21
 require (
 	github.com/alecthomas/kong v0.9.0
 	github.com/alexedwards/argon2id v1.0.0
+	github.com/automattic/go-gravatar v0.0.0-20210818030622-453d3c921ea3
 	github.com/go-jose/go-jose/v3 v3.0.3
 	github.com/go-jose/go-jose/v4 v4.0.2
 	github.com/mocktools/go-smtp-mock/v2 v2.3.0
@@ -23,7 +24,6 @@ require (
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
-	github.com/automattic/go-gravatar v0.0.0-20210818030622-453d3c921ea3 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/creasty/defaults v1.7.0 // indirect
