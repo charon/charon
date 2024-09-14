@@ -98,14 +98,14 @@ func (i *Identity) GetIdentityOrganization(id *identifier.Identifier) *IdentityO
 	return nil
 }
 
-func (i *Identity) HasOrganization(id identifier.Identifier) bool {
+func (i *Identity) GetOrganization(id identifier.Identifier) *IdentityOrganization {
 	for _, idOrg := range i.Organizations {
 		if idOrg.Organization.ID == id {
-			return true
+			return &idOrg
 		}
 	}
 
-	return false
+	return nil
 }
 
 type IdentityRef struct {
@@ -479,9 +479,9 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 
 		if slices.Contains(identity.Users, AccountRef{ID: accountID}) || slices.Contains(identity.Admins, AccountRef{ID: accountID}) {
 			// TODO: Do not filter in list endpoint but filter in search endpoint.
-			if organization != nil && identity.HasOrganization(*organization) {
+			if organization != nil && identity.GetOrganization(*organization) != nil {
 				result = append(result, IdentityRef{ID: id})
-			} else if notOrganization != nil && !identity.HasOrganization(*notOrganization) {
+			} else if notOrganization != nil && identity.GetOrganization(*notOrganization) == nil {
 				result = append(result, IdentityRef{ID: id})
 			} else if organization == nil && notOrganization == nil {
 				result = append(result, IdentityRef{ID: id})

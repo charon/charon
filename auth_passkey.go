@@ -50,20 +50,6 @@ func (u *charonUser) WebAuthnCredentials() []webauthn.Credential {
 	return u.Credentials
 }
 
-func withWebauthnError(err error) errors.E {
-	errE := errors.WithStack(err)
-	var e *protocol.Error
-	if errors.As(err, &e) {
-		if e.Type != "" {
-			errors.Details(errE)["type"] = e.Type
-		}
-		if e.DevInfo != "" {
-			errors.Details(errE)["debug"] = e.DevInfo
-		}
-	}
-	return errE
-}
-
 func WithPreferredCredentialAlgorithms(preferredAlgorithms []webauthncose.COSEAlgorithmIdentifier) webauthn.RegistrationOption {
 	return func(cco *protocol.PublicKeyCredentialCreationOptions) {
 		credentialParameters := []protocol.CredentialParameter{}

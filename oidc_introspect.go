@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/ory/fosite"
-	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/waf"
 )
 
@@ -30,7 +29,7 @@ func (s *Service) OIDCIntrospectPost(w http.ResponseWriter, req *http.Request, _
 
 	ir, err := oidc.NewIntrospectionRequest(ctx, req, session)
 	if err != nil {
-		errE := errors.WithStack(err)
+		errE := withFositeError(err)
 		s.WithError(ctx, errE)
 		oidc.WriteIntrospectionError(ctx, w, errE)
 		return

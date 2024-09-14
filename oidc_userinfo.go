@@ -30,7 +30,7 @@ func (s *Service) oidcUserInfo(w http.ResponseWriter, req *http.Request) {
 		if rfcerr.StatusCode() == http.StatusUnauthorized {
 			w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Bearer error="%s",error_description="%s"`, rfcerr.ErrorField, rfcerr.GetDescription()))
 		}
-		s.WithError(ctx, errors.WithStack(rfcerr))
+		s.WithError(ctx, withFositeError(rfcerr))
 		waf.Error(w, req, rfcerr.StatusCode())
 		return
 	}

@@ -4,7 +4,6 @@ import (
 	"io"
 	"net/http"
 
-	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 )
@@ -25,7 +24,7 @@ func (s *Service) OIDCTokenPost(w http.ResponseWriter, req *http.Request, _ waf.
 
 	accessRequest, err := oidc.NewAccessRequest(ctx, req, sessionData)
 	if err != nil {
-		errE := errors.WithStack(err)
+		errE := withFositeError(err)
 		s.WithError(ctx, errE)
 		oidc.WriteAccessError(ctx, w, accessRequest, errE)
 		return
@@ -50,7 +49,7 @@ func (s *Service) OIDCTokenPost(w http.ResponseWriter, req *http.Request, _ waf.
 
 	response, err := oidc.NewAccessResponse(ctx, accessRequest)
 	if err != nil {
-		errE := errors.WithStack(err)
+		errE := withFositeError(err)
 		s.WithError(ctx, errE)
 		oidc.WriteAccessError(ctx, w, accessRequest, errE)
 		return

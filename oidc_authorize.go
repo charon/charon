@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/ory/fosite"
-	"github.com/ory/fosite/token/jwt"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
@@ -56,7 +55,7 @@ func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.
 
 	authorizeRequest, err := oidc.NewAuthorizeRequest(ctx, req)
 	if err != nil {
-		errE := errors.WithStack(err)
+		errE := withFositeError(err)
 		s.WithError(ctx, errE)
 		oidc.WriteAuthorizeError(ctx, w, authorizeRequest, errE)
 		return
@@ -172,7 +171,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 	grantAllScopes(authorizeRequest)
 
 	oidcSession := &OIDCSession{ //nolint:forcetypeassert
-		Subject:                *flow.OIDCIdentity.ID,
+		Subject:                *flow.OIDCIdentity.GetOrganization(*flow.TargetOrganizationID).ID,
 		Session:                *accountID,
 		ExpiresAt:              nil,
 		RequestedAt:            flow.CreatedAt,
@@ -180,37 +179,39 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 		Client:                 authorizeRequest.GetClient().(*OIDCClient).ID,
 		JWTClaims:              nil,
 		JWTHeaders:             nil,
-		IDTokenClaimsInternal:  new(jwt.IDTokenClaims),
+		IDTokenClaimsInternal:  nil,
 		IDTokenHeadersInternal: nil,
 	}
+
+	idTokenClaims := oidcSession.IDTokenClaims()
 
 	for _, scope := range authorizeRequest.GetGrantedScopes() {
 		switch strings.ToLower(scope) {
 		case "profile":
 			if flow.OIDCIdentity.Username != "" {
-				oidcSession.IDTokenClaimsInternal.Add("preferred_username", flow.OIDCIdentity.Username)
+				idTokenClaims.Add("preferred_username", flow.OIDCIdentity.Username)
 			}
 			if flow.OIDCIdentity.GivenName != "" {
-				oidcSession.IDTokenClaimsInternal.Add("given_name", flow.OIDCIdentity.GivenName)
+				idTokenClaims.Add("given_name", flow.OIDCIdentity.GivenName)
 			}
 			if flow.OIDCIdentity.FullName != "" {
-				oidcSession.IDTokenClaimsInternal.Add("name", flow.OIDCIdentity.FullName)
+				idTokenClaims.Add("name", flow.OIDCIdentity.FullName)
 			}
 			if flow.OIDCIdentity.PictureURL != "" {
-				oidcSession.IDTokenClaimsInternal.Add("picture", flow.OIDCIdentity.PictureURL)
+				idTokenClaims.Add("picture", flow.OIDCIdentity.PictureURL)
 			}
 		case "email":
 			if flow.OIDCIdentity.Email != "" {
-				oidcSession.IDTokenClaimsInternal.Add("email", flow.OIDCIdentity.Username)
+				idTokenClaims.Add("email", flow.OIDCIdentity.Username)
 				// TODO: We are not yet making sure only validated addressed can be set in an identity.
-				oidcSession.IDTokenClaimsInternal.Add("email", true)
+				idTokenClaims.Add("email_verified", true)
 			}
 		}
 	}
 
 	response, err := oidc.NewAuthorizeResponse(ctx, authorizeRequest, oidcSession)
 	if err != nil {
-		errE = errors.WithStack(err)
+		errE = withFositeError(err)
 		s.WithError(ctx, errE)
 		oidc.WriteAuthorizeError(ctx, w, authorizeRequest, errE)
 		return true

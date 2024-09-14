@@ -325,7 +325,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 
 	token, signature, err := s.hmac.Generate(ctx)
 	if err != nil {
-		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
+		s.InternalServerErrorWithError(w, req, withFositeError(err))
 		return
 	}
 

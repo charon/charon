@@ -4,7 +4,6 @@ import (
 	"io"
 	"net/http"
 
-	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/waf"
 )
 
@@ -18,7 +17,7 @@ func (s *Service) OIDCRevokePost(w http.ResponseWriter, req *http.Request, _ waf
 
 	err := oidc.NewRevocationRequest(ctx, req)
 	if err != nil {
-		errE := errors.WithStack(err)
+		errE := withFositeError(err)
 		s.WithError(ctx, errE)
 		oidc.WriteRevocationResponse(ctx, w, errE)
 		return

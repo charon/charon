@@ -24,6 +24,8 @@ import (
 	"time"
 
 	"github.com/go-jose/go-jose/v3"
+	"github.com/go-webauthn/webauthn/protocol"
+	"github.com/ory/fosite"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
@@ -519,4 +521,50 @@ func validRedirectLocation(service *Service, location string) (string, errors.E)
 	}
 
 	return u.String(), nil
+}
+
+func withWebauthnError(err error) errors.E {
+	if err == nil {
+		return nil
+	}
+
+	errE := errors.WithStack(err)
+	var e *protocol.Error
+	if errors.As(err, &e) {
+		details := errors.Details(errE)
+		if e.Type != "" {
+			details["type"] = e.Type
+		}
+		if e.DevInfo != "" {
+			details["debug"] = e.DevInfo
+		}
+	}
+
+	return errE
+}
+
+func withFositeError(err error) errors.E {
+	if err == nil {
+		return nil
+	}
+
+	errE := errors.WithStack(err)
+	var e *fosite.RFC6749Error
+	if errors.As(err, &e) {
+		details := errors.Details(errE)
+		if e.DescriptionField != "" {
+			details["description"] = e.DescriptionField
+		}
+		if e.HintField != "" {
+			details["hint"] = e.HintField
+		}
+		if e.CodeField != 0 {
+			details["code"] = e.CodeField
+		}
+		if e.DebugField != "" {
+			details["debug"] = e.DebugField
+		}
+	}
+
+	return errE
 }
