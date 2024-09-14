@@ -351,9 +351,8 @@ func selectAndActivateIdentity(ctx context.Context, identityID, organizationID i
 	}
 
 	// Organization not present, we add it (active).
-	id := identifier.New()
 	identity.Organizations = append(identity.Organizations, IdentityOrganization{
-		ID:     &id,
+		ID:     nil,
 		Active: true,
 		Organization: OrganizationRef{
 			ID: organizationID,
