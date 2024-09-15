@@ -52,7 +52,7 @@ func createAuthFlow(t *testing.T, ts *httptest.Server, service *charon.Service) 
 	return authFlowCreateResponse.ID
 }
 
-func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, organizationID, flowID identifier.Identifier) { //nolint:dupl
+func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, organizationID, flowID identifier.Identifier) {
 	t.Helper()
 
 	identityListGet, errE := service.ReverseAPI("IdentityList", nil, nil)
@@ -76,6 +76,7 @@ func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	request, errE := x.MarshalWithoutEscapeHTML(charon.AuthFlowChooseIdentityRequest{
 		Identity: identities[0],
 	})
+	require.NoError(t, errE, "% -+#.1v", errE)
 
 	resp, err = ts.Client().Post(ts.URL+authFlowChooseIdentity, "application/json", bytes.NewReader(request)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
@@ -102,7 +103,7 @@ func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	}
 }
 
-func doRedirect(t *testing.T, ts *httptest.Server, service *charon.Service, organizationID, flowID identifier.Identifier) { //nolint:dupl
+func doRedirect(t *testing.T, ts *httptest.Server, service *charon.Service, organizationID, flowID identifier.Identifier) {
 	t.Helper()
 
 	authFlowRedirect, errE := service.ReverseAPI("AuthFlowRedirect", waf.Params{"id": flowID.String()}, nil)
