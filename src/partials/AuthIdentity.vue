@@ -70,11 +70,11 @@ async function getIdentities(organizationId: string, not: boolean, loading: Ref<
 
   progress.value += 1
   try {
-    const q: { notorg?: string, org?: string } = {}
+    const q: { notorg?: string; org?: string } = {}
     if (not) {
-      q['notorg'] = organizationId
+      q["notorg"] = organizationId
     } else {
-      q['org'] = organizationId
+      q["org"] = organizationId
     }
     const url = router.apiResolve({
       name: "IdentityList",
@@ -115,11 +115,16 @@ async function onSelect(id: string) {
       },
     }).href
 
-    const response = await postJSON<AuthFlowResponse>(url, {
-      identity: {
-        id,
-      },
-    } as AuthFlowChooseIdentityRequest, abortController.signal, progress)
+    const response = await postJSON<AuthFlowResponse>(
+      url,
+      {
+        identity: {
+          id,
+        },
+      } as AuthFlowChooseIdentityRequest,
+      abortController.signal,
+      progress,
+    )
     if (abortController.signal.aborted) {
       return
     }
@@ -224,7 +229,9 @@ async function onDecline() {
       <div v-if="otherIdentitiesLoading" class="mb-4">Loading...</div>
       <div v-else-if="otherIdentitiesLoadingError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
       <template v-else>
-        <div v-if="!otherIdentities.length" class="italic mb-4">There are no identities. {{ usedIdentities.length + otherIdentities.length === 0 ? "Create the first one." : "Create another one." }}</div>
+        <div v-if="!otherIdentities.length" class="italic mb-4">
+          There are no identities. {{ usedIdentities.length + otherIdentities.length === 0 ? "Create the first one." : "Create another one." }}
+        </div>
         <template v-for="identity of otherIdentities" :key="identity.id">
           <div class="grid grid-cols-1 gap-4 mb-4">
             <IdentityListItem :item="identity">
