@@ -215,7 +215,7 @@ export async function redirectOIDC(router: Router, flowId: string, flow: Flow, a
     if (processCompletedAndLocationRedirect(response, flow, progress, abortController)) {
       return
     }
-    if (!("error" in response) && !("provider" in response)) {
+    if (!("error" in response)) {
       // Flow is marked as ready for redirect, so we reload it again for redirect to happen.
       redirectServerSide(redirectUrl, true, progress)
       return
