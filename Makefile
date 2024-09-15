@@ -12,7 +12,7 @@ ifeq ($(REVISION),)
  REVISION = `git rev-parse HEAD`
 endif
 
-.PHONY: build build-static test test-ci lint lint-ci fmt fmt-ci upgrade clean release lint-docs audit watch
+.PHONY: build build-static test test-ci lint lint-ci fmt fmt-ci upgrade clean release lint-docs lint-docs-ci audit watch
 
 # dist is build only if it is missing. Use "make clean" to remove it to build it again.
 build: dist
@@ -41,10 +41,10 @@ test-ci: dist/index.html
 	go tool cover -html=coverage.txt -o coverage.html
 
 lint: dist/index.html
-	golangci-lint run --timeout 4m --color always --allow-parallel-runners --fix
+	golangci-lint run --timeout 4m --color always --allow-parallel-runners --fix --max-issues-per-linter 0 --max-same-issues 0
 
 lint-ci: dist/index.html
-	golangci-lint run --timeout 4m --out-format colored-line-number,code-climate:codeclimate.json
+	golangci-lint run --timeout 4m --max-issues-per-linter 0 --max-same-issues 0 --out-format colored-line-number,code-climate:codeclimate.json
 
 fmt:
 	go mod tidy
@@ -55,7 +55,7 @@ fmt-ci: fmt
 	git diff --exit-code --color=always
 
 upgrade:
-	go run github.com/icholy/gomajor@v0.11.0 get all
+	go run github.com/icholy/gomajor@v0.13.2 get all
 	go mod tidy
 
 clean:
@@ -65,7 +65,10 @@ release:
 	npx --yes --package 'release-it@15.4.2' --package '@release-it/keep-a-changelog@3.1.0' -- release-it
 
 lint-docs:
-	npx --yes --package 'markdownlint-cli@~0.34.0' -- markdownlint --ignore-path .gitignore --ignore testdata/ '**/*.md'
+	npx --yes --package 'markdownlint-cli@~0.41.0' -- markdownlint --ignore-path .gitignore --ignore testdata/ --fix '**/*.md'
+
+lint-docs-ci: lint-docs
+	git diff --exit-code --color=always
 
 audit: dist/index.html
 	go list -json -deps ./... | nancy sleuth --skip-update-check

@@ -20,9 +20,15 @@ import (
 	"gitlab.com/tozd/identifier"
 )
 
-type argon2idHasher struct{}
+const (
+	SecretPrefixAccessToken   = "cat-"
+	SecretPrefixRefreshToken  = "crt-"
+	SecretPrefixAuthorizeCode = "cac-"
+)
 
 var oidcStore = NewOIDCStore() //nolint:gochecknoglobals
+
+type argon2idHasher struct{}
 
 func (argon2idHasher) Compare(_ context.Context, hash, data []byte) error {
 	strData := string(data)
@@ -52,6 +58,59 @@ func (argon2idHasher) Hash(_ context.Context, data []byte) ([]byte, error) {
 		return nil, errors.WithStack(err)
 	}
 	return []byte(hashedPassword), nil
+}
+
+var _ oauth2.CoreStrategy = (*hmacSHAStrategy)(nil)
+
+type hmacSHAStrategy struct {
+	*oauth2.HMACSHAStrategyUnPrefixed
+}
+
+func newHMACSHAStrategy(
+	hmacStrategy *hmac.HMACStrategy,
+	config oauth2.LifespanConfigProvider,
+) *hmacSHAStrategy {
+	return &hmacSHAStrategy{
+		HMACSHAStrategyUnPrefixed: oauth2.NewHMACSHAStrategyUnPrefixed(hmacStrategy, config),
+	}
+}
+
+func (h *hmacSHAStrategy) trimPrefix(token, prefix string) string {
+	return strings.TrimPrefix(token, prefix)
+}
+
+func (h *hmacSHAStrategy) setPrefix(token, prefix string) string {
+	if token == "" {
+		return ""
+	}
+	return prefix + token
+}
+
+func (h *hmacSHAStrategy) GenerateAccessToken(ctx context.Context, r fosite.Requester) (string, string, error) {
+	token, sig, err := h.HMACSHAStrategyUnPrefixed.GenerateAccessToken(ctx, r)
+	return h.setPrefix(token, SecretPrefixAccessToken), sig, err
+}
+
+func (h *hmacSHAStrategy) ValidateAccessToken(ctx context.Context, r fosite.Requester, token string) error {
+	return h.HMACSHAStrategyUnPrefixed.ValidateAccessToken(ctx, r, h.trimPrefix(token, SecretPrefixAccessToken))
+}
+
+func (h *hmacSHAStrategy) GenerateRefreshToken(ctx context.Context, r fosite.Requester) (string, string, error) {
+	token, sig, err := h.HMACSHAStrategyUnPrefixed.GenerateRefreshToken(ctx, r)
+	return h.setPrefix(token, SecretPrefixRefreshToken), sig, err
+}
+
+func (h *hmacSHAStrategy) ValidateRefreshToken(ctx context.Context, r fosite.Requester, token string) error {
+	return h.HMACSHAStrategyUnPrefixed.ValidateRefreshToken(ctx, r, h.trimPrefix(token, SecretPrefixRefreshToken))
+}
+
+func (h *hmacSHAStrategy) GenerateAuthorizeCode(ctx context.Context, r fosite.Requester) (string, string, error) {
+	token, sig, err := h.HMACSHAStrategyUnPrefixed.GenerateAuthorizeCode(ctx, r)
+	return h.setPrefix(token, SecretPrefixAuthorizeCode), sig, err
+}
+
+func (h *hmacSHAStrategy) ValidateAuthorizeCode(ctx context.Context, r fosite.Requester, token string) error {
+	return h.HMACSHAStrategyUnPrefixed.ValidateAuthorizeCode(ctx, r, h.trimPrefix(token, SecretPrefixAuthorizeCode))
 }
 
 func initOIDC(config *Config, service *Service, domain string, hmacStrategy *hmac.HMACStrategy) (func() *fosite.Fosite, errors.E) {
@@ -94,12 +153,7 @@ func initOIDC(config *Config, service *Service, domain string, hmacStrategy *hma
 			return service.oidcKeys.rsa, nil
 		}
 
-		// TODO: Make HMACSHAStrategy use "charon" prefix instead of "ory" prefix.
-		//       See: https://github.com/ory/fosite/issues/789
-		oAuth2HMACStrategy := &oauth2.HMACSHAStrategy{
-			Enigma: hmacStrategy,
-			Config: config,
-		}
+		oAuth2HMACStrategy := newHMACSHAStrategy(hmacStrategy, config)
 
 		return compose.Compose( //nolint:forcetypeassert
 			config,

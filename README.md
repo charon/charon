@@ -77,7 +77,7 @@ make
 
 This will create `charon` binary.
 
-It requires [Go](https://golang.org/) 1.21 or newer.
+It requires [Go](https://golang.org/) 1.23 or newer.
 Node 20 or newer is required as well.
 
 Automatic media type detection uses file extensions and a file extension database has to be available
@@ -116,7 +116,7 @@ the frontend as necessary.
 
 ### Backend
 
-The backend is implemented in [Go](https://golang.org/) (requires 1.21 or newer)
+The backend is implemented in [Go](https://golang.org/) (requires 1.23 or newer)
 and provides a HTTP2 API. Node 20 or newer is required as well.
 
 Then clone the repository and run:
