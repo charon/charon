@@ -39,7 +39,7 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 	resp, err := ts.Client().Post(ts.URL+authFlowPasskeyCreateStart, "application/json", strings.NewReader(`{}`)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
@@ -79,7 +79,7 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 			Algorithm: int64(webauthncose.AlgRS256),
 		},
 		Modulus:  rsaKey.PublicKey.N.Bytes(),
-		Exponent: binary.LittleEndian.AppendUint32(nil, uint32(rsaKey.PublicKey.E))[:3],
+		Exponent: binary.LittleEndian.AppendUint32(nil, uint32(rsaKey.PublicKey.E))[:3], //nolint:gosec
 	}
 
 	publicKeyBytes, err := webauthncbor.Marshal(rsaPublicKeyData)
@@ -111,7 +111,7 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 	// AAGUID.
 	rawAuthData = append(rawAuthData, make([]byte, 16)...)
 	// ID length.
-	rawAuthData = binary.BigEndian.AppendUint16(rawAuthData, uint16(len(credentialID)))
+	rawAuthData = binary.BigEndian.AppendUint16(rawAuthData, uint16(len(credentialID))) //nolint:gosec
 	// CredentialID.
 	rawAuthData = append(rawAuthData, credentialID...)
 	// CredentialPublicKey.
@@ -190,7 +190,7 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 	resp, err = ts.Client().Post(ts.URL+authFlowPasskeyGetStart, "application/json", strings.NewReader(`{}`)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))

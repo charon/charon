@@ -64,7 +64,7 @@ func validateIDToken(
 	jti, ok := all["jti"].(string)
 	assert.True(t, ok, all["jti"])
 	_, errE := identifier.FromString(jti)
-	assert.NoError(t, errE, "% -+#.1v", errE)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	delete(all, "jti")
 
 	// TODO: Check exact value of the subject.

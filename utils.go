@@ -275,7 +275,7 @@ func initWithHost[T any](config *Config, domain string, init func(string) T) (fu
 	// Port is explicitly provided.
 	if config.ExternalPort != 0 {
 		host := domain
-		if config.ExternalPort != 443 { //nolint:gomnd
+		if config.ExternalPort != 443 { //nolint:mnd
 			host = net.JoinHostPort(host, strconv.Itoa(config.ExternalPort))
 		}
 		value := init(host)
@@ -366,7 +366,7 @@ func normalizePassword(password []byte) ([]byte, errors.E) {
 }
 
 func getRandomCode() (string, errors.E) {
-	randomNumber, err := rand.Int(rand.Reader, big.NewInt(1000000)) //nolint:gomnd
+	randomNumber, err := rand.Int(rand.Reader, big.NewInt(1000000)) //nolint:mnd
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
@@ -472,7 +472,7 @@ func makeEllipticKey(privateKey []byte, c elliptic.Curve, algorithm string) (*jo
 }
 
 func GenerateRSAKey() (*jose.JSONWebKey, errors.E) {
-	privateKey, err := rsa.GenerateKey(rand.Reader, 4096) //nolint:gomnd
+	privateKey, err := rsa.GenerateKey(rand.Reader, 4096) //nolint:mnd
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

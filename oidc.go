@@ -2,7 +2,6 @@ package charon
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -92,7 +91,7 @@ func (h *hmacSHAStrategy) GenerateAccessToken(ctx context.Context, r fosite.Requ
 }
 
 func (h *hmacSHAStrategy) ValidateAccessToken(ctx context.Context, r fosite.Requester, token string) error {
-	return h.HMACSHAStrategyUnPrefixed.ValidateAccessToken(ctx, r, h.trimPrefix(token, SecretPrefixAccessToken))
+	return h.HMACSHAStrategyUnPrefixed.ValidateAccessToken(ctx, r, h.trimPrefix(token, SecretPrefixAccessToken)) //nolint:wrapcheck
 }
 
 func (h *hmacSHAStrategy) GenerateRefreshToken(ctx context.Context, r fosite.Requester) (string, string, error) {
@@ -101,7 +100,7 @@ func (h *hmacSHAStrategy) GenerateRefreshToken(ctx context.Context, r fosite.Req
 }
 
 func (h *hmacSHAStrategy) ValidateRefreshToken(ctx context.Context, r fosite.Requester, token string) error {
-	return h.HMACSHAStrategyUnPrefixed.ValidateRefreshToken(ctx, r, h.trimPrefix(token, SecretPrefixRefreshToken))
+	return h.HMACSHAStrategyUnPrefixed.ValidateRefreshToken(ctx, r, h.trimPrefix(token, SecretPrefixRefreshToken)) //nolint:wrapcheck
 }
 
 func (h *hmacSHAStrategy) GenerateAuthorizeCode(ctx context.Context, r fosite.Requester) (string, string, error) {
@@ -110,7 +109,7 @@ func (h *hmacSHAStrategy) GenerateAuthorizeCode(ctx context.Context, r fosite.Re
 }
 
 func (h *hmacSHAStrategy) ValidateAuthorizeCode(ctx context.Context, r fosite.Requester, token string) error {
-	return h.HMACSHAStrategyUnPrefixed.ValidateAuthorizeCode(ctx, r, h.trimPrefix(token, SecretPrefixAuthorizeCode))
+	return h.HMACSHAStrategyUnPrefixed.ValidateAuthorizeCode(ctx, r, h.trimPrefix(token, SecretPrefixAuthorizeCode)) //nolint:wrapcheck
 }
 
 func initOIDC(config *Config, service *Service, domain string, hmacStrategy *hmac.HMACStrategy) (func() *fosite.Fosite, errors.E) {
@@ -120,7 +119,7 @@ func initOIDC(config *Config, service *Service, domain string, hmacStrategy *hma
 			panic(errE)
 		}
 
-		issuer := fmt.Sprintf("https://%s", host)
+		issuer := "https://" + host
 
 		config := &fosite.Config{ //nolint:exhaustruct
 			IDTokenIssuer: issuer,

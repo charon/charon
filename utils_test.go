@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNormalizeUsernameCaseMapped(t *testing.T) {
@@ -31,8 +32,6 @@ func TestNormalizeUsernameCaseMapped(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
-
 		t.Run(tt.Username, func(t *testing.T) {
 			t.Parallel()
 
@@ -70,8 +69,6 @@ func TestNormalizeUsernameCasePreserved(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
-
 		t.Run(tt.Username, func(t *testing.T) {
 			t.Parallel()
 
@@ -105,8 +102,6 @@ func TestNormalizePassword(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
-
 		t.Run(tt.Password, func(t *testing.T) {
 			t.Parallel()
 
@@ -122,9 +117,9 @@ func TestNormalizePassword(t *testing.T) {
 func TestGetRandomCode(t *testing.T) {
 	t.Parallel()
 
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		out, errE := getRandomCode()
-		assert.NoError(t, errE, "% -+#.1v", errE)
+		require.NoError(t, errE, "% -+#.1v", errE)
 		assert.Len(t, out, 6)
 	}
 }

@@ -30,7 +30,7 @@ func (h *hmacStrategyConfigurator) GetRotatedGlobalSecrets(_ context.Context) ([
 
 // GetTokenEntropy implements hmac.HMACStrategyConfigurator.
 func (h *hmacStrategyConfigurator) GetTokenEntropy(_ context.Context) int {
-	return 32 //nolint:gomnd
+	return 32 //nolint:mnd
 }
 
 var _ hmac.HMACStrategyConfigurator = (*hmacStrategyConfigurator)(nil)

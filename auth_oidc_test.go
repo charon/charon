@@ -164,7 +164,7 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	resp, err := ts.Client().Post(ts.URL+authFlowProviderStart, "application/json", strings.NewReader(`{"provider":"testing"}`)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
@@ -197,7 +197,7 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	out, err := io.ReadAll(resp.Body)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, http.StatusSeeOther, resp.StatusCode, string(out))
 	require.True(t, strings.HasPrefix(resp.Header.Get("Location"), ts.URL), resp.Header.Get("Location"))
 	location := resp.Header.Get("Location")
@@ -219,13 +219,13 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	out, err = io.ReadAll(resp.Body)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, http.StatusSeeOther, resp.StatusCode, string(out))
 	location = resp.Header.Get("Location")
 	assert.NotEmpty(t, location)
 
 	route, errE := service.GetRoute(location, http.MethodGet)
-	assert.NoError(t, errE, "% -+#.1v", errE)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.Equal(t, "AuthFlowGet", route.Name)
 
 	// Flow is available and is completed.

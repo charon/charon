@@ -177,8 +177,8 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 			EncryptOptions: AuthFlowResponsePasswordEncryptOptions{
 				Name:      "AES-GCM",
 				Nonce:     nonce,
-				Length:    8 * secretSize,        //nolint:gomnd
-				TagLength: 8 * aesgcm.Overhead(), //nolint:gomnd
+				Length:    8 * secretSize,        //nolint:mnd
+				TagLength: 8 * aesgcm.Overhead(), //nolint:mnd
 			},
 		},
 	}, nil)

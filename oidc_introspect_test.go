@@ -58,7 +58,6 @@ func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now
 	// See: https://github.com/go-jose/go-jose/pull/104
 	var key *jose.JSONWebKey
 	for _, k := range keySet.Keys {
-		k := k
 		if k.Algorithm == "RS256" {
 			require.Nil(t, key)
 			key = &k
@@ -147,7 +146,7 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 	assert.Equal(t, []string{applicationID, clientID}, response.Audience)
 	assert.Equal(t, ts.URL, response.Issuer)
 	_, errE = identifier.FromString(response.JTI)
-	assert.NoError(t, errE, "% -+#.1v", errE)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.Equal(t, sessionID, response.Session)
 
 	return &response
@@ -217,7 +216,7 @@ func validateAccessToken(
 	jti, ok := all["jti"].(string)
 	assert.True(t, ok, all["jti"])
 	_, errE := identifier.FromString(jti)
-	assert.NoError(t, errE, "% -+#.1v", errE)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	delete(all, "jti")
 
 	// TODO: Check exact value of the subject.

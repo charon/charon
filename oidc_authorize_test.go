@@ -61,7 +61,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	out, err := io.ReadAll(resp.Body)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, http.StatusSeeOther, resp.StatusCode, string(out))
 	assert.Equal(t, 2, resp.ProtoMajor)
 	location := resp.Header.Get("Location")
@@ -102,7 +102,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	out, err = io.ReadAll(resp.Body)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, http.StatusSeeOther, resp.StatusCode, string(out))
 	assert.Equal(t, 2, resp.ProtoMajor)
 	location = resp.Header.Get("Location")
@@ -165,7 +165,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 
 	// We use assert.WithinDuration with 2 seconds allowed delta, so in 10 iterations every
 	// second we should still catch if any timestamp is not progressing as expected.
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		// We sleep for a second so that all timestamps increase (they are at second granularity).
 		time.Sleep(time.Second)
 

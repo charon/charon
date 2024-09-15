@@ -46,7 +46,7 @@ func (p *codeProvider) URL(s *Service, flow *Flow, code string) (string, errors.
 func initCodeProvider(config *Config, domain string) (func() *codeProvider, errors.E) {
 	return initWithHost(config, domain, func(host string) *codeProvider {
 		return &codeProvider{
-			origin: fmt.Sprintf("https://%s", host),
+			origin: "https://" + host,
 		}
 	})
 }
@@ -58,7 +58,6 @@ var errMultipleCredentials = errors.Base("multiple credentials for the provider"
 func getCredentialByProvider(credentials []Credential, provider Provider) (*Credential, errors.E) {
 	var credential *Credential
 	for _, c := range credentials {
-		c := c
 		if c.Provider == provider {
 			if credential != nil {
 				// More than one credential for the provider, there should be at most one.
