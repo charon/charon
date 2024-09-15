@@ -20,6 +20,8 @@ var (
 	ErrIdentityAlreadyExists    = errors.Base("identity already exists")
 	ErrIdentityUnauthorized     = errors.Base("identity change unauthorized")
 	ErrIdentityValidationFailed = errors.Base("identity validation failed")
+
+	errEmptyIdentity = errors.Base("empty identity")
 )
 
 var (
@@ -182,7 +184,7 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 
 	// At least something is required.
 	if i.Username == "" && i.Email == "" && i.GivenName == "" && i.FullName == "" && i.PictureURL == "" {
-		return errors.New("empty identity")
+		return errors.WithStack(errEmptyIdentity)
 	}
 
 	accountID := mustGetAccountID(ctx)

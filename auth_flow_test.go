@@ -1,6 +1,7 @@
 package charon_test
 
 import (
+	"bytes"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -54,10 +55,29 @@ func createAuthFlow(t *testing.T, ts *httptest.Server, service *charon.Service) 
 func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, organizationID, flowID identifier.Identifier) { //nolint:dupl
 	t.Helper()
 
+	identityListGet, errE := service.ReverseAPI("IdentityList", nil, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	resp, err := ts.Client().Get(ts.URL + identityListGet) //nolint:noctx,bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, 2, resp.ProtoMajor)
+	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+	var identities []charon.IdentityRef
+	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &identities)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	require.Len(t, identities, 1)
+
 	authFlowChooseIdentity, errE := service.ReverseAPI("AuthFlowChooseIdentity", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	resp, err := ts.Client().Post(ts.URL+authFlowChooseIdentity, "application/json", strings.NewReader(`{}`)) //nolint:noctx,bodyclose
+	request, errE := x.MarshalWithoutEscapeHTML(charon.AuthFlowChooseIdentityRequest{
+		Identity: identities[0],
+	})
+
+	resp, err = ts.Client().Post(ts.URL+authFlowChooseIdentity, "application/json", bytes.NewReader(request)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	out, err := io.ReadAll(resp.Body)

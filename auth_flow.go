@@ -148,7 +148,7 @@ func (s *Service) AuthFlowGetGet(w http.ResponseWriter, req *http.Request, param
 }
 
 // validateSession returns session only if current session matches one made by the flow.
-func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api bool, flow *Flow) (*identifier.Identifier, bool) {
+func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api bool, flow *Flow) (*Session, bool) {
 	session, errE := s.getSessionFromRequest(w, req)
 	if errors.Is(errE, ErrSessionNotFound) {
 		if api {
@@ -165,7 +165,7 @@ func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api 
 	// Caller should call validateSession only when flow.Session is set.
 	if *flow.Session == session.ID {
 		// Fast path so that we do not have to fetch another session if it is the same session.
-		return &session.AccountID, false
+		return session, false
 	}
 
 	flowSession, errE := GetSession(req.Context(), *flow.Session)
@@ -191,7 +191,7 @@ func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api 
 		return nil, false
 	}
 
-	return &session.AccountID, false
+	return session, false
 }
 
 func (s *Service) getIdentityFromCredentials(credentials []Credential) (*Identity, errors.E) {
@@ -305,10 +305,12 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
-		errE = CreateIdentity(context.WithValue(ctx, accountIDContextKey, account.ID), identity)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
+		if identity != nil {
+			errE = CreateIdentity(context.WithValue(ctx, accountIDContextKey, account.ID), identity)
+			if errE != nil && !errors.Is(errE, errEmptyIdentity) {
+				s.InternalServerErrorWithError(w, req, errE)
+				return
+			}
 		}
 	} else {
 		// Sign-in. Update credentials for an existing account.

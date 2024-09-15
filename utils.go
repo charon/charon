@@ -241,13 +241,13 @@ func (s *Service) GetActiveFlowOIDCTarget(w http.ResponseWriter, req *http.Reque
 	}
 
 	// Current session should match the session in the flow.
-	accountID, handled := s.validateSession(w, req, true, flow)
+	session, handled := s.validateSession(w, req, true, flow)
 	if handled {
 		return identifier.Identifier{}, nil
 	}
 
-	// accountID cannot be nil because we call validateSession with api parameter set to true.
-	return *accountID, flow
+	// session cannot be nil because we call validateSession with api parameter set to true.
+	return session.AccountID, flow
 }
 
 func getHost(config *Config, domain string) (string, errors.E) {
