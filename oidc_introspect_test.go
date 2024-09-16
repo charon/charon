@@ -52,34 +52,9 @@ func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now
 	parsedToken, err := jwt.ParseSigned(token, []jose.SignatureAlgorithm{jose.RS256})
 	require.NoError(t, err)
 
-	// We manually search for the key because fosite does not set kid and we
-	// cannot just pass the keySet to token.Claims (it needs kid to match the key).
-	// See: https://github.com/ory/fosite/pull/799
-	// See: https://github.com/go-jose/go-jose/pull/104
-	var key *jose.JSONWebKey
-	for _, k := range keySet.Keys {
-		if k.Algorithm == "RS256" {
-			require.Nil(t, key)
-			key = &k
-		}
-	}
-	require.NotNil(t, key)
-
-	assert.ElementsMatch(t, []jose.Header{
-		{
-			// TODO: Uncomment once fosite sets kid.
-			//       See: https://github.com/ory/fosite/pull/799
-			// KeyID: key.KeyID.
-			Algorithm: "RS256",
-			ExtraHeaders: map[jose.HeaderKey]interface{}{
-				jose.HeaderType: "JWT",
-			},
-		},
-	}, parsedToken.Headers)
-
 	claims := jwt.Claims{}
 	all := map[string]interface{}{}
-	err = parsedToken.Claims(key, &claims, &all)
+	err = parsedToken.Claims(keySet, &claims, &all)
 	require.NoError(t, err)
 
 	err = claims.ValidateWithLeeway(jwt.Expected{

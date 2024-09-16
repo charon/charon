@@ -12,7 +12,7 @@ require (
 	github.com/go-jose/go-jose/v4 v4.0.4
 	github.com/mocktools/go-smtp-mock/v2 v2.3.1
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
-	github.com/ory/fosite v0.47.0
+	github.com/ory/fosite v0.47.1-0.20240916111829-869a37ce486c
 	github.com/temoto/robotstxt v1.1.2
 	github.com/wneessen/go-mail v0.4.4
 	gitlab.com/tozd/go/cli v0.4.0
