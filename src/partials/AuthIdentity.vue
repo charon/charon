@@ -215,17 +215,20 @@ async function onDecline() {
       <div v-else-if="usedIdentitiesLoadingError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
       <template v-else>
         <div v-if="!usedIdentities.length" class="italic mb-4">You have not yet used any identity with this organization.</div>
-        <template v-for="identity of usedIdentities" :key="identity.id">
+        <template v-for="(identity, i) of usedIdentities" :key="identity.id">
           <div class="grid grid-cols-1 gap-4 mb-4">
             <IdentityListItem :item="identity" :organization-id="organizationId">
               <div class="flex flex-col items-start">
-                <Button id="first-identity" primary type="button" tabindex="1" :progress="progress" @click.prevent="onSelect(identity.id)">Select</Button>
+                <Button :id="i === 0 ? 'first-identity' : null" primary type="button" tabindex="1" :progress="progress" @click.prevent="onSelect(identity.id)">Select</Button>
               </div>
             </IdentityListItem>
           </div>
         </template>
       </template>
-      <h3 class="text-l font-bold mb-4">Other available identities</h3>
+      <div class="flex flex-row justify-between items-center gap-4 mb-4">
+        <h3 class="text-l font-bold">Other available identities</h3>
+        <Button type="button" tabindex="2" :progress="progress" @click.prevent="onDecline">Create</Button>
+      </div>
       <div v-if="otherIdentitiesLoading" class="mb-4">Loading...</div>
       <div v-else-if="otherIdentitiesLoadingError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
       <template v-else>
@@ -235,11 +238,11 @@ async function onDecline() {
         <div v-else-if="otherIdentities.length === 0" class="italic mb-4">
           There are no other identities. Create one.
         </div>
-        <template v-for="identity of otherIdentities" :key="identity.id">
+        <template v-for="(identity, i) of otherIdentities" :key="identity.id">
           <div class="grid grid-cols-1 gap-4 mb-4">
             <IdentityListItem :item="identity">
               <div class="flex flex-col items-start">
-                <Button id="first-identity" primary type="button" tabindex="1" :progress="progress" @click.prevent="onSelect(identity.id)">Select</Button>
+                <Button :id="usedIdentities.length + i === 0 ? 'first-identity' : null" primary type="button" tabindex="3" :progress="progress" @click.prevent="onSelect(identity.id)">Select</Button>
               </div>
             </IdentityListItem>
           </div>
@@ -247,11 +250,8 @@ async function onDecline() {
       </template>
       <div v-if="unexpectedError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
       <div class="flex flex-row justify-between gap-4">
-        <Button type="button" tabindex="4" @click.prevent="onBack">Back</Button>
-        <div class="flex flex-row gap-4">
-          <Button type="button" tabindex="2" :progress="progress" @click.prevent="onDecline">Decline</Button>
-          <Button type="button" tabindex="3" :progress="progress" @click.prevent="onDecline">Create</Button>
-        </div>
+        <Button type="button" tabindex="5" @click.prevent="onBack">Back</Button>
+        <Button type="button" tabindex="4" :progress="progress" @click.prevent="onDecline">Decline</Button>
       </div>
     </div>
   </div>
