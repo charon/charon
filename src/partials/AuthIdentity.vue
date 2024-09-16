@@ -225,12 +225,15 @@ async function onDecline() {
           </div>
         </template>
       </template>
-      <h3 class="text-l font-bold mb-4">Available identities</h3>
+      <h3 class="text-l font-bold mb-4">Other available identities</h3>
       <div v-if="otherIdentitiesLoading" class="mb-4">Loading...</div>
       <div v-else-if="otherIdentitiesLoadingError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
       <template v-else>
-        <div v-if="!otherIdentities.length" class="italic mb-4">
-          There are no identities. {{ usedIdentities.length + otherIdentities.length === 0 ? "Create the first one." : "Create another one." }}
+        <div v-if="usedIdentities.length + otherIdentities.length === 0" class="italic mb-4">
+          There are no identities. Create the first one.
+        </div>
+        <div v-else-if="otherIdentities.length === 0" class="italic mb-4">
+          There are no other identities. Create one.
         </div>
         <template v-for="identity of otherIdentities" :key="identity.id">
           <div class="grid grid-cols-1 gap-4 mb-4">
