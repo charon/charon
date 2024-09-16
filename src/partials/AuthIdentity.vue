@@ -53,6 +53,7 @@ defineExpose({
 onBeforeUnmount(onBeforeLeave)
 
 function onAfterEnter() {
+  // TODO: Make this work. This is too early because data is not yet loaded so there is nothing to focus.
   document.getElementById("first-identity")?.focus()
 
   getIdentities(props.organizationId, false, usedIdentitiesLoading, usedIdentitiesLoadingError, usedIdentities)
