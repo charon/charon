@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2024-09-17
+
 ### Added
 
 - Support for managing multiple identities per user.
@@ -25,7 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Admins are able to create organizations and enable applications in them.
 - Users are able to authenticate to applications in organizations.
 
-[unreleased]: https://gitlab.com/charon/charon/-/compare/v0.1.0...main
+[unreleased]: https://gitlab.com/charon/charon/-/compare/v0.2.0...main
+[0.2.0]: https://gitlab.com/charon/charon/-/compare/v0.1.0...v0.2.0
 [0.1.0]: https://gitlab.com/charon/charon/-/tags/v0.1.0
 
 <!-- markdownlint-disable-file MD024 -->
