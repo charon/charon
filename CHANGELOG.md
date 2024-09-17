@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support for managing multiple identities per user.
+- Support for selecting an identity when authenticating to an application.
+
 ### Changed
 
 - Go 1.23 or newer is required.
