@@ -46,7 +46,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	qs := url.Values{
 		"client_id":             []string{clientID},
 		"redirect_uri":          []string{"https://example.com/redirect"},
-		"scope":                 []string{"openid offline_access"},
+		"scope":                 []string{"openid profile email offline_access"},
 		"response_type":         []string{"code"},
 		"response_mode":         []string{"query"},
 		"code_challenge_method": []string{"S256"},
@@ -127,7 +127,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	code := locationQuery.Get("code")
 	locationQuery.Del("code")
 	assert.NotEmpty(t, code)
-	assert.Equal(t, url.Values{"scope": []string{"openid offline_access"}, "state": []string{state}}, locationQuery)
+	assert.Equal(t, url.Values{"scope": []string{"openid profile email offline_access"}, "state": []string{state}}, locationQuery)
 
 	accessToken, idToken, refreshToken, now := exchangeCodeForTokens(t, ts, service, clientID, code, challenge)
 

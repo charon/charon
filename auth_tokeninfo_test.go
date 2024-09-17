@@ -72,12 +72,18 @@ func validateIDToken(
 	delete(all, "sub")
 
 	assert.Equal(t, map[string]interface{}{
-		"aud":       []interface{}{clientID},
-		"client_id": clientID,
-		"iss":       ts.URL,
-		"sid":       sessionID,
-		"nonce":     nonce,
-		"at_hash":   accessTokenHash,
+		"aud":                []interface{}{clientID},
+		"client_id":          clientID,
+		"iss":                ts.URL,
+		"sid":                sessionID,
+		"nonce":              nonce,
+		"at_hash":            accessTokenHash,
+		"email":              "user@example.com",
+		"email_verified":     true,
+		"given_name":         "User",
+		"name":               "User Name",
+		"picture":            "https://example.com/picture.png",
+		"preferred_username": "username",
 	}, all)
 
 	return jti

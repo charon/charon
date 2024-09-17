@@ -14,8 +14,15 @@ import (
 	"gitlab.com/charon/charon"
 )
 
+//nolint:tagliatelle
 type userInfoResponse struct {
-	Subject string `json:"sub"`
+	Subject           string `json:"sub"`
+	Email             string `json:"email"`
+	EmailVerified     bool   `json:"email_verified"`
+	GivenName         string `json:"given_name"`
+	Name              string `json:"name"`
+	Picture           string `json:"picture"`
+	PreferredUsername string `json:"preferred_username"`
 }
 
 func validateUserInfo(t *testing.T, ts *httptest.Server, service *charon.Service, token string) {
@@ -41,4 +48,10 @@ func validateUserInfo(t *testing.T, ts *httptest.Server, service *charon.Service
 
 	// TODO: Check exact value of the subject.
 	assert.NotEmpty(t, response.Subject)
+	assert.Equal(t, "user@example.com", response.Email)
+	assert.True(t, response.EmailVerified)
+	assert.Equal(t, "User", response.GivenName)
+	assert.Equal(t, "User Name", response.Name)
+	assert.Equal(t, "https://example.com/picture.png", response.Picture)
+	assert.Equal(t, "username", response.PreferredUsername)
 }

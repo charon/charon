@@ -78,7 +78,7 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 	data := url.Values{
 		"token":           []string{token},
 		"token_type_hint": []string{typeHint},
-		"scope":           []string{"openid offline_access"},
+		"scope":           []string{"openid profile email offline_access"},
 	}
 
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, ts.URL+oidcIntrospect, strings.NewReader(data.Encode()))
@@ -115,7 +115,7 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 	assert.Equal(t, clientID, response.ClientID)
 	assert.WithinDuration(t, now.Add(60*time.Minute), response.ExpirationTime.Time().UTC(), 2*time.Second)
 	assert.WithinDuration(t, now, response.IssueTime.Time().UTC(), 2*time.Second)
-	assert.Equal(t, "openid offline_access", response.Scope)
+	assert.Equal(t, "openid profile email offline_access", response.Scope)
 	// TODO: Check exact value of the subject.
 	assert.NotEmpty(t, response.Subject)
 	assert.Equal(t, []string{applicationID, clientID}, response.Audience)
@@ -136,7 +136,7 @@ func validateNotValidIntrospect(t *testing.T, ts *httptest.Server, service *char
 	data := url.Values{
 		"token":           []string{token},
 		"token_type_hint": []string{typeHint},
-		"scope":           []string{"openid offline_access"},
+		"scope":           []string{"openid profile email offline_access"},
 	}
 
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, ts.URL+oidcIntrospect, strings.NewReader(data.Encode()))
@@ -202,7 +202,7 @@ func validateAccessToken(
 		"aud":       []interface{}{applicationID, clientID},
 		"client_id": clientID,
 		"iss":       ts.URL,
-		"scope":     "openid offline_access",
+		"scope":     "openid profile email offline_access",
 		"sid":       sessionID,
 	}, all)
 

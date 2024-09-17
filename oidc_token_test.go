@@ -56,7 +56,7 @@ func exchangeCodeForTokens(t *testing.T, ts *httptest.Server, service *charon.Se
 	assert.NotEmpty(t, response.IDToken)
 	assert.NotEmpty(t, response.RefreshToken)
 	assert.InDelta(t, 3599, response.ExpiresIn, 1)
-	assert.Equal(t, "openid offline_access", response.Scope)
+	assert.Equal(t, "openid profile email offline_access", response.Scope)
 	assert.Equal(t, "bearer", response.TokenType)
 
 	return response.AccessToken, response.IDToken, response.RefreshToken, now
@@ -101,7 +101,7 @@ func exchangeRefreshTokenForTokens(t *testing.T, ts *httptest.Server, service *c
 	assert.NotEmpty(t, response.IDToken)
 	assert.NotEmpty(t, response.RefreshToken)
 	assert.InDelta(t, 3599, response.ExpiresIn, 1)
-	assert.Equal(t, "openid offline_access", response.Scope)
+	assert.Equal(t, "openid profile email offline_access", response.Scope)
 	assert.Equal(t, "bearer", response.TokenType)
 
 	// Previous tokens should not be valid anymore.
