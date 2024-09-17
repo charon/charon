@@ -169,7 +169,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 		// We sleep for a second so that all timestamps increase (they are at second granularity).
 		time.Sleep(time.Second)
 
-		accessToken, idToken, refreshToken, now = exchangeRefreshTokenForTokens(t, ts, service, clientID, refreshToken, accessToken, identityID)
+		accessToken, idToken, refreshToken, now = exchangeRefreshTokenForTokens(t, ts, service, clientID, refreshToken, accessToken)
 
 		assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, applicationID, sessionID, accessToken, accessTokenLastTimestamps, identityID)))
 		assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, applicationID, sessionID, nonce, accessToken, idToken, idTokenLastTimestamps, identityID)))

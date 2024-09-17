@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/tozd/go/x"
-	"gitlab.com/tozd/identifier"
 
 	"gitlab.com/charon/charon"
 )
@@ -63,7 +62,7 @@ func exchangeCodeForTokens(t *testing.T, ts *httptest.Server, service *charon.Se
 	return response.AccessToken, response.IDToken, response.RefreshToken, now
 }
 
-func exchangeRefreshTokenForTokens(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, refreshToken, accessToken string, identityID identifier.Identifier) (string, string, string, time.Time) {
+func exchangeRefreshTokenForTokens(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, refreshToken, accessToken string) (string, string, string, time.Time) {
 	t.Helper()
 
 	oidcToken, errE := service.ReverseAPI("OIDCToken", nil, nil)
@@ -106,8 +105,8 @@ func exchangeRefreshTokenForTokens(t *testing.T, ts *httptest.Server, service *c
 	assert.Equal(t, "bearer", response.TokenType)
 
 	// Previous tokens should not be valid anymore.
-	validateNotValidIntrospect(t, ts, service, clientID, refreshToken, "refresh_token", identityID)
-	validateNotValidIntrospect(t, ts, service, clientID, accessToken, "access_token", identityID)
+	validateNotValidIntrospect(t, ts, service, clientID, refreshToken, "refresh_token")
+	validateNotValidIntrospect(t, ts, service, clientID, accessToken, "access_token")
 
 	return response.AccessToken, response.IDToken, response.RefreshToken, now
 }
