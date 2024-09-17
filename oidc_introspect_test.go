@@ -44,7 +44,7 @@ type introspectRefreshTokenResponse struct {
 	ExpirationTime   jwt.NumericDate `json:"exp"`
 }
 
-func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, applicationID, token string) map[string]interface{} {
+func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, applicationID, token string, identityID identifier.Identifier) map[string]interface{} {
 	t.Helper()
 
 	keySet := getKeys(t, ts, service)
@@ -58,8 +58,7 @@ func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now
 	require.NoError(t, err)
 
 	err = claims.ValidateWithLeeway(jwt.Expected{
-		// TODO: Check exact value of the subject.
-		Subject:     "",
+		Subject:     identityID.String(),
 		Issuer:      ts.URL,
 		AnyAudience: []string{applicationID, clientID},
 		Time:        now,
@@ -69,7 +68,7 @@ func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now
 	return all
 }
 
-func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, applicationID, sessionID, token, typeHint string) *introspectAccessTokenResponse {
+func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, applicationID, sessionID, token, typeHint string, identityID identifier.Identifier) *introspectAccessTokenResponse {
 	t.Helper()
 
 	oidcIntrospect, errE := service.ReverseAPI("OIDCIntrospect", nil, nil)
@@ -116,8 +115,7 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 	assert.WithinDuration(t, now.Add(60*time.Minute), response.ExpirationTime.Time().UTC(), 2*time.Second)
 	assert.WithinDuration(t, now, response.IssueTime.Time().UTC(), 2*time.Second)
 	assert.Equal(t, "openid profile email offline_access", response.Scope)
-	// TODO: Check exact value of the subject.
-	assert.NotEmpty(t, response.Subject)
+	assert.Equal(t, identityID.String(), response.Subject)
 	assert.Equal(t, []string{applicationID, clientID}, response.Audience)
 	assert.Equal(t, ts.URL, response.Issuer)
 	_, errE = identifier.FromString(response.JTI)
@@ -127,7 +125,7 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 	return &response
 }
 
-func validateNotValidIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, token, typeHint string) {
+func validateNotValidIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, token, typeHint string, identityID identifier.Identifier) {
 	t.Helper()
 
 	oidcIntrospect, errE := service.ReverseAPI("OIDCIntrospect", nil, nil)
@@ -161,12 +159,12 @@ func validateNotValidIntrospect(t *testing.T, ts *httptest.Server, service *char
 func validateAccessToken(
 	t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time,
 	clientID, applicationID, sessionID, accessToken string,
-	lastTimestamps map[string]time.Time,
+	lastTimestamps map[string]time.Time, identityID identifier.Identifier,
 ) string {
 	t.Helper()
-	response := validateIntrospect(t, ts, service, now, clientID, applicationID, sessionID, accessToken, "access_token")
+	response := validateIntrospect(t, ts, service, now, clientID, applicationID, sessionID, accessToken, "access_token", identityID)
 
-	all := validateJWT(t, ts, service, now, clientID, applicationID, accessToken)
+	all := validateJWT(t, ts, service, now, clientID, applicationID, accessToken, identityID)
 
 	timestamps := map[string]int64{}
 
@@ -194,16 +192,13 @@ func validateAccessToken(
 	require.NoError(t, errE, "% -+#.1v", errE)
 	delete(all, "jti")
 
-	// TODO: Check exact value of the subject.
-	assert.NotEmpty(t, all["sub"])
-	delete(all, "sub")
-
 	assert.Equal(t, map[string]interface{}{
 		"aud":       []interface{}{applicationID, clientID},
 		"client_id": clientID,
 		"iss":       ts.URL,
 		"scope":     "openid profile email offline_access",
 		"sid":       sessionID,
+		"sub":       identityID.String(),
 	}, all)
 
 	assert.Equal(t, jti, response.JTI)

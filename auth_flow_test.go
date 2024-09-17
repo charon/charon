@@ -86,7 +86,7 @@ func createIdentity(t *testing.T, ts *httptest.Server, service *charon.Service) 
 	return identity
 }
 
-func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, organizationID, flowID identifier.Identifier) {
+func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, organizationID, flowID identifier.Identifier) identifier.Identifier {
 	t.Helper()
 
 	identity := createIdentity(t, ts, service)
@@ -138,6 +138,29 @@ func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, 
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
 		assert.Equal(t, `{"target":"oidc","name":"Test application","homepage":"https://example.com","organizationId":"`+organizationID.String()+`","provider":"password","completed":"identity"}`, string(out))
 	}
+
+	identityGet, errE := service.ReverseAPI("IdentityGet", waf.Params{"id": identity.ID.String()}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	resp, err = ts.Client().Get(ts.URL + identityGet) //nolint:noctx,bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, 2, resp.ProtoMajor)
+	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+	var fullIdentity charon.Identity
+	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &fullIdentity)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	for _, idOrg := range fullIdentity.Organizations {
+		if idOrg.Organization.ID == organizationID {
+			return *idOrg.ID
+		}
+	}
+
+	require.Fail(t, "identity not used with organization")
+	return identifier.Identifier{}
 }
 
 func doRedirect(t *testing.T, ts *httptest.Server, service *charon.Service, organizationID, flowID identifier.Identifier) {

@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/tozd/go/x"
+	"gitlab.com/tozd/identifier"
 
 	"gitlab.com/charon/charon"
 )
@@ -25,7 +26,7 @@ type userInfoResponse struct {
 	PreferredUsername string `json:"preferred_username"`
 }
 
-func validateUserInfo(t *testing.T, ts *httptest.Server, service *charon.Service, token string) {
+func validateUserInfo(t *testing.T, ts *httptest.Server, service *charon.Service, token string, identityID identifier.Identifier) {
 	t.Helper()
 
 	oidcUserInfo, errE := service.ReverseAPI("OIDCUserInfo", nil, nil)
@@ -46,8 +47,7 @@ func validateUserInfo(t *testing.T, ts *httptest.Server, service *charon.Service
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &response)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	// TODO: Check exact value of the subject.
-	assert.NotEmpty(t, response.Subject)
+	assert.Equal(t, identityID.String(), response.Subject)
 	assert.Equal(t, "user@example.com", response.Email)
 	assert.True(t, response.EmailVerified)
 	assert.Equal(t, "User", response.GivenName)

@@ -91,7 +91,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 
 	signinUser(t, ts, service, username, charon.CompletedSignin, organization.ID, flowID, charon.TargetOIDC)
 
-	chooseIdentity(t, ts, service, *organization.ID, flowID)
+	identityID := chooseIdentity(t, ts, service, *organization.ID, flowID)
 
 	doRedirect(t, ts, service, *organization.ID, flowID)
 
@@ -158,10 +158,10 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	idTokenLastTimestamps := map[string]time.Time{}
 
 	uniqueStrings := mapset.NewThreadUnsafeSet[string]()
-	assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, applicationID, sessionID, accessToken, accessTokenLastTimestamps)))
-	assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, applicationID, sessionID, nonce, accessToken, idToken, idTokenLastTimestamps)))
-	validateIntrospect(t, ts, service, now, clientID, applicationID, sessionID, refreshToken, "refresh_token")
-	validateUserInfo(t, ts, service, accessToken)
+	assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, applicationID, sessionID, accessToken, accessTokenLastTimestamps, identityID)))
+	assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, applicationID, sessionID, nonce, accessToken, idToken, idTokenLastTimestamps, identityID)))
+	validateIntrospect(t, ts, service, now, clientID, applicationID, sessionID, refreshToken, "refresh_token", identityID)
+	validateUserInfo(t, ts, service, accessToken, identityID)
 
 	// We use assert.WithinDuration with 2 seconds allowed delta, so in 10 iterations every
 	// second we should still catch if any timestamp is not progressing as expected.
@@ -169,11 +169,11 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 		// We sleep for a second so that all timestamps increase (they are at second granularity).
 		time.Sleep(time.Second)
 
-		accessToken, idToken, refreshToken, now = exchangeRefreshTokenForTokens(t, ts, service, clientID, refreshToken, accessToken)
+		accessToken, idToken, refreshToken, now = exchangeRefreshTokenForTokens(t, ts, service, clientID, refreshToken, accessToken, identityID)
 
-		assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, applicationID, sessionID, accessToken, accessTokenLastTimestamps)))
-		assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, applicationID, sessionID, nonce, accessToken, idToken, idTokenLastTimestamps)))
-		validateIntrospect(t, ts, service, now, clientID, applicationID, sessionID, refreshToken, "refresh_token")
-		validateUserInfo(t, ts, service, accessToken)
+		assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, applicationID, sessionID, accessToken, accessTokenLastTimestamps, identityID)))
+		assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, applicationID, sessionID, nonce, accessToken, idToken, idTokenLastTimestamps, identityID)))
+		validateIntrospect(t, ts, service, now, clientID, applicationID, sessionID, refreshToken, "refresh_token", identityID)
+		validateUserInfo(t, ts, service, accessToken, identityID)
 	}
 }

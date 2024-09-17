@@ -17,7 +17,7 @@ import (
 func validateIDToken(
 	t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time,
 	clientID, applicationID, sessionID, nonce, accessToken, idToken string,
-	lastTimestamps map[string]time.Time,
+	lastTimestamps map[string]time.Time, identityID identifier.Identifier,
 ) string {
 	t.Helper()
 
@@ -26,7 +26,7 @@ func validateIDToken(
 
 	// TODO: Validate using tokeninfo endpoint when it will be available.
 
-	all := validateJWT(t, ts, service, now, clientID, applicationID, idToken)
+	all := validateJWT(t, ts, service, now, clientID, applicationID, idToken, identityID)
 
 	for _, claim := range []string{"exp", "iat"} {
 		if assert.Contains(t, all, claim) {
@@ -67,10 +67,6 @@ func validateIDToken(
 	require.NoError(t, errE, "% -+#.1v", errE)
 	delete(all, "jti")
 
-	// TODO: Check exact value of the subject.
-	assert.NotEmpty(t, all["sub"])
-	delete(all, "sub")
-
 	assert.Equal(t, map[string]interface{}{
 		"aud":                []interface{}{clientID},
 		"client_id":          clientID,
@@ -78,6 +74,7 @@ func validateIDToken(
 		"sid":                sessionID,
 		"nonce":              nonce,
 		"at_hash":            accessTokenHash,
+		"sub":                identityID.String(),
 		"email":              "user@example.com",
 		"email_verified":     true,
 		"given_name":         "User",
