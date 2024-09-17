@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import type { Ref } from "vue"
-import type { AuthFlowChooseIdentityRequest, AuthFlowResponse, Completed, Identities } from "@/types"
+import type { AuthFlowChooseIdentityRequest, AuthFlowResponse, Completed, Identities, IdentityRef } from "@/types"
 
 import { ref, onBeforeUnmount, onMounted, getCurrentInstance, inject } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import IdentityListItem from "@/partials/IdentityListItem.vue"
+import IdentityCreate from "@/partials/IdentityCreate.vue"
 import { injectProgress } from "@/progress"
 import { getURL, postJSON, restartAuth } from "@/api"
 import { flowKey } from "@/flow"
@@ -30,6 +31,7 @@ const usedIdentities = ref<Identities>([])
 const otherIdentitiesLoading = ref(true)
 const otherIdentitiesLoadingError = ref("")
 const otherIdentities = ref<Identities>([])
+const createShown = ref(false)
 
 const unexpectedError = ref("")
 
@@ -200,6 +202,17 @@ async function onDecline() {
     progress.value -= 1
   }
 }
+
+function onCreateShow() {
+  createShown.value = true
+}
+
+function onIdentityCreated(identity: IdentityRef) {
+  createShown.value = false
+  getIdentities(props.organizationId, true, otherIdentitiesLoading, otherIdentitiesLoadingError, otherIdentities)
+
+  // TODO: Focus "select" button for the new identity.
+}
 </script>
 
 <template>
@@ -226,10 +239,7 @@ async function onDecline() {
           </div>
         </template>
       </template>
-      <div class="flex flex-row justify-between items-center gap-4 mb-4">
-        <h3 class="text-l font-bold">Other available identities</h3>
-        <Button type="button" tabindex="2" :progress="progress" @click.prevent="onDecline">Create</Button>
-      </div>
+      <h3 class="text-l font-bold mb-4">Other available identities</h3>
       <div v-if="otherIdentitiesLoading" class="mb-4">Loading...</div>
       <div v-else-if="otherIdentitiesLoadingError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
       <template v-else>
@@ -243,11 +253,18 @@ async function onDecline() {
           <div class="grid grid-cols-1 gap-4 mb-4">
             <IdentityListItem :item="identity">
               <div class="flex flex-col items-start">
-                <Button :id="usedIdentities.length + i === 0 ? 'first-identity' : null" primary type="button" tabindex="3" :progress="progress" @click.prevent="onSelect(identity.id)">Select</Button>
+                <Button :id="usedIdentities.length + i === 0 ? 'first-identity' : null" primary type="button" tabindex="2" :progress="progress" @click.prevent="onSelect(identity.id)">Select</Button>
               </div>
             </IdentityListItem>
           </div>
         </template>
+      </template>
+      <div v-if="!createShown" class="flex flex-row justify-start gap-4 mb-4">
+        <Button type="button" tabindex="3" :progress="progress" @click.prevent="onCreateShow">Create new identity</Button>
+      </div>
+      <template v-if="createShown">
+        <h3 class="text-l font-bold mb-4">Create new identity</h3>
+        <IdentityCreate class="mb-4" @created="onIdentityCreated" />
       </template>
       <div v-if="unexpectedError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
       <div class="flex flex-row justify-between gap-4">
