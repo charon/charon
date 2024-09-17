@@ -10,7 +10,7 @@ import { postJSON } from "@/api"
 import { injectProgress } from "@/progress"
 
 const $emit = defineEmits<{
-  "created": [identity: IdentityRef]
+  created: [identity: IdentityRef]
 }>()
 
 const router = useRouter()
