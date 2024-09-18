@@ -259,6 +259,7 @@ func (s *Service) getIdentityFromCredentials(credentials []Credential) (*Identit
 			if username != "" {
 				identity.Username = username
 			}
+			identity.Description = fmt.Sprintf("Identity automatically imported from %s.", s.oidcProviders()[credential.Provider].Name)
 		}
 	}
 	if identity != nil {

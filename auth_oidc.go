@@ -18,6 +18,7 @@ import (
 )
 
 type oidcProvider struct {
+	Name         string
 	Provider     *oidc.Provider
 	Verifier     *oidc.IDTokenVerifier
 	Config       *oauth2.Config
@@ -89,6 +90,7 @@ func initOIDCProviders(config *Config, service *Service, domain string, provider
 			}
 
 			oidcProviders[p.Key] = oidcProvider{
+				Name:         p.Name,
 				Provider:     provider,
 				Verifier:     provider.Verifier(&oidc.Config{ClientID: p.clientID}), //nolint:exhaustruct
 				Config:       config,
