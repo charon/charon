@@ -17,9 +17,6 @@ import (
 )
 
 const (
-	StepStart    = "start"
-	StepComplete = "complete"
-
 	MaxAuthAttempts = 10
 )
 
