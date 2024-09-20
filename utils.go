@@ -159,7 +159,7 @@ func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request,
 		EmailOrUsername:      "",
 		Attempts:             0,
 		OIDCAuthorizeRequest: nil,
-		OIDCIdentity:         nil,
+		Identity:             nil,
 		OIDCRedirectReady:    false,
 		OIDCProvider:         nil,
 		Passkey:              nil,
@@ -221,6 +221,29 @@ func (s *Service) GetActiveFlowNoAuthStep(w http.ResponseWriter, req *http.Reque
 	}
 
 	return flow
+}
+
+func (s *Service) GetActiveFlowAfterAuthStep(w http.ResponseWriter, req *http.Request, value string) (identifier.Identifier, *Flow) {
+	flow := s.GetActiveFlow(w, req, value)
+	if flow == nil {
+		return identifier.Identifier{}, nil
+	}
+
+	// Flow should already successfully (session is not nil) completed auth step,
+	// but not the final step (we checked that in GetActiveFlow() above).
+	if flow.Completed == "" || flow.Session == nil {
+		s.BadRequestWithError(w, req, errors.New("auth step not completed"))
+		return identifier.Identifier{}, nil
+	}
+
+	// Current session should match the session in the flow.
+	session, handled := s.validateSession(w, req, true, flow)
+	if handled {
+		return identifier.Identifier{}, nil
+	}
+
+	// session cannot be nil because we call validateSession with api parameter set to true.
+	return session.AccountID, flow
 }
 
 func (s *Service) GetActiveFlowOIDCTarget(w http.ResponseWriter, req *http.Request, value string) (identifier.Identifier, *Flow) {

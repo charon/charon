@@ -7,6 +7,8 @@ import siteContext from "@/context"
 
 export const flowKey = Symbol() as InjectionKey<Flow>
 
+export const charonOrganization = "TCD1UhKfBDewGv2TgPnFsX"
+
 export function updateStepsNoCode(flow: Flow) {
   if (!flow.getName()) {
     throw new Error("name is missing")
@@ -69,6 +71,8 @@ export function updateSteps(flow: Flow, targetStep: string, force?: boolean) {
   if (newSteps.length > 1 || force) {
     if (flow.getTarget() === "oidc") {
       newSteps.push({ key: "identity", name: "Choose identity or decline" })
+    } else {
+      newSteps.push({ key: "identity", name: "Choose identity" })
     }
     newSteps.push({ key: "autoRedirect", name: `Redirect to ${flow.getName()}` })
     flow.updateSteps(newSteps)

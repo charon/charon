@@ -9,15 +9,11 @@ export function processCompleted(
   target: "session" | "oidc",
   location: LocationResponse,
   name: string,
-  homepage: string,
-  organizationId: string,
   completed: Completed,
 ) {
   flow.updateTarget(target)
   flow.updateLocation(location)
   flow.updateName(name)
-  flow.updateHomepage(homepage)
-  flow.updateOrganizationId(organizationId)
   flow.updateCompleted(completed)
   switch (completed) {
     case "redirect":
@@ -26,11 +22,7 @@ export function processCompleted(
       break
     case "signin":
     case "signup":
-      if (target === "session") {
-        flow.forward("autoRedirect")
-      } else {
-        flow.forward("identity")
-      }
+      flow.forward("identity")
       break
     case "declined":
     case "identity":
@@ -51,9 +43,8 @@ export function processCompletedAndLocationRedirect(
   // or redirect on its own somewhere because of new (or lack thereof) cookies.
   if ("location" in response) {
     if ("completed" in response && flow) {
-      // "location" and "completed" are provided together only for session target,
-      // so there is no organization ID.
-      processCompleted(flow, response.target, response.location, response.name, "", "", response.completed)
+      // "location" and "completed" are provided together only for session target.
+      processCompleted(flow, response.target, response.location, response.name, response.completed)
       if (abortController) {
         abortController.abort()
       }
@@ -62,9 +53,15 @@ export function processCompletedAndLocationRedirect(
     }
     return true
   } else if ("completed" in response && flow && flow.getCompleted() !== response.completed) {
-    // If "completed" is provided, but "location" is not, we are in OIDC target,
-    // so we pass an empty location response as it is not really used.
-    processCompleted(flow, response.target, { url: "", replace: false }, response.name, response.homepage, response.organizationId, response.completed)
+    // If "completed" is provided, but "location" is not, we are in OIDC target or session target choosing
+    // an identity, in any case we pass an empty location response as it is not used.
+    if ("homepage" in response) {
+      flow.updateHomepage(response.homepage)
+    }
+    if ("organizationId" in response) {
+      flow.updateOrganizationId(response.organizationId)
+    }
+    processCompleted(flow, response.target, { url: "", replace: false }, response.name, response.completed)
     if (abortController) {
       abortController.abort()
     }

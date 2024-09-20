@@ -104,8 +104,7 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 }
 
 func (s *Service) AuthFlowGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	// This is similar to API case in completeAuthStep and failAuthStep,
-	// but fetches also the flow and checks the session.
+	// This is similar to API case in failAuthStep, but fetches also the flow and checks the session.
 
 	flow := s.GetFlow(w, req, params["id"])
 	if flow == nil {
@@ -135,7 +134,7 @@ func (s *Service) AuthFlowGetGet(w http.ResponseWriter, req *http.Request, param
 			}
 		}
 
-		if flow.Target == TargetSession {
+		if flow.Target == TargetSession && flow.IsCompleted() {
 			// For session target we provide the target location.
 			response.Location = &AuthFlowResponseLocation{
 				URL:     flow.TargetLocation,
@@ -380,9 +379,6 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	http.SetCookie(w, &cookie)
 
 	if api {
-		// This is similar to AuthFlowGet, only without fetching the flow and checking the session.
-		// It is similar to failAuthStep as well.
-
 		response := AuthFlowResponse{
 			Target:          flow.Target,
 			Name:            flow.TargetName,
@@ -397,21 +393,11 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 			Password:        nil,
 		}
 
-		if flow.Target == TargetSession {
-			// For session target we provide the target location.
-			response.Location = &AuthFlowResponseLocation{
-				URL:     flow.TargetLocation,
-				Replace: true,
-			}
-		}
-
 		s.WriteJSON(w, req, response, nil)
 		return
 	}
 
-	// We redirect back to the flow which then for session target redirects to the target location on
-	// the frontend, after showing the message about successful sign-in or sign-up. For OIDC target
-	// the frontend continues with choosing the identity.
+	// We redirect back to the flow where the frontend continues with choosing the identity.
 	l, errE := s.Reverse("AuthFlowGet", waf.Params{"id": flow.ID.String()}, nil)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -457,7 +443,6 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 
 	if api {
 		// This is similar to AuthFlowGet, only without fetching the flow and checking the session.
-		// It is similar to completeAuthStep as well.
 
 		response := AuthFlowResponse{
 			Target:          flow.Target,
@@ -473,7 +458,7 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 			Password:        nil,
 		}
 
-		if flow.Target == TargetSession {
+		if flow.Target == TargetSession && flow.IsCompleted() {
 			// For session target we provide the target location.
 			response.Location = &AuthFlowResponseLocation{
 				URL:     flow.TargetLocation,
@@ -500,10 +485,10 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 	s.TemporaryRedirectGetMethod(w, req, l)
 }
 
-// AuthFlowRestartAuthPost is not possible in session target because you could then open the flow later
-// on, after you already completed the flow and was redirected to target location, and reauthenticate.
-// In other words, session target flow is completed (flow.IsCompleted() returns true) after auth
-// step is completed and it makes no sense to allow restarting of completed flows.
+// AuthFlowRestartAuthPost is not possible in session target after you pick your identity because you
+// could then open the flow later on, after you already completed the flow and was redirected to target
+// location, and reauthenticate. In other words, session target flow is completed (flow.IsCompleted()
+// returns true) after auth step is completed and it makes no sense to allow restarting of completed flows.
 //
 // For OIDC target it is similar, after redirect, we do not allow restarting anymore.
 // In other words, after redirect, OIDC target flow is also completed.
@@ -513,7 +498,7 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 
 	ctx := req.Context()
 
-	_, flow := s.GetActiveFlowOIDCTarget(w, req, params["id"])
+	_, flow := s.GetActiveFlowAfterAuthStep(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -528,6 +513,7 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 	flow.Session = nil
 	flow.Completed = ""
 	flow.Provider = ""
+	flow.Identity = nil
 	flow.OIDCRedirectReady = false
 
 	// Everything should already be set to nil at this point, but just to make sure.
@@ -628,7 +614,7 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 
 	ctx := req.Context()
 
-	accountID, flow := s.GetActiveFlowOIDCTarget(w, req, params["id"])
+	accountID, flow := s.GetActiveFlowAfterAuthStep(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -642,16 +628,19 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 		return
 	}
 
-	// We know flow.TargetOrganization is not nil because we checked in
-	// GetActiveFlowOIDCTarget that Target == TargetOIDC.
-	identity, errE := selectAndActivateIdentity(ctx, chooseIdentity.Identity.ID, *flow.TargetOrganizationID)
+	targetOrganizationID := charonOrganization
+	if flow.Target == TargetOIDC {
+		// We know flow.TargetOrganization is not nil when Target == TargetOIDC.
+		targetOrganizationID = *flow.TargetOrganizationID
+	}
+	identity, errE := selectAndActivateIdentity(ctx, chooseIdentity.Identity.ID, targetOrganizationID)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
 	flow.Completed = CompletedIdentity
-	flow.OIDCIdentity = identity
+	flow.Identity = identity
 	flow.OIDCRedirectReady = false
 
 	errE = SetFlow(ctx, flow)
@@ -790,7 +779,7 @@ func (s *Service) AuthFlowCreatePost(w http.ResponseWriter, req *http.Request, _
 		EmailOrUsername:      "",
 		Attempts:             0,
 		OIDCAuthorizeRequest: nil,
-		OIDCIdentity:         nil,
+		Identity:             nil,
 		OIDCRedirectReady:    false,
 		OIDCProvider:         nil,
 		Passkey:              nil,

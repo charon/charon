@@ -9,7 +9,7 @@ import IdentityListItem from "@/partials/IdentityListItem.vue"
 import IdentityCreate from "@/partials/IdentityCreate.vue"
 import { injectProgress } from "@/progress"
 import { getURL, postJSON, restartAuth } from "@/api"
-import { flowKey } from "@/flow"
+import { charonOrganization, flowKey } from "@/flow"
 import { encodeQuery, processCompletedAndLocationRedirect } from "@/utils"
 
 const props = defineProps<{
@@ -58,8 +58,8 @@ function onAfterEnter() {
   // TODO: Make this work. This is too early because data is not yet loaded so there is nothing to focus.
   document.getElementById("first-identity")?.focus()
 
-  getIdentities(props.organizationId, false, usedIdentitiesLoading, usedIdentitiesLoadingError, usedIdentities)
-  getIdentities(props.organizationId, true, otherIdentitiesLoading, otherIdentitiesLoadingError, otherIdentities)
+  getIdentities(props.organizationId || charonOrganization, false, usedIdentitiesLoading, usedIdentitiesLoadingError, usedIdentities)
+  getIdentities(props.organizationId || charonOrganization, true, otherIdentitiesLoading, otherIdentitiesLoadingError, otherIdentities)
 }
 
 function onBeforeLeave() {
@@ -209,7 +209,7 @@ function onCreateShow() {
 
 function onIdentityCreated(identity: IdentityRef) {
   createShown.value = false
-  getIdentities(props.organizationId, true, otherIdentitiesLoading, otherIdentitiesLoadingError, otherIdentities)
+  getIdentities(props.organizationId || charonOrganization, true, otherIdentitiesLoading, otherIdentitiesLoadingError, otherIdentities)
 
   // TODO: Focus "select" button for the new identity.
 }
@@ -231,7 +231,7 @@ function onIdentityCreated(identity: IdentityRef) {
         <div v-if="!usedIdentities.length" class="italic mb-4">You have not yet used any identity with this organization.</div>
         <template v-for="(identity, i) of usedIdentities" :key="identity.id">
           <div class="grid grid-cols-1 gap-4 mb-4">
-            <IdentityListItem :item="identity" :organization-id="organizationId">
+            <IdentityListItem :item="identity" :organization-id="organizationId || charonOrganization">
               <div class="flex flex-col items-start">
                 <Button :id="i === 0 ? 'first-identity' : null" primary type="button" tabindex="1" :progress="progress" @click.prevent="onSelect(identity.id)"
                   >Select</Button

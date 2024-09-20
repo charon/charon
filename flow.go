@@ -29,8 +29,9 @@ const (
 	// Auth step failed (3rd party authentication failed, too many attempts, etc.).
 	CompletedFailed Completed = "failed"
 
-	// OIDC identity chosen.
+	// Identity chosen.
 	CompletedIdentity Completed = "identity"
+
 	// OIDC flow declined.
 	CompletedDeclined Completed = "declined"
 	// OIDC redirect was made back to the OIDC client.
@@ -72,10 +73,10 @@ type Flow struct {
 	TargetOrganizationID *identifier.Identifier
 	Provider             Provider
 	EmailOrUsername      string
+	Identity             *Identity
 	Attempts             int
 
 	OIDCAuthorizeRequest *fosite.AuthorizeRequest
-	OIDCIdentity         *Identity
 	OIDCRedirectReady    bool
 
 	OIDCProvider *FlowOIDCProvider
@@ -107,11 +108,11 @@ func (f *Flow) IsCompleted() bool {
 	switch f.Target {
 	case TargetSession:
 		switch f.Completed {
-		case CompletedSignin, CompletedSignup, CompletedFailed:
+		case CompletedIdentity, CompletedFailed:
 			return true
-		case "":
+		case "", CompletedSignin, CompletedSignup:
 			return false
-		case CompletedDeclined, CompletedIdentity, CompletedRedirect:
+		case CompletedDeclined, CompletedRedirect:
 			fallthrough
 		default:
 			errE := errors.New("invalid flow completed state for target")

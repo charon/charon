@@ -152,14 +152,14 @@ export async function startPassword(
 }
 
 export async function restartAuth(router: Router, flowId: string, flow: Flow, abort: AbortSignal | AbortController, progress: Ref<number>) {
-  if (flow.getTarget() === "session") {
-    throw new Error(`cannot restart session target`)
+  if (flow.getTarget() === "session" && flow.getCompleted() == "identity") {
+    throw new Error(`cannot restart completed flow`)
+  }
+  if (flow.getTarget() === "oidc" && flow.getCompleted() == "redirect") {
+    throw new Error(`cannot restart completed flow`)
   }
   if (flow.getCompleted() === "failed") {
     throw new Error(`cannot restart failed auth`)
-  }
-  if (flow.getCompleted() === "redirect") {
-    throw new Error(`cannot restart completed flow`)
   }
 
   const abortSignal = abort instanceof AbortController ? abort.signal : abort

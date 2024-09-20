@@ -191,20 +191,24 @@ onBeforeMount(async () => {
       }
       // "location" and "completed" are provided together only for session target,
       // so there is no organization ID.
-      processCompleted(flow, flowResponse.target, flowResponse.location, flowResponse.name, "", "", flowResponse.completed)
+      processCompleted(flow, flowResponse.target, flowResponse.location, flowResponse.name, flowResponse.completed)
     } else if ("completed" in flowResponse) {
       if (flowResponse.provider === "password") {
         updateStepsNoCode(flow)
       }
-      // If "completed" is provided, but "location" is not, we are in OIDC target,
-      // so we pass an empty location response as it is not really used.
+      // If "completed" is provided, but "location" is not, we are in OIDC target or session target choosing
+      // an identity, in any case we pass an empty location response as it is not used.
+      if ("homepage" in flowResponse) {
+        flow.updateHomepage(flowResponse.homepage)
+      }
+      if ("organizationId" in flowResponse) {
+        flow.updateOrganizationId(flowResponse.organizationId)
+      }
       processCompleted(
         flow,
         flowResponse.target,
         { url: "", replace: false },
         flowResponse.name,
-        flowResponse.homepage,
-        flowResponse.organizationId,
         flowResponse.completed,
       )
     }
@@ -372,8 +376,16 @@ const WithOrganizationDocument = WithDocument<Organization>
                   beforeActive &&
                   completed !== 'failed' &&
                   (completed === '' ||
-                    (target === 'oidc' &&
-                      completed !== 'redirect' &&
+                    (
+                      (
+                        // After authentication has completed, but not the whole flow has completed
+                        // (OIDC target completes with redirect, session target completes with identity),
+                        // allow returning to any step which is not an intermediary authentication step
+                        // (we want to force full authentication restart to the first authentication step
+                        // if a user wants to redo authentication).
+                        (target === 'oidc' && completed !== 'redirect') ||
+                        (target === 'session' && completed !== 'identity')
+                      ) &&
                       step.key != 'password' &&
                       step.key != 'oidcProvider' &&
                       step.key != 'passkeySignin' &&

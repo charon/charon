@@ -16,6 +16,8 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
+var charonOrganization = identifier.MustFromString("TCD1UhKfBDewGv2TgPnFsX") //nolint:gochecknoglobals
+
 var (
 	ErrOrganizationNotFound         = errors.Base("organization not found")
 	ErrOrganizationAlreadyExists    = errors.Base("organization already exists")

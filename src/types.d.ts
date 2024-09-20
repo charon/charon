@@ -53,6 +53,7 @@ export type AuthFlowResponse = (
   | {
       target: "session"
       name: string
+      completed: Completed
     }
   | {
       target: "oidc"

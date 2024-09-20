@@ -90,7 +90,7 @@ func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.
 		EmailOrUsername:      "",
 		Attempts:             0,
 		OIDCAuthorizeRequest: ar,
-		OIDCIdentity:         nil,
+		Identity:             nil,
 		OIDCRedirectReady:    false,
 		OIDCProvider:         nil,
 		Passkey:              nil,
@@ -171,7 +171,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 	grantAllScopes(authorizeRequest)
 
 	oidcSession := &OIDCSession{ //nolint:forcetypeassert
-		Subject:                *flow.OIDCIdentity.GetOrganization(*flow.TargetOrganizationID).ID,
+		Subject:                *flow.Identity.GetOrganization(*flow.TargetOrganizationID).ID,
 		Session:                session.ID,
 		ExpiresAt:              nil,
 		RequestedAt:            flow.CreatedAt,
@@ -188,21 +188,21 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 	for _, scope := range authorizeRequest.GetGrantedScopes() {
 		switch strings.ToLower(scope) {
 		case "profile":
-			if flow.OIDCIdentity.Username != "" {
-				idTokenClaims.Add("preferred_username", flow.OIDCIdentity.Username)
+			if flow.Identity.Username != "" {
+				idTokenClaims.Add("preferred_username", flow.Identity.Username)
 			}
-			if flow.OIDCIdentity.GivenName != "" {
-				idTokenClaims.Add("given_name", flow.OIDCIdentity.GivenName)
+			if flow.Identity.GivenName != "" {
+				idTokenClaims.Add("given_name", flow.Identity.GivenName)
 			}
-			if flow.OIDCIdentity.FullName != "" {
-				idTokenClaims.Add("name", flow.OIDCIdentity.FullName)
+			if flow.Identity.FullName != "" {
+				idTokenClaims.Add("name", flow.Identity.FullName)
 			}
-			if flow.OIDCIdentity.PictureURL != "" {
-				idTokenClaims.Add("picture", flow.OIDCIdentity.PictureURL)
+			if flow.Identity.PictureURL != "" {
+				idTokenClaims.Add("picture", flow.Identity.PictureURL)
 			}
 		case "email":
-			if flow.OIDCIdentity.Email != "" {
-				idTokenClaims.Add("email", flow.OIDCIdentity.Email)
+			if flow.Identity.Email != "" {
+				idTokenClaims.Add("email", flow.Identity.Email)
 				// TODO: We are not yet making sure only validated addressed can be set in an identity.
 				idTokenClaims.Add("email_verified", true)
 			}
