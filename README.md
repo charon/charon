@@ -205,6 +205,9 @@ you to the backend which then proxies unknown requests (non-API requests) to the
 - [Mozilla Persona](https://en.wikipedia.org/wiki/Mozilla_Persona) – was an identity provider integrated with Firefox
   browser, but it did not gain enough traction; this project is more than an identity provider adds many other
   features for both users and app developers
+- [Eartho](https://github.com/earthodev/eartho) – shares similar goals with Charon, both serving
+  as a trusted authentication intermediary, but they have different focuses. Charon aims to
+  support multiple identities you freely create and choose between.
 
 ## GitHub mirror
 
