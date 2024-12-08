@@ -157,10 +157,10 @@ project:
   # already added to the project. (Introduced in GitLab 14.0.) Type: array
   topics:
     - docker
-    - privacy
-    - sso
     - oauth
     - oidc
+    - privacy
+    - sso
   # One of disabled, private, or enabled. Type: string
   wiki_access_level: disabled
 avatar: ""
@@ -300,7 +300,7 @@ variables:
     protected: true
     raw: true
     # sops:enc
-    value: ENC[AES256_GCM,data:FUEM6XqFzZSdwRHjoY0cl4S0nt9e/Ch81Bg=,iv:76i0n/niFNJldj25qepnPEM/J/cqu7Qpf2vYbaT2Ks4=,tag:4PFu+I6+7vnWEWMjK5dNGQ==,type:str]
+    value: ENC[AES256_GCM,data:KURN0LOQk9VjPHxSpoeuCpxjVn/JYbdw0AQ=,iv:z9VbUQksO/lfjqXxbLg77imO8olpJtn9nKO8SwY9tGc=,tag:T762FbTOS57iMyGy2N/AsA==,type:str]
     variable_type: env_var
   - description: null
     environment_scope: '*'
@@ -309,7 +309,7 @@ variables:
     protected: true
     raw: true
     # sops:enc
-    value: ENC[AES256_GCM,data:9BMKsCnP0iClESzmugkMHxsll+KL1nO40SuksY7PngDiP20ctCsKi0gHLcg7Nl8xOq5nTwp+KAJWMPoWq/R80mGfAPatKJIG7WJAlB+4BK5QaCjH2Mg9lK46VHcLhWlqbqRP4G1dCXUYtTHk2qazuuMh5wq8kkq3RCjo0QmP6+F8FToot4QvJ/l+pCMN7FeLFlDMQUJLi1Zy1xuUBLzNf0OpnD6NwCblPRciEcslBi/zRDDM2Tn6u7D8vd0=,iv:3hJ2iA22wCqUvV8JzVsH3zYhf+e78BcenFrdtv7Fh88=,tag:sB2pGQ1995b8Wsx0etOpUw==,type:str]
+    value: ENC[AES256_GCM,data:+7dD9cELTe3J2ESqFHOGoCGfG5JridEmtDs5FJ/KgmIt42pNoZcUbeU+UgNFOEtqxBfuIAk6vnxMIjRNaRaork61KB14fzuy3C0UzxfK77bZAsjelCrg0fFpqYUZ+iRgDGhKjD1Vl7QOBHkVu9U6nfgfe0Ws+J0UQ4LCkL0C9syqYtMUTI7filWAfXhBy9Du1QPrzXr46vMZu8NT9J7xKOgojJLYdP21oBbwKLVU60q3nuV0tM+fBrNLShQ=,iv:oKopcIimXi30lXDiNA0k4+otVyizYaYL55eaoswzKSg=,tag:tKUggti+j/RU+SGx9bDM9w==,type:str]
     variable_type: file
 # active: The activation of pipeline schedule. If false is set, the pipeline
 # schedule is initially deactivated. Type: boolean
@@ -332,14 +332,14 @@ sops:
     - recipient: age1llyzf24usmx40ck9dxphq5kq3kzkdls3kuzdscrtgq30nm45pceqk6nxd3
       enc: |
         -----BEGIN AGE ENCRYPTED FILE-----
-        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBsMVFsb3VZNmY3NEZxZEVS
-        bFBlWDBnR0hieVN6eFYzd1hQb1FkN3RjTDNnCkRQaW5paVByUFl4a1Z5NmYwYjly
-        SnlvcTdaTFg2azRZZmVnak9UOWN0bXcKLS0tIEJ6NHVPWFRlOEgyckIxUkRrTmRT
-        U3RvM3BFMWRCZGxIejlJRTYxZ1dPRE0KnlUu8B9DynH6FxtTF9Rp1vqx0kJ3FJ7X
-        2B4dnfNg64ov+jekleduQcaZ3JOeCRKEEIPz7Spliky6TSnppO+meA==
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBqYUxuR0VJdlc0cjZ2MmlI
+        SXR3WWdmRXJjVHQrSThEUTA1V0lNRGZPVWdjCnJYRjBwV0NpUFBaRzRkT3FRWXZq
+        Vk5MenoyZjVrV2pxZVc2S3ZaRzB2SkkKLS0tIHN5QndrK1dXYmNFTGpyL2NJZUJx
+        Q0tHWkl3NTF0b0dvTmMvZFZzbTlETVkKPrNSsE4LgEfrdEH8tbK5PUBIUJY45HNP
+        Iqn9N6hkhJMJs4zYzLONwNhhjQ7+cC7jpeF3+zhiG7FZ9GRsOr3zpA==
         -----END AGE ENCRYPTED FILE-----
-  lastmodified: "2023-11-22T16:06:25Z"
-  mac: ENC[AES256_GCM,data:Rld4vU7AdH7j42tevltQq2VbKpFU9PMegMJT0aXvRAYiI2/UUEt5B/1At1idlB+o6Z+npR/4nJTZDnYUWUwM5BifXz8Jz2AmqbdaSjIgYw8HLL8GgTFf2Jnx4/nEVeIx9xKO7OlVYVyXuk5dmQeFJ77crxET3IsvI8DjcXc0BLI=,iv:4q4RufQb/CNpWRethyoWM2bUABh04dWnTC0eqL4ep+0=,tag:s6Gdk7DXXYRn4tjuDSEVtQ==,type:str]
+  lastmodified: "2024-12-08T10:25:48Z"
+  mac: ENC[AES256_GCM,data:6BtxKx5GXSp8NG+ScBYXmpxIvwBujqODs6nAUlXeQaEoQ4h58urTPb+8ONAFWfqHH+cW7Cfg30L9XJD18QlDHSy91O6alnWZ++DmYkwHc004k/kcfyp39eDuGIpvgHdr/RgwvZ/fHvE5e9/j73sFJAX5/qGfpsSw4+g4h69fP1g=,iv:B4nu7AvW/fWXZ9BR0qTluuY4hyljHeNe1//s+jYN/4A=,tag:NFuMnTXyKNO+7TLErW3WQA==,type:str]
   pgp: []
   encrypted_comment_regex: sops:enc
   mac_only_encrypted: true
