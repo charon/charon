@@ -101,12 +101,12 @@ func (p *Providers) Validate() error {
 
 //nolint:lll
 type Mail struct {
-	Host     string               `                                                                         help:"Host to send e-mails to. If not set, e-mails are logged instead."                                          yaml:"host"`
-	Port     int                  `default:"25"                                                             help:"Port to send e-mails to. Default: ${default}."                                        placeholder:"INT"    yaml:"port"`
-	Username string               `                                                                         help:"Username to use to send e-mails."                                                                          yaml:"username"`
-	Password kong.FileContentFlag `                                                     env:"PASSWORD_PATH" help:"File with password to use to send e-mails. Environment variable: ${env}."             placeholder:"PATH"   yaml:"password"`
-	Auth     string               `default:"${defaultMailAuth}" enum:"${mailAuthTypes}"                     help:"Authentication type to use. Possible: ${mailAuthTypes}. Default: ${defaultMailAuth}." placeholder:"STRING" yaml:"auth"`
-	From     string               `default:"${defaultMailFrom}"                                             help:"From header for e-mails. Default: ${defaultMailFrom}."                                placeholder:"EMAIL"  yaml:"from"`
+	Host     string               `                                                                         help:"Host to send e-mails to. If not set, e-mails are logged instead."                                  yaml:"host"`
+	Port     int                  `default:"25"                                                             help:"Port to send e-mails to. Default: ${default}."                                placeholder:"INT"    yaml:"port"`
+	Username string               `                                                                         help:"Username to use to send e-mails."                                                                  yaml:"username"`
+	Password kong.FileContentFlag `                                                     env:"PASSWORD_PATH" help:"File with password to use to send e-mails. Environment variable: ${env}."     placeholder:"PATH"   yaml:"password"`
+	Auth     string               `default:"${defaultMailAuth}" enum:"${mailAuthTypes}"                     help:"Authentication type to use. Possible: ${mailAuthTypes}. Default: ${default}." placeholder:"STRING" yaml:"auth"`
+	From     string               `default:"${defaultMailFrom}"                                             help:"From header for e-mails. Default: ${default}."                                placeholder:"EMAIL"  yaml:"from"`
 
 	// Exposed primarily for use in tests.
 	NotRequiredTLS bool `json:"-" kong:"-" yaml:"-"`
