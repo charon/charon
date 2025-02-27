@@ -1,8 +1,8 @@
 module gitlab.com/charon/charon
 
-go 1.23
+go 1.23.4
 
-toolchain go1.23.1
+toolchain go1.23.6
 
 require (
 	github.com/alecthomas/kong v1.8.1
