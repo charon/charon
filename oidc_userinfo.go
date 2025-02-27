@@ -43,7 +43,7 @@ func (s *Service) oidcUserInfo(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	interim := ar.GetSession().(*OIDCSession).IDTokenClaims().ToMap() //nolint:forcetypeassert
+	interim := ar.GetSession().(*OIDCSession).IDTokenClaims().ToMap() //nolint:forcetypeassert,errcheck
 	keysToDelete := []string{"aud", "auth_time", "exp", "iat", "iss", "jti", "nonce", "rat", "at_hash", "c_hash", "sid", "client_id"}
 	for _, key := range keysToDelete {
 		delete(interim, key)

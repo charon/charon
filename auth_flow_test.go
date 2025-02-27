@@ -46,7 +46,7 @@ func createAuthFlow(t *testing.T, ts *httptest.Server, service *charon.Service) 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"target":"session","name":"Charon Dashboard"}`, string(out))
+		assert.Equal(t, `{"target":"session","name":"Charon Dashboard"}`, string(out)) //nolint:testifylint
 	}
 
 	return authFlowCreateResponse.ID

@@ -189,7 +189,7 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"testing"}`, string(out))
+		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"testing"}`, string(out)) //nolint:testifylint
 	}
 
 	// Redirect to our testing provider.
@@ -211,7 +211,7 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"testing"}`, string(out))
+		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"testing"}`, string(out)) //nolint:testifylint
 	}
 
 	// Redirect to OIDC callback.

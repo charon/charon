@@ -56,7 +56,7 @@ func init() { //nolint:gochecknoinits
 			return nil
 		}
 
-		data, err := f.(fs.ReadFileFS).ReadFile(path)
+		data, err := f.(fs.ReadFileFS).ReadFile(path) //nolint:forcetypeassert,errcheck
 		if err != nil {
 			return err
 		}
@@ -208,7 +208,7 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	// We have the location testing server listens on now, so we can set the redirect URI.
-	oidcStore.Clients[oidcTestingClientID].(*fosite.DefaultClient).RedirectURIs = []string{ts.URL + authOIDCProvider} //nolint:forcetypeassert
+	oidcStore.Clients[oidcTestingClientID].(*fosite.DefaultClient).RedirectURIs = []string{ts.URL + authOIDCProvider} //nolint:forcetypeassert,errcheck
 
 	return ts, service, smtpServer, oidcTS
 }

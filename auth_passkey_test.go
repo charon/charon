@@ -64,7 +64,7 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 		assert.Equal(t, 2, resp.ProtoMajor)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
 		// Passkey create options are provided only in the response to the passkey create start call.
-		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"passkey"}`, string(out))
+		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"passkey"}`, string(out)) //nolint:testifylint
 	}
 
 	authFlowPasskeyCreateComplete, errE := service.ReverseAPI("AuthFlowPasskeyCreateComplete", waf.Params{"id": flowID.String()}, nil)
@@ -175,7 +175,7 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"passkey","completed":"`+string(charon.CompletedSignup)+`","location":{"url":"/","replace":true}}`, string(out))
+		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"passkey","completed":"`+string(charon.CompletedSignup)+`","location":{"url":"/","replace":true}}`, string(out)) //nolint:testifylint
 	}
 
 	signoutUser(t, ts, service)
@@ -215,7 +215,7 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 		assert.Equal(t, 2, resp.ProtoMajor)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
 		// Passkey get options are provided only in the response to the passkey get start call.
-		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"passkey"}`, string(out))
+		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"passkey"}`, string(out)) //nolint:testifylint
 	}
 
 	authFlowPasskeyGetComplete, errE := service.ReverseAPI("AuthFlowPasskeyGetComplete", waf.Params{"id": flowID.String()}, nil)
@@ -289,6 +289,6 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"passkey","completed":"`+string(charon.CompletedSignin)+`","location":{"url":"/","replace":true}}`, string(out))
+		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"passkey","completed":"`+string(charon.CompletedSignin)+`","location":{"url":"/","replace":true}}`, string(out)) //nolint:testifylint
 	}
 }

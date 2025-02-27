@@ -34,7 +34,7 @@ func TestRouteMeAndSignOut(t *testing.T) {
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"error":"unauthorized"}`, string(out))
+		assert.Equal(t, `{"error":"unauthorized"}`, string(out)) //nolint:testifylint
 	}
 
 	flowID := createAuthFlow(t, ts, service)
@@ -63,7 +63,7 @@ func TestRouteMeAndSignOut(t *testing.T) {
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"error":"unauthorized"}`, string(out))
+		assert.Equal(t, `{"error":"unauthorized"}`, string(out)) //nolint:testifylint
 	}
 
 	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
@@ -104,6 +104,6 @@ func TestRouteMeAndSignOut(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"password","completed":"`+string(charon.CompletedSignup)+`","location":{"url":"/","replace":true}}`, string(out))
+		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"password","completed":"`+string(charon.CompletedSignup)+`","location":{"url":"/","replace":true}}`, string(out)) //nolint:testifylint
 	}
 }

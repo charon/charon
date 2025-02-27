@@ -176,7 +176,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 		ExpiresAt:              nil,
 		RequestedAt:            flow.CreatedAt,
 		AuthTime:               *flow.AuthTime,
-		Client:                 authorizeRequest.GetClient().(*OIDCClient).ID,
+		Client:                 authorizeRequest.GetClient().(*OIDCClient).ID, //nolint:errcheck
 		JWTClaims:              nil,
 		JWTHeaders:             nil,
 		IDTokenClaimsInternal:  nil,

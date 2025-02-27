@@ -154,7 +154,7 @@ func initOIDC(config *Config, service *Service, domain string, hmacStrategy *hma
 
 		oAuth2HMACStrategy := newHMACSHAStrategy(hmacStrategy, config)
 
-		return compose.Compose( //nolint:forcetypeassert
+		return compose.Compose( //nolint:forcetypeassert,errcheck
 			config,
 			oidcStore,
 			&compose.CommonStrategy{
@@ -185,7 +185,7 @@ func initOIDC(config *Config, service *Service, domain string, hmacStrategy *hma
 func sanitizeAuthorizeRequest(request *fosite.AuthorizeRequest) *fosite.AuthorizeRequest {
 	sanitized := new(fosite.AuthorizeRequest)
 	*sanitized = *request
-	sanitized.Request = *request.Request.Sanitize( //nolint:forcetypeassert
+	sanitized.Request = *request.Request.Sanitize( //nolint:forcetypeassert,errcheck
 		[]string{
 			// OIDC parameters (same as fosite.handler.openid.oidcParameters).
 			"max_age", "prompt", "acr_values", "id_token_hint", "nonce",
@@ -335,7 +335,7 @@ func (s *OIDCSession) Clone() fosite.Session { //nolint:ireturn
 		return nil
 	}
 
-	return deepcopy.Copy(s).(fosite.Session) //nolint:forcetypeassert
+	return deepcopy.Copy(s).(fosite.Session) //nolint:forcetypeassert,errcheck
 }
 
 // GetExtraClaims implements fosite.ExtraClaimsSession and claims
@@ -347,7 +347,7 @@ func (s *OIDCSession) GetExtraClaims() map[string]interface{} {
 	}
 
 	// We make a clone so that WithScopeField does not change the original value.
-	return s.Clone().(*OIDCSession).JWTClaims.WithScopeField(jwt.JWTScopeFieldString).ToMapClaims() //nolint:forcetypeassert
+	return s.Clone().(*OIDCSession).JWTClaims.WithScopeField(jwt.JWTScopeFieldString).ToMapClaims() //nolint:forcetypeassert,errcheck
 }
 
 // SetSubject implements rfc7523.Session.

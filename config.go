@@ -412,7 +412,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			Logger:          config.Logger,
 			CanonicalLogger: config.Logger,
 			WithContext:     config.WithContext,
-			StaticFiles:     f.(fs.ReadFileFS),
+			StaticFiles:     f.(fs.ReadFileFS), //nolint:errcheck
 			Routes:          routesConfig.Routes,
 			Sites:           sites,
 			SiteContextPath: "/context.json",
