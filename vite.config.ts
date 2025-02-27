@@ -1,5 +1,4 @@
-/// <reference types="vitest" />
-import { defineConfig } from "vite"
+import { defineConfig } from "vitest/config"
 import vue from "@vitejs/plugin-vue"
 import license from "rollup-plugin-license"
 import path from "path"
@@ -13,9 +12,6 @@ export default defineConfig({
       sourcemap: true,
       thirdParty: {
         includeSelf: true,
-        // TODO: Remove includePrivate.
-        //       See: https://github.com/mjeanroy/rollup-plugin-license/issues/1685#issuecomment-2110103508
-        includePrivate: true,
         allow: {
           test: "(Apache-2.0 OR MIT OR BSD-2-Clause OR BSD-3-Clause OR ISC)",
           failOnUnlicensed: true,
