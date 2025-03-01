@@ -28,5 +28,5 @@ func signoutUser(t *testing.T, ts *httptest.Server, service *charon.Service) {
 	var authSignoutResponse charon.AuthSignoutResponse
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authSignoutResponse)
 	require.NoError(t, errE, "% -+#.1v", errE)
-	assert.Equal(t, "/", authSignoutResponse.URL)
+	assert.Equal(t, "/", authSignoutResponse.Location)
 }

@@ -15,8 +15,7 @@ type AuthSignoutRequest struct {
 }
 
 type AuthSignoutResponse struct {
-	URL     string `json:"url"`
-	Replace bool   `json:"replace"`
+	Location string `json:"url"`
 }
 
 // TODO: Allow specifying that a) provider who signed the user in should be signed out as well b) all providers user is known with is signed out as well.
@@ -49,7 +48,6 @@ func (s *Service) AuthSignoutPost(w http.ResponseWriter, req *http.Request, _ wa
 	}
 
 	s.WriteJSON(w, req, AuthSignoutResponse{
-		URL:     location,
-		Replace: false,
+		Location: location,
 	}, nil)
 }
