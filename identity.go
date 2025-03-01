@@ -2,6 +2,7 @@ package charon
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"io"
 	"net/http"
@@ -66,6 +67,18 @@ func (i *IdentityOrganization) Validate(_ context.Context, existing *IdentityOrg
 	return nil
 }
 
+type IdentityAccount struct {
+	IdentityID identifier.Identifier `json:"identityId"`
+	AccountID  identifier.Identifier `json:"accountId"`
+}
+
+func cmpIdentityAccount(a IdentityAccount, b IdentityAccount) int {
+	return cmp.Or(
+		bytes.Compare(a.IdentityID[:], b.IdentityID[:]),
+		bytes.Compare(a.AccountID[:], b.AccountID[:]),
+	)
+}
+
 type Identity struct {
 	ID *identifier.Identifier `json:"id"`
 
@@ -77,8 +90,12 @@ type Identity struct {
 
 	Description string `json:"description"`
 
-	Users  []AccountRef `json:"users,omitempty"`
-	Admins []AccountRef `json:"admins"`
+	// TODO: When sending Identity out, we should not expose account IDs.
+
+	// For identities we have an exception where we use accounts for access control,
+	// but we expose them through related identities to users.
+	Users  []IdentityAccount `json:"users,omitempty"`
+	Admins []IdentityAccount `json:"admins"`
 
 	Organizations []IdentityOrganization `json:"organizations"`
 }
@@ -108,6 +125,24 @@ func (i *Identity) GetOrganization(id identifier.Identifier) *IdentityOrganizati
 	}
 
 	return nil
+}
+
+func (i *Identity) HasUserAccess(accountID identifier.Identifier) bool {
+	for _, identityAccount := range i.Users {
+		if identityAccount.AccountID == accountID {
+			return true
+		}
+	}
+	return false
+}
+
+func (i *Identity) HasAdminAccess(accountID identifier.Identifier) bool {
+	for _, identityAccount := range i.Admins {
+		if identityAccount.AccountID == accountID {
+			return true
+		}
+	}
+	return false
 }
 
 type IdentityRef struct {
@@ -187,27 +222,26 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 		return errors.WithStack(errEmptyIdentity)
 	}
 
+	// Current user must be among admins if it is changing the identity.
+	// We check this elsewhere, here we make sure the user is stored as an admin.
+	identityID := mustGetIdentityID(ctx)
 	accountID := mustGetAccountID(ctx)
-	accountRef := AccountRef{ID: accountID}
-	if !slices.Contains(i.Admins, accountRef) {
-		i.Admins = append(i.Admins, accountRef)
+	identityAccount := IdentityAccount{identityID, accountID}
+	if !slices.Contains(i.Admins, identityAccount) {
+		i.Admins = append(i.Admins, identityAccount)
 	}
 
 	// We sort and remove duplicates.
-	slices.SortFunc(i.Admins, func(a AccountRef, b AccountRef) int {
-		return bytes.Compare(a.ID[:], b.ID[:])
-	})
+	slices.SortFunc(i.Admins, cmpIdentityAccount)
 	i.Admins = slices.Compact(i.Admins)
-	slices.SortFunc(i.Users, func(a AccountRef, b AccountRef) int {
-		return bytes.Compare(a.ID[:], b.ID[:])
-	})
+	slices.SortFunc(i.Users, cmpIdentityAccount)
 	i.Users = slices.Compact(i.Users)
 
 	// Admins should not be users as well.
-	adminsSet := mapset.NewThreadUnsafeSet[AccountRef]()
+	adminsSet := mapset.NewThreadUnsafeSet[IdentityAccount]()
 	adminsSet.Append(i.Admins...)
-	i.Users = slices.DeleteFunc(i.Users, func(ar AccountRef) bool {
-		return adminsSet.Contains(ar)
+	i.Users = slices.DeleteFunc(i.Users, func(ia IdentityAccount) bool {
+		return adminsSet.Contains(ia)
 	})
 
 	if i.Organizations == nil {
@@ -265,10 +299,10 @@ func GetIdentity(ctx context.Context, id identifier.Identifier) (*Identity, erro
 		return nil, errE
 	}
 	accountID := mustGetAccountID(ctx)
-	if !slices.Contains(identity.Users, AccountRef{accountID}) && !slices.Contains(identity.Admins, AccountRef{accountID}) {
-		return nil, errors.WithDetails(ErrIdentityUnauthorized, "id", id)
+	if identity.HasUserAccess(accountID) || identity.HasAdminAccess(accountID) {
+		return &identity, nil
 	}
-	return &identity, nil
+	return nil, errors.WithDetails(ErrIdentityUnauthorized, "id", id)
 }
 
 func CreateIdentity(ctx context.Context, identity *Identity) errors.E {
@@ -310,7 +344,7 @@ func UpdateIdentity(ctx context.Context, identity *Identity) errors.E { //nolint
 	}
 
 	accountID := mustGetAccountID(ctx)
-	if !slices.Contains(existingIdentity.Admins, AccountRef{ID: accountID}) {
+	if !existingIdentity.HasAdminAccess(accountID) {
 		return errors.WithDetails(ErrIdentityUnauthorized, "id", *identity.ID)
 	}
 
@@ -365,6 +399,8 @@ func selectAndActivateIdentity(ctx context.Context, identityID, organizationID i
 }
 
 func (s *Service) IdentityGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	// We always serve the page and leave to the API call to check permissions.
+
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
@@ -373,9 +409,7 @@ func (s *Service) IdentityGet(w http.ResponseWriter, req *http.Request, _ waf.Pa
 }
 
 func (s *Service) IdentityCreate(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	if s.RequireAuthenticated(w, req, false) == nil {
-		return
-	}
+	// We always serve the page and leave to the API call to check permissions.
 
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
@@ -385,6 +419,8 @@ func (s *Service) IdentityCreate(w http.ResponseWriter, req *http.Request, _ waf
 }
 
 func (s *Service) IdentityList(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	// We always serve the page and leave to the API call to check permissions.
+
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
@@ -406,7 +442,8 @@ func (s *Service) returnIdentityRef(_ context.Context, w http.ResponseWriter, re
 }
 
 func (s *Service) IdentityGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	ctx := s.RequireAuthenticated(w, req, true)
+	// We allow getting identities with the access token or session cookie.
+	ctx := s.requireAuthenticatedForIdentity(w, req)
 	if ctx == nil {
 		return
 	}
@@ -424,7 +461,9 @@ func (s *Service) IdentityGetGet(w http.ResponseWriter, req *http.Request, param
 	}
 
 	accountID := mustGetAccountID(ctx)
-	if slices.Contains(identity.Admins, AccountRef{ID: accountID}) {
+	if identity.HasAdminAccess(accountID) {
+		// getIdentityFromID checked that user has user or admin access to the identity
+		// so here we know that they have both.
 		s.WriteJSON(w, req, identity, map[string]interface{}{
 			"can_get":    true,
 			"can_update": true,
@@ -432,13 +471,16 @@ func (s *Service) IdentityGetGet(w http.ResponseWriter, req *http.Request, param
 		return
 	}
 
+	// getIdentityFromID checked that user has user or admin access to the identity
+	// so here we know that they have only user access.
 	s.WriteJSON(w, req, identity, map[string]interface{}{
 		"can_get": true,
 	})
 }
 
 func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	ctx := s.RequireAuthenticated(w, req, true)
+	// We allow getting identities with the access token or session cookie.
+	ctx := s.requireAuthenticatedForIdentity(w, req)
 	if ctx == nil {
 		return
 	}
@@ -479,7 +521,7 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 			return
 		}
 
-		if slices.Contains(identity.Users, AccountRef{ID: accountID}) || slices.Contains(identity.Admins, AccountRef{ID: accountID}) {
+		if identity.HasUserAccess(accountID) || identity.HasAdminAccess(accountID) {
 			// TODO: Do not filter in list endpoint but filter in search endpoint.
 			if organization != nil && identity.GetOrganization(*organization) != nil {
 				result = append(result, IdentityRef{ID: id})
@@ -502,6 +544,7 @@ func (s *Service) IdentityUpdatePost(w http.ResponseWriter, req *http.Request, p
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
+	// We allow updating identities only with the access token.
 	ctx := s.RequireAuthenticated(w, req, true)
 	if ctx == nil {
 		return
@@ -545,6 +588,7 @@ func (s *Service) IdentityCreatePost(w http.ResponseWriter, req *http.Request, _
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
+	// We allow creating identities only with the access token.
 	ctx := s.RequireAuthenticated(w, req, true)
 	if ctx == nil {
 		return

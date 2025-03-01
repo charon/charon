@@ -95,6 +95,7 @@ func initPasskeyProvider(config *Config, domain string) (func() *webauthn.WebAut
 
 		webAuthn, err := webauthn.New(wconfig)
 		if err != nil {
+			// Internal error: this should never happen.
 			panic(withWebauthnError(err))
 		}
 		return webAuthn
@@ -126,7 +127,7 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 	}
 
 	flow.ClearAuthStep("")
-	flow.Provider = PasskeyProvider
+	flow.Providers = append(flow.Providers, PasskeyProvider)
 	flow.Passkey = session
 	errE = SetFlow(ctx, flow)
 	if errE != nil {
@@ -135,20 +136,18 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Target:          flow.Target,
-		Name:            flow.TargetName,
-		Homepage:        flow.GetTargetHomepage(),
-		OrganizationID:  flow.GetTargetOrganizationID(),
-		Provider:        flow.Provider,
+		Completed:       flow.Completed,
+		OrganizationID:  flow.OrganizationID.String(),
+		AppID:           flow.AppID.String(),
+		Providers:       flow.Providers,
 		EmailOrUsername: flow.EmailOrUsername,
-		Error:           "",
-		Completed:       "",
-		Location:        nil,
+		OIDCProvider:    nil,
 		Passkey: &AuthFlowResponsePasskey{
 			CreateOptions: nil,
 			GetOptions:    options,
 		},
 		Password: nil,
+		Error:    "",
 	}, nil)
 }
 
@@ -292,7 +291,7 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 	}
 
 	flow.ClearAuthStep("")
-	flow.Provider = PasskeyProvider
+	flow.Providers = append(flow.Providers, PasskeyProvider)
 	flow.Passkey = session
 	errE = SetFlow(ctx, flow)
 	if errE != nil {
@@ -301,20 +300,18 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Target:          flow.Target,
-		Name:            flow.TargetName,
-		Homepage:        flow.GetTargetHomepage(),
-		OrganizationID:  flow.GetTargetOrganizationID(),
-		Provider:        flow.Provider,
+		Completed:       flow.Completed,
+		OrganizationID:  flow.OrganizationID.String(),
+		AppID:           flow.AppID.String(),
+		Providers:       flow.Providers,
 		EmailOrUsername: flow.EmailOrUsername,
-		Error:           "",
-		Completed:       "",
-		Location:        nil,
+		OIDCProvider:    nil,
 		Passkey: &AuthFlowResponsePasskey{
 			CreateOptions: options,
 			GetOptions:    nil,
 		},
 		Password: nil,
+		Error:    "",
 	}, nil)
 }
 

@@ -146,7 +146,7 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 	}
 
 	flow.ClearAuthStep(preservedEmailOrUsername)
-	flow.Provider = PasswordProvider
+	flow.Providers = append(flow.Providers, PasswordProvider)
 	flow.Password = &FlowPassword{
 		PrivateKey: privateKey.Bytes(),
 		Nonce:      nonce,
@@ -158,15 +158,12 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Target:          flow.Target,
-		Name:            flow.TargetName,
-		Homepage:        flow.GetTargetHomepage(),
-		OrganizationID:  flow.GetTargetOrganizationID(),
-		Provider:        flow.Provider,
+		Completed:       flow.Completed,
+		OrganizationID:  flow.OrganizationID.String(),
+		AppID:           flow.AppID.String(),
+		Providers:       flow.Providers,
 		EmailOrUsername: flow.EmailOrUsername,
-		Error:           "",
-		Completed:       "",
-		Location:        nil,
+		OIDCProvider:    nil,
 		Passkey:         nil,
 		Password: &AuthFlowResponsePassword{
 			PublicKey: privateKey.PublicKey().Bytes(),
@@ -181,6 +178,7 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 				TagLength: 8 * aesgcm.Overhead(), //nolint:mnd
 			},
 		},
+		Error: "",
 	}, nil)
 }
 
@@ -337,7 +335,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 		}
 
 		// Incorrect password. We do password recovery (if possible).
-		if !s.increaseAttempts(w, req, flow) {
+		if !s.increaseAuthAttempts(w, req, flow) {
 			return
 		}
 		s.sendCodeForExistingAccount(w, req, flow, true, account, flow.EmailOrUsername, mappedEmailOrUsername)

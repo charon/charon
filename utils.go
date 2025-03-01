@@ -21,7 +21,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/go-jose/go-jose/v3"
 	"github.com/go-webauthn/webauthn/protocol"
@@ -34,14 +33,19 @@ import (
 )
 
 const (
-	SessionCookieName = "__Host-session"
+	SessionCookiePrefix = "__Host-session-"
 )
+
+var ErrIdentityNotPresent = errors.Base("identity not present")
 
 // contextKey is a value for use with context.WithValue. It's used as
 // a pointer so it fits in an interface{} without allocation.
 type contextKey struct {
 	name string
 }
+
+// identityIDContextKey provides current identity ID.
+var identityIDContextKey = &contextKey{"identity"} //nolint:gochecknoglobals
 
 // accountIDContextKey provides current account ID.
 var accountIDContextKey = &contextKey{"account"} //nolint:gochecknoglobals
@@ -69,7 +73,56 @@ var (
 
 type emptyRequest struct{}
 
-func (s *Service) getSessionFromRequest(w http.ResponseWriter, req *http.Request) (*Session, errors.E) {
+// getIdentityFromRequest uses an Authorization header to obtain the OIDC access token
+// and determines the identity and account IDs from it.
+func (s *Service) getIdentityFromRequest(w http.ResponseWriter, req *http.Request) (identifier.Identifier, identifier.Identifier, errors.E) {
+	ctx := req.Context()
+	oidc := s.oidc()
+
+	// We use this header so responses might depend on it.
+	if !slices.Contains(w.Header().Values("Vary"), "Authorization") {
+		// This function might have been called multiple times, but
+		// we want to add this header with this value only once.
+		w.Header().Add("Vary", "Authorization")
+	}
+
+	const prefix = "Bearer "
+	auth := req.Header.Get("Authorization")
+	if len(auth) < len(prefix) || !strings.EqualFold(auth[:len(prefix)], prefix) {
+		return identifier.Identifier{}, identifier.Identifier{}, errors.WithStack(ErrIdentityNotPresent)
+	}
+
+	token := auth[len(prefix):]
+
+	// Create an empty session object which serves as a prototype of the reconstructed session object.
+	session := new(OIDCSession)
+
+	// TODO: Require any scope for the access token?
+	tu, ar, err := oidc.IntrospectToken(ctx, token, fosite.AccessToken, session)
+	if err != nil {
+		errE := withFositeError(err)
+		if errors.Is(err, fosite.ErrInactiveToken) {
+			return identifier.Identifier{}, identifier.Identifier{}, errors.WrapWith(errE, ErrIdentityNotPresent)
+		}
+		return identifier.Identifier{}, identifier.Identifier{}, errE
+	}
+
+	if tu != fosite.AccessToken {
+		return identifier.Identifier{}, identifier.Identifier{}, errors.WithStack(ErrIdentityNotPresent)
+	}
+
+	// We have to make sure the access token provided is really meant for us.
+	// See: https://github.com/ory/fosite/issues/845
+	if slices.Contains(ar.GetGrantedAudience(), charonAppID.String()) {
+		session = ar.GetSession().(*OIDCSession) //nolint:errcheck,forcetypeassert
+		return session.Subject, session.AccountID, nil
+	}
+
+	return identifier.Identifier{}, identifier.Identifier{}, errors.WithStack(ErrIdentityNotPresent)
+}
+
+// getSessionFromRequest uses a session cookie to determine current session for flow's ID, if any.
+func (s *Service) getSessionFromRequest(w http.ResponseWriter, req *http.Request, flowID identifier.Identifier) (*Session, errors.E) {
 	ctx := req.Context()
 
 	// We use this header so responses might depend on it.
@@ -79,7 +132,7 @@ func (s *Service) getSessionFromRequest(w http.ResponseWriter, req *http.Request
 		w.Header().Add("Vary", "Cookie")
 	}
 
-	cookie, err := req.Cookie(SessionCookieName)
+	cookie, err := req.Cookie(SessionCookiePrefix + flowID.String())
 	if errors.Is(err, http.ErrNoCookie) {
 		return nil, errors.WithStack(ErrSessionNotFound)
 	} else if err != nil {
@@ -107,6 +160,53 @@ func (s *Service) getSessionFromRequest(w http.ResponseWriter, req *http.Request
 	return GetSessionBySecretID(ctx, [32]byte(secretID))
 }
 
+// validateSession returns session only if current session matches one made by the flow.
+func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api bool, flow *Flow) (*Session, bool) {
+	session, errE := s.getSessionFromRequest(w, req, flow.ID)
+	if errors.Is(errE, ErrSessionNotFound) {
+		if api {
+			waf.Error(w, req, http.StatusGone)
+			return nil, true
+		}
+		// We return false and leave to frontend to load the flow using API to show the error.
+		return nil, false
+	} else if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return nil, true
+	}
+
+	// Caller should call validateSession only when flow.Session is set.
+	if *flow.SessionID == session.ID {
+		// Fast path so that we do not have to fetch another session if it is the same session.
+		return session, false
+	}
+
+	flowSession, errE := GetSession(req.Context(), *flow.SessionID)
+	if errors.Is(errE, ErrSessionNotFound) {
+		if api {
+			waf.Error(w, req, http.StatusGone)
+			return nil, true
+		}
+		// We return false and leave to frontend to load the flow using API to show the error.
+		return nil, false
+	} else if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return nil, true
+	}
+
+	// Session might have changed, but is it still the same account?
+	if flowSession.AccountID != session.AccountID {
+		if api {
+			waf.Error(w, req, http.StatusGone)
+			return nil, true
+		}
+		// We return false and leave to frontend to load the flow using API to show the error.
+		return nil, false
+	}
+
+	return session, false
+}
+
 // getFlowFromID obtains Flow from its string ID.
 func getFlowFromID(ctx context.Context, value string) (*Flow, errors.E) {
 	id, errE := identifier.FromString(value)
@@ -118,66 +218,91 @@ func getFlowFromID(ctx context.Context, value string) (*Flow, errors.E) {
 }
 
 func getAccountID(ctx context.Context) (identifier.Identifier, bool) {
-	a, ok := ctx.Value(accountIDContextKey).(identifier.Identifier)
-	return a, ok
+	i, ok := ctx.Value(accountIDContextKey).(identifier.Identifier)
+	return i, ok
 }
 
 func mustGetAccountID(ctx context.Context) identifier.Identifier {
 	a, ok := getAccountID(ctx)
 	if !ok {
+		// Internal error: this should never happen.
 		panic(errors.New("account not found in context"))
 	}
 	return a
 }
 
-func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request, api bool) context.Context {
-	session, errE := s.getSessionFromRequest(w, req)
+func getIdentityID(ctx context.Context) (identifier.Identifier, bool) {
+	i, ok := ctx.Value(identityIDContextKey).(identifier.Identifier)
+	return i, ok
+}
+
+func mustGetIdentityID(ctx context.Context) identifier.Identifier {
+	i, ok := getIdentityID(ctx)
+	if !ok {
+		// Internal error: this should never happen.
+		panic(errors.New("identity not found in context"))
+	}
+	return i
+}
+
+// RequireAuthenticated requires valid Authorization header with the OIDC access token
+// and returns context with access token's identity and account (if needed) IDs
+// stored in the context.
+//
+// It is expected to be used from API calls.
+func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request, needsAccountID bool) context.Context {
+	ctx := req.Context()
+
+	identityID, accountID, errE := s.getIdentityFromRequest(w, req)
 	if errE == nil {
-		return context.WithValue(req.Context(), accountIDContextKey, session.AccountID)
-	} else if !errors.Is(errE, ErrSessionNotFound) {
+		ctx = context.WithValue(ctx, identityIDContextKey, identityID)
+		if needsAccountID {
+			ctx = context.WithValue(ctx, accountIDContextKey, accountID)
+		}
+		return ctx
+	} else if !errors.Is(errE, ErrIdentityNotPresent) {
 		s.InternalServerErrorWithError(w, req, errE)
 		return nil
 	}
 
-	if api {
+	waf.Error(w, req, http.StatusUnauthorized)
+	return nil
+}
+
+// requireAuthenticatedForIdentity is similar to RequireAuthenticated but it checks both
+// the Authorization header for the OIDC access token and the session cookie and returns
+// context with account ID stored in the context.
+//
+// It is expected to be used from API calls. There has to be a query string parameter
+// "flow" with the flow ID when not used with the Authorization header.
+func (s *Service) requireAuthenticatedForIdentity(w http.ResponseWriter, req *http.Request) context.Context {
+	ctx := req.Context()
+
+	_, accountID, errE := s.getIdentityFromRequest(w, req)
+	if errE == nil {
+		return context.WithValue(ctx, accountIDContextKey, accountID)
+	} else if !errors.Is(errE, ErrIdentityNotPresent) {
+		s.InternalServerErrorWithError(w, req, errE)
+		return nil
+	}
+
+	flowID, errE := identifier.FromString(req.Form.Get("flow"))
+	if errE != nil {
+		s.WithError(ctx, errors.WithMessage(errE, `"flow" query string parameter`))
 		waf.Error(w, req, http.StatusUnauthorized)
 		return nil
 	}
 
-	id := identifier.New()
-	errE = SetFlow(req.Context(), &Flow{
-		ID:                   id,
-		CreatedAt:            time.Now().UTC(),
-		Session:              nil,
-		Completed:            "",
-		AuthTime:             nil,
-		Target:               TargetSession,
-		TargetLocation:       req.URL.String(),
-		TargetName:           "Charon Dashboard",
-		TargetOrganizationID: nil,
-		Provider:             "",
-		EmailOrUsername:      "",
-		Attempts:             0,
-		OIDCAuthorizeRequest: nil,
-		Identity:             nil,
-		OIDCRedirectReady:    false,
-		OIDCProvider:         nil,
-		Passkey:              nil,
-		Password:             nil,
-		Code:                 nil,
-	})
-	if errE != nil {
+	session, errE := s.getSessionFromRequest(w, req, flowID)
+	if errors.Is(errE, ErrSessionNotFound) {
+		waf.Error(w, req, http.StatusUnauthorized)
+		return nil
+	} else if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return nil
 	}
 
-	location, errE := s.Reverse("AuthFlowGet", waf.Params{"id": id.String()}, nil)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return nil
-	}
-	s.TemporaryRedirectGetMethod(w, req, location)
-	return nil
+	return context.WithValue(ctx, accountIDContextKey, session.AccountID)
 }
 
 func (s *Service) GetFlow(w http.ResponseWriter, req *http.Request, value string) *Flow {
@@ -200,7 +325,7 @@ func (s *Service) GetActiveFlow(w http.ResponseWriter, req *http.Request, value 
 	}
 
 	// Has flow already completed?
-	if flow.IsCompleted() {
+	if flow.IsFinished() {
 		waf.Error(w, req, http.StatusGone)
 		return nil
 	}
@@ -215,7 +340,7 @@ func (s *Service) GetActiveFlowNoAuthStep(w http.ResponseWriter, req *http.Reque
 	}
 
 	// Has auth step already been completed?
-	if flow.Completed != "" {
+	if len(flow.Completed) > 0 {
 		s.BadRequestWithError(w, req, errors.New("auth step already completed"))
 		return nil
 	}
@@ -223,7 +348,7 @@ func (s *Service) GetActiveFlowNoAuthStep(w http.ResponseWriter, req *http.Reque
 	return flow
 }
 
-func (s *Service) GetActiveFlowAfterAuthStep(w http.ResponseWriter, req *http.Request, value string) (identifier.Identifier, *Flow) {
+func (s *Service) GetActiveFlowWithSession(w http.ResponseWriter, req *http.Request, value string) (identifier.Identifier, *Flow) {
 	flow := s.GetActiveFlow(w, req, value)
 	if flow == nil {
 		return identifier.Identifier{}, nil
@@ -231,34 +356,7 @@ func (s *Service) GetActiveFlowAfterAuthStep(w http.ResponseWriter, req *http.Re
 
 	// Flow should already successfully (session is not nil) completed auth step,
 	// but not the final step (we checked that in GetActiveFlow() above).
-	if flow.Completed == "" || flow.Session == nil {
-		s.BadRequestWithError(w, req, errors.New("auth step not completed"))
-		return identifier.Identifier{}, nil
-	}
-
-	// Current session should match the session in the flow.
-	session, handled := s.validateSession(w, req, true, flow)
-	if handled {
-		return identifier.Identifier{}, nil
-	}
-
-	// session cannot be nil because we call validateSession with api parameter set to true.
-	return session.AccountID, flow
-}
-
-func (s *Service) GetActiveFlowOIDCTarget(w http.ResponseWriter, req *http.Request, value string) (identifier.Identifier, *Flow) {
-	flow := s.GetActiveFlow(w, req, value)
-	if flow == nil {
-		return identifier.Identifier{}, nil
-	}
-
-	if flow.Target != TargetOIDC {
-		s.BadRequestWithError(w, req, errors.New("not OIDC target"))
-		return identifier.Identifier{}, nil
-	}
-	// Flow already successfully (session is not nil) completed auth step, but not the final redirect step for the OIDC
-	// target (we checked that flow.Completed != CompletedRedirect in flow.IsCompleted() check in GetActiveFlow() above).
-	if flow.Completed == "" || flow.Session == nil {
+	if flow.SessionID == nil {
 		s.BadRequestWithError(w, req, errors.New("auth step not completed"))
 		return identifier.Identifier{}, nil
 	}
@@ -332,6 +430,7 @@ func initWithHost[T any](config *Config, domain string, init func(string) T) (fu
 		// This blocks until the server runs.
 		host, errE := getHost(config, domain)
 		if errE != nil {
+			// Internal error: this should never happen.
 			panic(errE)
 		}
 		if host == "" {

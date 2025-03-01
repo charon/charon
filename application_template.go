@@ -367,7 +367,7 @@ func interpolateVariables(template string, values map[string]string) (string, er
 type ApplicationTemplate struct {
 	ApplicationTemplatePublic
 
-	Admins []AccountRef `json:"admins"`
+	Admins []IdentityRef `json:"admins"`
 }
 
 type ApplicationTemplatePublic struct {
@@ -640,14 +640,16 @@ func (a *ApplicationTemplate) Validate(ctx context.Context, existing *Applicatio
 		return errE
 	}
 
-	accountID := mustGetAccountID(ctx)
-	accountRef := AccountRef{ID: accountID}
-	if !slices.Contains(a.Admins, accountRef) {
-		a.Admins = append(a.Admins, accountRef)
+	// Current user must be among admins if it is changing the application template.
+	// We check this elsewhere, here we make sure the user is stored as an admin.
+	identityID := mustGetIdentityID(ctx)
+	identityRef := IdentityRef{ID: identityID}
+	if !slices.Contains(a.Admins, identityRef) {
+		a.Admins = append(a.Admins, identityRef)
 	}
 
 	// We sort and remove duplicates.
-	slices.SortFunc(a.Admins, func(a AccountRef, b AccountRef) int {
+	slices.SortFunc(a.Admins, func(a IdentityRef, b IdentityRef) int {
 		return bytes.Compare(a.ID[:], b.ID[:])
 	})
 	a.Admins = slices.Compact(a.Admins)
@@ -710,8 +712,8 @@ func UpdateApplicationTemplate(ctx context.Context, applicationTemplate *Applica
 		return errE
 	}
 
-	accountID := mustGetAccountID(ctx)
-	if !slices.Contains(existingApplicationTemplate.Admins, AccountRef{ID: accountID}) {
+	identityID := mustGetIdentityID(ctx)
+	if !slices.Contains(existingApplicationTemplate.Admins, IdentityRef{ID: identityID}) {
 		return errors.WithDetails(ErrApplicationTemplateUnauthorized, "id", *applicationTemplate.ID)
 	}
 
@@ -739,9 +741,7 @@ func (s *Service) ApplicationTemplateGet(w http.ResponseWriter, req *http.Reques
 }
 
 func (s *Service) ApplicationTemplateCreate(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	if s.RequireAuthenticated(w, req, false) == nil {
-		return
-	}
+	// We always serve the page and leave to the API call to check permissions.
 
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
@@ -774,10 +774,12 @@ func (s *Service) returnApplicationTemplateRef(_ context.Context, w http.Respons
 func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 
-	session, errE := s.getSessionFromRequest(w, req)
+	hasIdentity := false
+	identityID, _, errE := s.getIdentityFromRequest(w, req)
 	if errE == nil {
-		ctx = context.WithValue(ctx, accountIDContextKey, session.AccountID)
-	} else if !errors.Is(errE, ErrSessionNotFound) {
+		ctx = context.WithValue(ctx, identityIDContextKey, identityID)
+		hasIdentity = true
+	} else if !errors.Is(errE, ErrIdentityNotPresent) {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
@@ -791,7 +793,7 @@ func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	if session != nil && slices.Contains(applicationTemplate.Admins, AccountRef{ID: session.AccountID}) {
+	if hasIdentity && slices.Contains(applicationTemplate.Admins, IdentityRef{ID: identityID}) {
 		s.WriteJSON(w, req, applicationTemplate, map[string]interface{}{
 			"can_update": true,
 		})
@@ -822,7 +824,7 @@ func (s *Service) ApplicationTemplateUpdatePost(w http.ResponseWriter, req *http
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	ctx := s.RequireAuthenticated(w, req, true)
+	ctx := s.RequireAuthenticated(w, req, false)
 	if ctx == nil {
 		return
 	}
@@ -865,7 +867,7 @@ func (s *Service) ApplicationTemplateCreatePost(w http.ResponseWriter, req *http
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	ctx := s.RequireAuthenticated(w, req, true)
+	ctx := s.RequireAuthenticated(w, req, false)
 	if ctx == nil {
 		return
 	}

@@ -74,19 +74,10 @@ func (s *OIDCStore) GetClient(_ context.Context, strID string) (fosite.Client, e
 				slices.Sort(redirectURIs)
 				redirectURIs = slices.Compact(redirectURIs)
 
-				homepage, errE := interpolateVariables(*app.ApplicationTemplate.HomepageTemplate, values)
-				if errE != nil {
-					// This should not happen. We have validated it.
-					errors.Details(errE)["template"] = app.ApplicationTemplate.HomepageTemplate
-					return nil, errE
-				}
-
 				return &OIDCClient{
 					ID:                      id,
+					OrganizationID:          *organization.ID,
 					AppID:                   *app.ID,
-					AppHomepage:             homepage,
-					TargetName:              app.ApplicationTemplate.Name,
-					TargetOrganization:      *organization.ID,
 					Type:                    ClientPublic,
 					TokenEndpointAuthMethod: "none",
 					Scopes:                  scopes,
@@ -124,19 +115,10 @@ func (s *OIDCStore) GetClient(_ context.Context, strID string) (fosite.Client, e
 				slices.Sort(redirectURIs)
 				redirectURIs = slices.Compact(redirectURIs)
 
-				homepage, errE := interpolateVariables(*app.ApplicationTemplate.HomepageTemplate, values)
-				if errE != nil {
-					// This should not happen. We have validated it.
-					errors.Details(errE)["template"] = app.ApplicationTemplate.HomepageTemplate
-					return nil, errE
-				}
-
 				return &OIDCClient{
 					ID:                      id,
+					OrganizationID:          *organization.ID,
 					AppID:                   *app.ID,
-					AppHomepage:             homepage,
-					TargetName:              app.ApplicationTemplate.Name,
-					TargetOrganization:      *organization.ID,
 					Type:                    ClientBackend,
 					TokenEndpointAuthMethod: templateClientBackend.TokenEndpointAuthMethod,
 					Scopes:                  scopes,
@@ -155,24 +137,10 @@ func (s *OIDCStore) GetClient(_ context.Context, strID string) (fosite.Client, e
 				slices.Sort(scopes)
 				scopes = slices.Compact(scopes)
 
-				values := map[string]string{}
-				for _, value := range app.Values {
-					values[value.Name] = value.Value
-				}
-
-				homepage, errE := interpolateVariables(*app.ApplicationTemplate.HomepageTemplate, values)
-				if errE != nil {
-					// This should not happen. We have validated it.
-					errors.Details(errE)["template"] = app.ApplicationTemplate.HomepageTemplate
-					return nil, errE
-				}
-
 				return &OIDCClient{
 					ID:                      id,
+					OrganizationID:          *organization.ID,
 					AppID:                   *app.ID,
-					AppHomepage:             homepage,
-					TargetName:              app.ApplicationTemplate.Name,
-					TargetOrganization:      *organization.ID,
 					Type:                    ClientService,
 					TokenEndpointAuthMethod: templateClientService.TokenEndpointAuthMethod,
 					Scopes:                  scopes,

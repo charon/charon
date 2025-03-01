@@ -17,6 +17,10 @@ import (
 	"golang.org/x/oauth2"
 )
 
+type AuthFlowResponseOIDCProvider struct {
+	Location string `json:"location"`
+}
+
 type oidcProvider struct {
 	Name         string
 	Provider     *oidc.Provider
@@ -34,6 +38,7 @@ func initOIDCProviders(config *Config, service *Service, domain string, provider
 
 			path, errE := service.Reverse("AuthOIDCProvider", waf.Params{"provider": string(p.Key)}, nil)
 			if errE != nil {
+				// Internal error: this should never happen.
 				panic(errE)
 			}
 
@@ -41,6 +46,7 @@ func initOIDCProviders(config *Config, service *Service, domain string, provider
 			ctx := oidc.ClientContext(context.Background(), client)
 			provider, err := oidc.NewProvider(ctx, p.issuer)
 			if err != nil {
+				// Internal error: this should never happen.
 				panic(errors.WithStack(err))
 			}
 
@@ -51,9 +57,11 @@ func initOIDCProviders(config *Config, service *Service, domain string, provider
 			}
 			err = provider.Claims(&jwksClaims)
 			if err != nil {
+				// Internal error: this should never happen.
 				panic(errors.WithStack(err))
 			}
 			if jwksClaims.JWKSURL == "" {
+				// Internal error: this should never happen.
 				panic(errors.New("jwks_uri is empty"))
 			}
 
@@ -66,6 +74,7 @@ func initOIDCProviders(config *Config, service *Service, domain string, provider
 				}
 				err := provider.Claims(&pkceClaims)
 				if err != nil {
+					// Internal error: this should never happen.
 					panic(errors.WithStack(err))
 				}
 				supportsPKCE = slices.Contains(pkceClaims.CodeChallengeMethodsSupported, "S256")
@@ -134,20 +143,19 @@ func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	opts := []oauth2.AuthCodeOption{}
-
 	flow.ClearAuthStep("")
-	flow.Provider = providerName
+	flow.Providers = append(flow.Providers, providerName)
 	flow.OIDCProvider = &FlowOIDCProvider{
 		Verifier: "",
 		Nonce:    identifier.New().String(),
 	}
+
+	opts := []oauth2.AuthCodeOption{}
 	opts = append(opts, oidc.Nonce(flow.OIDCProvider.Nonce))
 
 	if provider.SupportsPKCE {
-		verifier := oauth2.GenerateVerifier()
-		flow.OIDCProvider.Verifier = verifier
-		opts = append(opts, oauth2.S256ChallengeOption(verifier))
+		flow.OIDCProvider.Verifier = oauth2.GenerateVerifier()
+		opts = append(opts, oauth2.S256ChallengeOption(flow.OIDCProvider.Verifier))
 	}
 
 	errE = SetFlow(ctx, flow)
@@ -157,20 +165,17 @@ func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Req
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Target:          flow.Target,
-		Name:            flow.TargetName,
-		Homepage:        flow.GetTargetHomepage(),
-		OrganizationID:  flow.GetTargetOrganizationID(),
-		Provider:        flow.Provider,
+		Completed:       flow.Completed,
+		OrganizationID:  flow.OrganizationID.String(),
+		AppID:           flow.AppID.String(),
+		Providers:       flow.Providers,
 		EmailOrUsername: flow.EmailOrUsername,
-		Error:           "",
-		Completed:       "",
-		Location: &AuthFlowResponseLocation{
-			URL:     provider.Config.AuthCodeURL(flow.ID.String(), opts...),
-			Replace: false,
+		OIDCProvider: &AuthFlowResponseOIDCProvider{
+			Location: provider.Config.AuthCodeURL(flow.ID.String(), opts...),
 		},
 		Passkey:  nil,
 		Password: nil,
+		Error:    "",
 	}, nil)
 }
 

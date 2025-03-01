@@ -77,25 +77,26 @@ func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.
 	client := ar.Client.(*OIDCClient) //nolint:errcheck,forcetypeassert
 
 	errE := SetFlow(req.Context(), &Flow{
-		ID:                   id,
-		CreatedAt:            time.Now().UTC(),
-		Session:              nil,
-		Completed:            "",
-		AuthTime:             nil,
-		Target:               TargetOIDC,
-		TargetLocation:       client.AppHomepage,
-		TargetName:           client.TargetName,
-		TargetOrganizationID: &client.TargetOrganization,
-		Provider:             "",
-		EmailOrUsername:      "",
-		Attempts:             0,
+		ID:        id,
+		CreatedAt: time.Now().UTC(),
+		Completed: nil,
+		AuthTime:  nil,
+
+		OrganizationID: client.OrganizationID,
+		AppID:          client.AppID,
+
+		SessionID: nil,
+		Identity:  nil,
+
 		OIDCAuthorizeRequest: ar,
-		Identity:             nil,
-		OIDCRedirectReady:    false,
-		OIDCProvider:         nil,
-		Passkey:              nil,
-		Password:             nil,
-		Code:                 nil,
+
+		AuthAttempts:    0,
+		Providers:       nil,
+		EmailOrUsername: "",
+		OIDCProvider:    nil,
+		Passkey:         nil,
+		Password:        nil,
+		Code:            nil,
 	})
 	if errE != nil {
 		s.WithError(ctx, errE)
@@ -116,16 +117,19 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 	ctx := req.Context()
 	oidc := s.oidc()
 
+	errE := flow.AddCompleted(CompletedFinished)
+	if errE != nil {
+		// This should not happen. completeOIDCAuthorize should be called only
+		// with CompletedFinishReady as the last completed step.
+		s.InternalServerErrorWithError(w, req, errE)
+		return true
+	}
+
 	authorizeRequest := flow.OIDCAuthorizeRequest
-	completed := flow.Completed
+	// Clear authorize request.
+	flow.OIDCAuthorizeRequest = nil
 
-	if completed == CompletedFailed {
-		flow.Completed = CompletedRedirect
-		flow.OIDCRedirectReady = false
-
-		// Clear authorize request.
-		flow.OIDCAuthorizeRequest = nil
-
+	if flow.HasFailed() {
 		errE := SetFlow(ctx, flow)
 		if errE != nil {
 			// Because this can fail, store's CreateAuthorizeCodeSession, CreateOpenIDConnectSession, and CreatePKCERequestSession should be idempotent.
@@ -137,27 +141,21 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 		return true
 	}
 
-	// It should not be possible to get to OIDCRedirectReady state with flow.Session being nil,
-	// unless flow.Completed == CompletedFailed, which we checked above.
+	// It should not be possible to get to CompletedFinishReady state with flow.Session being nil,
+	// unless CompletedFailed, which we checked above.
 	session, handled := s.validateSession(w, req, false, flow)
 	if session == nil {
 		return handled
 	}
 
-	flow.Completed = CompletedRedirect
-	flow.OIDCRedirectReady = false
-
-	// Clear authorize request.
-	flow.OIDCAuthorizeRequest = nil
-
-	errE := SetFlow(ctx, flow)
+	errE = SetFlow(ctx, flow)
 	if errE != nil {
 		// Because this can fail, store's CreateAuthorizeCodeSession, CreateOpenIDConnectSession, and CreatePKCERequestSession should be idempotent.
 		s.InternalServerErrorWithError(w, req, errE)
 		return true
 	}
 
-	if completed == CompletedDeclined {
+	if flow.HasDeclined() {
 		oidc.WriteAuthorizeError(ctx, w, authorizeRequest, errors.Wrap(fosite.ErrAccessDenied, "user declined"))
 		return true
 	}
@@ -171,12 +169,13 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 	grantAllScopes(authorizeRequest)
 
 	oidcSession := &OIDCSession{ //nolint:forcetypeassert
-		Subject:                *flow.Identity.GetOrganization(*flow.TargetOrganizationID).ID,
-		Session:                session.ID,
+		AccountID:              session.AccountID,
+		Subject:                *flow.Identity.GetOrganization(flow.OrganizationID).ID,
+		SessionID:              session.ID,
 		ExpiresAt:              nil,
 		RequestedAt:            flow.CreatedAt,
 		AuthTime:               *flow.AuthTime,
-		Client:                 authorizeRequest.GetClient().(*OIDCClient).ID, //nolint:errcheck
+		ClientID:               authorizeRequest.GetClient().(*OIDCClient).ID, //nolint:errcheck
 		JWTClaims:              nil,
 		JWTHeaders:             nil,
 		IDTokenClaimsInternal:  nil,

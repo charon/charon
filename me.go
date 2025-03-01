@@ -8,8 +8,8 @@ import (
 )
 
 func (s *Service) MeGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	_, errE := s.getSessionFromRequest(w, req)
-	if errors.Is(errE, ErrSessionNotFound) {
+	_, _, errE := s.getIdentityFromRequest(w, req)
+	if errors.Is(errE, ErrIdentityNotPresent) {
 		encoded := s.PrepareJSON(w, req, []byte(`{"error":"unauthorized"}`), nil)
 		if encoded == nil {
 			return

@@ -26,40 +26,39 @@ type AuthFlowResponseLocation struct {
 }
 
 type AuthFlowResponse struct {
-	Target          Target                    `json:"target"`
-	Name            string                    `json:"name,omitempty"`
-	Homepage        string                    `json:"homepage,omitempty"`
-	OrganizationID  string                    `json:"organizationId,omitempty"`
-	Provider        Provider                  `json:"provider,omitempty"`
-	EmailOrUsername string                    `json:"emailOrUsername,omitempty"`
-	Error           string                    `json:"error,omitempty"`
-	Completed       Completed                 `json:"completed,omitempty"`
-	Location        *AuthFlowResponseLocation `json:"location,omitempty"`
-	Passkey         *AuthFlowResponsePasskey  `json:"passkey,omitempty"`
-	Password        *AuthFlowResponsePassword `json:"password,omitempty"`
+	Completed []Completed `json:"completed"`
+
+	OrganizationID string `json:"organizationId"`
+	AppID          string `json:"appId"`
+
+	Providers       []Provider                    `json:"providers,omitempty"`
+	EmailOrUsername string                        `json:"emailOrUsername,omitempty"`
+	OIDCProvider    *AuthFlowResponseOIDCProvider `json:"oidcProvider,omitempty"`
+	Passkey         *AuthFlowResponsePasskey      `json:"passkey,omitempty"`
+	Password        *AuthFlowResponsePassword     `json:"password,omitempty"`
+
+	Error string `json:"error,omitempty"`
 }
 
-func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *Flow, code string, failureErr errors.E) {
+func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *Flow, errorCode string, failureErr errors.E) {
 	ctx := req.Context()
 
 	if failureErr == nil {
 		failureErr = errors.New("flow error")
 	}
-	errors.Details(failureErr)["code"] = code
+	errors.Details(failureErr)["code"] = errorCode
 	s.WithError(ctx, failureErr)
 
 	response := AuthFlowResponse{
-		Target:          flow.Target,
-		Name:            flow.TargetName,
-		Homepage:        flow.GetTargetHomepage(),
-		OrganizationID:  flow.GetTargetOrganizationID(),
-		Provider:        flow.Provider,
+		Completed:       flow.Completed,
+		OrganizationID:  flow.OrganizationID.String(),
+		AppID:           flow.AppID.String(),
+		Providers:       flow.Providers,
 		EmailOrUsername: "",
-		Error:           code,
-		Completed:       "",
-		Location:        nil,
+		OIDCProvider:    nil,
 		Passkey:         nil,
 		Password:        nil,
+		Error:           errorCode,
 	}
 
 	encoded := s.PrepareJSON(w, req, response, nil)
@@ -78,7 +77,7 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 	}
 
 	// Is the flow ready for a redirect to the OIDC client?
-	if flow.Target == TargetOIDC && flow.OIDCRedirectReady && s.completeOIDCAuthorize(w, req, flow) {
+	if flow.IsFinishReady() && s.completeOIDCAuthorize(w, req, flow) {
 		return
 	}
 
@@ -109,85 +108,25 @@ func (s *Service) AuthFlowGetGet(w http.ResponseWriter, req *http.Request, param
 	}
 
 	response := AuthFlowResponse{
-		Target:          flow.Target,
-		Name:            flow.TargetName,
-		Homepage:        flow.GetTargetHomepage(),
-		OrganizationID:  flow.GetTargetOrganizationID(),
-		Provider:        flow.Provider,
-		EmailOrUsername: flow.EmailOrUsername,
-		Error:           "",
 		Completed:       flow.Completed,
-		Location:        nil,
+		OrganizationID:  flow.OrganizationID.String(),
+		AppID:           flow.AppID.String(),
+		Providers:       flow.Providers,
+		EmailOrUsername: flow.EmailOrUsername,
+		OIDCProvider:    nil,
 		Passkey:         nil,
 		Password:        nil,
+		Error:           "",
 	}
 
-	// Has auth step already been completed?
-	if flow.Completed != "" {
-		// If auth step was successful (session is not nil), then we require that the session matches the one made by the flow.
-		if flow.Session != nil {
-			if _, handled := s.validateSession(w, req, true, flow); handled {
-				return
-			}
-		}
-
-		if flow.Target == TargetSession && flow.IsCompleted() {
-			// For session target we provide the target location.
-			response.Location = &AuthFlowResponseLocation{
-				URL:     flow.TargetLocation,
-				Replace: true,
-			}
+	// If auth step was successful (session is not nil), then we require that the session matches the one made by the flow.
+	if flow.SessionID != nil {
+		if _, handled := s.validateSession(w, req, true, flow); handled {
+			return
 		}
 	}
 
 	s.WriteJSON(w, req, response, nil)
-}
-
-// validateSession returns session only if current session matches one made by the flow.
-func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api bool, flow *Flow) (*Session, bool) {
-	session, errE := s.getSessionFromRequest(w, req)
-	if errors.Is(errE, ErrSessionNotFound) {
-		if api {
-			waf.Error(w, req, http.StatusGone)
-			return nil, true
-		}
-		// We return false and leave to frontend to load the flow using API to show the error.
-		return nil, false
-	} else if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return nil, true
-	}
-
-	// Caller should call validateSession only when flow.Session is set.
-	if *flow.Session == session.ID {
-		// Fast path so that we do not have to fetch another session if it is the same session.
-		return session, false
-	}
-
-	flowSession, errE := GetSession(req.Context(), *flow.Session)
-	if errors.Is(errE, ErrSessionNotFound) {
-		if api {
-			waf.Error(w, req, http.StatusGone)
-			return nil, true
-		}
-		// We return false and leave to frontend to load the flow using API to show the error.
-		return nil, false
-	} else if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return nil, true
-	}
-
-	// Session might have changed, but is it still the same account?
-	if flowSession.AccountID != session.AccountID {
-		if api {
-			waf.Error(w, req, http.StatusGone)
-			return nil, true
-		}
-		// We return false and leave to frontend to load the flow using API to show the error.
-		return nil, false
-	}
-
-	return session, false
 }
 
 func (s *Service) getIdentityFromCredentials(credentials []Credential) (*Identity, errors.E) {
@@ -281,10 +220,14 @@ func (s *Service) getIdentityFromCredentials(credentials []Credential) (*Identit
 func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *Flow, account *Account, credentials []Credential) {
 	ctx := req.Context()
 
-	var completed Completed
 	if account == nil {
 		// Sign-up. Create new account.
-		completed = CompletedSignup
+		errE := flow.AddCompleted(CompletedSignup)
+		if errE != nil {
+			s.BadRequestWithError(w, req, errE)
+			return
+		}
+
 		account = &Account{
 			ID:          identifier.New(),
 			Credentials: map[Provider][]Credential{},
@@ -292,7 +235,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 		for _, credential := range credentials {
 			account.Credentials[credential.Provider] = append(account.Credentials[credential.Provider], credential)
 		}
-		errE := SetAccount(ctx, account)
+		errE = SetAccount(ctx, account)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
@@ -311,11 +254,16 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 		}
 	} else {
 		// Sign-in. Update credentials for an existing account.
-		completed = CompletedSignin
+		errE := flow.AddCompleted(CompletedSignin)
+		if errE != nil {
+			s.BadRequestWithError(w, req, errE)
+			return
+		}
+
 		// TODO: Updating only if credentials (meaningfully) changed.
 		// TODO: Update in a way which does not preserve history.
 		account.UpdateCredentials(credentials)
-		errE := SetAccount(ctx, account)
+		errE = SetAccount(ctx, account)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
@@ -330,9 +278,8 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 
 	secretID, err := base64.RawURLEncoding.DecodeString(signature)
 	if err != nil {
-		// This should not happen.
-		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
-		return
+		// Internal error: this should never happen.
+		panic(errors.WithStack(err))
 	}
 
 	sessionID := identifier.New()
@@ -345,10 +292,8 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
+	flow.SessionID = &sessionID
 
-	flow.Session = &sessionID
-	flow.Completed = completed
-	flow.OIDCRedirectReady = false
 	now := time.Now().UTC()
 	flow.AuthTime = &now
 
@@ -362,9 +307,9 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	}
 
 	cookie := http.Cookie{ //nolint:exhaustruct
-		Name:     SessionCookieName,
+		Name:     SessionCookiePrefix + flow.ID.String(),
 		Value:    SecretPrefixSession + token,
-		Path:     "/",
+		Path:     "/", // Host cookies have to have path set to "/".
 		Domain:   "",
 		Expires:  time.Now().Add(7 * 24 * time.Hour),
 		MaxAge:   0,
@@ -377,17 +322,15 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 
 	if api {
 		response := AuthFlowResponse{
-			Target:          flow.Target,
-			Name:            flow.TargetName,
-			Homepage:        flow.GetTargetHomepage(),
-			OrganizationID:  flow.GetTargetOrganizationID(),
-			Provider:        flow.Provider,
-			EmailOrUsername: "",
-			Error:           "",
 			Completed:       flow.Completed,
-			Location:        nil,
+			OrganizationID:  flow.OrganizationID.String(),
+			AppID:           flow.AppID.String(),
+			Providers:       flow.Providers,
+			EmailOrUsername: flow.EmailOrUsername,
+			OIDCProvider:    nil,
 			Passkey:         nil,
 			Password:        nil,
+			Error:           "",
 		}
 
 		s.WriteJSON(w, req, response, nil)
@@ -403,17 +346,17 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	s.TemporaryRedirectGetMethod(w, req, l)
 }
 
-func (s *Service) increaseAttempts(w http.ResponseWriter, req *http.Request, flow *Flow) bool {
+func (s *Service) increaseAuthAttempts(w http.ResponseWriter, req *http.Request, flow *Flow) bool {
 	ctx := req.Context()
 
-	flow.Attempts++
+	flow.AuthAttempts++
 	errE := SetFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return false
 	}
 
-	if flow.Attempts >= MaxAuthAttempts {
+	if flow.AuthAttempts >= MaxAuthAttempts {
 		s.failAuthStep(w, req, true, flow, errors.New("reached max auth attempts"))
 		return false
 	}
@@ -424,13 +367,16 @@ func (s *Service) increaseAttempts(w http.ResponseWriter, req *http.Request, flo
 func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *Flow, failureErr errors.E) {
 	ctx := req.Context()
 
-	flow.Completed = CompletedFailed
-	flow.OIDCRedirectReady = false
+	errE := flow.AddCompleted(CompletedFailed)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
 
 	// Everything should already be set to nil at this point, but just to make sure.
 	flow.ClearAuthStepAll()
 
-	errE := SetFlow(ctx, flow)
+	errE = SetFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -442,25 +388,15 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 		// This is similar to AuthFlowGet, only without fetching the flow and checking the session.
 
 		response := AuthFlowResponse{
-			Target:          flow.Target,
-			Name:            flow.TargetName,
-			Homepage:        flow.GetTargetHomepage(),
-			OrganizationID:  flow.GetTargetOrganizationID(),
-			Provider:        flow.Provider,
-			EmailOrUsername: "",
-			Error:           "",
 			Completed:       flow.Completed,
-			Location:        nil,
+			OrganizationID:  flow.OrganizationID.String(),
+			AppID:           flow.AppID.String(),
+			Providers:       flow.Providers,
+			EmailOrUsername: flow.EmailOrUsername,
+			OIDCProvider:    nil,
 			Passkey:         nil,
 			Password:        nil,
-		}
-
-		if flow.Target == TargetSession && flow.IsCompleted() {
-			// For session target we provide the target location.
-			response.Location = &AuthFlowResponseLocation{
-				URL:     flow.TargetLocation,
-				Replace: true,
-			}
+			Error:           "",
 		}
 
 		encoded := s.PrepareJSON(w, req, response, nil)
@@ -482,20 +418,15 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 	s.TemporaryRedirectGetMethod(w, req, l)
 }
 
-// AuthFlowRestartAuthPost is not possible in session target after you pick your identity because you
-// could then open the flow later on, after you already completed the flow and was redirected to target
-// location, and reauthenticate. In other words, session target flow is completed (flow.IsCompleted()
-// returns true) after auth step is completed and it makes no sense to allow restarting of completed flows.
-//
-// For OIDC target it is similar, after redirect, we do not allow restarting anymore.
-// In other words, after redirect, OIDC target flow is also completed.
 func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := req.Context()
 
-	_, flow := s.GetActiveFlowAfterAuthStep(w, req, params["id"])
+	// Restarting is possible after successful auth step but it is not possible anymore after redirect
+	// (after the flow has finished) which is checked in GetActiveFlowWithSession.
+	_, flow := s.GetActiveFlowWithSession(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -507,16 +438,15 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	flow.Session = nil
-	flow.Completed = ""
-	flow.Provider = ""
+	flow.Completed = nil
+	flow.SessionID = nil
 	flow.Identity = nil
-	flow.OIDCRedirectReady = false
+	flow.Providers = nil
 
-	// Everything should already be set to nil at this point, but just to make sure.
+	// We clear everything else as well.
 	flow.ClearAuthStepAll()
 
-	// We do not clear flow.Attempts because otherwise somebody with an account on the
+	// We do not clear flow.AuthAttempts because otherwise somebody with an account on the
 	// system could try up to MaxAuthAttempts - 1, then sign in, then restart, and repeat
 	// attempts. We want them to fail the whole flow and to have to restart it (it is easier
 	// to count failed flows and detect attacks this way).
@@ -531,7 +461,8 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 	// restarted auth but still stay signed in if they do not complete new authentication.
 	// It is better that they have to sign in again.
 	cookie := http.Cookie{ //nolint:exhaustruct
-		Name:     SessionCookieName,
+		Name:     SessionCookiePrefix + flow.ID.String(),
+		Value:    "",
 		Path:     "/",
 		Domain:   "",
 		MaxAge:   -1,
@@ -543,17 +474,15 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 	http.SetCookie(w, &cookie)
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Target:          flow.Target,
-		Name:            flow.TargetName,
-		Homepage:        flow.GetTargetHomepage(),
-		OrganizationID:  flow.GetTargetOrganizationID(),
-		Provider:        "",
-		EmailOrUsername: "",
-		Error:           "",
-		Completed:       "",
-		Location:        nil,
+		Completed:       flow.Completed,
+		OrganizationID:  flow.OrganizationID.String(),
+		AppID:           flow.AppID.String(),
+		Providers:       flow.Providers,
+		EmailOrUsername: flow.EmailOrUsername,
+		OIDCProvider:    nil,
 		Passkey:         nil,
 		Password:        nil,
+		Error:           "",
 	}, nil)
 }
 
@@ -563,7 +492,7 @@ func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, 
 
 	ctx := req.Context()
 
-	_, flow := s.GetActiveFlowOIDCTarget(w, req, params["id"])
+	_, flow := s.GetActiveFlowWithSession(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -575,10 +504,13 @@ func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, 
 		return
 	}
 
-	// TODO: Store decline.
+	errE = flow.AddCompleted(CompletedDeclined)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
 
-	flow.Completed = CompletedDeclined
-	flow.OIDCRedirectReady = false
+	// TODO: Store decline in a way that it is persisted in a similar way that choosing an identity is.
 
 	errE = SetFlow(ctx, flow)
 	if errE != nil {
@@ -587,17 +519,15 @@ func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, 
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Target:          flow.Target,
-		Name:            flow.TargetName,
-		Homepage:        flow.GetTargetHomepage(),
-		OrganizationID:  flow.GetTargetOrganizationID(),
-		Provider:        flow.Provider,
-		EmailOrUsername: "",
-		Error:           "",
 		Completed:       flow.Completed,
-		Location:        nil,
+		OrganizationID:  flow.OrganizationID.String(),
+		AppID:           flow.AppID.String(),
+		Providers:       flow.Providers,
+		EmailOrUsername: flow.EmailOrUsername,
+		OIDCProvider:    nil,
 		Passkey:         nil,
 		Password:        nil,
+		Error:           "",
 	}, nil)
 }
 
@@ -611,12 +541,10 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 
 	ctx := req.Context()
 
-	accountID, flow := s.GetActiveFlowAfterAuthStep(w, req, params["id"])
+	accountID, flow := s.GetActiveFlowWithSession(w, req, params["id"])
 	if flow == nil {
 		return
 	}
-
-	ctx = context.WithValue(ctx, accountIDContextKey, accountID)
 
 	var chooseIdentity AuthFlowChooseIdentityRequest
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &chooseIdentity)
@@ -625,20 +553,21 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 		return
 	}
 
-	targetOrganizationID := charonOrganization
-	if flow.Target == TargetOIDC {
-		// We know flow.TargetOrganization is not nil when Target == TargetOIDC.
-		targetOrganizationID = *flow.TargetOrganizationID
-	}
-	identity, errE := selectAndActivateIdentity(ctx, chooseIdentity.Identity.ID, targetOrganizationID)
+	errE = flow.AddCompleted(CompletedIdentity)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
-	flow.Completed = CompletedIdentity
+	ctx = context.WithValue(ctx, accountIDContextKey, accountID)
+
+	identity, errE := selectAndActivateIdentity(ctx, chooseIdentity.Identity.ID, flow.OrganizationID)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
 	flow.Identity = identity
-	flow.OIDCRedirectReady = false
 
 	errE = SetFlow(ctx, flow)
 	if errE != nil {
@@ -647,17 +576,15 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Target:          flow.Target,
-		Name:            flow.TargetName,
-		Homepage:        flow.GetTargetHomepage(),
-		OrganizationID:  flow.GetTargetOrganizationID(),
-		Provider:        flow.Provider,
-		EmailOrUsername: "",
-		Error:           "",
 		Completed:       flow.Completed,
-		Location:        nil,
+		OrganizationID:  flow.OrganizationID.String(),
+		AppID:           flow.AppID.String(),
+		Providers:       flow.Providers,
+		EmailOrUsername: flow.EmailOrUsername,
+		OIDCProvider:    nil,
 		Passkey:         nil,
 		Password:        nil,
+		Error:           "",
 	}, nil)
 }
 
@@ -672,34 +599,25 @@ func (s *Service) AuthFlowRedirectPost(w http.ResponseWriter, req *http.Request,
 		return
 	}
 
-	if flow.Target != TargetOIDC {
-		s.BadRequestWithError(w, req, errors.New("not OIDC target"))
-		return
-	}
-	if flow.Completed == CompletedFailed { //nolint:revive
-		// OIDC target flow did not successfully completed auth step.
-	} else if (flow.Completed == CompletedDeclined || flow.Completed == CompletedIdentity) && flow.Session != nil {
-		// Flow already successfully (session is not nil) completed auth step and additional steps for OIDC target,
-		// but not the final redirect step for the OIDC target, and is ready for redirect.
-
-		// Current session should match the session in the flow.
+	// If auth step was successful (session is not nil), then we require that the session matches the one made by the flow.
+	if flow.SessionID != nil {
 		if _, handled := s.validateSession(w, req, true, flow); handled {
 			return
 		}
-	} else {
-		s.BadRequestWithError(w, req, errors.New("OIC target flow not ready for redirect"))
-		return
 	}
 
-	var ea emptyRequest
-	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &ea)
+	errE := flow.AddCompleted(CompletedFinishReady)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
-	// It is already checked that flow.Completed is one of CompletedDeclined, CompletedIdentity, or CompletedFailed.
-	flow.OIDCRedirectReady = true
+	var ea emptyRequest
+	errE = x.DecodeJSONWithoutUnknownFields(req.Body, &ea)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
 
 	errE = SetFlow(ctx, flow)
 	if errE != nil {
@@ -708,85 +626,14 @@ func (s *Service) AuthFlowRedirectPost(w http.ResponseWriter, req *http.Request,
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Target:          flow.Target,
-		Name:            flow.TargetName,
-		Homepage:        flow.GetTargetHomepage(),
-		OrganizationID:  flow.GetTargetOrganizationID(),
-		Provider:        flow.Provider,
-		EmailOrUsername: "",
-		Error:           "",
 		Completed:       flow.Completed,
-		Location:        nil,
+		OrganizationID:  flow.OrganizationID.String(),
+		AppID:           flow.AppID.String(),
+		Providers:       flow.Providers,
+		EmailOrUsername: flow.EmailOrUsername,
+		OIDCProvider:    nil,
 		Passkey:         nil,
 		Password:        nil,
+		Error:           "",
 	}, nil)
-}
-
-type AuthFlowCreateRequest struct {
-	Location string `json:"location"`
-}
-
-type AuthFlowCreateResponse struct {
-	ID identifier.Identifier `json:"id"`
-}
-
-func (s *Service) AuthFlowCreatePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	defer req.Body.Close()
-	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
-
-	var authCreatePostRequest AuthFlowCreateRequest
-	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &authCreatePostRequest)
-	if errE != nil {
-		s.BadRequestWithError(w, req, errE)
-		return
-	}
-
-	location, errE := validRedirectLocation(s, authCreatePostRequest.Location)
-	if errE != nil {
-		s.BadRequestWithError(w, req, errE)
-		return
-	}
-
-	_, errE = s.getSessionFromRequest(w, req)
-	if errE == nil {
-		encoded := s.PrepareJSON(w, req, []byte(`{"error":"alreadyAuthenticated"}`), nil)
-		if encoded == nil {
-			return
-		}
-		w.WriteHeader(http.StatusConflict)
-		_, _ = w.Write(encoded)
-		return
-	} else if !errors.Is(errE, ErrSessionNotFound) {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	id := identifier.New()
-	errE = SetFlow(req.Context(), &Flow{
-		ID:                   id,
-		CreatedAt:            time.Now().UTC(),
-		Session:              nil,
-		Completed:            "",
-		AuthTime:             nil,
-		Target:               TargetSession,
-		TargetLocation:       location,
-		TargetName:           "Charon Dashboard",
-		TargetOrganizationID: nil,
-		Provider:             "",
-		EmailOrUsername:      "",
-		Attempts:             0,
-		OIDCAuthorizeRequest: nil,
-		Identity:             nil,
-		OIDCRedirectReady:    false,
-		OIDCProvider:         nil,
-		Passkey:              nil,
-		Password:             nil,
-		Code:                 nil,
-	})
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	s.WriteJSON(w, req, AuthFlowCreateResponse{ID: id}, nil)
 }

@@ -16,7 +16,12 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
-var charonOrganization = identifier.MustFromString("TCD1UhKfBDewGv2TgPnFsX") //nolint:gochecknoglobals
+//nolint:gochecknoglobals
+var (
+	// TODO: Generate random ones at initial run of Charon so that each Charon instance has different IDs.
+	charonOrganizationID = identifier.MustFromString("TCD1UhKfBDewGv2TgPnFsX")
+	charonAppID          = identifier.MustFromString("8sWLA74HFfjdaeQPHJ5GS8")
+)
 
 var (
 	ErrOrganizationNotFound         = errors.Base("organization not found")
@@ -475,7 +480,7 @@ func (a *OrganizationApplication) Validate(ctx context.Context, existing *Organi
 type Organization struct {
 	OrganizationPublic
 
-	Admins []AccountRef `json:"admins"`
+	Admins []IdentityRef `json:"admins"`
 
 	Applications []OrganizationApplication `json:"applications"`
 }
@@ -549,14 +554,16 @@ func (o *Organization) Validate(ctx context.Context, existing *Organization) err
 		return errE
 	}
 
-	accountID := mustGetAccountID(ctx)
-	accountRef := AccountRef{ID: accountID}
-	if !slices.Contains(o.Admins, accountRef) {
-		o.Admins = append(o.Admins, accountRef)
+	// Current user must be among admins if it is changing the organization.
+	// We check this elsewhere, here we make sure the user is stored as an admin.
+	identityID := mustGetIdentityID(ctx)
+	identityRef := IdentityRef{ID: identityID}
+	if !slices.Contains(o.Admins, identityRef) {
+		o.Admins = append(o.Admins, identityRef)
 	}
 
 	// We sort and remove duplicates.
-	slices.SortFunc(o.Admins, func(a AccountRef, b AccountRef) int {
+	slices.SortFunc(o.Admins, func(a IdentityRef, b IdentityRef) int {
 		return bytes.Compare(a.ID[:], b.ID[:])
 	})
 	o.Admins = slices.Compact(o.Admins)
@@ -650,8 +657,8 @@ func UpdateOrganization(ctx context.Context, organization *Organization) errors.
 		return errE
 	}
 
-	accountID := mustGetAccountID(ctx)
-	if !slices.Contains(existingOrganization.Admins, AccountRef{ID: accountID}) {
+	identityID := mustGetIdentityID(ctx)
+	if !slices.Contains(existingOrganization.Admins, IdentityRef{ID: identityID}) {
 		return errors.WithDetails(ErrOrganizationUnauthorized, "id", organization.ID)
 	}
 
@@ -679,9 +686,7 @@ func (s *Service) OrganizationGet(w http.ResponseWriter, req *http.Request, _ wa
 }
 
 func (s *Service) OrganizationCreate(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	if s.RequireAuthenticated(w, req, false) == nil {
-		return
-	}
+	// We always serve the page and leave to the API call to check permissions.
 
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
@@ -714,10 +719,12 @@ func (s *Service) returnOrganizationRef(_ context.Context, w http.ResponseWriter
 func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 
-	session, errE := s.getSessionFromRequest(w, req)
+	hasIdentity := false
+	identityID, _, errE := s.getIdentityFromRequest(w, req)
 	if errE == nil {
-		ctx = context.WithValue(ctx, accountIDContextKey, session.AccountID)
-	} else if !errors.Is(errE, ErrSessionNotFound) {
+		ctx = context.WithValue(ctx, identityIDContextKey, identityID)
+		hasIdentity = true
+	} else if !errors.Is(errE, ErrIdentityNotPresent) {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
@@ -731,7 +738,7 @@ func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	if session != nil && slices.Contains(organization.Admins, AccountRef{ID: session.AccountID}) {
+	if hasIdentity && slices.Contains(organization.Admins, IdentityRef{ID: identityID}) {
 		s.WriteJSON(w, req, organization, map[string]interface{}{
 			"can_update": true,
 		})
@@ -762,7 +769,7 @@ func (s *Service) OrganizationUpdatePost(w http.ResponseWriter, req *http.Reques
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	ctx := s.RequireAuthenticated(w, req, true)
+	ctx := s.RequireAuthenticated(w, req, false)
 	if ctx == nil {
 		return
 	}
@@ -805,7 +812,7 @@ func (s *Service) OrganizationCreatePost(w http.ResponseWriter, req *http.Reques
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	ctx := s.RequireAuthenticated(w, req, true)
+	ctx := s.RequireAuthenticated(w, req, false)
 	if ctx == nil {
 		return
 	}

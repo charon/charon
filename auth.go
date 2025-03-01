@@ -3,15 +3,12 @@ package charon
 import (
 	"io"
 	"net/http"
+	"strings"
+	"time"
 
 	"gitlab.com/tozd/go/x"
-	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 )
-
-type AccountRef struct {
-	ID identifier.Identifier `json:"id"`
-}
 
 type AuthSignoutRequest struct {
 	Location string `json:"location"`
@@ -41,17 +38,15 @@ func (s *Service) AuthSignoutPost(w http.ResponseWriter, req *http.Request, _ wa
 		return
 	}
 
-	cookie := http.Cookie{ //nolint:exhaustruct
-		Name:     SessionCookieName,
-		Path:     "/",
-		Domain:   "",
-		MaxAge:   -1,
-		Secure:   true,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
+	// We clear all session cookies for all flows.
+	for _, cookie := range req.Cookies() {
+		if strings.HasPrefix(cookie.Name, SessionCookiePrefix) {
+			cookie.Value = ""
+			cookie.Expires = time.Time{}
+			cookie.MaxAge = -1
+			http.SetCookie(w, cookie)
+		}
 	}
-
-	http.SetCookie(w, &cookie)
 
 	s.WriteJSON(w, req, AuthSignoutResponse{
 		URL:     location,

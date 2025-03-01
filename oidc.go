@@ -116,6 +116,7 @@ func initOIDC(config *Config, service *Service, domain string, hmacStrategy *hma
 	return initWithHost(config, domain, func(host string) *fosite.Fosite {
 		tokenPath, errE := service.ReverseAPI("OIDCToken", nil, nil)
 		if errE != nil {
+			// Internal error: this should never happen.
 			panic(errE)
 		}
 
@@ -213,12 +214,13 @@ var (
 // All fields are public so that JSON marshaling can preserve the object.
 // We use JSON marshaling when persisting sessions in the store.
 type OIDCSession struct {
+	AccountID   identifier.Identifier          `json:"accountId"`
 	Subject     identifier.Identifier          `json:"subject"`
-	Session     identifier.Identifier          `json:"session"`
+	SessionID   identifier.Identifier          `json:"sessionId"`
 	ExpiresAt   map[fosite.TokenType]time.Time `json:"expiresAt"`
 	RequestedAt time.Time                      `json:"requestedAt"`
 	AuthTime    time.Time                      `json:"authTime"`
-	Client      identifier.Identifier          `json:"client"`
+	ClientID    identifier.Identifier          `json:"clientId"`
 	// Fosite modifies these structs in-place and we have to keep a pointer
 	// to them so that we return always the same struct between calls.
 	JWTClaims  *jwt.JWTClaims `json:"jwtClaims"`
@@ -236,8 +238,8 @@ func (s *OIDCSession) GetJWTClaims() jwt.JWTClaimsContainer { //nolint:ireturn
 		s.JWTClaims = new(jwt.JWTClaims)
 
 		s.JWTClaims.Subject = s.Subject.String()
-		s.JWTClaims.Add("client_id", s.Client.String())
-		s.JWTClaims.Add("sid", s.Session.String())
+		s.JWTClaims.Add("client_id", s.ClientID.String())
+		s.JWTClaims.Add("sid", s.SessionID.String())
 	}
 
 	// We reset JTI every time.
@@ -265,8 +267,8 @@ func (s *OIDCSession) IDTokenClaims() *jwt.IDTokenClaims {
 		s.IDTokenClaimsInternal = new(jwt.IDTokenClaims)
 
 		s.IDTokenClaimsInternal.Subject = s.Subject.String()
-		s.IDTokenClaimsInternal.Add("client_id", s.Client.String())
-		s.IDTokenClaimsInternal.Add("sid", s.Session.String())
+		s.IDTokenClaimsInternal.Add("client_id", s.ClientID.String())
+		s.IDTokenClaimsInternal.Add("sid", s.SessionID.String())
 
 		// For ID tokens, these two timestamps are not reset
 		// but are kept to their initial values.
@@ -367,10 +369,8 @@ var (
 // enabled in an organization.
 type OIDCClient struct {
 	ID                      identifier.Identifier
+	OrganizationID          identifier.Identifier
 	AppID                   identifier.Identifier
-	AppHomepage             string
-	TargetName              string
-	TargetOrganization      identifier.Identifier
 	Type                    ClientType
 	TokenEndpointAuthMethod string
 	Scopes                  []string
@@ -436,6 +436,7 @@ func (c *OIDCClient) GetGrantTypes() fosite.Arguments {
 	default:
 		errE := errors.New("unknown client type")
 		errors.Details(errE)["type"] = c.Type
+		// Internal error: this should never happen.
 		panic(errE)
 	}
 }

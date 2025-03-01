@@ -186,10 +186,11 @@ func (s *Service) sendCode(
 	preservedEmailOrUsername string, emails []string, accountID *identifier.Identifier, credentials []Credential,
 ) {
 	if len(emails) == 0 {
-		// This method should no be called without e-mail addresses.
+		// Internal error: this method should no be called without e-mail addresses.
 		panic(errors.New("no email addresses"))
 	}
 	if accountID == nil && credentials == nil || accountID != nil && credentials != nil {
+		// Internal error: this should never happen.
 		panic(errors.New("accountID and credentials both nil or both not"))
 	}
 
@@ -206,7 +207,7 @@ func (s *Service) sendCode(
 	// This means that if user starts with bar@example.com, tries foo@example.com, and then go back to bar@example.com, all inside
 	// the same flow, code(s) from the first bar@example.com attempt will not work anymore. That is probably fine and rare.
 	flow.ClearAuthStep(preservedEmailOrUsername)
-	flow.Provider = CodeProvider
+	flow.Providers = append(flow.Providers, CodeProvider)
 	// Or flow.Code was never set or it was cleared by flow.Clear because flow.EmailOrUsername changed.
 	// Or account ID has changed (this is an edge case and sanity check because flow.Clear should already
 	// set flow.Code to nil if flow.EmailOrUsername changed and it is very rare that account for unchanged
@@ -257,17 +258,15 @@ func (s *Service) sendCode(
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Target:          flow.Target,
-		Name:            flow.TargetName,
-		Homepage:        flow.GetTargetHomepage(),
-		OrganizationID:  flow.GetTargetOrganizationID(),
-		Provider:        flow.Provider,
+		Completed:       flow.Completed,
+		OrganizationID:  flow.OrganizationID.String(),
+		AppID:           flow.AppID.String(),
+		Providers:       flow.Providers,
 		EmailOrUsername: preservedEmailOrUsername,
-		Error:           "",
-		Completed:       "",
-		Location:        nil,
+		OIDCProvider:    nil,
 		Passkey:         nil,
 		Password:        nil,
+		Error:           "",
 	}, nil)
 }
 
@@ -341,7 +340,7 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 		Data:     jsonData,
 	}}
 
-	// Account does not exist but have an e-mail address.
+	// Account does not exist but we have an e-mail address.
 	// We attempt to create a new account with an e-mail address only.
 	s.sendCode(w, req, flow, preservedEmailOrUsername, []string{preservedEmailOrUsername}, nil, credentials)
 }
@@ -373,7 +372,7 @@ func (s *Service) AuthFlowCodeCompletePost(w http.ResponseWriter, req *http.Requ
 		return
 	}
 
-	// We clean the provided code of all whitespace before we check it.
+	// We clean the provided code of all whitespace (not just at the beginning and end) before we check it.
 	code := strings.Map(func(r rune) rune {
 		if unicode.IsSpace(r) {
 			return -1
@@ -382,7 +381,7 @@ func (s *Service) AuthFlowCodeCompletePost(w http.ResponseWriter, req *http.Requ
 	}, codeComplete.Code)
 
 	if !slices.Contains(flow.Code.Codes, code) {
-		if !s.increaseAttempts(w, req, flow) {
+		if !s.increaseAuthAttempts(w, req, flow) {
 			return
 		}
 		s.flowError(w, req, flow, "invalidCode", nil)

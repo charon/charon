@@ -2,6 +2,7 @@ package charon
 
 import (
 	"context"
+	"slices"
 	"sync"
 	"time"
 
@@ -12,7 +13,10 @@ import (
 	"gitlab.com/tozd/identifier"
 )
 
-var ErrFlowNotFound = errors.Base("flow not found")
+var (
+	ErrFlowNotFound     = errors.Base("flow not found")
+	ErrInvalidCompleted = errors.Base("invalid completed value for flow state")
+)
 
 var (
 	flows   = make(map[identifier.Identifier][]byte) //nolint:gochecknoglobals
@@ -29,20 +33,16 @@ const (
 	// Auth step failed (3rd party authentication failed, too many attempts, etc.).
 	CompletedFailed Completed = "failed"
 
-	// Identity chosen.
+	// Identity selected.
 	CompletedIdentity Completed = "identity"
-
-	// OIDC flow declined.
+	// Identity selection has been declined.
 	CompletedDeclined Completed = "declined"
-	// OIDC redirect was made back to the OIDC client.
-	CompletedRedirect Completed = "redirect"
-)
 
-type Target string
+	// Flow is ready to be finished.
+	CompletedFinishReady Completed = "finishReady"
 
-const (
-	TargetSession Target = "session"
-	TargetOIDC    Target = "oidc"
+	// Flow has finished.
+	CompletedFinished Completed = "finished"
 )
 
 type FlowOIDCProvider struct {
@@ -62,27 +62,69 @@ type FlowCode struct {
 }
 
 type Flow struct {
-	ID                   identifier.Identifier
-	CreatedAt            time.Time
-	Session              *identifier.Identifier
-	Completed            Completed
-	AuthTime             *time.Time
-	Target               Target
-	TargetLocation       string
-	TargetName           string
-	TargetOrganizationID *identifier.Identifier
-	Provider             Provider
-	EmailOrUsername      string
-	Identity             *Identity
-	Attempts             int
+	ID        identifier.Identifier
+	CreatedAt time.Time
+	Completed []Completed
+	AuthTime  *time.Time
 
+	OrganizationID identifier.Identifier
+	AppID          identifier.Identifier
+
+	SessionID *identifier.Identifier
+	Identity  *Identity
+
+	// State of the OIDC authorization request which started this flow.
 	OIDCAuthorizeRequest *fosite.AuthorizeRequest
-	OIDCRedirectReady    bool
 
-	OIDCProvider *FlowOIDCProvider
-	Passkey      *webauthn.SessionData
-	Password     *FlowPassword
-	Code         *FlowCode
+	// State while the user is authenticating themselves.
+	AuthAttempts    int
+	Providers       []Provider
+	EmailOrUsername string
+	OIDCProvider    *FlowOIDCProvider
+	Passkey         *webauthn.SessionData
+	Password        *FlowPassword
+	Code            *FlowCode
+}
+
+func (f *Flow) AddCompleted(completed Completed) errors.E {
+	previous := f.lastCompletedStep()
+
+	switch completed {
+	case CompletedSignin, CompletedSignup, CompletedFailed:
+		// It has to be the first.
+		if previous != "" {
+			return errors.WithStack(ErrInvalidCompleted)
+		}
+	case CompletedIdentity:
+		// Only CompletedSignin and CompletedSignup are allowed as the previous step to select identity.
+		if previous != CompletedSignin && previous != CompletedSignup {
+			return errors.WithStack(ErrInvalidCompleted)
+		}
+	case CompletedDeclined:
+		if previous == "" {
+			// In UI we provide CompletedDeclined option only after the auth step, as an alternative to
+			// CompletedIdentity, but in API we allow to decline the flow also as the first step.
+		} else if previous != CompletedSignin && previous != CompletedSignup {
+			return errors.WithStack(ErrInvalidCompleted)
+		}
+	case CompletedFinishReady:
+		if previous != CompletedFailed && previous != CompletedIdentity && previous != CompletedDeclined {
+			return errors.WithStack(ErrInvalidCompleted)
+		}
+	case CompletedFinished:
+		if previous != CompletedFinishReady {
+			return errors.WithStack(ErrInvalidCompleted)
+		}
+	default:
+		errE := errors.New("invalid flow completed step")
+		errors.Details(errE)["completed"] = completed
+		errors.Details(errE)["existing"] = f.Completed
+		// Internal error: this should never happen.
+		panic(errE)
+	}
+
+	f.Completed = append(f.Completed, completed)
+	return nil
 }
 
 func (f *Flow) ClearAuthStep(emailOrUsername string) {
@@ -98,59 +140,34 @@ func (f *Flow) ClearAuthStep(emailOrUsername string) {
 	}
 }
 
+func (f *Flow) lastCompletedStep() Completed {
+	if len(f.Completed) == 0 {
+		return ""
+	}
+
+	return f.Completed[len(f.Completed)-1]
+}
+
 func (f *Flow) ClearAuthStepAll() {
 	f.ClearAuthStep("")
 	f.Code = nil
 	f.EmailOrUsername = ""
 }
 
-func (f *Flow) IsCompleted() bool {
-	switch f.Target {
-	case TargetSession:
-		switch f.Completed {
-		case CompletedIdentity, CompletedFailed:
-			return true
-		case "", CompletedSignin, CompletedSignup:
-			return false
-		case CompletedDeclined, CompletedRedirect:
-			fallthrough
-		default:
-			errE := errors.New("invalid flow completed state for target")
-			errors.Details(errE)["target"] = f.Target
-			errors.Details(errE)["completed"] = f.Completed
-			panic(errE)
-		}
-	case TargetOIDC:
-		switch f.Completed {
-		case CompletedRedirect:
-			return true
-		case "", CompletedSignin, CompletedSignup, CompletedFailed, CompletedDeclined, CompletedIdentity:
-			return false
-		default:
-			errE := errors.New("invalid flow completed state for target")
-			errors.Details(errE)["target"] = f.Target
-			errors.Details(errE)["completed"] = f.Completed
-			panic(errE)
-		}
-	default:
-		errE := errors.New("invalid flow target")
-		errors.Details(errE)["target"] = f.Target
-		panic(errE)
-	}
+func (f *Flow) IsFinishReady() bool {
+	return f.lastCompletedStep() == CompletedFinishReady
 }
 
-func (f *Flow) GetTargetOrganizationID() string {
-	if f.TargetOrganizationID == nil {
-		return ""
-	}
-	return f.TargetOrganizationID.String()
+func (f *Flow) IsFinished() bool {
+	return f.lastCompletedStep() == CompletedFinished
 }
 
-func (f *Flow) GetTargetHomepage() string {
-	if f.Target == TargetOIDC {
-		return f.TargetLocation
-	}
-	return ""
+func (f *Flow) HasFailed() bool {
+	return slices.Contains(f.Completed, CompletedFailed)
+}
+
+func (f *Flow) HasDeclined() bool {
+	return slices.Contains(f.Completed, CompletedDeclined)
 }
 
 func GetFlow(ctx context.Context, id identifier.Identifier) (*Flow, errors.E) { //nolint:revive
@@ -173,7 +190,7 @@ func GetFlow(ctx context.Context, id identifier.Identifier) (*Flow, errors.E) { 
 	}
 	// If ResponseTypes is still nil, then OIDCAuthorizeRequest was not really set
 	// in the flow, so we set it to nil explicitly to clear interface fields we set.
-	// This can happen when OIDCAuthorizeRequest is used with omitempty, then
+	// This can happen if OIDCAuthorizeRequest is ever used with omitempty, then
 	// Unmarshal does not set it to nil if it is not present in JSON.
 	if flow.OIDCAuthorizeRequest != nil && flow.OIDCAuthorizeRequest.ResponseTypes == nil {
 		flow.OIDCAuthorizeRequest = nil
