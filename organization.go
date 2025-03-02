@@ -26,6 +26,7 @@ var (
 	charonApplicationTemplateClientPublicID = identifier.MustFromString("Y6FAGc9DHiECGRJb4ML8zN")
 )
 
+// TODO: Return random IDs instead of an empty struct and expose them to the frontend.
 func initCharonOrganization(config *Config, domain string) (func() struct{}, errors.E) {
 	return initWithHost(config, domain, func(host string) struct{} {
 		organization := Organization{
