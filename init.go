@@ -10,7 +10,7 @@ import (
 
 type charonOrganization struct {
 	ID                                identifier.Identifier
-	ApplicationID                     identifier.Identifier
+	AppID                             identifier.Identifier
 	ClientID                          identifier.Identifier
 	ApplicationTemplateID             identifier.Identifier
 	ApplicationTemplateClientPublicID identifier.Identifier
@@ -20,7 +20,7 @@ type charonOrganization struct {
 func initCharonOrganization(config *Config, service *Service, domain string) (func() charonOrganization, errors.E) {
 	return initWithHost(config, domain, func(host string) charonOrganization {
 		charonOrganizationID := identifier.New()
-		charonApplicationID := identifier.New()
+		charonAppID := identifier.New()
 		charonClientID := identifier.New()
 		charonApplicationTemplateID := identifier.New()
 		charonApplicationTemplateClientPublicID := identifier.New()
@@ -36,7 +36,7 @@ func initCharonOrganization(config *Config, service *Service, domain string) (fu
 			Admins: []IdentityRef{},
 			Applications: []OrganizationApplication{
 				{
-					ID:     &charonApplicationID,
+					ID:     &charonAppID,
 					Active: true,
 					ApplicationTemplate: ApplicationTemplatePublic{
 						ID:               &charonApplicationTemplateID,
@@ -71,7 +71,7 @@ func initCharonOrganization(config *Config, service *Service, domain string) (fu
 			},
 		}
 
-		errE := organization.Validate(context.Background(), &organization)
+		errE := organization.validate(context.Background(), &organization)
 		if errE != nil {
 			// This should never happen.
 			panic(errE)
@@ -90,7 +90,7 @@ func initCharonOrganization(config *Config, service *Service, domain string) (fu
 
 		return charonOrganization{
 			ID:                                charonOrganizationID,
-			ApplicationID:                     charonApplicationID,
+			AppID:                             charonAppID,
 			ClientID:                          charonClientID,
 			ApplicationTemplateID:             charonApplicationTemplateID,
 			ApplicationTemplateClientPublicID: charonApplicationTemplateClientPublicID,

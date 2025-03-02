@@ -621,6 +621,7 @@ func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *Appl
 	return nil
 }
 
+// Validate requires ctx with identityIDContextKey set.
 func (a *ApplicationTemplate) Validate(ctx context.Context, existing *ApplicationTemplate) errors.E {
 	var e *ApplicationTemplatePublic
 	if existing == nil {

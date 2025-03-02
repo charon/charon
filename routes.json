@@ -208,12 +208,6 @@
       "get": null
     },
     {
-      "name": "AuthFlowCreate",
-      "path": "/auth/create",
-      "api": {},
-      "get": null
-    },
-    {
       "name": "AuthFlowGet",
       "path": "/auth/:id",
       "api": {},

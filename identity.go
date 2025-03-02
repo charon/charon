@@ -143,6 +143,7 @@ type IdentityRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
+// Validate requires ctx with identityIDContextKey set.
 func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 	if existing == nil {
 		if i.ID != nil {

@@ -81,7 +81,7 @@ func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.
 	errE := s.setFlow(req.Context(), &Flow{
 		ID:        id,
 		CreatedAt: time.Now().UTC(),
-		Completed: nil,
+		Completed: []Completed{},
 		AuthTime:  nil,
 
 		OrganizationID: client.OrganizationID,

@@ -438,7 +438,7 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	flow.Completed = nil
+	flow.Completed = []Completed{}
 	flow.SessionID = nil
 	flow.Identity = nil
 	flow.Providers = nil

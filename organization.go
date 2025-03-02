@@ -531,8 +531,20 @@ type OrganizationRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
-// Validate requires ctx with serviceContextKey set.
+// Validate requires ctx with identityIDContextKey and serviceContextKey set.
 func (o *Organization) Validate(ctx context.Context, existing *Organization) errors.E {
+	// Current user must be among admins if it is changing the organization.
+	// We check this elsewhere, here we make sure the user is stored as an admin.
+	identityID := mustGetIdentityID(ctx)
+	identityRef := IdentityRef{ID: identityID}
+	if !slices.Contains(o.Admins, identityRef) {
+		o.Admins = append(o.Admins, identityRef)
+	}
+
+	return o.validate(ctx, existing)
+}
+
+func (o *Organization) validate(ctx context.Context, existing *Organization) errors.E {
 	var e *OrganizationPublic
 	if existing == nil {
 		e = nil
@@ -542,14 +554,6 @@ func (o *Organization) Validate(ctx context.Context, existing *Organization) err
 	errE := o.OrganizationPublic.Validate(ctx, e)
 	if errE != nil {
 		return errE
-	}
-
-	// Current user must be among admins if it is changing the organization.
-	// We check this elsewhere, here we make sure the user is stored as an admin.
-	identityID := mustGetIdentityID(ctx)
-	identityRef := IdentityRef{ID: identityID}
-	if !slices.Contains(o.Admins, identityRef) {
-		o.Admins = append(o.Admins, identityRef)
 	}
 
 	// We sort and remove duplicates.

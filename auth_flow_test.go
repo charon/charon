@@ -2,54 +2,127 @@ package charon_test
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
+	"golang.org/x/oauth2"
 
 	"gitlab.com/charon/charon"
 )
 
-func createAuthFlow(t *testing.T, ts *httptest.Server, service *charon.Service) identifier.Identifier {
+func assertCharonDashboard(t *testing.T, ts *httptest.Server, service *charon.Service, organizationID, appID identifier.Identifier) {
 	t.Helper()
 
-	authFlowCreate, errE := service.ReverseAPI("AuthFlowCreate", nil, nil)
+	organizationGet, errE := service.ReverseAPI("OrganizationGet", waf.Params{"id": organizationID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	// Start the session target auth flow.
-	resp, err := ts.Client().Post(ts.URL+authFlowCreate, "application/json", strings.NewReader(`{"location":"/"}`)) //nolint:noctx,bodyclose
+	resp, err := ts.Client().Get(ts.URL + organizationGet) //nolint:noctx,bodyclose
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-	var authFlowCreateResponse charon.AuthFlowCreateResponse
-	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowCreateResponse)
+	var organization charon.Organization
+	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &organization)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": authFlowCreateResponse.ID.String()}, nil)
+	assert.Equal(t, "Charon", organization.Name)
+	assert.Equal(t, organizationID, *organization.ID)
+	if assert.Len(t, organization.Applications, 1) {
+		assert.Equal(t, appID, *organization.Applications[0].ID)
+		assert.Equal(t, "Dashboard", organization.Applications[0].ApplicationTemplate.Name)
+	}
+}
+
+func createAuthFlow(t *testing.T, ts *httptest.Server, service *charon.Service) identifier.Identifier {
+	t.Helper()
+
+	serviceContextPath, errE := service.Reverse("Context", nil, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	resp, err := ts.Client().Get(ts.URL + serviceContextPath)
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, 2, resp.ProtoMajor)
+	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+	var serviceContext struct {
+		ClientID    string `json:"clientId"`
+		RedirectURI string `json:"redirectUri"`
+	}
+	errE = x.DecodeJSON(resp.Body, &serviceContext)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	ctx := oidc.ClientContext(context.Background(), ts.Client())
+	provider, err := oidc.NewProvider(ctx, ts.URL)
+	require.NoError(t, err)
+
+	config := &oauth2.Config{
+		ClientID:    serviceContext.ClientID,
+		RedirectURL: serviceContext.RedirectURI,
+		Endpoint:    provider.Endpoint(),
+		Scopes:      []string{"openid", "profile", "email"},
+	}
+
+	nonce := identifier.New().String()
+	state := identifier.New().String()
+	verifier := oauth2.GenerateVerifier()
+
+	opts := []oauth2.AuthCodeOption{}
+	opts = append(opts, oidc.Nonce(nonce))
+	opts = append(opts, oauth2.S256ChallengeOption(verifier))
+
+	authURI := config.AuthCodeURL(state, opts...)
+	resp, err = ts.Client().Get(authURI)
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	assert.Equal(t, http.StatusSeeOther, resp.StatusCode)
+	assert.Equal(t, 2, resp.ProtoMajor)
+	io.Copy(io.Discard, resp.Body)
+
+	location := resp.Header.Get("Location")
+	assert.NotEmpty(t, location)
+
+	route, errE := service.GetRoute(location, http.MethodGet)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Equal(t, "AuthFlowGet", route.Name)
+
+	flowID, errE := identifier.FromString(route.Params["id"])
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	// Flow is available in initial state.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
 		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		out, err := io.ReadAll(resp.Body)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"target":"session","name":"Charon Dashboard"}`, string(out)) //nolint:testifylint
+		var flowResponse struct {
+			Completed      []charon.Completed    `json:"completed"`
+			OrganizationID identifier.Identifier `json:"organizationId"`
+			AppID          identifier.Identifier `json:"appId"`
+		}
+		errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &flowResponse)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		assert.Equal(t, []charon.Completed{}, flowResponse.Completed)
+		assertCharonDashboard(t, ts, service, flowResponse.OrganizationID, flowResponse.AppID)
 	}
 
-	return authFlowCreateResponse.ID
+	return flowID
 }
 
 func createIdentity(t *testing.T, ts *httptest.Server, service *charon.Service) charon.IdentityRef {
