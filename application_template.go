@@ -373,9 +373,9 @@ type ApplicationTemplate struct {
 type ApplicationTemplatePublic struct {
 	ID *identifier.Identifier `json:"id"`
 
-	Name             string  `json:"name"`
-	Description      string  `json:"description"`
-	HomepageTemplate *string `json:"homepageTemplate"`
+	Name             string `json:"name"`
+	Description      string `json:"description"`
+	HomepageTemplate string `json:"homepageTemplate"`
 
 	IDScopes []string `json:"idScopes"`
 
@@ -609,19 +609,18 @@ func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *Appl
 	}
 
 	// If there is standard uriBase variable, we populate with default homepage.
-	if a.HomepageTemplate == nil && slices.ContainsFunc(a.Variables, func(v Variable) bool { return v.Name == "uriBase" }) {
-		u := "{uriBase}"
-		a.HomepageTemplate = &u
+	if a.HomepageTemplate == "" && slices.ContainsFunc(a.Variables, func(v Variable) bool { return v.Name == "uriBase" }) {
+		a.HomepageTemplate = "{uriBase}"
 	}
 
-	if a.HomepageTemplate == nil || *a.HomepageTemplate == "" {
+	if a.HomepageTemplate == "" {
 		return errors.New("homepage template: is required")
 	}
 
-	errE := validateRedirectURIsTemplate(ctx, *a.HomepageTemplate, values)
+	errE := validateRedirectURIsTemplate(ctx, a.HomepageTemplate, values)
 	if errE != nil {
 		errE = errors.WithMessage(errE, "homepage template")
-		errors.Details(errE)["template"] = *a.HomepageTemplate
+		errors.Details(errE)["template"] = a.HomepageTemplate
 		return errE
 	}
 
