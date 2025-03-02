@@ -230,9 +230,10 @@ type Service struct {
 	oidc     func() *fosite.Fosite
 	oidcKeys *Keys
 
-	oidcProviders   func() map[Provider]oidcProvider
-	passkeyProvider func() *webauthn.WebAuthn
-	codeProvider    func() *codeProvider
+	oidcProviders      func() map[Provider]oidcProvider
+	passkeyProvider    func() *webauthn.WebAuthn
+	codeProvider       func() *codeProvider
+	charonOrganization func() struct{}
 
 	domain string
 
@@ -498,6 +499,10 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 	if errE != nil {
 		return nil, nil, errE
 	}
+	service.charonOrganization, errE = initCharonOrganization(config, domain)
+	if errE != nil {
+		return nil, nil, errE
+	}
 
 	return handler, service, nil
 }
@@ -514,6 +519,7 @@ func (config *Config) Run() errors.E {
 	go service.oidcProviders()
 	go service.passkeyProvider()
 	go service.codeProvider()
+	go service.charonOrganization()
 
 	// We stop the server gracefully on ctrl-c and TERM signal.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
