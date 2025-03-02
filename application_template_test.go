@@ -20,13 +20,11 @@ func createApplicationTemplate(t *testing.T, ts *httptest.Server, service *charo
 	applicationTemplateCreate, errE := service.ReverseAPI("ApplicationTemplateCreate", nil, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	homepage := "https://example.com"
-
 	applicationTemplate := charon.ApplicationTemplate{
 		ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
 			Name:             "Test application",
 			Description:      "",
-			HomepageTemplate: &homepage,
+			HomepageTemplate: "https://example.com",
 			IDScopes:         []string{"openid", "profile", "email", "offline_access"},
 			Variables:        []charon.Variable{},
 			ClientsPublic:    []charon.ApplicationTemplateClientPublic{},
