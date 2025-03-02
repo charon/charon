@@ -72,6 +72,12 @@ func initCharonOrganization(config *Config, domain string) (func() struct{}, err
 			},
 		}
 
+		errE := organization.Validate(context.Background(), &organization)
+		if errE != nil {
+			// This should never happen.
+			panic(errE)
+		}
+
 		data, errE := x.MarshalWithoutEscapeHTML(organization)
 		if errE != nil {
 			// This should never happen.
