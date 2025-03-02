@@ -237,7 +237,7 @@ func (s *Service) sendCode(
 		}
 	}
 	flow.Code.Codes = append(flow.Code.Codes, code)
-	errE = SetFlow(req.Context(), flow)
+	errE = s.setFlow(req.Context(), flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -305,9 +305,9 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 
 	var account *Account
 	if strings.Contains(mappedEmailOrUsername, "@") {
-		account, errE = GetAccountByCredential(ctx, EmailProvider, mappedEmailOrUsername)
+		account, errE = s.getAccountByCredential(ctx, EmailProvider, mappedEmailOrUsername)
 	} else {
-		account, errE = GetAccountByCredential(ctx, UsernameProvider, mappedEmailOrUsername)
+		account, errE = s.getAccountByCredential(ctx, UsernameProvider, mappedEmailOrUsername)
 	}
 
 	if errE == nil {
@@ -391,7 +391,7 @@ func (s *Service) AuthFlowCodeCompletePost(w http.ResponseWriter, req *http.Requ
 	var account *Account
 	if flow.Code.AccountID != nil {
 		var errE errors.E
-		account, errE = GetAccount(ctx, *flow.Code.AccountID)
+		account, errE = s.getAccount(ctx, *flow.Code.AccountID)
 		if errE != nil {
 			// We return internal server error even on ErrAccountNotFound. It is unlikely that
 			// the account got deleted in meantime so there might be some logic error. In any

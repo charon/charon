@@ -1,6 +1,7 @@
 package charon
 
 import (
+	"context"
 	"io"
 	"net/http"
 
@@ -13,7 +14,8 @@ func (s *Service) OIDCTokenPost(w http.ResponseWriter, req *http.Request, _ waf.
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	ctx := req.Context()
+	// OIDC GetClient requires ctx with serviceContextKey set.
+	ctx := context.WithValue(req.Context(), serviceContextKey, s)
 	oidc := s.oidc()
 
 	// Create an empty session object which serves as a prototype of the reconstructed session object.

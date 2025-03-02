@@ -1,6 +1,7 @@
 package charon
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/go-jose/go-jose/v3"
@@ -229,7 +230,8 @@ var (
 
 // oidcDiscovery provides discovery configuration.
 func (s *Service) oidcDiscovery(w http.ResponseWriter, req *http.Request) {
-	ctx := req.Context()
+	// OIDC GetClient requires ctx with serviceContextKey set.
+	ctx := context.WithValue(req.Context(), serviceContextKey, s)
 	oidc := s.oidc()
 	issuer := oidc.Config.GetAccessTokenIssuer(ctx)
 

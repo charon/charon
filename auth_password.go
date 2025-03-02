@@ -151,7 +151,7 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 		PrivateKey: privateKey.Bytes(),
 		Nonce:      nonce,
 	}
-	errE = SetFlow(ctx, flow)
+	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -215,7 +215,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 	// We reset flow.Password to nil always after this point, even if there is a failure,
 	// so that password cannot be reused.
 	flow.Password = nil
-	errE = SetFlow(ctx, flow)
+	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -282,9 +282,9 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 
 	var account *Account
 	if strings.Contains(mappedEmailOrUsername, "@") {
-		account, errE = GetAccountByCredential(ctx, EmailProvider, mappedEmailOrUsername)
+		account, errE = s.getAccountByCredential(ctx, EmailProvider, mappedEmailOrUsername)
 	} else {
-		account, errE = GetAccountByCredential(ctx, UsernameProvider, mappedEmailOrUsername)
+		account, errE = s.getAccountByCredential(ctx, UsernameProvider, mappedEmailOrUsername)
 	}
 
 	if errE == nil {

@@ -158,7 +158,7 @@ func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Req
 		opts = append(opts, oauth2.S256ChallengeOption(flow.OIDCProvider.Verifier))
 	}
 
-	errE = SetFlow(ctx, flow)
+	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -208,7 +208,7 @@ func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, par
 	// We reset flow.OIDCProvider to nil always after this point, even if there is a failure,
 	// so that nonce cannot be reused.
 	flow.OIDCProvider = nil
-	errE := SetFlow(ctx, flow)
+	errE := s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -273,7 +273,7 @@ func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, par
 		return
 	}
 
-	account, errE := GetAccountByCredential(ctx, providerName, idToken.Subject)
+	account, errE := s.getAccountByCredential(ctx, providerName, idToken.Subject)
 	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
 		errors.Details(errE)["provider"] = providerName
 		s.InternalServerErrorWithError(w, req, errE)

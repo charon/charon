@@ -27,6 +27,7 @@ import (
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
 	z "gitlab.com/tozd/go/zerolog"
+	"gitlab.com/tozd/identifier"
 
 	"gitlab.com/tozd/waf"
 )
@@ -233,12 +234,26 @@ type Service struct {
 	oidcProviders      func() map[Provider]oidcProvider
 	passkeyProvider    func() *webauthn.WebAuthn
 	codeProvider       func() *codeProvider
-	charonOrganization func() struct{}
+	charonOrganization func() charonOrganization
 
 	domain string
 
 	mailClient *mail.Client
 	mailFrom   string
+
+	// TODO: Move to a database.
+	accounts               map[identifier.Identifier][]byte
+	accountsMu             sync.RWMutex
+	applicationTemplates   map[identifier.Identifier][]byte
+	applicationTemplatesMu sync.RWMutex
+	flows                  map[identifier.Identifier][]byte
+	flowsMu                sync.RWMutex
+	identities             map[identifier.Identifier][]byte
+	identitiesMu           sync.RWMutex
+	organizations          map[identifier.Identifier][]byte
+	organizationsMu        sync.RWMutex
+	sessions               map[identifier.Identifier][]byte
+	sessionsMu             sync.RWMutex
 }
 
 // Init is used primarily in tests. Use Run otherwise.
@@ -437,15 +452,28 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 				}
 			},
 		},
-		hmac:            hmacStrategy,
-		oidc:            nil,
-		oidcKeys:        &config.OIDC.Keys,
-		oidcProviders:   nil,
-		passkeyProvider: nil,
-		codeProvider:    nil,
-		domain:          domain,
-		mailClient:      nil,
-		mailFrom:        config.Mail.From,
+		hmac:                   hmacStrategy,
+		oidc:                   nil,
+		oidcKeys:               &config.OIDC.Keys,
+		oidcProviders:          nil,
+		passkeyProvider:        nil,
+		codeProvider:           nil,
+		charonOrganization:     nil,
+		domain:                 domain,
+		mailClient:             nil,
+		mailFrom:               config.Mail.From,
+		accounts:               map[identifier.Identifier][]byte{},
+		accountsMu:             sync.RWMutex{},
+		applicationTemplates:   map[identifier.Identifier][]byte{},
+		applicationTemplatesMu: sync.RWMutex{},
+		flows:                  map[identifier.Identifier][]byte{},
+		flowsMu:                sync.RWMutex{},
+		identities:             map[identifier.Identifier][]byte{},
+		identitiesMu:           sync.RWMutex{},
+		organizations:          map[identifier.Identifier][]byte{},
+		organizationsMu:        sync.RWMutex{},
+		sessions:               map[identifier.Identifier][]byte{},
+		sessionsMu:             sync.RWMutex{},
 	}
 
 	if config.Mail.Host != "" {
@@ -499,7 +527,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 	if errE != nil {
 		return nil, nil, errE
 	}
-	service.charonOrganization, errE = initCharonOrganization(config, domain)
+	service.charonOrganization, errE = initCharonOrganization(config, service, domain)
 	if errE != nil {
 		return nil, nil, errE
 	}

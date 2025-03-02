@@ -1,6 +1,7 @@
 package charon
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -50,7 +51,8 @@ func grantAllScopes(request fosite.Requester) {
 // (GET request), which is expected to conclude handling the authorization request eventually
 // with call to completeOIDCAuthorize.
 func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	ctx := req.Context()
+	// OIDC GetClient requires ctx with serviceContextKey set.
+	ctx := context.WithValue(req.Context(), serviceContextKey, s)
 	oidc := s.oidc()
 
 	authorizeRequest, err := oidc.NewAuthorizeRequest(ctx, req)
@@ -76,7 +78,7 @@ func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.
 
 	client := ar.Client.(*OIDCClient) //nolint:errcheck,forcetypeassert
 
-	errE := SetFlow(req.Context(), &Flow{
+	errE := s.setFlow(req.Context(), &Flow{
 		ID:        id,
 		CreatedAt: time.Now().UTC(),
 		Completed: nil,
@@ -114,7 +116,8 @@ func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.
 }
 
 func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request, flow *Flow) bool {
-	ctx := req.Context()
+	// OIDC GetClient requires ctx with serviceContextKey set.
+	ctx := context.WithValue(req.Context(), serviceContextKey, s)
 	oidc := s.oidc()
 
 	errE := flow.AddCompleted(CompletedFinished)
@@ -130,7 +133,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 	flow.OIDCAuthorizeRequest = nil
 
 	if flow.HasFailed() {
-		errE := SetFlow(ctx, flow)
+		errE := s.setFlow(ctx, flow)
 		if errE != nil {
 			// Because this can fail, store's CreateAuthorizeCodeSession, CreateOpenIDConnectSession, and CreatePKCERequestSession should be idempotent.
 			s.InternalServerErrorWithError(w, req, errE)
@@ -148,7 +151,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 		return handled
 	}
 
-	errE = SetFlow(ctx, flow)
+	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		// Because this can fail, store's CreateAuthorizeCodeSession, CreateOpenIDConnectSession, and CreatePKCERequestSession should be idempotent.
 		s.InternalServerErrorWithError(w, req, errE)

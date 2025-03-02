@@ -23,16 +23,19 @@ func NewOIDCStore() *OIDCStore {
 	}
 }
 
-func (s *OIDCStore) GetClient(_ context.Context, strID string) (fosite.Client, error) { //nolint:ireturn
+// GetClient requires ctx with serviceContextKey set.
+func (s *OIDCStore) GetClient(ctx context.Context, strID string) (fosite.Client, error) { //nolint:ireturn
 	id, errE := identifier.FromString(strID)
 	if errE != nil {
 		return nil, errE
 	}
 
-	organizationsMu.RLock()
-	defer organizationsMu.RUnlock()
+	service := ctx.Value(serviceContextKey).(*Service)
 
-	for orgID, data := range organizations {
+	service.organizationsMu.RLock()
+	defer service.organizationsMu.RUnlock()
+
+	for orgID, data := range service.organizations {
 		var organization Organization
 		errE := x.UnmarshalWithoutUnknownFields(data, &organization)
 		if errE != nil {

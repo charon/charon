@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"slices"
-	"sync"
 
 	"github.com/alexedwards/argon2id"
 	mapset "github.com/deckarep/golang-set/v2"
@@ -21,11 +20,6 @@ var (
 	ErrOrganizationAlreadyExists    = errors.Base("organization already exists")
 	ErrOrganizationUnauthorized     = errors.Base("organization change unauthorized")
 	ErrOrganizationValidationFailed = errors.Base("organization validation failed")
-)
-
-var (
-	organizations   = make(map[identifier.Identifier][]byte) //nolint:gochecknoglobals
-	organizationsMu = sync.RWMutex{}                         //nolint:gochecknoglobals
 )
 
 type Value struct {
@@ -302,6 +296,7 @@ func (a *OrganizationApplication) GetClientService(id *identifier.Identifier) *O
 	return nil
 }
 
+// Validate requires ctx with serviceContextKey set.
 func (a *OrganizationApplication) Validate(ctx context.Context, existing *OrganizationApplication) errors.E {
 	if existing == nil {
 		if a.ID != nil {
@@ -329,7 +324,8 @@ func (a *OrganizationApplication) Validate(ctx context.Context, existing *Organi
 	if existing != nil {
 		e = &existing.ApplicationTemplate
 	} else if a.ApplicationTemplate.ID != nil {
-		at, errE := GetApplicationTemplate(ctx, *a.ApplicationTemplate.ID)
+		s := ctx.Value(serviceContextKey).(*Service)
+		at, errE := s.getApplicationTemplate(ctx, *a.ApplicationTemplate.ID)
 		if errE == nil {
 			e = &at.ApplicationTemplatePublic
 		} else if !errors.Is(errE, ErrApplicationTemplateNotFound) {
@@ -535,6 +531,7 @@ type OrganizationRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
+// Validate requires ctx with serviceContextKey set.
 func (o *Organization) Validate(ctx context.Context, existing *Organization) errors.E {
 	var e *OrganizationPublic
 	if existing == nil {
@@ -595,11 +592,11 @@ func (o *Organization) Validate(ctx context.Context, existing *Organization) err
 	return nil
 }
 
-func GetOrganization(ctx context.Context, id identifier.Identifier) (*Organization, errors.E) { //nolint:revive
-	organizationsMu.RLock()
-	defer organizationsMu.RUnlock()
+func (s *Service) getOrganization(ctx context.Context, id identifier.Identifier) (*Organization, errors.E) { //nolint:revive
+	s.organizationsMu.RLock()
+	defer s.organizationsMu.RUnlock()
 
-	data, ok := organizations[id]
+	data, ok := s.organizations[id]
 	if !ok {
 		return nil, errors.WithDetails(ErrOrganizationNotFound, "id", id)
 	}
@@ -612,7 +609,9 @@ func GetOrganization(ctx context.Context, id identifier.Identifier) (*Organizati
 	return &organization, nil
 }
 
-func CreateOrganization(ctx context.Context, organization *Organization) errors.E {
+func (s *Service) createOrganization(ctx context.Context, organization *Organization) errors.E {
+	ctx = context.WithValue(ctx, serviceContextKey, s)
+
 	errE := organization.Validate(ctx, nil)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrOrganizationValidationFailed)
@@ -623,22 +622,22 @@ func CreateOrganization(ctx context.Context, organization *Organization) errors.
 		return errE
 	}
 
-	organizationsMu.Lock()
-	defer organizationsMu.Unlock()
+	s.organizationsMu.Lock()
+	defer s.organizationsMu.Unlock()
 
-	organizations[*organization.ID] = data
+	s.organizations[*organization.ID] = data
 	return nil
 }
 
-func UpdateOrganization(ctx context.Context, organization *Organization) errors.E {
-	organizationsMu.Lock()
-	defer organizationsMu.Unlock()
+func (s *Service) updateOrganization(ctx context.Context, organization *Organization) errors.E {
+	s.organizationsMu.Lock()
+	defer s.organizationsMu.Unlock()
 
 	if organization.ID == nil {
 		return errors.WithMessage(ErrOrganizationValidationFailed, "ID is missing")
 	}
 
-	existingData, ok := organizations[*organization.ID]
+	existingData, ok := s.organizations[*organization.ID]
 	if !ok {
 		return errors.WithDetails(ErrOrganizationNotFound, "id", *organization.ID)
 	}
@@ -655,6 +654,8 @@ func UpdateOrganization(ctx context.Context, organization *Organization) errors.
 		return errors.WithDetails(ErrOrganizationUnauthorized, "id", organization.ID)
 	}
 
+	ctx = context.WithValue(ctx, serviceContextKey, s)
+
 	errE = organization.Validate(ctx, &existingOrganization)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrOrganizationValidationFailed)
@@ -666,7 +667,7 @@ func UpdateOrganization(ctx context.Context, organization *Organization) errors.
 		return errE
 	}
 
-	organizations[*organization.ID] = data
+	s.organizations[*organization.ID] = data
 	return nil
 }
 
@@ -696,13 +697,13 @@ func (s *Service) OrganizationList(w http.ResponseWriter, req *http.Request, _ w
 	}
 }
 
-func getOrganizationFromID(ctx context.Context, value string) (*Organization, errors.E) {
+func (s *Service) getOrganizationFromID(ctx context.Context, value string) (*Organization, errors.E) {
 	id, errE := identifier.FromString(value)
 	if errE != nil {
 		return nil, errors.WrapWith(errE, ErrOrganizationNotFound)
 	}
 
-	return GetOrganization(ctx, id)
+	return s.getOrganization(ctx, id)
 }
 
 func (s *Service) returnOrganizationRef(_ context.Context, w http.ResponseWriter, req *http.Request, organization *Organization) {
@@ -722,7 +723,7 @@ func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	organization, errE := getOrganizationFromID(ctx, params["id"])
+	organization, errE := s.getOrganizationFromID(ctx, params["id"])
 	if errors.Is(errE, ErrOrganizationNotFound) {
 		s.NotFound(w, req)
 		return
@@ -744,10 +745,10 @@ func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, p
 func (s *Service) OrganizationListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	result := []OrganizationRef{}
 
-	organizationsMu.RLock()
-	defer organizationsMu.RUnlock()
+	s.organizationsMu.RLock()
+	defer s.organizationsMu.RUnlock()
 
-	for id := range organizations {
+	for id := range s.organizations {
 		result = append(result, OrganizationRef{ID: id})
 	}
 
@@ -783,7 +784,7 @@ func (s *Service) OrganizationUpdatePost(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	errE = UpdateOrganization(ctx, &organization)
+	errE = s.updateOrganization(ctx, &organization)
 	if errors.Is(errE, ErrOrganizationUnauthorized) {
 		waf.Error(w, req, http.StatusUnauthorized)
 		return
@@ -822,7 +823,7 @@ func (s *Service) OrganizationCreatePost(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	errE = CreateOrganization(ctx, &organization)
+	errE = s.createOrganization(ctx, &organization)
 	if errors.Is(errE, ErrOrganizationValidationFailed) {
 		s.BadRequestWithError(w, req, errE)
 		return

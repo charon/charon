@@ -50,6 +50,9 @@ var identityIDContextKey = &contextKey{"identity"} //nolint:gochecknoglobals
 // accountIDContextKey provides current account ID.
 var accountIDContextKey = &contextKey{"account"} //nolint:gochecknoglobals
 
+// serviceContextKey provides current service instance.
+var serviceContextKey = &contextKey{"service"} //nolint:gochecknoglobals
+
 //nolint:gochecknoglobals
 var (
 	// This is similar to precis.UsernameCasePreserved, but also disallows empty usernames.
@@ -76,8 +79,10 @@ type emptyRequest struct{}
 // getIdentityFromRequest uses an Authorization header to obtain the OIDC access token
 // and determines the identity and account IDs from it.
 func (s *Service) getIdentityFromRequest(w http.ResponseWriter, req *http.Request) (identifier.Identifier, identifier.Identifier, errors.E) {
-	ctx := req.Context()
+	// OIDC GetClient requires ctx with serviceContextKey set.
+	ctx := context.WithValue(req.Context(), serviceContextKey, s)
 	oidc := s.oidc()
+	charonOrganization := s.charonOrganization()
 
 	// We use this header so responses might depend on it.
 	if !slices.Contains(w.Header().Values("Vary"), "Authorization") {
@@ -113,7 +118,7 @@ func (s *Service) getIdentityFromRequest(w http.ResponseWriter, req *http.Reques
 
 	// We have to make sure the access token provided is really meant for us.
 	// See: https://github.com/ory/fosite/issues/845
-	if slices.Contains(ar.GetGrantedAudience(), charonAppID.String()) {
+	if slices.Contains(ar.GetGrantedAudience(), charonOrganization.ApplicationID.String()) {
 		session = ar.GetSession().(*OIDCSession) //nolint:errcheck,forcetypeassert
 		return session.Subject, session.AccountID, nil
 	}
@@ -157,7 +162,7 @@ func (s *Service) getSessionFromRequest(w http.ResponseWriter, req *http.Request
 		return nil, errors.WithStack(err)
 	}
 
-	return GetSessionBySecretID(ctx, [32]byte(secretID))
+	return s.getSessionBySecretID(ctx, [32]byte(secretID))
 }
 
 // validateSession returns session only if current session matches one made by the flow.
@@ -181,7 +186,7 @@ func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api 
 		return session, false
 	}
 
-	flowSession, errE := GetSession(req.Context(), *flow.SessionID)
+	flowSession, errE := s.getSession(req.Context(), *flow.SessionID)
 	if errors.Is(errE, ErrSessionNotFound) {
 		if api {
 			waf.Error(w, req, http.StatusGone)
@@ -208,13 +213,13 @@ func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api 
 }
 
 // getFlowFromID obtains Flow from its string ID.
-func getFlowFromID(ctx context.Context, value string) (*Flow, errors.E) {
+func (s *Service) getFlowFromID(ctx context.Context, value string) (*Flow, errors.E) {
 	id, errE := identifier.FromString(value)
 	if errE != nil {
 		return nil, errors.WrapWith(errE, ErrFlowNotFound)
 	}
 
-	return GetFlow(ctx, id)
+	return s.getFlow(ctx, id)
 }
 
 func getAccountID(ctx context.Context) (identifier.Identifier, bool) {
@@ -306,7 +311,7 @@ func (s *Service) requireAuthenticatedForIdentity(w http.ResponseWriter, req *ht
 }
 
 func (s *Service) GetFlow(w http.ResponseWriter, req *http.Request, value string) *Flow {
-	flow, errE := getFlowFromID(req.Context(), value)
+	flow, errE := s.getFlowFromID(req.Context(), value)
 	if errors.Is(errE, ErrFlowNotFound) {
 		s.NotFoundWithError(w, req, errE)
 		return nil

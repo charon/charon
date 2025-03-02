@@ -235,7 +235,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 		for _, credential := range credentials {
 			account.Credentials[credential.Provider] = append(account.Credentials[credential.Provider], credential)
 		}
-		errE = SetAccount(ctx, account)
+		errE = s.setAccount(ctx, account)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
@@ -246,7 +246,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 			return
 		}
 		if identity != nil {
-			errE = CreateIdentity(context.WithValue(ctx, accountIDContextKey, account.ID), identity)
+			errE = s.createIdentity(context.WithValue(ctx, accountIDContextKey, account.ID), identity)
 			if errE != nil && !errors.Is(errE, errEmptyIdentity) {
 				s.InternalServerErrorWithError(w, req, errE)
 				return
@@ -263,7 +263,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 		// TODO: Updating only if credentials (meaningfully) changed.
 		// TODO: Update in a way which does not preserve history.
 		account.UpdateCredentials(credentials)
-		errE = SetAccount(ctx, account)
+		errE = s.setAccount(ctx, account)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
@@ -283,7 +283,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	}
 
 	sessionID := identifier.New()
-	errE := SetSession(ctx, &Session{
+	errE := s.setSession(ctx, &Session{
 		ID:        sessionID,
 		SecretID:  [32]byte(secretID),
 		AccountID: account.ID,
@@ -300,7 +300,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	// Everything should already be set to nil at this point, but just to make sure.
 	flow.ClearAuthStepAll()
 
-	errE = SetFlow(ctx, flow)
+	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -350,7 +350,7 @@ func (s *Service) increaseAuthAttempts(w http.ResponseWriter, req *http.Request,
 	ctx := req.Context()
 
 	flow.AuthAttempts++
-	errE := SetFlow(ctx, flow)
+	errE := s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return false
@@ -376,7 +376,7 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 	// Everything should already be set to nil at this point, but just to make sure.
 	flow.ClearAuthStepAll()
 
-	errE = SetFlow(ctx, flow)
+	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -451,7 +451,7 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 	// attempts. We want them to fail the whole flow and to have to restart it (it is easier
 	// to count failed flows and detect attacks this way).
 
-	errE = SetFlow(ctx, flow)
+	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -512,7 +512,7 @@ func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, 
 
 	// TODO: Store decline in a way that it is persisted in a similar way that choosing an identity is.
 
-	errE = SetFlow(ctx, flow)
+	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -561,7 +561,7 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 
 	ctx = context.WithValue(ctx, accountIDContextKey, accountID)
 
-	identity, errE := selectAndActivateIdentity(ctx, chooseIdentity.Identity.ID, flow.OrganizationID)
+	identity, errE := s.selectAndActivateIdentity(ctx, chooseIdentity.Identity.ID, flow.OrganizationID)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
@@ -569,7 +569,7 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 
 	flow.Identity = identity
 
-	errE = SetFlow(ctx, flow)
+	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -619,7 +619,7 @@ func (s *Service) AuthFlowRedirectPost(w http.ResponseWriter, req *http.Request,
 		return
 	}
 
-	errE = SetFlow(ctx, flow)
+	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return

@@ -129,7 +129,7 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 	flow.ClearAuthStep("")
 	flow.Providers = append(flow.Providers, PasskeyProvider)
 	flow.Passkey = session
-	errE = SetFlow(ctx, flow)
+	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -162,7 +162,7 @@ func (s *Service) getFlowPasskey(w http.ResponseWriter, req *http.Request, flow 
 	// We reset flow.Passkey to nil always after this point, even if there is a failure,
 	// so that challenge cannot be reused.
 	flow.Passkey = nil
-	errE := SetFlow(req.Context(), flow)
+	errE := s.setFlow(req.Context(), flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return nil
@@ -211,7 +211,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 
 	credential, err := s.passkeyProvider().ValidateDiscoverableLogin(func(rawID, _ []byte) (webauthn.User, error) {
 		id := base64.RawURLEncoding.EncodeToString(rawID)
-		account, errE := GetAccountByCredential(ctx, PasskeyProvider, id) //nolint:govet
+		account, errE := s.getAccountByCredential(ctx, PasskeyProvider, id) //nolint:govet
 		if errE != nil {
 			return nil, errE
 		}
@@ -241,7 +241,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		return
 	}
 
-	account, errE := GetAccountByCredential(ctx, PasskeyProvider, credentialID)
+	account, errE := s.getAccountByCredential(ctx, PasskeyProvider, credentialID)
 	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -293,7 +293,7 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 	flow.ClearAuthStep("")
 	flow.Providers = append(flow.Providers, PasskeyProvider)
 	flow.Passkey = session
-	errE = SetFlow(ctx, flow)
+	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -367,7 +367,7 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	account, errE := GetAccountByCredential(ctx, PasskeyProvider, credentialID)
+	account, errE := s.getAccountByCredential(ctx, PasskeyProvider, credentialID)
 	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
 		return

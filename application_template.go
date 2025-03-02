@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"regexp"
 	"slices"
-	"sync"
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/ory/fosite"
@@ -31,11 +30,6 @@ const (
 	ClientPublic  ClientType = "public"
 	ClientBackend ClientType = "backend"
 	ClientService ClientType = "service"
-)
-
-var (
-	applicationTemplates   = make(map[identifier.Identifier][]byte) //nolint:gochecknoglobals
-	applicationTemplatesMu = sync.RWMutex{}                         //nolint:gochecknoglobals
 )
 
 // From RFC 6749: scope-token = 1*( %x21 / %x23-5B / %x5D-7E ).
@@ -656,11 +650,11 @@ func (a *ApplicationTemplate) Validate(ctx context.Context, existing *Applicatio
 	return nil
 }
 
-func GetApplicationTemplate(ctx context.Context, id identifier.Identifier) (*ApplicationTemplate, errors.E) { //nolint:revive
-	applicationTemplatesMu.RLock()
-	defer applicationTemplatesMu.RUnlock()
+func (s *Service) getApplicationTemplate(ctx context.Context, id identifier.Identifier) (*ApplicationTemplate, errors.E) { //nolint:revive
+	s.applicationTemplatesMu.RLock()
+	defer s.applicationTemplatesMu.RUnlock()
 
-	data, ok := applicationTemplates[id]
+	data, ok := s.applicationTemplates[id]
 	if !ok {
 		return nil, errors.WithDetails(ErrApplicationTemplateNotFound, "id", id)
 	}
@@ -673,7 +667,7 @@ func GetApplicationTemplate(ctx context.Context, id identifier.Identifier) (*App
 	return &applicationTemplate, nil
 }
 
-func CreateApplicationTemplate(ctx context.Context, applicationTemplate *ApplicationTemplate) errors.E {
+func (s *Service) createApplicationTemplate(ctx context.Context, applicationTemplate *ApplicationTemplate) errors.E {
 	errE := applicationTemplate.Validate(ctx, nil)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrApplicationTemplateValidationFailed)
@@ -684,22 +678,22 @@ func CreateApplicationTemplate(ctx context.Context, applicationTemplate *Applica
 		return errE
 	}
 
-	applicationTemplatesMu.Lock()
-	defer applicationTemplatesMu.Unlock()
+	s.applicationTemplatesMu.Lock()
+	defer s.applicationTemplatesMu.Unlock()
 
-	applicationTemplates[*applicationTemplate.ID] = data
+	s.applicationTemplates[*applicationTemplate.ID] = data
 	return nil
 }
 
-func UpdateApplicationTemplate(ctx context.Context, applicationTemplate *ApplicationTemplate) errors.E { //nolint:dupl
-	applicationTemplatesMu.Lock()
-	defer applicationTemplatesMu.Unlock()
+func (s *Service) updateApplicationTemplate(ctx context.Context, applicationTemplate *ApplicationTemplate) errors.E { //nolint:dupl
+	s.applicationTemplatesMu.Lock()
+	defer s.applicationTemplatesMu.Unlock()
 
 	if applicationTemplate.ID == nil {
 		return errors.WithMessage(ErrApplicationTemplateValidationFailed, "ID is missing")
 	}
 
-	existingData, ok := applicationTemplates[*applicationTemplate.ID]
+	existingData, ok := s.applicationTemplates[*applicationTemplate.ID]
 	if !ok {
 		return errors.WithDetails(ErrApplicationTemplateNotFound, "id", *applicationTemplate.ID)
 	}
@@ -727,7 +721,7 @@ func UpdateApplicationTemplate(ctx context.Context, applicationTemplate *Applica
 		return errE
 	}
 
-	applicationTemplates[*applicationTemplate.ID] = data
+	s.applicationTemplates[*applicationTemplate.ID] = data
 	return nil
 }
 
@@ -757,13 +751,13 @@ func (s *Service) ApplicationTemplateList(w http.ResponseWriter, req *http.Reque
 	}
 }
 
-func getApplicationTemplateFromID(ctx context.Context, value string) (*ApplicationTemplate, errors.E) {
+func (s *Service) getApplicationTemplateFromID(ctx context.Context, value string) (*ApplicationTemplate, errors.E) {
 	id, errE := identifier.FromString(value)
 	if errE != nil {
 		return nil, errors.WrapWith(errE, ErrApplicationTemplateNotFound)
 	}
 
-	return GetApplicationTemplate(ctx, id)
+	return s.getApplicationTemplate(ctx, id)
 }
 
 func (s *Service) returnApplicationTemplateRef(_ context.Context, w http.ResponseWriter, req *http.Request, applicationTemplate *ApplicationTemplate) {
@@ -783,7 +777,7 @@ func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	applicationTemplate, errE := getApplicationTemplateFromID(ctx, params["id"])
+	applicationTemplate, errE := s.getApplicationTemplateFromID(ctx, params["id"])
 	if errors.Is(errE, ErrApplicationTemplateNotFound) {
 		s.NotFound(w, req)
 		return
@@ -805,10 +799,10 @@ func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Req
 func (s *Service) ApplicationTemplateListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	result := []ApplicationTemplateRef{}
 
-	applicationTemplatesMu.RLock()
-	defer applicationTemplatesMu.RUnlock()
+	s.applicationTemplatesMu.RLock()
+	defer s.applicationTemplatesMu.RUnlock()
 
-	for id := range applicationTemplates {
+	for id := range s.applicationTemplates {
 		result = append(result, ApplicationTemplateRef{ID: id})
 	}
 
@@ -844,7 +838,7 @@ func (s *Service) ApplicationTemplateUpdatePost(w http.ResponseWriter, req *http
 		return
 	}
 
-	errE = UpdateApplicationTemplate(ctx, &applicationTemplate)
+	errE = s.updateApplicationTemplate(ctx, &applicationTemplate)
 	if errors.Is(errE, ErrApplicationTemplateUnauthorized) {
 		waf.Error(w, req, http.StatusUnauthorized)
 		return
@@ -883,7 +877,7 @@ func (s *Service) ApplicationTemplateCreatePost(w http.ResponseWriter, req *http
 		return
 	}
 
-	errE = CreateApplicationTemplate(ctx, &applicationTemplate)
+	errE = s.createApplicationTemplate(ctx, &applicationTemplate)
 	if errors.Is(errE, ErrApplicationTemplateValidationFailed) {
 		s.BadRequestWithError(w, req, errE)
 		return

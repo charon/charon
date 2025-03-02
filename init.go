@@ -8,19 +8,24 @@ import (
 	"gitlab.com/tozd/identifier"
 )
 
-//nolint:gochecknoglobals
-var (
-	// TODO: Generate random ones at initial run of Charon so that each Charon instance has different IDs.
-	charonOrganizationID                    = identifier.MustFromString("TCD1UhKfBDewGv2TgPnFsX")
-	charonAppID                             = identifier.MustFromString("8sWLA74HFfjdaeQPHJ5GS8")
-	charonClientID                          = identifier.MustFromString("MWsRw9LcyggooUPHTpp5Jd")
-	charonApplicationTemplateID             = identifier.MustFromString("P9s5Ybwb7K6wMJAdzta5wq")
-	charonApplicationTemplateClientPublicID = identifier.MustFromString("Y6FAGc9DHiECGRJb4ML8zN")
-)
+type charonOrganization struct {
+	ID                                identifier.Identifier
+	ApplicationID                     identifier.Identifier
+	ClientID                          identifier.Identifier
+	ApplicationTemplateID             identifier.Identifier
+	ApplicationTemplateClientPublicID identifier.Identifier
+}
 
-// TODO: Return random IDs instead of an empty struct and expose them to the frontend.
-func initCharonOrganization(config *Config, domain string) (func() struct{}, errors.E) {
-	return initWithHost(config, domain, func(host string) struct{} {
+func initCharonOrganization(config *Config, service *Service, domain string) (func() charonOrganization, errors.E) {
+	return initWithHost(config, domain, func(host string) charonOrganization {
+		charonOrganizationID := identifier.New()
+		charonApplicationID := identifier.New()
+		charonClientID := identifier.New()
+		charonApplicationTemplateID := identifier.New()
+		charonApplicationTemplateClientPublicID := identifier.New()
+
+		url := "https://" + host
+
 		organization := Organization{
 			OrganizationPublic: OrganizationPublic{
 				ID:          &charonOrganizationID,
@@ -30,13 +35,13 @@ func initCharonOrganization(config *Config, domain string) (func() struct{}, err
 			Admins: []IdentityRef{},
 			Applications: []OrganizationApplication{
 				{
-					ID:     &charonAppID,
+					ID:     &charonApplicationID,
 					Active: true,
 					ApplicationTemplate: ApplicationTemplatePublic{
 						ID:               &charonApplicationTemplateID,
 						Name:             "Dashboard",
 						Description:      "",
-						HomepageTemplate: "https://gitlab.com/charon/charon",
+						HomepageTemplate: url,
 						IDScopes:         []string{"openid", "profile", "email"},
 						Variables:        []Variable{},
 						ClientsPublic: []ApplicationTemplateClientPublic{
@@ -44,7 +49,7 @@ func initCharonOrganization(config *Config, domain string) (func() struct{}, err
 								ID:                   &charonApplicationTemplateClientPublicID,
 								Description:          "",
 								AdditionalScopes:     []string{},
-								RedirectURITemplates: []string{host},
+								RedirectURITemplates: []string{url},
 							},
 						},
 						ClientsBackend: []ApplicationTemplateClientBackend{},
@@ -77,11 +82,17 @@ func initCharonOrganization(config *Config, domain string) (func() struct{}, err
 			panic(errE)
 		}
 
-		organizationsMu.Lock()
-		defer organizationsMu.Unlock()
+		service.organizationsMu.Lock()
+		defer service.organizationsMu.Unlock()
 
-		organizations[charonOrganizationID] = data
+		service.organizations[charonOrganizationID] = data
 
-		return struct{}{}
+		return charonOrganization{
+			ID:                                charonOrganizationID,
+			ApplicationID:                     charonApplicationID,
+			ClientID:                          charonClientID,
+			ApplicationTemplateID:             charonApplicationTemplateID,
+			ApplicationTemplateClientPublicID: charonApplicationTemplateClientPublicID,
+		}
 	})
 }

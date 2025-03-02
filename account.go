@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"sync"
 
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
@@ -12,11 +11,6 @@ import (
 )
 
 var ErrAccountNotFound = errors.Base("account not found")
-
-var (
-	accounts   = make(map[identifier.Identifier][]byte) //nolint:gochecknoglobals
-	accountsMu = sync.RWMutex{}                         //nolint:gochecknoglobals
-)
 
 type Provider string
 
@@ -79,11 +73,11 @@ func (a *Account) GetEmailAddresses() ([]string, errors.E) {
 	return emails, nil
 }
 
-func GetAccount(ctx context.Context, id identifier.Identifier) (*Account, errors.E) { //nolint:revive
-	accountsMu.RLock()
-	defer accountsMu.RUnlock()
+func (s *Service) getAccount(ctx context.Context, id identifier.Identifier) (*Account, errors.E) { //nolint:revive
+	s.accountsMu.RLock()
+	defer s.accountsMu.RUnlock()
 
-	data, ok := accounts[id]
+	data, ok := s.accounts[id]
 	if !ok {
 		return nil, errors.WithDetails(ErrAccountNotFound, "id", id)
 	}
@@ -96,12 +90,12 @@ func GetAccount(ctx context.Context, id identifier.Identifier) (*Account, errors
 	return &account, nil
 }
 
-func GetAccountByCredential(ctx context.Context, provider Provider, credentialID string) (*Account, errors.E) {
-	accountsMu.RLock()
-	defer accountsMu.RUnlock()
+func (s *Service) getAccountByCredential(ctx context.Context, provider Provider, credentialID string) (*Account, errors.E) {
+	s.accountsMu.RLock()
+	defer s.accountsMu.RUnlock()
 
-	for id := range accounts {
-		account, errE := GetAccount(ctx, id)
+	for id := range s.accounts {
+		account, errE := s.getAccount(ctx, id)
 		if errE != nil {
 			return nil, errE
 		}
@@ -114,16 +108,16 @@ func GetAccountByCredential(ctx context.Context, provider Provider, credentialID
 	return nil, errors.WithDetails(ErrAccountNotFound, "provider", provider, "credentialID", credentialID)
 }
 
-func SetAccount(ctx context.Context, account *Account) errors.E { //nolint:revive
+func (s *Service) setAccount(ctx context.Context, account *Account) errors.E { //nolint:revive
 	data, errE := x.MarshalWithoutEscapeHTML(account)
 	if errE != nil {
 		errors.Details(errE)["id"] = account.ID
 		return errE
 	}
 
-	accountsMu.Lock()
-	defer accountsMu.Unlock()
+	s.accountsMu.Lock()
+	defer s.accountsMu.Unlock()
 
-	accounts[account.ID] = data
+	s.accounts[account.ID] = data
 	return nil
 }

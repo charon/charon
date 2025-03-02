@@ -3,7 +3,6 @@ package charon
 import (
 	"context"
 	"slices"
-	"sync"
 	"time"
 
 	"github.com/go-webauthn/webauthn/webauthn"
@@ -16,11 +15,6 @@ import (
 var (
 	ErrFlowNotFound     = errors.Base("flow not found")
 	ErrInvalidCompleted = errors.Base("invalid completed value for flow state")
-)
-
-var (
-	flows   = make(map[identifier.Identifier][]byte) //nolint:gochecknoglobals
-	flowsMu = sync.RWMutex{}                         //nolint:gochecknoglobals
 )
 
 type Completed string
@@ -170,11 +164,11 @@ func (f *Flow) HasDeclined() bool {
 	return slices.Contains(f.Completed, CompletedDeclined)
 }
 
-func GetFlow(ctx context.Context, id identifier.Identifier) (*Flow, errors.E) { //nolint:revive
-	flowsMu.RLock()
-	defer flowsMu.RUnlock()
+func (s *Service) getFlow(ctx context.Context, id identifier.Identifier) (*Flow, errors.E) { //nolint:revive
+	s.flowsMu.RLock()
+	defer s.flowsMu.RUnlock()
 
-	data, ok := flows[id]
+	data, ok := s.flows[id]
 	if !ok {
 		return nil, errors.WithDetails(ErrFlowNotFound, "id", id)
 	}
@@ -198,7 +192,7 @@ func GetFlow(ctx context.Context, id identifier.Identifier) (*Flow, errors.E) { 
 	return &flow, nil
 }
 
-func SetFlow(ctx context.Context, flow *Flow) errors.E { //nolint:revive
+func (s *Service) setFlow(ctx context.Context, flow *Flow) errors.E { //nolint:revive
 	sanitizedFlow := flow
 	if flow.OIDCAuthorizeRequest != nil {
 		// We make a copy of the flow.
@@ -214,9 +208,9 @@ func SetFlow(ctx context.Context, flow *Flow) errors.E { //nolint:revive
 		return errE
 	}
 
-	flowsMu.Lock()
-	defer flowsMu.Unlock()
+	s.flowsMu.Lock()
+	defer s.flowsMu.Unlock()
 
-	flows[flow.ID] = data
+	s.flows[flow.ID] = data
 	return nil
 }

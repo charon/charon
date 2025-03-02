@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"slices"
-	"sync"
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"gitlab.com/tozd/go/errors"
@@ -23,11 +22,6 @@ var (
 	ErrIdentityValidationFailed = errors.Base("identity validation failed")
 
 	errEmptyIdentity = errors.Base("empty identity")
-)
-
-var (
-	identities   = make(map[identifier.Identifier][]byte) //nolint:gochecknoglobals
-	identitiesMu = sync.RWMutex{}                         //nolint:gochecknoglobals
 )
 
 type IdentityOrganization struct {
@@ -284,11 +278,11 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 	return nil
 }
 
-func GetIdentity(ctx context.Context, id identifier.Identifier) (*Identity, errors.E) {
-	identitiesMu.RLock()
-	defer identitiesMu.RUnlock()
+func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*Identity, errors.E) {
+	s.identitiesMu.RLock()
+	defer s.identitiesMu.RUnlock()
 
-	data, ok := identities[id]
+	data, ok := s.identities[id]
 	if !ok {
 		return nil, errors.WithDetails(ErrIdentityNotFound, "id", id)
 	}
@@ -305,7 +299,7 @@ func GetIdentity(ctx context.Context, id identifier.Identifier) (*Identity, erro
 	return nil, errors.WithDetails(ErrIdentityUnauthorized, "id", id)
 }
 
-func CreateIdentity(ctx context.Context, identity *Identity) errors.E {
+func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors.E {
 	errE := identity.Validate(ctx, nil)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrIdentityValidationFailed)
@@ -316,22 +310,22 @@ func CreateIdentity(ctx context.Context, identity *Identity) errors.E {
 		return errE
 	}
 
-	identitiesMu.Lock()
-	defer identitiesMu.Unlock()
+	s.identitiesMu.Lock()
+	defer s.identitiesMu.Unlock()
 
-	identities[*identity.ID] = data
+	s.identities[*identity.ID] = data
 	return nil
 }
 
-func UpdateIdentity(ctx context.Context, identity *Identity) errors.E { //nolint:dupl
-	identitiesMu.Lock()
-	defer identitiesMu.Unlock()
+func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors.E { //nolint:dupl
+	s.identitiesMu.Lock()
+	defer s.identitiesMu.Unlock()
 
 	if identity.ID == nil {
 		return errors.WithMessage(ErrIdentityValidationFailed, "ID is missing")
 	}
 
-	existingData, ok := identities[*identity.ID]
+	existingData, ok := s.identities[*identity.ID]
 	if !ok {
 		return errors.WithDetails(ErrIdentityNotFound, "id", *identity.ID)
 	}
@@ -359,13 +353,13 @@ func UpdateIdentity(ctx context.Context, identity *Identity) errors.E { //nolint
 		return errE
 	}
 
-	identities[*identity.ID] = data
+	s.identities[*identity.ID] = data
 	return nil
 }
 
 // TODO: This is full of races, use transactions once we use proper database to store identities.
-func selectAndActivateIdentity(ctx context.Context, identityID, organizationID identifier.Identifier) (*Identity, errors.E) {
-	identity, errE := GetIdentity(ctx, identityID)
+func (s *Service) selectAndActivateIdentity(ctx context.Context, identityID, organizationID identifier.Identifier) (*Identity, errors.E) {
+	identity, errE := s.getIdentity(ctx, identityID)
 	if errE != nil {
 		return nil, errE
 	}
@@ -382,7 +376,7 @@ func selectAndActivateIdentity(ctx context.Context, identityID, organizationID i
 			// IdentityOrganization has been changed, so we assign it back.
 			identity.Organizations[i] = idOrg
 
-			return identity, UpdateIdentity(ctx, identity)
+			return identity, s.updateIdentity(ctx, identity)
 		}
 	}
 
@@ -395,7 +389,7 @@ func selectAndActivateIdentity(ctx context.Context, identityID, organizationID i
 		},
 	})
 
-	return identity, UpdateIdentity(ctx, identity)
+	return identity, s.updateIdentity(ctx, identity)
 }
 
 func (s *Service) IdentityGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
@@ -428,13 +422,13 @@ func (s *Service) IdentityList(w http.ResponseWriter, req *http.Request, _ waf.P
 	}
 }
 
-func getIdentityFromID(ctx context.Context, value string) (*Identity, errors.E) {
+func (s *Service) getIdentityFromID(ctx context.Context, value string) (*Identity, errors.E) {
 	id, errE := identifier.FromString(value)
 	if errE != nil {
 		return nil, errors.WrapWith(errE, ErrIdentityNotFound)
 	}
 
-	return GetIdentity(ctx, id)
+	return s.getIdentity(ctx, id)
 }
 
 func (s *Service) returnIdentityRef(_ context.Context, w http.ResponseWriter, req *http.Request, identity *Identity) {
@@ -448,7 +442,7 @@ func (s *Service) IdentityGetGet(w http.ResponseWriter, req *http.Request, param
 		return
 	}
 
-	identity, errE := getIdentityFromID(ctx, params["id"])
+	identity, errE := s.getIdentityFromID(ctx, params["id"])
 	if errors.Is(errE, ErrIdentityUnauthorized) {
 		waf.Error(w, req, http.StatusUnauthorized)
 		return
@@ -489,8 +483,8 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 
 	result := []IdentityRef{}
 
-	identitiesMu.RLock()
-	defer identitiesMu.RUnlock()
+	s.identitiesMu.RLock()
+	defer s.identitiesMu.RUnlock()
 
 	var organization *identifier.Identifier
 	if org := req.Form.Get("org"); org != "" {
@@ -512,7 +506,7 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 		notOrganization = &o
 	}
 
-	for id, data := range identities {
+	for id, data := range s.identities {
 		var identity Identity
 		errE := x.UnmarshalWithoutUnknownFields(data, &identity)
 		if errE != nil {
@@ -566,7 +560,7 @@ func (s *Service) IdentityUpdatePost(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	errE = UpdateIdentity(ctx, &identity)
+	errE = s.updateIdentity(ctx, &identity)
 	if errors.Is(errE, ErrIdentityUnauthorized) {
 		waf.Error(w, req, http.StatusUnauthorized)
 		return
@@ -606,7 +600,7 @@ func (s *Service) IdentityCreatePost(w http.ResponseWriter, req *http.Request, _
 		return
 	}
 
-	errE = CreateIdentity(ctx, &identity)
+	errE = s.createIdentity(ctx, &identity)
 	if errors.Is(errE, ErrIdentityValidationFailed) {
 		s.BadRequestWithError(w, req, errE)
 		return
