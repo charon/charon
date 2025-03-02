@@ -19,6 +19,12 @@
       "get": {}
     },
     {
+      "name": "Context",
+      "path": "/context.json",
+      "api": null,
+      "get": {}
+    },
+    {
       "name": "Me",
       "path": "/me",
       "api": {},

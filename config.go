@@ -431,7 +431,8 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			StaticFiles:     f.(fs.ReadFileFS), //nolint:errcheck
 			Routes:          routesConfig.Routes,
 			Sites:           sites,
-			SiteContextPath: "/context.json",
+			// We serve our own context.json file.
+			SiteContextPath: "",
 			ProxyStaticTo:   config.Server.ProxyToInDevelopment(),
 			SkipServingFile: func(path string) bool {
 				switch path {

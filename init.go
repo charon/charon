@@ -14,6 +14,7 @@ type charonOrganization struct {
 	ClientID                          identifier.Identifier
 	ApplicationTemplateID             identifier.Identifier
 	ApplicationTemplateClientPublicID identifier.Identifier
+	RedirectURI                       string
 }
 
 func initCharonOrganization(config *Config, service *Service, domain string) (func() charonOrganization, errors.E) {
@@ -24,7 +25,7 @@ func initCharonOrganization(config *Config, service *Service, domain string) (fu
 		charonApplicationTemplateID := identifier.New()
 		charonApplicationTemplateClientPublicID := identifier.New()
 
-		url := "https://" + host
+		uri := "https://" + host
 
 		organization := Organization{
 			OrganizationPublic: OrganizationPublic{
@@ -41,7 +42,7 @@ func initCharonOrganization(config *Config, service *Service, domain string) (fu
 						ID:               &charonApplicationTemplateID,
 						Name:             "Dashboard",
 						Description:      "",
-						HomepageTemplate: url,
+						HomepageTemplate: uri,
 						IDScopes:         []string{"openid", "profile", "email"},
 						Variables:        []Variable{},
 						ClientsPublic: []ApplicationTemplateClientPublic{
@@ -49,7 +50,7 @@ func initCharonOrganization(config *Config, service *Service, domain string) (fu
 								ID:                   &charonApplicationTemplateClientPublicID,
 								Description:          "",
 								AdditionalScopes:     []string{},
-								RedirectURITemplates: []string{url},
+								RedirectURITemplates: []string{uri},
 							},
 						},
 						ClientsBackend: []ApplicationTemplateClientBackend{},
@@ -93,6 +94,7 @@ func initCharonOrganization(config *Config, service *Service, domain string) (fu
 			ClientID:                          charonClientID,
 			ApplicationTemplateID:             charonApplicationTemplateID,
 			ApplicationTemplateClientPublicID: charonApplicationTemplateClientPublicID,
+			RedirectURI:                       uri,
 		}
 	})
 }
