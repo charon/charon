@@ -34,10 +34,12 @@ func createOrganization(t *testing.T, ts *httptest.Server, service *charon.Servi
 		require.Empty(t, applicationTemplate.ClientsService)
 
 		applications = append(applications, charon.OrganizationApplication{
-			Active:              true,
-			ApplicationTemplate: applicationTemplate.ApplicationTemplatePublic,
-			Values:              []charon.Value{},
-			ClientsPublic:       []charon.OrganizationApplicationClientPublic{},
+			OrganizationApplicationPublic: charon.OrganizationApplicationPublic{
+				Active:              true,
+				ApplicationTemplate: applicationTemplate.ApplicationTemplatePublic,
+				Values:              []charon.Value{},
+			},
+			ClientsPublic: []charon.OrganizationApplicationClientPublic{},
 			ClientsBackend: []charon.OrganizationApplicationClientBackend{
 				{
 					Client: charon.ClientRef{

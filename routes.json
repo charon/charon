@@ -262,6 +262,12 @@
       "get": null
     },
     {
+      "name": "OrganizationApp",
+      "path": "/o/app/:id/:appId",
+      "api": {},
+      "get": null
+    },
+    {
       "name": "IdentityList",
       "path": "/i",
       "api": {},

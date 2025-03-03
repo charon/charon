@@ -36,27 +36,29 @@ func initCharonOrganization(config *Config, service *Service, domain string) (fu
 			Admins: []IdentityRef{},
 			Applications: []OrganizationApplication{
 				{
-					ID:     &charonAppID,
-					Active: true,
-					ApplicationTemplate: ApplicationTemplatePublic{
-						ID:               &charonApplicationTemplateID,
-						Name:             "Dashboard",
-						Description:      "",
-						HomepageTemplate: uri,
-						IDScopes:         []string{"openid", "profile", "email"},
-						Variables:        []Variable{},
-						ClientsPublic: []ApplicationTemplateClientPublic{
-							{
-								ID:                   &charonApplicationTemplateClientPublicID,
-								Description:          "",
-								AdditionalScopes:     []string{},
-								RedirectURITemplates: []string{uri},
+					OrganizationApplicationPublic: OrganizationApplicationPublic{
+						ID:     &charonAppID,
+						Active: true,
+						ApplicationTemplate: ApplicationTemplatePublic{
+							ID:               &charonApplicationTemplateID,
+							Name:             "Dashboard",
+							Description:      "",
+							HomepageTemplate: uri,
+							IDScopes:         []string{"openid", "profile", "email"},
+							Variables:        []Variable{},
+							ClientsPublic: []ApplicationTemplateClientPublic{
+								{
+									ID:                   &charonApplicationTemplateClientPublicID,
+									Description:          "",
+									AdditionalScopes:     []string{},
+									RedirectURITemplates: []string{uri},
+								},
 							},
+							ClientsBackend: []ApplicationTemplateClientBackend{},
+							ClientsService: []ApplicationTemplateClientService{},
 						},
-						ClientsBackend: []ApplicationTemplateClientBackend{},
-						ClientsService: []ApplicationTemplateClientService{},
+						Values: []Value{},
 					},
-					Values: []Value{},
 					ClientsPublic: []OrganizationApplicationClientPublic{
 						{
 							ID: &charonClientID,

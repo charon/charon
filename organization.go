@@ -228,7 +228,7 @@ func (c *OrganizationApplicationClientService) Validate(
 	return nil
 }
 
-type OrganizationApplication struct {
+type OrganizationApplicationPublic struct {
 	ID *identifier.Identifier `json:"id"`
 
 	Active bool `json:"active"`
@@ -239,7 +239,109 @@ type OrganizationApplication struct {
 	// TODO: Show to the organization admin that upstream template changed and invite them to update their template.
 	ApplicationTemplate ApplicationTemplatePublic `json:"applicationTemplate"`
 
-	Values         []Value                                `json:"values"`
+	Values []Value `json:"values"`
+}
+
+// Validate requires ctx with serviceContextKey set.
+func (a *OrganizationApplicationPublic) Validate(ctx context.Context, existing *OrganizationApplicationPublic) errors.E {
+	_, errE := a.validate(ctx, existing)
+	return errE
+}
+
+// validate is a version of Validate which returns values as well.
+func (a *OrganizationApplicationPublic) validate(ctx context.Context, existing *OrganizationApplicationPublic) (map[string]string, errors.E) {
+	if existing == nil {
+		if a.ID != nil {
+			errE := errors.New("ID provided for new document")
+			errors.Details(errE)["id"] = *a.ID
+			return nil, errE
+		}
+		id := identifier.New()
+		a.ID = &id
+	} else if a.ID == nil {
+		// This should not really happen because we fetch existing based on a.ID.
+		return nil, errors.New("ID missing for existing document")
+	} else if existing.ID == nil {
+		// This should not really happen because we always store documents with ID.
+		return nil, errors.New("ID missing for existing document")
+	} else if *a.ID != *existing.ID {
+		// This should not really happen because we fetch existing based on a.ID.
+		errE := errors.New("payload ID does not match existing ID")
+		errors.Details(errE)["payload"] = *a.ID
+		errors.Details(errE)["existing"] = *existing.ID
+		return nil, errE
+	}
+
+	var e *ApplicationTemplatePublic
+	if existing != nil {
+		e = &existing.ApplicationTemplate
+	} else if a.ApplicationTemplate.ID != nil {
+		s := ctx.Value(serviceContextKey).(*Service)
+		at, errE := s.getApplicationTemplate(ctx, *a.ApplicationTemplate.ID)
+		if errE == nil {
+			e = &at.ApplicationTemplatePublic
+		} else if !errors.Is(errE, ErrApplicationTemplateNotFound) {
+			return nil, errE
+		}
+	}
+	errE := a.ApplicationTemplate.Validate(ctx, e)
+	if errE != nil {
+		return nil, errE
+	}
+
+	if a.Values == nil {
+		a.Values = []Value{}
+	}
+
+	values := map[string]string{}
+	valuesSet := mapset.NewThreadUnsafeSet[string]()
+	for i, value := range a.Values {
+		errE := value.Validate(ctx)
+		if errE != nil {
+			errE = errors.WithMessage(errE, "value")
+			errors.Details(errE)["i"] = i
+			if value.Name != "" {
+				errors.Details(errE)["name"] = value.Name
+			}
+			return nil, errE
+		}
+
+		if valuesSet.Contains(value.Name) {
+			errE := errors.New("duplicate value")
+			errors.Details(errE)["i"] = i
+			errors.Details(errE)["name"] = value.Name
+			return nil, errE
+		}
+		valuesSet.Add(value.Name)
+		values[value.Name] = value.Value
+
+		// Value might have been changed by Validate, so we assign it back.
+		a.Values[i] = value
+	}
+
+	variablesSet := mapset.NewThreadUnsafeSet[string]()
+	for _, variable := range a.ApplicationTemplate.Variables {
+		// Variables have already been validated by us validating a.ApplicationTemplate above.
+		variablesSet.Add(variable.Name)
+	}
+
+	if !valuesSet.Equal(variablesSet) {
+		errE := errors.New("values do not match variables")
+		extra := valuesSet.Difference(variablesSet).ToSlice()
+		slices.Sort(extra)
+		missing := variablesSet.Difference(valuesSet).ToSlice()
+		slices.Sort(missing)
+		errors.Details(errE)["extra"] = extra
+		errors.Details(errE)["missing"] = missing
+		return nil, errE
+	}
+
+	return values, nil
+}
+
+type OrganizationApplication struct {
+	OrganizationApplicationPublic
+
 	ClientsPublic  []OrganizationApplicationClientPublic  `json:"clientsPublic"`
 	ClientsBackend []OrganizationApplicationClientBackend `json:"clientsBackend"`
 	ClientsService []OrganizationApplicationClientService `json:"clientsService"`
@@ -298,89 +400,14 @@ func (a *OrganizationApplication) GetClientService(id *identifier.Identifier) *O
 
 // Validate requires ctx with serviceContextKey set.
 func (a *OrganizationApplication) Validate(ctx context.Context, existing *OrganizationApplication) errors.E {
+	var e *OrganizationApplicationPublic
 	if existing == nil {
-		if a.ID != nil {
-			errE := errors.New("ID provided for new document")
-			errors.Details(errE)["id"] = *a.ID
-			return errE
-		}
-		id := identifier.New()
-		a.ID = &id
-	} else if a.ID == nil {
-		// This should not really happen because we fetch existing based on a.ID.
-		return errors.New("ID missing for existing document")
-	} else if existing.ID == nil {
-		// This should not really happen because we always store documents with ID.
-		return errors.New("ID missing for existing document")
-	} else if *a.ID != *existing.ID {
-		// This should not really happen because we fetch existing based on a.ID.
-		errE := errors.New("payload ID does not match existing ID")
-		errors.Details(errE)["payload"] = *a.ID
-		errors.Details(errE)["existing"] = *existing.ID
-		return errE
+		e = nil
+	} else {
+		e = &existing.OrganizationApplicationPublic
 	}
-
-	var e *ApplicationTemplatePublic
-	if existing != nil {
-		e = &existing.ApplicationTemplate
-	} else if a.ApplicationTemplate.ID != nil {
-		s := ctx.Value(serviceContextKey).(*Service)
-		at, errE := s.getApplicationTemplate(ctx, *a.ApplicationTemplate.ID)
-		if errE == nil {
-			e = &at.ApplicationTemplatePublic
-		} else if !errors.Is(errE, ErrApplicationTemplateNotFound) {
-			return errE
-		}
-	}
-	errE := a.ApplicationTemplate.Validate(ctx, e)
+	values, errE := a.OrganizationApplicationPublic.validate(ctx, e)
 	if errE != nil {
-		return errE
-	}
-
-	if a.Values == nil {
-		a.Values = []Value{}
-	}
-
-	values := map[string]string{}
-	valuesSet := mapset.NewThreadUnsafeSet[string]()
-	for i, value := range a.Values {
-		errE := value.Validate(ctx)
-		if errE != nil {
-			errE = errors.WithMessage(errE, "value")
-			errors.Details(errE)["i"] = i
-			if value.Name != "" {
-				errors.Details(errE)["name"] = value.Name
-			}
-			return errE
-		}
-
-		if valuesSet.Contains(value.Name) {
-			errE := errors.New("duplicate value")
-			errors.Details(errE)["i"] = i
-			errors.Details(errE)["name"] = value.Name
-			return errE
-		}
-		valuesSet.Add(value.Name)
-		values[value.Name] = value.Value
-
-		// Value might have been changed by Validate, so we assign it back.
-		a.Values[i] = value
-	}
-
-	variablesSet := mapset.NewThreadUnsafeSet[string]()
-	for _, variable := range a.ApplicationTemplate.Variables {
-		// Variables have already been validated by us validating a.ApplicationTemplate above.
-		variablesSet.Add(variable.Name)
-	}
-
-	if !valuesSet.Equal(variablesSet) {
-		errE := errors.New("values do not match variables")
-		extra := valuesSet.Difference(variablesSet).ToSlice()
-		slices.Sort(extra)
-		missing := variablesSet.Difference(valuesSet).ToSlice()
-		slices.Sort(missing)
-		errors.Details(errE)["extra"] = extra
-		errors.Details(errE)["missing"] = missing
 		return errE
 	}
 
@@ -544,6 +571,7 @@ func (o *Organization) Validate(ctx context.Context, existing *Organization) err
 	return o.validate(ctx, existing)
 }
 
+// validate is a version of Validate which allows empty Admins.
 func (o *Organization) validate(ctx context.Context, existing *Organization) errors.E {
 	var e *OrganizationPublic
 	if existing == nil {
@@ -744,6 +772,33 @@ func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, p
 	}
 
 	s.WriteJSON(w, req, organization.OrganizationPublic, nil)
+}
+
+func (s *Service) OrganizationAppGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	ctx := req.Context()
+
+	organization, errE := s.getOrganizationFromID(ctx, params["id"])
+	if errors.Is(errE, ErrOrganizationNotFound) {
+		s.NotFound(w, req)
+		return
+	} else if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	appID, errE := identifier.FromString(params["appId"])
+	if errE != nil {
+		s.NotFound(w, req)
+		return
+	}
+
+	orgApp := organization.GetApplication(&appID)
+	if orgApp == nil {
+		s.NotFound(w, req)
+		return
+	}
+
+	s.WriteJSON(w, req, orgApp.OrganizationApplicationPublic, nil)
 }
 
 func (s *Service) OrganizationListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {

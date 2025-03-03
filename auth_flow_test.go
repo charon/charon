@@ -20,6 +20,26 @@ import (
 	"gitlab.com/charon/charon"
 )
 
+func assertFlowResponse(t *testing.T, ts *httptest.Server, service *charon.Service, resp *http.Response, completed []charon.Completed, providers []charon.Provider) {
+	t.Helper()
+
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, 2, resp.ProtoMajor)
+	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+	var flowResponse struct {
+		Completed      []charon.Completed    `json:"completed"`
+		OrganizationID identifier.Identifier `json:"organizationId"`
+		AppID          identifier.Identifier `json:"appId"`
+		Providers      []charon.Provider     `json:"providers,omitempty"`
+	}
+	errE := x.DecodeJSONWithoutUnknownFields(resp.Body, &flowResponse)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Equal(t, completed, flowResponse.Completed)
+	assert.Equal(t, providers, flowResponse.Providers)
+	assertCharonDashboard(t, ts, service, flowResponse.OrganizationID, flowResponse.AppID)
+}
+
 func assertCharonDashboard(t *testing.T, ts *httptest.Server, service *charon.Service, organizationID, appID identifier.Identifier) {
 	t.Helper()
 
@@ -38,10 +58,22 @@ func assertCharonDashboard(t *testing.T, ts *httptest.Server, service *charon.Se
 
 	assert.Equal(t, "Charon", organization.Name)
 	assert.Equal(t, organizationID, *organization.ID)
-	if assert.Len(t, organization.Applications, 1) {
-		assert.Equal(t, appID, *organization.Applications[0].ID)
-		assert.Equal(t, "Dashboard", organization.Applications[0].ApplicationTemplate.Name)
-	}
+
+	organizationAppGet, errE := service.ReverseAPI("OrganizationApp", waf.Params{"id": organizationID.String(), "appId": appID.String()}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	resp, err = ts.Client().Get(ts.URL + organizationAppGet) //nolint:noctx,bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, 2, resp.ProtoMajor)
+	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+	var orgApp charon.OrganizationApplicationPublic
+	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &orgApp)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	assert.True(t, orgApp.Active)
+	assert.Equal(t, "Dashboard", orgApp.ApplicationTemplate.Name)
 }
 
 func createAuthFlow(t *testing.T, ts *httptest.Server, service *charon.Service) identifier.Identifier {
@@ -106,20 +138,7 @@ func createAuthFlow(t *testing.T, ts *httptest.Server, service *charon.Service) 
 	// Flow is available in initial state.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		assert.Equal(t, 2, resp.ProtoMajor)
-		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		var flowResponse struct {
-			Completed      []charon.Completed    `json:"completed"`
-			OrganizationID identifier.Identifier `json:"organizationId"`
-			AppID          identifier.Identifier `json:"appId"`
-		}
-		errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &flowResponse)
-		require.NoError(t, errE, "% -+#.1v", errE)
-		assert.Equal(t, []charon.Completed{}, flowResponse.Completed)
-		assertCharonDashboard(t, ts, service, flowResponse.OrganizationID, flowResponse.AppID)
+		assertFlowResponse(t, ts, service, resp, []charon.Completed{}, nil)
 	}
 
 	return flowID

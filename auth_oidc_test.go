@@ -181,13 +181,7 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	// Flow is available, current provider is testing.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		out, err := io.ReadAll(resp.Body) //nolint:govet
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		assert.Equal(t, 2, resp.ProtoMajor)
-		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"testing"}`, string(out)) //nolint:testifylint
+		assertFlowResponse(t, ts, service, resp, []charon.Completed{}, []charon.Provider{"testing"})
 	}
 
 	// Redirect to our testing provider.
@@ -203,13 +197,7 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	// Flow has not yet changed, current provider is testing.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		out, err := io.ReadAll(resp.Body) //nolint:govet
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		assert.Equal(t, 2, resp.ProtoMajor)
-		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"testing"}`, string(out)) //nolint:testifylint
+		assertFlowResponse(t, ts, service, resp, []charon.Completed{}, []charon.Provider{"testing"})
 	}
 
 	// Redirect to OIDC callback.
@@ -229,13 +217,7 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	// Flow is available and is completed.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		out, err := io.ReadAll(resp.Body)
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		assert.Equal(t, 2, resp.ProtoMajor)
-		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"testing","completed":"`+string(signinOrSignout)+`","location":{"url":"/","replace":true}}`, string(out))
+		assertFlowResponse(t, ts, service, resp, []charon.Completed{signinOrSignout}, []charon.Provider{"testing"})
 	}
 }
 
