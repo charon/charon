@@ -150,12 +150,12 @@ func startOIDCTestServer(t *testing.T) (*httptest.Server, *storage.MemoryStore) 
 	return ts, store
 }
 
-func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidcTS *httptest.Server, signinOrSignout charon.Completed) {
+func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidcTS *httptest.Server, signinOrSignout charon.Completed) string {
 	t.Helper()
 
 	oidcClient := oidcTS.Client()
 
-	flowID, _, _, _, _, _ := createAuthFlow(t, ts, service)
+	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
 
 	authFlowProviderStart, errE := service.ReverseAPI("AuthFlowProviderStart", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -216,9 +216,11 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 
 	// Flow is available and signinOrSignout is completed.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
-	if assert.NoError(t, err) {
-		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{signinOrSignout}, []charon.Provider{"testing"}, "", assertCharonDashboard)
-	}
+	require.NoError(t, err)
+	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{signinOrSignout}, []charon.Provider{"testing"}, "", assertCharonDashboard)
+
+	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, "testing")
+	return doRedirect(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, "testing")
 }
 
 func TestAuthFlowOIDC(t *testing.T) {
@@ -227,9 +229,9 @@ func TestAuthFlowOIDC(t *testing.T) {
 	ts, service, _, oidcTS := startTestServer(t)
 
 	// Signup with OIDC.
-	oidcSignin(t, ts, service, oidcTS, charon.CompletedSignup)
+	accessToken := oidcSignin(t, ts, service, oidcTS, charon.CompletedSignup)
 
-	signoutUser(t, ts, service)
+	signoutUser(t, ts, service, accessToken)
 
 	// Signin with OIDC.
 	oidcSignin(t, ts, service, oidcTS, charon.CompletedSignin)

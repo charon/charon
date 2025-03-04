@@ -193,7 +193,7 @@ func createIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	return identity
 }
 
-func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, organizationID, flowID identifier.Identifier, organization, app string, signinOrSignout charon.Completed) identifier.Identifier {
+func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, organizationID, flowID identifier.Identifier, organization, app string, signinOrSignout charon.Completed, provider charon.Provider) identifier.Identifier {
 	t.Helper()
 
 	identityList, errE := service.ReverseAPI("IdentityList", nil, nil)
@@ -211,7 +211,7 @@ func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	var identity charon.IdentityRef
-	if len(identities) == 1 {
+	if len(identities) < 1 {
 		identity = createIdentity(t, ts, service, flowID)
 
 		resp, err = ts.Client().Get(ts.URL + identityList + "?flow=" + flowID.String()) //nolint:noctx,bodyclose
@@ -224,12 +224,11 @@ func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, 
 		identities = []charon.IdentityRef{}
 		errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &identities)
 		require.NoError(t, errE, "% -+#.1v", errE)
-		require.Len(t, identities, 2)
+		require.Len(t, identities, 1)
 		require.Contains(t, identities, identity)
 	} else {
-		require.Len(t, identities, 2)
-		// We just pick one in this case.
-		identity = identities[1]
+		require.Len(t, identities, 1)
+		identity = identities[0]
 	}
 
 	authFlowChooseIdentity, errE := service.ReverseAPI("AuthFlowChooseIdentity", waf.Params{"id": flowID.String()}, nil)
@@ -242,14 +241,14 @@ func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, 
 
 	resp, err = ts.Client().Post(ts.URL+authFlowChooseIdentity, "application/json", bytes.NewReader(request)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	assertFlowResponse(t, ts, service, resp, &organizationID, []charon.Completed{signinOrSignout, charon.CompletedIdentity}, []charon.Provider{charon.PasswordProvider}, "", assertAppName(t, organization, app))
+	assertFlowResponse(t, ts, service, resp, &organizationID, []charon.Completed{signinOrSignout, charon.CompletedIdentity}, []charon.Provider{provider}, "", assertAppName(t, organization, app))
 
 	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		assertFlowResponse(t, ts, service, resp, &organizationID, []charon.Completed{signinOrSignout, charon.CompletedIdentity}, []charon.Provider{charon.PasswordProvider}, "", assertAppName(t, organization, app))
+		assertFlowResponse(t, ts, service, resp, &organizationID, []charon.Completed{signinOrSignout, charon.CompletedIdentity}, []charon.Provider{provider}, "", assertAppName(t, organization, app))
 	}
 
 	identityGet, errE := service.ReverseAPI("IdentityGet", waf.Params{"id": identity.ID.String()}, nil)
@@ -276,7 +275,7 @@ func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	return identifier.Identifier{}
 }
 
-func doRedirect(t *testing.T, ts *httptest.Server, service *charon.Service, organizationID, flowID identifier.Identifier, organization, app, nonce, state, pkceVerifier string, config *oauth2.Config, verifier *oidc.IDTokenVerifier, signinOrSignout charon.Completed) string {
+func doRedirect(t *testing.T, ts *httptest.Server, service *charon.Service, organizationID, flowID identifier.Identifier, organization, app, nonce, state, pkceVerifier string, config *oauth2.Config, verifier *oidc.IDTokenVerifier, signinOrSignout charon.Completed, provider charon.Provider) string {
 	t.Helper()
 
 	authFlowRedirect, errE := service.ReverseAPI("AuthFlowRedirect", waf.Params{"id": flowID.String()}, nil)
@@ -284,14 +283,14 @@ func doRedirect(t *testing.T, ts *httptest.Server, service *charon.Service, orga
 
 	resp, err := ts.Client().Post(ts.URL+authFlowRedirect, "application/json", strings.NewReader(`{}`)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	assertFlowResponse(t, ts, service, resp, &organizationID, []charon.Completed{signinOrSignout, charon.CompletedIdentity, charon.CompletedFinishReady}, []charon.Provider{charon.PasswordProvider}, "", assertAppName(t, organization, app))
+	assertFlowResponse(t, ts, service, resp, &organizationID, []charon.Completed{signinOrSignout, charon.CompletedIdentity, charon.CompletedFinishReady}, []charon.Provider{provider}, "", assertAppName(t, organization, app))
 
 	authFlowGetAPI, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	resp, err = ts.Client().Get(ts.URL + authFlowGetAPI) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		assertFlowResponse(t, ts, service, resp, &organizationID, []charon.Completed{signinOrSignout, charon.CompletedIdentity, charon.CompletedFinishReady}, []charon.Provider{charon.PasswordProvider}, "", assertAppName(t, organization, app))
+		assertFlowResponse(t, ts, service, resp, &organizationID, []charon.Completed{signinOrSignout, charon.CompletedIdentity, charon.CompletedFinishReady}, []charon.Provider{provider}, "", assertAppName(t, organization, app))
 	}
 
 	authFlowGet, errE := service.Reverse("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
@@ -325,7 +324,7 @@ func doRedirect(t *testing.T, ts *httptest.Server, service *charon.Service, orga
 
 	resp, err = ts.Client().Get(ts.URL + authFlowGetAPI) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		assertFlowResponse(t, ts, service, resp, &organizationID, []charon.Completed{signinOrSignout, charon.CompletedIdentity, charon.CompletedFinishReady, charon.CompletedFinished}, []charon.Provider{charon.PasswordProvider}, "", assertAppName(t, organization, app))
+		assertFlowResponse(t, ts, service, resp, &organizationID, []charon.Completed{signinOrSignout, charon.CompletedIdentity, charon.CompletedFinishReady, charon.CompletedFinished}, []charon.Provider{provider}, "", assertAppName(t, organization, app))
 	}
 
 	require.NotEmpty(t, oauth2Token.AccessToken)
