@@ -28,8 +28,8 @@ type AuthFlowResponseLocation struct {
 type AuthFlowResponse struct {
 	Completed []Completed `json:"completed"`
 
-	OrganizationID string `json:"organizationId"`
-	AppID          string `json:"appId"`
+	OrganizationID identifier.Identifier `json:"organizationId"`
+	AppID          identifier.Identifier `json:"appId"`
 
 	Providers       []Provider                    `json:"providers,omitempty"`
 	EmailOrUsername string                        `json:"emailOrUsername,omitempty"`
@@ -51,8 +51,8 @@ func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *Flow
 
 	response := AuthFlowResponse{
 		Completed:       flow.Completed,
-		OrganizationID:  flow.OrganizationID.String(),
-		AppID:           flow.AppID.String(),
+		OrganizationID:  flow.OrganizationID,
+		AppID:           flow.AppID,
 		Providers:       flow.Providers,
 		EmailOrUsername: "",
 		OIDCProvider:    nil,
@@ -109,8 +109,8 @@ func (s *Service) AuthFlowGetGet(w http.ResponseWriter, req *http.Request, param
 
 	response := AuthFlowResponse{
 		Completed:       flow.Completed,
-		OrganizationID:  flow.OrganizationID.String(),
-		AppID:           flow.AppID.String(),
+		OrganizationID:  flow.OrganizationID,
+		AppID:           flow.AppID,
 		Providers:       flow.Providers,
 		EmailOrUsername: flow.EmailOrUsername,
 		OIDCProvider:    nil,
@@ -129,7 +129,7 @@ func (s *Service) AuthFlowGetGet(w http.ResponseWriter, req *http.Request, param
 	s.WriteJSON(w, req, response, nil)
 }
 
-func (s *Service) getIdentityFromCredentials(credentials []Credential) (*Identity, errors.E) {
+func (s *Service) makeIdentityFromCredentials(credentials []Credential) (*Identity, errors.E) {
 	var identity *Identity
 	for _, credential := range credentials {
 		switch credential.Provider {
@@ -240,12 +240,15 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
-		identity, errE := s.getIdentityFromCredentials(credentials)
+		identity, errE := s.makeIdentityFromCredentials(credentials)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
+		// From some credentials it is not possible to make an identity.
 		if identity != nil {
+			// We do not set identityIDContextKey because we are creating a new identity for the current
+			// account while using a session cookie. The identity itself will be used instead.
 			errE = s.createIdentity(context.WithValue(ctx, accountIDContextKey, account.ID), identity)
 			if errE != nil && !errors.Is(errE, errEmptyIdentity) {
 				s.InternalServerErrorWithError(w, req, errE)
@@ -323,8 +326,8 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	if api {
 		response := AuthFlowResponse{
 			Completed:       flow.Completed,
-			OrganizationID:  flow.OrganizationID.String(),
-			AppID:           flow.AppID.String(),
+			OrganizationID:  flow.OrganizationID,
+			AppID:           flow.AppID,
 			Providers:       flow.Providers,
 			EmailOrUsername: flow.EmailOrUsername,
 			OIDCProvider:    nil,
@@ -389,8 +392,8 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 
 		response := AuthFlowResponse{
 			Completed:       flow.Completed,
-			OrganizationID:  flow.OrganizationID.String(),
-			AppID:           flow.AppID.String(),
+			OrganizationID:  flow.OrganizationID,
+			AppID:           flow.AppID,
 			Providers:       flow.Providers,
 			EmailOrUsername: flow.EmailOrUsername,
 			OIDCProvider:    nil,
@@ -475,8 +478,8 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 
 	s.WriteJSON(w, req, AuthFlowResponse{
 		Completed:       flow.Completed,
-		OrganizationID:  flow.OrganizationID.String(),
-		AppID:           flow.AppID.String(),
+		OrganizationID:  flow.OrganizationID,
+		AppID:           flow.AppID,
 		Providers:       flow.Providers,
 		EmailOrUsername: flow.EmailOrUsername,
 		OIDCProvider:    nil,
@@ -520,8 +523,8 @@ func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, 
 
 	s.WriteJSON(w, req, AuthFlowResponse{
 		Completed:       flow.Completed,
-		OrganizationID:  flow.OrganizationID.String(),
-		AppID:           flow.AppID.String(),
+		OrganizationID:  flow.OrganizationID,
+		AppID:           flow.AppID,
 		Providers:       flow.Providers,
 		EmailOrUsername: flow.EmailOrUsername,
 		OIDCProvider:    nil,
@@ -559,9 +562,10 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 		return
 	}
 
-	ctx = context.WithValue(ctx, accountIDContextKey, accountID)
+	c := context.WithValue(ctx, accountIDContextKey, accountID)
+	c = context.WithValue(c, identityIDContextKey, chooseIdentity.Identity.ID)
 
-	identity, errE := s.selectAndActivateIdentity(ctx, chooseIdentity.Identity.ID, flow.OrganizationID)
+	identity, errE := s.selectAndActivateIdentity(c, chooseIdentity.Identity.ID, flow.OrganizationID)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
@@ -577,8 +581,8 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 
 	s.WriteJSON(w, req, AuthFlowResponse{
 		Completed:       flow.Completed,
-		OrganizationID:  flow.OrganizationID.String(),
-		AppID:           flow.AppID.String(),
+		OrganizationID:  flow.OrganizationID,
+		AppID:           flow.AppID,
 		Providers:       flow.Providers,
 		EmailOrUsername: flow.EmailOrUsername,
 		OIDCProvider:    nil,
@@ -627,8 +631,8 @@ func (s *Service) AuthFlowRedirectPost(w http.ResponseWriter, req *http.Request,
 
 	s.WriteJSON(w, req, AuthFlowResponse{
 		Completed:       flow.Completed,
-		OrganizationID:  flow.OrganizationID.String(),
-		AppID:           flow.AppID.String(),
+		OrganizationID:  flow.OrganizationID,
+		AppID:           flow.AppID,
 		Providers:       flow.Providers,
 		EmailOrUsername: flow.EmailOrUsername,
 		OIDCProvider:    nil,

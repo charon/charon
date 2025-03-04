@@ -1,6 +1,7 @@
 package charon_test
 
 import (
+	"context"
 	_ "embed"
 	"io"
 	"net/http"
@@ -25,7 +26,7 @@ func TestRouteMeAndSignOut(t *testing.T) {
 	me, errE := service.ReverseAPI("Me", nil, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	// Initial GET should return error.
+	// Initial GET (without access token) should return error.
 	resp, err := ts.Client().Get(ts.URL + me) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
 		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
@@ -37,11 +38,14 @@ func TestRouteMeAndSignOut(t *testing.T) {
 		assert.Equal(t, `{"error":"unauthorized"}`, string(out)) //nolint:testifylint
 	}
 
-	flowID := createAuthFlow(t, ts, service)
-	signinUser(t, ts, service, username, charon.CompletedSignup, nil, flowID, charon.TargetSession)
+	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
+	accessToken := signinUser(t, ts, service, username, charon.CompletedSignup, nil, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier)
 
-	// After sign-up, GET should return success.
-	resp, err = ts.Client().Get(ts.URL + me) //nolint:noctx,bodyclose
+	// After sign-up, GET (with access token) should return success.
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+me, nil)
+	require.NoError(t, err)
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	resp, err = ts.Client().Do(req) //nolint:noctx,bodycloseodyclose
 	if assert.NoError(t, err) {
 		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 		out, err := io.ReadAll(resp.Body) //nolint:govet
@@ -52,10 +56,13 @@ func TestRouteMeAndSignOut(t *testing.T) {
 		assert.Equal(t, `{"success":true}`, string(out))
 	}
 
-	signoutUser(t, ts, service)
+	signoutUser(t, ts, service, accessToken)
 
-	// After sign-out GET should return error.
-	resp, err = ts.Client().Get(ts.URL + me) //nolint:noctx,bodyclose
+	// After sign-out GET (with revoked access token) should return error.
+	req, err = http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+me, nil)
+	require.NoError(t, err)
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	resp, err = ts.Client().Do(req) //nolint:noctx,bodycloseodyclose
 	if assert.NoError(t, err) {
 		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 		out, err := io.ReadAll(resp.Body) //nolint:govet
@@ -69,22 +76,25 @@ func TestRouteMeAndSignOut(t *testing.T) {
 	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	// Loading flow when signed out should error.
+	// Loading flow when signed out (no session cookie anymore) should error.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
 		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 		_, err := io.ReadAll(resp.Body) //nolint:govet
 		assert.NoError(t, err)
-		assert.Equal(t, http.StatusGone, resp.StatusCode)
+		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
 		// TODO: This should return JSON with some error payload.
 	}
 
-	flowID = createAuthFlow(t, ts, service)
-	signinUser(t, ts, service, username, charon.CompletedSignin, nil, flowID, charon.TargetSession)
+	flowID, nonce, state, pkceVerifier, config, verifier = createAuthFlow(t, ts, service)
+	accessToken = signinUser(t, ts, service, username, charon.CompletedSignin, nil, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier)
 
-	// After sign-in, GET should again return success.
-	resp, err = ts.Client().Get(ts.URL + me) //nolint:noctx,bodyclose
+	// After sign-in, GET (with new access token) should again return success.
+	req, err = http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+me, nil)
+	require.NoError(t, err)
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	resp, err = ts.Client().Do(req) //nolint:noctx,bodycloseodyclose
 	if assert.NoError(t, err) {
 		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 		out, err := io.ReadAll(resp.Body) //nolint:govet
@@ -95,15 +105,14 @@ func TestRouteMeAndSignOut(t *testing.T) {
 		assert.Equal(t, `{"success":true}`, string(out))
 	}
 
-	// Loading old flow when signed in again with same account should work.
+	// Loading old flow when signed in again does not work because sessions are bound to flows.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
 		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		out, err := io.ReadAll(resp.Body)
+		_, err := io.ReadAll(resp.Body) //nolint:govet
 		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
-		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"password","completed":"`+string(charon.CompletedSignup)+`","location":{"url":"/","replace":true}}`, string(out)) //nolint:testifylint
+		// TODO: This should return JSON with some error payload.
 	}
 }

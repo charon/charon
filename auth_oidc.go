@@ -166,8 +166,8 @@ func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Req
 
 	s.WriteJSON(w, req, AuthFlowResponse{
 		Completed:       flow.Completed,
-		OrganizationID:  flow.OrganizationID.String(),
-		AppID:           flow.AppID.String(),
+		OrganizationID:  flow.OrganizationID,
+		AppID:           flow.AppID,
 		Providers:       flow.Providers,
 		EmailOrUsername: flow.EmailOrUsername,
 		OIDCProvider: &AuthFlowResponseOIDCProvider{
@@ -250,7 +250,7 @@ func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, par
 	}
 
 	idToken, err := provider.Verifier.Verify(ctx, rawIDToken)
-	if !ok {
+	if err != nil {
 		errE = errors.WithStack(err)
 		errors.Details(errE)["provider"] = providerName
 		s.BadRequestWithError(w, req, errE)

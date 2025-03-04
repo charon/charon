@@ -219,11 +219,26 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 
 	// Current user must be among admins if it is changing the identity.
 	// We check this elsewhere, here we make sure the user is stored as an admin.
-	identityID := mustGetIdentityID(ctx)
+	identityID, ok := getIdentityID(ctx)
 	accountID := mustGetAccountID(ctx)
-	identityAccount := IdentityAccount{identityID, accountID}
-	if !slices.Contains(i.Admins, identityAccount) {
-		i.Admins = append(i.Admins, identityAccount)
+	if !ok && existing != nil {
+		// We are updating an existing identity using session cookie. In this case we just check
+		// (again, it has been checked in updateIdentity already) that the account is among admins,
+		// but we cannot add the current user to admins ourselves.
+		if !existing.HasAdminAccess(accountID) {
+			// This should not really happen because we check this in updateIdentity.
+			return errors.New("current account is not already among admins")
+		}
+	} else {
+		if !ok {
+			// When creating a new identity for the current account while using a session cookie,
+			// we do not set identityIDContextKey. We use the identity itself instead.
+			identityID = *i.ID
+		}
+		identityAccount := IdentityAccount{identityID, accountID}
+		if !slices.Contains(i.Admins, identityAccount) {
+			i.Admins = append(i.Admins, identityAccount)
+		}
 	}
 
 	// We sort and remove duplicates.
@@ -300,6 +315,10 @@ func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*I
 	return nil, errors.WithDetails(ErrIdentityUnauthorized, "id", id)
 }
 
+// createIdentity should have ctx with both identityIDContextKey and accountIDContextKey set,
+// unless it is used to create a new identity for a new user without any other identity
+// (but which has an account). Only in such case, the identityIDContextKey does not have to
+// be set and the identity itself will be used instead.
 func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors.E {
 	errE := identity.Validate(ctx, nil)
 	if errE != nil {
@@ -539,8 +558,8 @@ func (s *Service) IdentityUpdatePost(w http.ResponseWriter, req *http.Request, p
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	// We allow updating identities only with the access token.
-	ctx := s.RequireAuthenticated(w, req, true)
+	// We allow creating identities with the access token or session cookie.
+	ctx := s.requireAuthenticatedForIdentity(w, req)
 	if ctx == nil {
 		return
 	}
@@ -583,8 +602,8 @@ func (s *Service) IdentityCreatePost(w http.ResponseWriter, req *http.Request, _
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	// We allow creating identities only with the access token.
-	ctx := s.RequireAuthenticated(w, req, true)
+	// We allow creating identities with the access token or session cookie.
+	ctx := s.requireAuthenticatedForIdentity(w, req)
 	if ctx == nil {
 		return
 	}

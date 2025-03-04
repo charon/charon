@@ -137,8 +137,8 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 
 	s.WriteJSON(w, req, AuthFlowResponse{
 		Completed:       flow.Completed,
-		OrganizationID:  flow.OrganizationID.String(),
-		AppID:           flow.AppID.String(),
+		OrganizationID:  flow.OrganizationID,
+		AppID:           flow.AppID,
 		Providers:       flow.Providers,
 		EmailOrUsername: flow.EmailOrUsername,
 		OIDCProvider:    nil,
@@ -301,8 +301,8 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 
 	s.WriteJSON(w, req, AuthFlowResponse{
 		Completed:       flow.Completed,
-		OrganizationID:  flow.OrganizationID.String(),
-		AppID:           flow.AppID.String(),
+		OrganizationID:  flow.OrganizationID,
+		AppID:           flow.AppID,
 		Providers:       flow.Providers,
 		EmailOrUsername: flow.EmailOrUsername,
 		OIDCProvider:    nil,

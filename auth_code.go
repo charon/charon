@@ -259,8 +259,8 @@ func (s *Service) sendCode(
 
 	s.WriteJSON(w, req, AuthFlowResponse{
 		Completed:       flow.Completed,
-		OrganizationID:  flow.OrganizationID.String(),
-		AppID:           flow.AppID.String(),
+		OrganizationID:  flow.OrganizationID,
+		AppID:           flow.AppID,
 		Providers:       flow.Providers,
 		EmailOrUsername: preservedEmailOrUsername,
 		OIDCProvider:    nil,

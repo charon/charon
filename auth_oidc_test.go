@@ -155,7 +155,7 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 
 	oidcClient := oidcTS.Client()
 
-	flowID := createAuthFlow(t, ts, service)
+	flowID, _, _, _, _, _ := createAuthFlow(t, ts, service)
 
 	authFlowProviderStart, errE := service.ReverseAPI("AuthFlowProviderStart", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -181,7 +181,7 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	// Flow is available, current provider is testing.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		assertFlowResponse(t, ts, service, resp, []charon.Completed{}, []charon.Provider{"testing"})
+		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{"testing"}, "", assertCharonDashboard)
 	}
 
 	// Redirect to our testing provider.
@@ -197,7 +197,7 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	// Flow has not yet changed, current provider is testing.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		assertFlowResponse(t, ts, service, resp, []charon.Completed{}, []charon.Provider{"testing"})
+		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{"testing"}, "", assertCharonDashboard)
 	}
 
 	// Redirect to OIDC callback.
@@ -214,10 +214,10 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.Equal(t, "AuthFlowGet", route.Name)
 
-	// Flow is available and is completed.
+	// Flow is available and signinOrSignout is completed.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		assertFlowResponse(t, ts, service, resp, []charon.Completed{signinOrSignout}, []charon.Provider{"testing"})
+		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{signinOrSignout}, []charon.Provider{"testing"}, "", assertCharonDashboard)
 	}
 }
 

@@ -159,8 +159,8 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 
 	s.WriteJSON(w, req, AuthFlowResponse{
 		Completed:       flow.Completed,
-		OrganizationID:  flow.OrganizationID.String(),
-		AppID:           flow.AppID.String(),
+		OrganizationID:  flow.OrganizationID,
+		AppID:           flow.AppID,
 		Providers:       flow.Providers,
 		EmailOrUsername: flow.EmailOrUsername,
 		OIDCProvider:    nil,
