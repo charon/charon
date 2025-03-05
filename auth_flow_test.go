@@ -213,7 +213,7 @@ func getIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, ide
 	return fullIdentity
 }
 
-func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, organizationID, flowID identifier.Identifier, organization, app string, signinOrSignout charon.Completed, providers []charon.Provider, expectedIdentities int, expectedIdentityUsername string) identifier.Identifier {
+func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, organizationID, flowID identifier.Identifier, organization, app string, signinOrSignout charon.Completed, providers []charon.Provider, expectedIdentities int, expectedEmailOrUsername string) identifier.Identifier {
 	t.Helper()
 
 	identityList, errE := service.ReverseAPI("IdentityList", nil, nil)
@@ -251,13 +251,13 @@ func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, 
 		found := false
 		for _, id := range identities {
 			i := getIdentity(t, ts, service, id, flowID)
-			if i.Username == expectedIdentityUsername {
+			if i.Username == expectedEmailOrUsername || i.Email == expectedEmailOrUsername {
 				identity = id
 				found = true
 				break
 			}
 		}
-		assert.True(t, found)
+		require.True(t, found)
 	}
 
 	authFlowChooseIdentity, errE := service.ReverseAPI("AuthFlowChooseIdentity", waf.Params{"id": flowID.String()}, nil)
