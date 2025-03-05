@@ -10,6 +10,8 @@ import (
 
 var ErrSessionNotFound = errors.Base("session not found")
 
+// TODO: Add expiration to sessions which matches the length the cookie lasts.
+
 type Session struct {
 	ID       identifier.Identifier
 	SecretID [32]byte
