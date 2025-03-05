@@ -73,7 +73,7 @@ func (a *Account) GetEmailAddresses() ([]string, errors.E) {
 	return emails, nil
 }
 
-func (s *Service) getAccount(_ context.Context, id identifier.Identifier) (*Account, errors.E) { //nolint:revive
+func (s *Service) getAccount(_ context.Context, id identifier.Identifier) (*Account, errors.E) {
 	s.accountsMu.RLock()
 	defer s.accountsMu.RUnlock()
 
@@ -108,7 +108,7 @@ func (s *Service) getAccountByCredential(ctx context.Context, provider Provider,
 	return nil, errors.WithDetails(ErrAccountNotFound, "provider", provider, "credentialID", credentialID)
 }
 
-func (s *Service) setAccount(_ context.Context, account *Account) errors.E { //nolint:revive
+func (s *Service) setAccount(_ context.Context, account *Account) errors.E {
 	data, errE := x.MarshalWithoutEscapeHTML(account)
 	if errE != nil {
 		errors.Details(errE)["id"] = account.ID

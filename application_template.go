@@ -651,7 +651,7 @@ func (a *ApplicationTemplate) Validate(ctx context.Context, existing *Applicatio
 	return nil
 }
 
-func (s *Service) getApplicationTemplate(_ context.Context, id identifier.Identifier) (*ApplicationTemplate, errors.E) { //nolint:revive
+func (s *Service) getApplicationTemplate(_ context.Context, id identifier.Identifier) (*ApplicationTemplate, errors.E) {
 	s.applicationTemplatesMu.RLock()
 	defer s.applicationTemplatesMu.RUnlock()
 

@@ -624,7 +624,7 @@ func (o *Organization) validate(ctx context.Context, existing *Organization) err
 	return nil
 }
 
-func (s *Service) getOrganization(_ context.Context, id identifier.Identifier) (*Organization, errors.E) { //nolint:revive
+func (s *Service) getOrganization(_ context.Context, id identifier.Identifier) (*Organization, errors.E) {
 	s.organizationsMu.RLock()
 	defer s.organizationsMu.RUnlock()
 
