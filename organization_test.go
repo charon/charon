@@ -2,6 +2,7 @@ package charon_test
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -17,7 +18,7 @@ import (
 
 const applicationClientSecret = "client-secret"
 
-func createOrganization(t *testing.T, ts *httptest.Server, service *charon.Service, applicationTemplate *charon.ApplicationTemplate) *charon.Organization {
+func createOrganization(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string, applicationTemplate *charon.ApplicationTemplate) *charon.Organization {
 	t.Helper()
 
 	organizationCreate, errE := service.ReverseAPI("OrganizationCreate", nil, nil)
@@ -63,7 +64,12 @@ func createOrganization(t *testing.T, ts *httptest.Server, service *charon.Servi
 	data, errE := x.MarshalWithoutEscapeHTML(organization)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	resp, err := ts.Client().Post(ts.URL+organizationCreate, "application/json", bytes.NewReader(data)) //nolint:noctx,bodyclose
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, ts.URL+organizationCreate, bytes.NewReader(data))
+	require.NoError(t, err)
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := ts.Client().Do(req) //nolint:noctx,bodyclose
+
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -76,7 +82,10 @@ func createOrganization(t *testing.T, ts *httptest.Server, service *charon.Servi
 	organizationGet, errE := service.ReverseAPI("OrganizationGet", waf.Params{"id": organizationRef.ID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	resp, err = ts.Client().Get(ts.URL + organizationGet) //nolint:noctx,bodyclose
+	req, err = http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+organizationGet, nil)
+	require.NoError(t, err)
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	resp, err = ts.Client().Do(req) //nolint:noctx,bodycloseodyclose
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	assert.Equal(t, http.StatusOK, resp.StatusCode)

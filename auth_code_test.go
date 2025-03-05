@@ -127,6 +127,6 @@ func completeUserCode(t *testing.T, ts *httptest.Server, service *charon.Service
 	require.NoError(t, err)
 	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{signinOrSignout}, providers, "", assertAppName(t, organization, app))
 
-	chooseIdentity(t, ts, service, oid, flowID, organization, app, signinOrSignout, providers)
-	return doRedirect(t, ts, service, oid, flowID, organization, app, nonce, state, pkceVerifier, config, verifier, signinOrSignout, providers)
+	chooseIdentity(t, ts, service, oid, flowID, organization, app, signinOrSignout, providers, 1, "username")
+	return doRedirectAndAccessToken(t, ts, service, oid, flowID, organization, app, nonce, state, pkceVerifier, config, verifier, signinOrSignout, providers)
 }

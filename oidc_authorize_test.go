@@ -26,21 +26,19 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	ts, service, _, _ := startTestServer(t)
 
 	username := identifier.New().String()
-	state := identifier.New().String()
-	nonce := identifier.New().String()
 	challenge := identifier.New().String() + identifier.New().String() + identifier.New().String()
 
 	challengeHash := sha256.Sum256([]byte(challenge))
 	codeChallenge := base64.RawURLEncoding.EncodeToString(challengeHash[:])
 
-	flowID := createAuthFlow(t, ts, service)
-	signinUser(t, ts, service, username, charon.CompletedSignup, nil, flowID, charon.TargetSession)
+	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
+	accessToken := signinUser(t, ts, service, username, charon.CompletedSignup, nil, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier)
 
-	applicationTemplate := createApplicationTemplate(t, ts, service)
+	applicationTemplate := createApplicationTemplate(t, ts, service, accessToken)
 
-	organization := createOrganization(t, ts, service, applicationTemplate)
+	organization := createOrganization(t, ts, service, accessToken, applicationTemplate)
 
-	applicationID := organization.Applications[0].ID.String()
+	appID := organization.Applications[0].ID.String()
 	clientID := organization.Applications[0].ClientsBackend[0].ID.String()
 
 	qs := url.Values{
@@ -77,48 +75,30 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	// Flow is available, target is oidc.
+	// Flow is available, for created organization and app.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		out, err := io.ReadAll(resp.Body) //nolint:govet
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		assert.Equal(t, 2, resp.ProtoMajor)
-		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"target":"oidc","name":"Test application","homepage":"https://example.com","organizationId":"`+organization.ID.String()+`"}`, string(out))
+		assertFlowResponse(t, ts, service, resp, organization.ID, []charon.Completed{}, nil, "", assertAppName(t, "Test organization", "Test application"))
 	}
 
-	signinUser(t, ts, service, username, charon.CompletedSignin, organization.ID, flowID, charon.TargetOIDC)
+	resp = startPasswordSignin(t, ts, service, username, []byte("test1234"), organization.ID, flowID, "Test organization", "Test application") //nolint:bodyclose
+	assertSignedUser(t, charon.CompletedSignin, flowID, resp)
 
-	identityID := chooseIdentity(t, ts, service, *organization.ID, flowID)
-
-	doRedirect(t, ts, service, *organization.ID, flowID)
-
-	nonAPIAuthFlowGet, errE := service.Reverse("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
-	require.NoError(t, errE, "% -+#.1v", errE)
-
-	resp, err = ts.Client().Get(ts.URL + nonAPIAuthFlowGet) //nolint:noctx,bodyclose
+	// Flow is available and signinOrSignout is completed.
+	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-	out, err = io.ReadAll(resp.Body)
-	require.NoError(t, err)
-	assert.Equal(t, http.StatusSeeOther, resp.StatusCode, string(out))
-	assert.Equal(t, 2, resp.ProtoMajor)
-	location = resp.Header.Get("Location")
-	assert.NotEmpty(t, location)
+	assertFlowResponse(t, ts, service, resp, organization.ID, []charon.Completed{charon.CompletedSignin}, []charon.Provider{charon.PasswordProvider}, "", assertAppName(t, "Test organization", "Test application"))
+
+	identityID := chooseIdentity(t, ts, service, *organization.ID, flowID, "Test organization", "Test application", charon.CompletedSignin, []charon.Provider{charon.PasswordProvider}, 2, "username")
+
+	location = doRedirect(t, ts, service, *organization.ID, flowID, "Test organization", "Test application", charon.CompletedSignin, []charon.Provider{charon.PasswordProvider})
+
 	assert.True(t, strings.HasPrefix(location, "https://example.com/redirect?"), location)
 
 	// Flow is available and is completed.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		out, err := io.ReadAll(resp.Body) //nolint:govet
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		assert.Equal(t, 2, resp.ProtoMajor)
-		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"target":"oidc","name":"Test application","homepage":"https://example.com","organizationId":"`+organization.ID.String()+`","provider":"password","completed":"redirect"}`, string(out))
+		assertFlowResponse(t, ts, service, resp, organization.ID, []charon.Completed{charon.CompletedSignin, charon.CompletedIdentity, charon.CompletedFinishReady, charon.CompletedFinished}, []charon.Provider{charon.PasswordProvider}, "", assertAppName(t, "Test organization", "Test application"))
 	}
 
 	parsedLocation, err := url.Parse(location)
@@ -137,7 +117,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 
 	var sessionToken string
 	for _, cookie := range cookies {
-		if cookie.Name == charon.SessionCookieName {
+		if cookie.Name == charon.SessionCookiePrefix+flowID.String() {
 			sessionToken = cookie.Value
 			break
 		}
@@ -149,7 +129,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 
 	secretID, err := base64.RawURLEncoding.DecodeString(split[1])
 	require.NoError(t, err)
-	session, errE := charon.GetSessionBySecretID(context.Background(), [32]byte(secretID))
+	session, errE := service.GetSessionBySecretID(context.Background(), [32]byte(secretID))
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	sessionID := session.ID.String()
@@ -158,9 +138,9 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	idTokenLastTimestamps := map[string]time.Time{}
 
 	uniqueStrings := mapset.NewThreadUnsafeSet[string]()
-	assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, applicationID, sessionID, accessToken, accessTokenLastTimestamps, identityID)))
-	assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, applicationID, sessionID, nonce, accessToken, idToken, idTokenLastTimestamps, identityID)))
-	validateIntrospect(t, ts, service, now, clientID, applicationID, sessionID, refreshToken, "refresh_token", identityID)
+	assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, appID, sessionID, accessToken, accessTokenLastTimestamps, identityID)))
+	assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, appID, sessionID, nonce, accessToken, idToken, idTokenLastTimestamps, identityID)))
+	validateIntrospect(t, ts, service, now, clientID, appID, sessionID, refreshToken, "refresh_token", identityID)
 	validateUserInfo(t, ts, service, accessToken, identityID)
 
 	// We use assert.WithinDuration with 2 seconds allowed delta, so in 10 iterations every
@@ -171,9 +151,9 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 
 		accessToken, idToken, refreshToken, now = exchangeRefreshTokenForTokens(t, ts, service, clientID, refreshToken, accessToken)
 
-		assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, applicationID, sessionID, accessToken, accessTokenLastTimestamps, identityID)))
-		assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, applicationID, sessionID, nonce, accessToken, idToken, idTokenLastTimestamps, identityID)))
-		validateIntrospect(t, ts, service, now, clientID, applicationID, sessionID, refreshToken, "refresh_token", identityID)
+		assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, appID, sessionID, accessToken, accessTokenLastTimestamps, identityID)))
+		assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, appID, sessionID, nonce, accessToken, idToken, idTokenLastTimestamps, identityID)))
+		validateIntrospect(t, ts, service, now, clientID, appID, sessionID, refreshToken, "refresh_token", identityID)
 		validateUserInfo(t, ts, service, accessToken, identityID)
 	}
 }

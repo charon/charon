@@ -166,7 +166,7 @@ func (s *Service) getSessionFromRequest(w http.ResponseWriter, req *http.Request
 		return nil, errors.WithStack(err)
 	}
 
-	return s.getSessionBySecretID(ctx, [32]byte(secretID))
+	return s.GetSessionBySecretID(ctx, [32]byte(secretID))
 }
 
 // validateSession returns session only if current session matches one made by the flow.
