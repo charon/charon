@@ -71,7 +71,7 @@ func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *Flow
 }
 
 func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	flow := s.GetFlow(w, req, params["id"])
+	flow := s.GetFlowHandler(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -102,7 +102,7 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 func (s *Service) AuthFlowGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	// This is similar to API case in failAuthStep, but fetches also the flow and checks the session.
 
-	flow := s.GetFlow(w, req, params["id"])
+	flow := s.GetFlowHandler(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -303,7 +303,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	// Everything should already be set to nil at this point, but just to make sure.
 	flow.ClearAuthStepAll()
 
-	errE = s.setFlow(ctx, flow)
+	errE = s.SetFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -353,7 +353,7 @@ func (s *Service) increaseAuthAttempts(w http.ResponseWriter, req *http.Request,
 	ctx := req.Context()
 
 	flow.AuthAttempts++
-	errE := s.setFlow(ctx, flow)
+	errE := s.SetFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return false
@@ -379,7 +379,7 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 	// Everything should already be set to nil at this point, but just to make sure.
 	flow.ClearAuthStepAll()
 
-	errE = s.setFlow(ctx, flow)
+	errE = s.SetFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -454,7 +454,7 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 	// attempts. We want them to fail the whole flow and to have to restart it (it is easier
 	// to count failed flows and detect attacks this way).
 
-	errE = s.setFlow(ctx, flow)
+	errE = s.SetFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -515,7 +515,7 @@ func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, 
 
 	// TODO: Store decline in a way that it is persisted in a similar way that choosing an identity is.
 
-	errE = s.setFlow(ctx, flow)
+	errE = s.SetFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -573,7 +573,7 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 
 	flow.Identity = identity
 
-	errE = s.setFlow(ctx, flow)
+	errE = s.SetFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -623,7 +623,7 @@ func (s *Service) AuthFlowRedirectPost(w http.ResponseWriter, req *http.Request,
 		return
 	}
 
-	errE = s.setFlow(ctx, flow)
+	errE = s.SetFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return

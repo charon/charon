@@ -237,7 +237,7 @@ func (s *Service) sendCode(
 		}
 	}
 	flow.Code.Codes = append(flow.Code.Codes, code)
-	errE = s.setFlow(req.Context(), flow)
+	errE = s.SetFlow(req.Context(), flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return

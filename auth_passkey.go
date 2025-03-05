@@ -129,7 +129,7 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 	flow.ClearAuthStep("")
 	flow.Providers = append(flow.Providers, PasskeyProvider)
 	flow.Passkey = session
-	errE = s.setFlow(ctx, flow)
+	errE = s.SetFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -162,7 +162,7 @@ func (s *Service) getFlowPasskey(w http.ResponseWriter, req *http.Request, flow 
 	// We reset flow.Passkey to nil always after this point, even if there is a failure,
 	// so that challenge cannot be reused.
 	flow.Passkey = nil
-	errE := s.setFlow(req.Context(), flow)
+	errE := s.SetFlow(req.Context(), flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return nil
@@ -293,7 +293,7 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 	flow.ClearAuthStep("")
 	flow.Providers = append(flow.Providers, PasskeyProvider)
 	flow.Passkey = session
-	errE = s.setFlow(ctx, flow)
+	errE = s.SetFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return

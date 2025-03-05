@@ -14,13 +14,15 @@ import (
 func TestStore(t *testing.T) {
 	t.Parallel()
 
+	_, service, _, _ := startTestServer(t)
+
 	ctx := context.Background()
 	f := &charon.Flow{
 		ID: identifier.New(),
 	}
-	errE := charon.SetFlow(ctx, f)
+	errE := service.SetFlow(ctx, f)
 	require.NoError(t, errE, "% -+#.1v", errE)
-	f2, errE := charon.GetFlow(ctx, f.ID)
+	f2, errE := service.GetFlow(ctx, f.ID)
 	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.Equal(t, f, f2)
 	assert.Nil(t, f2.OIDCAuthorizeRequest)

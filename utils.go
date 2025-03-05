@@ -226,7 +226,7 @@ func (s *Service) getFlowFromID(ctx context.Context, value string) (*Flow, error
 		return nil, errors.WrapWith(errE, ErrFlowNotFound)
 	}
 
-	return s.getFlow(ctx, id)
+	return s.GetFlow(ctx, id)
 }
 
 func getAccountID(ctx context.Context) (identifier.Identifier, bool) {
@@ -320,7 +320,7 @@ func (s *Service) requireAuthenticatedForIdentity(w http.ResponseWriter, req *ht
 	return context.WithValue(ctx, accountIDContextKey, session.AccountID)
 }
 
-func (s *Service) GetFlow(w http.ResponseWriter, req *http.Request, value string) *Flow {
+func (s *Service) GetFlowHandler(w http.ResponseWriter, req *http.Request, value string) *Flow {
 	flow, errE := s.getFlowFromID(req.Context(), value)
 	if errors.Is(errE, ErrFlowNotFound) {
 		s.NotFoundWithError(w, req, errE)
@@ -334,7 +334,7 @@ func (s *Service) GetFlow(w http.ResponseWriter, req *http.Request, value string
 }
 
 func (s *Service) GetActiveFlow(w http.ResponseWriter, req *http.Request, value string) *Flow {
-	flow := s.GetFlow(w, req, value)
+	flow := s.GetFlowHandler(w, req, value)
 	if flow == nil {
 		return nil
 	}

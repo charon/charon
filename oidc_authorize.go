@@ -78,7 +78,7 @@ func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.
 
 	client := ar.Client.(*OIDCClient) //nolint:errcheck,forcetypeassert
 
-	errE := s.setFlow(req.Context(), &Flow{
+	errE := s.SetFlow(req.Context(), &Flow{
 		ID:        id,
 		CreatedAt: time.Now().UTC(),
 		Completed: []Completed{},
@@ -133,7 +133,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 	flow.OIDCAuthorizeRequest = nil
 
 	if flow.HasFailed() {
-		errE := s.setFlow(ctx, flow)
+		errE := s.SetFlow(ctx, flow)
 		if errE != nil {
 			// Because this can fail, store's CreateAuthorizeCodeSession, CreateOpenIDConnectSession, and CreatePKCERequestSession should be idempotent.
 			s.InternalServerErrorWithError(w, req, errE)
@@ -151,7 +151,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 		return handled
 	}
 
-	errE = s.setFlow(ctx, flow)
+	errE = s.SetFlow(ctx, flow)
 	if errE != nil {
 		// Because this can fail, store's CreateAuthorizeCodeSession, CreateOpenIDConnectSession, and CreatePKCERequestSession should be idempotent.
 		s.InternalServerErrorWithError(w, req, errE)
