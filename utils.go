@@ -341,7 +341,7 @@ func (s *Service) GetActiveFlow(w http.ResponseWriter, req *http.Request, value 
 
 	// Has flow already completed?
 	if flow.IsFinished() {
-		waf.Error(w, req, http.StatusGone)
+		waf.Error(w, req, http.StatusUnauthorized)
 		return nil
 	}
 
