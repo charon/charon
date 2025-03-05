@@ -276,7 +276,7 @@ func (a *OrganizationApplicationPublic) validate(ctx context.Context, existing *
 	if existing != nil {
 		e = &existing.ApplicationTemplate
 	} else if a.ApplicationTemplate.ID != nil {
-		s := ctx.Value(serviceContextKey).(*Service)
+		s := ctx.Value(serviceContextKey).(*Service) //nolint:forcetypeassert,errcheck
 		at, errE := s.getApplicationTemplate(ctx, *a.ApplicationTemplate.ID)
 		if errE == nil {
 			e = &at.ApplicationTemplatePublic
@@ -624,7 +624,7 @@ func (o *Organization) validate(ctx context.Context, existing *Organization) err
 	return nil
 }
 
-func (s *Service) getOrganization(ctx context.Context, id identifier.Identifier) (*Organization, errors.E) { //nolint:revive
+func (s *Service) getOrganization(_ context.Context, id identifier.Identifier) (*Organization, errors.E) { //nolint:revive
 	s.organizationsMu.RLock()
 	defer s.organizationsMu.RUnlock()
 
@@ -742,7 +742,7 @@ func (s *Service) returnOrganizationRef(_ context.Context, w http.ResponseWriter
 	s.WriteJSON(w, req, OrganizationRef{ID: *organization.ID}, nil)
 }
 
-func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
 	ctx := req.Context()
 
 	hasIdentity := false

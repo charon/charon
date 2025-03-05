@@ -18,12 +18,12 @@ func (s *Service) Context(w http.ResponseWriter, req *http.Request, _ waf.Params
 
 	site := waf.MustGetSite[*Site](ctx)
 
-	charonOrganization := s.charonOrganization()
+	co := s.charonOrganization()
 
 	// TODO: Cache so that it is not re-computed on every request.
 	s.WriteJSON(w, req, serviceContext{
 		Site:        *site,
-		ClientID:    charonOrganization.ClientID.String(),
-		RedirectURI: charonOrganization.RedirectURI,
+		ClientID:    co.ClientID.String(),
+		RedirectURI: co.RedirectURI,
 	}, nil)
 }

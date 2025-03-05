@@ -91,7 +91,7 @@ func (s *Service) getIdentityFromRequest(w http.ResponseWriter, req *http.Reques
 	// OIDC GetClient requires ctx with serviceContextKey set.
 	ctx := context.WithValue(req.Context(), serviceContextKey, s)
 	oidc := s.oidc()
-	charonOrganization := s.charonOrganization()
+	co := s.charonOrganization()
 
 	// We use this header so responses might depend on it.
 	if !slices.Contains(w.Header().Values("Vary"), "Authorization") {
@@ -122,7 +122,7 @@ func (s *Service) getIdentityFromRequest(w http.ResponseWriter, req *http.Reques
 
 	// We have to make sure the access token provided is really meant for us.
 	// See: https://github.com/ory/fosite/issues/845
-	if slices.Contains(ar.GetGrantedAudience(), charonOrganization.AppID.String()) {
+	if slices.Contains(ar.GetGrantedAudience(), co.AppID.String()) {
 		session = ar.GetSession().(*OIDCSession) //nolint:errcheck,forcetypeassert
 		return session.Subject, session.AccountID, nil
 	}

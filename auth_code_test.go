@@ -60,7 +60,7 @@ func TestAuthFlowPasswordAndCode(t *testing.T) {
 
 	// Signed-up user can authenticate with password only.
 	flowID, nonce, state, pkceVerifier, config, verifier = createAuthFlow(t, ts, service)
-	accessToken = signinUser(t, ts, service, email, charon.CompletedSignin, nil, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier)
+	accessToken = signinUser(t, ts, service, email, charon.CompletedSignin, flowID, nonce, state, pkceVerifier, config, verifier)
 
 	signoutUser(t, ts, service, accessToken)
 

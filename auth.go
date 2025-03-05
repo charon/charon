@@ -67,14 +67,14 @@ func (s *Service) AuthSignoutPost(w http.ResponseWriter, req *http.Request, _ wa
 		// OIDC GetClient requires ctx with serviceContextKey set.
 		ctx := context.WithValue(req.Context(), serviceContextKey, s)
 		oidc := s.oidc()
-		charonOrganization := s.charonOrganization()
+		co := s.charonOrganization()
 		revoke, errE := s.ReverseAPI("OIDCRevoke", nil, nil)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
 		r, err := http.NewRequestWithContext(ctx, http.MethodPost, revoke, strings.NewReader(url.Values{
-			"client_id":       {charonOrganization.ClientID.String()},
+			"client_id":       {co.ClientID.String()},
 			"token":           {token},
 			"token_type_hint": {"access_token"},
 		}.Encode()))

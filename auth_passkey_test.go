@@ -24,12 +24,12 @@ import (
 	"gitlab.com/charon/charon"
 )
 
-func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
+func TestAuthFlowPasskey(t *testing.T) {
 	t.Parallel()
 
 	ts, service, _, _ := startTestServer(t)
 
-	flowID, _, _, _, _, _ := createAuthFlow(t, ts, service)
+	flowID, _, _, _, _, _ := createAuthFlow(t, ts, service) //nolint:dogsled
 
 	authFlowPasskeyCreateStart, errE := service.ReverseAPI("AuthFlowPasskeyCreateStart", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -154,7 +154,7 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 	}
 
 	// Start another flow.
-	flowID, _, _, _, _, _ = createAuthFlow(t, ts, service)
+	flowID, _, _, _, _, _ = createAuthFlow(t, ts, service) //nolint:dogsled
 
 	authFlowPasskeyGetStart, errE := service.ReverseAPI("AuthFlowPasskeyGetStart", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)

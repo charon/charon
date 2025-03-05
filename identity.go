@@ -337,7 +337,7 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 	return nil
 }
 
-func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors.E { //nolint:dupl
+func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors.E {
 	s.identitiesMu.Lock()
 	defer s.identitiesMu.Unlock()
 
@@ -554,7 +554,7 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 	s.WriteJSON(w, req, result, nil)
 }
 
-func (s *Service) IdentityUpdatePost(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
+func (s *Service) IdentityUpdatePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 

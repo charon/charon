@@ -97,10 +97,10 @@ func assertSignedUser(t *testing.T, signinOrSignout charon.Completed, flowID ide
 	}
 }
 
-func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emailOrUsername string, signinOrSignout charon.Completed, organizationID *identifier.Identifier, flowID identifier.Identifier, organization, app, nonce, state, pkceVerifier string, config *oauth2.Config, verifier *oidc.IDTokenVerifier) string {
+func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emailOrUsername string, signinOrSignout charon.Completed, flowID identifier.Identifier, nonce, state, pkceVerifier string, config *oauth2.Config, verifier *oidc.IDTokenVerifier) string {
 	t.Helper()
 
-	resp := startPasswordSignin(t, ts, service, emailOrUsername, []byte("test1234"), organizationID, flowID, organization, app) //nolint:bodyclose
+	resp := startPasswordSignin(t, ts, service, emailOrUsername, []byte("test1234"), nil, flowID, "Charon", "Dashboard") //nolint:bodyclose
 	assertSignedUser(t, signinOrSignout, flowID, resp)
 
 	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
@@ -109,8 +109,8 @@ func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emai
 	// Flow is available and signinOrSignout is completed.
 	resp, err := ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	oid := assertFlowResponse(t, ts, service, resp, organizationID, []charon.Completed{signinOrSignout}, []charon.Provider{charon.PasswordProvider}, "", assertAppName(t, organization, app))
+	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{signinOrSignout}, []charon.Provider{charon.PasswordProvider}, "", assertCharonDashboard)
 
-	chooseIdentity(t, ts, service, oid, flowID, organization, app, signinOrSignout, []charon.Provider{charon.PasswordProvider}, 1, emailOrUsername)
-	return doRedirectAndAccessToken(t, ts, service, oid, flowID, organization, app, nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{charon.PasswordProvider})
+	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{charon.PasswordProvider}, 1, emailOrUsername)
+	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{charon.PasswordProvider})
 }

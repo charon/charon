@@ -24,7 +24,7 @@ func signoutUser(t *testing.T, ts *httptest.Server, service *charon.Service, acc
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Content-Type", "application/json")
-	resp, err := ts.Client().Do(req) //nolint:noctx,bodyclose
+	resp, err := ts.Client().Do(req) //nolint:bodyclose
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	assert.Equal(t, http.StatusOK, resp.StatusCode)

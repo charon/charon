@@ -95,7 +95,7 @@ func (f *Flow) AddCompleted(completed Completed) errors.E {
 			return errors.WithStack(ErrInvalidCompleted)
 		}
 	case CompletedDeclined:
-		if previous == "" {
+		if previous == "" { //nolint:revive
 			// In UI we provide CompletedDeclined option only after the auth step, as an alternative to
 			// CompletedIdentity, but in API we allow to decline the flow also as the first step.
 		} else if previous != CompletedSignin && previous != CompletedSignup {

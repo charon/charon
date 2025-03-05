@@ -651,7 +651,7 @@ func (a *ApplicationTemplate) Validate(ctx context.Context, existing *Applicatio
 	return nil
 }
 
-func (s *Service) getApplicationTemplate(ctx context.Context, id identifier.Identifier) (*ApplicationTemplate, errors.E) { //nolint:revive
+func (s *Service) getApplicationTemplate(_ context.Context, id identifier.Identifier) (*ApplicationTemplate, errors.E) { //nolint:revive
 	s.applicationTemplatesMu.RLock()
 	defer s.applicationTemplatesMu.RUnlock()
 
@@ -686,7 +686,7 @@ func (s *Service) createApplicationTemplate(ctx context.Context, applicationTemp
 	return nil
 }
 
-func (s *Service) updateApplicationTemplate(ctx context.Context, applicationTemplate *ApplicationTemplate) errors.E { //nolint:dupl
+func (s *Service) updateApplicationTemplate(ctx context.Context, applicationTemplate *ApplicationTemplate) errors.E {
 	s.applicationTemplatesMu.Lock()
 	defer s.applicationTemplatesMu.Unlock()
 
@@ -765,7 +765,7 @@ func (s *Service) returnApplicationTemplateRef(_ context.Context, w http.Respons
 	s.WriteJSON(w, req, ApplicationTemplateRef{ID: *applicationTemplate.ID}, nil)
 }
 
-func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
 	ctx := req.Context()
 
 	hasIdentity := false

@@ -39,13 +39,13 @@ func TestRouteMeAndSignOut(t *testing.T) {
 	}
 
 	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
-	accessToken := signinUser(t, ts, service, username, charon.CompletedSignup, nil, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier)
+	accessToken := signinUser(t, ts, service, username, charon.CompletedSignup, flowID, nonce, state, pkceVerifier, config, verifier)
 
 	// After sign-up, GET (with access token) should return success.
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+me, nil)
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
-	resp, err = ts.Client().Do(req) //nolint:noctx,bodycloseodyclose
+	resp, err = ts.Client().Do(req) //nolint:bodyclose
 	if assert.NoError(t, err) {
 		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 		out, err := io.ReadAll(resp.Body) //nolint:govet
@@ -62,7 +62,7 @@ func TestRouteMeAndSignOut(t *testing.T) {
 	req, err = http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+me, nil)
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
-	resp, err = ts.Client().Do(req) //nolint:noctx,bodycloseodyclose
+	resp, err = ts.Client().Do(req) //nolint:bodyclose
 	if assert.NoError(t, err) {
 		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 		out, err := io.ReadAll(resp.Body) //nolint:govet
@@ -88,13 +88,13 @@ func TestRouteMeAndSignOut(t *testing.T) {
 	}
 
 	flowID, nonce, state, pkceVerifier, config, verifier = createAuthFlow(t, ts, service)
-	accessToken = signinUser(t, ts, service, username, charon.CompletedSignin, nil, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier)
+	accessToken = signinUser(t, ts, service, username, charon.CompletedSignin, flowID, nonce, state, pkceVerifier, config, verifier)
 
 	// After sign-in, GET (with new access token) should again return success.
 	req, err = http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+me, nil)
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
-	resp, err = ts.Client().Do(req) //nolint:noctx,bodycloseodyclose
+	resp, err = ts.Client().Do(req) //nolint:bodyclose
 	if assert.NoError(t, err) {
 		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 		out, err := io.ReadAll(resp.Body) //nolint:govet
@@ -109,7 +109,7 @@ func TestRouteMeAndSignOut(t *testing.T) {
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
 		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		_, err := io.ReadAll(resp.Body) //nolint:govet
+		_, err := io.ReadAll(resp.Body)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)

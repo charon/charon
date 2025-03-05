@@ -30,7 +30,7 @@ func (s *OIDCStore) GetClient(ctx context.Context, strID string) (fosite.Client,
 		return nil, errE
 	}
 
-	service := ctx.Value(serviceContextKey).(*Service)
+	service := ctx.Value(serviceContextKey).(*Service) //nolint:forcetypeassert,errcheck
 
 	service.organizationsMu.RLock()
 	defer service.organizationsMu.RUnlock()

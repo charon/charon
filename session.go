@@ -17,7 +17,7 @@ type Session struct {
 	AccountID identifier.Identifier
 }
 
-func (s *Service) getSession(ctx context.Context, id identifier.Identifier) (*Session, errors.E) { //nolint:revive
+func (s *Service) getSession(_ context.Context, id identifier.Identifier) (*Session, errors.E) { //nolint:revive
 	s.sessionsMu.RLock()
 	defer s.sessionsMu.RUnlock()
 
@@ -54,7 +54,7 @@ func (s *Service) GetSessionBySecretID(ctx context.Context, secretID [32]byte) (
 	return nil, errors.WithStack(ErrSessionNotFound)
 }
 
-func (s *Service) setSession(ctx context.Context, session *Session) errors.E { //nolint:revive
+func (s *Service) setSession(_ context.Context, session *Session) errors.E { //nolint:revive
 	data, errE := x.MarshalWithoutEscapeHTML(session)
 	if errE != nil {
 		errors.Details(errE)["id"] = session.ID

@@ -48,7 +48,7 @@ func createApplicationTemplate(t *testing.T, ts *httptest.Server, service *charo
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Content-Type", "application/json")
-	resp, err := ts.Client().Do(req) //nolint:noctx,bodyclose
+	resp, err := ts.Client().Do(req) //nolint:bodyclose
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -64,7 +64,7 @@ func createApplicationTemplate(t *testing.T, ts *httptest.Server, service *charo
 	req, err = http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+applicationTemplateGet, nil)
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
-	resp, err = ts.Client().Do(req) //nolint:noctx,bodycloseodyclose
+	resp, err = ts.Client().Do(req) //nolint:bodyclose
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	assert.Equal(t, http.StatusOK, resp.StatusCode)

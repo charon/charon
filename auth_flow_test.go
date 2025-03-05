@@ -97,7 +97,7 @@ func createAuthFlow(t *testing.T, ts *httptest.Server, service *charon.Service) 
 	serviceContextPath, errE := service.Reverse("Context", nil, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	resp, err := ts.Client().Get(ts.URL + serviceContextPath)
+	resp, err := ts.Client().Get(ts.URL + serviceContextPath) //nolint:noctx,bodyclose
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -130,12 +130,12 @@ func createAuthFlow(t *testing.T, ts *httptest.Server, service *charon.Service) 
 	opts = append(opts, oauth2.S256ChallengeOption(pkceVerifier))
 
 	authURI := config.AuthCodeURL(state, opts...)
-	resp, err = ts.Client().Get(authURI)
+	resp, err = ts.Client().Get(authURI) //nolint:noctx,bodyclose
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	assert.Equal(t, http.StatusSeeOther, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
-	io.Copy(io.Discard, resp.Body)
+	io.Copy(io.Discard, resp.Body) //nolint:errcheck
 
 	location := resp.Header.Get("Location")
 	assert.NotEmpty(t, location)
