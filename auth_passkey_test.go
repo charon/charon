@@ -8,7 +8,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/binary"
-	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -30,7 +29,7 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 
 	ts, service, _, _ := startTestServer(t)
 
-	flowID := createAuthFlow(t, ts, service)
+	flowID, _, _, _, _, _ := createAuthFlow(t, ts, service)
 
 	authFlowPasskeyCreateStart, errE := service.ReverseAPI("AuthFlowPasskeyCreateStart", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -46,8 +45,7 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 	var authFlowResponse charon.AuthFlowResponse
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
 	require.NoError(t, errE, "% -+#.1v", errE)
-	assert.Equal(t, charon.TargetSession, authFlowResponse.Target)
-	assert.Equal(t, charon.PasskeyProvider, authFlowResponse.Provider)
+	assert.Equal(t, []charon.Provider{charon.PasskeyProvider}, authFlowResponse.Providers)
 	require.NotNil(t, authFlowResponse.Passkey)
 	require.NotNil(t, authFlowResponse.Passkey.CreateOptions)
 
@@ -57,14 +55,8 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 	// Flow is available, current provider is passkey.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		out, err := io.ReadAll(resp.Body) //nolint:govet
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		assert.Equal(t, 2, resp.ProtoMajor)
-		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
 		// Passkey create options are provided only in the response to the passkey create start call.
-		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"passkey"}`, string(out)) //nolint:testifylint
+		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{charon.PasskeyProvider}, "", assertCharonDashboard)
 	}
 
 	authFlowPasskeyCreateComplete, errE := service.ReverseAPI("AuthFlowPasskeyCreateComplete", waf.Params{"id": flowID.String()}, nil)
@@ -153,35 +145,16 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 	// Complete passkey create.
 	resp, err = ts.Client().Post(ts.URL+authFlowPasskeyCreateComplete, "application/json", bytes.NewReader(data)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, 2, resp.ProtoMajor)
-	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-	authFlowResponse = charon.AuthFlowResponse{}
-	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
-	require.NoError(t, errE, "% -+#.1v", errE)
-	require.Equal(t, charon.CompletedSignup, authFlowResponse.Completed)
-	assert.Len(t, resp.Cookies(), 1)
-	for _, cookie := range resp.Cookies() {
-		assert.Equal(t, charon.SessionCookieName, cookie.Name)
-	}
+	assertSignedUser(t, charon.CompletedSignup, flowID, resp)
 
-	// Flow is available and is completed.
+	// Flow is available and CompletedSignup is completed.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		out, err := io.ReadAll(resp.Body) //nolint:govet
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		assert.Equal(t, 2, resp.ProtoMajor)
-		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"passkey","completed":"`+string(charon.CompletedSignup)+`","location":{"url":"/","replace":true}}`, string(out)) //nolint:testifylint
+		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{charon.CompletedSignup}, []charon.Provider{charon.PasskeyProvider}, "", assertCharonDashboard)
 	}
 
-	signoutUser(t, ts, service)
-
 	// Start another flow.
-	flowID = createAuthFlow(t, ts, service)
+	flowID, _, _, _, _, _ = createAuthFlow(t, ts, service)
 
 	authFlowPasskeyGetStart, errE := service.ReverseAPI("AuthFlowPasskeyGetStart", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -197,8 +170,7 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 	authFlowResponse = charon.AuthFlowResponse{}
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
 	require.NoError(t, errE, "% -+#.1v", errE)
-	assert.Equal(t, charon.TargetSession, authFlowResponse.Target)
-	assert.Equal(t, charon.PasskeyProvider, authFlowResponse.Provider)
+	assert.Equal(t, []charon.Provider{charon.PasskeyProvider}, authFlowResponse.Providers)
 	require.NotNil(t, authFlowResponse.Passkey)
 	require.NotNil(t, authFlowResponse.Passkey.GetOptions)
 
@@ -208,14 +180,8 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 	// Flow is available, current provider is passkey.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		out, err := io.ReadAll(resp.Body) //nolint:govet
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		assert.Equal(t, 2, resp.ProtoMajor)
-		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
 		// Passkey get options are provided only in the response to the passkey get start call.
-		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"passkey"}`, string(out)) //nolint:testifylint
+		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{charon.PasskeyProvider}, "", assertCharonDashboard)
 	}
 
 	authFlowPasskeyGetComplete, errE := service.ReverseAPI("AuthFlowPasskeyGetComplete", waf.Params{"id": flowID.String()}, nil)
@@ -267,28 +233,11 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 	// Complete passkey get.
 	resp, err = ts.Client().Post(ts.URL+authFlowPasskeyGetComplete, "application/json", bytes.NewReader(data)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, 2, resp.ProtoMajor)
-	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-	authFlowResponse = charon.AuthFlowResponse{}
-	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
-	require.NoError(t, errE, "% -+#.1v", errE)
-	require.Equal(t, charon.CompletedSignin, authFlowResponse.Completed)
-	assert.Len(t, resp.Cookies(), 1)
-	for _, cookie := range resp.Cookies() {
-		assert.Equal(t, charon.SessionCookieName, cookie.Name)
-	}
+	assertSignedUser(t, charon.CompletedSignin, flowID, resp)
 
-	// Flow is available and is completed.
+	// Flow is available and CompletedSignin is completed.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		out, err := io.ReadAll(resp.Body)
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		assert.Equal(t, 2, resp.ProtoMajor)
-		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"passkey","completed":"`+string(charon.CompletedSignin)+`","location":{"url":"/","replace":true}}`, string(out)) //nolint:testifylint
+		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{charon.CompletedSignin}, []charon.Provider{charon.PasskeyProvider}, "", assertCharonDashboard)
 	}
 }

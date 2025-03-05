@@ -84,7 +84,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	resp = startPasswordSignin(t, ts, service, username, []byte("test1234"), organization.ID, flowID, "Test organization", "Test application") //nolint:bodyclose
 	assertSignedUser(t, charon.CompletedSignin, flowID, resp)
 
-	// Flow is available and signinOrSignout is completed.
+	// Flow is available and CompletedSignin is completed.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	require.NoError(t, err)
 	assertFlowResponse(t, ts, service, resp, organization.ID, []charon.Completed{charon.CompletedSignin}, []charon.Provider{charon.PasswordProvider}, "", assertAppName(t, "Test organization", "Test application"))
@@ -95,7 +95,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 
 	assert.True(t, strings.HasPrefix(location, "https://example.com/redirect?"), location)
 
-	// Flow is available and is completed.
+	// Flow is available and is finished.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
 		assertFlowResponse(t, ts, service, resp, organization.ID, []charon.Completed{charon.CompletedSignin, charon.CompletedIdentity, charon.CompletedFinishReady, charon.CompletedFinished}, []charon.Provider{charon.PasswordProvider}, "", assertAppName(t, "Test organization", "Test application"))
