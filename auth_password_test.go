@@ -80,15 +80,14 @@ func startPasswordSignin(t *testing.T, ts *httptest.Server, service *charon.Serv
 	return resp
 }
 
-func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emailOrUsername string, signinOrSignout charon.Completed, organizationID *identifier.Identifier, flowID identifier.Identifier, organization, app, nonce, state, pkceVerifier string, config *oauth2.Config, verifier *oidc.IDTokenVerifier) string {
+func assertSignedUser(t *testing.T, signinOrSignout charon.Completed, flowID identifier.Identifier, resp *http.Response) {
 	t.Helper()
 
-	resp := startPasswordSignin(t, ts, service, emailOrUsername, []byte("test1234"), organizationID, flowID, organization, app) //nolint:bodyclose
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-	authFlowResponse := charon.AuthFlowResponse{}
+	var authFlowResponse charon.AuthFlowResponse
 	errE := x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
 	require.NoError(t, errE, "% -+#.1v", errE)
 	require.Equal(t, []charon.Completed{signinOrSignout}, authFlowResponse.Completed)
@@ -96,6 +95,13 @@ func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emai
 	for _, cookie := range resp.Cookies() {
 		assert.Equal(t, charon.SessionCookiePrefix+flowID.String(), cookie.Name)
 	}
+}
+
+func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emailOrUsername string, signinOrSignout charon.Completed, organizationID *identifier.Identifier, flowID identifier.Identifier, organization, app, nonce, state, pkceVerifier string, config *oauth2.Config, verifier *oidc.IDTokenVerifier) string {
+	t.Helper()
+
+	resp := startPasswordSignin(t, ts, service, emailOrUsername, []byte("test1234"), organizationID, flowID, organization, app) //nolint:bodyclose
+	assertSignedUser(t, signinOrSignout, flowID, resp)
 
 	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -105,6 +111,6 @@ func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emai
 	require.NoError(t, err)
 	oid := assertFlowResponse(t, ts, service, resp, organizationID, []charon.Completed{signinOrSignout}, []charon.Provider{charon.PasswordProvider}, "", assertAppName(t, organization, app))
 
-	chooseIdentity(t, ts, service, oid, flowID, organization, app, signinOrSignout, "password")
-	return doRedirect(t, ts, service, oid, flowID, organization, app, nonce, state, pkceVerifier, config, verifier, signinOrSignout, "password")
+	chooseIdentity(t, ts, service, oid, flowID, organization, app, signinOrSignout, []charon.Provider{charon.PasswordProvider})
+	return doRedirect(t, ts, service, oid, flowID, organization, app, nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{charon.PasswordProvider})
 }

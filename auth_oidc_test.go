@@ -219,8 +219,8 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	require.NoError(t, err)
 	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{signinOrSignout}, []charon.Provider{"testing"}, "", assertCharonDashboard)
 
-	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, "testing")
-	return doRedirect(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, "testing")
+	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{"testing"})
+	return doRedirect(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{"testing"})
 }
 
 func TestAuthFlowOIDC(t *testing.T) {

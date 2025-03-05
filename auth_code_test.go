@@ -2,7 +2,6 @@ package charon_test
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -10,12 +9,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/coreos/go-oidc/v3/oidc"
 	smtpmock "github.com/mocktools/go-smtp-mock/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
+	"golang.org/x/oauth2"
 
 	"gitlab.com/charon/charon"
 )
@@ -28,9 +28,9 @@ func TestAuthFlowCodeOnly(t *testing.T) {
 
 	ts, service, smtpServer, _ := startTestServer(t)
 
-	signinUserCode(t, ts, service, smtpServer, email, charon.CompletedSignup)
+	accessToken := signinUserCode(t, ts, service, smtpServer, email, charon.CompletedSignup)
 
-	signoutUser(t, ts, service)
+	signoutUser(t, ts, service, accessToken)
 
 	signinUserCode(t, ts, service, smtpServer, email, charon.CompletedSignin)
 }
@@ -43,39 +43,39 @@ func TestAuthFlowPasswordAndCode(t *testing.T) {
 
 	ts, service, smtpServer, _ := startTestServer(t)
 
-	flowID := createAuthFlow(t, ts, service)
+	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
 
 	// Start password authentication with e-mail address.
-	resp := startPasswordSignin(t, ts, service, email, []byte("test1234"), nil, flowID, charon.TargetSession) //nolint:bodyclose
+	resp := startPasswordSignin(t, ts, service, email, []byte("test1234"), nil, flowID, "Charon", "Dashboard") //nolint:bodyclose
 
 	// Complete with user code.
-	completeUserCode(t, ts, service, smtpServer, resp, email, charon.CompletedSignup, flowID)
+	accessToken := completeUserCode(t, ts, service, smtpServer, resp, email, charon.CompletedSignup, []charon.Provider{charon.PasswordProvider, charon.CodeProvider}, nil, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier)
 
-	signoutUser(t, ts, service)
+	signoutUser(t, ts, service, accessToken)
 
 	// Signed-up user can authenticate with code only.
-	signinUserCode(t, ts, service, smtpServer, email, charon.CompletedSignin)
+	accessToken = signinUserCode(t, ts, service, smtpServer, email, charon.CompletedSignin)
 
-	signoutUser(t, ts, service)
+	signoutUser(t, ts, service, accessToken)
 
 	// Signed-up user can authenticate with password only.
-	flowID = createAuthFlow(t, ts, service)
-	signinUser(t, ts, service, email, charon.CompletedSignin, nil, flowID, charon.TargetSession)
+	flowID, nonce, state, pkceVerifier, config, verifier = createAuthFlow(t, ts, service)
+	accessToken = signinUser(t, ts, service, email, charon.CompletedSignin, nil, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier)
 
-	signoutUser(t, ts, service)
+	signoutUser(t, ts, service, accessToken)
 
 	// Sign-in with invalid password is the same as sign-up.
-	flowID = createAuthFlow(t, ts, service)
-	resp = startPasswordSignin(t, ts, service, email, []byte("test4321"), nil, flowID, charon.TargetSession) //nolint:bodyclose
+	flowID, nonce, state, pkceVerifier, config, verifier = createAuthFlow(t, ts, service)
+	resp = startPasswordSignin(t, ts, service, email, []byte("test4321"), nil, flowID, "Charon", "Dashboard") //nolint:bodyclose
 
 	// Complete with user code.
-	completeUserCode(t, ts, service, smtpServer, resp, email, charon.CompletedSignin, flowID)
+	completeUserCode(t, ts, service, smtpServer, resp, email, charon.CompletedSignin, []charon.Provider{charon.PasswordProvider, charon.CodeProvider}, nil, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier)
 }
 
-func signinUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, smtpServer *smtpmock.Server, emailOrUsername string, signinOrSignout charon.Completed) {
+func signinUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, smtpServer *smtpmock.Server, emailOrUsername string, signinOrSignout charon.Completed) string {
 	t.Helper()
 
-	flowID := createAuthFlow(t, ts, service)
+	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
 
 	authFlowCodeStart, errE := service.ReverseAPI("AuthFlowCodeStart", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -84,40 +84,25 @@ func signinUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	resp, err := ts.Client().Post(ts.URL+authFlowCodeStart, "application/json", strings.NewReader(`{"emailOrUsername":"`+emailOrUsername+`"}`)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
 
-	completeUserCode(t, ts, service, smtpServer, resp, emailOrUsername, signinOrSignout, flowID)
+	return completeUserCode(t, ts, service, smtpServer, resp, emailOrUsername, signinOrSignout, []charon.Provider{charon.CodeProvider}, nil, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier)
 }
 
-func completeUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, smtpServer *smtpmock.Server, resp *http.Response, emailOrUsername string, signinOrSignout charon.Completed, flowID identifier.Identifier) {
+func completeUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, smtpServer *smtpmock.Server, resp *http.Response, emailOrUsername string, signinOrSignout charon.Completed, providers []charon.Provider, organizationID *identifier.Identifier, flowID identifier.Identifier, organization, app, nonce, state, pkceVerifier string, config *oauth2.Config, verifier *oidc.IDTokenVerifier) string {
 	t.Helper()
 
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-	out, err := io.ReadAll(resp.Body)
+	assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, providers, emailOrUsername, assertAppName(t, organization, app))
+
+	messages, err := smtpServer.WaitForMessagesAndPurge(1, time.Second)
 	require.NoError(t, err)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, 2, resp.ProtoMajor)
-	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-	assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"code","emailOrUsername":"`+emailOrUsername+`"}`, string(out))
-
-	// To make sure the message is delivered.
-	time.Sleep(time.Second)
-
-	messages := smtpServer.MessagesAndPurge()
-
 	require.Len(t, messages, 1)
 
 	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	// Flow is available, current provider is code.
+	// Flow is still available.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		out, err := io.ReadAll(resp.Body) //nolint:govet
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		assert.Equal(t, 2, resp.ProtoMajor)
-		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"code","emailOrUsername":"`+emailOrUsername+`"}`, string(out))
+		assertFlowResponse(t, ts, service, resp, organizationID, []charon.Completed{}, providers, emailOrUsername, assertAppName(t, organization, app))
 	}
 
 	nonAPIAuthFlowGet, errE := service.Reverse("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
@@ -135,30 +120,13 @@ func completeUserCode(t *testing.T, ts *httptest.Server, service *charon.Service
 	// Complete code authentication.
 	resp, err = ts.Client().Post(ts.URL+authFlowCodeComplete, "application/json", strings.NewReader(`{"code":"`+match[1]+`"}`)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-	require.NoError(t, err)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, 2, resp.ProtoMajor)
-	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-	var authFlowResponse charon.AuthFlowResponse
-	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
-	require.NoError(t, errE, "% -+#.1v", errE)
-	require.Equal(t, signinOrSignout, authFlowResponse.Completed)
-	assert.Len(t, resp.Cookies(), 1)
-	for _, cookie := range resp.Cookies() {
-		assert.Equal(t, charon.SessionCookieName, cookie.Name)
-	}
+	assertSignedUser(t, signinOrSignout, flowID, resp)
 
-	// Flow is available and is completed.
+	// Flow is available and signinOrSignout is completed.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
-	if assert.NoError(t, err) {
-		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		out, err := io.ReadAll(resp.Body)
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		assert.Equal(t, 2, resp.ProtoMajor)
-		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		// There is no username or e-mail address in the response after the flow completes.
-		assert.Equal(t, `{"target":"session","name":"Charon Dashboard","provider":"code","completed":"`+string(signinOrSignout)+`","location":{"url":"/","replace":true}}`, string(out))
-	}
+	require.NoError(t, err)
+	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{signinOrSignout}, providers, "", assertAppName(t, organization, app))
+
+	chooseIdentity(t, ts, service, oid, flowID, organization, app, signinOrSignout, providers)
+	return doRedirect(t, ts, service, oid, flowID, organization, app, nonce, state, pkceVerifier, config, verifier, signinOrSignout, providers)
 }
