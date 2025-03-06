@@ -42,11 +42,13 @@ func (s *Service) AuthSignoutPost(w http.ResponseWriter, req *http.Request, _ wa
 		return
 	}
 
+	ctx := req.Context()
+
 	// We clear all session cookies for all flows.
 	for _, cookie := range req.Cookies() {
 		if strings.HasPrefix(cookie.Name, SessionCookiePrefix) {
 			// We create a new cookie based on the existing one, but set MaxAge to -1 to clear it.
-			cookie = &http.Cookie{ //nolint:exhaustruct
+			deleteCookie := &http.Cookie{ //nolint:exhaustruct
 				Name:     cookie.Name,
 				Value:    "",
 				Path:     "/", // Host cookies have to have path set to "/".
@@ -57,15 +59,23 @@ func (s *Service) AuthSignoutPost(w http.ResponseWriter, req *http.Request, _ wa
 				HttpOnly: true,
 				SameSite: http.SameSiteLaxMode,
 			}
-			http.SetCookie(w, cookie)
-			// TODO: We should also invalidate the session in the database for every cookie we found.
+			http.SetCookie(w, deleteCookie)
+			session, errE := s.getSessionFromCookieValue(ctx, cookie.Value)
+			if errE != nil {
+				continue
+			}
+			errE = s.deleteSession(ctx, session.ID)
+			if errE != nil {
+				s.InternalServerErrorWithError(w, req, errE)
+				return
+			}
 		}
 	}
 
 	token := getBearerToken(req)
 	if token != "" {
 		// OIDC GetClient requires ctx with serviceContextKey set.
-		ctx := context.WithValue(req.Context(), serviceContextKey, s)
+		ctx = context.WithValue(ctx, serviceContextKey, s)
 		oidc := s.oidc()
 		co := s.charonOrganization()
 		revoke, errE := s.ReverseAPI("OIDCRevoke", nil, nil)

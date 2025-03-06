@@ -26,6 +26,15 @@ func (s Session) Expired() bool {
 	return time.Now().After(s.CreatedAt.Add(sessionExpiration))
 }
 
+func (s *Service) deleteSession(_ context.Context, id identifier.Identifier) errors.E {
+	s.sessionsMu.Lock()
+	defer s.sessionsMu.Unlock()
+
+	delete(s.sessions, id)
+
+	return nil
+}
+
 func (s *Service) getSession(_ context.Context, id identifier.Identifier) (*Session, errors.E) {
 	s.sessionsMu.RLock()
 	defer s.sessionsMu.RUnlock()

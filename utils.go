@@ -130,6 +130,28 @@ func (s *Service) getIdentityFromRequest(w http.ResponseWriter, req *http.Reques
 	return identifier.Identifier{}, identifier.Identifier{}, errors.WithStack(ErrIdentityNotPresent)
 }
 
+func (s *Service) getSessionFromCookieValue(ctx context.Context, cookieValue string) (*Session, errors.E) {
+	// We use a prefix to aid secret scanners.
+	if !strings.HasPrefix(cookieValue, SecretPrefixSession) {
+		return nil, errors.Wrapf(ErrSessionNotFound, `cookie value does not have "%s" prefix`, SecretPrefixSession)
+	}
+
+	token := strings.TrimPrefix(cookieValue, SecretPrefixSession)
+
+	err := s.hmac.Validate(ctx, token)
+	if err != nil {
+		return nil, errors.WrapWith(err, ErrSessionNotFound)
+	}
+
+	secretID, err := base64.RawURLEncoding.DecodeString(s.hmac.Signature(token))
+	if err != nil {
+		// This should not happen as we validated the token.
+		return nil, errors.WithStack(err)
+	}
+
+	return s.GetSessionBySecretID(ctx, [32]byte(secretID))
+}
+
 // getSessionFromRequest uses a session cookie to determine current session for flow's ID, if any.
 func (s *Service) getSessionFromRequest(w http.ResponseWriter, req *http.Request, flowID identifier.Identifier) (*Session, errors.E) {
 	ctx := req.Context()
@@ -148,25 +170,7 @@ func (s *Service) getSessionFromRequest(w http.ResponseWriter, req *http.Request
 		return nil, errors.WithStack(err)
 	}
 
-	// We use a prefix to aid secret scanners.
-	if !strings.HasPrefix(cookie.Value, SecretPrefixSession) {
-		return nil, errors.Wrapf(ErrSessionNotFound, `cookie value does not have "%s" prefix`, SecretPrefixSession)
-	}
-
-	token := strings.TrimPrefix(cookie.Value, SecretPrefixSession)
-
-	err = s.hmac.Validate(ctx, token)
-	if err != nil {
-		return nil, errors.WrapWith(err, ErrSessionNotFound)
-	}
-
-	secretID, err := base64.RawURLEncoding.DecodeString(s.hmac.Signature(token))
-	if err != nil {
-		// This should not happen as we validated the token.
-		return nil, errors.WithStack(err)
-	}
-
-	return s.GetSessionBySecretID(ctx, [32]byte(secretID))
+	return s.getSessionFromCookieValue(ctx, cookie.Value)
 }
 
 // validateSession returns session only if current session matches one made by the flow.
