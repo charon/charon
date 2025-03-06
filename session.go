@@ -2,6 +2,7 @@ package charon
 
 import (
 	"context"
+	"time"
 
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
@@ -10,13 +11,19 @@ import (
 
 var ErrSessionNotFound = errors.Base("session not found")
 
-// TODO: Add expiration to sessions which matches the length the cookie lasts.
+// One week.
+const sessionExpiration = time.Hour * 24 * 7
 
 type Session struct {
-	ID       identifier.Identifier
-	SecretID [32]byte
+	ID        identifier.Identifier
+	SecretID  [32]byte
+	CreatedAt time.Time
 
 	AccountID identifier.Identifier
+}
+
+func (s Session) Expired() bool {
+	return time.Now().After(s.CreatedAt.Add(sessionExpiration))
 }
 
 func (s *Service) getSession(_ context.Context, id identifier.Identifier) (*Session, errors.E) {
@@ -32,6 +39,9 @@ func (s *Service) getSession(_ context.Context, id identifier.Identifier) (*Sess
 	if errE != nil {
 		errors.Details(errE)["id"] = id
 		return nil, errE
+	}
+	if session.Expired() {
+		return nil, errors.WithDetails(ErrSessionNotFound, "id", id)
 	}
 	return &session, nil
 }
@@ -49,6 +59,9 @@ func (s *Service) GetSessionBySecretID(ctx context.Context, secretID [32]byte) (
 			return nil, errE
 		}
 		if session.SecretID == secretID {
+			if session.Expired() {
+				return nil, errors.WithDetails(ErrSessionNotFound)
+			}
 			return &session, nil
 		}
 	}

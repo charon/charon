@@ -286,8 +286,10 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	}
 
 	sessionID := identifier.New()
+	now := time.Now().UTC()
 	errE := s.setSession(ctx, &Session{
 		ID:        sessionID,
+		CreatedAt: now,
 		SecretID:  [32]byte(secretID),
 		AccountID: account.ID,
 	})
@@ -296,8 +298,6 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 		return
 	}
 	flow.SessionID = &sessionID
-
-	now := time.Now().UTC()
 	flow.AuthTime = &now
 
 	// Everything should already be set to nil at this point, but just to make sure.
@@ -314,7 +314,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 		Value:    SecretPrefixSession + token,
 		Path:     "/", // Host cookies have to have path set to "/".
 		Domain:   "",
-		Expires:  time.Now().Add(7 * 24 * time.Hour),
+		Expires:  time.Now().Add(sessionExpiration),
 		MaxAge:   0,
 		Secure:   true,
 		HttpOnly: true,
