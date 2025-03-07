@@ -80,12 +80,12 @@ type usernameCredential struct {
 func (s *Service) normalizeEmailOrUsername(w http.ResponseWriter, req *http.Request, flow *Flow, emailOrUsername string) string {
 	preservedEmailOrUsername, errE := normalizeUsernameCasePreserved(emailOrUsername)
 	if errE != nil {
-		s.flowError(w, req, flow, "invalidEmailOrUsername", errE)
+		s.flowError(w, req, flow, "ErrorCodeInvalidEmailOrUsername", errE)
 		return ""
 	}
 
 	if len(preservedEmailOrUsername) < emailOrUsernameMinLength {
-		s.flowError(w, req, flow, "shortEmailOrUsername", nil)
+		s.flowError(w, req, flow, "ErrorCodeShortEmailOrUsername", nil)
 		return ""
 	}
 
@@ -268,12 +268,12 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 
 	plainPassword, errE = normalizePassword(plainPassword)
 	if errE != nil {
-		s.flowError(w, req, flow, "invalidPassword", errE)
+		s.flowError(w, req, flow, "ErrorCodeInvalidPassword", errE)
 		return
 	}
 
 	if len(plainPassword) < passwordMinLength {
-		s.flowError(w, req, flow, "shortPassword", nil)
+		s.flowError(w, req, flow, "ErrorCodeShortPassword", nil)
 		return
 	}
 

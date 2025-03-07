@@ -167,11 +167,11 @@ func (s *Service) sendCodeForExistingAccount(
 		}
 
 		if len(emails) == 0 {
-			var code string
+			var code ErrorCode
 			if passwordFlow {
-				code = "wrongPassword"
+				code = ErrorCodeWrongPassword
 			} else {
-				code = "noEmails"
+				code = ErrorCodeNoEmails
 			}
 			s.flowError(w, req, flow, code, nil)
 			return
@@ -323,7 +323,7 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 
 	// We can send a code only if we have an e-mail address.
 	if !strings.Contains(mappedEmailOrUsername, "@") {
-		s.flowError(w, req, flow, "noAccount", nil)
+		s.flowError(w, req, flow, ErrorCodeNoAccount, nil)
 		return
 	}
 
@@ -384,7 +384,7 @@ func (s *Service) AuthFlowCodeCompletePost(w http.ResponseWriter, req *http.Requ
 		if !s.increaseAuthAttempts(w, req, flow) {
 			return
 		}
-		s.flowError(w, req, flow, "invalidCode", nil)
+		s.flowError(w, req, flow, ErrorCodeInvalidCode, nil)
 		return
 	}
 

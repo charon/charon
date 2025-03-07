@@ -20,11 +20,6 @@ const (
 	MaxAuthAttempts = 10
 )
 
-type AuthFlowResponseLocation struct {
-	URL     string `json:"url"`
-	Replace bool   `json:"replace"`
-}
-
 type AuthFlowResponse struct {
 	Completed []Completed `json:"completed"`
 
@@ -37,10 +32,23 @@ type AuthFlowResponse struct {
 	Passkey         *AuthFlowResponsePasskey      `json:"passkey,omitempty"`
 	Password        *AuthFlowResponsePassword     `json:"password,omitempty"`
 
-	Error string `json:"error,omitempty"`
+	Error ErrorCode `json:"error,omitempty"`
 }
 
-func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *Flow, errorCode string, failureErr errors.E) {
+type ErrorCode string
+
+const (
+	ErrorCodeWrongPassword          ErrorCode = "wrongPassword"
+	ErrorCodeNoEmails               ErrorCode = "noEmails"
+	ErrorCodeNoAccount              ErrorCode = "noAccount"
+	ErrorCodeInvalidCode            ErrorCode = "invalidCode"
+	ErrorCodeInvalidEmailOrUsername ErrorCode = "invalidEmailOrUsername"
+	ErrorCodeShortEmailOrUsername   ErrorCode = "shortEmailOrUsername"
+	ErrorCodeInvalidPassword        ErrorCode = "invalidPassword"
+	ErrorCodeShortPassword          ErrorCode = "shortPassword"
+)
+
+func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *Flow, errorCode ErrorCode, failureErr errors.E) {
 	ctx := req.Context()
 
 	if failureErr == nil {

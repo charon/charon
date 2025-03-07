@@ -62,13 +62,14 @@ func (i *IdentityOrganization) Validate(_ context.Context, existing *IdentityOrg
 }
 
 type IdentityAccount struct {
-	IdentityID identifier.Identifier `json:"identityId"`
-	AccountID  identifier.Identifier `json:"accountId"`
+	IdentityRef
+
+	AccountID identifier.Identifier `json:"accountId"`
 }
 
 func cmpIdentityAccount(a IdentityAccount, b IdentityAccount) int {
 	return cmp.Or(
-		bytes.Compare(a.IdentityID[:], b.IdentityID[:]),
+		bytes.Compare(a.ID[:], b.ID[:]),
 		bytes.Compare(a.AccountID[:], b.AccountID[:]),
 	)
 }
@@ -84,7 +85,7 @@ type Identity struct {
 
 	Description string `json:"description"`
 
-	// TODO: When sending Identity out, we should not expose account IDs.
+	// TODO: When sending Identity out, we should not expose account IDs in IdentityAccount but send it only as IdentityRef.
 
 	// For identities we have an exception where we use accounts for access control,
 	// but we expose them through related identities to users.
@@ -235,7 +236,7 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 			// we do not set identityIDContextKey. We use the identity itself instead.
 			identityID = *i.ID
 		}
-		identityAccount := IdentityAccount{identityID, accountID}
+		identityAccount := IdentityAccount{IdentityRef{identityID}, accountID}
 		if !slices.Contains(i.Admins, identityAccount) {
 			i.Admins = append(i.Admins, identityAccount)
 		}
