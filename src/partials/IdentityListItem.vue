@@ -29,7 +29,7 @@ function isDisabled(): boolean {
 </script>
 
 <template>
-  <WithIdentityDocument :id="item.id" ref="identity" name="IdentityGet">
+  <WithIdentityDocument ref="identity" :params="{id: item.id}" name="IdentityGet">
     <template #default="{ doc, metadata, url }">
       <div class="flex flex-row gap-4" :data-url="url">
         <div v-if="doc.pictureUrl" class="flex-none">

@@ -317,7 +317,7 @@ const WithOrganizationDocument = WithDocument<Organization>
             <ul>
               <li v-for="(identityOrganization, i) in identityOrganizations" :key="identityOrganization.id || i" class="flex flex-col mb-4">
                 <!-- TODO: Use OrganizationListItem partial here. -->
-                <WithOrganizationDocument :id="identityOrganization.organization.id" name="OrganizationGet">
+                <WithOrganizationDocument :params="{id: identityOrganization.organization.id}" name="OrganizationGet">
                   <template #default="{ doc, metadata: meta, url }">
                     <h3 class="text-lg flex flex-row items-center gap-1" :data-url="url">
                       <router-link :to="{ name: 'OrganizationGet', params: { id: doc.id } }" class="link">{{ doc.name }}</router-link>
@@ -356,7 +356,7 @@ const WithOrganizationDocument = WithDocument<Organization>
             <template v-for="organization in organizations" :key="organization.id">
               <li v-if="!isOrganizationAdded(organization)" class="flex flex-col gap-4">
                 <!-- TODO: Use OrganizationListItem partial here. Should OrganizationListItem also show description? And provide slot for buttons? -->
-                <WithOrganizationDocument :id="organization.id" name="OrganizationGet">
+                <WithOrganizationDocument :params="{id: organization.id}" name="OrganizationGet">
                   <template #default="{ doc, metadata: meta, url }">
                     <div class="flex flex-row justify-between items-center gap-4" :data-url="url">
                       <h3 class="text-lg flex flex-row items-center gap-1">

@@ -11,7 +11,7 @@ const WithOrganizationDocument = WithDocument<Organization>
 </script>
 
 <template>
-  <WithOrganizationDocument :id="item.id" name="OrganizationGet">
+  <WithOrganizationDocument :params="{id: item.id}" name="OrganizationGet">
     <template #default="{ doc, metadata, url }">
       <h2 class="text-xl flex flex-row items-center gap-1" :data-url="url">
         <router-link :to="{ name: 'OrganizationGet', params: { id: doc.id } }" class="link">{{ doc.name }}</router-link>

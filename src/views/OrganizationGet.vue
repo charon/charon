@@ -381,7 +381,7 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                   the current list. But we can just check the metadata.
                 -->
                 <!-- TODO: Use ApplicationTemplateListItem partial here. -->
-                <WithApplicationTemplateDocument :id="application.applicationTemplate.id" name="ApplicationTemplateGet">
+                <WithApplicationTemplateDocument :params="{id: application.applicationTemplate.id}" name="ApplicationTemplateGet">
                   <template #default="{ metadata: meta, url }">
                     <h3 class="text-lg flex flex-row items-center gap-1" :data-url="url">
                       <router-link :to="{ name: 'ApplicationTemplateGet', params: { id: application.applicationTemplate.id } }" class="link">{{
@@ -497,7 +497,7 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
           <ul v-if="metadata.can_update" class="flex flex-col gap-4">
             <li v-for="applicationTemplate in applicationTemplates" :key="applicationTemplate.id" class="flex flex-col gap-4">
               <!-- TODO: Use ApplicationTemplateListItem partial here. Should ApplicationTemplateListItem also show description? And provide slot for buttons? -->
-              <WithApplicationTemplateDocument :id="applicationTemplate.id" name="ApplicationTemplateGet">
+              <WithApplicationTemplateDocument :params="{id: applicationTemplate.id}" name="ApplicationTemplateGet">
                 <template #default="{ doc, metadata: meta, url }">
                   <div class="flex flex-row justify-between items-center gap-4" :data-url="url">
                     <h3 class="text-lg flex flex-row items-center gap-1">
