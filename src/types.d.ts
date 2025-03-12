@@ -69,6 +69,8 @@ export type AuthFlowResponse = {
   providers?: string[]
   emailOrUsername?: string
 } & (
+  // AuthFlowResponse can also return none of the fields below. Not sure if this is
+  // captured by this type definition, but it probably does not matter in practice.
   | {
       error: ErrorCode
     }
