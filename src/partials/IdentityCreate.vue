@@ -65,9 +65,11 @@ async function onSubmit() {
     }
     const url = router.apiResolve({
       name: "IdentityCreate",
-      query: props.flowId ? {
-        flow: props.flowId,
-      } : undefined,
+      query: props.flowId
+        ? {
+            flow: props.flowId,
+          }
+        : undefined,
     }).href
 
     const identity = await postJSON<IdentityRef>(url, payload, abortController.signal, progress)

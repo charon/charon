@@ -13,7 +13,9 @@ const props = withDefaults(
     query?: QueryValues
   }>(),
   {
-    query: () => {return {}},
+    query: () => {
+      return {}
+    },
   },
 )
 

@@ -1,21 +1,18 @@
 import type { Ref } from "vue"
 
 import { ref } from "vue"
-import * as client from 'openid-client'
+import * as client from "openid-client"
 // It is OK that we fetch siteContext here because the server sends preload header
 // so we have to fetch it always anyway. Generally this is already cached.
 import siteContext from "@/context"
 import { currentAbsoluteURL, redirectServerSide, replaceLocationSearch } from "./utils"
 
-const config = await client.discovery(
-  new URL(document.location.origin),
-  siteContext.clientId,
-)
+const config = await client.discovery(new URL(document.location.origin), siteContext.clientId)
 
 type State = {
-  redirect: string,
-  codeVerifier: string,
-  nonce: string,
+  redirect: string
+  codeVerifier: string
+  nonce: string
 }
 
 export const accessToken = ref("")
@@ -26,14 +23,16 @@ export async function signIn(progress: Ref<number>) {
   const stateId = client.randomState()
   const nonce = client.randomNonce()
 
-  const redirectTo = client.buildAuthorizationUrl(config, {
-    redirect_uri: siteContext.redirectUri,
-    code_challenge: codeChallenge,
-    code_challenge_method: 'S256',
-    scope: "openid profile email",
-    state: stateId,
-    nonce: nonce,
-  }).toString()
+  const redirectTo = client
+    .buildAuthorizationUrl(config, {
+      redirect_uri: siteContext.redirectUri,
+      code_challenge: codeChallenge,
+      code_challenge_method: "S256",
+      scope: "openid profile email",
+      state: stateId,
+      nonce: nonce,
+    })
+    .toString()
 
   const state: State = {
     redirect: currentAbsoluteURL(),
@@ -41,7 +40,7 @@ export async function signIn(progress: Ref<number>) {
     nonce,
   }
 
-  localStorage.setItem(stateId, JSON.stringify(state));
+  localStorage.setItem(stateId, JSON.stringify(state))
 
   redirectServerSide(redirectTo, false, progress)
 }
@@ -62,15 +61,11 @@ export async function processOIDCRedirect() {
   localStorage.removeItem(stateId)
   const state = JSON.parse(stateJSON) as State
 
-  const tokens = await client.authorizationCodeGrant(
-    config,
-    url,
-    {
-      pkceCodeVerifier: state.codeVerifier,
-      expectedState: stateId,
-      expectedNonce: state.nonce,
-    },
-  )
+  const tokens = await client.authorizationCodeGrant(config, url, {
+    pkceCodeVerifier: state.codeVerifier,
+    expectedState: stateId,
+    expectedNonce: state.nonce,
+  })
 
   accessToken.value = tokens.access_token
 }

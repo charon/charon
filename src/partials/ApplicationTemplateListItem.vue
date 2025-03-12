@@ -11,7 +11,7 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
 </script>
 
 <template>
-  <WithApplicationTemplateDocument :params="{id: item.id}" name="ApplicationTemplateGet">
+  <WithApplicationTemplateDocument :params="{ id: item.id }" name="ApplicationTemplateGet">
     <template #default="{ doc, metadata, url }">
       <h2 class="text-xl flex flex-row items-center gap-1" :data-url="url">
         <router-link :to="{ name: 'ApplicationTemplateGet', params: { id: doc.id } }" class="link">{{ doc.name }}</router-link>
