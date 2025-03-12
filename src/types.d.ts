@@ -26,69 +26,49 @@ export type EncryptOptions = {
   length: number
 }
 
-export type PasswordResponseJSON = {
+export type AuthFlowResponsePasswordJSON = {
   publicKey: string
   deriveOptions: DeriveOptions
   encryptOptions: EncryptOptionsJSON
 }
 
-export type PasswordResponse = {
+export type AuthFlowResponsePassword = {
   publicKey: Uint8Array
   deriveOptions: DeriveOptions
   encryptOptions: EncryptOptions
 }
 
-export type LocationResponse = {
-  url: string
-  replace: boolean
+export type AuthFlowResponseOIDCProvider = {
+  location: string
 }
 
-// "signinOrSignup" is frontend only addition where we have to move back to choose the identity, but we do not know
-// anymore if it was "signin" or "signup". We cannot use "" because that means that the user is not yet authenticated.
-export type Completed = "" | "signin" | "signup" | "failed" | "identity" | "declined" | "redirect" | "signinOrSignup"
+export type AuthFlowResponsePasskey = {
+  createOptions: { publicKey: PublicKeyCredentialCreationOptionsJSON }
+} | {
+  getOptions: { publicKey: PublicKeyCredentialRequestOptionsJSON }
+}
 
-export type AuthFlowStep = { key: string; name: string }
+export type Completed = "" | "signin" | "signup" | "failed" | "identity" | "declined" | "finishReady" | "finished"
 
-export type AuthFlowResponse = (
-  | {
-      target: "session"
-      name: string
-      completed: Completed
-    }
-  | {
-      target: "oidc"
-      name: string
-      homepage: string
-      organizationId: string
-      completed: Completed
-    }
-) & {
-  provider?: string
-  emailOrUsername?: string
+export type ErrorCode = "wrongPassword" | "noEmails" | "noAccount" | "invalidCode" | "invalidEmailOrUsername" | "shortEmailOrUsername" | "invalidPassword" | "shortPassword"
+
+export type AuthFlowResponse = {
+  completed: Completed[],
+  organizationId: string,
+  appId: string,
+  providers?: string[],
+  emailOrUsername?: string,
 } & (
-    | {
-        error: "wrongPassword" | "noEmails" | "noAccount" | "invalidCode" | "invalidEmailOrUsername" | "shortEmailOrUsername" | "invalidPassword" | "shortPassword"
-      }
-    | {
-        location: LocationResponse
-      }
-    | {
-        completed: Completed
-        location: LocationResponse
-      }
-    | {
-        passkey:
-          | {
-              createOptions: { publicKey: PublicKeyCredentialCreationOptionsJSON }
-            }
-          | {
-              getOptions: { publicKey: PublicKeyCredentialRequestOptionsJSON }
-            }
-      }
-    | {
-        password: PasswordResponseJSON
-      }
-  )
+  {
+    error: ErrorCode
+  } | {
+    oidcProvider: AuthFlowResponseOIDCProvider,
+  } | {
+    passkey: AuthFlowResponsePasskey,
+  } | {
+    password: AuthFlowResponsePasswordJSON,
+  }
+)
 
 export type AuthFlowProviderStartRequest = {
   provider: string
@@ -124,27 +104,14 @@ export type AuthSignoutRequest = {
 }
 
 export type AuthSignoutResponse = {
-  url: string
-  replace: boolean
-}
-
-export type AuthFlowCreateRequest = {
   location: string
 }
-
-export type AuthFlowCreateResponse =
-  | {
-      id: string
-    }
-  | {
-      error: "alreadyAuthenticated"
-    }
 
 export type AuthFlowChooseIdentityRequest = {
   identity: IdentityRef
 }
 
-export type Provider = {
+export type SiteProvider = {
   key: string
   name: string
   type: string
@@ -157,30 +124,38 @@ export type SiteContext = {
     buildTimestamp?: string
     revision?: string
   }
-  providers: Provider[]
+  providers: SiteProvider[]
+  clientId: string
+  redirectUri: string
 }
 
+export type AuthFlowStep = { key: string; name: string }
+
 export type Flow = {
+  getId(): string
+
   forward(to: string): void
   backward(to: string): void
-  getEmailOrUsername(): string
-  updateEmailOrUsername(value: string): void
-  updatePublicKey(value?: Uint8Array): void
-  updateDeriveOptions(value?: DeriveOptions): void
-  updateEncryptOptions(value?: EncryptOptions): void
-  getProvider(): string
-  updateProvider(value: string): void
-  getTarget(): "session" | "oidc"
-  updateTarget(value: "session" | "oidc"): void
-  updateLocation(value: LocationResponse): void
-  getName(): string
-  updateName(value: string): void
-  updateHomepage(value: string): void
-  updateOrganizationId(value: string): void
   getSteps(): AuthFlowStep[]
-  updateSteps(value: AuthFlowStep[]): void
-  getCompleted(): Completed
-  updateCompleted(value: Completed): void
+  setSteps(value: AuthFlowStep[]): void
+
+  getCompleted(): Completed[]
+  setCompleted(value: Completed[]): void
+  getOrganizationId(): string
+  setOrganizationId(value: string): void
+  getAppId(): string
+  setAppId(value: string): void
+  getOIDCProvider(): SiteProvider | null
+  setOIDCProvider(value: SiteProvider | null): void
+  getEmailOrUsername(): string
+  setEmailOrUsername(value: string): void
+
+  getPublicKey(): Uint8Array | undefined
+  setPublicKey(value?: Uint8Array): void
+  getDeriveOptions(): DeriveOptions | undefined
+  setDeriveOptions(value?: DeriveOptions): void
+  getEncryptOptions(): EncryptOptions | undefined
+  setEncryptOptions(value?: EncryptOptions): void
 }
 
 // Symbol is not generated by the server side, but we can easily support it here.
@@ -228,7 +203,11 @@ export type ApplicationTemplateClientService = {
   tokenEndpointAuthMethod: "client_secret_post" | "client_secret_basic"
 }
 
-export type ApplicationTemplate = ApplicationTemplateCreate & {
+export type ApplicationTemplateCreate = {
+  name: string
+}
+
+export type ApplicationTemplatePublic = ApplicationTemplateCreate & {
   id: string
   description: string
   homepageTemplate: string
@@ -237,12 +216,10 @@ export type ApplicationTemplate = ApplicationTemplateCreate & {
   clientsPublic: ApplicationTemplateClientPublic[]
   clientsBackend: ApplicationTemplateClientBackend[]
   clientsService: ApplicationTemplateClientService[]
-  // Application templates in OrganizationApplication do not have this field.
-  admins?: AccountRef[]
 }
 
-export type ApplicationTemplateCreate = {
-  name: string
+export type ApplicationTemplate = ApplicationTemplatePublic & {
+  admins?: IdentityRef[]
 }
 
 export type Organizations = OrganizationRef[]
@@ -260,7 +237,7 @@ export type ClientRef = {
   id: string
 }
 
-export type AccountRef = {
+export type IdentityRef = {
   id: string
 }
 
@@ -281,14 +258,17 @@ export type OrganizationApplicationClientService = {
   secret: string
 }
 
-export type OrganizationApplication = {
+export type OrganizationApplicationPublic = {
   id?: string
   active: boolean
-  applicationTemplate: ApplicationTemplate | DeepReadonly<ApplicationTemplate>
+  applicationTemplate: ApplicationTemplatePublic | DeepReadonly<ApplicationTemplatePublic>
   values: Value[]
-  clientsPublic: OrganizationApplicationClientPublic[]
-  clientsBackend: OrganizationApplicationClientBackend[]
-  clientsService: OrganizationApplicationClientService[]
+}
+
+export type OrganizationApplication = OrganizationApplicationPublic & {
+  clientsPublic?: OrganizationApplicationClientPublic[]
+  clientsBackend?: OrganizationApplicationClientBackend[]
+  clientsService?: OrganizationApplicationClientService[]
 }
 
 export type IdentityOrganization = {
@@ -297,11 +277,14 @@ export type IdentityOrganization = {
   organization: OrganizationRef
 }
 
-export type Organization = OrganizationCreate & {
+export type OrganizationPublic = OrganizationCreate & {
   id: string
   description: string
-  admins: AccountRef[]
-  applications: OrganizationApplication[]
+}
+
+export type Organization = OrganizationPublic & {
+  admins?: IdentityRef[]
+  applications?: OrganizationApplication[]
 }
 
 export type OrganizationCreate = {
@@ -310,8 +293,10 @@ export type OrganizationCreate = {
 
 export type Identity = IdentityCreate & {
   id: string
-  users?: AccountRef[]
-  admins: AccountRef[]
+  // We use IdentityRef instead of IdentityAccount here because client
+  // side has access only to identity IDs and not account IDs.
+  users?: IdentityRef[]
+  admins: IdentityRef[]
   organizations: IdentityOrganization[]
 }
 
@@ -325,10 +310,6 @@ export type IdentityCreate = {
 }
 
 export type Identities = IdentityRef[]
-
-export type IdentityRef = {
-  id: string
-}
 
 // It is recursive.
 export type Mutable<T> = {

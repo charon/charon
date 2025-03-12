@@ -16,9 +16,9 @@ elements and links but that should not change how components look.
 -->
 
 <script setup lang="ts">
-import type { AuthFlowResponse, AuthFlowStep, Completed, DeriveOptions, EncryptOptions, LocationResponse, Organization } from "@/types"
+import type { AuthFlowResponse, AuthFlowStep, Completed, DeriveOptions, EncryptOptions, Flow, Organization, OrganizationApplicationPublic, SiteProvider } from "@/types"
 
-import { onBeforeMount, onBeforeUnmount, onMounted, provide, ref, watch } from "vue"
+import { onBeforeMount, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import WithDocument from "@/components/WithDocument.vue"
 import Stepper from "@/components/Stepper.vue"
@@ -35,8 +35,8 @@ import AuthManualRedirect from "@/partials/AuthManualRedirect.vue"
 import { getURL, restartAuth } from "@/api"
 // Importing "@/flow" also fetches siteContext which we have to fetch because
 // the server sends the preload header for it. Generally this is already cached.
-import { getProvider, updateSteps, flowKey, updateStepsNoCode } from "@/flow"
-import { processCompleted } from "@/utils"
+import { updateSteps, processFirstResponse } from "@/flow"
+import { getHomepage } from "@/utils"
 import { injectProgress } from "@/progress"
 
 const props = defineProps<{
@@ -54,23 +54,25 @@ const unexpectedError = ref("")
 const steps = ref<AuthFlowStep[]>([])
 const currentStep = ref("start")
 const direction = ref<"forward" | "backward">("forward")
+
+const completed = ref<Completed[]>([])
+const organizationId = ref("")
+const appId = ref("")
+const oidcProvider = ref<SiteProvider | null>(null)
 const emailOrUsername = ref("")
 const publicKey = ref<Uint8Array>()
 const deriveOptions = ref<DeriveOptions>()
 const encryptOptions = ref<EncryptOptions>()
-const provider = ref("")
-const location = ref<LocationResponse>({ url: "", replace: false })
-const target = ref<"session" | "oidc">("session")
-const name = ref("")
-const homepage = ref("")
-const organizationId = ref("")
-const completed = ref<Completed>("")
 
 onBeforeUnmount(() => {
   abortController.abort()
 })
 
-const flow = {
+const flow: Flow = {
+  getId(): string {
+    return props.id
+  },
+
   forward(to: string) {
     updateSteps(flow, to)
     direction.value = "forward"
@@ -80,62 +82,63 @@ const flow = {
     direction.value = "backward"
     currentStep.value = to
   },
-  getEmailOrUsername(): string {
-    return emailOrUsername.value
-  },
-  updateEmailOrUsername(value: string) {
-    emailOrUsername.value = value
-  },
-  updatePublicKey(value?: Uint8Array) {
-    publicKey.value = value
-  },
-  updateDeriveOptions(value?: DeriveOptions) {
-    deriveOptions.value = value
-  },
-  updateEncryptOptions(value?: EncryptOptions) {
-    encryptOptions.value = value
-  },
-  getProvider(): string {
-    return provider.value
-  },
-  updateProvider(value: string) {
-    provider.value = value
-  },
-  getTarget(): "session" | "oidc" {
-    return target.value
-  },
-  updateTarget(value: "session" | "oidc") {
-    target.value = value
-  },
-  updateLocation(value: LocationResponse) {
-    location.value = value
-  },
-  getName(): string {
-    return name.value
-  },
-  updateName(value: string) {
-    name.value = value
-  },
-  updateHomepage(value: string) {
-    homepage.value = value
-  },
-  updateOrganizationId(value: string) {
-    organizationId.value = value
-  },
   getSteps(): AuthFlowStep[] {
     return steps.value
   },
-  updateSteps(value: AuthFlowStep[]) {
+  setSteps(value: AuthFlowStep[]) {
     steps.value = value
   },
-  getCompleted(): Completed {
+
+  getCompleted(): Completed[] {
     return completed.value
   },
-  updateCompleted(value: Completed) {
+  setCompleted(value: Completed[]) {
     completed.value = value
   },
+  getOrganizationId(): string {
+    return organizationId.value
+  },
+  setOrganizationId(value: string) {
+    organizationId.value = value
+  },
+  getAppId(): string {
+    return appId.value
+  },
+  setAppId(value: string) {
+    appId.value = value
+  },
+  getOIDCProvider(): SiteProvider | null {
+    return oidcProvider.value
+  },
+  setOIDCProvider(value: SiteProvider | null) {
+    oidcProvider.value = value
+  },
+  getEmailOrUsername(): string {
+    return emailOrUsername.value
+  },
+  setEmailOrUsername(value: string) {
+    emailOrUsername.value = value
+  },
+
+  getPublicKey: function (): Uint8Array | undefined {
+    return publicKey.value
+  },
+  setPublicKey(value?: Uint8Array) {
+    publicKey.value = value
+  },
+  getDeriveOptions: function (): DeriveOptions | undefined {
+    return deriveOptions.value
+  },
+  setDeriveOptions(value?: DeriveOptions) {
+    deriveOptions.value = value
+  },
+  getEncryptOptions: function (): EncryptOptions | undefined {
+    return encryptOptions.value
+  },
+  setEncryptOptions(value?: EncryptOptions) {
+    encryptOptions.value = value
+  },
 }
-provide(flowKey, flow)
 
 onBeforeMount(async () => {
   try {
@@ -150,71 +153,7 @@ onBeforeMount(async () => {
     if (abortController.signal.aborted) {
       return
     }
-
-    const flowResponse = response.doc
-    target.value = flowResponse.target
-    if (flowResponse.name) {
-      name.value = flowResponse.name
-    }
-    if ("homepage" in flowResponse) {
-      homepage.value = flowResponse.homepage
-    }
-    if ("organizationId" in flowResponse) {
-      organizationId.value = flowResponse.organizationId
-    }
-    if (flowResponse.emailOrUsername) {
-      emailOrUsername.value = flowResponse.emailOrUsername
-    }
-    if (flowResponse.provider) {
-      if (flowResponse.provider === "code" || flowResponse.provider === "password") {
-        updateSteps(flow, flowResponse.provider)
-        currentStep.value = flowResponse.provider
-      } else if (flowResponse.provider === "passkey") {
-        updateSteps(flow, "passkeySignin")
-        currentStep.value = "passkeySignin"
-      } else if (getProvider(flowResponse.provider)) {
-        provider.value = flowResponse.provider
-        // We call updateSteps but the flow is probably completed so
-        // we will set currentStep to "autoRedirect" (or "manualRedirect") below.
-        // Still, we want steps to be updated for the "oidcProvider" first.
-        updateSteps(flow, "oidcProvider")
-        currentStep.value = "oidcProvider"
-      } else {
-        throw new Error(`unknown provider "${flowResponse.provider}"`)
-      }
-    } else {
-      updateSteps(flow, "start", true)
-    }
-    if ("location" in flowResponse && "completed" in flowResponse) {
-      if (flowResponse.provider === "password") {
-        updateStepsNoCode(flow)
-      }
-      // "location" and "completed" are provided together only for session target,
-      // so there is no organization ID.
-      processCompleted(flow, flowResponse.target, flowResponse.location, flowResponse.name, flowResponse.completed)
-    } else if ("completed" in flowResponse) {
-      if (flowResponse.provider === "password") {
-        updateStepsNoCode(flow)
-      }
-      // If "completed" is provided, but "location" is not, we are in OIDC target or session target choosing
-      // an identity, in any case we pass an empty location response as it is not used.
-      if ("homepage" in flowResponse) {
-        flow.updateHomepage(flowResponse.homepage)
-      }
-      if ("organizationId" in flowResponse) {
-        flow.updateOrganizationId(flowResponse.organizationId)
-      }
-      processCompleted(
-        flow,
-        flowResponse.target,
-        { url: "", replace: false },
-        flowResponse.name,
-        flowResponse.completed,
-      )
-    }
-    if ("error" in flowResponse && flowResponse.error) {
-      throw new Error(`unexpected error "${flowResponse.error}"`)
-    }
+    processFirstResponse(router, response.doc, flow, progress)
   } catch (error) {
     if (abortController.signal.aborted) {
       return
@@ -231,11 +170,16 @@ async function onPreviousStep(step: string) {
     return
   }
 
-  if (completed.value !== "" && step === "start") {
+  if (completed.value.length > 0 && step === "start") {
+    // Going back to start (after completed auth step) means restarting authentication.
     // TODO: What to do if unexpected error happens?
-    await restartAuth(router, props.id, flow, abortController.signal, progress)
-  } else if (completed.value !== "" && step === "identity") {
-    flow.updateCompleted("signinOrSignup")
+    // Here we do not pass abortController, but just its signal because we do not want to abort
+    // the view-level controller, which is what restartAuth does if it receives the abort controller.
+    await restartAuth(router, flow, abortController.signal, progress)
+  } else if (completed.value.length > 0 && step === "identity") {
+    // Going back to identity step means removing steps after the completed identity step.
+    const completed = flow.getCompleted()
+    flow.setCompleted(completed.filter((c) => c !== "identity" && c !== "finishReady" && c !== "declined"))
     flow.backward(step)
   } else {
     flow.backward(step)
@@ -324,6 +268,7 @@ onBeforeUnmount(() => {
 })
 
 const WithOrganizationDocument = WithDocument<Organization>
+const WithOrganizationApplicationDocument = WithDocument<OrganizationApplicationPublic>
 </script>
 
 <template>
@@ -346,13 +291,12 @@ const WithOrganizationDocument = WithDocument<Organization>
       <template v-else>
         <div class="w-full rounded border bg-white p-4 shadow">
           <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>
-          <div v-if="target === 'session'" class="mb-4">
-            <strong>{{ name }}</strong> is asking you to sign-in or sign-up. Please follow the steps below to do so.
-          </div>
-          <div v-else class="mb-4">
-            <a :href="homepage" class="link"
-              ><strong>{{ name }}</strong></a
-            >
+          <div class="mb-4">
+            <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationAppGet">
+              <template #default="{ doc }">
+                <a :href="getHomepage(doc)" class="link"><strong>{{ doc.applicationTemplate.name }}</strong></a>
+              </template>
+            </WithOrganizationApplicationDocument>
             from organization
             <WithOrganizationDocument :id="organizationId" name="OrganizationGet">
               <template #default="{ doc, url }">
@@ -374,23 +318,21 @@ const WithOrganizationDocument = WithDocument<Organization>
               <a
                 v-else-if="
                   beforeActive &&
-                  completed !== 'failed' &&
-                  (completed === '' ||
+                  !flow.getCompleted().includes('failed') &&
+                  (flow.getCompleted().length === 0 ||
                     (
-                      (
-                        // After authentication has completed, but not the whole flow has completed
-                        // (OIDC target completes with redirect, session target completes with identity),
-                        // allow returning to any step which is not an intermediary authentication step
-                        // (we want to force full authentication restart to the first authentication step
-                        // if a user wants to redo authentication).
-                        (target === 'oidc' && completed !== 'redirect') ||
-                        (target === 'session' && completed !== 'identity')
-                      ) &&
+                      // After authentication has completed, but not the whole flow has finished
+                      // allow returning to any step which is not an intermediary authentication step
+                      // (we want to force full authentication restart to the first authentication step
+                      // if a user wants to redo authentication).
+                      !flow.getCompleted().includes('finished') &&
                       step.key != 'password' &&
                       step.key != 'oidcProvider' &&
                       step.key != 'passkeySignin' &&
                       step.key != 'passkeySignup' &&
-                      step.key != 'code'))
+                      step.key != 'code'
+                    )
+                  )
                 "
                 href=""
                 class="link"
@@ -411,39 +353,26 @@ const WithOrganizationDocument = WithDocument<Organization>
             @after-leave="onAfterLeave"
             @leave-cancelled="onLeaveCancelled"
           >
-            <AuthStart v-if="currentStep === 'start'" :id="id" ref="component" :email-or-username="emailOrUsername" />
-            <AuthOIDCProvider v-else-if="currentStep === 'oidcProvider'" :id="id" ref="component" :provider="provider" />
-            <AuthPasskeySignin v-else-if="currentStep === 'passkeySignin'" :id="id" ref="component" />
-            <AuthPasskeySignup v-else-if="currentStep === 'passkeySignup'" :id="id" ref="component" />
+            <AuthStart v-if="currentStep === 'start'" ref="component" :flow="flow" />
+            <AuthOIDCProvider v-else-if="currentStep === 'oidcProvider'" ref="component" :flow="flow" />
+            <AuthPasskeySignin v-else-if="currentStep === 'passkeySignin'" ref="component" :flow="flow" />
+            <AuthPasskeySignup v-else-if="currentStep === 'passkeySignup'" ref="component" :flow="flow" />
             <AuthPassword
               v-else-if="currentStep === 'password'"
-              :id="id"
               ref="component"
-              :email-or-username="emailOrUsername"
-              :public-key="publicKey"
-              :derive-options="deriveOptions"
-              :encrypt-options="encryptOptions"
+              :flow="flow"
             />
-            <AuthCode v-else-if="currentStep === 'code'" :id="id" ref="component" :name="name" :email-or-username="emailOrUsername" />
-            <AuthIdentity v-else-if="currentStep === 'identity'" :id="id" ref="component" :name="name" :completed="completed" :organization-id="organizationId" />
+            <AuthCode v-else-if="currentStep === 'code'" ref="component" :flow="flow" />
+            <AuthIdentity v-else-if="currentStep === 'identity'" ref="component" :flow="flow" />
             <AuthAutoRedirect
               v-else-if="currentStep === 'autoRedirect'"
-              :id="id"
               ref="component"
-              :name="name"
-              :completed="completed"
-              :location="location"
-              :target="target"
+              :flow="flow"
             />
             <AuthManualRedirect
               v-else-if="currentStep === 'manualRedirect'"
-              :id="id"
               ref="component"
-              :name="name"
-              :completed="completed"
-              :location="location"
-              :target="target"
-              :homepage="homepage"
+              :flow="flow"
             />
           </Transition>
         </div>

@@ -1,22 +1,20 @@
 <script setup lang="ts">
-import type { AuthFlowPasskeyGetCompleteRequest, AuthFlowResponse } from "@/types"
+import type { AuthFlowPasskeyGetCompleteRequest, AuthFlowResponse, Flow } from "@/types"
 
-import { getCurrentInstance, inject, onMounted, onBeforeUnmount, ref } from "vue"
+import { getCurrentInstance, onMounted, onBeforeUnmount, ref } from "vue"
 import { useRouter } from "vue-router"
 import { startAuthentication, WebAuthnAbortService } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
 import { postJSON } from "@/api"
-import { processCompletedAndLocationRedirect } from "@/utils"
-import { flowKey } from "@/flow"
+import { processResponse } from "@/flow"
 import { injectProgress } from "@/progress"
 
 const props = defineProps<{
-  id: string
+  flow: Flow
 }>()
 
 const router = useRouter()
 
-const flow = inject(flowKey)
 const progress = injectProgress()
 
 const abortController = new AbortController()
@@ -47,13 +45,13 @@ async function onAfterEnter() {
     const startUrl = router.apiResolve({
       name: "AuthFlowPasskeyGetStart",
       params: {
-        id: props.id,
+        id: props.flow.getId(),
       },
     }).href
     const completeUrl = router.apiResolve({
       name: "AuthFlowPasskeyGetComplete",
       params: {
-        id: props.id,
+        id: props.flow.getId(),
       },
     }).href
 
@@ -68,7 +66,8 @@ async function onAfterEnter() {
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(start, flow, progress, abortController)) {
+    // processResponse should not really do anything here.
+    if (processResponse(router, start, props.flow, progress, abortController)) {
       return
     }
     if (!("passkey" in start && "getOptions" in start.passkey)) {
@@ -82,7 +81,7 @@ async function onAfterEnter() {
       if (abortController.signal.aborted) {
         return
       }
-      flow!.forward("passkeySignup")
+      props.flow.forward("passkeySignup")
       return
     }
 
@@ -104,7 +103,8 @@ async function onAfterEnter() {
       if (abortController.signal.aborted) {
         return
       }
-      if (processCompletedAndLocationRedirect(complete, flow, progress, abortController)) {
+      // processResponse should move the flow to the next step.
+      if (processResponse(router, complete, props.flow, progress, abortController)) {
         return
       }
       throw new Error("unexpected response")
@@ -136,7 +136,7 @@ async function onBack() {
 
   abortController.abort()
   WebAuthnAbortService.cancelCeremony()
-  flow!.backward("start")
+  props.flow.backward("start")
 }
 
 async function onCancel() {
@@ -146,7 +146,7 @@ async function onCancel() {
 
   abortController.abort()
   WebAuthnAbortService.cancelCeremony()
-  flow!.forward("passkeySignup")
+  props.flow.forward("passkeySignup")
 }
 </script>
 

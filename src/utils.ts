@@ -1,74 +1,8 @@
-import type { Ref } from "vue"
-import type { Mutable, AuthFlowResponse, Completed, Flow, LocationResponse, QueryValuesWithOptional, QueryValues } from "@/types"
+import type { DeepReadonly, Ref } from "vue"
+import type { Mutable, QueryValuesWithOptional, QueryValues, OrganizationApplicationPublic } from "@/types"
 
 import { cloneDeep, isEqual } from "lodash-es"
 import { toRaw } from "vue"
-
-export function processCompleted(
-  flow: Flow,
-  target: "session" | "oidc",
-  location: LocationResponse,
-  name: string,
-  completed: Completed,
-) {
-  flow.updateTarget(target)
-  flow.updateLocation(location)
-  flow.updateName(name)
-  flow.updateCompleted(completed)
-  switch (completed) {
-    case "redirect":
-    case "failed":
-      flow.forward("manualRedirect")
-      break
-    case "signin":
-    case "signup":
-      flow.forward("identity")
-      break
-    case "declined":
-    case "identity":
-      flow.forward("autoRedirect")
-      break
-    default:
-      throw new Error(`unknown completed "${completed}"`)
-  }
-}
-
-export function processCompletedAndLocationRedirect(
-  response: AuthFlowResponse,
-  flow: Flow | undefined,
-  progress: Ref<number>,
-  abortController: AbortController | null,
-): boolean {
-  // We do not use Vue Router to force a server-side request which might return updated cookies
-  // or redirect on its own somewhere because of new (or lack thereof) cookies.
-  if ("location" in response) {
-    if ("completed" in response && flow) {
-      // "location" and "completed" are provided together only for session target.
-      processCompleted(flow, response.target, response.location, response.name, response.completed)
-      if (abortController) {
-        abortController.abort()
-      }
-    } else {
-      redirectServerSide(response.location.url, response.location.replace, progress)
-    }
-    return true
-  } else if ("completed" in response && flow && flow.getCompleted() !== response.completed) {
-    // If "completed" is provided, but "location" is not, we are in OIDC target or session target choosing
-    // an identity, in any case we pass an empty location response as it is not used.
-    if ("homepage" in response) {
-      flow.updateHomepage(response.homepage)
-    }
-    if ("organizationId" in response) {
-      flow.updateOrganizationId(response.organizationId)
-    }
-    processCompleted(flow, response.target, { url: "", replace: false }, response.name, response.completed)
-    if (abortController) {
-      abortController.abort()
-    }
-    return true
-  }
-  return false
-}
 
 export function redirectServerSide(url: string, replace: boolean, progress: Ref<number>) {
   // We increase the progress and never decrease it to wait for browser to do the redirect.
@@ -81,6 +15,15 @@ export function redirectServerSide(url: string, replace: boolean, progress: Ref<
   } else {
     window.location.assign(url)
   }
+}
+
+export function getHomepage(doc: DeepReadonly<OrganizationApplicationPublic>): string {
+  const homepageTemplate = doc.applicationTemplate.homepageTemplate
+  const values = new Map<string, string>()
+  for (const v of doc.values) {
+    values.set(v.name, v.value)
+  }
+  return interpolateVariables(homepageTemplate, values)
 }
 
 export function fromBase64(input: string): Uint8Array {
@@ -111,9 +54,17 @@ export function isEmail(emailOrUsername: string): boolean {
 
 export function replaceLocationHash(hash: string) {
   if (hash) {
-    history.replaceState ? history.replaceState(null, "", window.location.href.split("#")[0] + "#" + hash) : (window.location.hash = "#" + hash)
+    if (history.replaceState) {
+      history.replaceState(null, "", window.location.href.split("#")[0] + "#" + hash)
+    } else {
+      window.location.hash = "#" + hash
+    }
   } else {
-    history.replaceState ? history.replaceState(null, "", window.location.href.split("#")[0]) : (window.location.hash = "")
+    if (history.replaceState) {
+      history.replaceState(null, "", window.location.href.split("#")[0])
+    } else {
+      window.location.hash = ""
+    }
   }
 }
 
@@ -161,4 +112,28 @@ export function encodeQuery(query: QueryValuesWithOptional): QueryValues {
   }
 
   return values
+}
+
+const variableRegexp = /\{([^}]+)\}/g;
+
+// interpolateVariables should match implementation on the backend.
+export function interpolateVariables(template: string, values: Map<string, string>): string {
+  const unmatchedVariables: string[] = []
+  const result = template.replace(variableRegexp, (match) => {
+      const varName = match.slice(1, -1); // Removing the curly braces.
+      if (values.has(varName)) {
+          return values.get(varName)!
+      }
+      // Unmatched variable.
+      unmatchedVariables.push(varName)
+      return ""
+  });
+
+  if (unmatchedVariables.length > 0) {
+    const uniqueUnmatchedVariables = Array.from(new Set(unmatchedVariables))
+    uniqueUnmatchedVariables.sort()
+    throw new Error(`unknown variables: ${uniqueUnmatchedVariables.join(", ")}`)
+  }
+
+  return result
 }

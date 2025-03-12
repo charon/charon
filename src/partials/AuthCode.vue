@@ -1,25 +1,23 @@
 <script setup lang="ts">
-import type { AuthFlowCodeCompleteRequest, AuthFlowCodeStartRequest, AuthFlowResponse } from "@/types"
+import type { AuthFlowCodeCompleteRequest, AuthFlowCodeStartRequest, AuthFlowResponse, Flow, OrganizationApplicationPublic } from "@/types"
 
-import { ref, watch, onBeforeUnmount, onMounted, getCurrentInstance, inject } from "vue"
+import { ref, watch, onBeforeUnmount, onMounted, getCurrentInstance } from "vue"
 import { useRoute, useRouter } from "vue-router"
+import WithDocument from "@/components/WithDocument.vue"
 import Button from "@/components/Button.vue"
 import InputCode from "@/components/InputCode.vue"
 import { postJSON } from "@/api"
-import { processCompletedAndLocationRedirect, isEmail } from "@/utils"
-import { flowKey } from "@/flow"
+import { isEmail } from "@/utils"
 import { injectProgress } from "@/progress"
+import { processResponse } from "@/flow"
 
 const props = defineProps<{
-  id: string
-  name: string
-  emailOrUsername: string
+  flow: Flow
 }>()
 
 const router = useRouter()
 const route = useRoute()
 
-const flow = inject(flowKey)
 const progress = injectProgress()
 
 const abortController = new AbortController()
@@ -87,7 +85,7 @@ async function onBack() {
   }
 
   abortController.abort()
-  flow!.backward("password")
+  props.flow.backward("password")
 }
 
 async function onRedo() {
@@ -100,7 +98,7 @@ async function onRedo() {
   }
 
   abortController.abort()
-  flow!.backward("start")
+  props.flow.backward("start")
 }
 
 async function onNext() {
@@ -115,7 +113,7 @@ async function onNext() {
     const url = router.apiResolve({
       name: "AuthFlowCodeComplete",
       params: {
-        id: props.id,
+        id: props.flow.getId(),
       },
     }).href
 
@@ -130,7 +128,8 @@ async function onNext() {
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(response, flow, progress, abortController)) {
+    // processResponse should move the flow to the next step.
+    if (processResponse(router, response, props.flow, progress, abortController)) {
       return
     }
     if ("error" in response && ["invalidCode"].includes(response.error)) {
@@ -163,14 +162,14 @@ async function onResend() {
     const url = router.apiResolve({
       name: "AuthFlowCodeStart",
       params: {
-        id: props.id,
+        id: props.flow.getId(),
       },
     }).href
 
     const response = await postJSON<AuthFlowResponse>(
       url,
       {
-        emailOrUsername: props.emailOrUsername,
+        emailOrUsername: props.flow.getEmailOrUsername(),
       } as AuthFlowCodeStartRequest,
       abortController.signal,
       progress,
@@ -178,12 +177,13 @@ async function onResend() {
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(response, flow, progress, abortController)) {
+    // processResponse should not really do anything here.
+    if (processResponse(router, response, props.flow, progress, abortController)) {
       return
     }
     // No error is expected in the response because code has already been generated in the past
     // for the same request, so we do not check response.error here.
-    if ("provider" in response && response.provider === "code") {
+    if (response.providers && response.providers.length > 0 && response.providers[response.providers.length-1] === "code") {
       sendCounter.value += 1
       document.getElementById("code")?.focus()
       return
@@ -199,26 +199,30 @@ async function onResend() {
     progress.value -= 1
   }
 }
+
+const WithOrganizationApplicationDocument = WithDocument<OrganizationApplicationPublic>
 </script>
 
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div class="flex flex-col">
-      <label v-if="codeFromHash && isEmail(emailOrUsername)" for="code" class="mb-1"
-        >We sent the following 6-digit code to <strong>{{ emailOrUsername }}</strong> e-mail address:</label
+      <label v-if="codeFromHash && isEmail(flow.getEmailOrUsername())" for="code" class="mb-1"
+        >We sent the following 6-digit code to <strong>{{ flow.getEmailOrUsername() }}</strong> e-mail address:</label
       >
       <label v-else-if="codeFromHash" for="code" class="mb-1">
         We sent the following 6-digit code to e-mail address(es) associated with the Charon username
-        <strong>{{ emailOrUsername }}</strong
+        <strong>{{ flow.getEmailOrUsername() }}</strong
         >:</label
       >
-      <label v-else-if="!codeFromHash && isEmail(emailOrUsername)" for="code" class="mb-1"
-        >We {{ sendCounter > 1 ? `sent (${sendCounter}x)` : "sent" }} a 6-digit code to <strong>{{ emailOrUsername }}</strong> e-mail address. Please enter it to
+      <label v-else-if="!codeFromHash && isEmail(flow.getEmailOrUsername())" for="code" class="mb-1"
+        >We {{ sendCounter > 1 ? `sent (${sendCounter}x)` : "sent" }} a 6-digit code
+        to <strong>{{ flow.getEmailOrUsername() }}</strong> e-mail address. Please enter it to
         continue:</label
       >
       <label v-else-if="!codeFromHash" for="code" class="mb-1">
-        We {{ sendCounter > 1 ? `sent (${sendCounter}x)` : "sent" }} a 6-digit code to e-mail address(es) associated with the Charon username
-        <strong>{{ emailOrUsername }}</strong
+        We {{ sendCounter > 1 ? `sent (${sendCounter}x)` : "sent" }} a 6-digit code to
+        e-mail address(es) associated with the Charon username
+        <strong>{{ flow.getEmailOrUsername() }}</strong
         >. Please enter it to continue:</label
       >
       <!--
@@ -252,7 +256,12 @@ async function onResend() {
     <div v-else-if="codeFromHash" class="mt-4">Please confirm the code to continue.</div>
     <div v-else class="mt-4">Please allow few minutes for the code to arrive. Check spam or junk folder.</div>
     <div v-if="codeFromHash" class="mt-4">
-      If you were not signing in or signing up into {{ name }}, please disregard the e-mail and <strong>do not</strong> confirm the code.
+      <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationAppGet">
+        <template #default="{ doc }">
+          If you were not signing in or signing up into {{ doc.applicationTemplate.name }},
+          please disregard the e-mail and <strong>do not</strong> confirm the code.
+        </template>
+      </WithOrganizationApplicationDocument>
     </div>
     <div v-else class="mt-4">
       If you have trouble accessing your e-mail, try a

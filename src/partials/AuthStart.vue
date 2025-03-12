@@ -1,23 +1,23 @@
 <script setup lang="ts">
-import { ref, computed, watch, onBeforeUnmount, onMounted, getCurrentInstance, inject } from "vue"
+import type { Flow } from "@/types"
+
+import { ref, computed, watch, onBeforeUnmount, onMounted, getCurrentInstance } from "vue"
 import { useRouter } from "vue-router"
 import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import { startPassword } from "@/api"
 import { isEmail } from "@/utils"
-import { flowKey } from "@/flow"
 import { injectProgress } from "@/progress"
 import siteContext from "@/context"
+import { getOIDCProvider } from "@/flow"
 
 const props = defineProps<{
-  id: string
-  emailOrUsername: string
+  flow: Flow
 }>()
 
 const router = useRouter()
 
-const flow = inject(flowKey)
 const progress = injectProgress()
 
 const abortController = new AbortController()
@@ -31,12 +31,12 @@ function resetOnInteraction() {
   unexpectedError.value = ""
 }
 
-watch(() => props.emailOrUsername, resetOnInteraction)
+watch(() => props.flow.getEmailOrUsername(), resetOnInteraction)
 
 // A proxy so that we can pass it as v-model.
 const emailOrUsernameProxy = computed({
   get() {
-    return props.emailOrUsername
+    return props.flow.getEmailOrUsername()
   },
   set(v: string) {
     if (abortController.signal.aborted) {
@@ -47,7 +47,7 @@ const emailOrUsernameProxy = computed({
     // watch props.emailOrUsername which does so, which is the same pattern
     // we are using elsewhere (even when not using writable computed refs).
 
-    flow!.updateEmailOrUsername(v)
+    props.flow.setEmailOrUsername(v)
   },
 })
 
@@ -82,7 +82,7 @@ async function onNext() {
 
   progress.value += 1
   try {
-    const response = await startPassword(router, props.id, props.emailOrUsername, flow!, abortController, progress, progress)
+    const response = await startPassword(router, props.flow, abortController, progress, progress)
     if (abortController.signal.aborted) {
       return
     }
@@ -94,11 +94,10 @@ async function onNext() {
       return
     }
 
-    flow!.updateEmailOrUsername(response.emailOrUsername)
-    flow!.updatePublicKey(response.publicKey)
-    flow!.updateDeriveOptions(response.deriveOptions)
-    flow!.updateEncryptOptions(response.encryptOptions)
-    flow!.forward("password")
+    props.flow.setPublicKey(response.publicKey)
+    props.flow.setDeriveOptions(response.deriveOptions)
+    props.flow.setEncryptOptions(response.encryptOptions)
+    props.flow.forward("password")
   } catch (error) {
     if (abortController.signal.aborted) {
       return
@@ -115,7 +114,7 @@ async function onPasskey() {
     return
   }
 
-  flow!.forward("passkeySignin")
+  props.flow.forward("passkeySignin")
 }
 
 async function onOIDCProvider(provider: string) {
@@ -123,8 +122,13 @@ async function onOIDCProvider(provider: string) {
     return
   }
 
-  flow!.updateProvider(provider)
-  flow!.forward("oidcProvider")
+  const p = getOIDCProvider([provider])
+  if (!p) {
+    // This should not happen.
+    throw new Error(`unknown OIDC provider: ${provider}`)
+  }
+  props.flow.setOIDCProvider(p)
+  props.flow.forward("oidcProvider")
 }
 </script>
 
@@ -160,14 +164,14 @@ async function onOIDCProvider(provider: string) {
           client side so we might be counting characters differently here, leading to confusion.
           Button is on purpose not disabled on unexpectedError so that user can retry.
         -->
-        <Button primary type="submit" :disabled="!emailOrUsername.trim() || !!passwordError" :progress="progress">Next</Button>
+        <Button primary type="submit" :disabled="!flow.getEmailOrUsername().trim() || !!passwordError" :progress="progress">Next</Button>
       </form>
-      <div v-if="passwordError === 'invalidEmailOrUsername' && isEmail(emailOrUsername)" class="mt-4 text-error-600">Invalid e-mail address.</div>
-      <div v-else-if="passwordError === 'invalidEmailOrUsername' && !isEmail(emailOrUsername)" class="mt-4 text-error-600">Invalid username.</div>
-      <div v-else-if="passwordError === 'shortEmailOrUsername' && isEmail(emailOrUsername)" class="mt-4 text-error-600">
+      <div v-if="passwordError === 'invalidEmailOrUsername' && isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">Invalid e-mail address.</div>
+      <div v-else-if="passwordError === 'invalidEmailOrUsername' && !isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">Invalid username.</div>
+      <div v-else-if="passwordError === 'shortEmailOrUsername' && isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">
         E-mail address should be at least 3 characters.
       </div>
-      <div v-else-if="passwordError === 'shortEmailOrUsername' && !isEmail(emailOrUsername)" class="mt-4 text-error-600">Username should be at least 3 characters.</div>
+      <div v-else-if="passwordError === 'shortEmailOrUsername' && !isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">Username should be at least 3 characters.</div>
       <div v-else-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
     </div>
     <h2 class="text-center m-4 text-xl font-bold uppercase">Or use</h2>

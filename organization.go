@@ -774,6 +774,8 @@ func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, p
 	s.WriteJSON(w, req, organization.OrganizationPublic, nil)
 }
 
+// TODO: We should get rid of OrganizationApp API endpoint and make OrganizationGetGet return a list of public data for all its applications.
+
 func (s *Service) OrganizationAppGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 

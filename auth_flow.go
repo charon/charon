@@ -441,6 +441,11 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 	if flow == nil {
 		return
 	}
+	// Restarting is not possible after failed auth step.
+	if flow.HasFailed() {
+		s.BadRequestWithError(w, req, errors.New("flow has failed"))
+		return
+	}
 
 	var ea emptyRequest
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &ea)

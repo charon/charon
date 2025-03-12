@@ -1,26 +1,21 @@
 <script setup lang="ts">
-import type { Completed, LocationResponse } from "@/types"
+import type { Flow, OrganizationApplicationPublic } from "@/types"
+import type { ComponentExposed } from "vue-component-type-helpers"
 
-import { ref, onBeforeUnmount, onMounted, getCurrentInstance, inject } from "vue"
+import { ref, onBeforeUnmount, onMounted, getCurrentInstance } from "vue"
 import { useRouter } from "vue-router"
+import WithDocument from "@/components/WithDocument.vue"
 import Button from "@/components/Button.vue"
 import { injectProgress } from "@/progress"
-import { redirectServerSide } from "@/utils"
-import { flowKey } from "@/flow"
+import { getHomepage, redirectServerSide } from "@/utils"
 import { redirectOIDC } from "@/api"
 
 const props = defineProps<{
-  id: string
-  name: string
-  completed: Completed
-  location: LocationResponse
-  target: "session" | "oidc"
-  homepage: string
+  flow: Flow
 }>()
 
 const router = useRouter()
 
-const flow = inject(flowKey)
 const progress = injectProgress()
 
 const abortController = new AbortController()
@@ -61,22 +56,21 @@ async function onRedirect() {
 
   resetOnInteraction()
 
-  if (props.target === "session") {
-    await onRedirectSession()
-  } else if (props.completed === "failed") {
+  if (props.flow.getCompleted().includes("failed")) {
     await doRedirectOIDC()
-  } else {
+  } else if (props.flow.getCompleted().includes("finished")) {
+    // When flow is already finished, we can redirect just to the home page
+    // because the original OIDC flow has already been completed.
     await doRedirectHomepage()
+  } else {
+    // Should not happen as defined in processCompleted.
+    throw new Error(`unexpected completed: ${props.flow.getCompleted()}`)
   }
-}
-
-async function onRedirectSession() {
-  redirectServerSide(props.location.url, props.location.replace, progress)
 }
 
 async function doRedirectOIDC() {
   try {
-    await redirectOIDC(router, props.id, flow!, abortController, progress)
+    await redirectOIDC(router, props.flow, abortController, progress)
   } catch (error) {
     if (abortController.signal.aborted) {
       return
@@ -87,24 +81,31 @@ async function doRedirectOIDC() {
 }
 
 async function doRedirectHomepage() {
-  redirectServerSide(props.homepage, true, progress)
+  redirectServerSide(getHomepage(withOrganizationApplicationDocument.value!.doc!), true, progress)
 }
+
+const WithOrganizationApplicationDocument = WithDocument<OrganizationApplicationPublic>
+const withOrganizationApplicationDocument = ref<ComponentExposed<typeof WithOrganizationApplicationDocument> | null>(null)
 </script>
 
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
-    <template v-if="completed === 'failed'">
-      <div class="text-error-600 mb-4"><strong>Sorry.</strong> Signing in or signing up failed.</div>
-      <div class="mb-4">You can return to {{ name }} and try again.</div>
-    </template>
-    <div v-else-if="completed === 'redirect'" class="mb-4">
-      You have already been redirected to {{ name }} and completed the flow. You can now instead go to its homepage.
-    </div>
-    <div v-if="unexpectedError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
-    <div class="flex flex-row justify-end gap-4">
-      <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">{{
-        completed === "redirect" ? "Homepage" : "Return"
-      }}</Button>
-    </div>
+    <WithOrganizationApplicationDocument ref="withOrganizationApplicationDocument" :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationAppGet">
+      <template #default="{ doc }">
+        <template v-if="flow.getCompleted().includes('failed')">
+          <div class="text-error-600 mb-4"><strong>Sorry.</strong> Signing in or signing up failed.</div>
+          <div class="mb-4">You can return to {{ doc.applicationTemplate.name }} and try again.</div>
+        </template>
+        <div v-else-if="flow.getCompleted().includes('finished')" class="mb-4">
+          You have already been redirected to {{ doc.applicationTemplate.name }} and completed the flow. You can now instead go to its homepage.
+        </div>
+        <div v-if="unexpectedError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
+        <div class="flex flex-row justify-end gap-4">
+          <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">{{
+            flow.getCompleted().includes('finished') ? "Homepage" : "Return"
+          }}</Button>
+        </div>
+      </template>
+    </WithOrganizationApplicationDocument>
   </div>
 </template>

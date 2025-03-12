@@ -1,22 +1,20 @@
 <script setup lang="ts">
-import type { AuthFlowPasskeyCreateCompleteRequest, AuthFlowResponse } from "@/types"
+import type { AuthFlowPasskeyCreateCompleteRequest, AuthFlowResponse, Flow } from "@/types"
 
-import { getCurrentInstance, inject, nextTick, onMounted, onBeforeUnmount, ref } from "vue"
+import { getCurrentInstance, nextTick, onMounted, onBeforeUnmount, ref } from "vue"
 import { useRouter } from "vue-router"
 import { startRegistration, WebAuthnAbortService } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
 import { postJSON } from "@/api"
-import { processCompletedAndLocationRedirect } from "@/utils"
-import { flowKey } from "@/flow"
+import { processResponse } from "@/flow"
 import { injectProgress } from "@/progress"
 
 const props = defineProps<{
-  id: string
+  flow: Flow
 }>()
 
 const router = useRouter()
 
-const flow = inject(flowKey)
 const progress = injectProgress()
 
 const abortController = new AbortController()
@@ -55,7 +53,7 @@ async function onBack() {
 
   abortController.abort()
   WebAuthnAbortService.cancelCeremony()
-  flow!.backward("passkeySignin")
+  props.flow.backward("passkeySignin")
 }
 
 async function onPasskeySignup() {
@@ -71,13 +69,13 @@ async function onPasskeySignup() {
     const startUrl = router.apiResolve({
       name: "AuthFlowPasskeyCreateStart",
       params: {
-        id: props.id,
+        id: props.flow.getId(),
       },
     }).href
     const completeUrl = router.apiResolve({
       name: "AuthFlowPasskeyCreateComplete",
       params: {
-        id: props.id,
+        id: props.flow.getId(),
       },
     }).href
 
@@ -85,7 +83,8 @@ async function onPasskeySignup() {
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(start, flow, progress, abortController)) {
+    // processResponse should not really do anything here.
+    if (processResponse(router, start, props.flow, progress, abortController)) {
       return
     }
     if (!("passkey" in start && "createOptions" in start.passkey)) {
@@ -123,7 +122,8 @@ async function onPasskeySignup() {
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(complete, flow, progress, abortController)) {
+    // processResponse should move the flow to the next step.
+    if (processResponse(router, complete, props.flow, progress, abortController)) {
       return
     }
     throw new Error("unexpected response")

@@ -1,27 +1,22 @@
 <script setup lang="ts">
-import type { AuthFlowCodeStartRequest, AuthFlowPasswordCompleteRequest, AuthFlowResponse, DeriveOptions, EncryptOptions } from "@/types"
+import type { AuthFlowCodeStartRequest, AuthFlowPasswordCompleteRequest, AuthFlowResponse, Flow } from "@/types"
 
-import { ref, watch, onBeforeUnmount, onMounted, getCurrentInstance, inject } from "vue"
+import { ref, watch, onBeforeUnmount, onMounted, getCurrentInstance } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import InputTextButton from "@/components/InputTextButton.vue"
 import { postJSON, startPassword } from "@/api"
-import { processCompletedAndLocationRedirect, toBase64, isEmail } from "@/utils"
-import { flowKey, updateStepsNoCode } from "@/flow"
+import { toBase64, isEmail } from "@/utils"
+import { removeSteps, processResponse } from "@/flow"
 import { injectProgress } from "@/progress"
 
 const props = defineProps<{
-  id: string
-  emailOrUsername: string
-  publicKey?: Uint8Array
-  deriveOptions?: DeriveOptions
-  encryptOptions?: EncryptOptions
+  flow: Flow
 }>()
 
 const router = useRouter()
 
-const flow = inject(flowKey)
 const progress = injectProgress()
 
 const abortController = new AbortController()
@@ -64,7 +59,7 @@ function onAfterEnter() {
 
   // If public key or options are not available, we fetch them early so that user
   // does not have to wait later on for us to fetch them.
-  if (!props.publicKey || !props.deriveOptions || !props.encryptOptions) {
+  if (!props.flow.getPublicKey() || !props.flow.getDeriveOptions() || !props.flow.getEncryptOptions()) {
     // We do not use await here because it is OK if everything else continues to run
     // while we are fetching the public key and options. (Also onAfterEnter is not async.)
     getKey()
@@ -85,7 +80,7 @@ async function getKey(): Promise<boolean> {
 
   keyProgress.value += 1
   try {
-    const response = await startPassword(router, props.id, props.emailOrUsername, flow!, abortController, keyProgress, progress)
+    const response = await startPassword(router, props.flow, abortController, keyProgress, progress)
     if (abortController.signal.aborted) {
       return false
     }
@@ -97,10 +92,9 @@ async function getKey(): Promise<boolean> {
       throw new Error("unexpected response")
     }
 
-    // We ignore response.emailOrUsername.
-    flow!.updatePublicKey(response.publicKey)
-    flow!.updateDeriveOptions(response.deriveOptions)
-    flow!.updateEncryptOptions(response.encryptOptions)
+    props.flow.setPublicKey(response.publicKey)
+    props.flow.setDeriveOptions(response.deriveOptions)
+    props.flow.setEncryptOptions(response.encryptOptions)
     return true
   } catch (error) {
     if (abortController.signal.aborted) {
@@ -123,7 +117,7 @@ async function onBack() {
   }
 
   abortController.abort()
-  flow!.backward("start")
+  props.flow.backward("start")
 }
 
 async function onRedo() {
@@ -136,7 +130,7 @@ async function onRedo() {
   }
 
   abortController.abort()
-  flow!.backward("start")
+  props.flow.backward("start")
 }
 
 async function onNext() {
@@ -151,29 +145,30 @@ async function onNext() {
     const url = router.apiResolve({
       name: "AuthFlowPasswordComplete",
       params: {
-        id: props.id,
+        id: props.flow.getId(),
       },
     }).href
 
-    if (!props.publicKey || !props.deriveOptions || !props.encryptOptions) {
+    if (!props.flow.getPublicKey() || !props.flow.getDeriveOptions() || !props.flow.getEncryptOptions()) {
       if (!(await getKey())) {
         // Or signal was aborted or it was an redirect response.
         return
       }
-      if (!props.deriveOptions || !props.publicKey || !props.encryptOptions) {
-        // This should not happen.
-        throw new Error("missing public key or options")
-      }
     }
 
-    const deriveOptions = props.deriveOptions
-    const publicKey = props.publicKey
-    const encryptOptions = props.encryptOptions
+    const publicKey = props.flow.getPublicKey()
+    const deriveOptions = props.flow.getDeriveOptions()
+    const encryptOptions = props.flow.getEncryptOptions()
+
+    if (!publicKey || !deriveOptions || !encryptOptions) {
+      // This should not happen.
+      throw new Error("missing public key or options")
+    }
 
     // We invalidate public key and options to never reuse them.
-    flow!.updatePublicKey()
-    flow!.updateDeriveOptions()
-    flow!.updateEncryptOptions()
+    props.flow.setPublicKey()
+    props.flow.setDeriveOptions()
+    props.flow.setEncryptOptions()
 
     const encoder = new TextEncoder()
     const keyPair = await crypto.subtle.generateKey(deriveOptions, false, ["deriveKey"])
@@ -217,8 +212,10 @@ async function onNext() {
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(response, flow, progress, abortController)) {
-      updateStepsNoCode(flow!)
+    // processResponse might move the flow to the next step if sign-in or sign-up happened.
+    if (processResponse(router, response, props.flow, progress, abortController)) {
+      // Sign-in or sign-up happened, code step is not necessary anymore.
+      removeSteps(props.flow, ["code"])
       return
     }
     if ("error" in response && ["wrongPassword", "invalidPassword", "shortPassword"].includes(response.error)) {
@@ -228,14 +225,15 @@ async function onNext() {
         // attempted it means that the account exist but without e-mail addresses.
         codeError.value = "noEmails"
         codeErrorOnce.value = true
-        updateStepsNoCode(flow!)
+        // Code step is not possible.
+        removeSteps(props.flow, ["code"])
       }
       // We do not await getKey so that user can fix the password in meantime.
       getKey()
       return
     }
-    if ("provider" in response && response.provider === "code") {
-      flow!.forward("code")
+    if (response.providers && response.providers.length > 0 && response.providers[response.providers.length-1] === "code") {
+      props.flow.forward("code")
       return
     }
     throw new Error("unexpected response")
@@ -262,20 +260,20 @@ async function onCode() {
     const url = router.apiResolve({
       name: "AuthFlowCodeStart",
       params: {
-        id: props.id,
+        id: props.flow.getId(),
       },
     }).href
 
     // We invalidate public key and options because starting the code
     // provider invalidates them on the server side.
-    flow!.updatePublicKey()
-    flow!.updateDeriveOptions()
-    flow!.updateEncryptOptions()
+    props.flow.setPublicKey()
+    props.flow.setDeriveOptions()
+    props.flow.setEncryptOptions()
 
     const response = await postJSON<AuthFlowResponse>(
       url,
       {
-        emailOrUsername: props.emailOrUsername,
+        emailOrUsername: props.flow.getEmailOrUsername(),
       } as AuthFlowCodeStartRequest,
       abortController.signal,
       progress,
@@ -283,17 +281,19 @@ async function onCode() {
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(response, flow, progress, abortController)) {
+    // processResponse should move the flow to the next step.
+    if (processResponse(router, response, props.flow, progress, abortController)) {
       return
     }
     if ("error" in response && ["noAccount", "noEmails"].includes(response.error)) {
       codeError.value = response.error
       codeErrorOnce.value = true
-      updateStepsNoCode(flow!)
+      // Code step is not possible.
+      removeSteps(props.flow, ["code"])
       return
     }
-    if ("provider" in response && response.provider === "code") {
-      flow!.forward("code")
+    if (response.providers && response.providers.length > 0 && response.providers[response.providers.length-1] === "code") {
+      props.flow.forward("code")
       return
     }
     throw new Error("unexpected response")
@@ -312,9 +312,9 @@ async function onCode() {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div class="flex flex-col">
-      <label for="email-or-username" class="mb-1">{{ isEmail(emailOrUsername) ? "Your e-mail address" : "Charon username" }}</label>
+      <label for="email-or-username" class="mb-1">{{ isEmail(flow.getEmailOrUsername()) ? "Your e-mail address" : "Charon username" }}</label>
       <InputTextButton id="email-or-username" class="flex-grow" tabindex="5" @click.prevent="onBack">
-        {{ emailOrUsername }}
+        {{ flow.getEmailOrUsername() }}
       </InputTextButton>
     </div>
     <div class="flex flex-col mt-4">
@@ -336,7 +336,7 @@ async function onCode() {
           autocapitalize="none"
           spellcheck="false"
           type="email"
-          :value="emailOrUsername"
+          :value="flow.getEmailOrUsername()"
           class="hidden"
         />
         <InputText
@@ -376,7 +376,7 @@ async function onCode() {
       </div>
     </template>
     <div v-else-if="unexpectedPasswordError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
-    <div v-else-if="isEmail(emailOrUsername)" class="mt-4">
+    <div v-else-if="isEmail(flow.getEmailOrUsername())" class="mt-4">
       If you do not yet have an account, it will be created for you. If you enter wrong password or passphrase, recovery will be done automatically for you by sending you
       a code to your e-mail address.
     </div>

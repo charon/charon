@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AuthFlowCreateRequest, AuthFlowCreateResponse, AuthSignoutRequest, AuthSignoutResponse } from "@/types"
+import type { AuthSignoutRequest, AuthSignoutResponse } from "@/types"
 
 import { onBeforeUnmount } from "vue"
 import { useRouter } from "vue-router"
@@ -44,12 +44,12 @@ async function onSignOut() {
       return
     }
 
-    if ("url" in response) {
-      redirectServerSide(response.url, response.replace, progress)
-
+    if ("location" in response) {
       if (browserSupportsWebAuthn()) {
         navigator.credentials.preventSilentAccess()
       }
+
+      redirectServerSide(response.location, true, progress)
 
       return
     }
@@ -66,48 +66,7 @@ async function onSignOut() {
 }
 
 async function onSignIn() {
-  if (abortController.signal.aborted) {
-    return
-  }
-
-  progress.value += 1
-  try {
-    const payload: AuthFlowCreateRequest = {
-      // We remove origin prefix from full URL to get absolute URL.
-      location: document.location.href.slice(document.location.origin.length),
-    }
-    const url = router.apiResolve({
-      name: "AuthFlowCreate",
-    }).href
-
-    const response = await postJSON<AuthFlowCreateResponse>(url, payload, abortController.signal, progress)
-    if (abortController.signal.aborted) {
-      return
-    }
-
-    if ("error" in response && ["alreadyAuthenticated"].includes(response.error)) {
-      // TODO: Can we update "me" state reactively?
-
-      // We increase the progress and never decrease it to wait for browser to do the reload.
-      progress.value += 1
-      // We reload the page to get new "me" state.
-      document.location.reload()
-      return
-    }
-    if ("id" in response) {
-      router.push({ name: "AuthFlowGet", params: { id: response.id } })
-      return
-    }
-    throw new Error("unexpected response")
-  } catch (error) {
-    if (abortController.signal.aborted) {
-      return
-    }
-    // TODO: Can we do something better?
-    throw error
-  } finally {
-    progress.value -= 1
-  }
+  // TODO: Use OIDC client.
 }
 </script>
 

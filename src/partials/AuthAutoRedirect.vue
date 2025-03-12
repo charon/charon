@@ -1,25 +1,19 @@
 <script setup lang="ts">
-import type { Completed, LocationResponse } from "@/types"
+import type { Flow, OrganizationApplicationPublic } from "@/types"
 
-import { ref, onBeforeUnmount, onMounted, getCurrentInstance, inject } from "vue"
+import { ref, onBeforeUnmount, onMounted, getCurrentInstance } from "vue"
 import { useRouter } from "vue-router"
+import WithDocument from "@/components/WithDocument.vue"
 import Button from "@/components/Button.vue"
 import { injectProgress } from "@/progress"
-import { redirectServerSide } from "@/utils"
-import { flowKey } from "@/flow"
 import { redirectOIDC } from "@/api"
 
 const props = defineProps<{
-  id: string
-  name: string
-  completed: Completed
-  location: LocationResponse
-  target: "session" | "oidc"
+  flow: Flow
 }>()
 
 const router = useRouter()
 
-const flow = inject(flowKey)
 const progress = injectProgress()
 
 const abortController = new AbortController()
@@ -80,8 +74,10 @@ async function onBack() {
   clearInterval(interval)
   interval = 0
   abortController.abort()
-  flow!.updateCompleted("signinOrSignup")
-  flow!.backward("identity")
+  // Going back to identity step means removing steps after the completed identity step.
+  const completed = props.flow.getCompleted()
+  props.flow.setCompleted(completed.filter((c) => c !== "identity" && c !== "finishReady" && c !== "declined"))
+  props.flow.backward("identity")
 }
 
 async function onPauseResume() {
@@ -110,20 +106,12 @@ async function onRedirect() {
   interval = 0
   resetOnInteraction()
 
-  if (props.target === "session") {
-    await doRedirectSession()
-  } else {
-    await doRedirectOIDC()
-  }
-}
-
-async function doRedirectSession() {
-  redirectServerSide(props.location.url, props.location.replace, progress)
+  await doRedirectOIDC()
 }
 
 async function doRedirectOIDC() {
   try {
-    await redirectOIDC(router, props.id, flow!, abortController, progress)
+    await redirectOIDC(router, props.flow, abortController, progress)
   } catch (error) {
     if (abortController.signal.aborted) {
       return
@@ -164,26 +152,30 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener("keydown", onPause)
 })
+
+const WithOrganizationApplicationDocument = WithDocument<OrganizationApplicationPublic>
 </script>
 
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
-    <div v-if="completed === 'signin'" class="mb-4"><strong>Congratulations.</strong> You successfully signed in.</div>
-    <div v-else-if="completed === 'signup'" class="mb-4"><strong>Congratulations.</strong> You successfully signed up.</div>
-    <div v-else-if="completed === 'identity'" class="mb-4">
-      <strong>Congratulations.</strong> Everything is ready to sign you in or sign you up into {{ name }} using the identity you have chosen.
-    </div>
-    <div v-else-if="completed === 'declined'" class="mb-4">You decided to <strong>decline sign-in or sign-up</strong> into {{ name }} using Charon.</div>
-    <div>You will be now redirected to {{ name }} in {{ seconds === 1 ? "1 second" : `${seconds} seconds` }}{{ paused ? " (paused)" : "" }}.</div>
+    <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationAppGet">
+      <template #default="{ doc }">
+        <div v-if="flow.getCompleted().includes('identity')" class="mb-4">
+          <strong>Congratulations.</strong> Everything is ready to sign you in or sign you up
+          into {{ doc.applicationTemplate.name }} using the identity you have chosen.
+        </div>
+        <div v-else-if="flow.getCompleted().includes('declined')" class="mb-4">
+          You decided to <strong>decline sign-in or sign-up</strong> into {{ doc.applicationTemplate.name }} using Charon.
+        </div>
+        <div>
+          You will be now redirected to {{ doc.applicationTemplate.name }} in
+          {{ seconds === 1 ? "1 second" : `${seconds} seconds` }}{{ paused ? " (paused)" : "" }}.
+        </div>
+      </template>
+    </WithOrganizationApplicationDocument>
     <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
-    <div
-      class="mt-4 flex flex-row gap-4"
-      :class="{
-        'justify-between': target === 'oidc',
-        'justify-end': target === 'session',
-      }"
-    >
-      <Button v-if="target === 'oidc'" type="button" tabindex="3" @click.prevent="onBack">Back</Button>
+    <div class="mt-4 flex flex-row gap-4 justify-between">
+      <Button type="button" tabindex="3" @click.prevent="onBack">Back</Button>
       <div class="flex flex-row gap-4">
         <Button type="button" tabindex="2" :progress="progress" @click.prevent="onPauseResume">{{ paused ? "Resume" : "Pause" }}</Button>
         <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">Redirect</Button>

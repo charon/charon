@@ -1,27 +1,23 @@
 <script setup lang="ts">
 import type { Ref } from "vue"
-import type { AuthFlowChooseIdentityRequest, AuthFlowResponse, Completed, Identities, IdentityRef } from "@/types"
+import type { AuthFlowChooseIdentityRequest, AuthFlowResponse, Flow, Identities, IdentityRef } from "@/types"
 
-import { ref, onBeforeUnmount, onMounted, getCurrentInstance, inject } from "vue"
+import { ref, onBeforeUnmount, onMounted, getCurrentInstance } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import IdentityListItem from "@/partials/IdentityListItem.vue"
 import IdentityCreate from "@/partials/IdentityCreate.vue"
 import { injectProgress } from "@/progress"
 import { getURL, postJSON, restartAuth } from "@/api"
-import { charonOrganization, flowKey } from "@/flow"
-import { encodeQuery, processCompletedAndLocationRedirect } from "@/utils"
+import { encodeQuery } from "@/utils"
+import { processResponse } from "@/flow"
 
 const props = defineProps<{
-  id: string
-  name: string
-  completed: Completed
-  organizationId: string
+  flow: Flow
 }>()
 
 const router = useRouter()
 
-const flow = inject(flowKey)
 const progress = injectProgress()
 
 const abortController = new AbortController()
@@ -58,8 +54,8 @@ function onAfterEnter() {
   // TODO: Make this work. This is too early because data is not yet loaded so there is nothing to focus.
   document.getElementById("first-identity")?.focus()
 
-  getIdentities(props.organizationId || charonOrganization, false, usedIdentitiesLoading, usedIdentitiesLoadingError, usedIdentities)
-  getIdentities(props.organizationId || charonOrganization, true, otherIdentitiesLoading, otherIdentitiesLoadingError, otherIdentities)
+  getIdentities(props.flow.getOrganizationId(), false, usedIdentitiesLoading, usedIdentitiesLoadingError, usedIdentities)
+  getIdentities(props.flow.getOrganizationId(), true, otherIdentitiesLoading, otherIdentitiesLoadingError, otherIdentities)
 }
 
 function onBeforeLeave() {
@@ -114,7 +110,7 @@ async function onSelect(id: string) {
     const url = router.apiResolve({
       name: "AuthFlowChooseIdentity",
       params: {
-        id: props.id,
+        id: props.flow.getId(),
       },
     }).href
 
@@ -131,7 +127,8 @@ async function onSelect(id: string) {
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(response, flow, progress, abortController)) {
+    // processResponse should move the flow to the next step.
+    if (processResponse(router, response, props.flow, progress, abortController)) {
       return
     }
     throw new Error("unexpected response")
@@ -156,7 +153,7 @@ async function onBack() {
   progress.value += 1
   try {
     // restartAuth calls abortController.abort so we do not have to do it here.
-    await restartAuth(router, props.id, flow!, abortController, progress)
+    await restartAuth(router, props.flow, abortController, progress)
   } catch (error) {
     if (abortController.signal.aborted) {
       return
@@ -180,7 +177,7 @@ async function onDecline() {
     const url = router.apiResolve({
       name: "AuthFlowDecline",
       params: {
-        id: props.id,
+        id: props.flow.getId(),
       },
     }).href
 
@@ -188,7 +185,8 @@ async function onDecline() {
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(response, flow, progress, abortController)) {
+    // processResponse should move the flow to the next step.
+    if (processResponse(router, response, props.flow, progress, abortController)) {
       return
     }
     throw new Error("unexpected response")
@@ -209,7 +207,7 @@ function onCreateShow() {
 
 function onIdentityCreated(identity: IdentityRef) {
   createShown.value = false
-  getIdentities(props.organizationId || charonOrganization, true, otherIdentitiesLoading, otherIdentitiesLoadingError, otherIdentities)
+  getIdentities(props.flow.getOrganizationId(), true, otherIdentitiesLoading, otherIdentitiesLoadingError, otherIdentities)
 
   // TODO: Focus "select" button for the new identity.
 }
@@ -218,8 +216,8 @@ function onIdentityCreated(identity: IdentityRef) {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div class="flex flex-col">
-      <div v-if="completed === 'signin'" class="mb-4"><strong>Congratulations.</strong> You successfully signed in into Charon.</div>
-      <div v-else-if="completed === 'signup'" class="mb-4"><strong>Congratulations.</strong> You successfully signed up into Charon.</div>
+      <div v-if="flow.getCompleted().includes('signin')" class="mb-4"><strong>Congratulations.</strong> You successfully signed in into Charon.</div>
+      <div v-else-if="flow.getCompleted().includes('signup')" class="mb-4"><strong>Congratulations.</strong> You successfully signed up into Charon.</div>
       <div class="mb-4">
         Select the identity you want to continue with. Its information will be provided to the application and the organization. You can also create a new identity or
         decline to proceed.
@@ -231,7 +229,7 @@ function onIdentityCreated(identity: IdentityRef) {
         <div v-if="!usedIdentities.length" class="italic mb-4">You have not yet used any identity with this organization.</div>
         <template v-for="(identity, i) of usedIdentities" :key="identity.id">
           <div class="grid grid-cols-1 gap-4 mb-4">
-            <IdentityListItem :item="identity" :organization-id="organizationId || charonOrganization">
+            <IdentityListItem :item="identity" :organization-id="flow.getOrganizationId()">
               <div class="flex flex-col items-start">
                 <Button :id="i === 0 ? 'first-identity' : null" primary type="button" tabindex="1" :progress="progress" @click.prevent="onSelect(identity.id)"
                   >Select</Button

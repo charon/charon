@@ -409,8 +409,8 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                       </li>
                     </ol>
                   </fieldset>
-                  <h4 v-if="application.clientsPublic.length" class="font-bold mt-4">Public clients</h4>
-                  <ol v-if="application.clientsPublic.length">
+                  <h4 v-if="application.clientsPublic?.length" class="font-bold mt-4">Public clients</h4>
+                  <ol v-if="application.clientsPublic?.length">
                     <li v-for="(client, j) in application.clientsPublic" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
                       <div>{{ j + 1 }}.</div>
                       <div class="flex flex-col gap-4">
@@ -425,8 +425,8 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                       </div>
                     </li>
                   </ol>
-                  <h4 v-if="application.clientsBackend.length" class="font-bold mt-4">Backend clients</h4>
-                  <ol v-if="application.clientsBackend.length">
+                  <h4 v-if="application.clientsBackend?.length" class="font-bold mt-4">Backend clients</h4>
+                  <ol v-if="application.clientsBackend?.length">
                     <li v-for="(client, j) in application.clientsBackend" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
                       <div>{{ j + 1 }}.</div>
                       <div class="flex flex-col gap-4">
@@ -447,8 +447,8 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                       </div>
                     </li>
                   </ol>
-                  <h4 v-if="application.clientsService.length" class="font-bold mt-4">Service clients</h4>
-                  <ol v-if="application.clientsService.length">
+                  <h4 v-if="application.clientsService?.length" class="font-bold mt-4">Service clients</h4>
+                  <ol v-if="application.clientsService?.length">
                     <li v-for="(client, j) in application.clientsService" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
                       <div>{{ j + 1 }}.</div>
                       <div class="flex flex-col gap-4">

@@ -1,10 +1,10 @@
 import type { Ref } from "vue"
 import type { Router } from "vue-router"
-import type { AuthFlowPasswordStartRequest, AuthFlowResponse, Flow, Metadata, PasswordResponse } from "@/types"
+import type { AuthFlowPasswordStartRequest, AuthFlowResponse, Flow, Metadata, AuthFlowResponsePassword } from "@/types"
 
-import { fromBase64, processCompletedAndLocationRedirect, redirectServerSide } from "@/utils"
+import { fromBase64 } from "@/utils"
 import { decodeMetadata } from "@/metadata"
-import { updateSteps } from "@/flow"
+import { processResponse } from "@/flow"
 
 export class FetchError extends Error {
   cause?: Error
@@ -99,26 +99,24 @@ export async function postJSON<T>(url: string, data: object, abortSignal: AbortS
 
 export async function startPassword(
   router: Router,
-  flowId: string,
-  emailOrUsername: string,
   flow: Flow,
   abortController: AbortController,
   keyProgress: Ref<number>,
   progress: Ref<number>,
-): Promise<(PasswordResponse & { emailOrUsername: string }) | { error: string } | null> {
+): Promise<AuthFlowResponsePassword | { error: string } | null> {
   keyProgress.value += 1
   try {
     const url = router.apiResolve({
       name: "AuthFlowPasswordStart",
       params: {
-        id: flowId,
+        id: flow.getId(),
       },
     }).href
 
     const response = await postJSON<AuthFlowResponse>(
       url,
       {
-        emailOrUsername,
+        emailOrUsername: flow.getEmailOrUsername(),
       } as AuthFlowPasswordStartRequest,
       abortController.signal,
       keyProgress,
@@ -126,7 +124,8 @@ export async function startPassword(
     if (abortController.signal.aborted) {
       return null
     }
-    if (processCompletedAndLocationRedirect(response, flow, progress, abortController)) {
+    // processResponse should not really do anything here.
+    if (processResponse(router, response, flow, progress, abortController)) {
       return null
     }
     if ("error" in response && ["invalidEmailOrUsername", "shortEmailOrUsername"].includes(response.error)) {
@@ -136,7 +135,6 @@ export async function startPassword(
     }
     if ("password" in response) {
       return {
-        emailOrUsername: response.emailOrUsername!,
         publicKey: fromBase64(response.password.publicKey),
         deriveOptions: response.password.deriveOptions,
         encryptOptions: {
@@ -151,15 +149,12 @@ export async function startPassword(
   }
 }
 
-export async function restartAuth(router: Router, flowId: string, flow: Flow, abort: AbortSignal | AbortController, progress: Ref<number>) {
-  if (flow.getTarget() === "session" && flow.getCompleted() == "identity") {
-    throw new Error(`cannot restart completed flow`)
+export async function restartAuth(router: Router, flow: Flow, abort: AbortSignal | AbortController, progress: Ref<number>) {
+  if (flow.getCompleted().includes("finished")) {
+    throw new Error(`cannot restart finished flow`)
   }
-  if (flow.getTarget() === "oidc" && flow.getCompleted() == "redirect") {
-    throw new Error(`cannot restart completed flow`)
-  }
-  if (flow.getCompleted() === "failed") {
-    throw new Error(`cannot restart failed auth`)
+  if (flow.getCompleted().includes("failed")) {
+    throw new Error(`cannot restart failed authentication`)
   }
 
   const abortSignal = abort instanceof AbortController ? abort.signal : abort
@@ -169,7 +164,7 @@ export async function restartAuth(router: Router, flowId: string, flow: Flow, ab
     const url = router.apiResolve({
       name: "AuthFlowRestartAuth",
       params: {
-        id: flowId,
+        id: flow.getId(),
       },
     }).href
 
@@ -177,13 +172,8 @@ export async function restartAuth(router: Router, flowId: string, flow: Flow, ab
     if (abortSignal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(response, flow, progress, abort instanceof AbortController ? abort : null)) {
-      return
-    }
-    if (!("error" in response) && !("provider" in response) && !("completed" in response)) {
-      flow.updateCompleted("")
-      updateSteps(flow, "start", true)
-      flow.backward("start")
+    // processResponse should update steps and move the flow back to the start.
+    if (processResponse(router, response, flow, progress, abort instanceof AbortController ? abort : null)) {
       return
     }
     throw new Error("unexpected response")
@@ -192,19 +182,13 @@ export async function restartAuth(router: Router, flowId: string, flow: Flow, ab
   }
 }
 
-export async function redirectOIDC(router: Router, flowId: string, flow: Flow, abortController: AbortController, progress: Ref<number>) {
+export async function redirectOIDC(router: Router, flow: Flow, abortController: AbortController, progress: Ref<number>) {
   progress.value += 1
   try {
     const url = router.apiResolve({
       name: "AuthFlowRedirect",
       params: {
-        id: flowId,
-      },
-    }).href
-    const redirectUrl = router.resolve({
-      name: "AuthFlowGet",
-      params: {
-        id: flowId,
+        id: flow.getId(),
       },
     }).href
 
@@ -212,12 +196,8 @@ export async function redirectOIDC(router: Router, flowId: string, flow: Flow, a
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(response, flow, progress, abortController)) {
-      return
-    }
-    if (!("error" in response)) {
-      // Flow is marked as ready for redirect, so we reload it again for redirect to happen.
-      redirectServerSide(redirectUrl, true, progress)
+    // processResponse should reload the flow for final redirect to happen.
+    if (processResponse(router, response, flow, progress, abortController)) {
       return
     }
     throw new Error("unexpected response")

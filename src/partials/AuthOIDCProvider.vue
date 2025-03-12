@@ -1,22 +1,20 @@
 <script setup lang="ts">
-import type { AuthFlowProviderStartRequest, AuthFlowResponse } from "@/types"
+import type { AuthFlowProviderStartRequest, AuthFlowResponse, Flow } from "@/types"
 
-import { ref, onBeforeUnmount, onMounted, getCurrentInstance, inject } from "vue"
+import { ref, onBeforeUnmount, onMounted, getCurrentInstance } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import { postJSON } from "@/api"
-import { processCompletedAndLocationRedirect } from "@/utils"
-import { flowKey, providerName } from "@/flow"
+import { redirectServerSide } from "@/utils"
 import { injectProgress } from "@/progress"
+import { processResponse } from "@/flow"
 
 const props = defineProps<{
-  id: string
-  provider: string
+  flow: Flow
 }>()
 
 const router = useRouter()
 
-const flow = inject(flowKey)
 const progress = injectProgress()
 
 const abortController = new AbortController()
@@ -77,7 +75,7 @@ async function onBack() {
   clearInterval(interval)
   interval = 0
   abortController.abort()
-  flow!.backward("start")
+  props.flow.backward("start")
 }
 
 async function onPauseResume() {
@@ -111,14 +109,16 @@ async function onRedirect() {
     const url = router.apiResolve({
       name: "AuthFlowProviderStart",
       params: {
-        id: props.id,
+        id: props.flow.getId(),
       },
     }).href
+
+    const provider = props.flow.getOIDCProvider()
 
     const response = await postJSON<AuthFlowResponse>(
       url,
       {
-        provider: props.provider,
+        provider: provider!.key,
       } as AuthFlowProviderStartRequest,
       abortController.signal,
       progress,
@@ -126,7 +126,12 @@ async function onRedirect() {
     if (abortController.signal.aborted) {
       return
     }
-    if (processCompletedAndLocationRedirect(response, flow, progress, abortController)) {
+    // processResponse should not really do anything here.
+    if (processResponse(router, response, props.flow, progress, abortController)) {
+      return
+    }
+    if ("oidcProvider" in response) {
+      redirectServerSide(response.oidcProvider.location, true, progress)
       return
     }
     throw new Error("unexpected response")
@@ -177,12 +182,13 @@ onBeforeUnmount(() => {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div>
-      You will be redirected to <strong>{{ providerName(provider) }}</strong> in {{ seconds === 1 ? "1 second" : `${seconds} seconds` }}{{ paused ? " (paused)" : "" }}.
+      You will be redirected to <strong>{{ flow.getOIDCProvider()!.name }}</strong> in {{ seconds === 1 ? "1 second" : `${seconds} seconds` }}{{ paused ? " (paused)" : "" }}.
     </div>
     <div class="mt-4">Please follow instructions there to sign-in into Charon. Afterwards, you will be redirected back here.</div>
     <div class="mt-4">
-      You might have to sign-in into {{ providerName(provider) }} first. You might be redirected back by {{ providerName(provider) }} immediately, without showing you
-      anything.
+      You might have to sign-in into {{ flow.getOIDCProvider()!.name }} first.
+      You might be redirected back by {{ flow.getOIDCProvider()!.name }} immediately,
+      without showing you anything.
     </div>
     <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
     <div class="mt-4 flex flex-row justify-between gap-4">

@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T">
-import type { Metadata } from "@/types"
+import type { Metadata, QueryValues } from "@/types"
 
 import { ref, watch, readonly, onMounted, onUpdated, onUnmounted, getCurrentInstance, Ref, DeepReadonly } from "vue"
 import { useRouter } from "vue-router"
@@ -7,8 +7,8 @@ import { getURL } from "@/api"
 import { injectMainProgress } from "@/progress"
 
 const props = defineProps<{
-  id: string
   name: string
+  params: QueryValues
 }>()
 
 const router = useRouter()
@@ -20,7 +20,7 @@ const _metadata = ref<Metadata>({})
 const _error = ref<string | null>(null)
 const _url = ref<string | null>(null)
 const doc = (import.meta.env.DEV ? readonly(_doc) : _doc) as DeepReadonly<Ref<T | null>>
-const metadata = import.meta.env.DEV ? readonly(_metadata) : _metadata
+const metadata = import.meta.env.DEV ? readonly(_metadata) : _metadata as DeepReadonly<Ref<Metadata>>
 const error = import.meta.env.DEV ? readonly(_error) : _error
 const url = import.meta.env.DEV ? readonly(_url) : _url
 
@@ -42,16 +42,14 @@ onUpdated(() => {
 })
 
 watch(
-  () => ({ id: props.id, name: props.name }),
+  () => ({ params: props.params, name: props.name }),
   async (params, oldParams, onCleanup) => {
     const abortController = new AbortController()
     onCleanup(() => abortController.abort())
 
     const newURL = router.apiResolve({
       name: params.name,
-      params: {
-        id: params.id,
-      },
+      params: params.params,
     }).href
     _url.value = newURL
 
@@ -85,6 +83,7 @@ watch(
 
 defineExpose({
   doc,
+  metadata,
   error,
   url,
 })
