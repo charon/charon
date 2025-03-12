@@ -42,32 +42,45 @@ export type AuthFlowResponseOIDCProvider = {
   location: string
 }
 
-export type AuthFlowResponsePasskey = {
-  createOptions: { publicKey: PublicKeyCredentialCreationOptionsJSON }
-} | {
-  getOptions: { publicKey: PublicKeyCredentialRequestOptionsJSON }
-}
+export type AuthFlowResponsePasskey =
+  | {
+      createOptions: { publicKey: PublicKeyCredentialCreationOptionsJSON }
+    }
+  | {
+      getOptions: { publicKey: PublicKeyCredentialRequestOptionsJSON }
+    }
 
 export type Completed = "" | "signin" | "signup" | "failed" | "identity" | "declined" | "finishReady" | "finished"
 
-export type ErrorCode = "wrongPassword" | "noEmails" | "noAccount" | "invalidCode" | "invalidEmailOrUsername" | "shortEmailOrUsername" | "invalidPassword" | "shortPassword"
+export type ErrorCode =
+  | "wrongPassword"
+  | "noEmails"
+  | "noAccount"
+  | "invalidCode"
+  | "invalidEmailOrUsername"
+  | "shortEmailOrUsername"
+  | "invalidPassword"
+  | "shortPassword"
 
 export type AuthFlowResponse = {
-  completed: Completed[],
-  organizationId: string,
-  appId: string,
-  providers?: string[],
-  emailOrUsername?: string,
+  completed: Completed[]
+  organizationId: string
+  appId: string
+  providers?: string[]
+  emailOrUsername?: string
 } & (
-  {
-    error: ErrorCode
-  } | {
-    oidcProvider: AuthFlowResponseOIDCProvider,
-  } | {
-    passkey: AuthFlowResponsePasskey,
-  } | {
-    password: AuthFlowResponsePasswordJSON,
-  }
+  | {
+      error: ErrorCode
+    }
+  | {
+      oidcProvider: AuthFlowResponseOIDCProvider
+    }
+  | {
+      passkey: AuthFlowResponsePasskey
+    }
+  | {
+      password: AuthFlowResponsePasswordJSON
+    }
 )
 
 export type AuthFlowProviderStartRequest = {

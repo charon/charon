@@ -90,7 +90,11 @@ const withOrganizationApplicationDocument = ref<ComponentExposed<typeof WithOrga
 
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
-    <WithOrganizationApplicationDocument ref="withOrganizationApplicationDocument" :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationAppGet">
+    <WithOrganizationApplicationDocument
+      ref="withOrganizationApplicationDocument"
+      :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }"
+      name="OrganizationAppGet"
+    >
       <template #default="{ doc }">
         <template v-if="flow.getCompleted().includes('failed')">
           <div class="text-error-600 mb-4"><strong>Sorry.</strong> Signing in or signing up failed.</div>
@@ -102,7 +106,7 @@ const withOrganizationApplicationDocument = ref<ComponentExposed<typeof WithOrga
         <div v-if="unexpectedError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
         <div class="flex flex-row justify-end gap-4">
           <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">{{
-            flow.getCompleted().includes('finished') ? "Homepage" : "Return"
+            flow.getCompleted().includes("finished") ? "Homepage" : "Return"
           }}</Button>
         </div>
       </template>

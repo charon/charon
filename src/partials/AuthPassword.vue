@@ -232,7 +232,7 @@ async function onNext() {
       getKey()
       return
     }
-    if (response.providers && response.providers.length > 0 && response.providers[response.providers.length-1] === "code") {
+    if (response.providers && response.providers.length > 0 && response.providers[response.providers.length - 1] === "code") {
       props.flow.forward("code")
       return
     }
@@ -292,7 +292,7 @@ async function onCode() {
       removeSteps(props.flow, ["code"])
       return
     }
-    if (response.providers && response.providers.length > 0 && response.providers[response.providers.length-1] === "code") {
+    if (response.providers && response.providers.length > 0 && response.providers[response.providers.length - 1] === "code") {
       props.flow.forward("code")
       return
     }

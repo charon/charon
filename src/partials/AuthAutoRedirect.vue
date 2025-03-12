@@ -161,15 +161,13 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
     <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationAppGet">
       <template #default="{ doc }">
         <div v-if="flow.getCompleted().includes('identity')" class="mb-4">
-          <strong>Congratulations.</strong> Everything is ready to sign you in or sign you up
-          into {{ doc.applicationTemplate.name }} using the identity you have chosen.
+          <strong>Congratulations.</strong> Everything is ready to sign you in or sign you up into {{ doc.applicationTemplate.name }} using the identity you have chosen.
         </div>
         <div v-else-if="flow.getCompleted().includes('declined')" class="mb-4">
           You decided to <strong>decline sign-in or sign-up</strong> into {{ doc.applicationTemplate.name }} using Charon.
         </div>
         <div>
-          You will be now redirected to {{ doc.applicationTemplate.name }} in
-          {{ seconds === 1 ? "1 second" : `${seconds} seconds` }}{{ paused ? " (paused)" : "" }}.
+          You will be now redirected to {{ doc.applicationTemplate.name }} in {{ seconds === 1 ? "1 second" : `${seconds} seconds` }}{{ paused ? " (paused)" : "" }}.
         </div>
       </template>
     </WithOrganizationApplicationDocument>

@@ -183,7 +183,7 @@ async function onResend() {
     }
     // No error is expected in the response because code has already been generated in the past
     // for the same request, so we do not check response.error here.
-    if (response.providers && response.providers.length > 0 && response.providers[response.providers.length-1] === "code") {
+    if (response.providers && response.providers.length > 0 && response.providers[response.providers.length - 1] === "code") {
       sendCounter.value += 1
       document.getElementById("code")?.focus()
       return
@@ -215,13 +215,11 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
         >:</label
       >
       <label v-else-if="!codeFromHash && isEmail(flow.getEmailOrUsername())" for="code" class="mb-1"
-        >We {{ sendCounter > 1 ? `sent (${sendCounter}x)` : "sent" }} a 6-digit code
-        to <strong>{{ flow.getEmailOrUsername() }}</strong> e-mail address. Please enter it to
-        continue:</label
+        >We {{ sendCounter > 1 ? `sent (${sendCounter}x)` : "sent" }} a 6-digit code to <strong>{{ flow.getEmailOrUsername() }}</strong> e-mail address. Please enter it
+        to continue:</label
       >
       <label v-else-if="!codeFromHash" for="code" class="mb-1">
-        We {{ sendCounter > 1 ? `sent (${sendCounter}x)` : "sent" }} a 6-digit code to
-        e-mail address(es) associated with the Charon username
+        We {{ sendCounter > 1 ? `sent (${sendCounter}x)` : "sent" }} a 6-digit code to e-mail address(es) associated with the Charon username
         <strong>{{ flow.getEmailOrUsername() }}</strong
         >. Please enter it to continue:</label
       >
@@ -258,8 +256,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
     <div v-if="codeFromHash" class="mt-4">
       <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationAppGet">
         <template #default="{ doc }">
-          If you were not signing in or signing up into {{ doc.applicationTemplate.name }},
-          please disregard the e-mail and <strong>do not</strong> confirm the code.
+          If you were not signing in or signing up into {{ doc.applicationTemplate.name }}, please disregard the e-mail and <strong>do not</strong> confirm the code.
         </template>
       </WithOrganizationApplicationDocument>
     </div>

@@ -294,7 +294,9 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
           <div class="mb-4">
             <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationAppGet">
               <template #default="{ doc }">
-                <a :href="getHomepage(doc)" class="link"><strong>{{ doc.applicationTemplate.name }}</strong></a>
+                <a :href="getHomepage(doc)" class="link"
+                  ><strong>{{ doc.applicationTemplate.name }}</strong></a
+                >
               </template>
             </WithOrganizationApplicationDocument>
             from organization
@@ -320,19 +322,16 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                   beforeActive &&
                   !flow.getCompleted().includes('failed') &&
                   (flow.getCompleted().length === 0 ||
-                    (
-                      // After authentication has completed, but not the whole flow has finished
-                      // allow returning to any step which is not an intermediary authentication step
-                      // (we want to force full authentication restart to the first authentication step
-                      // if a user wants to redo authentication).
-                      !flow.getCompleted().includes('finished') &&
+                    // After authentication has completed, but not the whole flow has finished
+                    // allow returning to any step which is not an intermediary authentication step
+                    // (we want to force full authentication restart to the first authentication step
+                    // if a user wants to redo authentication).
+                    (!flow.getCompleted().includes('finished') &&
                       step.key != 'password' &&
                       step.key != 'oidcProvider' &&
                       step.key != 'passkeySignin' &&
                       step.key != 'passkeySignup' &&
-                      step.key != 'code'
-                    )
-                  )
+                      step.key != 'code'))
                 "
                 href=""
                 class="link"
@@ -357,23 +356,11 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
             <AuthOIDCProvider v-else-if="currentStep === 'oidcProvider'" ref="component" :flow="flow" />
             <AuthPasskeySignin v-else-if="currentStep === 'passkeySignin'" ref="component" :flow="flow" />
             <AuthPasskeySignup v-else-if="currentStep === 'passkeySignup'" ref="component" :flow="flow" />
-            <AuthPassword
-              v-else-if="currentStep === 'password'"
-              ref="component"
-              :flow="flow"
-            />
+            <AuthPassword v-else-if="currentStep === 'password'" ref="component" :flow="flow" />
             <AuthCode v-else-if="currentStep === 'code'" ref="component" :flow="flow" />
             <AuthIdentity v-else-if="currentStep === 'identity'" ref="component" :flow="flow" />
-            <AuthAutoRedirect
-              v-else-if="currentStep === 'autoRedirect'"
-              ref="component"
-              :flow="flow"
-            />
-            <AuthManualRedirect
-              v-else-if="currentStep === 'manualRedirect'"
-              ref="component"
-              :flow="flow"
-            />
+            <AuthAutoRedirect v-else-if="currentStep === 'autoRedirect'" ref="component" :flow="flow" />
+            <AuthManualRedirect v-else-if="currentStep === 'manualRedirect'" ref="component" :flow="flow" />
           </Transition>
         </div>
       </template>

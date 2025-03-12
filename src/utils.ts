@@ -114,20 +114,20 @@ export function encodeQuery(query: QueryValuesWithOptional): QueryValues {
   return values
 }
 
-const variableRegexp = /\{([^}]+)\}/g;
+const variableRegexp = /\{([^}]+)\}/g
 
 // interpolateVariables should match implementation on the backend.
 export function interpolateVariables(template: string, values: Map<string, string>): string {
   const unmatchedVariables: string[] = []
   const result = template.replace(variableRegexp, (match) => {
-      const varName = match.slice(1, -1); // Removing the curly braces.
-      if (values.has(varName)) {
-          return values.get(varName)!
-      }
-      // Unmatched variable.
-      unmatchedVariables.push(varName)
-      return ""
-  });
+    const varName = match.slice(1, -1) // Removing the curly braces.
+    if (values.has(varName)) {
+      return values.get(varName)!
+    }
+    // Unmatched variable.
+    unmatchedVariables.push(varName)
+    return ""
+  })
 
   if (unmatchedVariables.length > 0) {
     const uniqueUnmatchedVariables = Array.from(new Set(unmatchedVariables))

@@ -171,7 +171,9 @@ async function onOIDCProvider(provider: string) {
       <div v-else-if="passwordError === 'shortEmailOrUsername' && isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">
         E-mail address should be at least 3 characters.
       </div>
-      <div v-else-if="passwordError === 'shortEmailOrUsername' && !isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">Username should be at least 3 characters.</div>
+      <div v-else-if="passwordError === 'shortEmailOrUsername' && !isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">
+        Username should be at least 3 characters.
+      </div>
       <div v-else-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
     </div>
     <h2 class="text-center m-4 text-xl font-bold uppercase">Or use</h2>

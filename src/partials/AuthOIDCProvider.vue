@@ -182,13 +182,13 @@ onBeforeUnmount(() => {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div>
-      You will be redirected to <strong>{{ flow.getOIDCProvider()!.name }}</strong> in {{ seconds === 1 ? "1 second" : `${seconds} seconds` }}{{ paused ? " (paused)" : "" }}.
+      You will be redirected to <strong>{{ flow.getOIDCProvider()!.name }}</strong> in {{ seconds === 1 ? "1 second" : `${seconds} seconds`
+      }}{{ paused ? " (paused)" : "" }}.
     </div>
     <div class="mt-4">Please follow instructions there to sign-in into Charon. Afterwards, you will be redirected back here.</div>
     <div class="mt-4">
-      You might have to sign-in into {{ flow.getOIDCProvider()!.name }} first.
-      You might be redirected back by {{ flow.getOIDCProvider()!.name }} immediately,
-      without showing you anything.
+      You might have to sign-in into {{ flow.getOIDCProvider()!.name }} first. You might be redirected back by {{ flow.getOIDCProvider()!.name }} immediately, without
+      showing you anything.
     </div>
     <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
     <div class="mt-4 flex flex-row justify-between gap-4">

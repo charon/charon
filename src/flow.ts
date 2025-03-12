@@ -77,12 +77,7 @@ export async function updateSteps(flow: Flow, targetStep: string, force?: boolea
   }
 }
 
-export function processCompleted(
-  router: Router,
-  flow: Flow,
-  progress: Ref<number>,
-  completed: Completed[],
-) {
+export function processCompleted(router: Router, flow: Flow, progress: Ref<number>, completed: Completed[]) {
   const oldCompleted = flow.getCompleted()
   flow.setCompleted(completed)
   if (completed.length > 0) {
@@ -92,7 +87,7 @@ export function processCompleted(
         id: flow.getId(),
       },
     }).href
-    switch (completed[completed.length-1]) {
+    switch (completed[completed.length - 1]) {
       case "finished":
       case "failed":
         flow.forward("manualRedirect")
@@ -103,7 +98,7 @@ export function processCompleted(
         break
       case "declined":
       case "identity":
-          flow.forward("autoRedirect")
+        flow.forward("autoRedirect")
         break
       case "finishReady":
         // Flow is now marked as ready for redirect (completed finishReady),
@@ -120,13 +115,7 @@ export function processCompleted(
   }
 }
 
-export function processResponse(
-  router: Router,
-  response: AuthFlowResponse,
-  flow: Flow,
-  progress: Ref<number>,
-  abortController: AbortController | null,
-): boolean {
+export function processResponse(router: Router, response: AuthFlowResponse, flow: Flow, progress: Ref<number>, abortController: AbortController | null): boolean {
   flow.setOrganizationId(response.organizationId)
   flow.setAppId(response.appId)
   if (response.providers) {
@@ -149,13 +138,7 @@ export function processResponse(
   return false
 }
 
-export function processFirstResponse(
-  router: Router,
-  response: AuthFlowResponse,
-  flow: Flow,
-  progress: Ref<number>,
-) {
-
+export function processFirstResponse(router: Router, response: AuthFlowResponse, flow: Flow, progress: Ref<number>) {
   if (response.providers && response.providers.length > 0) {
     let targetSteps = []
     let currentStep = ""
@@ -195,7 +178,12 @@ export function processFirstResponse(
     updateSteps(flow, "start", true)
   }
   processResponse(router, response, flow, progress, null)
-  if ((response.completed.includes("signin") || response.completed.includes("signup")) && response.providers && response.providers.includes("password") && !response.providers.includes("code")) {
+  if (
+    (response.completed.includes("signin") || response.completed.includes("signup")) &&
+    response.providers &&
+    response.providers.includes("password") &&
+    !response.providers.includes("code")
+  ) {
     // Authentication step has completed with only password provider and no code provider.
     // We remove the code step we might have added above.
     removeSteps(flow, ["code"])
