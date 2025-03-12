@@ -5,6 +5,7 @@ import { replaceLocationHash } from "@/utils"
 import { progressKey } from "@/progress"
 import { routes } from "@/../routes.json"
 import "@/app.css"
+import { processOIDCRedirect } from "./auth"
 
 // Facebook Login returns adds a hash on its callback. Here we remove it before
 // we create Vue router so that Vue router gets clean route (it might matter if
@@ -13,6 +14,9 @@ import "@/app.css"
 if (window.location.hash === "#_=_") {
   replaceLocationHash("")
 }
+
+// Process OIDC redirect if it is present.
+await processOIDCRedirect()
 
 const router = createRouter({
   history: createWebHistory(),

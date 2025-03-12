@@ -6,10 +6,16 @@ import { useRouter } from "vue-router"
 import { getURL } from "@/api"
 import { injectMainProgress } from "@/progress"
 
-const props = defineProps<{
-  name: string
-  params: QueryValues
-}>()
+const props = withDefaults(
+  defineProps<{
+    name: string
+    params: QueryValues
+    query?: QueryValues
+  }>(),
+  {
+    query: () => {return {}},
+  },
+)
 
 const router = useRouter()
 
@@ -42,7 +48,7 @@ onUpdated(() => {
 })
 
 watch(
-  () => ({ params: props.params, name: props.name }),
+  () => ({ params: props.params, name: props.name, query: props.query }),
   async (params, oldParams, onCleanup) => {
     const abortController = new AbortController()
     onCleanup(() => abortController.abort())
@@ -50,6 +56,7 @@ watch(
     const newURL = router.apiResolve({
       name: params.name,
       params: params.params,
+      query: params.query,
     }).href
     _url.value = newURL
 

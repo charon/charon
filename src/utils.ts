@@ -55,15 +55,39 @@ export function isEmail(emailOrUsername: string): boolean {
 export function replaceLocationHash(hash: string) {
   if (hash) {
     if (history.replaceState) {
-      history.replaceState(null, "", window.location.href.split("#")[0] + "#" + hash)
+      const url = new URL(window.location.href)
+      url.hash = "#" + hash
+      history.replaceState(null, "", url)
     } else {
       window.location.hash = "#" + hash
     }
   } else {
     if (history.replaceState) {
-      history.replaceState(null, "", window.location.href.split("#")[0])
+      const url = new URL(window.location.href)
+      url.hash = ""
+      history.replaceState(null, "", url)
     } else {
       window.location.hash = ""
+    }
+  }
+}
+
+export function replaceLocationSearch(search: string) {
+  if (search) {
+    if (history.replaceState) {
+      const url = new URL(window.location.href)
+      url.search = "?" + search
+      history.replaceState(null, "", url)
+    } else {
+      window.location.search = "?" + search
+    }
+  } else {
+    if (history.replaceState) {
+      const url = new URL(window.location.href)
+      url.search = ""
+      history.replaceState(null, "", url)
+    } else {
+      window.location.search = ""
     }
   }
 }
@@ -136,4 +160,9 @@ export function interpolateVariables(template: string, values: Map<string, strin
   }
 
   return result
+}
+
+export function currentAbsoluteURL(): string {
+  // We remove origin prefix from full URL to get absolute URL.
+  return document.location.href.slice(document.location.origin.length)
 }

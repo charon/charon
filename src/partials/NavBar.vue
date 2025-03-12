@@ -9,8 +9,8 @@ import Button from "@/components/Button.vue"
 import { useNavbar } from "@/navbar"
 import { postJSON } from "@/api"
 import { injectProgress } from "@/progress"
-import { redirectServerSide } from "@/utils"
-import me from "@/me"
+import { currentAbsoluteURL, redirectServerSide } from "@/utils"
+import { accessToken, signIn, isSignedIn } from "@/auth"
 
 const { ref: navbar, attrs: navbarAttrs } = useNavbar()
 
@@ -32,8 +32,7 @@ async function onSignOut() {
   progress.value += 1
   try {
     const payload: AuthSignoutRequest = {
-      // We remove origin prefix from full URL to get absolute URL.
-      location: document.location.href.slice(document.location.origin.length),
+      location: currentAbsoluteURL(),
     }
     const url = router.apiResolve({
       name: "AuthSignout",
@@ -48,6 +47,8 @@ async function onSignOut() {
       if (browserSupportsWebAuthn()) {
         navigator.credentials.preventSilentAccess()
       }
+
+      accessToken.value = ""
 
       redirectServerSide(response.location, true, progress)
 
@@ -66,7 +67,7 @@ async function onSignOut() {
 }
 
 async function onSignIn() {
-  // TODO: Use OIDC client.
+  await signIn(progress)
 }
 </script>
 
@@ -83,7 +84,7 @@ async function onSignIn() {
       <GlobeAltIcon class="m-1 sm:m-4 sm:h-10 sm:w-10 h-7 w-7 rounded group-focus:ring-2 group-focus:ring-primary-500" />
     </router-link>
     <slot><div class="flex-grow"></div></slot>
-    <Button v-if="me.success" primary type="button" :progress="progress" @click.prevent="onSignOut">Sign-out</Button>
+    <Button v-if="isSignedIn()" primary type="button" :progress="progress" @click.prevent="onSignOut">Sign-out</Button>
     <Button v-else primary type="button" :progress="progress" @click.prevent="onSignIn">Sign-in or sign-up</Button>
   </div>
 </template>

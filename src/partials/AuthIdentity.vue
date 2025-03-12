@@ -69,7 +69,9 @@ async function getIdentities(organizationId: string, not: boolean, loading: Ref<
 
   progress.value += 1
   try {
-    const q: { notorg?: string; org?: string } = {}
+    const q: { flow: string, notorg?: string; org?: string } = {
+      flow: props.flow.getId(),
+    }
     if (not) {
       q["notorg"] = organizationId
     } else {
@@ -229,7 +231,7 @@ function onIdentityCreated(identity: IdentityRef) {
         <div v-if="!usedIdentities.length" class="italic mb-4">You have not yet used any identity with this organization.</div>
         <template v-for="(identity, i) of usedIdentities" :key="identity.id">
           <div class="grid grid-cols-1 gap-4 mb-4">
-            <IdentityListItem :item="identity" :organization-id="flow.getOrganizationId()">
+            <IdentityListItem :item="identity" :organization-id="flow.getOrganizationId()" :flow-id="flow.getId()">
               <div class="flex flex-col items-start">
                 <Button :id="i === 0 ? 'first-identity' : null" primary type="button" tabindex="1" :progress="progress" @click.prevent="onSelect(identity.id)"
                   >Select</Button
@@ -247,7 +249,7 @@ function onIdentityCreated(identity: IdentityRef) {
         <div v-else-if="otherIdentities.length === 0" class="italic mb-4">There are no other identities. Create one.</div>
         <template v-for="(identity, i) of otherIdentities" :key="identity.id">
           <div class="grid grid-cols-1 gap-4 mb-4">
-            <IdentityListItem :item="identity">
+            <IdentityListItem :item="identity" :flow-id="flow.getId()">
               <div class="flex flex-col items-start">
                 <Button
                   :id="usedIdentities.length + i === 0 ? 'first-identity' : null"
@@ -268,7 +270,7 @@ function onIdentityCreated(identity: IdentityRef) {
       </div>
       <template v-if="createShown">
         <h3 class="text-l font-bold mb-4">Create new identity</h3>
-        <IdentityCreate class="mb-4" @created="onIdentityCreated" />
+        <IdentityCreate class="mb-4" :flow-id="flow.getId()" @created="onIdentityCreated" />
       </template>
       <div v-if="unexpectedError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
       <div class="flex flex-row justify-between gap-4">

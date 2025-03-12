@@ -25,7 +25,9 @@ func initCharonOrganization(config *Config, service *Service, domain string) (fu
 		charonApplicationTemplateID := identifier.New()
 		charonApplicationTemplateClientPublicID := identifier.New()
 
-		uri := "https://" + host
+		// In browsers, trailing slash is always added at the beginning of pathname, so we
+		// do the same here to make sure redirect URIs match window.location.href in browsers.
+		uri := "https://" + host + "/"
 
 		organization := Organization{
 			OrganizationPublic: OrganizationPublic{

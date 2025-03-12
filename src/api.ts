@@ -5,6 +5,7 @@ import type { AuthFlowPasswordStartRequest, AuthFlowResponse, Flow, Metadata, Au
 import { fromBase64 } from "@/utils"
 import { decodeMetadata } from "@/metadata"
 import { processResponse } from "@/flow"
+import { accessToken } from "@/auth"
 
 export class FetchError extends Error {
   cause?: Error
@@ -34,6 +35,10 @@ export async function getURL<T>(
     progress.value += 1
   }
   try {
+    const headers = new Headers()
+    if (accessToken.value) {
+      headers.set("Authorization", `Bearer ${accessToken.value}`)
+    }
     const response = await fetch(url, {
       method: "GET",
       // Mode and credentials match crossorigin=anonymous in link preload header.
@@ -42,6 +47,7 @@ export async function getURL<T>(
       referrer: document.location.href,
       referrerPolicy: "strict-origin-when-cross-origin",
       signal: abortSignal,
+      headers,
     })
     const contentType = response.headers.get("Content-Type")
     if (!contentType || !contentType.includes("application/json")) {
@@ -66,11 +72,13 @@ export async function postJSON<T>(url: string, data: object, abortSignal: AbortS
     progress.value += 1
   }
   try {
+    const headers = new Headers()
+    headers.set("Content-Type", "application/json")
+    if (accessToken.value) {
+      headers.set("Authorization", `Bearer ${accessToken.value}`)
+    }
     const response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(data),
       mode: "same-origin",
       credentials: "same-origin",
@@ -78,6 +86,7 @@ export async function postJSON<T>(url: string, data: object, abortSignal: AbortS
       referrer: document.location.href,
       referrerPolicy: "strict-origin-when-cross-origin",
       signal: abortSignal,
+      headers,
     })
     const contentType = response.headers.get("Content-Type")
     if (!contentType || !contentType.includes("application/json")) {

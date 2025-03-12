@@ -93,7 +93,7 @@ const withOrganizationApplicationDocument = ref<ComponentExposed<typeof WithOrga
     <WithOrganizationApplicationDocument
       ref="withOrganizationApplicationDocument"
       :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }"
-      name="OrganizationAppGet"
+      name="OrganizationApp"
     >
       <template #default="{ doc }">
         <template v-if="flow.getCompleted().includes('failed')">

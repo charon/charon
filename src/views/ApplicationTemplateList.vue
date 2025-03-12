@@ -9,7 +9,7 @@ import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
 import { getURL } from "@/api"
 import { injectProgress } from "@/progress"
-import me from "@/me"
+import { isSignedIn } from "@/auth"
 
 const router = useRouter()
 
@@ -59,14 +59,14 @@ onBeforeMount(async () => {
       <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
         <div class="flex flex-row justify-between items-center gap-4">
           <h1 class="text-2xl font-bold">Application templates</h1>
-          <ButtonLink v-if="me.success" :to="{ name: 'ApplicationTemplateCreate' }" :progress="progress" primary>Create</ButtonLink>
+          <ButtonLink v-if="isSignedIn()" :to="{ name: 'ApplicationTemplateCreate' }" :progress="progress" primary>Create</ButtonLink>
         </div>
       </div>
       <div v-if="dataLoading" class="w-full rounded border bg-white p-4 shadow">Loading...</div>
       <div v-else-if="dataLoadingError" class="w-full rounded border bg-white p-4 shadow text-error-600">Unexpected error. Please try again.</div>
       <template v-else>
         <div v-if="!applicationTemplates.length" class="w-full rounded border bg-white p-4 shadow grid grid-cols-1 gap-4 italic">
-          There are no application templates. {{ me.success ? "Create the first one." : "Sign-in or sign-up to create the first one." }}
+          There are no application templates. {{ isSignedIn() ? "Create the first one." : "Sign-in or sign-up to create the first one." }}
         </div>
         <div v-for="applicationTemplate of applicationTemplates" :key="applicationTemplate.id" class="w-full rounded border bg-white p-4 shadow grid grid-cols-1 gap-4">
           <ApplicationTemplateListItem :item="applicationTemplate" />

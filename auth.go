@@ -18,7 +18,7 @@ type AuthSignoutRequest struct {
 }
 
 type AuthSignoutResponse struct {
-	Location string `json:"url"`
+	Location string `json:"location"`
 }
 
 // TODO: Allow specifying that a) provider who signed the user in should be signed out as well b) all providers user is known with is signed out as well.

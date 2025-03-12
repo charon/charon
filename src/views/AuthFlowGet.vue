@@ -292,7 +292,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
         <div class="w-full rounded border bg-white p-4 shadow">
           <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>
           <div class="mb-4">
-            <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationAppGet">
+            <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationApp">
               <template #default="{ doc }">
                 <a :href="getHomepage(doc)" class="link"
                   ><strong>{{ doc.applicationTemplate.name }}</strong></a

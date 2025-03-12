@@ -158,7 +158,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
 
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
-    <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationAppGet">
+    <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationApp">
       <template #default="{ doc }">
         <div v-if="flow.getCompleted().includes('identity')" class="mb-4">
           <strong>Congratulations.</strong> Everything is ready to sign you in or sign you up into {{ doc.applicationTemplate.name }} using the identity you have chosen.

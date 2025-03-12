@@ -254,7 +254,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
     <div v-else-if="codeFromHash" class="mt-4">Please confirm the code to continue.</div>
     <div v-else class="mt-4">Please allow few minutes for the code to arrive. Check spam or junk folder.</div>
     <div v-if="codeFromHash" class="mt-4">
-      <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationAppGet">
+      <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationApp">
         <template #default="{ doc }">
           If you were not signing in or signing up into {{ doc.applicationTemplate.name }}, please disregard the e-mail and <strong>do not</strong> confirm the code.
         </template>

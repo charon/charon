@@ -9,6 +9,10 @@ import Button from "@/components/Button.vue"
 import { postJSON } from "@/api"
 import { injectProgress } from "@/progress"
 
+const props = defineProps<{
+  flowId?: string
+}>()
+
 const $emit = defineEmits<{
   created: [identity: IdentityRef]
 }>()
@@ -61,6 +65,9 @@ async function onSubmit() {
     }
     const url = router.apiResolve({
       name: "IdentityCreate",
+      query: props.flowId ? {
+        flow: props.flowId,
+      } : undefined,
     }).href
 
     const identity = await postJSON<IdentityRef>(url, payload, abortController.signal, progress)
