@@ -15,6 +15,7 @@ type State = {
   nonce: string
 }
 
+// TODO: Instead of providing access token directly, provide a wrapper around fetch which adds the token and fetches a new one if it expires.
 export const accessToken = ref("")
 
 export async function signIn(progress: Ref<number>) {
@@ -67,12 +68,10 @@ export async function processOIDCRedirect() {
     expectedNonce: state.nonce,
   })
 
+  // TODO: Inspect the access token and figure out when it will expire and remove the access token then.
   accessToken.value = tokens.access_token
 }
 
 export function isSignedIn(): boolean {
-  // TODO: Use introspection endpoint to check if the user is signed in.
-  //       Cache until the known expiration. Make sure this is checked only
-  //       once even if multiple calls to this function are done in parallel.
   return accessToken.value !== ""
 }
