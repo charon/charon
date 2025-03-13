@@ -62,7 +62,7 @@ func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *Flow
 		OrganizationID:  flow.OrganizationID,
 		AppID:           flow.AppID,
 		Providers:       flow.Providers,
-		EmailOrUsername: "",
+		EmailOrUsername: flow.EmailOrUsername,
 		OIDCProvider:    nil,
 		Passkey:         nil,
 		Password:        nil,
