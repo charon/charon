@@ -97,7 +97,7 @@ func assertSignedUser(t *testing.T, signinOrSignout charon.Completed, flowID ide
 	}
 }
 
-func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emailOrUsername string, signinOrSignout charon.Completed, flowID identifier.Identifier, nonce, state, pkceVerifier string, config *oauth2.Config, verifier *oidc.IDTokenVerifier) string {
+func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emailOrUsername string, signinOrSignout charon.Completed, flowID identifier.Identifier, nonce, state, pkceVerifier string, config *oauth2.Config, verifier *oidc.IDTokenVerifier) (string, identifier.Identifier) {
 	t.Helper()
 
 	resp := startPasswordSignin(t, ts, service, emailOrUsername, []byte("test1234"), nil, flowID, "Charon", "Dashboard") //nolint:bodyclose
@@ -111,6 +111,6 @@ func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emai
 	require.NoError(t, err)
 	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{signinOrSignout}, []charon.Provider{charon.PasswordProvider}, "", assertCharonDashboard)
 
-	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{charon.PasswordProvider}, 1, emailOrUsername)
-	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{charon.PasswordProvider})
+	identityId := chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{charon.PasswordProvider}, 1, emailOrUsername)
+	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{charon.PasswordProvider}), identityId
 }

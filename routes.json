@@ -25,12 +25,6 @@
       "get": {}
     },
     {
-      "name": "Me",
-      "path": "/me",
-      "api": {},
-      "get": null
-    },
-    {
       "name": "OIDCAuthorize",
       "path": "/auth/oidc/authorize",
       "api": null,
