@@ -5,6 +5,7 @@ import { ref, watch, readonly, onMounted, onUpdated, onUnmounted, getCurrentInst
 import { useRouter } from "vue-router"
 import { getURL } from "@/api"
 import { injectMainProgress } from "@/progress"
+import { isEqual } from "lodash-es"
 
 const props = withDefaults(
   defineProps<{
@@ -50,15 +51,20 @@ onUpdated(() => {
 })
 
 watch(
-  () => ({ params: props.params, name: props.name, query: props.query }),
-  async (params, oldParams, onCleanup) => {
+  [() => props.params, () => props.name, () => props.query],
+  async ([params, name, query], [oldParams, oldName, oldQuery], onCleanup) => {
+    // Do nothing if nothing changed.
+    if (isEqual(params, oldParams) && isEqual(name, oldName) && isEqual(query, oldQuery)) {
+      return
+    }
+
     const abortController = new AbortController()
     onCleanup(() => abortController.abort())
 
     const newURL = router.apiResolve({
-      name: params.name,
-      params: params.params,
-      query: params.query,
+      name,
+      params,
+      query,
     }).href
     _url.value = newURL
 
@@ -87,6 +93,7 @@ watch(
   },
   {
     immediate: true,
+    deep: true,
   },
 )
 
