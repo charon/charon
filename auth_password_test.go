@@ -111,6 +111,6 @@ func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emai
 	require.NoError(t, err)
 	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{signinOrSignout}, []charon.Provider{charon.PasswordProvider}, "", assertCharonDashboard)
 
-	identityId := chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{charon.PasswordProvider}, 1, emailOrUsername)
-	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{charon.PasswordProvider}), identityId
+	identityID := chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{charon.PasswordProvider}, 1, emailOrUsername)
+	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{charon.PasswordProvider}), identityID
 }

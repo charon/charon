@@ -102,7 +102,7 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"picture":"`+gravatarURL+`","preferred_username":"`+username+`","sub":"`+identityID.String()+`"}`, string(out)) //nolint:testifylint
+		assert.Equal(t, `{"picture":"`+gravatarURL+`","preferred_username":"`+username+`","sub":"`+identityID.String()+`"}`, string(out))
 	}
 
 	signoutUser(t, ts, service, accessToken)
@@ -152,7 +152,7 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"picture":"`+gravatarURL+`","preferred_username":"`+username+`","sub":"`+identityID.String()+`"}`, string(out)) //nolint:testifylint
+		assert.Equal(t, `{"picture":"`+gravatarURL+`","preferred_username":"`+username+`","sub":"`+identityID.String()+`"}`, string(out))
 	}
 
 	// Loading old flow when signed in again does not work because sessions are bound to flows.
