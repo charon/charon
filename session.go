@@ -18,27 +18,44 @@ type Session struct {
 	ID        identifier.Identifier
 	SecretID  [32]byte
 	CreatedAt time.Time
+	Active    bool
 
 	AccountID identifier.Identifier
 }
 
 func (s Session) Expired() bool {
+	if !s.Active {
+		return true
+	}
 	return time.Now().After(s.CreatedAt.Add(sessionExpiration))
 }
 
-func (s *Service) deleteSession(_ context.Context, id identifier.Identifier) errors.E {
+func (s *Service) disableSession(ctx context.Context, id identifier.Identifier) errors.E {
 	s.sessionsMu.Lock()
 	defer s.sessionsMu.Unlock()
 
-	delete(s.sessions, id)
+	session, errE := s.getSessionNoLock(ctx, id)
+	if errE != nil {
+		return errE
+	}
+
+	session.Active = false
+	errE = s.setSessionNoLock(ctx, session)
+	if errE != nil {
+		return errE
+	}
 
 	return nil
 }
 
-func (s *Service) getSession(_ context.Context, id identifier.Identifier) (*Session, errors.E) {
+func (s *Service) getSession(ctx context.Context, id identifier.Identifier) (*Session, errors.E) {
 	s.sessionsMu.RLock()
 	defer s.sessionsMu.RUnlock()
 
+	return s.getSessionNoLock(ctx, id)
+}
+
+func (s *Service) getSessionNoLock(_ context.Context, id identifier.Identifier) (*Session, errors.E) {
 	data, ok := s.sessions[id]
 	if !ok {
 		return nil, errors.WithDetails(ErrSessionNotFound, "id", id)
@@ -78,15 +95,19 @@ func (s *Service) GetSessionBySecretID(ctx context.Context, secretID [32]byte) (
 	return nil, errors.WithStack(ErrSessionNotFound)
 }
 
-func (s *Service) setSession(_ context.Context, session *Session) errors.E {
+func (s *Service) setSession(ctx context.Context, session *Session) errors.E {
+	s.sessionsMu.Lock()
+	defer s.sessionsMu.Unlock()
+
+	return s.setSessionNoLock(ctx, session)
+}
+
+func (s *Service) setSessionNoLock(_ context.Context, session *Session) errors.E {
 	data, errE := x.MarshalWithoutEscapeHTML(session)
 	if errE != nil {
 		errors.Details(errE)["id"] = session.ID
 		return errE
 	}
-
-	s.sessionsMu.Lock()
-	defer s.sessionsMu.Unlock()
 
 	s.sessions[session.ID] = data
 	return nil

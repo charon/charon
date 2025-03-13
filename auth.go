@@ -64,7 +64,7 @@ func (s *Service) AuthSignoutPost(w http.ResponseWriter, req *http.Request, _ wa
 			if errE != nil {
 				continue
 			}
-			errE = s.deleteSession(ctx, session.ID)
+			errE = s.disableSession(ctx, session.ID)
 			if errE != nil {
 				s.InternalServerErrorWithError(w, req, errE)
 				return

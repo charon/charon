@@ -297,8 +297,9 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	now := time.Now().UTC()
 	errE := s.setSession(ctx, &Session{
 		ID:        sessionID,
-		CreatedAt: now,
 		SecretID:  [32]byte(secretID),
+		CreatedAt: now,
+		Active:    true,
 		AccountID: account.ID,
 	})
 	if errE != nil {
