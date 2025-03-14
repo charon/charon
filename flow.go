@@ -81,40 +81,59 @@ type Flow struct {
 }
 
 func (f *Flow) AddCompleted(completed Completed) errors.E {
-	previous := f.lastCompletedStep()
+	for {
+		previous := f.lastCompletedStep()
 
-	switch completed {
-	case CompletedSignin, CompletedSignup, CompletedFailed:
-		// It has to be the first.
-		if previous != "" {
-			return errors.WithStack(ErrInvalidCompleted)
+		switch completed {
+		case CompletedSignin, CompletedSignup, CompletedFailed:
+			// It has to be the first.
+			if previous != "" {
+				return errors.WithStack(ErrInvalidCompleted)
+			}
+		case CompletedIdentity:
+			if previous == CompletedIdentity || previous == CompletedDeclined {
+				// We allow to select identity again or to select it after it was previously declined.
+				// We remove the last completed step first.
+				f.Completed = f.Completed[:len(f.Completed)-1]
+				continue
+			} else if previous != CompletedSignin && previous != CompletedSignup {
+				// Only CompletedSignin and CompletedSignup are allowed as the previous step to select identity.
+				return errors.WithStack(ErrInvalidCompleted)
+			}
+		case CompletedDeclined:
+			if previous == "" { //nolint:revive
+				// In UI we provide CompletedDeclined option only after the auth step, as an alternative to
+				// CompletedIdentity, but in API we allow to decline the flow also as the first step.
+			} else if previous == CompletedDeclined || previous == CompletedIdentity {
+				// We allow to decline again or to decline after an identity was previously selected.
+				// We remove the last completed step first.
+				f.Completed = f.Completed[:len(f.Completed)-1]
+				continue
+			} else if previous != CompletedSignin && previous != CompletedSignup {
+				return errors.WithStack(ErrInvalidCompleted)
+			}
+		case CompletedFinishReady:
+			if previous == CompletedFinishReady {
+				// We allow to mark the flow as ready to be finished again.
+				// We remove the last completed step first.
+				f.Completed = f.Completed[:len(f.Completed)-1]
+				continue
+			} else if previous != CompletedFailed && previous != CompletedIdentity && previous != CompletedDeclined {
+				return errors.WithStack(ErrInvalidCompleted)
+			}
+		case CompletedFinished:
+			if previous != CompletedFinishReady {
+				return errors.WithStack(ErrInvalidCompleted)
+			}
+		default:
+			errE := errors.New("invalid flow completed step")
+			errors.Details(errE)["completed"] = completed
+			errors.Details(errE)["existing"] = f.Completed
+			// Internal error: this should never happen.
+			panic(errE)
 		}
-	case CompletedIdentity:
-		// Only CompletedSignin and CompletedSignup are allowed as the previous step to select identity.
-		if previous != CompletedSignin && previous != CompletedSignup {
-			return errors.WithStack(ErrInvalidCompleted)
-		}
-	case CompletedDeclined:
-		if previous == "" { //nolint:revive
-			// In UI we provide CompletedDeclined option only after the auth step, as an alternative to
-			// CompletedIdentity, but in API we allow to decline the flow also as the first step.
-		} else if previous != CompletedSignin && previous != CompletedSignup {
-			return errors.WithStack(ErrInvalidCompleted)
-		}
-	case CompletedFinishReady:
-		if previous != CompletedFailed && previous != CompletedIdentity && previous != CompletedDeclined {
-			return errors.WithStack(ErrInvalidCompleted)
-		}
-	case CompletedFinished:
-		if previous != CompletedFinishReady {
-			return errors.WithStack(ErrInvalidCompleted)
-		}
-	default:
-		errE := errors.New("invalid flow completed step")
-		errors.Details(errE)["completed"] = completed
-		errors.Details(errE)["existing"] = f.Completed
-		// Internal error: this should never happen.
-		panic(errE)
+
+		break
 	}
 
 	f.Completed = append(f.Completed, completed)
