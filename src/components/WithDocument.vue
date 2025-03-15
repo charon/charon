@@ -51,12 +51,13 @@ onUpdated(() => {
 })
 
 watch(
-  [() => props.params, () => props.name, () => props.query],
-  async ([params, name, query], [oldParams, oldName, oldQuery], onCleanup) => {
-    // Do nothing if nothing changed.
-    if (isEqual(params, oldParams) && isEqual(name, oldName) && isEqual(query, oldQuery)) {
-      return
-    }
+  // We use JSON.stringify so that watch reruns really only when params and query objects change
+  // meaningfully and is not that only their objects are recreated (with same values), for example.
+  // See: https://github.com/vuejs/vue/issues/13242
+  [() => JSON.stringify(props.params), () => props.name, () => JSON.stringify(props.query)],
+  async ([paramsJSON, name, queryJSON], [oldParamsJSON, oldName, oldQueryJSON], onCleanup) => {
+    const params = JSON.parse(paramsJSON)
+    const query = JSON.parse(queryJSON)
 
     const abortController = new AbortController()
     onCleanup(() => abortController.abort())
@@ -93,7 +94,6 @@ watch(
   },
   {
     immediate: true,
-    deep: true,
   },
 )
 
