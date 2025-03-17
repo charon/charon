@@ -5,7 +5,6 @@ import { ref, watch, readonly, onMounted, onUpdated, onUnmounted, getCurrentInst
 import { useRouter } from "vue-router"
 import { getURL } from "@/api"
 import { injectMainProgress } from "@/progress"
-import { isEqual } from "lodash-es"
 
 const props = withDefaults(
   defineProps<{
@@ -51,8 +50,11 @@ onUpdated(() => {
 })
 
 watch(
-  // We use JSON.stringify so that watch reruns really only when params and query objects change
-  // meaningfully and is not that only their objects are recreated (with same values), for example.
+  // We use JSON.stringify so that watch reruns really only when params and query objects change meaningfully and is not that only their
+  // objects are recreated (with same values), for example. JSON.stringify orders JSON fields in the object iteration order which means
+  // that JSON serialization could change (and watch callback would rerun) while objects did not really change meaningfully (for params
+  // and query we do not care about order of fields). In practice, this should not really happen because generally objects passed to
+  // props are created every time in the same way in templates.
   // See: https://github.com/vuejs/vue/issues/13242
   [() => JSON.stringify(props.params), () => props.name, () => JSON.stringify(props.query)],
   async ([paramsJSON, name, queryJSON], [oldParamsJSON, oldName, oldQueryJSON], onCleanup) => {
