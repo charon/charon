@@ -173,7 +173,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 
 	oidcSession := &OIDCSession{ //nolint:forcetypeassert
 		AccountID:              session.AccountID,
-		Subject:                *flow.Identity.GetOrganization(flow.OrganizationID).ID,
+		Subject:                *flow.Identity.GetOrganization(&flow.OrganizationID).ID,
 		SessionID:              session.ID,
 		ExpiresAt:              nil,
 		RequestedAt:            flow.CreatedAt,

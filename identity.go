@@ -95,6 +95,7 @@ type Identity struct {
 	Organizations []IdentityOrganization `json:"organizations"`
 }
 
+// GetIdentityOrganization returns IdentityOrganization based on IdentityOrganization's ID.
 func (i *Identity) GetIdentityOrganization(id *identifier.Identifier) *IdentityOrganization {
 	if i == nil {
 		return nil
@@ -112,9 +113,17 @@ func (i *Identity) GetIdentityOrganization(id *identifier.Identifier) *IdentityO
 	return nil
 }
 
-func (i *Identity) GetOrganization(id identifier.Identifier) *IdentityOrganization {
+// GetIdentityOrganization returns IdentityOrganization based on IdentityOrganization's Organization's ID.
+func (i *Identity) GetOrganization(id *identifier.Identifier) *IdentityOrganization {
+	if i == nil {
+		return nil
+	}
+	if id == nil {
+		return nil
+	}
+
 	for _, idOrg := range i.Organizations {
-		if idOrg.Organization.ID == id {
+		if idOrg.Organization.ID == *id {
 			return &idOrg
 		}
 	}
@@ -385,23 +394,18 @@ func (s *Service) selectAndActivateIdentity(ctx context.Context, identityID, org
 		return nil, errE
 	}
 
-	for i, idOrg := range identity.Organizations {
+	for _, idOrg := range identity.Organizations {
 		if idOrg.Organization.ID == organizationID {
 			if idOrg.Active {
 				// Organization already present and active, nothing to do.
 				return identity, nil
 			}
 
-			// Organization already present but not active, we activate it.
-			idOrg.Active = true
-			// IdentityOrganization has been changed, so we assign it back.
-			identity.Organizations[i] = idOrg
-
-			return identity, s.updateIdentity(ctx, identity)
+			return nil, errors.New("identity not active for organization")
 		}
 	}
 
-	// Organization not present, we add it (active).
+	// Organization not present, we add it (as active).
 	identity.Organizations = append(identity.Organizations, IdentityOrganization{
 		ID:     nil,
 		Active: true,
@@ -527,6 +531,19 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 		notOrganization = &o
 	}
 
+	inactive := false
+	if b := req.Form.Get("inactive"); b != "" {
+		switch b {
+		case "true":
+			inactive = true
+		case "false":
+			inactive = false
+		default:
+			s.BadRequestWithError(w, req, errors.New(`invalid "inactive" parameter`))
+			return
+		}
+	}
+
 	for id, data := range s.identities {
 		var identity Identity
 		errE := x.UnmarshalWithoutUnknownFields(data, &identity)
@@ -536,15 +553,21 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 			return
 		}
 
-		if identity.HasUserAccess(accountID) || identity.HasAdminAccess(accountID) {
+		// TODO: Do not filter in list endpoint but filter in search endpoint.
+		if !identity.HasUserAccess(accountID) && !identity.HasAdminAccess(accountID) {
+			continue
+		}
+
+		if idOrg := identity.GetOrganization(organization); idOrg != nil {
 			// TODO: Do not filter in list endpoint but filter in search endpoint.
-			if organization != nil && identity.GetOrganization(*organization) != nil {
-				result = append(result, IdentityRef{ID: id})
-			} else if notOrganization != nil && identity.GetOrganization(*notOrganization) == nil {
-				result = append(result, IdentityRef{ID: id})
-			} else if organization == nil && notOrganization == nil {
+			// Or all identities (including inactive ones) are requested, or we return only active ones.
+			if !inactive || idOrg.Active {
 				result = append(result, IdentityRef{ID: id})
 			}
+		} else if idOrg := identity.GetOrganization(notOrganization); idOrg != nil {
+			result = append(result, IdentityRef{ID: id})
+		} else if organization == nil && notOrganization == nil {
+			result = append(result, IdentityRef{ID: id})
 		}
 	}
 

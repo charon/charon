@@ -31,6 +31,9 @@ onBeforeMount(async () => {
   try {
     const url = router.apiResolve({
       name: "IdentityList",
+      query: {
+        inactive: "true",
+      },
     }).href
 
     const response = await getURL<Identities>(url, null, abortController.signal, progress)
