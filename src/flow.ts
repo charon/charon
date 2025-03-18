@@ -140,40 +140,27 @@ export function processResponse(router: Router, response: AuthFlowResponse, flow
 
 export function processFirstResponse(router: Router, response: AuthFlowResponse, flow: Flow, progress: Ref<number>) {
   if (response.providers && response.providers.length > 0) {
-    let targetSteps = []
-    let currentStep = ""
+    const targetSteps = []
     for (const provider of response.providers) {
       const oidcProvider = getOIDCProvider([provider])
       if (provider === "code" || provider === "password") {
-        // Currently we always push both password and code steps and possibly
-        // later on remove the code step if it is not necessary.
-        targetSteps.push("password")
-        currentStep = "password"
+        targetSteps.push(provider)
       } else if (provider === "passkey") {
         targetSteps.push("passkeySignin")
-        currentStep = "passkeySignin"
       } else if (oidcProvider) {
         // processResponse below will set the OIDC provider again,
         // but we set it here so that updateSteps can use it.
         flow.setOIDCProvider(oidcProvider)
         targetSteps.push("oidcProvider")
-        currentStep = "oidcProvider"
       } else {
         throw new Error(`unknown provider: ${provider}`)
       }
     }
-    // We remove duplicates.
-    targetSteps = Array.from(new Set(targetSteps))
-    if (!currentStep || targetSteps.length === 0) {
-      throw new Error("not possible")
-    }
-    if (targetSteps.length > 1) {
-      // Currently we support only one factor.
-      throw new Error("not possible")
-    }
-    updateSteps(flow, targetSteps[0])
+    // There should be at least one step at this point.
+    const lastStep = targetSteps[targetSteps.length - 1]
+    updateSteps(flow, lastStep)
     // We might move current step further in processResponse based on completed steps.
-    flow.forward(currentStep)
+    flow.forward(lastStep)
   } else {
     updateSteps(flow, "start", true)
   }
