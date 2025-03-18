@@ -146,7 +146,8 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 	}
 
 	flow.ClearAuthStep(preservedEmailOrUsername)
-	flow.Providers = append(flow.Providers, PasswordProvider)
+	// Currently we support only one factor.
+	flow.Providers = []Provider{PasswordProvider}
 	flow.Password = &FlowPassword{
 		PrivateKey: privateKey.Bytes(),
 		Nonce:      nonce,
@@ -401,7 +402,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 	if strings.Contains(mappedEmailOrUsername, "@") {
 		// Account does not exist and we do have an e-mail address.
 		// We send the code to verify the e-mail address.
-		s.sendCode(w, req, flow, flow.EmailOrUsername, []string{flow.EmailOrUsername}, nil, credentials)
+		s.sendCode(w, req, flow, true, flow.EmailOrUsername, []string{flow.EmailOrUsername}, nil, credentials)
 		return
 	}
 

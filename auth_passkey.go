@@ -127,7 +127,8 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 	}
 
 	flow.ClearAuthStep("")
-	flow.Providers = append(flow.Providers, PasskeyProvider)
+	// Currently we support only one factor.
+	flow.Providers = []Provider{PasskeyProvider}
 	flow.Passkey = session
 	errE = s.SetFlow(ctx, flow)
 	if errE != nil {
@@ -291,7 +292,8 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 	}
 
 	flow.ClearAuthStep("")
-	flow.Providers = append(flow.Providers, PasskeyProvider)
+	// Currently we support only one factor.
+	flow.Providers = []Provider{PasskeyProvider}
 	flow.Passkey = session
 	errE = s.SetFlow(ctx, flow)
 	if errE != nil {

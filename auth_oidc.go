@@ -144,7 +144,8 @@ func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Req
 	}
 
 	flow.ClearAuthStep("")
-	flow.Providers = append(flow.Providers, providerName)
+	// Currently we support only one factor.
+	flow.Providers = []Provider{providerName}
 	flow.OIDCProvider = &FlowOIDCProvider{
 		Verifier: "",
 		Nonce:    identifier.New().String(),

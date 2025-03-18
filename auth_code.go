@@ -178,11 +178,11 @@ func (s *Service) sendCodeForExistingAccount(
 		}
 	}
 
-	s.sendCode(w, req, flow, preservedEmailOrUsername, emails, &account.ID, nil)
+	s.sendCode(w, req, flow, passwordFlow, preservedEmailOrUsername, emails, &account.ID, nil)
 }
 
 func (s *Service) sendCode(
-	w http.ResponseWriter, req *http.Request, flow *Flow,
+	w http.ResponseWriter, req *http.Request, flow *Flow, passwordFlow bool,
 	preservedEmailOrUsername string, emails []string, accountID *identifier.Identifier, credentials []Credential,
 ) {
 	if len(emails) == 0 {
@@ -207,7 +207,11 @@ func (s *Service) sendCode(
 	// This means that if user starts with bar@example.com, tries foo@example.com, and then go back to bar@example.com, all inside
 	// the same flow, code(s) from the first bar@example.com attempt will not work anymore. That is probably fine and rare.
 	flow.ClearAuthStep(preservedEmailOrUsername)
-	flow.Providers = append(flow.Providers, CodeProvider)
+	if passwordFlow {
+		flow.Providers = append(flow.Providers, CodeProvider)
+	} else {
+		flow.Providers = []Provider{CodeProvider}
+	}
 	// Or flow.Code was never set or it was cleared by flow.Clear because flow.EmailOrUsername changed.
 	// Or account ID has changed (this is an edge case and sanity check because flow.Clear should already
 	// set flow.Code to nil if flow.EmailOrUsername changed and it is very rare that account for unchanged
@@ -342,7 +346,7 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 
 	// Account does not exist but we have an e-mail address.
 	// We attempt to create a new account with an e-mail address only.
-	s.sendCode(w, req, flow, preservedEmailOrUsername, []string{preservedEmailOrUsername}, nil, credentials)
+	s.sendCode(w, req, flow, false, preservedEmailOrUsername, []string{preservedEmailOrUsername}, nil, credentials)
 }
 
 type AuthFlowCodeCompleteRequest struct {
