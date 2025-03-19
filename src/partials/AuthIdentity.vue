@@ -69,7 +69,7 @@ async function getIdentities(organizationId: string, not: boolean, loading: Ref<
 
   progress.value += 1
   try {
-    const q: { flow: string; active: string, notorg?: string; org?: string } = {
+    const q: { flow: string; active: string; notorg?: string; org?: string } = {
       flow: props.flow.getId(),
       active: "true",
     }
