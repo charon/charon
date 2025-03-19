@@ -43,8 +43,8 @@ const identityOrganizationsUpdated = ref(false)
 const identityOrganizations = ref<IdentityOrganization[]>([])
 
 function isOrganizationAdded(organization: OrganizationRef): boolean {
-  for (const idOrg of identityOrganizations.value) {
-    if (idOrg.organization.id === organization.id) {
+  for (const identityOrganization of identityOrganizations.value) {
+    if (identityOrganization.organization.id === organization.id) {
       return true
     }
   }
