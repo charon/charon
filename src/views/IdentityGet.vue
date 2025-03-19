@@ -338,7 +338,7 @@ async function onAddOrganization(organization: OrganizationRef) {
               <!--
                 Button is on purpose not disabled on unexpectedError so that user can retry.
               -->
-              <Button id="applications-update" type="submit" primary :disabled="!canOrganizationsSubmit()" :progress="progress">Update</Button>
+              <Button id="organizations-update" type="submit" primary :disabled="!canOrganizationsSubmit()" :progress="progress">Update</Button>
             </div>
           </form>
           <h2 v-if="metadata.can_update" class="text-xl font-bold">Available organizations</h2>
