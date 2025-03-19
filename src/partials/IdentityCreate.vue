@@ -8,6 +8,7 @@ import TextArea from "@/components/TextArea.vue"
 import Button from "@/components/Button.vue"
 import { postJSON } from "@/api"
 import { injectProgress } from "@/progress"
+import { encodeQuery } from "@/utils"
 
 const props = defineProps<{
   flowId?: string
@@ -66,9 +67,9 @@ async function onSubmit() {
     const url = router.apiResolve({
       name: "IdentityCreate",
       query: props.flowId
-        ? {
+        ? encodeQuery({
             flow: props.flowId,
-          }
+          })
         : undefined,
     }).href
 

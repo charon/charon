@@ -5,6 +5,7 @@ import { ref, watch, readonly, onMounted, onUpdated, onUnmounted, getCurrentInst
 import { useRouter } from "vue-router"
 import { getURL } from "@/api"
 import { injectMainProgress } from "@/progress"
+import { encodeQuery } from "@/utils"
 
 const props = withDefaults(
   defineProps<{
@@ -67,7 +68,7 @@ watch(
     const newURL = router.apiResolve({
       name,
       params,
-      query,
+      query: encodeQuery(query),
     }).href
     _url.value = newURL
 
