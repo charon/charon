@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DeepReadonly, Ref } from "vue"
-import type { Organization, Metadata, ApplicationTemplates, ApplicationTemplate, OrganizationApplication, ApplicationTemplateRef } from "@/types"
+import type { Organization, Metadata, ApplicationTemplates, ApplicationTemplate, OrganizationApplication, ApplicationTemplateRef, Identities, IdentityRef, OrganizationIdentity, Identity, IdentityOrganization } from "@/types"
 
 import { nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useRouter } from "vue-router"
@@ -11,6 +11,7 @@ import Button from "@/components/Button.vue"
 import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
 import ApplicationTemplateListItem from "@/partials/ApplicationTemplateListItem.vue"
+import IdentityListItem from "@/partials/IdentityListItem.vue"
 import { getURL, postJSON } from "@/api"
 import { setupArgon2id } from "@/argon2id"
 import { clone, equals } from "@/utils"
@@ -30,6 +31,7 @@ const dataLoadingError = ref("")
 const organization = ref<Organization | null>(null)
 const metadata = ref<Metadata>({})
 const applicationTemplates = ref<ApplicationTemplates>([])
+const identities = ref<Identities>([])
 const generatedSecrets = ref(new Map<string, string>())
 
 const basicUnexpectedError = ref("")
@@ -41,9 +43,23 @@ const applicationsUnexpectedError = ref("")
 const applicationsUpdated = ref(false)
 const applications = ref<OrganizationApplication[]>([])
 
+const organizationIdentitiesUnexpectedError = ref("")
+const organizationIdentitiesUpdated = ref(false)
+let organizationIdentitiesInitial: OrganizationIdentity[] = []
+const organizationIdentities = ref<OrganizationIdentity[]>([])
+
 function isApplicationAdded(applicationTemplate: ApplicationTemplateRef): boolean {
   for (const application of applications.value) {
     if (application.applicationTemplate.id === applicationTemplate.id) {
+      return true
+    }
+  }
+  return false
+}
+
+function isIdentityAdded(identity: IdentityRef): boolean {
+  for (const organizationIdentity of organizationIdentities.value) {
+    if (organizationIdentity.identity.id === identity.id) {
       return true
     }
   }
@@ -56,6 +72,8 @@ function resetOnInteraction() {
   basicUpdated.value = false
   applicationsUnexpectedError.value = ""
   applicationsUpdated.value = false
+  organizationIdentitiesUnexpectedError.value = ""
+  organizationIdentitiesUpdated.value = false
   // dataLoading and dataLoadingError are not listed here on
   // purpose because they are used only on mount.
 }
@@ -66,7 +84,7 @@ function initWatchInteraction() {
     return
   }
 
-  const stop = watch([name, description, applications], resetOnInteraction, { deep: true })
+  const stop = watch([name, description, applications, organizationIdentities], resetOnInteraction, { deep: true })
   if (watchInteractionStop !== null) {
     throw new Error("watchInteractionStop already set")
   }
@@ -81,7 +99,7 @@ onBeforeUnmount(() => {
   abortController.abort()
 })
 
-async function loadData(update: "init" | "basic" | "applications" | null) {
+async function loadData(update: "init" | "basic" | "applications" | "identities" | null) {
   if (abortController.signal.aborted) {
     return
   }
@@ -118,12 +136,52 @@ async function loadData(update: "init" | "basic" | "applications" | null) {
         name: "ApplicationTemplateList",
       }).href
 
-      const resp = await getURL<ApplicationTemplates>(applicationsURL, null, abortController.signal, progress)
+      let resp = await getURL<ApplicationTemplates>(applicationsURL, null, abortController.signal, progress)
       if (abortController.signal.aborted) {
         return
       }
 
       applicationTemplates.value = resp.doc
+
+      const identitiesURL = router.apiResolve({
+        name: "IdentityList",
+      }).href
+
+      resp = await getURL<Identities>(identitiesURL, null, abortController.signal, progress)
+      if (abortController.signal.aborted) {
+        return
+      }
+
+      identities.value = resp.doc
+    }
+
+    if (update === "init" || update === "identities") {
+      const updatedOrganizationIdentities: OrganizationIdentity[] = []
+      for (const identity of identities.value) {
+        const identityURL = router.apiResolve({
+          name: "IdentityGet",
+          params: {
+            id: identity.id,
+          },
+        }).href
+
+        const resp = await getURL<Identity>(identityURL, null, abortController.signal, progress)
+        if (abortController.signal.aborted) {
+          return
+        }
+
+        for (const identityOrganization of resp.doc.organizations) {
+          if (identityOrganization.organization.id === props.id) {
+            updatedOrganizationIdentities.push({
+              id: identityOrganization.id,
+              active: identityOrganization.active,
+              identity: resp.doc,
+            })
+          }
+        }
+      }
+      organizationIdentitiesInitial = clone(updatedOrganizationIdentities)
+      organizationIdentities.value = updatedOrganizationIdentities
     }
   } catch (error) {
     if (abortController.signal.aborted) {
@@ -337,6 +395,160 @@ function getServiceClientDescription(application: OrganizationApplication, clien
   return ""
 }
 
+function canIdentitiesSubmit(): boolean {
+  // Anything changed?
+  if (!equals(organizationIdentitiesInitial, organizationIdentities.value)) {
+    return true
+  }
+
+  return false
+}
+
+async function onAddIdentity(identity: Identity | DeepReadonly<Identity>) {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  organizationIdentities.value.push({
+    active: false,
+    identity,
+  })
+
+  nextTick(() => {
+    document.getElementById("identities-update")?.focus()
+  })
+}
+
+// getIdentityOrganization should match implementation on the backend.
+function getIdentityOrganization(identity: Identity, id: string | undefined): IdentityOrganization | null {
+  if (id === undefined) {
+    return null
+  }
+
+  for (const identityOrganization of identity.organizations) {
+    if (identityOrganization.id === id) {
+      return identityOrganization
+    }
+  }
+
+  return null
+}
+
+// getOrganization should match implementation on the backend.
+function getOrganization(identity: Identity, id: string | undefined): IdentityOrganization | null {
+  if (id === undefined) {
+    return null
+  }
+
+  for (const identityOrganization of identity.organizations) {
+    if (identityOrganization.organization.id === id) {
+      return identityOrganization
+    }
+  }
+
+  return null
+}
+
+async function onIdentitiesSubmit() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  resetOnInteraction()
+
+  progress.value += 1
+  try {
+    try {
+      for (const organizationIdentity of organizationIdentities.value) {
+        const payload = clone(organizationIdentity.identity)
+        // Does there exist an entry with this ID? ID might be undefined which is fine.
+        let identityOrganization = getIdentityOrganization(payload, organizationIdentity.id)
+        if (identityOrganization === null) {
+          // Is there any other entry for this organization?
+          identityOrganization = getOrganization(payload, props.id)
+          if (identityOrganization === null) {
+            payload.organizations.push({
+              // ID can be undefined and this is OK, the backend will assign it.
+              id: organizationIdentity.id,
+              active: organizationIdentity.active,
+              organization: { id: props.id },
+            })
+          } else {
+            // We could not find it by ID but we found it by organization's ID,
+            // which probably means the ID was reset to undefined.
+            identityOrganization.id = organizationIdentity.id
+            identityOrganization.active = organizationIdentity.active
+          }
+        } else {
+          identityOrganization.active = organizationIdentity.active
+        }
+
+        const url = router.apiResolve({
+          name: "IdentityUpdate",
+          params: {
+            id: payload.id,
+          },
+        }).href
+
+        await postJSON(url, payload, abortController.signal, progress)
+        if (abortController.signal.aborted) {
+          return
+        }
+      }
+
+      // Some identities might have been removed.
+      for (const organizationIdentity of organizationIdentitiesInitial) {
+        if (organizationIdentity.id === undefined) {
+          // This should not be possible because all organizationIdentitiesInitial
+          // entries came from the backend and should have IDs.
+          throw new Error(`organization identity without ID`)
+        }
+
+        let found = false
+        for (const orgId of organizationIdentities.value) {
+          if (orgId.id === organizationIdentity.id) {
+            found = true
+            break
+          }
+        }
+        if (found) {
+          // Not removed.
+          continue
+        }
+
+        const payload = clone(organizationIdentity.identity)
+        payload.organizations = payload.organizations.filter((orgId) => orgId.id !== organizationIdentity.id)
+
+        const url = router.apiResolve({
+          name: "IdentityUpdate",
+          params: {
+            id: payload.id,
+          },
+        }).href
+
+        await postJSON(url, payload, abortController.signal, progress)
+        if (abortController.signal.aborted) {
+          return
+        }
+      }
+
+      organizationIdentitiesUpdated.value = true
+    } catch (error) {
+      if (abortController.signal.aborted) {
+        return
+      }
+      console.error("OrganizationGet.onIdentitiesSubmit", error)
+      organizationIdentitiesUnexpectedError.value = `${error}`
+    } finally {
+      // We always update identities state, even on errors,
+      // because it might have been partially successful.
+      await loadData("identities")
+    }
+  } finally {
+    progress.value -= 1
+  }
+}
+
 // TODO: Remember previous secrets and reuse them if an add application is removed and then added back.
 // TODO: Provide explicit buttons to rotate each secret.
 </script>
@@ -487,6 +699,52 @@ function getServiceClientDescription(application: OrganizationApplication, clien
                 </template>
               </ApplicationTemplateListItem>
             </li>
+          </ul>
+          <h2 v-if="organizationIdentities.length || canIdentitiesSubmit()" class="text-xl font-bold">Added identities</h2>
+          <div v-if="organizationIdentitiesUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
+          <div v-else-if="organizationIdentitiesUpdated" class="text-success-600">Added identities updated successfully.</div>
+          <form v-if="organizationIdentities.length || canIdentitiesSubmit()" class="flex flex-col" novalidate @submit.prevent="onIdentitiesSubmit">
+            <ul>
+              <li v-for="(organizationIdentity, i) in organizationIdentities" :key="organizationIdentity.id || i" class="flex flex-col mb-4">
+                <IdentityListItem :item="organizationIdentity.identity" :organization-id="id" />
+                <div class="ml-4">
+                  <div v-if="organizationIdentity.active" class="flex flew-row justify-between items-center gap-4 mt-4">
+                    <div>Status: <strong>active</strong></div>
+                    <div class="flex flex-row gap-4">
+                      <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = false">Disable</Button>
+                      <Button type="button" :progress="progress" @click.prevent="organizationIdentities.splice(i, 1)">Remove</Button>
+                    </div>
+                  </div>
+                  <div v-else class="flex flew-row justify-between items-center gap-4 mt-4">
+                    <div>Status: <strong>disabled</strong></div>
+                    <div class="flex flex-row gap-4">
+                      <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = true">Activate</Button>
+                      <Button type="button" :progress="progress" @click.prevent="organizationIdentities.splice(i, 1)">Remove</Button>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            </ul>
+            <div class="flex flex-row justify-end">
+              <!--
+                Button is on purpose not disabled on unexpectedError so that user can retry.
+              -->
+              <Button id="identities-update" type="submit" primary :disabled="!canIdentitiesSubmit()" :progress="progress">Update</Button>
+            </div>
+          </form>
+          <h2 class="text-xl font-bold">Available identities</h2>
+          <ul class="flex flex-col gap-4">
+            <template v-for="identity in identities" :key="identity.id">
+              <li v-if="!isIdentityAdded(identity)">
+                <IdentityListItem :item="identity" :organization-id="id">
+                  <template #default="{ doc }">
+                    <div class="flex flex-col items-start">
+                      <Button type="button" :progress="progress" primary @click.prevent="onAddIdentity(doc)">Add</Button>
+                    </div>
+                  </template>
+                </IdentityListItem>
+              </li>
+            </template>
           </ul>
         </template>
       </div>
