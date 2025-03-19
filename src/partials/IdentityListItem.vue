@@ -84,7 +84,7 @@ function isDisabled(): boolean {
           </div>
           <div v-if="doc.description" class="mt-1 whitespace-pre-line">{{ doc.description }}</div>
         </div>
-        <slot></slot>
+        <slot :doc="doc" :metadata="metadata"></slot>
       </div>
     </template>
   </WithIdentityDocument>

@@ -8,9 +8,9 @@ import { Identifier } from "@tozd/identifier"
 import InputText from "@/components/InputText.vue"
 import TextArea from "@/components/TextArea.vue"
 import Button from "@/components/Button.vue"
-import WithDocument from "@/components/WithDocument.vue"
 import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
+import ApplicationTemplateListItem from "@/partials/ApplicationTemplateListItem.vue"
 import { getURL, postJSON } from "@/api"
 import { setupArgon2id } from "@/argon2id"
 import { clone, equals } from "@/utils"
@@ -339,8 +339,6 @@ function getServiceClientDescription(application: OrganizationApplication, clien
 
 // TODO: Remember previous secrets and reuse them if an add application is removed and then added back.
 // TODO: Provide explicit buttons to rotate each secret.
-
-const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
 </script>
 
 <template>
@@ -376,22 +374,7 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
           <form v-if="metadata.can_update && (applications.length || canApplicationsSubmit())" class="flex flex-col" novalidate @submit.prevent="onApplicationsSubmit">
             <ul>
               <li v-for="(application, i) in applications" :key="application.id || i" class="flex flex-col mb-4">
-                <!--
-                  Embedded application template does not contain list of admins so we have fetch
-                  the current list. But we can just check the metadata.
-                -->
-                <!-- TODO: Use ApplicationTemplateListItem partial here. -->
-                <WithApplicationTemplateDocument :params="{ id: application.applicationTemplate.id }" name="ApplicationTemplateGet">
-                  <template #default="{ metadata: meta, url }">
-                    <h3 class="text-lg flex flex-row items-center gap-1" :data-url="url">
-                      <router-link :to="{ name: 'ApplicationTemplateGet', params: { id: application.applicationTemplate.id } }" class="link">{{
-                        application.applicationTemplate.name
-                      }}</router-link>
-                      <span v-if="meta.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">admin</span>
-                    </h3>
-                    <div v-if="application.applicationTemplate.description" class="mt-4 ml-4 whitespace-pre-line">{{ application.applicationTemplate.description }}</div>
-                  </template>
-                </WithApplicationTemplateDocument>
+                <ApplicationTemplateListItem :item="{ id: application.applicationTemplate.id }" :public-doc="application.applicationTemplate" h3 />
                 <div class="ml-4">
                   <fieldset v-if="application.values.length" class="mt-4">
                     <legend class="font-bold">Configuration</legend>
@@ -495,23 +478,14 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
           </form>
           <h2 v-if="metadata.can_update" class="text-xl font-bold">Available applications</h2>
           <ul v-if="metadata.can_update" class="flex flex-col gap-4">
-            <li v-for="applicationTemplate in applicationTemplates" :key="applicationTemplate.id" class="flex flex-col gap-4">
-              <!-- TODO: Use ApplicationTemplateListItem partial here. Should ApplicationTemplateListItem also show description? And provide slot for buttons? -->
-              <WithApplicationTemplateDocument :params="{ id: applicationTemplate.id }" name="ApplicationTemplateGet">
-                <template #default="{ doc, metadata: meta, url }">
-                  <div class="flex flex-row justify-between items-center gap-4" :data-url="url">
-                    <h3 class="text-lg flex flex-row items-center gap-1">
-                      <router-link :to="{ name: 'ApplicationTemplateGet', params: { id: applicationTemplate.id } }" class="link">{{ doc.name }}</router-link>
-                      <span v-if="isApplicationAdded(applicationTemplate)" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none"
-                        >added</span
-                      >
-                      <span v-if="meta.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">admin</span>
-                    </h3>
+            <li v-for="applicationTemplate in applicationTemplates" :key="applicationTemplate.id">
+              <ApplicationTemplateListItem :item="applicationTemplate" :labels="isApplicationAdded(applicationTemplate) ? ['admin'] : []" h3>
+                <template #default="{ doc }">
+                  <div class="flex flex-col items-start">
                     <Button type="button" :progress="progress" primary @click.prevent="onAddApplicationTemplate(doc)">Add</Button>
                   </div>
-                  <div v-if="doc.description" class="ml-4 whitespace-pre-line">{{ doc.description }}</div>
                 </template>
-              </WithApplicationTemplateDocument>
+              </ApplicationTemplateListItem>
             </li>
           </ul>
         </template>
