@@ -113,7 +113,7 @@ func (i *Identity) GetIdentityOrganization(id *identifier.Identifier) *IdentityO
 	return nil
 }
 
-// GetIdentityOrganization returns IdentityOrganization based on IdentityOrganization's Organization's ID.
+// GetOrganization returns IdentityOrganization based on IdentityOrganization's Organization's ID.
 func (i *Identity) GetOrganization(id *identifier.Identifier) *IdentityOrganization {
 	if i == nil {
 		return nil
