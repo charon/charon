@@ -16,7 +16,7 @@ const WithOrganizationDocument = WithDocument<Organization>
   <WithOrganizationDocument :params="{ id: item.id }" name="OrganizationGet">
     <template #default="{ doc, metadata, url }">
       <div class="flex flex-row justify-between items-center gap-4" :data-url="url">
-        <component :is="h3 ? 'h3' : 'h2'"  class="flex flex-row items-center gap-1" :class="h3 ? 'text-lg' : 'text-xl'">
+        <component :is="h3 ? 'h3' : 'h2'" class="flex flex-row items-center gap-1" :class="h3 ? 'text-lg' : 'text-xl'">
           <router-link :to="{ name: 'OrganizationGet', params: { id: doc.id } }" class="link">{{ doc.name }}</router-link>
           <span v-for="label in labels || []" :key="label" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{ label }}</span>
           <span v-if="metadata.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">admin</span>
