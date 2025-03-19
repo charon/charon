@@ -68,7 +68,7 @@ onBeforeMount(async () => {
         <div v-if="!applicationTemplates.length" class="w-full rounded border bg-white p-4 shadow grid grid-cols-1 gap-4 italic">
           There are no application templates. {{ isSignedIn() ? "Create the first one." : "Sign-in or sign-up to create the first one." }}
         </div>
-        <div v-for="applicationTemplate of applicationTemplates" :key="applicationTemplate.id" class="w-full rounded border bg-white p-4 shadow grid grid-cols-1 gap-4">
+        <div v-for="applicationTemplate of applicationTemplates" :key="applicationTemplate.id" class="w-full rounded border bg-white p-4 shadow grid grid-cols-1">
           <ApplicationTemplateListItem :item="applicationTemplate" />
         </div>
       </template>

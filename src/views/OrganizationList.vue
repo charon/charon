@@ -68,7 +68,7 @@ onBeforeMount(async () => {
         <div v-if="!organizations.length" class="w-full rounded border bg-white p-4 shadow grid grid-cols-1 gap-4 italic">
           There are no organizations. {{ isSignedIn() ? "Create the first one." : "Sign-in or sign-up to create the first one." }}
         </div>
-        <div v-for="organization of organizations" :key="organization.id" class="w-full rounded border bg-white p-4 shadow grid grid-cols-1 gap-4">
+        <div v-for="organization of organizations" :key="organization.id" class="w-full rounded border bg-white p-4 shadow grid grid-cols-1">
           <OrganizationListItem :item="organization" />
         </div>
       </template>
