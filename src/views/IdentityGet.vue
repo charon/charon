@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import type { DeepReadonly, Ref } from "vue"
-import type { Identity, IdentityOrganization, Metadata, Organization, OrganizationRef, Organizations } from "@/types"
+import type { Ref } from "vue"
+import type { Identity, IdentityOrganization, Metadata, OrganizationRef, Organizations } from "@/types"
 
 import { nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import InputText from "@/components/InputText.vue"
 import TextArea from "@/components/TextArea.vue"
 import Button from "@/components/Button.vue"
-import WithDocument from "@/components/WithDocument.vue"
+import OrganizationListItem from "@/partials/OrganizationListItem.vue"
 import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
 import { getURL, postJSON } from "@/api"
@@ -257,13 +257,14 @@ async function onOrganizationsSubmit() {
   await onSubmit(payload, "organizations", identityOrganizationsUpdated, identityOrganizationsUnexpectedError)
 }
 
-async function onAddOrganization(organization: DeepReadonly<Organization>) {
+async function onAddOrganization(organization: OrganizationRef) {
   if (abortController.signal.aborted) {
     return
   }
 
   identityOrganizations.value.push({
     active: false,
+    // We manually construct OrganizationRef in a case we got passed whole Organization.
     organization: { id: organization.id },
   })
 
@@ -271,8 +272,6 @@ async function onAddOrganization(organization: DeepReadonly<Organization>) {
     document.getElementById("organizations-update")?.focus()
   })
 }
-
-const WithOrganizationDocument = WithDocument<Organization>
 </script>
 
 <template>
@@ -316,16 +315,7 @@ const WithOrganizationDocument = WithDocument<Organization>
           <form v-if="identityOrganizations.length || canOrganizationsSubmit()" class="flex flex-col" novalidate @submit.prevent="onOrganizationsSubmit">
             <ul>
               <li v-for="(identityOrganization, i) in identityOrganizations" :key="identityOrganization.id || i" class="flex flex-col mb-4">
-                <!-- TODO: Use OrganizationListItem partial here. -->
-                <WithOrganizationDocument :params="{ id: identityOrganization.organization.id }" name="OrganizationGet">
-                  <template #default="{ doc, metadata: meta, url }">
-                    <h3 class="text-lg flex flex-row items-center gap-1" :data-url="url">
-                      <router-link :to="{ name: 'OrganizationGet', params: { id: doc.id } }" class="link">{{ doc.name }}</router-link>
-                      <span v-if="meta.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">admin</span>
-                    </h3>
-                    <div v-if="doc.description" class="mt-4 ml-4 whitespace-pre-line">{{ doc.description }}</div>
-                  </template>
-                </WithOrganizationDocument>
+                <OrganizationListItem :item="identityOrganization.organization" h3 />
                 <div class="ml-4">
                   <div v-if="identityOrganization.active" class="flex flew-row justify-between items-center gap-4 mt-4">
                     <div>Status: <strong>active</strong></div>
@@ -354,20 +344,12 @@ const WithOrganizationDocument = WithDocument<Organization>
           <h2 v-if="metadata.can_update" class="text-xl font-bold">Available organizations</h2>
           <ul v-if="metadata.can_update" class="flex flex-col gap-4">
             <template v-for="organization in organizations" :key="organization.id">
-              <li v-if="!isOrganizationAdded(organization)" class="flex flex-col gap-4">
-                <!-- TODO: Use OrganizationListItem partial here. Should OrganizationListItem also show description? And provide slot for buttons? -->
-                <WithOrganizationDocument :params="{ id: organization.id }" name="OrganizationGet">
-                  <template #default="{ doc, metadata: meta, url }">
-                    <div class="flex flex-row justify-between items-center gap-4" :data-url="url">
-                      <h3 class="text-lg flex flex-row items-center gap-1">
-                        <router-link :to="{ name: 'OrganizationGet', params: { id: organization.id } }" class="link">{{ doc.name }}</router-link>
-                        <span v-if="meta.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">admin</span>
-                      </h3>
-                      <Button type="button" :progress="progress" primary @click.prevent="onAddOrganization(doc)">Add</Button>
-                    </div>
-                    <div v-if="doc.description" class="ml-4 whitespace-pre-line">{{ doc.description }}</div>
-                  </template>
-                </WithOrganizationDocument>
+              <li v-if="!isOrganizationAdded(organization)">
+                <OrganizationListItem :item="organization" h3>
+                  <div class="flex flex-col items-start">
+                    <Button type="button" :progress="progress" primary @click.prevent="onAddOrganization(organization)">Add</Button>
+                  </div>
+                </OrganizationListItem>
               </li>
             </template>
           </ul>
