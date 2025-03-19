@@ -531,15 +531,15 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 		notOrganization = &o
 	}
 
-	inactive := false
-	if b := req.Form.Get("inactive"); b != "" {
+	active := false
+	if b := req.Form.Get("active"); b != "" {
 		switch b {
 		case "true":
-			inactive = true
+			active = true
 		case "false":
-			inactive = false
+			active = false
 		default:
-			s.BadRequestWithError(w, req, errors.New(`invalid "inactive" parameter`))
+			s.BadRequestWithError(w, req, errors.New(`invalid "active" parameter`))
 			return
 		}
 	}
@@ -558,13 +558,13 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 			continue
 		}
 
-		if idOrg := identity.GetOrganization(organization); idOrg != nil {
+		if idOrg := identity.GetOrganization(organization); organization != nil && idOrg != nil {
 			// TODO: Do not filter in list endpoint but filter in search endpoint.
-			// Or all identities (including inactive ones) are requested, or we return only active ones.
-			if !inactive || idOrg.Active {
+			// Or only active identities are requested, or we return all.
+			if (active && idOrg.Active) || !active {
 				result = append(result, IdentityRef{ID: id})
 			}
-		} else if idOrg := identity.GetOrganization(notOrganization); idOrg != nil {
+		} else if idOrg := identity.GetOrganization(notOrganization); notOrganization != nil && idOrg == nil {
 			result = append(result, IdentityRef{ID: id})
 		} else if organization == nil && notOrganization == nil {
 			result = append(result, IdentityRef{ID: id})

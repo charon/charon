@@ -69,8 +69,9 @@ async function getIdentities(organizationId: string, not: boolean, loading: Ref<
 
   progress.value += 1
   try {
-    const q: { flow: string; notorg?: string; org?: string } = {
+    const q: { flow: string; active: string, notorg?: string; org?: string } = {
       flow: props.flow.getId(),
+      active: "true",
     }
     if (not) {
       q["notorg"] = organizationId
@@ -228,7 +229,7 @@ function onIdentityCreated(identity: IdentityRef) {
       <div v-if="usedIdentitiesLoading" class="mb-4">Loading...</div>
       <div v-else-if="usedIdentitiesLoadingError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
       <template v-else>
-        <div v-if="!usedIdentities.length" class="italic mb-4">You have not yet used any identity with this organization.</div>
+        <div v-if="!usedIdentities.length" class="italic mb-4">You have not yet used any (active) identity with this organization.</div>
         <template v-for="(identity, i) of usedIdentities" :key="identity.id">
           <div class="grid grid-cols-1 gap-4 mb-4">
             <IdentityListItem :item="identity" :organization-id="flow.getOrganizationId()" :flow-id="flow.getId()">
@@ -245,8 +246,8 @@ function onIdentityCreated(identity: IdentityRef) {
       <div v-if="otherIdentitiesLoading" class="mb-4">Loading...</div>
       <div v-else-if="otherIdentitiesLoadingError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
       <template v-else>
-        <div v-if="usedIdentities.length + otherIdentities.length === 0" class="italic mb-4">There are no identities. Create the first one.</div>
-        <div v-else-if="otherIdentities.length === 0" class="italic mb-4">There are no other identities. Create one.</div>
+        <div v-if="usedIdentities.length + otherIdentities.length === 0" class="italic mb-4">There are no (active) identities. Create the first one.</div>
+        <div v-else-if="otherIdentities.length === 0" class="italic mb-4">There are no other (active) identities. Create one.</div>
         <template v-for="(identity, i) of otherIdentities" :key="identity.id">
           <div class="grid grid-cols-1 gap-4 mb-4">
             <IdentityListItem :item="identity" :flow-id="flow.getId()">
