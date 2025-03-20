@@ -23,6 +23,9 @@ const props = defineProps<{
 
 const router = useRouter()
 
+// We could be using separate progress for the organization and identities, because those
+// are really two separate forms (and documents) visually combined into one form, but we are
+// using only one progress to further drive the illusion of only one form.
 const progress = injectProgress()
 
 const abortController = new AbortController()
