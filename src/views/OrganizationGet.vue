@@ -498,26 +498,13 @@ async function onIdentitiesSubmit() {
 
       // Some identities might have been removed.
       for (const organizationIdentity of organizationIdentitiesInitial) {
-        if (organizationIdentity.id === undefined) {
-          // This should not be possible because all organizationIdentitiesInitial
-          // entries came from the backend and should have IDs.
-          throw new Error(`organization identity without ID`)
-        }
-
-        let found = false
-        for (const orgId of organizationIdentities.value) {
-          if (orgId.id === organizationIdentity.id) {
-            found = true
-            break
-          }
-        }
-        if (found) {
+        if (isIdentityAdded(organizationIdentity.identity)) {
           // Not removed.
           continue
         }
 
         const payload = clone(organizationIdentity.identity)
-        payload.organizations = payload.organizations.filter((orgId) => orgId.id !== organizationIdentity.id)
+        payload.organizations = payload.organizations.filter((idOrg) => idOrg.organization.id !== props.id)
 
         const url = router.apiResolve({
           name: "IdentityUpdate",
