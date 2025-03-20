@@ -286,6 +286,13 @@ export type OrganizationApplication = OrganizationApplicationPublic & {
   clientsService?: OrganizationApplicationClientService[]
 }
 
+// This is used only on the frontend.
+export type OrganizationIdentity = {
+  id?: string
+  active: boolean
+  identity: Identity | DeepReadonly<Identity>
+}
+
 export type IdentityOrganization = {
   id?: string
   active: boolean
