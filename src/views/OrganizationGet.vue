@@ -99,7 +99,7 @@ onBeforeUnmount(() => {
   abortController.abort()
 })
 
-async function loadData(update: "init" | "basic" | "applications" | "identities" | null) {
+async function loadData(update: "init" | "basic" | "applications" | "identities" | null, dataError: Ref<string> | null) {
   if (abortController.signal.aborted) {
     return
   }
@@ -107,28 +107,31 @@ async function loadData(update: "init" | "basic" | "applications" | "identities"
   watchInteractionStop!()
   progress.value += 1
   try {
-    const organizationURL = router.apiResolve({
-      name: "OrganizationGet",
-      params: {
-        id: props.id,
-      },
-    }).href
+    // A special case, we do not need to load the organization if we are loading identities.
+    if (update !== "identities") {
+      const organizationURL = router.apiResolve({
+        name: "OrganizationGet",
+        params: {
+          id: props.id,
+        },
+      }).href
 
-    const response = await getURL<Organization>(organizationURL, null, abortController.signal, progress)
-    if (abortController.signal.aborted) {
-      return
-    }
+      const response = await getURL<Organization>(organizationURL, null, abortController.signal, progress)
+      if (abortController.signal.aborted) {
+        return
+      }
 
-    organization.value = response.doc
-    metadata.value = response.metadata
+      organization.value = response.doc
+      metadata.value = response.metadata
 
-    // We have to make copies so that we break reactivity link with data.doc.
-    if (update === "init" || update === "basic") {
-      name.value = response.doc.name
-      description.value = response.doc.description
-    }
-    if (update === "init" || update === "applications") {
-      applications.value = clone(response.doc.applications || [])
+      // We have to make copies so that we break reactivity link with data.doc.
+      if (update === "init" || update === "basic") {
+        name.value = response.doc.name
+        description.value = response.doc.description
+      }
+      if (update === "init" || update === "applications") {
+        applications.value = clone(response.doc.applications || [])
+      }
     }
 
     if (update === "init") {
@@ -136,23 +139,23 @@ async function loadData(update: "init" | "basic" | "applications" | "identities"
         name: "ApplicationTemplateList",
       }).href
 
-      let resp = await getURL<ApplicationTemplates>(applicationsURL, null, abortController.signal, progress)
+      const resp1 = await getURL<ApplicationTemplates>(applicationsURL, null, abortController.signal, progress)
       if (abortController.signal.aborted) {
         return
       }
 
-      applicationTemplates.value = resp.doc
+      applicationTemplates.value = resp1.doc
 
       const identitiesURL = router.apiResolve({
         name: "IdentityList",
       }).href
 
-      resp = await getURL<Identities>(identitiesURL, null, abortController.signal, progress)
+      const resp2 = await getURL<Identities>(identitiesURL, null, abortController.signal, progress)
       if (abortController.signal.aborted) {
         return
       }
 
-      identities.value = resp.doc
+      identities.value = resp2.doc
     }
 
     if (update === "init" || update === "identities") {
@@ -189,7 +192,9 @@ async function loadData(update: "init" | "basic" | "applications" | "identities"
     }
     // TODO: 404 should be shown differently, but probably in the same way for all 404.
     console.error("OrganizationGet.loadData", error)
-    dataLoadingError.value = `${error}`
+    if (dataError) {
+      dataError.value = `${error}`
+    }
   } finally {
     dataLoading.value = false
     progress.value -= 1
@@ -198,7 +203,7 @@ async function loadData(update: "init" | "basic" | "applications" | "identities"
 }
 
 onBeforeMount(async () => {
-  await loadData("init")
+  await loadData("init", dataLoadingError)
 })
 
 async function onSubmit(payload: Organization, update: "basic" | "applications", updated: Ref<boolean>, unexpectedError: Ref<string>) {
@@ -233,7 +238,8 @@ async function onSubmit(payload: Organization, update: "basic" | "applications",
     } finally {
       // We update organization state even on errors,
       // but do not update individual fields on errors.
-      await loadData(unexpectedError.value ? null : update)
+      // If there is already an error, we ignore any data loading error.
+      await loadData(unexpectedError.value ? null : update, unexpectedError.value ? null : unexpectedError)
     }
   } finally {
     progress.value -= 1
@@ -529,7 +535,8 @@ async function onIdentitiesSubmit() {
     } finally {
       // We always update identities state, even on errors,
       // because it might have been partially successful.
-      await loadData("identities")
+      // If there is already an error, we ignore any data loading error.
+      await loadData("identities", organizationIdentitiesUnexpectedError.value ? null : organizationIdentitiesUnexpectedError)
     }
   } finally {
     progress.value -= 1

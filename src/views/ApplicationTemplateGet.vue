@@ -95,7 +95,7 @@ onBeforeUnmount(() => {
   abortController.abort()
 })
 
-async function loadData(update: "init" | "basic" | "variables" | "clientsPublic" | "clientsBackend" | "clientsService" | null) {
+async function loadData(update: "init" | "basic" | "variables" | "clientsPublic" | "clientsBackend" | "clientsService" | null, dataError: Ref<string> | null) {
   if (abortController.signal.aborted) {
     return
   }
@@ -143,7 +143,9 @@ async function loadData(update: "init" | "basic" | "variables" | "clientsPublic"
     }
     // TODO: 404 should be shown differently, but probably in the same way for all 404.
     console.error("ApplicationTemplateGet.loadData", error)
-    dataLoadingError.value = `${error}`
+    if (dataError) {
+      dataError.value = `${error}`
+    }
   } finally {
     dataLoading.value = false
     progress.value -= 1
@@ -152,7 +154,7 @@ async function loadData(update: "init" | "basic" | "variables" | "clientsPublic"
 }
 
 onBeforeMount(async () => {
-  await loadData("init")
+  await loadData("init", dataLoadingError)
 })
 
 async function onSubmit(
@@ -192,7 +194,8 @@ async function onSubmit(
     } finally {
       // We update applicationTemplate state even on errors,
       // but do not update individual fields on errors.
-      await loadData(unexpectedError.value ? null : update)
+      // If there is already an error, we ignore any data loading error.
+      await loadData(unexpectedError.value ? null : update, unexpectedError.value ? null : unexpectedError)
     }
   } finally {
     progress.value -= 1
