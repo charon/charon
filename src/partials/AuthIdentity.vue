@@ -228,9 +228,9 @@ function onIdentityCreated(identity: IdentityRef) {
       <h3 class="text-l font-bold mb-4">Previously used identities</h3>
       <div v-if="usedIdentitiesLoading" class="mb-4">Loading...</div>
       <div v-else-if="usedIdentitiesLoadingError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
-      <template v-else>
-        <div v-if="!usedIdentities.length" class="italic mb-4">You have not yet used any (active) identity with this organization.</div>
-        <div v-for="(identity, i) of usedIdentities" :key="identity.id" class="grid grid-cols-1 gap-4 mb-4">
+      <div v-else-if="!usedIdentities.length" class="italic mb-4">You have not yet used any (active) identity with this organization.</div>
+      <ul v-else>
+        <li v-for="(identity, i) of usedIdentities" :key="identity.id" class="grid grid-cols-1 gap-4 mb-4">
           <IdentityListItem :item="identity" :organization-id="flow.getOrganizationId()" :flow-id="flow.getId()">
             <div class="flex flex-col items-start">
               <Button :id="i === 0 ? 'first-identity' : null" primary type="button" tabindex="1" :progress="progress" @click.prevent="onSelect(identity.id)"
@@ -238,15 +238,15 @@ function onIdentityCreated(identity: IdentityRef) {
               >
             </div>
           </IdentityListItem>
-        </div>
-      </template>
+        </li>
+      </ul>
       <h3 class="text-l font-bold mb-4">Other available identities</h3>
       <div v-if="otherIdentitiesLoading" class="mb-4">Loading...</div>
       <div v-else-if="otherIdentitiesLoadingError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
-      <template v-else>
-        <div v-if="usedIdentities.length + otherIdentities.length === 0" class="italic mb-4">There are no (active) identities. Create the first one.</div>
-        <div v-else-if="otherIdentities.length === 0" class="italic mb-4">There are no other (active) identities. Create one.</div>
-        <div v-for="(identity, i) of otherIdentities" :key="identity.id" class="grid grid-cols-1 gap-4 mb-4">
+      <div v-else-if="usedIdentities.length + otherIdentities.length === 0" class="italic mb-4">There are no (active) identities. Create the first one.</div>
+      <div v-else-if="otherIdentities.length === 0" class="italic mb-4">There are no other (active) identities. Create one.</div>
+      <ul v-else>
+        <li v-for="(identity, i) of otherIdentities" :key="identity.id" class="grid grid-cols-1 gap-4 mb-4">
           <IdentityListItem :item="identity" :flow-id="flow.getId()">
             <div class="flex flex-col items-start">
               <Button
@@ -260,8 +260,8 @@ function onIdentityCreated(identity: IdentityRef) {
               >
             </div>
           </IdentityListItem>
-        </div>
-      </template>
+        </li>
+      </ul>
       <div v-if="!createShown" class="flex flex-row justify-start gap-4 mb-4">
         <Button type="button" tabindex="3" :progress="progress" @click.prevent="onCreateShow">Create new identity</Button>
       </div>
