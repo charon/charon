@@ -621,8 +621,13 @@ func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *Appl
 	return nil
 }
 
-func (a *ApplicationTemplate) HasAdminAccess(identityID identifier.Identifier) bool {
-	return slices.Contains(a.Admins, IdentityRef{ID: identityID})
+func (a *ApplicationTemplate) HasAdminAccess(identityIDs ...identifier.Identifier) bool {
+	for _, identityID := range identityIDs {
+		if slices.Contains(a.Admins, IdentityRef{ID: identityID}) {
+			return true
+		}
+	}
+	return false
 }
 
 // Validate requires ctx with identityIDContextKey set.

@@ -558,8 +558,13 @@ type OrganizationRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
-func (o *Organization) HasAdminAccess(identityID identifier.Identifier) bool {
-	return slices.Contains(o.Admins, IdentityRef{ID: identityID})
+func (o *Organization) HasAdminAccess(identityIDs ...identifier.Identifier) bool {
+	for _, identityID := range identityIDs {
+		if slices.Contains(o.Admins, IdentityRef{ID: identityID}) {
+			return true
+		}
+	}
+	return false
 }
 
 // Validate requires ctx with identityIDContextKey and serviceContextKey set.
