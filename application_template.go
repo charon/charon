@@ -621,6 +621,10 @@ func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *Appl
 	return nil
 }
 
+func (a *ApplicationTemplate) HasAdminAccess(identityID identifier.Identifier) bool {
+	return slices.Contains(a.Admins, IdentityRef{ID: identityID})
+}
+
 // Validate requires ctx with identityIDContextKey set.
 func (a *ApplicationTemplate) Validate(ctx context.Context, existing *ApplicationTemplate) errors.E {
 	var e *ApplicationTemplatePublic
@@ -637,9 +641,8 @@ func (a *ApplicationTemplate) Validate(ctx context.Context, existing *Applicatio
 	// Current user must be among admins if it is changing the application template.
 	// We check this elsewhere, here we make sure the user is stored as an admin.
 	identityID := mustGetIdentityID(ctx)
-	identityRef := IdentityRef{ID: identityID}
-	if !slices.Contains(a.Admins, identityRef) {
-		a.Admins = append(a.Admins, identityRef)
+	if !a.HasAdminAccess(identityID) {
+		a.Admins = append(a.Admins, IdentityRef{ID: identityID})
 	}
 
 	// We sort and remove duplicates.
@@ -707,7 +710,7 @@ func (s *Service) updateApplicationTemplate(ctx context.Context, applicationTemp
 	}
 
 	identityID := mustGetIdentityID(ctx)
-	if !slices.Contains(existingApplicationTemplate.Admins, IdentityRef{ID: identityID}) {
+	if !existingApplicationTemplate.HasAdminAccess(identityID) {
 		return errors.WithDetails(ErrApplicationTemplateUnauthorized, "id", *applicationTemplate.ID)
 	}
 
@@ -787,7 +790,7 @@ func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	if hasIdentity && slices.Contains(applicationTemplate.Admins, IdentityRef{ID: identityID}) {
+	if hasIdentity && applicationTemplate.HasAdminAccess(identityID) {
 		s.WriteJSON(w, req, applicationTemplate, map[string]interface{}{
 			"can_update": true,
 		})
