@@ -295,7 +295,7 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 // getIdentitiesForAccount returns all identities the account has access to.
 //
 // s.accountsToIdentitiesMu should be locked for reading while calling this function.
-func (s *Service) getIdentitiesForAccount(_ context.Context, accountID identifier.Identifier) ([]IdentityRef, errors.E) {
+func (s *Service) getIdentitiesForAccount(_ context.Context, accountID identifier.Identifier) ([]IdentityRef, errors.E) { //nolint:unparam
 	return s.accountsToIdentities[accountID], nil
 }
 
