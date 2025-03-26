@@ -2,7 +2,6 @@ package charon
 
 import (
 	"bytes"
-	"cmp"
 	"context"
 	"io"
 	"net/http"
@@ -61,19 +60,6 @@ func (i *IdentityOrganization) Validate(_ context.Context, existing *IdentityOrg
 	return nil
 }
 
-type IdentityAccount struct {
-	IdentityRef
-
-	AccountID identifier.Identifier `json:"accountId"`
-}
-
-func cmpIdentityAccount(a IdentityAccount, b IdentityAccount) int {
-	return cmp.Or(
-		bytes.Compare(a.ID[:], b.ID[:]),
-		bytes.Compare(a.AccountID[:], b.AccountID[:]),
-	)
-}
-
 type Identity struct {
 	ID *identifier.Identifier `json:"id"`
 
@@ -85,12 +71,8 @@ type Identity struct {
 
 	Description string `json:"description"`
 
-	// TODO: When sending Identity out, we should not expose account IDs in IdentityAccount but send it only as IdentityRef.
-
-	// For identities we have an exception where we use accounts for access control,
-	// but we expose them through related identities to users.
-	Users  []IdentityAccount `json:"users,omitempty"`
-	Admins []IdentityAccount `json:"admins"`
+	Users  []IdentityRef `json:"users,omitempty"`
+	Admins []IdentityRef `json:"admins"`
 
 	Organizations []IdentityOrganization `json:"organizations"`
 }
@@ -131,18 +113,20 @@ func (i *Identity) GetOrganization(id *identifier.Identifier) *IdentityOrganizat
 	return nil
 }
 
-func (i *Identity) HasUserAccess(accountID identifier.Identifier) bool {
-	for _, identityAccount := range i.Users {
-		if identityAccount.AccountID == accountID {
+// HasUserAccess returns true if at least one of the identities is among users.
+func (i *Identity) HasUserAccess(identities ...IdentityRef) bool {
+	for _, identity := range identities {
+		if slices.Contains(i.Users, identity) {
 			return true
 		}
 	}
 	return false
 }
 
-func (i *Identity) HasAdminAccess(accountID identifier.Identifier) bool {
-	for _, identityAccount := range i.Admins {
-		if identityAccount.AccountID == accountID {
+// HasAdminAccess returns true if at least one of the identities is among admins.
+func (i *Identity) HasAdminAccess(identities ...IdentityRef) bool {
+	for _, identity := range identities {
+		if slices.Contains(i.Admins, identity) {
 			return true
 		}
 	}
@@ -153,7 +137,8 @@ type IdentityRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
-// Validate requires ctx with identityIDContextKey set.
+// Validate uses ctx with identityIDContextKey if set.
+// When not set, changes to admins are not allowed.
 func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 	if existing == nil {
 		if i.ID != nil {
@@ -230,14 +215,13 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 	// Current user must be among admins if it is changing the identity.
 	// We check this elsewhere, here we make sure the user is stored as an admin.
 	identityID, ok := getIdentityID(ctx)
-	accountID := mustGetAccountID(ctx)
 	if !ok && existing != nil {
-		// We are updating an existing identity using session cookie. In this case we just check
-		// (again, it has been checked in updateIdentity already) that the account is among admins,
-		// but we cannot add the current user to admins ourselves.
-		if !existing.HasAdminAccess(accountID) {
-			// This should not really happen because we check this in updateIdentity.
-			return errors.New("current account is not already among admins")
+		// We are updating an existing identity using session cookie. In this case it has been checked
+		// in updateIdentity already that the current user is among admins, but we cannot add the
+		// current user to admins ourselves. Because of this, we do not allow changes to admins
+		// at all when using a session cookie.
+		if !slices.Equal(existing.Admins, i.Admins) {
+			return errors.New("admins changed when using session cookie")
 		}
 	} else {
 		if !ok {
@@ -245,22 +229,26 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 			// we do not set identityIDContextKey. We use the identity itself instead.
 			identityID = *i.ID
 		}
-		identityAccount := IdentityAccount{IdentityRef{identityID}, accountID}
-		if !slices.Contains(i.Admins, identityAccount) {
-			i.Admins = append(i.Admins, identityAccount)
+		identity := IdentityRef{ID: identityID}
+		if !i.HasAdminAccess(identity) {
+			i.Admins = append(i.Admins, identity)
 		}
 	}
 
 	// We sort and remove duplicates.
-	slices.SortFunc(i.Admins, cmpIdentityAccount)
+	slices.SortFunc(i.Admins, func(a IdentityRef, b IdentityRef) int {
+		return bytes.Compare(a.ID[:], b.ID[:])
+	})
 	i.Admins = slices.Compact(i.Admins)
-	slices.SortFunc(i.Users, cmpIdentityAccount)
+	slices.SortFunc(i.Users, func(a IdentityRef, b IdentityRef) int {
+		return bytes.Compare(a.ID[:], b.ID[:])
+	})
 	i.Users = slices.Compact(i.Users)
 
 	// Admins should not be users as well.
-	adminsSet := mapset.NewThreadUnsafeSet[IdentityAccount]()
+	adminsSet := mapset.NewThreadUnsafeSet[IdentityRef]()
 	adminsSet.Append(i.Admins...)
-	i.Users = slices.DeleteFunc(i.Users, func(ia IdentityAccount) bool {
+	i.Users = slices.DeleteFunc(i.Users, func(ia IdentityRef) bool {
 		return adminsSet.Contains(ia)
 	})
 
@@ -304,25 +292,49 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 	return nil
 }
 
-func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*Identity, errors.E) {
+// getIdentitiesForAccount returns all identities the account has access to.
+//
+// s.accountsToIdentitiesMu should be locked for reading while calling this function.
+func (s *Service) getIdentitiesForAccount(_ context.Context, accountID identifier.Identifier) ([]IdentityRef, errors.E) {
+	return s.accountsToIdentities[accountID], nil
+}
+
+func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*Identity, bool, errors.E) {
+	accountID := mustGetAccountID(ctx)
+
 	s.identitiesMu.RLock()
 	defer s.identitiesMu.RUnlock()
 
+	// We lock s.accountsToIdentitiesMu inside s.identitiesMu lock to have
+	// consistent view of identities and accounts.
+	s.accountsToIdentitiesMu.RLock()
+	defer s.accountsToIdentitiesMu.RUnlock()
+
 	data, ok := s.identities[id]
 	if !ok {
-		return nil, errors.WithDetails(ErrIdentityNotFound, "id", id)
+		return nil, false, errors.WithDetails(ErrIdentityNotFound, "id", id)
 	}
 	var identity Identity
 	errE := x.UnmarshalWithoutUnknownFields(data, &identity)
 	if errE != nil {
 		errors.Details(errE)["id"] = id
-		return nil, errE
+		return nil, false, errE
 	}
-	accountID := mustGetAccountID(ctx)
-	if identity.HasUserAccess(accountID) || identity.HasAdminAccess(accountID) {
-		return &identity, nil
+
+	ids, errE := s.getIdentitiesForAccount(ctx, accountID)
+	if errE != nil {
+		return nil, false, errE
 	}
-	return nil, errors.WithDetails(ErrIdentityUnauthorized, "id", id)
+	// We could also just check if slices.Contains(ids, IdentityRef{ID: *identity.ID}),
+	// but this gives us information about the type of the access. Furthermore, it makes
+	// things safer in the case that collecting ids is buggy and returns too many ids.
+	if identity.HasUserAccess(ids...) {
+		return &identity, false, nil
+	}
+	if identity.HasAdminAccess(ids...) {
+		return &identity, true, nil
+	}
+	return nil, false, errors.WithDetails(ErrIdentityUnauthorized, "id", id)
 }
 
 // createIdentity should have ctx with both identityIDContextKey and accountIDContextKey set,
@@ -330,6 +342,8 @@ func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*I
 // (but which has an account). Only in such case, the identityIDContextKey does not have to
 // be set and the identity itself will be used instead.
 func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors.E {
+	accountID := mustGetAccountID(ctx)
+
 	errE := identity.Validate(ctx, nil)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrIdentityValidationFailed)
@@ -343,13 +357,88 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 	s.identitiesMu.Lock()
 	defer s.identitiesMu.Unlock()
 
+	// We lock s.accountsToIdentitiesMu inside s.identitiesMu lock to have
+	// consistent view of identities and accounts.
+	s.accountsToIdentitiesMu.Lock()
+	defer s.accountsToIdentitiesMu.Unlock()
+
 	s.identities[*identity.ID] = data
+
+	i := IdentityRef{ID: *identity.ID}
+
+	// Current account is always added for the identity just created. This is to keep the invariant that
+	// the current account always has access to the identity just created, which is also checked in Validate
+	// and the identity itself is added to admins there as well, if missing, establishing the link between
+	// the identity and the account, for identities which have as admins only themselves, answering the question
+	// which account do they belong to, bootstrapping correct propagation of which accounts have access based on identities.
+	s.setAccountForIdentity(accountID, i)
+
+	// The identity was maybe created with its Users and Admins slices not empty. We add all
+	// accounts with access to identities in these slices to accounts which have access to the identity.
+	// Because we just added the current account for the identity and the identity might have been
+	// added to Admins in Validate, we might do unnecessary work of attempting to re-add
+	// the current account, but it is not a big deal.
+	identities := mapset.NewThreadUnsafeSet(identity.Users...)
+	identities.Append(identity.Admins...)
+	for _, accountID := range s.getAccountsForIdentities(identities) {
+		s.setAccountForIdentity(accountID, i)
+	}
+
 	return nil
 }
 
+// setAccountForIdentity adds the identity to the list of identities the account has
+// access to, if it is not already on the list.
+//
+// s.accountsToIdentitiesMu should be locked while calling this function.
+func (s *Service) setAccountForIdentity(accountID identifier.Identifier, identity IdentityRef) {
+	identities := s.accountsToIdentities[accountID]
+	if !slices.Contains(identities, identity) {
+		s.accountsToIdentities[accountID] = append(identities, identity)
+	}
+}
+
+// unsetAccountForIdentity removes the identity from the list of identities the account has
+// access to, if it is in the list.
+//
+// s.accountsToIdentitiesMu should be locked while calling this function.
+func (s *Service) unsetAccountForIdentity(accountID identifier.Identifier, identity IdentityRef) {
+	identities := s.accountsToIdentities[accountID]
+	if i := slices.Index(identities, identity); i >= 0 {
+		s.accountsToIdentities[accountID] = slices.Delete(identities, i, i+1)
+	}
+}
+
+// getAccountsForIdentities returns all accounts that have access to any of the
+// given identities.
+//
+// s.accountsToIdentitiesMu should be locked while calling this function.
+func (s *Service) getAccountsForIdentities(identities mapset.Set[IdentityRef]) []identifier.Identifier {
+	accountIDs := []identifier.Identifier{}
+	for accountID, ids := range s.accountsToIdentities {
+		if identities.ContainsAny(ids...) {
+			accountIDs = append(accountIDs, accountID)
+		}
+	}
+
+	// To have deterministic results (easier for testing).
+	slices.SortFunc(accountIDs, func(a, b identifier.Identifier) int {
+		return bytes.Compare(a[:], b[:])
+	})
+
+	return accountIDs
+}
+
 func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors.E {
+	accountID := mustGetAccountID(ctx)
+
 	s.identitiesMu.Lock()
 	defer s.identitiesMu.Unlock()
+
+	// We lock s.accountsToIdentitiesMu inside s.identitiesMu lock to have
+	// consistent view of identities and accounts.
+	s.accountsToIdentitiesMu.Lock()
+	defer s.accountsToIdentitiesMu.Unlock()
 
 	if identity.ID == nil {
 		return errors.WithMessage(ErrIdentityValidationFailed, "ID is missing")
@@ -367,8 +456,11 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 		return errE
 	}
 
-	accountID := mustGetAccountID(ctx)
-	if !existingIdentity.HasAdminAccess(accountID) {
+	ids, errE := s.getIdentitiesForAccount(ctx, accountID)
+	if errE != nil {
+		return errE
+	}
+	if !existingIdentity.HasAdminAccess(ids...) {
 		return errors.WithDetails(ErrIdentityUnauthorized, "id", *identity.ID)
 	}
 
@@ -384,12 +476,42 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 	}
 
 	s.identities[*identity.ID] = data
+
+	i := IdentityRef{ID: *identity.ID}
+
+	identitiesBefore := mapset.NewThreadUnsafeSet(existingIdentity.Users...)
+	identitiesBefore.Append(existingIdentity.Admins...)
+
+	identitiesAfter := mapset.NewThreadUnsafeSet(identity.Users...)
+	identitiesAfter.Append(identity.Admins...)
+
+	// For all identities which have been removed from Users and Admins slices we remove corresponding accounts
+	// with access to those identities from accounts which have access to the identity. This might remove too
+	// many accounts if account has access through multiple identities (some of which have not been removed),
+	// but we will add those accounts back below.
+	for _, accountID := range s.getAccountsForIdentities(identitiesBefore.Difference(identitiesAfter)) {
+		s.unsetAccountForIdentity(accountID, i)
+	}
+
+	// Current account is always added for the identity just updated. This is to make sure the access is restored
+	// for the current account if it has just been removed above and to keep the invariant that the current account
+	// always has access to the identity just updated. Furthermore, by keeping the link between the identity and
+	// the account, we facilitate correct propagation of which accounts have access based on identities.
+	s.setAccountForIdentity(accountID, i)
+
+	// We add all accounts with access to identities in these slices to accounts which have access to the identity.
+	// This includes accounts we erroneously removed above, but also accounts corresponding to identities which
+	// have been added to Users and Admins slices.
+	for _, accountID := range s.getAccountsForIdentities(identitiesAfter) {
+		s.setAccountForIdentity(accountID, i)
+	}
+
 	return nil
 }
 
 // TODO: This is full of races, use transactions once we use proper database to store identities.
 func (s *Service) selectAndActivateIdentity(ctx context.Context, identityID, organizationID identifier.Identifier) (*Identity, errors.E) {
-	identity, errE := s.getIdentity(ctx, identityID)
+	identity, _, errE := s.getIdentity(ctx, identityID)
 	if errE != nil {
 		return nil, errE
 	}
@@ -447,10 +569,10 @@ func (s *Service) IdentityList(w http.ResponseWriter, req *http.Request, _ waf.P
 	}
 }
 
-func (s *Service) getIdentityFromID(ctx context.Context, value string) (*Identity, errors.E) {
+func (s *Service) getIdentityFromID(ctx context.Context, value string) (*Identity, bool, errors.E) {
 	id, errE := identifier.FromString(value)
 	if errE != nil {
-		return nil, errors.WrapWith(errE, ErrIdentityNotFound)
+		return nil, false, errors.WrapWith(errE, ErrIdentityNotFound)
 	}
 
 	return s.getIdentity(ctx, id)
@@ -467,7 +589,7 @@ func (s *Service) IdentityGetGet(w http.ResponseWriter, req *http.Request, param
 		return
 	}
 
-	identity, errE := s.getIdentityFromID(ctx, params["id"])
+	identity, isAdmin, errE := s.getIdentityFromID(ctx, params["id"])
 	if errors.Is(errE, ErrIdentityUnauthorized) {
 		waf.Error(w, req, http.StatusUnauthorized)
 		return
@@ -479,8 +601,7 @@ func (s *Service) IdentityGetGet(w http.ResponseWriter, req *http.Request, param
 		return
 	}
 
-	accountID := mustGetAccountID(ctx)
-	if identity.HasAdminAccess(accountID) {
+	if isAdmin {
 		// getIdentityFromID checked that user has user or admin access to the identity
 		// so here we know that they have both.
 		s.WriteJSON(w, req, identity, map[string]interface{}{
@@ -503,13 +624,23 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 	if ctx == nil {
 		return
 	}
-
 	accountID := mustGetAccountID(ctx)
 
 	result := []IdentityRef{}
 
 	s.identitiesMu.RLock()
 	defer s.identitiesMu.RUnlock()
+
+	// We lock s.accountsToIdentitiesMu inside s.identitiesMu lock to have
+	// consistent view of identities and accounts.
+	s.accountsToIdentitiesMu.RLock()
+	defer s.accountsToIdentitiesMu.RUnlock()
+
+	ids, errE := s.getIdentitiesForAccount(ctx, accountID)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
 
 	var organization *identifier.Identifier
 	if org := req.Form.Get("org"); org != "" {
@@ -553,8 +684,12 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 			return
 		}
 
+		// We could also just check if slices.Contains(ids, IdentityRef{ID: *identity.ID}),
+		// but this matches the logic in getIdentity to minimize any change of discrepancies.
+		// Furthermore, it makes things safer in the case that collecting ids is buggy and
+		// returns too many ids.
 		// TODO: Do not filter in list endpoint but filter in search endpoint.
-		if !identity.HasUserAccess(accountID) && !identity.HasAdminAccess(accountID) {
+		if !identity.HasUserAccess(ids...) && !identity.HasAdminAccess(ids...) {
 			continue
 		}
 

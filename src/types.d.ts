@@ -315,8 +315,6 @@ export type OrganizationCreate = {
 
 export type Identity = IdentityCreate & {
   id: string
-  // We use IdentityRef instead of IdentityAccount here because client
-  // side has access only to identity IDs and not account IDs.
   users?: IdentityRef[]
   admins: IdentityRef[]
   organizations: IdentityOrganization[]

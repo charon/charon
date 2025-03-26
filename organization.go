@@ -558,9 +558,10 @@ type OrganizationRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
-func (o *Organization) HasAdminAccess(identityIDs ...identifier.Identifier) bool {
-	for _, identityID := range identityIDs {
-		if slices.Contains(o.Admins, IdentityRef{ID: identityID}) {
+// HasAdminAccess returns true if at least one of the identities is among admins.
+func (o *Organization) HasAdminAccess(identities ...IdentityRef) bool {
+	for _, identity := range identities {
+		if slices.Contains(o.Admins, identity) {
 			return true
 		}
 	}
@@ -571,9 +572,9 @@ func (o *Organization) HasAdminAccess(identityIDs ...identifier.Identifier) bool
 func (o *Organization) Validate(ctx context.Context, existing *Organization) errors.E {
 	// Current user must be among admins if it is changing the organization.
 	// We check this elsewhere, here we make sure the user is stored as an admin.
-	identityID := mustGetIdentityID(ctx)
-	if !o.HasAdminAccess(identityID) {
-		o.Admins = append(o.Admins, IdentityRef{ID: identityID})
+	identity := IdentityRef{ID: mustGetIdentityID(ctx)}
+	if !o.HasAdminAccess(identity) {
+		o.Admins = append(o.Admins, identity)
 	}
 
 	return o.validate(ctx, existing)
@@ -689,8 +690,8 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 		return errE
 	}
 
-	identityID := mustGetIdentityID(ctx)
-	if !existingOrganization.HasAdminAccess(identityID) {
+	identity := IdentityRef{ID: mustGetIdentityID(ctx)}
+	if !existingOrganization.HasAdminAccess(identity) {
 		return errors.WithDetails(ErrOrganizationUnauthorized, "id", organization.ID)
 	}
 
@@ -772,7 +773,7 @@ func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	if hasIdentity && organization.HasAdminAccess(identityID) {
+	if hasIdentity && organization.HasAdminAccess(IdentityRef{ID: identityID}) {
 		s.WriteJSON(w, req, organization, map[string]interface{}{
 			"can_update": true,
 		})
