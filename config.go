@@ -18,6 +18,7 @@ import (
 
 	"github.com/alecthomas/kong"
 	"github.com/coreos/go-oidc/v3/oidc"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/go-jose/go-jose/v3"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/ory/fosite"
@@ -254,7 +255,7 @@ type Service struct {
 	organizationsMu        sync.RWMutex
 	sessions               map[identifier.Identifier][]byte
 	sessionsMu             sync.RWMutex
-	accountsToIdentities   map[identifier.Identifier][]IdentityRef
+	accountsToIdentities   map[identifier.Identifier]mapset.Set[IdentityRef]
 	accountsToIdentitiesMu sync.RWMutex
 }
 
@@ -477,7 +478,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		organizationsMu:        sync.RWMutex{},
 		sessions:               map[identifier.Identifier][]byte{},
 		sessionsMu:             sync.RWMutex{},
-		accountsToIdentities:   map[identifier.Identifier][]IdentityRef{},
+		accountsToIdentities:   map[identifier.Identifier]mapset.Set[IdentityRef]{},
 		accountsToIdentitiesMu: sync.RWMutex{},
 	}
 

@@ -114,23 +114,13 @@ func (i *Identity) GetOrganization(id *identifier.Identifier) *IdentityOrganizat
 }
 
 // HasUserAccess returns true if at least one of the identities is among users.
-func (i *Identity) HasUserAccess(identities ...IdentityRef) bool {
-	for _, identity := range identities {
-		if slices.Contains(i.Users, identity) {
-			return true
-		}
-	}
-	return false
+func (i *Identity) HasUserAccess(identities mapset.Set[IdentityRef]) bool {
+	return identities.ContainsAny(i.Users...)
 }
 
 // HasAdminAccess returns true if at least one of the identities is among admins.
-func (i *Identity) HasAdminAccess(identities ...IdentityRef) bool {
-	for _, identity := range identities {
-		if slices.Contains(i.Admins, identity) {
-			return true
-		}
-	}
-	return false
+func (i *Identity) HasAdminAccess(identities mapset.Set[IdentityRef]) bool {
+	return identities.ContainsAny(i.Admins...)
 }
 
 type IdentityRef struct {
@@ -230,7 +220,7 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 			identityID = *i.ID
 		}
 		identity := IdentityRef{ID: identityID}
-		if !i.HasAdminAccess(identity) {
+		if !i.HasAdminAccess(mapset.NewThreadUnsafeSet(identity)) {
 			i.Admins = append(i.Admins, identity)
 		}
 	}
@@ -295,7 +285,7 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 // getIdentitiesForAccount returns all identities the account has access to.
 //
 // s.accountsToIdentitiesMu should be locked for reading while calling this function.
-func (s *Service) getIdentitiesForAccount(_ context.Context, accountID identifier.Identifier) ([]IdentityRef, errors.E) { //nolint:unparam
+func (s *Service) getIdentitiesForAccount(_ context.Context, accountID identifier.Identifier) (mapset.Set[IdentityRef], errors.E) { //nolint:unparam
 	return s.accountsToIdentities[accountID], nil
 }
 
@@ -325,13 +315,13 @@ func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*I
 	if errE != nil {
 		return nil, false, errE
 	}
-	// We could also just check if slices.Contains(ids, IdentityRef{ID: *identity.ID}),
+	// We could also just check if ids.Contains(IdentityRef{ID: *identity.ID}),
 	// but this gives us information about the type of the access. Furthermore, it makes
 	// things safer in the case that collecting ids is buggy and returns too many ids.
-	if identity.HasUserAccess(ids...) {
+	if identity.HasUserAccess(ids) {
 		return &identity, false, nil
 	}
-	if identity.HasAdminAccess(ids...) {
+	if identity.HasAdminAccess(ids) {
 		return &identity, true, nil
 	}
 	return nil, false, errors.WithDetails(ErrIdentityUnauthorized, "id", id)
@@ -374,25 +364,27 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 	return nil
 }
 
-// setAccountForIdentity adds the identity to the list of identities the account has
-// access to, if it is not already on the list.
+// setAccountForIdentity adds the identity to the set of identities the account has
+// access to.
 //
 // s.accountsToIdentitiesMu should be locked while calling this function.
 func (s *Service) setAccountForIdentity(accountID identifier.Identifier, identity IdentityRef) {
-	identities := s.accountsToIdentities[accountID]
-	if !slices.Contains(identities, identity) {
-		s.accountsToIdentities[accountID] = append(identities, identity)
+	identities, ok := s.accountsToIdentities[accountID]
+	if !ok {
+		s.accountsToIdentities[accountID] = mapset.NewThreadUnsafeSet(identity)
+		return
 	}
+	identities.Add(identity)
 }
 
-// unsetAccountForIdentity removes the identity from the list of identities the account has
-// access to, if it is in the list.
+// unsetAccountForIdentity removes the identity from the set of identities the account has
+// access to.
 //
 // s.accountsToIdentitiesMu should be locked while calling this function.
 func (s *Service) unsetAccountForIdentity(accountID identifier.Identifier, identity IdentityRef) {
-	identities := s.accountsToIdentities[accountID]
-	if i := slices.Index(identities, identity); i >= 0 {
-		s.accountsToIdentities[accountID] = slices.Delete(identities, i, i+1)
+	identities, ok := s.accountsToIdentities[accountID]
+	if ok {
+		identities.Remove(identity)
 	}
 }
 
@@ -403,7 +395,7 @@ func (s *Service) unsetAccountForIdentity(accountID identifier.Identifier, ident
 func (s *Service) getAccountsForIdentities(identities mapset.Set[IdentityRef]) mapset.Set[identifier.Identifier] {
 	accountIDs := mapset.NewThreadUnsafeSet[identifier.Identifier]()
 	for accountID, ids := range s.accountsToIdentities {
-		if identities.ContainsAny(ids...) {
+		if identities.ContainsAnyElement(ids) {
 			accountIDs.Add(accountID)
 		}
 	}
@@ -441,7 +433,7 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 	if errE != nil {
 		return errE
 	}
-	if !existingIdentity.HasAdminAccess(ids...) {
+	if !existingIdentity.HasAdminAccess(ids) {
 		return errors.WithDetails(ErrIdentityUnauthorized, "id", *identity.ID)
 	}
 
@@ -680,12 +672,12 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 			return
 		}
 
-		// We could also just check if slices.Contains(ids, IdentityRef{ID: *identity.ID}),
+		// We could also just check if ids.Contains(IdentityRef{ID: *identity.ID}),
 		// but this matches the logic in getIdentity to minimize any change of discrepancies.
 		// Furthermore, it makes things safer in the case that collecting ids is buggy and
 		// returns too many ids.
 		// TODO: Do not filter in list endpoint but filter in search endpoint.
-		if !identity.HasUserAccess(ids...) && !identity.HasAdminAccess(ids...) {
+		if !identity.HasUserAccess(ids) && !identity.HasAdminAccess(ids) {
 			continue
 		}
 
