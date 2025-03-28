@@ -366,23 +366,10 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 
 	i := IdentityRef{ID: *identity.ID}
 
-	// Current account is always added for the identity just created. This is to keep the invariant that
-	// the current account always has access to the identity just created, which is also checked in Validate
-	// and the identity itself is added to admins there as well, if missing, establishing the link between
-	// the identity and the account, for identities which have as admins only themselves, answering the question
-	// which account do they belong to, bootstrapping correct propagation of which accounts have access based on identities.
-	s.setAccountForIdentity(accountID, i)
-
-	// The identity was maybe created with its Users and Admins slices not empty. We add all
-	// accounts with access to identities in these slices to accounts which have access to the identity.
-	// Because we just added the current account for the identity and the identity might have been
-	// added to Admins in Validate, we might do unnecessary work of attempting to re-add
-	// the current account, but it is not a big deal.
 	identities := mapset.NewThreadUnsafeSet(identity.Users...)
 	identities.Append(identity.Admins...)
-	for _, accountID := range s.getAccountsForIdentities(identities) {
-		s.setAccountForIdentity(accountID, i)
-	}
+
+	s.updateAccountForIdentity(accountID, i, mapset.NewThreadUnsafeSet[IdentityRef](), identities)
 
 	return nil
 }
@@ -413,19 +400,13 @@ func (s *Service) unsetAccountForIdentity(accountID identifier.Identifier, ident
 // given identities.
 //
 // s.accountsToIdentitiesMu should be locked while calling this function.
-func (s *Service) getAccountsForIdentities(identities mapset.Set[IdentityRef]) []identifier.Identifier {
-	accountIDs := []identifier.Identifier{}
+func (s *Service) getAccountsForIdentities(identities mapset.Set[IdentityRef]) mapset.Set[identifier.Identifier] {
+	accountIDs := mapset.NewThreadUnsafeSet[identifier.Identifier]()
 	for accountID, ids := range s.accountsToIdentities {
 		if identities.ContainsAny(ids...) {
-			accountIDs = append(accountIDs, accountID)
+			accountIDs.Add(accountID)
 		}
 	}
-
-	// To have deterministic results (easier for testing).
-	slices.SortFunc(accountIDs, func(a, b identifier.Identifier) int {
-		return bytes.Compare(a[:], b[:])
-	})
-
 	return accountIDs
 }
 
@@ -485,28 +466,43 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 	identitiesAfter := mapset.NewThreadUnsafeSet(identity.Users...)
 	identitiesAfter.Append(identity.Admins...)
 
-	// For all identities which have been removed from Users and Admins slices we remove corresponding accounts
-	// with access to those identities from accounts which have access to the identity. This might remove too
-	// many accounts if account has access through multiple identities (some of which have not been removed),
-	// but we will add those accounts back below.
-	for _, accountID := range s.getAccountsForIdentities(identitiesBefore.Difference(identitiesAfter)) {
-		s.unsetAccountForIdentity(accountID, i)
+	s.updateAccountForIdentity(accountID, i, identitiesBefore, identitiesAfter)
+
+	return nil
+}
+
+// updateAccountForIdentity updates accounts which have access to the identity after the set
+// of identities with access to the identity has changed from identitiesBefore to identitiesAfter.
+//
+// It also recurses to identities which might use this identity in their Users and Admins slices.
+//
+// s.accountsToIdentitiesMu should be locked while calling this function.
+func (s *Service) updateAccountForIdentity(accountID identifier.Identifier, identity IdentityRef, identitiesBefore, identitiesAfter mapset.Set[IdentityRef]) {
+	identitySet := mapset.NewThreadUnsafeSet(identity)
+
+	// For all identities which have been removed we remove corresponding accounts with access to those identities
+	// from accounts which have access to the identity. This might remove too many accounts if account has access
+	// through multiple identities (some of which have not been removed), but we will add those accounts back below.
+	for a := range mapset.Elements(s.getAccountsForIdentities(identitiesBefore.Difference(identitiesAfter))) {
+		s.unsetAccountForIdentity(a, identity)
 	}
 
-	// Current account is always added for the identity just updated. This is to make sure the access is restored
-	// for the current account if it has just been removed above and to keep the invariant that the current account
-	// always has access to the identity just updated. Furthermore, by keeping the link between the identity and
-	// the account, we facilitate correct propagation of which accounts have access based on identities.
-	s.setAccountForIdentity(accountID, i)
+	// Current account is always added for the identity just created or updated. This is to make sure the access is
+	// restored for the current account if it has just been removed above and to keep the invariant that the current
+	// account always has access to the identity just created or updated, which is also checked in Validate
+	// and the identity itself is added to admins there as well, if missing, establishing the link between
+	// the identity and the account, for identities which have as admins only themselves, answering the question
+	// which account do they belong to, bootstrapping correct propagation of which accounts have access based on identities.
+	s.setAccountForIdentity(accountID, identity)
 
 	// We add all accounts with access to identities in these slices to accounts which have access to the identity.
 	// This includes accounts we erroneously removed above, but also accounts corresponding to identities which
 	// have been added to Users and Admins slices.
-	for _, accountID := range s.getAccountsForIdentities(identitiesAfter) {
-		s.setAccountForIdentity(accountID, i)
+	for a := range mapset.Elements(s.getAccountsForIdentities(identitiesAfter)) {
+		s.setAccountForIdentity(a, identity)
 	}
 
-	return nil
+	// TODO: Propagate access to identities which might use this identity in their Users and Admins slices.
 }
 
 // TODO: This is full of races, use transactions once we use proper database to store identities.
