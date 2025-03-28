@@ -284,9 +284,9 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 
 // getIdentitiesForAccount returns all identities the account has access to.
 //
-// s.accountsToIdentitiesMu should be locked for reading while calling this function.
+// s.identitiesAccessMu should be locked for reading while calling this function.
 func (s *Service) getIdentitiesForAccount(_ context.Context, accountID identifier.Identifier) (mapset.Set[IdentityRef], errors.E) { //nolint:unparam
-	return s.accountsToIdentities[accountID], nil
+	return mapset.NewThreadUnsafeSetFromMapKeys(s.identitiesAccess[accountID]), nil
 }
 
 func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*Identity, bool, errors.E) {
@@ -295,10 +295,10 @@ func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*I
 	s.identitiesMu.RLock()
 	defer s.identitiesMu.RUnlock()
 
-	// We lock s.accountsToIdentitiesMu inside s.identitiesMu lock to have
+	// We lock s.identitiesAccessMu inside s.identitiesMu lock to have
 	// consistent view of identities and accounts.
-	s.accountsToIdentitiesMu.RLock()
-	defer s.accountsToIdentitiesMu.RUnlock()
+	s.identitiesAccessMu.RLock()
+	defer s.identitiesAccessMu.RUnlock()
 
 	data, ok := s.identities[id]
 	if !ok {
@@ -347,55 +347,76 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 	s.identitiesMu.Lock()
 	defer s.identitiesMu.Unlock()
 
-	// We lock s.accountsToIdentitiesMu inside s.identitiesMu lock to have
+	// We lock s.identitiesAccessMu inside s.identitiesMu lock to have
 	// consistent view of identities and accounts.
-	s.accountsToIdentitiesMu.Lock()
-	defer s.accountsToIdentitiesMu.Unlock()
+	s.identitiesAccessMu.Lock()
+	defer s.identitiesAccessMu.Unlock()
 
 	s.identities[*identity.ID] = data
 
 	i := IdentityRef{ID: *identity.ID}
 
+	// Current account is always added for the identity just created. This is also checked in Validate and the
+	// identity itself is added to admins there as well, if missing, establishing the link between the identity
+	// and the account, for identities which have as admins only themselves, answering the question which account
+	// do they belong to, bootstrapping correct propagation of which accounts have access based on identities.
+	s.setAccountForIdentity(accountID, i, i)
+
 	identities := mapset.NewThreadUnsafeSet(identity.Users...)
 	identities.Append(identity.Admins...)
 
-	s.updateAccountForIdentity(accountID, i, mapset.NewThreadUnsafeSet[IdentityRef](), identities)
-
-	return nil
+	return s.updateAccounts(i, mapset.NewThreadUnsafeSet[IdentityRef](), identities)
 }
 
 // setAccountForIdentity adds the identity to the set of identities the account has
-// access to.
+// access to, recording the support for the access.
 //
-// s.accountsToIdentitiesMu should be locked while calling this function.
-func (s *Service) setAccountForIdentity(accountID identifier.Identifier, identity IdentityRef) {
-	identities, ok := s.accountsToIdentities[accountID]
+// s.identitiesAccessMu should be locked while calling this function.
+func (s *Service) setAccountForIdentity(accountID identifier.Identifier, identity, support IdentityRef) {
+	identities, ok := s.identitiesAccess[accountID]
 	if !ok {
-		s.accountsToIdentities[accountID] = mapset.NewThreadUnsafeSet(identity)
+		s.identitiesAccess[accountID] = map[IdentityRef]mapset.Set[IdentityRef]{
+			identity: mapset.NewThreadUnsafeSet(support),
+		}
 		return
 	}
-	identities.Add(identity)
+	supportSet, ok := identities[identity]
+	if !ok {
+		identities[identity] = mapset.NewThreadUnsafeSet(support)
+		return
+	}
+	supportSet.Add(support)
 }
 
-// unsetAccountForIdentity removes the identity from the set of identities the account has
+// unsetAccountForIdentity removes the support from the set of identities the account has
 // access to.
 //
-// s.accountsToIdentitiesMu should be locked while calling this function.
-func (s *Service) unsetAccountForIdentity(accountID identifier.Identifier, identity IdentityRef) {
-	identities, ok := s.accountsToIdentities[accountID]
-	if ok {
-		identities.Remove(identity)
+// s.identitiesAccessMu should be locked while calling this function.
+func (s *Service) unsetAccountForIdentity(accountID identifier.Identifier, identity, support IdentityRef) {
+	identities, ok := s.identitiesAccess[accountID]
+	if !ok {
+		return
+	}
+	supportSet, ok := identities[identity]
+	if !ok {
+		return
+	}
+	supportSet.Remove(support)
+	if supportSet.IsEmpty() {
+		delete(identities, identity)
+	}
+	if len(identities) == 0 {
+		delete(s.identitiesAccess, accountID)
 	}
 }
 
-// getAccountsForIdentities returns all accounts that have access to any of the
-// given identities.
+// getAccountsForIdentity returns all accounts that have access to the identity.
 //
-// s.accountsToIdentitiesMu should be locked while calling this function.
-func (s *Service) getAccountsForIdentities(identities mapset.Set[IdentityRef]) mapset.Set[identifier.Identifier] {
+// s.identitiesAccessMu should be locked while calling this function.
+func (s *Service) getAccountsForIdentity(identity IdentityRef) mapset.Set[identifier.Identifier] {
 	accountIDs := mapset.NewThreadUnsafeSet[identifier.Identifier]()
-	for accountID, ids := range s.accountsToIdentities {
-		if identities.ContainsAnyElement(ids) {
+	for accountID, identities := range s.identitiesAccess {
+		if _, ok := identities[identity]; ok {
 			accountIDs.Add(accountID)
 		}
 	}
@@ -408,10 +429,10 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 	s.identitiesMu.Lock()
 	defer s.identitiesMu.Unlock()
 
-	// We lock s.accountsToIdentitiesMu inside s.identitiesMu lock to have
+	// We lock s.identitiesAccessMu inside s.identitiesMu lock to have
 	// consistent view of identities and accounts.
-	s.accountsToIdentitiesMu.Lock()
-	defer s.accountsToIdentitiesMu.Unlock()
+	s.identitiesAccessMu.Lock()
+	defer s.identitiesAccessMu.Unlock()
 
 	if identity.ID == nil {
 		return errors.WithMessage(ErrIdentityValidationFailed, "ID is missing")
@@ -458,43 +479,103 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 	identitiesAfter := mapset.NewThreadUnsafeSet(identity.Users...)
 	identitiesAfter.Append(identity.Admins...)
 
-	s.updateAccountForIdentity(accountID, i, identitiesBefore, identitiesAfter)
-
-	return nil
+	return s.updateAccounts(i, identitiesBefore, identitiesAfter)
 }
 
-// updateAccountForIdentity updates accounts which have access to the identity after the set
+// updateAccounts updates accounts which have access to the identity after the set
 // of identities with access to the identity has changed from identitiesBefore to identitiesAfter.
 //
 // It also recurses to identities which might use this identity in their Users and Admins slices.
 //
-// s.accountsToIdentitiesMu should be locked while calling this function.
-func (s *Service) updateAccountForIdentity(accountID identifier.Identifier, identity IdentityRef, identitiesBefore, identitiesAfter mapset.Set[IdentityRef]) {
+// s.identitiesMu and s.identitiesAccessMu should be locked while calling this function.
+func (s *Service) updateAccounts(identity IdentityRef, identitiesBefore, identitiesAfter mapset.Set[IdentityRef]) errors.E {
+	beforeAccounts := s.getAccountsForIdentity(identity)
+
+	// We add support from all added identities to corresponding accounts for the identity.
+	for added := range mapset.Elements(identitiesAfter.Difference(identitiesBefore)) {
+		for a := range mapset.Elements(s.getAccountsForIdentity(added)) {
+			s.setAccountForIdentity(a, identity, added)
+		}
+	}
+
+	// We remove support from all removed identities from corresponding accounts for the identity.
+	for removed := range mapset.Elements(identitiesBefore.Difference(identitiesAfter)) {
+		for a := range mapset.Elements(s.getAccountsForIdentity(removed)) {
+			s.unsetAccountForIdentity(a, identity, removed)
+		}
+	}
+
+	afterAccounts := s.getAccountsForIdentity(identity)
+
+	if afterAccounts.Equal(beforeAccounts) {
+		// If nothing changed, we can stop here.
+		return nil
+	}
+
+	// Now we propagate access changes to identities which might use this identity in their Users and Admins slices.
+	return s.propagateAccountsUpdate(identity, beforeAccounts, afterAccounts)
+}
+
+type beforeAfterAccounts struct {
+	before mapset.Set[identifier.Identifier]
+	after  mapset.Set[identifier.Identifier]
+}
+
+func (s *Service) propagateAccountsUpdate(identity IdentityRef, identityBeforeAccounts, identityAfterAccounts mapset.Set[identifier.Identifier]) errors.E {
 	identitySet := mapset.NewThreadUnsafeSet(identity)
 
-	// For all identities which have been removed we remove corresponding accounts with access to those identities
-	// from accounts which have access to the identity. This might remove too many accounts if account has access
-	// through multiple identities (some of which have not been removed), but we will add those accounts back below.
-	for a := range mapset.Elements(s.getAccountsForIdentities(identitiesBefore.Difference(identitiesAfter))) {
-		s.unsetAccountForIdentity(a, identity)
+	changedIdentities := map[IdentityRef]beforeAfterAccounts{}
+
+	for _, data := range s.identities {
+		var otherIdentity Identity
+		errE := x.UnmarshalWithoutUnknownFields(data, &otherIdentity)
+		if errE != nil {
+			return errE
+		}
+
+		// We skip otherIdentity if the identity does not have access to it.
+		if !otherIdentity.HasAdminAccess(identitySet) && !otherIdentity.HasUserAccess(identitySet) {
+			continue
+		}
+
+		o := IdentityRef{ID: *otherIdentity.ID}
+
+		beforeAccounts := s.getAccountsForIdentity(o)
+
+		// All accounts in the accounts set have access to the identity and to the otherIdentity through the identity,
+		// so we add support from identity for access to the otherIdentity for all added accounts.
+		for a := range mapset.Elements(identityAfterAccounts.Difference(identityBeforeAccounts)) {
+			s.setAccountForIdentity(a, o, identity)
+		}
+
+		// Before access to the identity changed, all accounts with access to the identity also had access to the otherIdentity
+		// through the identity, so we remove support from identity for access to the otherIdentity for all removed accounts.
+		for a := range mapset.Elements(identityBeforeAccounts.Difference(identityAfterAccounts)) {
+			s.unsetAccountForIdentity(a, o, identity)
+		}
+
+		afterAccounts := s.getAccountsForIdentity(o)
+
+		if afterAccounts.Equal(beforeAccounts) {
+			// If nothing changed, we do not have to recurse for this identity.
+			continue
+		}
+
+		changedIdentities[o] = beforeAfterAccounts{
+			before: beforeAccounts,
+			after:  afterAccounts,
+		}
 	}
 
-	// Current account is always added for the identity just created or updated. This is to make sure the access is
-	// restored for the current account if it has just been removed above and to keep the invariant that the current
-	// account always has access to the identity just created or updated, which is also checked in Validate
-	// and the identity itself is added to admins there as well, if missing, establishing the link between
-	// the identity and the account, for identities which have as admins only themselves, answering the question
-	// which account do they belong to, bootstrapping correct propagation of which accounts have access based on identities.
-	s.setAccountForIdentity(accountID, identity)
-
-	// We add all accounts with access to identities in these slices to accounts which have access to the identity.
-	// This includes accounts we erroneously removed above, but also accounts corresponding to identities which
-	// have been added to Users and Admins slices.
-	for a := range mapset.Elements(s.getAccountsForIdentities(identitiesAfter)) {
-		s.setAccountForIdentity(a, identity)
+	// We recurse.
+	for i, as := range changedIdentities {
+		errE := s.propagateAccountsUpdate(i, as.before, as.after)
+		if errE != nil {
+			return errE
+		}
 	}
 
-	// TODO: Propagate access to identities which might use this identity in their Users and Admins slices.
+	return nil
 }
 
 // TODO: This is full of races, use transactions once we use proper database to store identities.
@@ -619,10 +700,10 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 	s.identitiesMu.RLock()
 	defer s.identitiesMu.RUnlock()
 
-	// We lock s.accountsToIdentitiesMu inside s.identitiesMu lock to have
+	// We lock s.identitiesAccessMu inside s.identitiesMu lock to have
 	// consistent view of identities and accounts.
-	s.accountsToIdentitiesMu.RLock()
-	defer s.accountsToIdentitiesMu.RUnlock()
+	s.identitiesAccessMu.RLock()
+	defer s.identitiesAccessMu.RUnlock()
 
 	ids, errE := s.getIdentitiesForAccount(ctx, accountID)
 	if errE != nil {

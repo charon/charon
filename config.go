@@ -255,8 +255,10 @@ type Service struct {
 	organizationsMu        sync.RWMutex
 	sessions               map[identifier.Identifier][]byte
 	sessionsMu             sync.RWMutex
-	accountsToIdentities   map[identifier.Identifier]mapset.Set[IdentityRef]
-	accountsToIdentitiesMu sync.RWMutex
+	// Map from account ID to map from identity refs (to which account ID has access)
+	// to set of identity refs which are the support for the access.
+	identitiesAccess   map[identifier.Identifier]map[IdentityRef]mapset.Set[IdentityRef]
+	identitiesAccessMu sync.RWMutex
 }
 
 // Init is used primarily in tests. Use Run otherwise.
@@ -478,8 +480,8 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		organizationsMu:        sync.RWMutex{},
 		sessions:               map[identifier.Identifier][]byte{},
 		sessionsMu:             sync.RWMutex{},
-		accountsToIdentities:   map[identifier.Identifier]mapset.Set[IdentityRef]{},
-		accountsToIdentitiesMu: sync.RWMutex{},
+		identitiesAccess:       map[identifier.Identifier]map[IdentityRef]mapset.Set[IdentityRef]{},
+		identitiesAccessMu:     sync.RWMutex{},
 	}
 
 	if config.Mail.Host != "" {
