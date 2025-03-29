@@ -72,7 +72,7 @@ func (s *Service) getSessionNoLock(_ context.Context, id identifier.Identifier) 
 	return &session, nil
 }
 
-func (s *Service) getSessionBySecretID(ctx context.Context, secretID [32]byte) (*Session, errors.E) { //nolint:revive
+func (s *Service) getSessionBySecretID(_ context.Context, secretID [32]byte) (*Session, errors.E) {
 	s.sessionsMu.RLock()
 	defer s.sessionsMu.RUnlock()
 

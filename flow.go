@@ -183,7 +183,7 @@ func (f *Flow) HasDeclined() bool {
 	return slices.Contains(f.Completed, CompletedDeclined)
 }
 
-func (s *Service) getFlow(ctx context.Context, id identifier.Identifier) (*Flow, errors.E) { //nolint:revive
+func (s *Service) getFlow(_ context.Context, id identifier.Identifier) (*Flow, errors.E) {
 	s.flowsMu.RLock()
 	defer s.flowsMu.RUnlock()
 
@@ -211,7 +211,7 @@ func (s *Service) getFlow(ctx context.Context, id identifier.Identifier) (*Flow,
 	return &flow, nil
 }
 
-func (s *Service) setFlow(ctx context.Context, flow *Flow) errors.E { //nolint:revive
+func (s *Service) setFlow(_ context.Context, flow *Flow) errors.E {
 	sanitizedFlow := flow
 	if flow.OIDCAuthorizeRequest != nil {
 		// We make a copy of the flow.
