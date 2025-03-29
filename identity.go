@@ -317,6 +317,9 @@ func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*I
 	// We could also just check if ids.Contains(IdentityRef{ID: *identity.ID}),
 	// but this gives us information about the type of the access. Furthermore, it makes
 	// things safer in the case that collecting ids is buggy and returns too many ids.
+	// (Using HasAdminAccess checks that the account has access to an identity which
+	// has admin access over this identity, while ids.Contains(IdentityRef{ID: *identity.ID})
+	// checks for access only to this identity.)
 	if identity.HasAdminAccess(ids) {
 		return &identity, true, nil
 	}
