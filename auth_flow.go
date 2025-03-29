@@ -312,7 +312,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	// Everything should already be set to nil at this point, but just to make sure.
 	flow.ClearAuthStepAll()
 
-	errE = s.SetFlow(ctx, flow)
+	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -362,7 +362,7 @@ func (s *Service) increaseAuthAttempts(w http.ResponseWriter, req *http.Request,
 	ctx := req.Context()
 
 	flow.AuthAttempts++
-	errE := s.SetFlow(ctx, flow)
+	errE := s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return false
@@ -388,7 +388,7 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 	// Everything should already be set to nil at this point, but just to make sure.
 	flow.ClearAuthStepAll()
 
-	errE = s.SetFlow(ctx, flow)
+	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -468,7 +468,7 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 	// attempts. We want them to fail the whole flow and to have to restart it (it is easier
 	// to count failed flows and detect attacks this way).
 
-	errE = s.SetFlow(ctx, flow)
+	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -529,7 +529,7 @@ func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, 
 
 	// TODO: Store decline in a way that it is persisted in a similar way that choosing an identity is.
 
-	errE = s.SetFlow(ctx, flow)
+	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -587,7 +587,7 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 
 	flow.Identity = identity
 
-	errE = s.SetFlow(ctx, flow)
+	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -637,7 +637,7 @@ func (s *Service) AuthFlowRedirectPost(w http.ResponseWriter, req *http.Request,
 		return
 	}
 
-	errE = s.SetFlow(ctx, flow)
+	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return

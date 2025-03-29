@@ -20,9 +20,9 @@ func TestStore(t *testing.T) {
 	f := &charon.Flow{
 		ID: identifier.New(),
 	}
-	errE := service.SetFlow(ctx, f)
+	errE := service.TestingSetFlow(ctx, f)
 	require.NoError(t, errE, "% -+#.1v", errE)
-	f2, errE := service.GetFlow(ctx, f.ID)
+	f2, errE := service.TestingGetFlow(ctx, f.ID)
 	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.Equal(t, f, f2)
 	assert.Nil(t, f2.OIDCAuthorizeRequest)

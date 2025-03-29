@@ -152,7 +152,7 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 		PrivateKey: privateKey.Bytes(),
 		Nonce:      nonce,
 	}
-	errE = s.SetFlow(ctx, flow)
+	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -216,7 +216,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 	// We reset flow.Password to nil always after this point, even if there is a failure,
 	// so that password cannot be reused.
 	flow.Password = nil
-	errE = s.SetFlow(ctx, flow)
+	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return

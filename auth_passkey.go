@@ -130,7 +130,7 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 	// Currently we support only one factor.
 	flow.Providers = []Provider{PasskeyProvider}
 	flow.Passkey = session
-	errE = s.SetFlow(ctx, flow)
+	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -163,7 +163,7 @@ func (s *Service) getFlowPasskey(w http.ResponseWriter, req *http.Request, flow 
 	// We reset flow.Passkey to nil always after this point, even if there is a failure,
 	// so that challenge cannot be reused.
 	flow.Passkey = nil
-	errE := s.SetFlow(req.Context(), flow)
+	errE := s.setFlow(req.Context(), flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return nil
@@ -295,7 +295,7 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 	// Currently we support only one factor.
 	flow.Providers = []Provider{PasskeyProvider}
 	flow.Passkey = session
-	errE = s.SetFlow(ctx, flow)
+	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return

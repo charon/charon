@@ -129,7 +129,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 
 	secretID, err := base64.RawURLEncoding.DecodeString(split[1])
 	require.NoError(t, err)
-	session, errE := service.GetSessionBySecretID(context.Background(), [32]byte(secretID))
+	session, errE := service.TestingGetSessionBySecretID(context.Background(), [32]byte(secretID))
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	sessionID := session.ID.String()

@@ -149,7 +149,7 @@ func (s *Service) getSessionFromCookieValue(ctx context.Context, cookieValue str
 		return nil, errors.WithStack(err)
 	}
 
-	return s.GetSessionBySecretID(ctx, [32]byte(secretID))
+	return s.getSessionBySecretID(ctx, [32]byte(secretID))
 }
 
 // getSessionFromRequest uses a session cookie to determine current session for flow's ID, if any.
@@ -230,7 +230,7 @@ func (s *Service) getFlowFromID(ctx context.Context, value string) (*Flow, error
 		return nil, errors.WrapWith(errE, ErrFlowNotFound)
 	}
 
-	return s.GetFlow(ctx, id)
+	return s.getFlow(ctx, id)
 }
 
 func getAccountID(ctx context.Context) (identifier.Identifier, bool) {
