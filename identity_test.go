@@ -69,3 +69,56 @@ func TestCreateIdentity(t *testing.T) {
 	assert.Empty(t, createdIdentity.Users)
 	assert.Contains(t, createdIdentity.Admins, identityRef)
 }
+
+func createTestIdentity(t *testing.T, service *charon.Service, ctx context.Context) identifier.Identifier {
+	t.Helper()
+
+	newIdentity := charon.Identity{Username: identifier.New().String()}
+	errE := service.TestingCreateIdentity(ctx, &newIdentity)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	return *newIdentity.ID
+}
+
+func TestUpdateIdentity(t *testing.T) {
+	t.Parallel()
+
+	_, service, _, _ := startTestServer(t) //nolint:dogsled
+
+	accountID := identifier.New()
+	ctx := service.TestingWithAccountID(context.Background(), accountID)
+
+	identityID := createTestIdentity(t, service, ctx)
+	createdIdentity, _, errE := service.TestingGetIdentity(ctx, identityID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	user1 := createTestIdentity(t, service, ctx)
+	user2 := createTestIdentity(t, service, ctx)
+	admin1 := createTestIdentity(t, service, ctx)
+	admin2 := createTestIdentity(t, service, ctx)
+
+	newUsers := []charon.IdentityRef{{ID: user1}, {ID: user2}}
+	newAdmins := []charon.IdentityRef{{ID: admin1}, {ID: admin2}}
+
+	createdIdentity.Users = newUsers
+	createdIdentity.Admins = newAdmins
+
+	// Changing users and admins is not allowed without identity ID in the context.
+	errE = service.TestingUpdateIdentity(ctx, createdIdentity)
+	require.ErrorIs(t, errE, charon.ErrIdentityValidationFailed)
+
+	ctx = service.TestingWithIdentityID(ctx, identityID)
+
+	errE = service.TestingUpdateIdentity(ctx, createdIdentity)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	updatedIdentity, _, errE := service.TestingGetIdentity(ctx, identityID)
+	require.NoError(t, errE)
+
+	// Current identity (in the context) should be automatically added to admins.
+	newAdmins = append(newAdmins, charon.IdentityRef{ID: identityID})
+
+	// We check using newUsers and newAdmins because createdIdentity has been
+	// changed in-place and always matches updatedIdentity.
+	assert.ElementsMatch(t, newUsers, updatedIdentity.Users)
+	assert.ElementsMatch(t, newAdmins, updatedIdentity.Admins)
+}
