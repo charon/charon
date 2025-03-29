@@ -236,8 +236,7 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 	i.Users = slices.Compact(i.Users)
 
 	// Admins should not be users as well.
-	adminsSet := mapset.NewThreadUnsafeSet[IdentityRef]()
-	adminsSet.Append(i.Admins...)
+	adminsSet := mapset.NewThreadUnsafeSet(i.Admins...)
 	i.Users = slices.DeleteFunc(i.Users, func(ia IdentityRef) bool {
 		return adminsSet.Contains(ia)
 	})
