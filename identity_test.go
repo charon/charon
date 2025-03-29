@@ -32,6 +32,11 @@ func TestCreateIdentity(t *testing.T) {
 	identityID := *newIdentity.ID
 	identityRef := charon.IdentityRef{ID: identityID}
 
+	access := service.TestingGetIdentitiesAccess(accountID)
+	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef]{
+		identityRef: mapset.NewThreadUnsafeSet(identityRef),
+	}, access)
+
 	createdIdentity, isAdmin, errE := service.TestingGetIdentity(ctx, identityID)
 	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.True(t, isAdmin)
@@ -39,11 +44,6 @@ func TestCreateIdentity(t *testing.T) {
 	assert.Equal(t, newIdentity.Email, createdIdentity.Email)
 	assert.Empty(t, createdIdentity.Users)
 	assert.Equal(t, []charon.IdentityRef{identityRef}, createdIdentity.Admins)
-
-	access := service.TestingGetIdentitiesAccess(accountID)
-	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef]{
-		identityRef: mapset.NewThreadUnsafeSet(identityRef),
-	}, access)
 
 	ctx = service.TestingWithIdentityID(ctx, identityID)
 
@@ -55,6 +55,12 @@ func TestCreateIdentity(t *testing.T) {
 	errE = service.TestingCreateIdentity(ctx, &newIdentity)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
+	access = service.TestingGetIdentitiesAccess(accountID)
+	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef]{
+		identityRef:           mapset.NewThreadUnsafeSet(identityRef),
+		{ID: *newIdentity.ID}: mapset.NewThreadUnsafeSet(identityRef),
+	}, access)
+
 	createdIdentity, isAdmin, errE = service.TestingGetIdentity(ctx, *newIdentity.ID)
 	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.True(t, isAdmin)
@@ -62,10 +68,4 @@ func TestCreateIdentity(t *testing.T) {
 	assert.Equal(t, newIdentity.Email, createdIdentity.Email)
 	assert.Empty(t, createdIdentity.Users)
 	assert.Contains(t, createdIdentity.Admins, identityRef)
-
-	access = service.TestingGetIdentitiesAccess(accountID)
-	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef]{
-		identityRef:           mapset.NewThreadUnsafeSet(identityRef),
-		{ID: *newIdentity.ID}: mapset.NewThreadUnsafeSet(identityRef),
-	}, access)
 }
