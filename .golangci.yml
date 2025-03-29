@@ -146,9 +146,6 @@ linters:
 
 issues:
   exclude-rules:
-    - path: utils_test\.go
-      linters:
-        - testpackage
     - path: .*_test\.go
       linters:
         - exhaustruct

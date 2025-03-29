@@ -1,10 +1,12 @@
-package charon
+package charon_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"gitlab.com/charon/charon"
 )
 
 func TestNormalizeUsernameCaseMapped(t *testing.T) {
@@ -35,7 +37,7 @@ func TestNormalizeUsernameCaseMapped(t *testing.T) {
 		t.Run(tt.Username, func(t *testing.T) {
 			t.Parallel()
 
-			out, errE := normalizeUsernameCaseMapped(tt.Username)
+			out, errE := charon.TestingNormalizeUsernameCaseMapped(tt.Username)
 			assert.Equal(t, tt.Expected, out)
 			if tt.Error != "" {
 				assert.EqualError(t, errE, tt.Error)
@@ -72,7 +74,7 @@ func TestNormalizeUsernameCasePreserved(t *testing.T) {
 		t.Run(tt.Username, func(t *testing.T) {
 			t.Parallel()
 
-			out, errE := normalizeUsernameCasePreserved(tt.Username)
+			out, errE := charon.TestingNormalizeUsernameCasePreserved(tt.Username)
 			assert.Equal(t, tt.Expected, out)
 			if tt.Error != "" {
 				assert.EqualError(t, errE, tt.Error)
@@ -105,7 +107,7 @@ func TestNormalizePassword(t *testing.T) {
 		t.Run(tt.Password, func(t *testing.T) {
 			t.Parallel()
 
-			out, errE := normalizePassword([]byte(tt.Password))
+			out, errE := charon.TestingNormalizePassword([]byte(tt.Password))
 			assert.Equal(t, tt.Expected, string(out))
 			if tt.Error != "" {
 				assert.EqualError(t, errE, tt.Error)
@@ -118,7 +120,7 @@ func TestGetRandomCode(t *testing.T) {
 	t.Parallel()
 
 	for range 1000 {
-		out, errE := getRandomCode()
+		out, errE := charon.TestingGetRandomCode()
 		require.NoError(t, errE, "% -+#.1v", errE)
 		assert.Len(t, out, 6)
 	}
