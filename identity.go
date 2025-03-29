@@ -317,11 +317,14 @@ func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*I
 	// We could also just check if ids.Contains(IdentityRef{ID: *identity.ID}),
 	// but this gives us information about the type of the access. Furthermore, it makes
 	// things safer in the case that collecting ids is buggy and returns too many ids.
-	if identity.HasUserAccess(ids) {
-		return &identity, false, nil
-	}
 	if identity.HasAdminAccess(ids) {
 		return &identity, true, nil
+	}
+	// We first check for admin access because it has priority over user access.
+	// We do not allow same identity in both admins and users, but it could still happen
+	// that through transitivity, the same account has access through both admins and users.
+	if identity.HasUserAccess(ids) {
+		return &identity, false, nil
 	}
 	return nil, false, errors.WithDetails(ErrIdentityUnauthorized, "id", id)
 }
