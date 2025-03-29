@@ -1,7 +1,6 @@
 package charon
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -257,7 +256,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 		if identity != nil {
 			// We do not set identityIDContextKey because we are creating a new identity for the current
 			// account while using a session cookie. The identity itself will be used instead.
-			errE = s.createIdentity(context.WithValue(ctx, accountIDContextKey, account.ID), identity)
+			errE = s.createIdentity(s.withAccountID(ctx, account.ID), identity)
 			if errE != nil && !errors.Is(errE, errEmptyIdentity) {
 				s.InternalServerErrorWithError(w, req, errE)
 				return
@@ -576,8 +575,8 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 		return
 	}
 
-	c := context.WithValue(ctx, accountIDContextKey, accountID)
-	c = context.WithValue(c, identityIDContextKey, chooseIdentity.Identity.ID)
+	c := s.withAccountID(ctx, accountID)
+	c = s.withIdentityID(c, chooseIdentity.Identity.ID)
 
 	identity, errE := s.selectAndActivateIdentity(c, chooseIdentity.Identity.ID, flow.OrganizationID)
 	if errE != nil {

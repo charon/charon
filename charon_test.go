@@ -3,9 +3,12 @@ package charon //nolint:testpackage
 import (
 	"context"
 
+	mapset "github.com/deckarep/golang-set/v2"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/identifier"
 )
+
+// We export these for testing purposes only.
 
 func (s *Service) TestingGetFlow(ctx context.Context, id identifier.Identifier) (*Flow, errors.E) {
 	return s.getFlow(ctx, id)
@@ -17,6 +20,33 @@ func (s *Service) TestingSetFlow(ctx context.Context, flow *Flow) errors.E {
 
 func (s *Service) TestingGetSessionBySecretID(ctx context.Context, secretID [32]byte) (*Session, errors.E) {
 	return s.getSessionBySecretID(ctx, secretID)
+}
+
+func (s *Service) TestingCreateIdentity(ctx context.Context, identity *Identity) errors.E {
+	return s.createIdentity(ctx, identity)
+}
+
+func (s *Service) TestingUpdateIdentity(ctx context.Context, identity *Identity) errors.E {
+	return s.updateIdentity(ctx, identity)
+}
+
+func (s *Service) TestingGetIdentity(ctx context.Context, id identifier.Identifier) (*Identity, bool, errors.E) {
+	return s.getIdentity(ctx, id)
+}
+
+func (s *Service) TestingWithIdentityID(ctx context.Context, identityID identifier.Identifier) context.Context {
+	return s.withIdentityID(ctx, identityID)
+}
+
+func (s *Service) TestingWithAccountID(ctx context.Context, accountID identifier.Identifier) context.Context {
+	return s.withAccountID(ctx, accountID)
+}
+
+func (s *Service) TestingGetIdentitiesAccess(accountID identifier.Identifier) map[IdentityRef]mapset.Set[IdentityRef] {
+	s.identitiesAccessMu.RLock()
+	defer s.identitiesAccessMu.RUnlock()
+
+	return s.identitiesAccess[accountID]
 }
 
 func TestingNormalizeUsernameCaseMapped(username string) (string, errors.E) {

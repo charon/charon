@@ -85,6 +85,14 @@ func getBearerToken(req *http.Request) string {
 	return auth[len(prefix):]
 }
 
+func (s *Service) withAccountID(ctx context.Context, accountID identifier.Identifier) context.Context {
+	return context.WithValue(ctx, accountIDContextKey, accountID)
+}
+
+func (s *Service) withIdentityID(ctx context.Context, identityID identifier.Identifier) context.Context {
+	return context.WithValue(ctx, identityIDContextKey, identityID)
+}
+
 // getIdentityFromRequest uses an Authorization header to obtain the OIDC access token
 // and determines the identity and account IDs from it.
 func (s *Service) getIdentityFromRequest(w http.ResponseWriter, req *http.Request) (identifier.Identifier, identifier.Identifier, errors.E) {
@@ -271,9 +279,9 @@ func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request,
 
 	identityID, accountID, errE := s.getIdentityFromRequest(w, req)
 	if errE == nil {
-		ctx = context.WithValue(ctx, identityIDContextKey, identityID)
+		ctx = s.withIdentityID(ctx, identityID)
 		if needsAccountID {
-			ctx = context.WithValue(ctx, accountIDContextKey, accountID)
+			ctx = s.withAccountID(ctx, accountID)
 		}
 		return ctx
 	} else if !errors.Is(errE, ErrIdentityNotPresent) {
@@ -297,8 +305,8 @@ func (s *Service) requireAuthenticatedForIdentity(w http.ResponseWriter, req *ht
 
 	identityID, accountID, errE := s.getIdentityFromRequest(w, req)
 	if errE == nil {
-		ctx = context.WithValue(ctx, identityIDContextKey, identityID)
-		ctx = context.WithValue(ctx, accountIDContextKey, accountID)
+		ctx = s.withIdentityID(ctx, identityID)
+		ctx = s.withAccountID(ctx, accountID)
 		return ctx
 	} else if !errors.Is(errE, ErrIdentityNotPresent) {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -321,7 +329,7 @@ func (s *Service) requireAuthenticatedForIdentity(w http.ResponseWriter, req *ht
 	}
 
 	// Because we called validateSession with api set to true, session should never be nil here.
-	return context.WithValue(ctx, accountIDContextKey, session.AccountID)
+	return s.withAccountID(ctx, session.AccountID)
 }
 
 func (s *Service) GetFlowHandler(w http.ResponseWriter, req *http.Request, value string) *Flow {

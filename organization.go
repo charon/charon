@@ -757,7 +757,7 @@ func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, p
 	hasIdentity := false
 	identityID, _, errE := s.getIdentityFromRequest(w, req)
 	if errE == nil {
-		ctx = context.WithValue(ctx, identityIDContextKey, identityID)
+		ctx = s.withIdentityID(ctx, identityID)
 		hasIdentity = true
 	} else if !errors.Is(errE, ErrIdentityNotPresent) {
 		s.InternalServerErrorWithError(w, req, errE)

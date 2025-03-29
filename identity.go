@@ -17,7 +17,7 @@ import (
 var (
 	ErrIdentityNotFound         = errors.Base("identity not found")
 	ErrIdentityAlreadyExists    = errors.Base("identity already exists")
-	ErrIdentityUnauthorized     = errors.Base("identity change unauthorized")
+	ErrIdentityUnauthorized     = errors.Base("identity access unauthorized")
 	ErrIdentityValidationFailed = errors.Base("identity validation failed")
 
 	errEmptyIdentity = errors.Base("empty identity")
@@ -360,7 +360,12 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 	// identity itself is added to admins there as well, if missing, establishing the link between the identity
 	// and the account, for identities which have as admins only themselves, answering the question which account
 	// do they belong to, bootstrapping correct propagation of which accounts have access based on identities.
-	s.setAccountForIdentity(accountID, i, i)
+	identityID, ok := getIdentityID(ctx)
+	if ok {
+		s.setAccountForIdentity(accountID, i, IdentityRef{identityID})
+	} else {
+		s.setAccountForIdentity(accountID, i, i)
+	}
 
 	identities := mapset.NewThreadUnsafeSet(identity.Users...)
 	identities.Append(identity.Admins...)
