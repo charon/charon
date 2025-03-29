@@ -1,6 +1,18 @@
 <script setup lang="ts">
 import type { DeepReadonly, Ref } from "vue"
-import type { Organization, Metadata, ApplicationTemplates, ApplicationTemplate, OrganizationApplication, ApplicationTemplateRef, Identities, IdentityRef, OrganizationIdentity, Identity, IdentityOrganization } from "@/types"
+import type {
+  Organization,
+  Metadata,
+  ApplicationTemplates,
+  ApplicationTemplate,
+  OrganizationApplication,
+  ApplicationTemplateRef,
+  Identities,
+  IdentityRef,
+  OrganizationIdentity,
+  Identity,
+  IdentityOrganization,
+} from "@/types"
 
 import { nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useRouter } from "vue-router"
