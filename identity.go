@@ -528,61 +528,68 @@ func (s *Service) updateAccounts(identity IdentityRef, identitiesBefore, identit
 }
 
 type beforeAfterAccounts struct {
-	before mapset.Set[identifier.Identifier]
-	after  mapset.Set[identifier.Identifier]
+	identity IdentityRef
+	before   mapset.Set[identifier.Identifier]
+	after    mapset.Set[identifier.Identifier]
 }
 
 func (s *Service) propagateAccountsUpdate(identity IdentityRef, identityBeforeAccounts, identityAfterAccounts mapset.Set[identifier.Identifier]) errors.E {
-	identitySet := mapset.NewThreadUnsafeSet(identity)
-
-	changedIdentities := map[IdentityRef]beforeAfterAccounts{}
-
-	for _, data := range s.identities {
-		var otherIdentity Identity
-		errE := x.UnmarshalWithoutUnknownFields(data, &otherIdentity)
-		if errE != nil {
-			return errE
-		}
-
-		// We skip otherIdentity if the identity does not have access to it.
-		if !otherIdentity.HasAdminAccess(identitySet) && !otherIdentity.HasUserAccess(identitySet) {
-			continue
-		}
-
-		o := IdentityRef{ID: *otherIdentity.ID}
-
-		beforeAccounts := s.getAccountsForIdentity(o)
-
-		// All accounts in the accounts set have access to the identity and to the otherIdentity through the identity,
-		// so we add support from identity for access to the otherIdentity for all added accounts.
-		for a := range mapset.Elements(identityAfterAccounts.Difference(identityBeforeAccounts)) {
-			s.setAccountForIdentity(a, o, identity)
-		}
-
-		// Before access to the identity changed, all accounts with access to the identity also had access to the otherIdentity
-		// through the identity, so we remove support from identity for access to the otherIdentity for all removed accounts.
-		for a := range mapset.Elements(identityBeforeAccounts.Difference(identityAfterAccounts)) {
-			s.unsetAccountForIdentity(a, o, identity)
-		}
-
-		afterAccounts := s.getAccountsForIdentity(o)
-
-		if afterAccounts.Equal(beforeAccounts) {
-			// If nothing changed, we do not have to recurse for this identity.
-			continue
-		}
-
-		changedIdentities[o] = beforeAfterAccounts{
-			before: beforeAccounts,
-			after:  afterAccounts,
-		}
+	changedIdentities := []beforeAfterAccounts{
+		{
+			identity: identity,
+			before:   identityBeforeAccounts,
+			after:    identityAfterAccounts,
+		},
 	}
 
-	// We recurse.
-	for i, as := range changedIdentities {
-		errE := s.propagateAccountsUpdate(i, as.before, as.after)
-		if errE != nil {
-			return errE
+	for len(changedIdentities) > 0 {
+		i := changedIdentities[0].identity
+		before := changedIdentities[0].before
+		after := changedIdentities[0].after
+		changedIdentities = changedIdentities[1:]
+
+		identitySet := mapset.NewThreadUnsafeSet(i)
+
+		for _, data := range s.identities {
+			var otherIdentity Identity
+			errE := x.UnmarshalWithoutUnknownFields(data, &otherIdentity)
+			if errE != nil {
+				return errE
+			}
+
+			// We skip otherIdentity if the identity does not have access to it.
+			if !otherIdentity.HasAdminAccess(identitySet) && !otherIdentity.HasUserAccess(identitySet) {
+				continue
+			}
+
+			o := IdentityRef{ID: *otherIdentity.ID}
+
+			beforeAccounts := s.getAccountsForIdentity(o)
+
+			// All accounts in the accounts set have access to the identity and to the otherIdentity through the identity,
+			// so we add support from identity for access to the otherIdentity for all added accounts.
+			for a := range mapset.Elements(after.Difference(before)) {
+				s.setAccountForIdentity(a, o, i)
+			}
+
+			// Before access to the identity changed, all accounts with access to the identity also had access to the otherIdentity
+			// through the identity, so we remove support from identity for access to the otherIdentity for all removed accounts.
+			for a := range mapset.Elements(before.Difference(after)) {
+				s.unsetAccountForIdentity(a, o, i)
+			}
+
+			afterAccounts := s.getAccountsForIdentity(o)
+
+			if afterAccounts.Equal(beforeAccounts) {
+				// If nothing changed, we do not have to recurse for this identity.
+				continue
+			}
+
+			changedIdentities = append(changedIdentities, beforeAfterAccounts{
+				identity: o,
+				before:   beforeAccounts,
+				after:    afterAccounts,
+			})
 		}
 	}
 
