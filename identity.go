@@ -362,14 +362,17 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 
 	i := IdentityRef{ID: *identity.ID}
 
-	// Current account is always added for the identity just created. This is also checked in Validate and the
-	// identity itself is added to admins there as well, if missing, establishing the link between the identity
-	// and the account, for identities which have as admins only themselves, answering the question which account
-	// do they belong to, bootstrapping correct propagation of which accounts have access based on identities.
+	// Current account is always added for the identity just created. This is also checked in Validate
+	// and admin identity is added there to admins, if missing.
 	identityID, ok := getIdentityID(ctx)
 	if ok {
 		s.setAccountForIdentity(accountID, i, IdentityRef{identityID})
 	} else {
+		// When identity is created using only an account ID without identity ID in the context, identity itself
+		// is added to admins in Validate. By adding the account for the identity, we establishing the link
+		// between the identity and the account, answering the question which account do they belong to,
+		// bootstrapping correct propagation of which accounts have access based on identities. This is
+		// a special case where we allow an identity and its support to be the same identity.
 		s.setAccountForIdentity(accountID, i, i)
 	}
 
@@ -555,6 +558,14 @@ func (s *Service) propagateAccountsUpdate(identity IdentityRef, identityBeforeAc
 			errE := x.UnmarshalWithoutUnknownFields(data, &otherIdentity)
 			if errE != nil {
 				return errE
+			}
+
+			// Only when creating an identity using only an account ID without identity ID in the context,
+			// we allow an identity and its support to be the same identity. We do not propagate this
+			// because otherwise once any identity was shared, it could not be unshared because any account
+			// which had access once would also got support for access through the identity itself.
+			if *otherIdentity.ID == i.ID {
+				continue
 			}
 
 			// We skip otherIdentity if the identity does not have access to it.
