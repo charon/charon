@@ -114,11 +114,29 @@ func TestUpdateIdentity(t *testing.T) {
 	updatedIdentity, _, errE := service.TestingGetIdentity(ctx, identityID)
 	require.NoError(t, errE)
 
+	identityRef := charon.IdentityRef{ID: identityID}
+
 	// Current identity (in the context) should be automatically added to admins.
-	newAdmins = append(newAdmins, charon.IdentityRef{ID: identityID})
+	newAdmins = append(newAdmins, identityRef)
 
 	// We check using newUsers and newAdmins because createdIdentity has been
 	// changed in-place and always matches updatedIdentity.
 	assert.ElementsMatch(t, newUsers, updatedIdentity.Users)
 	assert.ElementsMatch(t, newAdmins, updatedIdentity.Admins)
+
+	access := service.TestingGetIdentitiesAccess(accountID)
+	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef]{
+		identityRef: mapset.NewThreadUnsafeSet(
+			identityRef,
+			charon.IdentityRef{ID: user1},
+			charon.IdentityRef{ID: user2},
+			charon.IdentityRef{ID: admin1},
+			charon.IdentityRef{ID: admin2},
+		),
+		{ID: user1}:  mapset.NewThreadUnsafeSet(charon.IdentityRef{ID: user1}),
+		{ID: user2}:  mapset.NewThreadUnsafeSet(charon.IdentityRef{ID: user2}),
+		{ID: admin1}: mapset.NewThreadUnsafeSet(charon.IdentityRef{ID: admin1}),
+		{ID: admin2}: mapset.NewThreadUnsafeSet(charon.IdentityRef{ID: admin2}),
+	}, access)
+}
 }
