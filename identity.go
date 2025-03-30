@@ -15,8 +15,9 @@ import (
 )
 
 var (
-	ErrIdentityNotFound         = errors.Base("identity not found")
-	ErrIdentityAlreadyExists    = errors.Base("identity already exists")
+	ErrIdentityNotFound      = errors.Base("identity not found")
+	ErrIdentityAlreadyExists = errors.Base("identity already exists")
+	// TODO: Should we remove ErrIdentityUnauthorized and just use ErrIdentityNotFound?
 	ErrIdentityUnauthorized     = errors.Base("identity access unauthorized")
 	ErrIdentityValidationFailed = errors.Base("identity validation failed")
 
