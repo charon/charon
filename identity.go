@@ -305,12 +305,10 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 func (s *Service) getIdentitiesForAccount(_ context.Context, accountID identifier.Identifier, identity IdentityRef) (mapset.Set[IdentityRef], bool, errors.E) { //nolint:unparam
 	isCreator := false
 	ids := mapset.NewThreadUnsafeSetFromMapKeys(s.identitiesAccess[accountID])
-	for id, a := range s.identityCreators {
-		if a == accountID {
-			ids.Add(id)
-			if id == identity {
-				isCreator = true
-			}
+	if created, ok := s.identityCreators[accountID]; ok {
+		ids = ids.Union(created)
+		if created.Contains(identity) {
+			isCreator = true
 		}
 	}
 	return ids, isCreator, nil
@@ -395,7 +393,11 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 		// is added to admins in Validate. Here, we record the identity creator, establishing the link
 		// between the identity and the account, bootstrapping correct propagation of which accounts have
 		// access based on identities.
-		s.identityCreators[i] = accountID
+		if created, ok := s.identityCreators[accountID]; ok {
+			created.Add(i)
+		} else {
+			s.identityCreators[accountID] = mapset.NewThreadUnsafeSet(i)
+		}
 	}
 
 	identities := mapset.NewThreadUnsafeSet(identity.Users...)
@@ -462,8 +464,10 @@ func (s *Service) getAccountsForIdentity(identity IdentityRef) mapset.Set[identi
 			accountIDs.Add(accountID)
 		}
 	}
-	if creator, ok := s.identityCreators[identity]; ok {
-		accountIDs.Add(creator)
+	for accountID, created := range s.identityCreators {
+		if created.Contains(identity) {
+			accountIDs.Add(accountID)
+		}
 	}
 	return accountIDs
 }
