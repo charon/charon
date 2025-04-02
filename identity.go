@@ -761,12 +761,7 @@ func (s *Service) IdentityGetGet(w http.ResponseWriter, req *http.Request, param
 	})
 }
 
-func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	// We allow getting identities with the access token or session cookie.
-	ctx := s.requireAuthenticatedForIdentity(w, req)
-	if ctx == nil {
-		return
-	}
+func (s *Service) identityList(ctx context.Context, organization, notOrganization *identifier.Identifier, active bool) ([]IdentityRef, errors.E) {
 	accountID := mustGetAccountID(ctx)
 
 	result := []IdentityRef{}
@@ -778,6 +773,55 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 	// consistent view of identities and accounts.
 	s.identitiesAccessMu.RLock()
 	defer s.identitiesAccessMu.RUnlock()
+
+	for id, data := range s.identities {
+		var identity Identity
+		errE := x.UnmarshalWithoutUnknownFields(data, &identity)
+		if errE != nil {
+			errors.Details(errE)["id"] = id
+			return nil, errE
+		}
+
+		i := IdentityRef{ID: id}
+
+		ids, isCreator, errE := s.getIdentitiesForAccount(ctx, accountID, i)
+		if errE != nil {
+			return nil, errE
+		}
+
+		// We could also just check if ids.Contains(i), but this matches the logic in
+		// getIdentity to minimize any chance of discrepancies.
+		// TODO: Do not filter in list endpoint but filter in search endpoint.
+		if !identity.HasUserAccess(ids) && !identity.HasAdminAccess(ids, isCreator) {
+			continue
+		}
+
+		if idOrg := identity.GetOrganization(organization); organization != nil && idOrg != nil {
+			// TODO: Do not filter in list endpoint but filter in search endpoint.
+			// Or only active identities are requested, or we return all.
+			if (active && idOrg.Active) || !active {
+				result = append(result, i)
+			}
+		} else if idOrg := identity.GetOrganization(notOrganization); notOrganization != nil && idOrg == nil {
+			result = append(result, i)
+		} else if organization == nil && notOrganization == nil {
+			result = append(result, i)
+		}
+	}
+
+	slices.SortFunc(result, func(a IdentityRef, b IdentityRef) int {
+		return bytes.Compare(a.ID[:], b.ID[:])
+	})
+
+	return result, nil
+}
+
+func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	// We allow getting identities with the access token or session cookie.
+	ctx := s.requireAuthenticatedForIdentity(w, req)
+	if ctx == nil {
+		return
+	}
 
 	var organization *identifier.Identifier
 	if org := req.Form.Get("org"); org != "" {
@@ -812,46 +856,11 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 		}
 	}
 
-	for id, data := range s.identities {
-		var identity Identity
-		errE := x.UnmarshalWithoutUnknownFields(data, &identity)
-		if errE != nil {
-			errors.Details(errE)["id"] = id
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-
-		i := IdentityRef{ID: id}
-
-		ids, isCreator, errE := s.getIdentitiesForAccount(ctx, accountID, i)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-
-		// We could also just check if ids.Contains(i), but this matches the logic in
-		// getIdentity to minimize any chance of discrepancies.
-		// TODO: Do not filter in list endpoint but filter in search endpoint.
-		if !identity.HasUserAccess(ids) && !identity.HasAdminAccess(ids, isCreator) {
-			continue
-		}
-
-		if idOrg := identity.GetOrganization(organization); organization != nil && idOrg != nil {
-			// TODO: Do not filter in list endpoint but filter in search endpoint.
-			// Or only active identities are requested, or we return all.
-			if (active && idOrg.Active) || !active {
-				result = append(result, i)
-			}
-		} else if idOrg := identity.GetOrganization(notOrganization); notOrganization != nil && idOrg == nil {
-			result = append(result, i)
-		} else if organization == nil && notOrganization == nil {
-			result = append(result, i)
-		}
+	result, errE := s.identityList(ctx, organization, notOrganization, active)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
 	}
-
-	slices.SortFunc(result, func(a IdentityRef, b IdentityRef) int {
-		return bytes.Compare(a.ID[:], b.ID[:])
-	})
 
 	s.WriteJSON(w, req, result, nil)
 }
