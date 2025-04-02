@@ -257,7 +257,11 @@ type Service struct {
 	sessionsMu             sync.RWMutex
 	// Map from account ID to map from identity refs (to which account ID has access)
 	// to set of identity refs which are the support for the access.
-	identitiesAccess   map[identifier.Identifier]map[IdentityRef]mapset.Set[IdentityRef]
+	identitiesAccess map[identifier.Identifier]map[IdentityRef]mapset.Set[IdentityRef]
+	// Map from identity refs to the creator of the identity's account ID.
+	// TODO: Should creator be just an internal field of Identity struct?
+	identityCreators map[IdentityRef]identifier.Identifier
+	// We use only one mutex for both identitiesAccess and identityCreators as they are always used together.
 	identitiesAccessMu sync.RWMutex
 }
 
@@ -428,7 +432,8 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		Config: &hmacStrategyConfigurator{Secret: secret},
 	}
 
-	service := &Service{ //nolint:forcetypeassert
+	service := &Service{
+		//nolint:forcetypeassert
 		Service: waf.Service[*Site]{
 			Logger:          config.Logger,
 			CanonicalLogger: config.Logger,
@@ -481,6 +486,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		sessions:               map[identifier.Identifier][]byte{},
 		sessionsMu:             sync.RWMutex{},
 		identitiesAccess:       map[identifier.Identifier]map[IdentityRef]mapset.Set[IdentityRef]{},
+		identityCreators:       map[IdentityRef]identifier.Identifier{},
 		identitiesAccessMu:     sync.RWMutex{},
 	}
 

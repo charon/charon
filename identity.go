@@ -120,8 +120,23 @@ func (i *Identity) HasUserAccess(identities mapset.Set[IdentityRef]) bool {
 }
 
 // HasAdminAccess returns true if at least one of the identities is among admins.
-func (i *Identity) HasAdminAccess(identities mapset.Set[IdentityRef]) bool {
-	return identities.ContainsAny(i.Admins...)
+func (i *Identity) HasAdminAccess(identities mapset.Set[IdentityRef], isCreator bool) bool {
+	admins := mapset.NewThreadUnsafeSet(i.Admins...)
+	iRef := IdentityRef{ID: *i.ID}
+	creatorIsAdmin := admins.Contains(iRef)
+	if creatorIsAdmin {
+		// Because we record that the creator is an admin by adding identity itself
+		// as an admin, we need to remove it from the set of admins, otherwise anyone
+		// with access to the identity (even just user access) would be seen as an admin,
+		// but we want only the creator to be an admin in such a case.
+		admins.Remove(iRef)
+	}
+	if identities.ContainsAnyElement(admins) {
+		return true
+	} else if isCreator && creatorIsAdmin {
+		return true
+	}
+	return false
 }
 
 type IdentityRef struct {
@@ -221,7 +236,9 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 			identityID = *i.ID
 		}
 		identity := IdentityRef{ID: identityID}
-		if !i.HasAdminAccess(mapset.NewThreadUnsafeSet(identity)) {
+		// We use true for isCreator here because we want HasAdminAccess to return true
+		// always when the identity is not among admins, even in the case of the creator.
+		if !i.HasAdminAccess(mapset.NewThreadUnsafeSet(identity), true) {
 			i.Admins = append(i.Admins, identity)
 		}
 	}
@@ -285,8 +302,18 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 // getIdentitiesForAccount returns all identities the account has access to.
 //
 // s.identitiesAccessMu should be locked for reading while calling this function.
-func (s *Service) getIdentitiesForAccount(_ context.Context, accountID identifier.Identifier) (mapset.Set[IdentityRef], errors.E) { //nolint:unparam
-	return mapset.NewThreadUnsafeSetFromMapKeys(s.identitiesAccess[accountID]), nil
+func (s *Service) getIdentitiesForAccount(_ context.Context, accountID identifier.Identifier, identity IdentityRef) (mapset.Set[IdentityRef], bool, errors.E) { //nolint:unparam
+	isCreator := false
+	ids := mapset.NewThreadUnsafeSetFromMapKeys(s.identitiesAccess[accountID])
+	for id, a := range s.identityCreators {
+		if a == accountID {
+			ids.Add(id)
+			if id == identity {
+				isCreator = true
+			}
+		}
+	}
+	return ids, isCreator, nil
 }
 
 func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*Identity, bool, errors.E) {
@@ -311,17 +338,13 @@ func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*I
 		return nil, false, errE
 	}
 
-	ids, errE := s.getIdentitiesForAccount(ctx, accountID)
+	ids, isCreator, errE := s.getIdentitiesForAccount(ctx, accountID, IdentityRef{ID: *identity.ID})
 	if errE != nil {
 		return nil, false, errE
 	}
 	// We could also just check if ids.Contains(IdentityRef{ID: *identity.ID}),
-	// but this gives us information about the type of the access. Furthermore, it makes
-	// things safer in the case that collecting ids is buggy and returns too many ids.
-	// (Using HasAdminAccess checks that the account has access to an identity which
-	// has admin access over this identity, while ids.Contains(IdentityRef{ID: *identity.ID})
-	// checks for access only to this identity.)
-	if identity.HasAdminAccess(ids) {
+	// but this gives us information about the type of the access.
+	if identity.HasAdminAccess(ids, isCreator) {
 		return &identity, true, nil
 	}
 	// We first check for admin access because it has priority over user access.
@@ -369,11 +392,10 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 		s.setAccountForIdentity(accountID, i, IdentityRef{identityID})
 	} else {
 		// When identity is created using only an account ID without identity ID in the context, identity itself
-		// is added to admins in Validate. By adding the account for the identity, we establishing the link
-		// between the identity and the account, answering the question which account do they belong to,
-		// bootstrapping correct propagation of which accounts have access based on identities. This is
-		// a special case where we allow an identity and its support to be the same identity.
-		s.setAccountForIdentity(accountID, i, i)
+		// is added to admins in Validate. Here, we record the identity creator, establishing the link
+		// between the identity and the account, bootstrapping correct propagation of which accounts have
+		// access based on identities.
+		s.identityCreators[i] = accountID
 	}
 
 	identities := mapset.NewThreadUnsafeSet(identity.Users...)
@@ -387,6 +409,9 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 //
 // s.identitiesAccessMu should be locked while calling this function.
 func (s *Service) setAccountForIdentity(accountID identifier.Identifier, identity, support IdentityRef) {
+	if identity == support {
+		panic(errors.New("support cannot be identity"))
+	}
 	identities, ok := s.identitiesAccess[accountID]
 	if !ok {
 		s.identitiesAccess[accountID] = map[IdentityRef]mapset.Set[IdentityRef]{
@@ -407,6 +432,9 @@ func (s *Service) setAccountForIdentity(accountID identifier.Identifier, identit
 //
 // s.identitiesAccessMu should be locked while calling this function.
 func (s *Service) unsetAccountForIdentity(accountID identifier.Identifier, identity, support IdentityRef) {
+	if identity == support {
+		panic(errors.New("support cannot be identity"))
+	}
 	identities, ok := s.identitiesAccess[accountID]
 	if !ok {
 		return
@@ -433,6 +461,9 @@ func (s *Service) getAccountsForIdentity(identity IdentityRef) mapset.Set[identi
 		if _, ok := identities[identity]; ok {
 			accountIDs.Add(accountID)
 		}
+	}
+	if creator, ok := s.identityCreators[identity]; ok {
+		accountIDs.Add(creator)
 	}
 	return accountIDs
 }
@@ -464,11 +495,13 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 		return errE
 	}
 
-	ids, errE := s.getIdentitiesForAccount(ctx, accountID)
+	i := IdentityRef{ID: *identity.ID}
+
+	ids, isCreator, errE := s.getIdentitiesForAccount(ctx, accountID, i)
 	if errE != nil {
 		return errE
 	}
-	if !existingIdentity.HasAdminAccess(ids) {
+	if !existingIdentity.HasAdminAccess(ids, isCreator) {
 		return errors.WithDetails(ErrIdentityUnauthorized, "id", *identity.ID)
 	}
 
@@ -484,8 +517,6 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 	}
 
 	s.identities[*identity.ID] = data
-
-	i := IdentityRef{ID: *identity.ID}
 
 	identitiesBefore := mapset.NewThreadUnsafeSet(existingIdentity.Users...)
 	identitiesBefore.Append(existingIdentity.Admins...)
@@ -507,6 +538,11 @@ func (s *Service) updateAccounts(identity IdentityRef, identitiesBefore, identit
 
 	// We add support from all added identities to corresponding accounts for the identity.
 	for added := range mapset.Elements(identitiesAfter.Difference(identitiesBefore)) {
+		if added == identity {
+			// When the identity and support are the same it is a special case and it really means
+			// the creator of the identity which is recorded separately so we do not do anything here.
+			continue
+		}
 		for a := range mapset.Elements(s.getAccountsForIdentity(added)) {
 			s.setAccountForIdentity(a, identity, added)
 		}
@@ -514,6 +550,11 @@ func (s *Service) updateAccounts(identity IdentityRef, identitiesBefore, identit
 
 	// We remove support from all removed identities from corresponding accounts for the identity.
 	for removed := range mapset.Elements(identitiesBefore.Difference(identitiesAfter)) {
+		if removed == identity {
+			// When the identity and support are the same it is a special case and it really means
+			// the creator of the identity which is recorded separately so we do not do anything here.
+			continue
+		}
 		for a := range mapset.Elements(s.getAccountsForIdentity(removed)) {
 			s.unsetAccountForIdentity(a, identity, removed)
 		}
@@ -560,16 +601,16 @@ func (s *Service) propagateAccountsUpdate(identity IdentityRef, identityBeforeAc
 				return errE
 			}
 
-			// Only when creating an identity using only an account ID without identity ID in the context,
-			// we allow an identity and its support to be the same identity. We do not propagate this
-			// because otherwise once any identity was shared, it could not be unshared because any account
-			// which had access once would also got support for access through the identity itself.
+			// When the identity and support are the same it is a special case and it really means
+			// the creator of the identity which is recorded separately so we do not propagate this here.
 			if *otherIdentity.ID == i.ID {
 				continue
 			}
 
 			// We skip otherIdentity if the identity does not have access to it.
-			if !otherIdentity.HasAdminAccess(identitySet) && !otherIdentity.HasUserAccess(identitySet) {
+			// We use false for isCreator here because we do not want to propagate the special case
+			// anyway here and otherIdentity and identitySet are disjoint anyway, too.
+			if !otherIdentity.HasAdminAccess(identitySet, false) && !otherIdentity.HasUserAccess(identitySet) {
 				continue
 			}
 
@@ -734,12 +775,6 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 	s.identitiesAccessMu.RLock()
 	defer s.identitiesAccessMu.RUnlock()
 
-	ids, errE := s.getIdentitiesForAccount(ctx, accountID)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
 	var organization *identifier.Identifier
 	if org := req.Form.Get("org"); org != "" {
 		o, errE := identifier.FromString(org)
@@ -782,12 +817,18 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 			return
 		}
 
-		// We could also just check if ids.Contains(IdentityRef{ID: *identity.ID}),
-		// but this matches the logic in getIdentity to minimize any change of discrepancies.
-		// Furthermore, it makes things safer in the case that collecting ids is buggy and
-		// returns too many ids.
+		i := IdentityRef{ID: id}
+
+		ids, isCreator, errE := s.getIdentitiesForAccount(ctx, accountID, i)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+
+		// We could also just check if ids.Contains(i), but this matches the logic in
+		// getIdentity to minimize any chance of discrepancies.
 		// TODO: Do not filter in list endpoint but filter in search endpoint.
-		if !identity.HasUserAccess(ids) && !identity.HasAdminAccess(ids) {
+		if !identity.HasUserAccess(ids) && !identity.HasAdminAccess(ids, isCreator) {
 			continue
 		}
 
@@ -795,12 +836,12 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 			// TODO: Do not filter in list endpoint but filter in search endpoint.
 			// Or only active identities are requested, or we return all.
 			if (active && idOrg.Active) || !active {
-				result = append(result, IdentityRef{ID: id})
+				result = append(result, i)
 			}
 		} else if idOrg := identity.GetOrganization(notOrganization); notOrganization != nil && idOrg == nil {
-			result = append(result, IdentityRef{ID: id})
+			result = append(result, i)
 		} else if organization == nil && notOrganization == nil {
-			result = append(result, IdentityRef{ID: id})
+			result = append(result, i)
 		}
 	}
 
