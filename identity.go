@@ -259,6 +259,14 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 		return adminsSet.Contains(ia)
 	})
 
+	// Users should not contain the identity itself. This is only allowed as a special case for admins
+	// as a way to signal that the creator has admin access over the identity. We allow the special case
+	// for admins even when there is no creator of an identity to make behavior the same for both types
+	// of identities (with and without creator), but it does not influence anything.
+	if slices.Contains(i.Users, IdentityRef{ID: *i.ID}) {
+		return errors.New("identity contains itself as a user")
+	}
+
 	if i.Organizations == nil {
 		i.Organizations = []IdentityOrganization{}
 	}
