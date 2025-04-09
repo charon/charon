@@ -558,8 +558,8 @@ gitlab.com/tozd/go/x v0.0.0-20240906084819-fda0a3bbba65 h1:EOPL0NFJdCOGgw30Fliw/
 gitlab.com/tozd/go/x v0.0.0-20240906084819-fda0a3bbba65/go.mod h1:lFvcc9G8jYZ4JDjrgpPbKulVRhDhrA+pVDSsDur84wQ=
 gitlab.com/tozd/go/zerolog v0.8.0 h1:TulC8FS+YWFMhYVkZA1MT1UXyKYL7HbVvdcafZgrvi0=
 gitlab.com/tozd/go/zerolog v0.8.0/go.mod h1:Z+ucoqBBXh1etoTW5l7vDMpM74qt4xsowBurfQOUJjY=
-gitlab.com/tozd/identifier v0.4.0 h1:8htfYks8PAmTrEx95kzAEARYX/K0d9F2JUeXdCB3UsA=
-gitlab.com/tozd/identifier v0.4.0/go.mod h1:6VpMkJ87a+9JPgGUUKj/GxBS3krZ/Cz9aUNemamRQm8=
+gitlab.com/tozd/identifier v0.5.0 h1:fsIA8vOU+vX1jNgDlJ7Av9jE6FAYnIv2/hXuW5w4CNI=
+gitlab.com/tozd/identifier v0.5.0/go.mod h1:PyFlSz3WP0fKm4tFpeva27lviYIMD49qXPoU8H7rkR8=
 gitlab.com/tozd/waf v0.19.0 h1:iiP+CSwxOqyTdB3CN3sMBZ3Z5jffgJabiL1PSmj2TW0=
 gitlab.com/tozd/waf v0.19.0/go.mod h1:B6gQ8pBvoeJMBdsOKduIcPRhP05+N9aQidc4Fh+eN8U=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
