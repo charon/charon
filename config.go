@@ -18,7 +18,6 @@ import (
 
 	"github.com/alecthomas/kong"
 	"github.com/coreos/go-oidc/v3/oidc"
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/go-jose/go-jose/v3"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/ory/fosite"
@@ -258,9 +257,9 @@ type Service struct {
 	// Map from account ID to map from identity refs (to which account ID has access) to
 	// paths which are the support for the access.
 	identitiesAccess map[identifier.Identifier]map[IdentityRef][][]IdentityRef
-	// Map from account ID to a set of all identity refs the account created.
+	// Map from identity ref to the account ID that created it.
 	// TODO: Should creator be just an internal field of Identity struct?
-	identityCreators map[identifier.Identifier]mapset.Set[IdentityRef]
+	identityCreators map[IdentityRef]identifier.Identifier
 	// We use only one mutex for both identitiesAccess and identityCreators as they are always used together.
 	identitiesAccessMu sync.RWMutex
 }
@@ -486,7 +485,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		sessions:               map[identifier.Identifier][]byte{},
 		sessionsMu:             sync.RWMutex{},
 		identitiesAccess:       map[identifier.Identifier]map[IdentityRef][][]IdentityRef{},
-		identityCreators:       map[identifier.Identifier]mapset.Set[IdentityRef]{},
+		identityCreators:       map[IdentityRef]identifier.Identifier{},
 		identitiesAccessMu:     sync.RWMutex{},
 	}
 
