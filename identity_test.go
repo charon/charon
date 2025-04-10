@@ -521,3 +521,227 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.ElementsMatch(t, []charon.IdentityRef{adminIdentityRef, userIdentityRef, thirdIdentityRef}, result)
 }
+
+type testIdentity struct {
+	ctx     context.Context //nolint:containedctx
+	account identifier.Identifier
+	id      charon.IdentityRef
+}
+
+func setupIdentityHierarchy(t *testing.T, service *charon.Service) []testIdentity {
+	t.Helper()
+
+	accountID := identifier.New()
+	ctxRoot := service.TestingWithAccountID(context.Background(), accountID)
+	rootIdentityID := createTestIdentity(t, service, ctxRoot)
+	rootIdentityRef := charon.IdentityRef{ID: rootIdentityID}
+	ctxRoot = service.TestingWithIdentityID(ctxRoot, rootIdentityID)
+
+	accountID1 := identifier.New()
+	ctx1 := service.TestingWithAccountID(context.Background(), accountID1)
+	child1IdentityID := createTestIdentity(t, service, ctx1)
+	ctx1 = service.TestingWithIdentityID(ctx1, child1IdentityID)
+
+	accountID2 := identifier.New()
+	ctx2 := service.TestingWithAccountID(context.Background(), accountID2)
+	child2IdentityID := createTestIdentity(t, service, ctx2)
+	ctx2 = service.TestingWithIdentityID(ctx2, child2IdentityID)
+
+	child1Identity, isAdmin, errE := service.TestingGetIdentity(ctx1, child1IdentityID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.True(t, isAdmin)
+
+	child2Identity, isAdmin, errE := service.TestingGetIdentity(ctx2, child2IdentityID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.True(t, isAdmin)
+
+	// Grant root identity admin access to child identities.
+	child1Identity.Admins = append(child1Identity.Admins, rootIdentityRef)
+	child2Identity.Admins = append(child2Identity.Admins, rootIdentityRef)
+
+	errE = service.TestingUpdateIdentity(ctx1, child1Identity)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	errE = service.TestingUpdateIdentity(ctx2, child2Identity)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	return []testIdentity{
+		{
+			ctx:     ctxRoot,
+			account: accountID,
+			id:      rootIdentityRef,
+		},
+		{
+			ctx:     ctx1,
+			account: accountID1,
+			id:      charon.IdentityRef{ID: child1IdentityID},
+		},
+		{
+			ctx:     ctx2,
+			account: accountID2,
+			id:      charon.IdentityRef{ID: child2IdentityID},
+		},
+	}
+}
+
+func TestRecursiveIdentityAccess(t *testing.T) {
+	t.Parallel()
+
+	_, service, _, _ := startTestServer(t) //nolint:dogsled
+
+	ids := setupIdentityHierarchy(t, service)
+
+	// Test access recursion.
+	for _, id := range ids {
+		_, isAdmin, errE := service.TestingGetIdentity(ids[0].ctx, id.id.ID)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		require.True(t, isAdmin)
+	}
+
+	// Children do not have access to the root identity.
+	for _, id := range ids[1:] {
+		_, _, errE := service.TestingGetIdentity(id.ctx, ids[0].id.ID)
+		assert.ErrorIs(t, errE, charon.ErrIdentityUnauthorized)
+	}
+
+	access := service.TestingGetIdentitiesAccess(ids[0].account)
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		ids[0].id: {{}},
+		ids[1].id: {{ids[0].id}},
+		ids[2].id: {{ids[0].id}},
+	}, access)
+	access = service.TestingGetIdentitiesAccess(ids[1].account)
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		ids[1].id: {{}},
+	}, access)
+	access = service.TestingGetIdentitiesAccess(ids[2].account)
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		ids[2].id: {{}},
+	}, access)
+
+	for _, id := range ids {
+		a, ok := service.TestingGetCreatedIdentities(id.id)
+		assert.True(t, ok)
+		assert.Equal(t, id.account, a)
+	}
+}
+
+func TestCyclicIdentityAccess(t *testing.T) {
+	t.Parallel()
+
+	_, service, _, _ := startTestServer(t) //nolint:dogsled
+
+	ids := setupIdentityHierarchy(t, service)
+
+	// Introducing cycle: make child identity admin over the root.
+	updatedRootIdentity, _, errE := service.TestingGetIdentity(ids[0].ctx, ids[0].id.ID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	updatedRootIdentity.Admins = append(updatedRootIdentity.Admins, ids[1].id)
+	errE = service.TestingUpdateIdentity(ids[0].ctx, updatedRootIdentity)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	access := service.TestingGetIdentitiesAccess(ids[0].account)
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		ids[0].id: {{}},
+		ids[1].id: {{ids[0].id}},
+		ids[2].id: {{ids[0].id}},
+	}, access)
+	access = service.TestingGetIdentitiesAccess(ids[1].account)
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		ids[0].id: {{ids[1].id}},
+		ids[1].id: {{}},
+		ids[2].id: {{ids[1].id, ids[0].id}},
+	}, access)
+	access = service.TestingGetIdentitiesAccess(ids[2].account)
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		ids[2].id: {{}},
+	}, access)
+
+	for _, id := range ids {
+		a, ok := service.TestingGetCreatedIdentities(id.id)
+		assert.True(t, ok)
+		assert.Equal(t, id.account, a)
+	}
+
+	// Child identity should have admin access to the root identity.
+	_, isAdmin, errE := service.TestingGetIdentity(ids[1].ctx, ids[0].id.ID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.True(t, isAdmin)
+
+	// We remove creator's access to the root identity.
+	updatedRootIdentity.Admins = []charon.IdentityRef{ids[1].id}
+	errE = service.TestingUpdateIdentity(ids[1].ctx, updatedRootIdentity)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	access = service.TestingGetIdentitiesAccess(ids[0].account)
+	assert.Equal(t, map[charon.IdentityRef][][]charon.IdentityRef(nil), access)
+	access = service.TestingGetIdentitiesAccess(ids[1].account)
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		ids[0].id: {{ids[1].id}},
+		ids[1].id: {{}},
+		ids[2].id: {{ids[1].id, ids[0].id}},
+	}, access)
+	access = service.TestingGetIdentitiesAccess(ids[2].account)
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		ids[2].id: {{}},
+	}, access)
+
+	// Child identity has access to all identities.
+	for _, id := range ids {
+		_, isAdmin, errE = service.TestingGetIdentity(ids[1].ctx, id.id.ID)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		require.True(t, isAdmin)
+	}
+
+	// Root identity does not have access to any identity.
+	for _, id := range ids {
+		_, _, errE = service.TestingGetIdentity(ids[0].ctx, id.id.ID)
+		assert.ErrorIs(t, errE, charon.ErrIdentityUnauthorized)
+	}
+
+	// We restore creator's access to the root identity.
+	updatedRootIdentity.Admins = []charon.IdentityRef{ids[1].id, ids[0].id}
+	errE = service.TestingUpdateIdentity(ids[1].ctx, updatedRootIdentity)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	access = service.TestingGetIdentitiesAccess(ids[0].account)
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		ids[0].id: {{}},
+		ids[1].id: {{ids[0].id}},
+		ids[2].id: {{ids[0].id}},
+	}, access)
+	access = service.TestingGetIdentitiesAccess(ids[1].account)
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		ids[0].id: {{ids[1].id}},
+		ids[1].id: {{}},
+		ids[2].id: {{ids[1].id, ids[0].id}},
+	}, access)
+	access = service.TestingGetIdentitiesAccess(ids[2].account)
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		ids[2].id: {{}},
+	}, access)
+
+	// Another cycle: making another child identity admin over the root identity.
+	updatedRootIdentity.Admins = []charon.IdentityRef{ids[1].id, ids[0].id, ids[2].id}
+	errE = service.TestingUpdateIdentity(ids[0].ctx, updatedRootIdentity)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	access = service.TestingGetIdentitiesAccess(ids[0].account)
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		ids[0].id: {{}},
+		ids[1].id: {{ids[0].id}},
+		ids[2].id: {{ids[0].id}},
+	}, access)
+	access = service.TestingGetIdentitiesAccess(ids[1].account)
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		ids[0].id: {{ids[1].id}},
+		ids[1].id: {{}},
+		ids[2].id: {{ids[1].id, ids[0].id}},
+	}, access)
+	access = service.TestingGetIdentitiesAccess(ids[2].account)
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		ids[0].id: {{ids[2].id}},
+		ids[1].id: {{ids[2].id, ids[0].id}},
+		ids[2].id: {{}},
+	}, access)
+}
