@@ -431,8 +431,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		Config: &hmacStrategyConfigurator{Secret: secret},
 	}
 
-	service := &Service{
-		//nolint:forcetypeassert
+	service := &Service{ //nolint:forcetypeassert
 		Service: waf.Service[*Site]{
 			Logger:          config.Logger,
 			CanonicalLogger: config.Logger,

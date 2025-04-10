@@ -311,7 +311,9 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 // getIdentitiesForAccount returns all identities the account has access to.
 //
 // s.identitiesAccessMu should be locked for reading while calling this function.
-func (s *Service) getIdentitiesForAccount(_ context.Context, accountID identifier.Identifier, identity IdentityRef) (mapset.Set[IdentityRef], bool, errors.E) { //nolint:unparam
+func (s *Service) getIdentitiesForAccount(
+	_ context.Context, accountID identifier.Identifier, identity IdentityRef,
+) (mapset.Set[IdentityRef], bool, errors.E) { //nolint:unparam
 	ids := mapset.NewThreadUnsafeSetFromMapKeys(s.identitiesAccess[accountID])
 	isCreator := slices.ContainsFunc(s.identitiesAccess[accountID][identity], func(i []IdentityRef) bool {
 		// Creator has empty support path.

@@ -79,7 +79,7 @@ func TestCreateIdentity(t *testing.T) {
 	assert.False(t, ok)
 }
 
-func createTestIdentity(t *testing.T, service *charon.Service, ctx context.Context) identifier.Identifier {
+func createTestIdentity(t *testing.T, service *charon.Service, ctx context.Context) identifier.Identifier { //nolint:revive
 	t.Helper()
 
 	newIdentity := charon.Identity{Username: identifier.New().String()}
