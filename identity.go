@@ -617,7 +617,7 @@ func (s *Service) propagateAccountsUpdate(identity IdentityRef, identityBeforeAc
 			// We skip otherIdentity if the identity does not have access to it.
 			// We use false for isCreator here because we do not want to propagate the special case
 			// anyway here and otherIdentity and identitySet are disjoint anyway, too.
-			if !otherIdentity.HasAdminAccess(identitySet, false) && !otherIdentity.HasUserAccess(identitySet) {
+			if !otherIdentity.HasUserAccess(identitySet) && !otherIdentity.HasAdminAccess(identitySet, false) {
 				continue
 			}
 
