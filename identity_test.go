@@ -397,12 +397,27 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.ElementsMatch(t, []charon.IdentityRef{adminIdentityRef, userIdentityRef}, result)
 
-	// Adding user identity to user access does not work.
+	// Adding user identity to user access.
 	updatedUserIdentity.Users = []charon.IdentityRef{userIdentityRef}
 	errE = service.TestingUpdateIdentity(adminCtx, updatedUserIdentity)
-	require.ErrorIs(t, errE, charon.ErrIdentityValidationFailed)
+	require.NoError(t, errE, "% -+#.1v", errE)
 
-	// But adding user identity back to admin access works and restores creator's access.
+	_, isAdmin, errE = service.TestingGetIdentity(userCtx, userIdentityID)
+	assert.False(t, isAdmin)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	updatedUserIdentity, isAdmin, errE = service.TestingGetIdentity(adminCtx, userIdentityID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.True(t, isAdmin)
+	assert.ElementsMatch(t, []charon.IdentityRef{userIdentityRef}, updatedUserIdentity.Users)
+	assert.ElementsMatch(t, []charon.IdentityRef{adminIdentityRef}, updatedUserIdentity.Admins)
+	result, errE = service.TestListIdentity(userCtx)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.ElementsMatch(t, []charon.IdentityRef{userIdentityRef}, result)
+	result, errE = service.TestListIdentity(adminCtx)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.ElementsMatch(t, []charon.IdentityRef{adminIdentityRef, userIdentityRef}, result)
+
+	// Adding user identity back to admin access works and restores creator's access.
 	// Supporting this is important so that we can support undo functionality.
 	updatedUserIdentity.Users = nil
 	updatedUserIdentity.Admins = []charon.IdentityRef{adminIdentityRef, userIdentityRef}
