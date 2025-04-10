@@ -118,7 +118,7 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 	assert.Equal(t, identityID.String(), response.Subject)
 	assert.Equal(t, []string{appID, clientID}, response.Audience)
 	assert.Equal(t, ts.URL, response.Issuer)
-	_, errE = identifier.FromString(response.JTI)
+	_, errE = identifier.MaybeString(response.JTI)
 	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.Equal(t, sessionID, response.Session)
 
@@ -188,7 +188,7 @@ func validateAccessToken(
 	require.Contains(t, all, "jti")
 	jti, ok := all["jti"].(string)
 	assert.True(t, ok, all["jti"])
-	_, errE := identifier.FromString(jti)
+	_, errE := identifier.MaybeString(jti)
 	require.NoError(t, errE, "% -+#.1v", errE)
 	delete(all, "jti")
 

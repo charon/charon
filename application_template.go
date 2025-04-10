@@ -760,7 +760,7 @@ func (s *Service) ApplicationTemplateList(w http.ResponseWriter, req *http.Reque
 }
 
 func (s *Service) getApplicationTemplateFromID(ctx context.Context, value string) (*ApplicationTemplate, errors.E) {
-	id, errE := identifier.FromString(value)
+	id, errE := identifier.MaybeString(value)
 	if errE != nil {
 		return nil, errors.WrapWith(errE, ErrApplicationTemplateNotFound)
 	}

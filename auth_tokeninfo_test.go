@@ -63,7 +63,7 @@ func validateIDToken(
 	require.Contains(t, all, "jti")
 	jti, ok := all["jti"].(string)
 	assert.True(t, ok, all["jti"])
-	_, errE := identifier.FromString(jti)
+	_, errE := identifier.MaybeString(jti)
 	require.NoError(t, errE, "% -+#.1v", errE)
 	delete(all, "jti")
 

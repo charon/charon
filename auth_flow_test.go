@@ -144,7 +144,7 @@ func createAuthFlow(t *testing.T, ts *httptest.Server, service *charon.Service) 
 	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.Equal(t, "AuthFlowGet", route.Name)
 
-	flowID, errE := identifier.FromString(route.Params["id"])
+	flowID, errE := identifier.MaybeString(route.Params["id"])
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)

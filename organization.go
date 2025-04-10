@@ -739,7 +739,7 @@ func (s *Service) OrganizationList(w http.ResponseWriter, req *http.Request, _ w
 }
 
 func (s *Service) getOrganizationFromID(ctx context.Context, value string) (*Organization, errors.E) {
-	id, errE := identifier.FromString(value)
+	id, errE := identifier.MaybeString(value)
 	if errE != nil {
 		return nil, errors.WrapWith(errE, ErrOrganizationNotFound)
 	}
@@ -797,7 +797,7 @@ func (s *Service) OrganizationAppGet(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	appID, errE := identifier.FromString(params["appId"])
+	appID, errE := identifier.MaybeString(params["appId"])
 	if errE != nil {
 		s.NotFound(w, req)
 		return

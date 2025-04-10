@@ -233,7 +233,7 @@ func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api 
 
 // getFlowFromID obtains Flow from its string ID.
 func (s *Service) getFlowFromID(ctx context.Context, value string) (*Flow, errors.E) {
-	id, errE := identifier.FromString(value)
+	id, errE := identifier.MaybeString(value)
 	if errE != nil {
 		return nil, errors.WrapWith(errE, ErrFlowNotFound)
 	}

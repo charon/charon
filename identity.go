@@ -748,7 +748,7 @@ func (s *Service) IdentityList(w http.ResponseWriter, req *http.Request, _ waf.P
 }
 
 func (s *Service) getIdentityFromID(ctx context.Context, value string) (*Identity, bool, errors.E) {
-	id, errE := identifier.FromString(value)
+	id, errE := identifier.MaybeString(value)
 	if errE != nil {
 		return nil, false, errors.WrapWith(errE, ErrIdentityNotFound)
 	}
@@ -860,7 +860,7 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 
 	var organization *identifier.Identifier
 	if org := req.Form.Get("org"); org != "" {
-		o, errE := identifier.FromString(org)
+		o, errE := identifier.MaybeString(org)
 		if errE != nil {
 			s.BadRequestWithError(w, req, errors.WithMessage(errE, `invalid "org" parameter`))
 			return
@@ -870,7 +870,7 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 
 	var notOrganization *identifier.Identifier
 	if org := req.Form.Get("notorg"); org != "" {
-		o, errE := identifier.FromString(org)
+		o, errE := identifier.MaybeString(org)
 		if errE != nil {
 			s.BadRequestWithError(w, req, errors.WithMessage(errE, `invalid "notorg" parameter`))
 			return

@@ -355,7 +355,7 @@ func (s *OIDCSession) GetExtraClaims() map[string]interface{} {
 // SetSubject implements rfc7523.Session.
 func (s *OIDCSession) SetSubject(subject string) {
 	// Subject is validated earlier (in GetPublicKeyScopes).
-	s.Subject = identifier.MustFromString(subject)
+	s.Subject = identifier.String(subject)
 }
 
 var (

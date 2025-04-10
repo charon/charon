@@ -25,7 +25,7 @@ func NewOIDCStore() *OIDCStore {
 
 // GetClient requires ctx with serviceContextKey set.
 func (s *OIDCStore) GetClient(ctx context.Context, strID string) (fosite.Client, error) { //nolint:ireturn
-	id, errE := identifier.FromString(strID)
+	id, errE := identifier.MaybeString(strID)
 	if errE != nil {
 		return nil, errE
 	}
