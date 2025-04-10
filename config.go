@@ -255,9 +255,9 @@ type Service struct {
 	organizationsMu        sync.RWMutex
 	sessions               map[identifier.Identifier][]byte
 	sessionsMu             sync.RWMutex
-	// Map from account ID to map from identity refs (to which account ID has access)
-	// to set of identity refs which are the support for the access.
-	identitiesAccess map[identifier.Identifier]map[IdentityRef]mapset.Set[IdentityRef]
+	// Map from account ID to map from identity refs (to which account ID has access) to
+	// paths which are the support for the access.
+	identitiesAccess map[identifier.Identifier]map[IdentityRef][][]IdentityRef
 	// Map from account ID to a set of all identity refs the account created.
 	// TODO: Should creator be just an internal field of Identity struct?
 	identityCreators map[identifier.Identifier]mapset.Set[IdentityRef]
@@ -485,7 +485,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		organizationsMu:        sync.RWMutex{},
 		sessions:               map[identifier.Identifier][]byte{},
 		sessionsMu:             sync.RWMutex{},
-		identitiesAccess:       map[identifier.Identifier]map[IdentityRef]mapset.Set[IdentityRef]{},
+		identitiesAccess:       map[identifier.Identifier]map[IdentityRef][][]IdentityRef{},
 		identityCreators:       map[identifier.Identifier]mapset.Set[IdentityRef]{},
 		identitiesAccessMu:     sync.RWMutex{},
 	}

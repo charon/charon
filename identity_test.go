@@ -33,7 +33,7 @@ func TestCreateIdentity(t *testing.T) {
 	identityRef := charon.IdentityRef{ID: identityID}
 
 	access := service.TestingGetIdentitiesAccess(accountID)
-	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef](nil), access)
+	assert.Equal(t, map[charon.IdentityRef][][]charon.IdentityRef(nil), access)
 
 	createdIdentity, isAdmin, errE := service.TestingGetIdentity(ctx, identityID)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -54,8 +54,8 @@ func TestCreateIdentity(t *testing.T) {
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	access = service.TestingGetIdentitiesAccess(accountID)
-	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef]{
-		{ID: *newIdentity.ID}: mapset.NewThreadUnsafeSet(identityRef),
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		{ID: *newIdentity.ID}: {{identityRef}},
 	}, access)
 
 	createdIdentity, isAdmin, errE = service.TestingGetIdentity(ctx, *newIdentity.ID)
@@ -78,6 +78,16 @@ func createTestIdentity(t *testing.T, service *charon.Service, ctx context.Conte
 	errE := service.TestingCreateIdentity(ctx, &newIdentity)
 	require.NoError(t, errE, "% -+#.1v", errE)
 	return *newIdentity.ID
+}
+
+func assertEqualAccess(t *testing.T, expected, actual map[charon.IdentityRef][][]charon.IdentityRef) {
+	t.Helper()
+
+	if assert.ElementsMatch(t, mapset.NewThreadUnsafeSetFromMapKeys(expected).ToSlice(), mapset.NewThreadUnsafeSetFromMapKeys(actual).ToSlice()) {
+		for id := range expected {
+			assert.ElementsMatch(t, expected[id], actual[id], id.ID.String())
+		}
+	}
 }
 
 func TestUpdateIdentity(t *testing.T) {
@@ -131,8 +141,8 @@ func TestUpdateIdentity(t *testing.T) {
 	assert.ElementsMatch(t, newAdmins, updatedIdentity.Admins)
 
 	access := service.TestingGetIdentitiesAccess(accountID)
-	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef]{
-		identityRef: mapset.NewThreadUnsafeSet(user1Ref, user2Ref, admin1Ref, admin2Ref),
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		identityRef: {{user1Ref}, {user2Ref}, {admin1Ref}, {admin2Ref}},
 	}, access)
 
 	// All identities were created without identity ID in the context and thus have a creator.
@@ -160,9 +170,9 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	adminIdentityRef := charon.IdentityRef{ID: adminIdentityID}
 
 	access := service.TestingGetIdentitiesAccess(userAccountID)
-	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef](nil), access)
+	assert.Equal(t, map[charon.IdentityRef][][]charon.IdentityRef(nil), access)
 	access = service.TestingGetIdentitiesAccess(adminAccountID)
-	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef](nil), access)
+	assert.Equal(t, map[charon.IdentityRef][][]charon.IdentityRef(nil), access)
 	created := service.TestingGetCreatedIdentities(userAccountID)
 	assert.Equal(t, mapset.NewThreadUnsafeSet(userIdentityRef), created)
 	created = service.TestingGetCreatedIdentities(adminAccountID)
@@ -194,10 +204,10 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	access = service.TestingGetIdentitiesAccess(userAccountID)
-	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef](nil), access)
+	assert.Equal(t, map[charon.IdentityRef][][]charon.IdentityRef(nil), access)
 	access = service.TestingGetIdentitiesAccess(adminAccountID)
-	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef]{
-		userIdentityRef: mapset.NewThreadUnsafeSet(adminIdentityRef),
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		userIdentityRef: {{adminIdentityRef}},
 	}, access)
 	created = service.TestingGetCreatedIdentities(userAccountID)
 	assert.Equal(t, mapset.NewThreadUnsafeSet(userIdentityRef), created)
@@ -237,9 +247,9 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	require.NoError(t, errE)
 
 	access = service.TestingGetIdentitiesAccess(userAccountID)
-	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef](nil), access)
+	assert.Equal(t, map[charon.IdentityRef][][]charon.IdentityRef(nil), access)
 	access = service.TestingGetIdentitiesAccess(adminAccountID)
-	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef](nil), access)
+	assert.Equal(t, map[charon.IdentityRef][][]charon.IdentityRef(nil), access)
 	created = service.TestingGetCreatedIdentities(userAccountID)
 	assert.Equal(t, mapset.NewThreadUnsafeSet(userIdentityRef), created)
 	created = service.TestingGetCreatedIdentities(adminAccountID)
@@ -264,10 +274,10 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	access = service.TestingGetIdentitiesAccess(userAccountID)
-	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef](nil), access)
+	assert.Equal(t, map[charon.IdentityRef][][]charon.IdentityRef(nil), access)
 	access = service.TestingGetIdentitiesAccess(adminAccountID)
-	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef]{
-		userIdentityRef: mapset.NewThreadUnsafeSet(adminIdentityRef),
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		userIdentityRef: {{adminIdentityRef}},
 	}, access)
 	created = service.TestingGetCreatedIdentities(userAccountID)
 	assert.Equal(t, mapset.NewThreadUnsafeSet(userIdentityRef), created)
@@ -324,10 +334,10 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 
 	// Nothing changed here.
 	access = service.TestingGetIdentitiesAccess(userAccountID)
-	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef](nil), access)
+	assert.Equal(t, map[charon.IdentityRef][][]charon.IdentityRef(nil), access)
 	access = service.TestingGetIdentitiesAccess(adminAccountID)
-	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef]{
-		userIdentityRef: mapset.NewThreadUnsafeSet(adminIdentityRef),
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		userIdentityRef: {{adminIdentityRef}},
 	}, access)
 	created = service.TestingGetCreatedIdentities(userAccountID)
 	assert.Equal(t, mapset.NewThreadUnsafeSet(userIdentityRef), created)
@@ -377,10 +387,10 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 
 	// Nothing changed here.
 	access = service.TestingGetIdentitiesAccess(userAccountID)
-	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef](nil), access)
+	assert.Equal(t, map[charon.IdentityRef][][]charon.IdentityRef(nil), access)
 	access = service.TestingGetIdentitiesAccess(adminAccountID)
-	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef]{
-		userIdentityRef: mapset.NewThreadUnsafeSet(adminIdentityRef),
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		userIdentityRef: {{adminIdentityRef}},
 	}, access)
 	created = service.TestingGetCreatedIdentities(userAccountID)
 	assert.Equal(t, mapset.NewThreadUnsafeSet(userIdentityRef), created)
@@ -392,13 +402,13 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	thirdIdentityRef := charon.IdentityRef{ID: thirdIdentityID}
 
 	access = service.TestingGetIdentitiesAccess(userAccountID)
-	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef]{
-		thirdIdentityRef: mapset.NewThreadUnsafeSet(userIdentityRef),
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		thirdIdentityRef: {{userIdentityRef}},
 	}, access)
 	access = service.TestingGetIdentitiesAccess(adminAccountID)
-	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef]{
-		userIdentityRef:  mapset.NewThreadUnsafeSet(adminIdentityRef),
-		thirdIdentityRef: mapset.NewThreadUnsafeSet(userIdentityRef),
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		userIdentityRef:  {{adminIdentityRef}},
+		thirdIdentityRef: {{adminIdentityRef, userIdentityRef}},
 	}, access)
 	created = service.TestingGetCreatedIdentities(userAccountID)
 	assert.Equal(t, mapset.NewThreadUnsafeSet(userIdentityRef), created)
@@ -427,13 +437,13 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	access = service.TestingGetIdentitiesAccess(userAccountID)
-	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef]{
-		thirdIdentityRef: mapset.NewThreadUnsafeSet(userIdentityRef),
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		thirdIdentityRef: {{userIdentityRef}},
 	}, access)
 	access = service.TestingGetIdentitiesAccess(adminAccountID)
-	assert.Equal(t, map[charon.IdentityRef]mapset.Set[charon.IdentityRef]{
-		userIdentityRef:  mapset.NewThreadUnsafeSet(adminIdentityRef),
-		thirdIdentityRef: mapset.NewThreadUnsafeSet(userIdentityRef),
+	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
+		userIdentityRef:  {{adminIdentityRef}},
+		thirdIdentityRef: {{adminIdentityRef, userIdentityRef}},
 	}, access)
 	created = service.TestingGetCreatedIdentities(userAccountID)
 	assert.Equal(t, mapset.NewThreadUnsafeSet(userIdentityRef), created)

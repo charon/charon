@@ -5,6 +5,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"reflect"
 	"slices"
 
 	mapset "github.com/deckarep/golang-set/v2"
@@ -391,12 +392,7 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 
 	i := IdentityRef{ID: *identity.ID}
 
-	// Current account is always added for the identity just created. This is also checked in Validate
-	// and admin identity is added there to admins, if missing.
-	identityID, ok := getIdentityID(ctx)
-	if ok {
-		s.setAccountForIdentity(accountID, i, IdentityRef{identityID})
-	} else {
+	if _, ok := getIdentityID(ctx); !ok {
 		// When identity is created using only an account ID without identity ID in the context, identity itself
 		// is added to admins in Validate. Here, we record the identity creator, establishing the link
 		// between the identity and the account, bootstrapping correct propagation of which accounts have
@@ -411,50 +407,58 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 	identities := mapset.NewThreadUnsafeSet(identity.Users...)
 	identities.Append(identity.Admins...)
 
-	return s.updateAccounts(i, mapset.NewThreadUnsafeSet[IdentityRef](), identities)
+	return s.updateAccounts(i, map[identifier.Identifier][][]IdentityRef{}, mapset.NewThreadUnsafeSet[IdentityRef](), identities)
 }
 
 // setAccountForIdentity adds the identity to the set of identities the account has
 // access to, recording the support for the access.
 //
 // s.identitiesAccessMu should be locked while calling this function.
-func (s *Service) setAccountForIdentity(accountID identifier.Identifier, identity, support IdentityRef) {
-	if identity == support {
-		panic(errors.New("support cannot be identity"))
+func (s *Service) setAccountForIdentity(accountID identifier.Identifier, identity IdentityRef, support []IdentityRef) {
+	if len(support) == 0 {
+		panic(errors.New("support path cannot be empty"))
+	}
+	if slices.Contains(support, identity) {
+		// We do not do anything if the support path contains the identity
+		// because it means that support forms a cycle.
+		return
 	}
 	identities, ok := s.identitiesAccess[accountID]
 	if !ok {
-		s.identitiesAccess[accountID] = map[IdentityRef]mapset.Set[IdentityRef]{
-			identity: mapset.NewThreadUnsafeSet(support),
+		s.identitiesAccess[accountID] = map[IdentityRef][][]IdentityRef{
+			identity: {support},
 		}
 		return
 	}
-	supportSet, ok := identities[identity]
-	if !ok {
-		identities[identity] = mapset.NewThreadUnsafeSet(support)
+	supports := identities[identity]
+	if slices.ContainsFunc(supports, func(e []IdentityRef) bool {
+		return slices.Equal(e, support)
+	}) {
 		return
 	}
-	supportSet.Add(support)
+	identities[identity] = append(supports, support)
 }
 
 // unsetAccountForIdentity removes the support from the set of identities the account has
 // access to.
 //
 // s.identitiesAccessMu should be locked while calling this function.
-func (s *Service) unsetAccountForIdentity(accountID identifier.Identifier, identity, support IdentityRef) {
-	if identity == support {
-		panic(errors.New("support cannot be identity"))
+func (s *Service) unsetAccountForIdentity(accountID identifier.Identifier, identity IdentityRef, support []IdentityRef) {
+	if len(support) == 0 {
+		panic(errors.New("support path cannot be empty"))
 	}
 	identities, ok := s.identitiesAccess[accountID]
 	if !ok {
 		return
 	}
-	supportSet, ok := identities[identity]
+	supports, ok := identities[identity]
 	if !ok {
 		return
 	}
-	supportSet.Remove(support)
-	if supportSet.IsEmpty() {
+	identities[identity] = slices.DeleteFunc(supports, func(e []IdentityRef) bool {
+		return slices.Equal(e, support)
+	})
+	if len(identities[identity]) == 0 {
 		delete(identities, identity)
 	}
 	if len(identities) == 0 {
@@ -465,16 +469,32 @@ func (s *Service) unsetAccountForIdentity(accountID identifier.Identifier, ident
 // getAccountsForIdentity returns all accounts that have access to the identity.
 //
 // s.identitiesAccessMu should be locked while calling this function.
-func (s *Service) getAccountsForIdentity(identity IdentityRef) mapset.Set[identifier.Identifier] {
-	accountIDs := mapset.NewThreadUnsafeSet[identifier.Identifier]()
+func (s *Service) getAccountsForIdentity(identity IdentityRef) map[identifier.Identifier][][]IdentityRef {
+	accountIDs := map[identifier.Identifier][][]IdentityRef{}
 	for accountID, identities := range s.identitiesAccess {
-		if _, ok := identities[identity]; ok {
-			accountIDs.Add(accountID)
+		if supports, ok := identities[identity]; ok {
+			accountIDs[accountID] = supports
 		}
 	}
 	for accountID, created := range s.identityCreators {
 		if created.Contains(identity) {
-			accountIDs.Add(accountID)
+			data, ok := s.identities[identity.ID]
+			if !ok {
+				panic(errors.WithDetails(ErrIdentityNotFound, "id", identity.ID))
+			}
+			var i Identity
+			errE := x.UnmarshalWithoutUnknownFields(data, &i)
+			if errE != nil {
+				errors.Details(errE)["id"] = identity.ID
+				panic(errE)
+			}
+			// We have to check if account/creator really has access to the identity
+			// (if Admins slice contains the identity itself, then creator has access).
+			if i.HasAdminAccess(mapset.NewThreadUnsafeSet(identity), true) {
+				accountIDs[accountID] = append(accountIDs[accountID], []IdentityRef{})
+			}
+			// At most one account creates an identity.
+			break
 		}
 	}
 	return accountIDs
@@ -528,6 +548,10 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 		return errE
 	}
 
+	// We call getAccountsForIdentity before s.identities because getAccountsForIdentity
+	// might access s.identities to obtain current state.
+	beforeAccounts := s.getAccountsForIdentity(i)
+
 	s.identities[*identity.ID] = data
 
 	identitiesBefore := mapset.NewThreadUnsafeSet(existingIdentity.Users...)
@@ -536,7 +560,7 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 	identitiesAfter := mapset.NewThreadUnsafeSet(identity.Users...)
 	identitiesAfter.Append(identity.Admins...)
 
-	return s.updateAccounts(i, identitiesBefore, identitiesAfter)
+	return s.updateAccounts(i, beforeAccounts, identitiesBefore, identitiesAfter)
 }
 
 // updateAccounts updates accounts which have access to the identity after the set
@@ -545,36 +569,45 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 // It also recurses to identities which might use this identity in their Users and Admins slices.
 //
 // s.identitiesMu and s.identitiesAccessMu should be locked while calling this function.
-func (s *Service) updateAccounts(identity IdentityRef, identitiesBefore, identitiesAfter mapset.Set[IdentityRef]) errors.E {
-	beforeAccounts := s.getAccountsForIdentity(identity)
+func (s *Service) updateAccounts(identity IdentityRef, beforeAccounts map[identifier.Identifier][][]IdentityRef, identitiesBefore, identitiesAfter mapset.Set[IdentityRef]) errors.E {
+	// We remove support from all removed identities from corresponding accounts for the identity.
+	for removed := range mapset.Elements(identitiesBefore.Difference(identitiesAfter)) {
+		if removed == identity {
+			// When the identity and removed are the same it is a special case and it really means
+			// the creator of the identity which is recorded separately so we do not do anything here.
+			// This is really just a small optimization because such support path should not exist and
+			// unsetAccountForIdentity would simply not do anything.
+			continue
+		}
+		for a, supports := range s.getAccountsForIdentity(removed) {
+			for _, support := range supports {
+				sp := slices.Clone(support)
+				sp = append(sp, removed)
+				s.unsetAccountForIdentity(a, identity, sp)
+			}
+		}
+	}
 
 	// We add support from all added identities to corresponding accounts for the identity.
 	for added := range mapset.Elements(identitiesAfter.Difference(identitiesBefore)) {
 		if added == identity {
-			// When the identity and support are the same it is a special case and it really means
+			// When the identity and added are the same it is a special case and it really means
 			// the creator of the identity which is recorded separately so we do not do anything here.
+			// This is really just a small optimization because setAccountForIdentity would not do anything.
 			continue
 		}
-		for a := range mapset.Elements(s.getAccountsForIdentity(added)) {
-			s.setAccountForIdentity(a, identity, added)
-		}
-	}
-
-	// We remove support from all removed identities from corresponding accounts for the identity.
-	for removed := range mapset.Elements(identitiesBefore.Difference(identitiesAfter)) {
-		if removed == identity {
-			// When the identity and support are the same it is a special case and it really means
-			// the creator of the identity which is recorded separately so we do not do anything here.
-			continue
-		}
-		for a := range mapset.Elements(s.getAccountsForIdentity(removed)) {
-			s.unsetAccountForIdentity(a, identity, removed)
+		for a, supports := range s.getAccountsForIdentity(added) {
+			for _, support := range supports {
+				sp := slices.Clone(support)
+				sp = append(sp, added)
+				s.setAccountForIdentity(a, identity, sp)
+			}
 		}
 	}
 
 	afterAccounts := s.getAccountsForIdentity(identity)
 
-	if afterAccounts.Equal(beforeAccounts) {
+	if reflect.DeepEqual(beforeAccounts, afterAccounts) {
 		// If nothing changed, we can stop here.
 		return nil
 	}
@@ -585,11 +618,11 @@ func (s *Service) updateAccounts(identity IdentityRef, identitiesBefore, identit
 
 type beforeAfterAccounts struct {
 	identity IdentityRef
-	before   mapset.Set[identifier.Identifier]
-	after    mapset.Set[identifier.Identifier]
+	before   map[identifier.Identifier][][]IdentityRef
+	after    map[identifier.Identifier][][]IdentityRef
 }
 
-func (s *Service) propagateAccountsUpdate(identity IdentityRef, identityBeforeAccounts, identityAfterAccounts mapset.Set[identifier.Identifier]) errors.E {
+func (s *Service) propagateAccountsUpdate(identity IdentityRef, identityBeforeAccounts, identityAfterAccounts map[identifier.Identifier][][]IdentityRef) errors.E {
 	changedIdentities := []beforeAfterAccounts{
 		{
 			identity: identity,
@@ -630,21 +663,53 @@ func (s *Service) propagateAccountsUpdate(identity IdentityRef, identityBeforeAc
 
 			beforeAccounts := s.getAccountsForIdentity(o)
 
-			// All accounts in the accounts set have access to the identity and to the otherIdentity through the identity,
-			// so we add support from identity for access to the otherIdentity for all added accounts.
-			for a := range mapset.Elements(after.Difference(before)) {
-				s.setAccountForIdentity(a, o, i)
-			}
+			afterKeys := mapset.NewThreadUnsafeSetFromMapKeys(after)
+			beforeKeys := mapset.NewThreadUnsafeSetFromMapKeys(before)
 
 			// Before access to the identity changed, all accounts with access to the identity also had access to the otherIdentity
 			// through the identity, so we remove support from identity for access to the otherIdentity for all removed accounts.
-			for a := range mapset.Elements(before.Difference(after)) {
-				s.unsetAccountForIdentity(a, o, i)
+			for a := range mapset.Elements(beforeKeys.Difference(afterKeys)) {
+				for _, support := range before[a] {
+					sp := slices.Clone(support)
+					sp = append(sp, i)
+					s.unsetAccountForIdentity(a, o, sp)
+				}
+			}
+
+			// For all accounts for which support has changed, we propagate support changes.
+			for a := range mapset.Elements(beforeKeys.Intersect(afterKeys)) {
+				if reflect.DeepEqual(before[a], after[a]) {
+					// Nothing changed.
+					continue
+				}
+
+				// First we remove all support from before.
+				for _, support := range before[a] {
+					sp := slices.Clone(support)
+					sp = append(sp, i)
+					s.unsetAccountForIdentity(a, o, sp)
+				}
+				// Then we add all support from after, this might re-add support from before, too.
+				for _, support := range after[a] {
+					sp := slices.Clone(support)
+					sp = append(sp, i)
+					s.setAccountForIdentity(a, o, sp)
+				}
+			}
+
+			// All accounts in the accounts set have access to the identity and to the otherIdentity through the identity,
+			// so we add support from identity for access to the otherIdentity for all added accounts.
+			for a := range mapset.Elements(afterKeys.Difference(beforeKeys)) {
+				for _, support := range after[a] {
+					sp := slices.Clone(support)
+					sp = append(sp, i)
+					s.setAccountForIdentity(a, o, sp)
+				}
 			}
 
 			afterAccounts := s.getAccountsForIdentity(o)
 
-			if afterAccounts.Equal(beforeAccounts) {
+			if reflect.DeepEqual(beforeAccounts, afterAccounts) {
 				// If nothing changed, we do not have to recurse for this identity.
 				continue
 			}
