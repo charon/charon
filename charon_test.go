@@ -3,7 +3,6 @@ package charon //nolint:testpackage
 import (
 	"context"
 
-	mapset "github.com/deckarep/golang-set/v2"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/identifier"
 )
@@ -34,6 +33,10 @@ func (s *Service) TestingGetIdentity(ctx context.Context, id identifier.Identifi
 	return s.getIdentity(ctx, id)
 }
 
+func (s *Service) TestListIdentity(ctx context.Context) ([]IdentityRef, errors.E) {
+	return s.identityList(ctx, nil, nil, false)
+}
+
 func (s *Service) TestingWithIdentityID(ctx context.Context, identityID identifier.Identifier) context.Context {
 	return s.withIdentityID(ctx, identityID)
 }
@@ -42,11 +45,19 @@ func (s *Service) TestingWithAccountID(ctx context.Context, accountID identifier
 	return s.withAccountID(ctx, accountID)
 }
 
-func (s *Service) TestingGetIdentitiesAccess(accountID identifier.Identifier) map[IdentityRef]mapset.Set[IdentityRef] {
+func (s *Service) TestingGetIdentitiesAccess(accountID identifier.Identifier) map[IdentityRef][][]IdentityRef {
 	s.identitiesAccessMu.RLock()
 	defer s.identitiesAccessMu.RUnlock()
 
 	return s.identitiesAccess[accountID]
+}
+
+func (s *Service) TestingGetCreatedIdentities(identity IdentityRef) (identifier.Identifier, bool) {
+	s.identitiesAccessMu.RLock()
+	defer s.identitiesAccessMu.RUnlock()
+
+	a, ok := s.identityCreators[identity]
+	return a, ok
 }
 
 func TestingNormalizeUsernameCaseMapped(username string) (string, errors.E) {
