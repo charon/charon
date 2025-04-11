@@ -716,20 +716,18 @@ async function onIdentitiesSubmit() {
             <ul>
               <li v-for="(organizationIdentity, i) in organizationIdentities" :key="organizationIdentity.id || i" class="flex flex-col mb-4">
                 <IdentityListItem :item="organizationIdentity.identity" :organization-id="id" />
-                <div class="ml-4">
-                  <div v-if="organizationIdentity.active" class="flex flew-row justify-between items-center gap-4 mt-4">
-                    <div>Status: <strong>active</strong></div>
-                    <div class="flex flex-row gap-4">
-                      <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = false">Disable</Button>
-                      <Button type="button" :progress="progress" @click.prevent="organizationIdentities.splice(i, 1)">Remove</Button>
-                    </div>
+                <div class="ml-4 mt-4 flex flew-row gap-4 justify-between items-start">
+                  <div class="flex flex-col">
+                    <div>ID: <strong>{{ organizationIdentity.id }}</strong></div>
+                    <div>Status: <strong>{{ organizationIdentity.active ? 'active' : 'disabled' }}</strong></div>
                   </div>
-                  <div v-else class="flex flew-row justify-between items-center gap-4 mt-4">
-                    <div>Status: <strong>disabled</strong></div>
-                    <div class="flex flex-row gap-4">
-                      <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = true">Activate</Button>
-                      <Button type="button" :progress="progress" @click.prevent="organizationIdentities.splice(i, 1)">Remove</Button>
-                    </div>
+                  <div v-if="organizationIdentity.active" class="flex flex-row gap-4">
+                    <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = false">Disable</Button>
+                    <Button type="button" :progress="progress" @click.prevent="organizationIdentities.splice(i, 1)">Remove</Button>
+                  </div>
+                  <div v-else class="flex flex-row gap-4">
+                    <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = true">Activate</Button>
+                    <Button type="button" :progress="progress" @click.prevent="organizationIdentities.splice(i, 1)">Remove</Button>
                   </div>
                 </div>
               </li>
