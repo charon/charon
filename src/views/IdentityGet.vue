@@ -324,20 +324,18 @@ async function onAddOrganization(organization: OrganizationRef) {
               <ul>
                 <li v-for="(identityOrganization, i) in identityOrganizations" :key="identityOrganization.id || i" class="flex flex-col mb-4">
                   <OrganizationListItem :item="identityOrganization.organization" h3 />
-                  <div class="ml-4">
-                    <div v-if="identityOrganization.active" class="flex flew-row justify-between items-center gap-4 mt-4">
-                      <div>Status: <strong>active</strong></div>
-                      <div class="flex flex-row gap-4">
-                        <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = false">Disable</Button>
-                        <Button type="button" :progress="progress" @click.prevent="identityOrganizations.splice(i, 1)">Remove</Button>
-                      </div>
+                  <div class="ml-4 mt-4 flex flew-row gap-4 justify-between items-start">
+                    <div class="flex flex-col">
+                      <div>ID: <strong>{{ identityOrganization.id }}</strong></div>
+                      <div>Status: <strong>{{ identityOrganization.active ? 'active' : 'disabled' }}</strong></div>
                     </div>
-                    <div v-else class="flex flew-row justify-between items-center gap-4 mt-4">
-                      <div>Status: <strong>disabled</strong></div>
-                      <div class="flex flex-row gap-4">
-                        <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = true">Activate</Button>
-                        <Button type="button" :progress="progress" @click.prevent="identityOrganizations.splice(i, 1)">Remove</Button>
-                      </div>
+                    <div v-if="identityOrganization.active" class="flex flew-row gap-4">
+                      <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = false">Disable</Button>
+                      <Button type="button" :progress="progress" @click.prevent="identityOrganizations.splice(i, 1)">Remove</Button>
+                    </div>
+                    <div v-else class="flex flew-row gap-4">
+                      <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = true">Activate</Button>
+                      <Button type="button" :progress="progress" @click.prevent="identityOrganizations.splice(i, 1)">Remove</Button>
                     </div>
                   </div>
                 </li>
