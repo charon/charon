@@ -1,26 +1,38 @@
 <script setup lang="ts">
-import type { Identity, IdentityRef } from "@/types"
+import type { Identity, IdentityPublic, IdentityRef } from "@/types"
 import type { ComponentExposed } from "vue-component-type-helpers"
 
 import { ref } from "vue"
 import WithDocument from "@/components/WithDocument.vue"
 
-const props = defineProps<{
-  item: IdentityRef
-  organizationId?: string
-  flowId?: string
-  labels?: string[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    item: IdentityRef
+    organizationId?: string
+    flowId?: string
+    labels?: string[]
+    scoped?: boolean
+  }>(),
+  {
+    organizationId: undefined,
+    flowId: undefined,
+    labels: undefined,
+    scoped: false,
+  },
+)
 
-const WithIdentityDocument = WithDocument<Identity>
+const WithIdentityDocument = WithDocument<typeof props.scoped extends true ? IdentityPublic : Identity>
 const identity = ref<ComponentExposed<typeof WithIdentityDocument> | null>(null)
 
 function isDisabled(): boolean {
   if (!props.organizationId) {
     return false
   }
+  if (!identity.value || !identity.value.doc || !("organizations" in identity.value.doc)) {
+    return false
+  }
 
-  for (const idOrg of identity.value!.doc!.organizations) {
+  for (const idOrg of identity.value.doc.organizations) {
     if (idOrg.organization.id === props.organizationId) {
       return !idOrg.active
     }
@@ -31,7 +43,7 @@ function isDisabled(): boolean {
 </script>
 
 <template>
-  <WithIdentityDocument ref="identity" :params="{ id: item.id }" :query="flowId ? { flow: flowId } : undefined" name="IdentityGet">
+  <WithIdentityDocument ref="identity" :params="scoped ? { id: organizationId!, identityId: item.id }  : { id: item.id }" :query="flowId ? { flow: flowId } : undefined" :name="scoped ? 'OrganizationIdentity' : 'IdentityGet'">
     <template #default="{ doc, metadata, url }">
       <div class="flex flex-row gap-4" :data-url="url">
         <div v-if="doc.pictureUrl" class="flex-none">
@@ -88,7 +100,7 @@ function isDisabled(): boolean {
           <div v-else-if="doc.fullName && (doc.username || doc.email)" class="mt-1">
             {{ doc.fullName }}
           </div>
-          <div v-if="doc.description" class="mt-1 whitespace-pre-line">{{ doc.description }}</div>
+          <div v-if="'description' in doc && doc.description" class="mt-1 whitespace-pre-line">{{ doc.description }}</div>
         </div>
         <slot :doc="doc" :metadata="metadata"></slot>
       </div>

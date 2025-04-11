@@ -166,12 +166,14 @@ func createIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	request, errE := x.MarshalWithoutEscapeHTML(charon.Identity{
-		ID:            nil,
-		Username:      "username",
-		Email:         "user@example.com",
-		GivenName:     "User",
-		FullName:      "User Name",
-		PictureURL:    "https://example.com/picture.png",
+		IdentityPublic: charon.IdentityPublic{
+			ID:         nil,
+			Username:   "username",
+			Email:      "user@example.com",
+			GivenName:  "User",
+			FullName:   "User Name",
+			PictureURL: "https://example.com/picture.png",
+		},
 		Description:   "",
 		Users:         nil,
 		Admins:        nil,

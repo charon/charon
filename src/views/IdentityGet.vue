@@ -107,12 +107,12 @@ async function loadData(update: "init" | "basic" | "organizations" | null, dataE
 
     // We have to make copies so that we break reactivity link with data.doc.
     if (update === "init" || update === "basic") {
-      username.value = response.doc.username
-      email.value = response.doc.email
-      givenName.value = response.doc.givenName
-      fullName.value = response.doc.fullName
-      pictureUrl.value = response.doc.pictureUrl
-      description.value = response.doc.description
+      username.value = response.doc.username || ""
+      email.value = response.doc.email || ""
+      givenName.value = response.doc.givenName || ""
+      fullName.value = response.doc.fullName || ""
+      pictureUrl.value = response.doc.pictureUrl || ""
+      description.value = response.doc.description || ""
     }
     if (update == "init" || update === "organizations") {
       identityOrganizations.value = clone(response.doc.organizations || [])

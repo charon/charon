@@ -774,9 +774,10 @@ func (s *Service) returnApplicationTemplateRef(_ context.Context, w http.Respons
 
 func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
 	ctx := req.Context()
+	co := s.charonOrganization()
 
 	hasIdentity := false
-	identityID, _, errE := s.getIdentityFromRequest(w, req)
+	identityID, _, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
 	if errE == nil {
 		ctx = s.withIdentityID(ctx, identityID)
 		hasIdentity = true

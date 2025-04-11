@@ -15,11 +15,13 @@ import InputText from "@/components/InputText.vue"
 import TextArea from "@/components/TextArea.vue"
 import Button from "@/components/Button.vue"
 import RadioButton from "@/components/RadioButton.vue"
+import IdentityListItem from "@/partials/IdentityListItem.vue"
 import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
 import { getURL, postJSON } from "@/api"
 import { clone, equals } from "@/utils"
 import { injectProgress } from "@/progress"
+import siteContext from "@/context"
 
 const props = defineProps<{
   id: string
@@ -852,6 +854,14 @@ function onAddClientService() {
               <Button type="submit" primary :disabled="!canClientsServiceSubmit()" :progress="progress">Update</Button>
             </div>
           </form>
+          <h2 class="text-xl font-bold">Permissions</h2>
+          <ul>
+            <li v-for="admin of applicationTemplate?.admins || []" :key="admin.id" class="grid grid-cols-1 gap-4 mb-4">
+              <IdentityListItem :item="admin" :organization-id="siteContext.organizationId" scoped>
+
+              </IdentityListItem>
+            </li>
+          </ul>
         </template>
       </div>
     </div>

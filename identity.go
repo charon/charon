@@ -26,7 +26,7 @@ var (
 )
 
 type IdentityOrganization struct {
-	// ID is also ID of this identity in the organization.
+	// ID is also ID of this identity in the organization (it is organization-scoped).
 	ID *identifier.Identifier `json:"id"`
 
 	Active bool `json:"active"`
@@ -62,16 +62,99 @@ func (i *IdentityOrganization) Validate(_ context.Context, existing *IdentityOrg
 	return nil
 }
 
-type Identity struct {
+type IdentityPublic struct {
+	// ID is a database ID when stored in the database or it is an
+	// IdentityOrganization's (organization-scoped) ID when exposing over API.
 	ID *identifier.Identifier `json:"id"`
 
-	Username   string `json:"username"`
-	Email      string `json:"email"`
-	GivenName  string `json:"givenName"`
-	FullName   string `json:"fullName"`
-	PictureURL string `json:"pictureUrl"`
+	Username   string `json:"username,omitempty"`
+	Email      string `json:"email,omitempty"`
+	GivenName  string `json:"givenName,omitempty"`
+	FullName   string `json:"fullName,omitempty"`
+	PictureURL string `json:"pictureUrl,omitempty"`
+}
 
-	Description string `json:"description"`
+func (i *IdentityPublic) Validate(ctx context.Context, existing *IdentityPublic) errors.E {
+	if existing == nil {
+		if i.ID != nil {
+			errE := errors.New("ID provided for new document")
+			errors.Details(errE)["id"] = *i.ID
+			return errE
+		}
+		id := identifier.New()
+		i.ID = &id
+	} else if i.ID == nil {
+		// This should not really happen because we fetch existing based on i.ID.
+		return errors.New("ID missing for existing document")
+	} else if existing.ID == nil {
+		// This should not really happen because we always store documents with ID.
+		return errors.New("ID missing for existing document")
+	} else if *i.ID != *existing.ID {
+		// This should not really happen because we fetch existing based on i.ID.
+		errE := errors.New("payload ID does not match existing ID")
+		errors.Details(errE)["payload"] = *i.ID
+		errors.Details(errE)["existing"] = *existing.ID
+		return errE
+	}
+
+	if i.Username != "" {
+		username, errE := normalizeUsernameCasePreserved(i.Username)
+		if errE != nil {
+			errE = errors.WithMessage(errE, "username")
+			errors.Details(errE)["username"] = i.Username
+			return errE
+		}
+
+		if len(username) < emailOrUsernameMinLength {
+			errE := errors.New("username too short")
+			errors.Details(errE)["username"] = i.Username
+			return errE
+		}
+
+		i.Username = username
+	}
+
+	// TODO: E-mails should be possible to be only those which have been validated.
+
+	if i.Email != "" {
+		email, errE := normalizeUsernameCasePreserved(i.Email)
+		if errE != nil {
+			errE = errors.WithMessage(errE, "e-mail")
+			errors.Details(errE)["email"] = i.Email
+			return errE
+		}
+
+		if len(email) < emailOrUsernameMinLength {
+			errE := errors.New("e-mail too short")
+			errors.Details(errE)["email"] = i.Email
+			return errE
+		}
+
+		i.Email = email
+	}
+
+	// TODO: Normalize GivenName and FullName.
+
+	if i.PictureURL != "" {
+		errE := validateURI(ctx, i.PictureURL)
+		if errE != nil {
+			return errors.WithMessage(errE, "picture URL")
+		}
+	}
+
+	// At least something is required.
+	if i.Username == "" && i.Email == "" && i.GivenName == "" && i.FullName == "" && i.PictureURL == "" {
+		return errors.WithStack(errEmptyIdentity)
+	}
+
+	return nil
+}
+
+type Identity struct {
+	IdentityPublic
+
+	// Description for users with access to the identity.
+	Description string `json:"description,omitempty"`
 
 	Users  []IdentityRef `json:"users,omitempty"`
 	Admins []IdentityRef `json:"admins"`
@@ -147,76 +230,15 @@ type IdentityRef struct {
 // Validate uses ctx with identityIDContextKey if set.
 // When not set, changes to admins are not allowed.
 func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
+	var e *IdentityPublic
 	if existing == nil {
-		if i.ID != nil {
-			errE := errors.New("ID provided for new document")
-			errors.Details(errE)["id"] = *i.ID
-			return errE
-		}
-		id := identifier.New()
-		i.ID = &id
-	} else if i.ID == nil {
-		// This should not really happen because we fetch existing based on i.ID.
-		return errors.New("ID missing for existing document")
-	} else if existing.ID == nil {
-		// This should not really happen because we always store documents with ID.
-		return errors.New("ID missing for existing document")
-	} else if *i.ID != *existing.ID {
-		// This should not really happen because we fetch existing based on i.ID.
-		errE := errors.New("payload ID does not match existing ID")
-		errors.Details(errE)["payload"] = *i.ID
-		errors.Details(errE)["existing"] = *existing.ID
+		e = nil
+	} else {
+		e = &existing.IdentityPublic
+	}
+	errE := i.IdentityPublic.Validate(ctx, e)
+	if errE != nil {
 		return errE
-	}
-
-	if i.Username != "" {
-		username, errE := normalizeUsernameCasePreserved(i.Username)
-		if errE != nil {
-			errE = errors.WithMessage(errE, "username")
-			errors.Details(errE)["username"] = i.Username
-			return errE
-		}
-
-		if len(username) < emailOrUsernameMinLength {
-			errE := errors.New("username too short")
-			errors.Details(errE)["username"] = i.Username
-			return errE
-		}
-
-		i.Username = username
-	}
-
-	// TODO: E-mails should be possible to be only those which have been validated.
-
-	if i.Email != "" {
-		email, errE := normalizeUsernameCasePreserved(i.Email)
-		if errE != nil {
-			errE = errors.WithMessage(errE, "e-mail")
-			errors.Details(errE)["email"] = i.Email
-			return errE
-		}
-
-		if len(email) < emailOrUsernameMinLength {
-			errE := errors.New("e-mail too short")
-			errors.Details(errE)["email"] = i.Email
-			return errE
-		}
-
-		i.Email = email
-	}
-
-	// TODO: Normalize GivenName and FullName.
-
-	if i.PictureURL != "" {
-		errE := validateURI(ctx, i.PictureURL)
-		if errE != nil {
-			return errors.WithMessage(errE, "picture URL")
-		}
-	}
-
-	// At least something is required.
-	if i.Username == "" && i.Email == "" && i.GivenName == "" && i.FullName == "" && i.PictureURL == "" {
-		return errors.WithStack(errEmptyIdentity)
 	}
 
 	// Current user must be among admins if it is changing the identity.
@@ -686,15 +708,13 @@ func (s *Service) selectAndActivateIdentity(ctx context.Context, identityID, org
 		return nil, errE
 	}
 
-	for _, idOrg := range identity.Organizations {
-		if idOrg.Organization.ID == organizationID {
-			if idOrg.Active {
-				// Organization already present and active, nothing to do.
-				return identity, nil
-			}
-
-			return nil, errors.New("identity not active for organization")
+	idOrg := identity.GetOrganization(&organizationID)
+	if idOrg != nil {
+		if idOrg.Active {
+			// Organization already present and active, nothing to do.
+			return identity, nil
 		}
+		return nil, errors.New("identity not active for organization")
 	}
 
 	// Organization not present, we add it (as active).

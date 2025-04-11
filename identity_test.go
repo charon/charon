@@ -19,8 +19,10 @@ func TestCreateIdentity(t *testing.T) {
 	_, service, _, _ := startTestServer(t) //nolint:dogsled
 
 	newIdentity := charon.Identity{
-		Username: "newuser",
-		Email:    "newuser@example.com",
+		IdentityPublic: charon.IdentityPublic{
+			Username: "newuser",
+			Email:    "newuser@example.com",
+		},
 	}
 
 	accountID := identifier.New()
@@ -48,8 +50,10 @@ func TestCreateIdentity(t *testing.T) {
 	ctx = service.TestingWithIdentityID(ctx, identityID)
 
 	newIdentity = charon.Identity{
-		Username: "another",
-		Email:    "another@example.com",
+		IdentityPublic: charon.IdentityPublic{
+			Username: "another",
+			Email:    "another@example.com",
+		},
 	}
 
 	errE = service.TestingCreateIdentity(ctx, &newIdentity)
@@ -82,7 +86,7 @@ func TestCreateIdentity(t *testing.T) {
 func createTestIdentity(t *testing.T, service *charon.Service, ctx context.Context) identifier.Identifier { //nolint:revive
 	t.Helper()
 
-	newIdentity := charon.Identity{Username: identifier.New().String()}
+	newIdentity := charon.Identity{IdentityPublic: charon.IdentityPublic{Username: identifier.New().String()}}
 	errE := service.TestingCreateIdentity(ctx, &newIdentity)
 	require.NoError(t, errE, "% -+#.1v", errE)
 	return *newIdentity.ID

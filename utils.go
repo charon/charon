@@ -93,13 +93,16 @@ func (s *Service) withIdentityID(ctx context.Context, identityID identifier.Iden
 	return context.WithValue(ctx, identityIDContextKey, identityID)
 }
 
+// TODO: In getIdentityFromRequest we should probably differentiate between header not present and header having invalid access token.
+//       If header is not present, caller probably expects public data. If header is present then caller probably expects
+//       that the token is valid and if not it might be a surprise to return just public data (like that the header wa not present).
+
 // getIdentityFromRequest uses an Authorization header to obtain the OIDC access token
 // and determines the identity and account IDs from it.
-func (s *Service) getIdentityFromRequest(w http.ResponseWriter, req *http.Request) (identifier.Identifier, identifier.Identifier, errors.E) {
+func (s *Service) getIdentityFromRequest(w http.ResponseWriter, req *http.Request, audience string) (identifier.Identifier, identifier.Identifier, errors.E) {
 	// OIDC GetClient requires ctx with serviceContextKey set.
 	ctx := context.WithValue(req.Context(), serviceContextKey, s)
 	oidc := s.oidc()
-	co := s.charonOrganization()
 
 	// We use this header so responses might depend on it.
 	if !slices.Contains(w.Header().Values("Vary"), "Authorization") {
@@ -128,9 +131,9 @@ func (s *Service) getIdentityFromRequest(w http.ResponseWriter, req *http.Reques
 		return identifier.Identifier{}, identifier.Identifier{}, errors.WithStack(ErrIdentityNotPresent)
 	}
 
-	// We have to make sure the access token provided is really meant for us.
+	// We have to make sure the access token provided is really meant for the audience.
 	// See: https://github.com/ory/fosite/issues/845
-	if slices.Contains(ar.GetGrantedAudience(), co.AppID.String()) {
+	if slices.Contains(ar.GetGrantedAudience(), audience) {
 		session = ar.GetSession().(*OIDCSession) //nolint:errcheck,forcetypeassert
 		return session.Subject, session.AccountID, nil
 	}
@@ -276,8 +279,9 @@ func mustGetIdentityID(ctx context.Context) identifier.Identifier {
 // It is expected to be used from API calls.
 func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request, needsAccountID bool) context.Context {
 	ctx := req.Context()
+	co := s.charonOrganization()
 
-	identityID, accountID, errE := s.getIdentityFromRequest(w, req)
+	identityID, accountID, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
 	if errE == nil {
 		ctx = s.withIdentityID(ctx, identityID)
 		if needsAccountID {
@@ -302,8 +306,9 @@ func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request,
 // "flow" with the flow ID when not used with the Authorization header.
 func (s *Service) requireAuthenticatedForIdentity(w http.ResponseWriter, req *http.Request) context.Context {
 	ctx := req.Context()
+	co := s.charonOrganization()
 
-	identityID, accountID, errE := s.getIdentityFromRequest(w, req)
+	identityID, accountID, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
 	if errE == nil {
 		ctx = s.withIdentityID(ctx, identityID)
 		ctx = s.withAccountID(ctx, accountID)

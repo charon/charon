@@ -753,9 +753,10 @@ func (s *Service) returnOrganizationRef(_ context.Context, w http.ResponseWriter
 
 func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
 	ctx := req.Context()
+	co := s.charonOrganization()
 
 	hasIdentity := false
-	identityID, _, errE := s.getIdentityFromRequest(w, req)
+	identityID, _, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
 	if errE == nil {
 		ctx = s.withIdentityID(ctx, identityID)
 		hasIdentity = true
@@ -799,7 +800,7 @@ func (s *Service) OrganizationAppGet(w http.ResponseWriter, req *http.Request, p
 
 	appID, errE := identifier.MaybeString(params["appId"])
 	if errE != nil {
-		s.NotFound(w, req)
+		s.NotFoundWithError(w, req, errE)
 		return
 	}
 
@@ -810,6 +811,75 @@ func (s *Service) OrganizationAppGet(w http.ResponseWriter, req *http.Request, p
 	}
 
 	s.WriteJSON(w, req, orgApp.OrganizationApplicationPublic, nil)
+}
+
+// Anyone with valid access token for the organization can access public data about any
+// identity in the organization given the organization-scoped identity ID.
+func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	ctx := req.Context()
+
+	organizationID, errE := identifier.MaybeString(params["id"])
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	identityID, errE := identifier.MaybeString(params["identityId"])
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	_, _, errE = s.getIdentityFromRequest(w, req, organizationID.String())
+	if errors.Is(errE, ErrIdentityNotPresent) {
+		s.WithError(ctx, errE)
+		waf.Error(w, req, http.StatusUnauthorized)
+		return
+	} else if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	s.identitiesMu.RLock()
+	defer s.identitiesMu.RUnlock()
+
+	// TODO: Use an index instead of iterating over all identities.
+	for id, data := range s.identities {
+		var identity Identity
+		errE := x.UnmarshalWithoutUnknownFields(data, &identity)
+		if errE != nil {
+			errors.Details(errE)["id"] = id
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+
+		idOrg := identity.GetIdentityOrganization(&identityID)
+		if idOrg == nil {
+			continue
+		}
+
+		if idOrg.Organization.ID != organizationID {
+			s.NotFound(w, req)
+			return
+		}
+
+		if !idOrg.Active {
+			s.NotFound(w, req)
+			return
+		}
+
+		// We do not want to expose the database ID.
+		identity.IdentityPublic.ID = idOrg.ID
+
+		// TODO: Expose only those fields the access tokens have access to through its scopes.
+		//       E.g., backend access token might access e-mail address while frontend access token might not need access to e-mail address.
+		//       How can we support that the frontend access token accesses e-mail address of the currently signed-in user but not of all other users?
+
+		s.WriteJSON(w, req, identity.IdentityPublic, nil)
+		return
+	}
+
+	s.NotFound(w, req)
 }
 
 func (s *Service) OrganizationListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {

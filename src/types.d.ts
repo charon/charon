@@ -140,6 +140,7 @@ export type SiteContext = {
     revision?: string
   }
   providers: SiteProvider[]
+  organizationId: string
   clientId: string
   redirectUri: string
 }
@@ -313,20 +314,26 @@ export type OrganizationCreate = {
   name: string
 }
 
-export type Identity = IdentityCreate & {
-  id: string
+export type Identity = IdentityCreate & IdentityPublic & {
   users?: IdentityRef[]
   admins: IdentityRef[]
   organizations: IdentityOrganization[]
 }
 
-export type IdentityCreate = {
-  username: string
-  email: string
-  givenName: string
-  fullName: string
-  pictureUrl: string
-  description: string
+type IdentityAttributes = {
+  username?: string
+  email?: string
+  givenName?: string
+  fullName?: string
+  pictureUrl?: string
+}
+
+export type IdentityPublic = IdentityAttributes & {
+  id: string
+}
+
+export type IdentityCreate = IdentityAttributes & {
+  description?: string
 }
 
 export type Identities = IdentityRef[]

@@ -9,8 +9,9 @@ import (
 type serviceContext struct {
 	Site
 
-	ClientID    string `json:"clientId"`
-	RedirectURI string `json:"redirectUri"`
+	OrganizationID string `json:"organizationId"`
+	ClientID       string `json:"clientId"`
+	RedirectURI    string `json:"redirectUri"`
 }
 
 func (s *Service) Context(w http.ResponseWriter, req *http.Request, _ waf.Params) {
@@ -22,8 +23,9 @@ func (s *Service) Context(w http.ResponseWriter, req *http.Request, _ waf.Params
 
 	// TODO: Cache so that it is not re-computed on every request.
 	s.WriteJSON(w, req, serviceContext{
-		Site:        *site,
-		ClientID:    co.ClientID.String(),
-		RedirectURI: co.RedirectURI,
+		Site:           *site,
+		OrganizationID: co.ID.String(),
+		ClientID:       co.ClientID.String(),
+		RedirectURI:    co.RedirectURI,
 	}, nil)
 }
