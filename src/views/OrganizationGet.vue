@@ -14,7 +14,7 @@ import type {
   IdentityOrganization,
 } from "@/types"
 
-import { nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
+import { computed, nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import { Identifier } from "@tozd/identifier"
 import InputText from "@/components/InputText.vue"
@@ -62,6 +62,10 @@ const organizationIdentitiesUnexpectedError = ref("")
 const organizationIdentitiesUpdated = ref(false)
 let organizationIdentitiesInitial: OrganizationIdentity[] = []
 const organizationIdentities = ref<OrganizationIdentity[]>([])
+
+const availableIdentities = computed(() => {
+  return identities.value.filter((identity) => !isIdentityAdded(identity))
+})
 
 function isApplicationAdded(applicationTemplate: ApplicationTemplateRef): boolean {
   for (const application of applications.value) {
@@ -589,160 +593,166 @@ async function onIdentitiesSubmit() {
               <Button type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">Update</Button>
             </div>
           </form>
-          <h2 v-if="metadata.can_update && (applications.length || canApplicationsSubmit())" class="text-xl font-bold">Added applications</h2>
-          <div v-if="applicationsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
-          <div v-else-if="applicationsUpdated" class="text-success-600">Added applications updated successfully.</div>
-          <form v-if="metadata.can_update && (applications.length || canApplicationsSubmit())" class="flex flex-col" novalidate @submit.prevent="onApplicationsSubmit">
-            <ul>
-              <li v-for="(application, i) in applications" :key="application.id || i" class="flex flex-col mb-4">
-                <ApplicationTemplateListItem :item="{ id: application.applicationTemplate.id }" :public-doc="application.applicationTemplate" h3 />
-                <div class="ml-4">
-                  <fieldset v-if="application.values.length" class="mt-4">
-                    <legend class="font-bold">Configuration</legend>
-                    <ol>
-                      <li v-for="(value, j) in application.values" :key="value.name" class="flex flex-col mt-4">
-                        <code>{{ value.name }}</code>
-                        <div v-if="getValueDescription(application, value.name)" class="ml-4">{{ getValueDescription(application, value.name) }}</div>
-                        <InputText
-                          :id="`application-${i}-values-${j}`"
-                          v-model="value.value"
-                          class="flex-grow flex-auto min-w-0 ml-4 mt-1"
-                          :progress="progress"
-                          required
-                        />
+          <template v-if="metadata.can_update && (applications.length || canApplicationsSubmit())">
+            <h2 class="text-xl font-bold">Added applications</h2>
+            <div v-if="applicationsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
+            <div v-else-if="applicationsUpdated" class="text-success-600">Added applications updated successfully.</div>
+            <form class="flex flex-col" novalidate @submit.prevent="onApplicationsSubmit">
+              <ul>
+                <li v-for="(application, i) in applications" :key="application.id || i" class="flex flex-col mb-4">
+                  <ApplicationTemplateListItem :item="{ id: application.applicationTemplate.id }" :public-doc="application.applicationTemplate" h3 />
+                  <div class="ml-4">
+                    <fieldset v-if="application.values.length" class="mt-4">
+                      <legend class="font-bold">Configuration</legend>
+                      <ol>
+                        <li v-for="(value, j) in application.values" :key="value.name" class="flex flex-col mt-4">
+                          <code>{{ value.name }}</code>
+                          <div v-if="getValueDescription(application, value.name)" class="ml-4">{{ getValueDescription(application, value.name) }}</div>
+                          <InputText
+                            :id="`application-${i}-values-${j}`"
+                            v-model="value.value"
+                            class="flex-grow flex-auto min-w-0 ml-4 mt-1"
+                            :progress="progress"
+                            required
+                          />
+                        </li>
+                      </ol>
+                    </fieldset>
+                    <h4 v-if="application.clientsPublic?.length" class="font-bold mt-4">Public clients</h4>
+                    <ol v-if="application.clientsPublic?.length">
+                      <li v-for="(client, j) in application.clientsPublic" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
+                        <div>{{ j + 1 }}.</div>
+                        <div class="flex flex-col gap-4">
+                          <div v-if="getPublicClientDescription(application, client.client.id)">{{ getPublicClientDescription(application, client.client.id) }}</div>
+                          <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
+                            <div>Client ID:</div>
+                            <div v-if="client.id">
+                              <code>{{ client.id }}</code>
+                            </div>
+                            <div v-else><span class="italic">confirm update to allocate</span></div>
+                          </div>
+                        </div>
                       </li>
                     </ol>
-                  </fieldset>
-                  <h4 v-if="application.clientsPublic?.length" class="font-bold mt-4">Public clients</h4>
-                  <ol v-if="application.clientsPublic?.length">
-                    <li v-for="(client, j) in application.clientsPublic" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
-                      <div>{{ j + 1 }}.</div>
-                      <div class="flex flex-col gap-4">
-                        <div v-if="getPublicClientDescription(application, client.client.id)">{{ getPublicClientDescription(application, client.client.id) }}</div>
-                        <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
-                          <div>Client ID:</div>
-                          <div v-if="client.id">
-                            <code>{{ client.id }}</code>
-                          </div>
-                          <div v-else><span class="italic">confirm update to allocate</span></div>
-                        </div>
-                      </div>
-                    </li>
-                  </ol>
-                  <h4 v-if="application.clientsBackend?.length" class="font-bold mt-4">Backend clients</h4>
-                  <ol v-if="application.clientsBackend?.length">
-                    <li v-for="(client, j) in application.clientsBackend" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
-                      <div>{{ j + 1 }}.</div>
-                      <div class="flex flex-col gap-4">
-                        <div v-if="getBackendClientDescription(application, client.client.id)">{{ getBackendClientDescription(application, client.client.id) }}</div>
-                        <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
-                          <div>Client ID:</div>
-                          <div v-if="client.id">
-                            <code>{{ client.id }}</code>
-                          </div>
-                          <div v-else><span class="italic">confirm update to allocate</span></div>
-                          <template v-if="client.id && generatedSecrets.has(client.client.id)">
-                            <div>Client secret:</div>
-                            <div>
-                              <code>{{ generatedSecrets.get(client.client.id) }}</code>
+                    <h4 v-if="application.clientsBackend?.length" class="font-bold mt-4">Backend clients</h4>
+                    <ol v-if="application.clientsBackend?.length">
+                      <li v-for="(client, j) in application.clientsBackend" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
+                        <div>{{ j + 1 }}.</div>
+                        <div class="flex flex-col gap-4">
+                          <div v-if="getBackendClientDescription(application, client.client.id)">{{ getBackendClientDescription(application, client.client.id) }}</div>
+                          <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
+                            <div>Client ID:</div>
+                            <div v-if="client.id">
+                              <code>{{ client.id }}</code>
                             </div>
-                          </template>
-                        </div>
-                      </div>
-                    </li>
-                  </ol>
-                  <h4 v-if="application.clientsService?.length" class="font-bold mt-4">Service clients</h4>
-                  <ol v-if="application.clientsService?.length">
-                    <li v-for="(client, j) in application.clientsService" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
-                      <div>{{ j + 1 }}.</div>
-                      <div class="flex flex-col gap-4">
-                        <div v-if="getServiceClientDescription(application, client.client.id)">{{ getServiceClientDescription(application, client.client.id) }}</div>
-                        <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
-                          <div>Client ID:</div>
-                          <div v-if="client.id">
-                            <code>{{ client.id }}</code>
+                            <div v-else><span class="italic">confirm update to allocate</span></div>
+                            <template v-if="client.id && generatedSecrets.has(client.client.id)">
+                              <div>Client secret:</div>
+                              <div>
+                                <code>{{ generatedSecrets.get(client.client.id) }}</code>
+                              </div>
+                            </template>
                           </div>
-                          <div v-else><span class="italic">confirm update to allocate</span></div>
-                          <template v-if="client.id && generatedSecrets.has(client.client.id)">
-                            <div>Client secret:</div>
-                            <div>
-                              <code>{{ generatedSecrets.get(client.client.id) }}</code>
-                            </div>
-                          </template>
                         </div>
+                      </li>
+                    </ol>
+                    <h4 v-if="application.clientsService?.length" class="font-bold mt-4">Service clients</h4>
+                    <ol v-if="application.clientsService?.length">
+                      <li v-for="(client, j) in application.clientsService" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
+                        <div>{{ j + 1 }}.</div>
+                        <div class="flex flex-col gap-4">
+                          <div v-if="getServiceClientDescription(application, client.client.id)">{{ getServiceClientDescription(application, client.client.id) }}</div>
+                          <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
+                            <div>Client ID:</div>
+                            <div v-if="client.id">
+                              <code>{{ client.id }}</code>
+                            </div>
+                            <div v-else><span class="italic">confirm update to allocate</span></div>
+                            <template v-if="client.id && generatedSecrets.has(client.client.id)">
+                              <div>Client secret:</div>
+                              <div>
+                                <code>{{ generatedSecrets.get(client.client.id) }}</code>
+                              </div>
+                            </template>
+                          </div>
+                        </div>
+                      </li>
+                    </ol>
+                    <div v-if="application.active" class="flex flew-row justify-between items-center gap-4 mt-4">
+                      <div>Status: <strong>active</strong></div>
+                      <div class="flex flex-row gap-4">
+                        <Button type="button" :progress="progress" @click.prevent="application.active = false">Disable</Button>
+                        <Button type="button" :progress="progress" @click.prevent="applications.splice(i, 1)">Remove</Button>
                       </div>
-                    </li>
-                  </ol>
-                  <div v-if="application.active" class="flex flew-row justify-between items-center gap-4 mt-4">
-                    <div>Status: <strong>active</strong></div>
-                    <div class="flex flex-row gap-4">
-                      <Button type="button" :progress="progress" @click.prevent="application.active = false">Disable</Button>
-                      <Button type="button" :progress="progress" @click.prevent="applications.splice(i, 1)">Remove</Button>
+                    </div>
+                    <div v-else class="flex flew-row justify-between items-center gap-4 mt-4">
+                      <div>Status: <strong>disabled</strong></div>
+                      <div class="flex flex-row gap-4">
+                        <Button type="button" :progress="progress" @click.prevent="application.active = true">Activate</Button>
+                        <Button type="button" :progress="progress" @click.prevent="applications.splice(i, 1)">Remove</Button>
+                      </div>
                     </div>
                   </div>
-                  <div v-else class="flex flew-row justify-between items-center gap-4 mt-4">
-                    <div>Status: <strong>disabled</strong></div>
-                    <div class="flex flex-row gap-4">
-                      <Button type="button" :progress="progress" @click.prevent="application.active = true">Activate</Button>
-                      <Button type="button" :progress="progress" @click.prevent="applications.splice(i, 1)">Remove</Button>
+                </li>
+              </ul>
+              <div class="flex flex-row justify-end">
+                <!--
+                  Button is on purpose not disabled on unexpectedError so that user can retry.
+                -->
+                <Button id="applications-update" type="submit" primary :disabled="!canApplicationsSubmit()" :progress="progress">Update</Button>
+              </div>
+            </form>
+          </template>
+          <template v-if="metadata.can_update && applicationTemplates.length">
+            <h2 class="text-xl font-bold">Available applications</h2>
+            <ul class="flex flex-col gap-4">
+              <li v-for="applicationTemplate in applicationTemplates" :key="applicationTemplate.id">
+                <ApplicationTemplateListItem :item="applicationTemplate" :labels="isApplicationAdded(applicationTemplate) ? ['admin'] : []" h3>
+                  <template #default="{ doc }">
+                    <div class="flex flex-col items-start">
+                      <Button type="button" :progress="progress" primary @click.prevent="onAddApplicationTemplate(doc)">Add</Button>
+                    </div>
+                  </template>
+                </ApplicationTemplateListItem>
+              </li>
+            </ul>
+          </template>
+          <template v-if="organizationIdentities.length || canIdentitiesSubmit()">
+            <h2 class="text-xl font-bold">Added identities</h2>
+            <div v-if="organizationIdentitiesUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
+            <div v-else-if="organizationIdentitiesUpdated" class="text-success-600">Added identities updated successfully.</div>
+            <form class="flex flex-col" novalidate @submit.prevent="onIdentitiesSubmit">
+              <ul>
+                <li v-for="(organizationIdentity, i) in organizationIdentities" :key="organizationIdentity.id || i" class="flex flex-col mb-4">
+                  <IdentityListItem :item="organizationIdentity.identity" :organization-id="id" />
+                  <div class="ml-4 mt-4 flex flew-row gap-4 justify-between items-start">
+                    <div class="flex flex-col">
+                      <div>ID: <strong>{{ organizationIdentity.id }}</strong></div>
+                      <div>Status: <strong>{{ organizationIdentity.active ? 'active' : 'disabled' }}</strong></div>
+                    </div>
+                    <div v-if="organizationIdentity.active" class="flex flex-row gap-4">
+                      <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = false">Disable</Button>
+                      <Button type="button" :progress="progress" @click.prevent="organizationIdentities.splice(i, 1)">Remove</Button>
+                    </div>
+                    <div v-else class="flex flex-row gap-4">
+                      <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = true">Activate</Button>
+                      <Button type="button" :progress="progress" @click.prevent="organizationIdentities.splice(i, 1)">Remove</Button>
                     </div>
                   </div>
-                </div>
-              </li>
-            </ul>
-            <div class="flex flex-row justify-end">
-              <!--
-                Button is on purpose not disabled on unexpectedError so that user can retry.
-              -->
-              <Button id="applications-update" type="submit" primary :disabled="!canApplicationsSubmit()" :progress="progress">Update</Button>
-            </div>
-          </form>
-          <h2 v-if="metadata.can_update" class="text-xl font-bold">Available applications</h2>
-          <ul v-if="metadata.can_update" class="flex flex-col gap-4">
-            <li v-for="applicationTemplate in applicationTemplates" :key="applicationTemplate.id">
-              <ApplicationTemplateListItem :item="applicationTemplate" :labels="isApplicationAdded(applicationTemplate) ? ['admin'] : []" h3>
-                <template #default="{ doc }">
-                  <div class="flex flex-col items-start">
-                    <Button type="button" :progress="progress" primary @click.prevent="onAddApplicationTemplate(doc)">Add</Button>
-                  </div>
-                </template>
-              </ApplicationTemplateListItem>
-            </li>
-          </ul>
-          <h2 v-if="organizationIdentities.length || canIdentitiesSubmit()" class="text-xl font-bold">Added identities</h2>
-          <div v-if="organizationIdentitiesUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
-          <div v-else-if="organizationIdentitiesUpdated" class="text-success-600">Added identities updated successfully.</div>
-          <form v-if="organizationIdentities.length || canIdentitiesSubmit()" class="flex flex-col" novalidate @submit.prevent="onIdentitiesSubmit">
-            <ul>
-              <li v-for="(organizationIdentity, i) in organizationIdentities" :key="organizationIdentity.id || i" class="flex flex-col mb-4">
-                <IdentityListItem :item="organizationIdentity.identity" :organization-id="id" />
-                <div class="ml-4 mt-4 flex flew-row gap-4 justify-between items-start">
-                  <div class="flex flex-col">
-                    <div>ID: <strong>{{ organizationIdentity.id }}</strong></div>
-                    <div>Status: <strong>{{ organizationIdentity.active ? 'active' : 'disabled' }}</strong></div>
-                  </div>
-                  <div v-if="organizationIdentity.active" class="flex flex-row gap-4">
-                    <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = false">Disable</Button>
-                    <Button type="button" :progress="progress" @click.prevent="organizationIdentities.splice(i, 1)">Remove</Button>
-                  </div>
-                  <div v-else class="flex flex-row gap-4">
-                    <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = true">Activate</Button>
-                    <Button type="button" :progress="progress" @click.prevent="organizationIdentities.splice(i, 1)">Remove</Button>
-                  </div>
-                </div>
-              </li>
-            </ul>
-            <div class="flex flex-row justify-end">
-              <!--
-                Button is on purpose not disabled on unexpectedError so that user can retry.
-              -->
-              <Button id="identities-update" type="submit" primary :disabled="!canIdentitiesSubmit()" :progress="progress">Update</Button>
-            </div>
-          </form>
-          <h2 class="text-xl font-bold">Available identities</h2>
-          <ul class="flex flex-col gap-4">
-            <template v-for="identity in identities" :key="identity.id">
-              <li v-if="!isIdentityAdded(identity)">
+                </li>
+              </ul>
+              <div class="flex flex-row justify-end">
+                <!--
+                  Button is on purpose not disabled on unexpectedError so that user can retry.
+                -->
+                <Button id="identities-update" type="submit" primary :disabled="!canIdentitiesSubmit()" :progress="progress">Update</Button>
+              </div>
+            </form>
+          </template>
+          <template v-if="metadata.can_update && availableIdentities.length">
+            <h2 class="text-xl font-bold">Available identities</h2>
+            <ul class="flex flex-col gap-4">
+              <li v-for="identity in availableIdentities" :key="identity.id">
                 <IdentityListItem :item="identity" :organization-id="id">
                   <template #default="{ doc }">
                     <div class="flex flex-col items-start">
@@ -751,8 +761,8 @@ async function onIdentitiesSubmit() {
                   </template>
                 </IdentityListItem>
               </li>
-            </template>
-          </ul>
+            </ul>
+          </template>
         </template>
       </div>
     </div>

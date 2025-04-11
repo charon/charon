@@ -2,7 +2,7 @@
 import type { Ref } from "vue"
 import type { Identity, IdentityOrganization, Metadata, OrganizationRef, Organizations } from "@/types"
 
-import { nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
+import { computed, nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import InputText from "@/components/InputText.vue"
 import TextArea from "@/components/TextArea.vue"
@@ -41,6 +41,10 @@ const description = ref("")
 const identityOrganizationsUnexpectedError = ref("")
 const identityOrganizationsUpdated = ref(false)
 const identityOrganizations = ref<IdentityOrganization[]>([])
+
+const availableOrganizations = computed(() => {
+  return organizations.value.filter((organization) => !isOrganizationAdded(organization))
+})
 
 function isOrganizationAdded(organization: OrganizationRef): boolean {
   for (const identityOrganization of identityOrganizations.value) {
@@ -312,50 +316,52 @@ async function onAddOrganization(organization: OrganizationRef) {
               <Button type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">Update</Button>
             </div>
           </form>
-          <h2 v-if="identityOrganizations.length || canOrganizationsSubmit()" class="text-xl font-bold">Added organizations</h2>
-          <div v-if="identityOrganizationsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
-          <div v-else-if="identityOrganizationsUpdated" class="text-success-600">Added organizations updated successfully.</div>
-          <form v-if="identityOrganizations.length || canOrganizationsSubmit()" class="flex flex-col" novalidate @submit.prevent="onOrganizationsSubmit">
-            <ul>
-              <li v-for="(identityOrganization, i) in identityOrganizations" :key="identityOrganization.id || i" class="flex flex-col mb-4">
-                <OrganizationListItem :item="identityOrganization.organization" h3 />
-                <div class="ml-4">
-                  <div v-if="identityOrganization.active" class="flex flew-row justify-between items-center gap-4 mt-4">
-                    <div>Status: <strong>active</strong></div>
-                    <div class="flex flex-row gap-4">
-                      <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = false">Disable</Button>
-                      <Button type="button" :progress="progress" @click.prevent="identityOrganizations.splice(i, 1)">Remove</Button>
+          <template v-if="identityOrganizations.length || canOrganizationsSubmit()">
+            <h2 class="text-xl font-bold">Added organizations</h2>
+            <div v-if="identityOrganizationsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
+            <div v-else-if="identityOrganizationsUpdated" class="text-success-600">Added organizations updated successfully.</div>
+            <form class="flex flex-col" novalidate @submit.prevent="onOrganizationsSubmit">
+              <ul>
+                <li v-for="(identityOrganization, i) in identityOrganizations" :key="identityOrganization.id || i" class="flex flex-col mb-4">
+                  <OrganizationListItem :item="identityOrganization.organization" h3 />
+                  <div class="ml-4">
+                    <div v-if="identityOrganization.active" class="flex flew-row justify-between items-center gap-4 mt-4">
+                      <div>Status: <strong>active</strong></div>
+                      <div class="flex flex-row gap-4">
+                        <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = false">Disable</Button>
+                        <Button type="button" :progress="progress" @click.prevent="identityOrganizations.splice(i, 1)">Remove</Button>
+                      </div>
+                    </div>
+                    <div v-else class="flex flew-row justify-between items-center gap-4 mt-4">
+                      <div>Status: <strong>disabled</strong></div>
+                      <div class="flex flex-row gap-4">
+                        <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = true">Activate</Button>
+                        <Button type="button" :progress="progress" @click.prevent="identityOrganizations.splice(i, 1)">Remove</Button>
+                      </div>
                     </div>
                   </div>
-                  <div v-else class="flex flew-row justify-between items-center gap-4 mt-4">
-                    <div>Status: <strong>disabled</strong></div>
-                    <div class="flex flex-row gap-4">
-                      <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = true">Activate</Button>
-                      <Button type="button" :progress="progress" @click.prevent="identityOrganizations.splice(i, 1)">Remove</Button>
-                    </div>
-                  </div>
-                </div>
-              </li>
-            </ul>
-            <div class="flex flex-row justify-end">
-              <!--
-                Button is on purpose not disabled on unexpectedError so that user can retry.
-              -->
-              <Button id="organizations-update" type="submit" primary :disabled="!canOrganizationsSubmit()" :progress="progress">Update</Button>
-            </div>
-          </form>
-          <h2 v-if="metadata.can_update" class="text-xl font-bold">Available organizations</h2>
-          <ul v-if="metadata.can_update" class="flex flex-col gap-4">
-            <template v-for="organization in organizations" :key="organization.id">
-              <li v-if="!isOrganizationAdded(organization)">
+                </li>
+              </ul>
+              <div class="flex flex-row justify-end">
+                <!--
+                  Button is on purpose not disabled on unexpectedError so that user can retry.
+                -->
+                <Button id="organizations-update" type="submit" primary :disabled="!canOrganizationsSubmit()" :progress="progress">Update</Button>
+              </div>
+            </form>
+          </template>
+          <template v-if="metadata.can_update && availableOrganizations.length">
+            <h2 class="text-xl font-bold">Available organizations</h2>
+            <ul class="flex flex-col gap-4">
+              <li v-for="organization in availableOrganizations" :key="organization.id">
                 <OrganizationListItem :item="organization" h3>
                   <div class="flex flex-col items-start">
                     <Button type="button" :progress="progress" primary @click.prevent="onAddOrganization(organization)">Add</Button>
                   </div>
                 </OrganizationListItem>
               </li>
-            </template>
-          </ul>
+            </ul>
+          </template>
         </template>
       </div>
     </div>
