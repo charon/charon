@@ -726,9 +726,14 @@ async function onIdentitiesSubmit() {
                 <li v-for="(organizationIdentity, i) in organizationIdentities" :key="organizationIdentity.id || i" class="flex flex-col mb-4">
                   <IdentityListItem :item="organizationIdentity.identity" :organization-id="id" />
                   <div class="ml-4 mt-4 flex flew-row gap-4 justify-between items-start">
-                    <div class="flex flex-col">
-                      <div>ID: <strong>{{ organizationIdentity.id }}</strong></div>
-                      <div>Status: <strong>{{ organizationIdentity.active ? 'active' : 'disabled' }}</strong></div>
+                    <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
+                      <div>ID:</div>
+                      <div v-if="organizationIdentity.id">
+                        <code>{{ organizationIdentity.id }}</code>
+                      </div>
+                      <div v-else><span class="italic">confirm update to allocate</span></div>
+                      <div>Status:</div>
+                      <div><strong>{{ organizationIdentity.active ? 'active' : 'disabled' }}</strong></div>
                     </div>
                     <div v-if="organizationIdentity.active" class="flex flex-row gap-4">
                       <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = false">Disable</Button>

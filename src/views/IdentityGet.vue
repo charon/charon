@@ -325,9 +325,14 @@ async function onAddOrganization(organization: OrganizationRef) {
                 <li v-for="(identityOrganization, i) in identityOrganizations" :key="identityOrganization.id || i" class="flex flex-col mb-4">
                   <OrganizationListItem :item="identityOrganization.organization" h3 />
                   <div class="ml-4 mt-4 flex flew-row gap-4 justify-between items-start">
-                    <div class="flex flex-col">
-                      <div>ID: <strong>{{ identityOrganization.id }}</strong></div>
-                      <div>Status: <strong>{{ identityOrganization.active ? 'active' : 'disabled' }}</strong></div>
+                    <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
+                      <div>ID:</div>
+                      <div v-if="identityOrganization.id">
+                        <code>{{ identityOrganization.id }}</code>
+                      </div>
+                      <div v-else><span class="italic">confirm update to allocate</span></div>
+                      <div>Status:</div>
+                      <div><strong>{{ identityOrganization.active ? 'active' : 'disabled' }}</strong></div>
                     </div>
                     <div v-if="identityOrganization.active" class="flex flew-row gap-4">
                       <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = false">Disable</Button>
