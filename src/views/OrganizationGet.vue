@@ -707,7 +707,7 @@ async function onIdentitiesSubmit() {
             <h2 class="text-xl font-bold">Available applications</h2>
             <ul class="flex flex-col gap-4">
               <li v-for="applicationTemplate in applicationTemplates" :key="applicationTemplate.id">
-                <ApplicationTemplateListItem :item="applicationTemplate" :labels="isApplicationAdded(applicationTemplate) ? ['admin'] : []" h3>
+                <ApplicationTemplateListItem :item="applicationTemplate" :labels="isApplicationAdded(applicationTemplate) ? ['added'] : []" h3>
                   <template #default="{ doc }">
                     <div class="flex flex-col items-start">
                       <Button type="button" :progress="progress" primary @click.prevent="onAddApplicationTemplate(doc)">Add</Button>
