@@ -235,6 +235,8 @@ export type ApplicationTemplatePublic = ApplicationTemplateCreate & {
 }
 
 export type ApplicationTemplate = ApplicationTemplatePublic & {
+  // When user does not have admin permissions, they get in fact only
+  // ApplicationTemplatePublic so we have this field as optional.
   admins?: IdentityRef[]
 }
 
@@ -306,6 +308,8 @@ export type OrganizationPublic = OrganizationCreate & {
 }
 
 export type Organization = OrganizationPublic & {
+  // When user does not have admin permissions, they get in fact only
+  // OrganizationPublic so we have these fields as optional.
   admins?: IdentityRef[]
   applications?: OrganizationApplication[]
 }
@@ -315,6 +319,9 @@ export type OrganizationCreate = {
 }
 
 export type Identity = IdentityCreate & IdentityPublic & {
+  // Identity is returned from API only when user can access it and can access
+  // its full document, including permissions and organizations, so we can be
+  // precise which fields are optional.
   users?: IdentityRef[]
   admins: IdentityRef[]
   organizations: IdentityOrganization[]

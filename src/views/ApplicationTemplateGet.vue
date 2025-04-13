@@ -5,6 +5,7 @@ import type {
   ApplicationTemplateClientBackend,
   ApplicationTemplateClientPublic,
   ApplicationTemplateClientService,
+  IdentityRef,
   Metadata,
   Variable,
 } from "@/types"
@@ -60,6 +61,10 @@ const clientsServiceUnexpectedError = ref("")
 const clientsServiceUpdated = ref(false)
 const clientsService = ref<ApplicationTemplateClientService[]>([])
 
+const adminsUnexpectedError = ref("")
+const adminsUpdated = ref(false)
+const admins = ref<IdentityRef[]>([])
+
 function resetOnInteraction() {
   // We reset flags and errors on interaction.
   basicUnexpectedError.value = ""
@@ -72,6 +77,8 @@ function resetOnInteraction() {
   clientsBackendUpdated.value = false
   clientsServiceUnexpectedError.value = ""
   clientsServiceUpdated.value = false
+  adminsUnexpectedError.value = ""
+  adminsUpdated.value = false
   // dataLoading and dataLoadingError are not listed here on
   // purpose because they are used only on mount.
 }
@@ -82,7 +89,7 @@ function initWatchInteraction() {
     return
   }
 
-  const stop = watch([name, description, homepageTemplate, idScopes, variables, clientsPublic, clientsBackend, clientsService], resetOnInteraction, { deep: true })
+  const stop = watch([name, description, homepageTemplate, idScopes, variables, clientsPublic, clientsBackend, clientsService, admins], resetOnInteraction, { deep: true })
   if (watchInteractionStop !== null) {
     throw new Error("watchInteractionStop already set")
   }
@@ -97,7 +104,7 @@ onBeforeUnmount(() => {
   abortController.abort()
 })
 
-async function loadData(update: "init" | "basic" | "variables" | "clientsPublic" | "clientsBackend" | "clientsService" | null, dataError: Ref<string> | null) {
+async function loadData(update: "init" | "basic" | "variables" | "clientsPublic" | "clientsBackend" | "clientsService" | "admins" | null, dataError: Ref<string> | null) {
   if (abortController.signal.aborted) {
     return
   }
@@ -139,6 +146,9 @@ async function loadData(update: "init" | "basic" | "variables" | "clientsPublic"
     if (update === "init" || update === "clientsService") {
       clientsService.value = clone(response.doc.clientsService)
     }
+    if (update === "init" || update === "admins") {
+      admins.value = clone(response.doc.admins || [])
+    }
   } catch (error) {
     if (abortController.signal.aborted) {
       return
@@ -161,7 +171,7 @@ onBeforeMount(async () => {
 
 async function onSubmit(
   payload: ApplicationTemplate,
-  update: "basic" | "variables" | "clientsPublic" | "clientsBackend" | "clientsService",
+  update: "basic" | "variables" | "clientsPublic" | "clientsBackend" | "clientsService" | "admins",
   updated: Ref<boolean>,
   unexpectedError: Ref<string>,
 ) {
@@ -255,6 +265,7 @@ async function onBasicSubmit() {
     clientsPublic: applicationTemplate.value!.clientsPublic,
     clientsBackend: applicationTemplate.value!.clientsBackend,
     clientsService: applicationTemplate.value!.clientsService,
+    admins: applicationTemplate.value!.admins,
   }
   await onSubmit(payload, "basic", basicUpdated, basicUnexpectedError)
 }
@@ -287,6 +298,7 @@ async function onVariablesSubmit() {
     clientsPublic: applicationTemplate.value!.clientsPublic,
     clientsBackend: applicationTemplate.value!.clientsBackend,
     clientsService: applicationTemplate.value!.clientsService,
+    admins: applicationTemplate.value!.admins,
   }
   await onSubmit(payload, "variables", variablesUpdated, variablesUnexpectedError)
 }
@@ -343,6 +355,7 @@ async function onClientsPublicSubmit() {
     clientsPublic: clientsPublic.value,
     clientsBackend: applicationTemplate.value!.clientsBackend,
     clientsService: applicationTemplate.value!.clientsService,
+    admins: applicationTemplate.value!.admins,
   }
   await onSubmit(payload, "clientsPublic", clientsPublicUpdated, clientsPublicUnexpectedError)
 }
@@ -416,6 +429,7 @@ async function onClientsBackendSubmit() {
     clientsPublic: applicationTemplate.value!.clientsPublic,
     clientsBackend: clientsBackend.value,
     clientsService: applicationTemplate.value!.clientsService,
+    admins: applicationTemplate.value!.admins,
   }
   await onSubmit(payload, "clientsBackend", clientsBackendUpdated, clientsBackendUnexpectedError)
 }
@@ -479,6 +493,7 @@ async function onClientsServiceSubmit() {
     clientsPublic: applicationTemplate.value!.clientsPublic,
     clientsBackend: applicationTemplate.value!.clientsBackend,
     clientsService: clientsService.value,
+    admins: applicationTemplate.value!.admins,
   }
   await onSubmit(payload, "clientsService", clientsServiceUpdated, clientsServiceUnexpectedError)
 }
@@ -499,6 +514,50 @@ function onAddClientService() {
 
   nextTick(() => {
     document.getElementById(`client-service-${clientsService.value.length - 1}-tokenEndpointAuthMethod-client_secret_post`)?.focus()
+  })
+}
+
+
+function canAdminsSubmit(): boolean {
+  // Anything changed?
+  if (!equals(applicationTemplate.value!.admins, admins.value)) {
+    return true
+  }
+
+  return false
+}
+
+async function onAdminsSubmit() {
+  const payload: ApplicationTemplate = {
+    // We update only admins.
+    id: props.id,
+    name: applicationTemplate.value!.name,
+    description: applicationTemplate.value!.description,
+    homepageTemplate: applicationTemplate.value!.homepageTemplate,
+    idScopes: applicationTemplate.value!.idScopes,
+    variables: applicationTemplate.value!.variables,
+    clientsPublic: applicationTemplate.value!.clientsPublic,
+    clientsBackend: applicationTemplate.value!.clientsBackend,
+    clientsService: applicationTemplate.value!.clientsService,
+    admins: admins.value,
+  }
+  await onSubmit(payload, "admins", adminsUpdated, adminsUnexpectedError)
+}
+
+function onAddAdmin() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  // No need to call resetOnInteraction here because we modify variables
+  // which we watch to call resetOnInteraction.
+
+  admins.value.push({
+    id: "",
+  })
+
+  nextTick(() => {
+    document.getElementById(`admin-${admins.value.length - 1}-id`)?.focus()
   })
 }
 </script>
@@ -552,7 +611,7 @@ function onAddClientService() {
               <Button type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">Update</Button>
             </div>
           </form>
-          <template v-if="variables.length || metadata.can_update">
+          <template v-if="metadata.can_update || variables.length || canVariablesSubmit()">
             <h2 class="text-xl font-bold">Variables</h2>
             <div v-if="variablesUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
             <div v-else-if="variablesUpdated" class="text-success-600">Variables updated successfully.</div>
@@ -595,7 +654,7 @@ function onAddClientService() {
               </div>
             </form>
           </template>
-          <template v-if="clientsPublic.length || metadata.can_update">
+          <template v-if="metadata.can_update || clientsPublic.length || canClientsPublicSubmit()">
             <h2 class="text-xl font-bold">Public clients</h2>
             <div v-if="clientsPublicUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
             <div v-else-if="clientsPublicUpdated" class="text-success-600">Public clients updated successfully.</div>
@@ -670,7 +729,7 @@ function onAddClientService() {
               </div>
             </form>
           </template>
-          <template v-if="clientsBackend.length || metadata.can_update">
+          <template v-if="metadata.can_update || clientsBackend.length || canClientsBackendSubmit()">
             <h2 class="text-xl font-bold">Backend clients</h2>
             <div v-if="clientsBackendUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
             <div v-else-if="clientsBackendUpdated" class="text-success-600">Backend clients updated successfully.</div>
@@ -780,7 +839,7 @@ function onAddClientService() {
               </div>
             </form>
           </template>
-          <template v-if="clientsService.length || metadata.can_update">
+          <template v-if="metadata.can_update || clientsService.length || canClientsServiceSubmit()">
             <h2 class="text-xl font-bold">Service clients</h2>
             <div v-if="clientsServiceUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
             <div v-else-if="clientsServiceUpdated" class="text-success-600">Service clients updated successfully.</div>
@@ -862,14 +921,42 @@ function onAddClientService() {
               </div>
             </form>
           </template>
-          <h2 class="text-xl font-bold">Admins</h2>
-          <ul>
-            <li v-for="admin of applicationTemplate?.admins || []" :key="admin.id" class="grid grid-cols-1 gap-4 mb-4">
-              <IdentityPublic :item="admin" :organization-id="siteContext.organizationId">
-
-              </IdentityPublic>
-            </li>
-          </ul>
+          <template v-if="metadata.can_update && (admins.length || canAdminsSubmit())">
+            <h2 class="text-xl font-bold">Admins</h2>
+            <div v-if="adminsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
+            <div v-else-if="adminsUpdated" class="text-success-600">Admins updated successfully.</div>
+            <form class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
+              <ol>
+                <li v-for="(admin, i) of admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
+                  <div>{{ i + 1 }}.</div>
+                  <div class="flex flex-col">
+                    <IdentityPublic v-if="applicationTemplate?.admins?.find(a => a.id === admin.id)" :item="admin" :organization-id="siteContext.organizationId">
+                      <div class="flex flex-col items-start">
+                        <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>
+                      </div>
+                    </IdentityPublic>
+                    <div v-else class="flex flex-row gap-4">
+                      <InputText
+                        :id="`admin-${i}-id`"
+                        v-model="admins[i].id"
+                        class="flex-grow flex-auto min-w-0"
+                        :progress="progress"
+                        required
+                      />
+                      <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>
+                    </div>
+                  </div>
+                </li>
+              </ol>
+              <div class="flex flex-row justify-between gap-4">
+                <Button type="button" @click.prevent="onAddAdmin">Add admin</Button>
+                <!--
+                  Button is on purpose not disabled on unexpectedError so that user can retry.
+                -->
+                <Button type="submit" primary :disabled="!canAdminsSubmit()" :progress="progress">Update</Button>
+              </div>
+            </form>
+          </template>
         </template>
       </div>
     </div>
