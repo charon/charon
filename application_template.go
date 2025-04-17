@@ -656,6 +656,8 @@ func (a *ApplicationTemplate) Validate(ctx context.Context, existing *Applicatio
 	})
 	a.Admins = slices.Compact(a.Admins)
 
+	// TODO: Validate that a.Admins really exist?
+
 	return nil
 }
 

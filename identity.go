@@ -308,6 +308,8 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 		return adminsSet.Contains(ia)
 	})
 
+	// TODO: Validate that i.Users and i.Admins really exist?
+
 	if i.Organizations == nil {
 		i.Organizations = []IdentityOrganization{}
 	}

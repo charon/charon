@@ -599,6 +599,8 @@ func (o *Organization) validate(ctx context.Context, existing *Organization) err
 	})
 	o.Admins = slices.Compact(o.Admins)
 
+	// TODO: Validate that o.Admins really exist?
+
 	if o.Applications == nil {
 		o.Applications = []OrganizationApplication{}
 	}
