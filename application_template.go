@@ -838,7 +838,7 @@ func (s *Service) ApplicationTemplateUpdatePost(w http.ResponseWriter, req *http
 		return
 	}
 
-	// If applicationTemplate.ID == nil, UpdateApplicationTemplate returns an error.
+	// If applicationTemplate.ID == nil, updateApplicationTemplate returns an error.
 	if applicationTemplate.ID != nil && params["id"] != applicationTemplate.ID.String() {
 		errE = errors.New("params ID does not match payload ID")
 		errors.Details(errE)["params"] = params["id"]

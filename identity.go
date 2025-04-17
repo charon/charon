@@ -929,7 +929,7 @@ func (s *Service) IdentityUpdatePost(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	// If identity.ID == nil, UpdateIdentity returns an error.
+	// If identity.ID == nil, updateIdentity returns an error.
 	if identity.ID != nil && params["id"] != identity.ID.String() {
 		errE = errors.New("params ID does not match payload ID")
 		errors.Details(errE)["params"] = params["id"]

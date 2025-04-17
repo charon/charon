@@ -915,7 +915,7 @@ func (s *Service) OrganizationUpdatePost(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	// If organization.ID == nil, UpdateOrganization returns an error.
+	// If organization.ID == nil, updateOrganization returns an error.
 	if organization.ID != nil && params["id"] != organization.ID.String() {
 		errE = errors.New("params ID does not match payload ID")
 		errors.Details(errE)["params"] = params["id"]
