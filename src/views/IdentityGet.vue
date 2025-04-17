@@ -201,22 +201,25 @@ function canBasicSubmit(): boolean {
   }
 
   // Anything changed?
-  if (identity.value!.username !== username.value) {
+  if ((identity.value!.username || "") !== username.value) {
     return true
   }
-  if (identity.value!.email !== email.value) {
+  if ((identity.value!.email || "") !== email.value) {
     return true
   }
-  if (identity.value!.givenName !== givenName.value) {
+  if ((identity.value!.givenName || "") !== givenName.value) {
     return true
   }
-  if (identity.value!.fullName !== fullName.value) {
+  if ((identity.value!.fullName || "") !== fullName.value) {
     return true
   }
-  if (identity.value!.pictureUrl !== pictureUrl.value) {
+  if ((identity.value!.username || "") !== username.value) {
     return true
   }
-  if (identity.value!.description !== description.value) {
+  if ((identity.value!.email || "") !== email.value) {
+    return true
+  }
+  if ((identity.value!.description || "") !== description.value) {
     return true
   }
 
