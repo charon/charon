@@ -817,6 +817,7 @@ func (s *Service) OrganizationAppGet(w http.ResponseWriter, req *http.Request, p
 // identity in the organization given the organization-scoped identity ID.
 func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
+	co := s.charonOrganization()
 
 	organizationID, errE := identifier.MaybeString(params["id"])
 	if errE != nil {
@@ -853,23 +854,35 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 			return
 		}
 
-		idOrg := identity.GetIdentityOrganization(&identityID)
-		if idOrg == nil {
-			continue
-		}
+		if co.ID == organizationID {
+			// A special case for Charon organization: organization-scoped identity ID is the same as the identity ID.
+			// We need a special case here because we want to return even identities which have not been added to the
+			// Charon organization (so that users can give permissions over identities to other users while those
+			// identities have never been used with the Charon organization itself).
+			// We could simplify here and just access the identity directly using its ID, but we want the logic flow
+			// to be the same as when the organization is not the Charon organization.
+			if *identity.ID != identityID {
+				continue
+			}
+		} else {
+			idOrg := identity.GetIdentityOrganization(&identityID)
+			if idOrg == nil {
+				continue
+			}
 
-		if idOrg.Organization.ID != organizationID {
-			s.NotFound(w, req)
-			return
-		}
+			if idOrg.Organization.ID != organizationID {
+				s.NotFound(w, req)
+				return
+			}
 
-		if !idOrg.Active {
-			s.NotFound(w, req)
-			return
-		}
+			if !idOrg.Active {
+				s.NotFound(w, req)
+				return
+			}
 
-		// We do not want to expose the database ID.
-		identity.IdentityPublic.ID = idOrg.ID
+			// We do not want to expose the database ID.
+			identity.IdentityPublic.ID = idOrg.ID
+		}
 
 		// TODO: Expose only those fields the access tokens have access to through its scopes.
 		//       E.g., backend access token might access e-mail address while frontend access token might not need access to e-mail address.

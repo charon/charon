@@ -34,15 +34,33 @@ type IdentityOrganization struct {
 	Organization OrganizationRef `json:"organization"`
 }
 
-func (i *IdentityOrganization) Validate(_ context.Context, existing *IdentityOrganization) errors.E {
+// Validate requires ctx with serviceContextKey set.
+func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityOrganization, identity *Identity) errors.E {
 	if existing == nil {
 		if i.ID != nil {
 			errE := errors.New("ID provided for new document")
 			errors.Details(errE)["id"] = *i.ID
 			return errE
 		}
-		id := identifier.New()
-		i.ID = &id
+		s := ctx.Value(serviceContextKey).(*Service) //nolint:forcetypeassert,errcheck
+		co := s.charonOrganization()
+		if co.ID == i.Organization.ID {
+			// A special case for Charon organization: organization-scoped identity ID is the same as the identity ID.
+			// Permissions generally use organization-scoped IDs and operate only with identities which are added to
+			// the organization, but for Charon organization we want permissions to operate also on identities which
+			// have not been added to the Charon organization (so that users can give permissions over identities to
+			// other users while those identities have never been used with the Charon organization itself). One way
+			// to address this would be to always add all identities to the Charon organization so that they all get
+			// assigned its organization-scoped IDs, but that would then mean that we would also have to prevent removing
+			// Charon organization and also users will not know which identities they have previously used with the
+			// Charon organization (as it would look like they used all of them). Instead, we use the identity ID as
+			// organization-scoped ID. This allows us to have an ID for use in Charon organization permissions even
+			// if the identity has not been added to the Charon organization.
+			i.ID = identity.ID
+		} else {
+			id := identifier.New()
+			i.ID = &id
+		}
 	} else if i.ID == nil {
 		// This should not really happen because we fetch existing based on i.ID.
 		return errors.New("ID missing for existing document")
@@ -54,6 +72,13 @@ func (i *IdentityOrganization) Validate(_ context.Context, existing *IdentityOrg
 		errE := errors.New("payload ID does not match existing ID")
 		errors.Details(errE)["payload"] = *i.ID
 		errors.Details(errE)["existing"] = *existing.ID
+		return errE
+	}
+
+	if existing != nil && i.Organization.ID != existing.Organization.ID {
+		errE := errors.New("payload organization ID does not match existing organization ID")
+		errors.Details(errE)["payload"] = i.Organization.ID
+		errors.Details(errE)["existing"] = existing.Organization.ID
 		return errE
 	}
 
@@ -229,6 +254,7 @@ type IdentityRef struct {
 
 // Validate uses ctx with identityIDContextKey if set.
 // When not set, changes to admins are not allowed.
+// Validate requires ctx with serviceContextKey set.
 func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 	var e *IdentityPublic
 	if existing == nil {
@@ -289,7 +315,7 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 	idOrgsSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
 	organizationsSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
 	for ii, idOrg := range i.Organizations {
-		errE := idOrg.Validate(ctx, existing.GetIdentityOrganization(idOrg.ID))
+		errE := idOrg.Validate(ctx, existing.GetIdentityOrganization(idOrg.ID), i)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "organization")
 			errors.Details(errE)["i"] = ii
@@ -382,6 +408,8 @@ func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*I
 // be set and the identity itself will be used instead.
 func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors.E {
 	accountID := mustGetAccountID(ctx)
+
+	ctx = context.WithValue(ctx, serviceContextKey, s)
 
 	errE := identity.Validate(ctx, nil)
 	if errE != nil {
@@ -518,6 +546,8 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 	if !existingIdentity.HasAdminAccess(ids, isCreator) {
 		return errors.WithDetails(ErrIdentityUnauthorized, "id", *identity.ID)
 	}
+
+	ctx = context.WithValue(ctx, serviceContextKey, s)
 
 	errE = identity.Validate(ctx, &existingIdentity)
 	if errE != nil {
