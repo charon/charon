@@ -754,7 +754,7 @@ async function onIdentitiesSubmit() {
               </div>
             </form>
           </template>
-          <template v-if="metadata.can_update && availableIdentities.length">
+          <template v-if="availableIdentities.length">
             <h2 class="text-xl font-bold">Available identities</h2>
             <ul class="flex flex-col gap-4">
               <li v-for="identity in availableIdentities" :key="identity.id">
