@@ -34,16 +34,14 @@ type IdentityOrganization struct {
 	Organization OrganizationRef `json:"organization"`
 }
 
-// Validate requires ctx with serviceContextKey set.
-func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityOrganization, identity *Identity) errors.E {
+func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityOrganization, service *Service, identity *Identity) errors.E {
 	if existing == nil {
 		if i.ID != nil {
 			errE := errors.New("ID provided for new document")
 			errors.Details(errE)["id"] = *i.ID
 			return errE
 		}
-		s := ctx.Value(serviceContextKey).(*Service) //nolint:forcetypeassert,errcheck
-		co := s.charonOrganization()
+		co := service.charonOrganization()
 		if co.ID == i.Organization.ID {
 			// A special case for Charon organization: organization-scoped identity ID is the same as the identity ID.
 			// Permissions generally use organization-scoped IDs and operate only with identities which are added to
@@ -254,8 +252,7 @@ type IdentityRef struct {
 
 // Validate uses ctx with identityIDContextKey if set.
 // When not set, changes to admins are not allowed.
-// Validate requires ctx with serviceContextKey set.
-func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
+func (i *Identity) Validate(ctx context.Context, existing *Identity, service *Service) errors.E {
 	var e *IdentityPublic
 	if existing == nil {
 		e = nil
@@ -317,7 +314,7 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity) errors.E {
 	idOrgsSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
 	organizationsSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
 	for ii, idOrg := range i.Organizations {
-		errE := idOrg.Validate(ctx, existing.GetIdentityOrganization(idOrg.ID), i)
+		errE := idOrg.Validate(ctx, existing.GetIdentityOrganization(idOrg.ID), service, i)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "organization")
 			errors.Details(errE)["i"] = ii
@@ -411,9 +408,7 @@ func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*I
 func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors.E {
 	accountID := mustGetAccountID(ctx)
 
-	ctx = context.WithValue(ctx, serviceContextKey, s)
-
-	errE := identity.Validate(ctx, nil)
+	errE := identity.Validate(ctx, nil, s)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrIdentityValidationFailed)
 	}
@@ -549,9 +544,7 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 		return errors.WithDetails(ErrIdentityUnauthorized, "id", *identity.ID)
 	}
 
-	ctx = context.WithValue(ctx, serviceContextKey, s)
-
-	errE = identity.Validate(ctx, &existingIdentity)
+	errE = identity.Validate(ctx, &existingIdentity, s)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrIdentityValidationFailed)
 	}

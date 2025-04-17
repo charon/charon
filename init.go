@@ -75,7 +75,7 @@ func initCharonOrganization(config *Config, service *Service, domain string) (fu
 			},
 		}
 
-		errE := organization.validate(context.Background(), &organization)
+		errE := organization.validate(context.Background(), &organization, nil)
 		if errE != nil {
 			// This should never happen.
 			panic(errE)

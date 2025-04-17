@@ -242,14 +242,13 @@ type OrganizationApplicationPublic struct {
 	Values []Value `json:"values"`
 }
 
-// Validate requires ctx with serviceContextKey set.
-func (a *OrganizationApplicationPublic) Validate(ctx context.Context, existing *OrganizationApplicationPublic) errors.E {
-	_, errE := a.validate(ctx, existing)
+func (a *OrganizationApplicationPublic) Validate(ctx context.Context, existing *OrganizationApplicationPublic, service *Service) errors.E {
+	_, errE := a.validate(ctx, existing, service)
 	return errE
 }
 
 // validate is a version of Validate which returns values as well.
-func (a *OrganizationApplicationPublic) validate(ctx context.Context, existing *OrganizationApplicationPublic) (map[string]string, errors.E) {
+func (a *OrganizationApplicationPublic) validate(ctx context.Context, existing *OrganizationApplicationPublic, service *Service) (map[string]string, errors.E) {
 	if existing == nil {
 		if a.ID != nil {
 			errE := errors.New("ID provided for new document")
@@ -276,8 +275,7 @@ func (a *OrganizationApplicationPublic) validate(ctx context.Context, existing *
 	if existing != nil {
 		e = &existing.ApplicationTemplate
 	} else if a.ApplicationTemplate.ID != nil {
-		s := ctx.Value(serviceContextKey).(*Service) //nolint:forcetypeassert,errcheck
-		at, errE := s.getApplicationTemplate(ctx, *a.ApplicationTemplate.ID)
+		at, errE := service.getApplicationTemplate(ctx, *a.ApplicationTemplate.ID)
 		if errE == nil {
 			e = &at.ApplicationTemplatePublic
 		} else if !errors.Is(errE, ErrApplicationTemplateNotFound) {
@@ -398,15 +396,14 @@ func (a *OrganizationApplication) GetClientService(id *identifier.Identifier) *O
 	return nil
 }
 
-// Validate requires ctx with serviceContextKey set.
-func (a *OrganizationApplication) Validate(ctx context.Context, existing *OrganizationApplication) errors.E {
+func (a *OrganizationApplication) Validate(ctx context.Context, existing *OrganizationApplication, service *Service) errors.E {
 	var e *OrganizationApplicationPublic
 	if existing == nil {
 		e = nil
 	} else {
 		e = &existing.OrganizationApplicationPublic
 	}
-	values, errE := a.OrganizationApplicationPublic.validate(ctx, e)
+	values, errE := a.OrganizationApplicationPublic.validate(ctx, e, service)
 	if errE != nil {
 		return errE
 	}
@@ -568,8 +565,8 @@ func (o *Organization) HasAdminAccess(identities ...IdentityRef) bool {
 	return false
 }
 
-// Validate requires ctx with identityIDContextKey and serviceContextKey set.
-func (o *Organization) Validate(ctx context.Context, existing *Organization) errors.E {
+// Validate requires ctx with identityIDContextKey set.
+func (o *Organization) Validate(ctx context.Context, existing *Organization, service *Service) errors.E {
 	// Current user must be among admins if it is changing the organization.
 	// We check this elsewhere, here we make sure the user is stored as an admin.
 	identity := IdentityRef{ID: mustGetIdentityID(ctx)}
@@ -577,11 +574,11 @@ func (o *Organization) Validate(ctx context.Context, existing *Organization) err
 		o.Admins = append(o.Admins, identity)
 	}
 
-	return o.validate(ctx, existing)
+	return o.validate(ctx, existing, service)
 }
 
 // validate is a version of Validate which allows empty Admins.
-func (o *Organization) validate(ctx context.Context, existing *Organization) errors.E {
+func (o *Organization) validate(ctx context.Context, existing *Organization, service *Service) errors.E {
 	var e *OrganizationPublic
 	if existing == nil {
 		e = nil
@@ -607,7 +604,7 @@ func (o *Organization) validate(ctx context.Context, existing *Organization) err
 
 	appsSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
 	for i, orgApp := range o.Applications {
-		errE := orgApp.Validate(ctx, existing.GetApplication(orgApp.ID))
+		errE := orgApp.Validate(ctx, existing.GetApplication(orgApp.ID), service)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "application")
 			errors.Details(errE)["i"] = i
@@ -653,9 +650,7 @@ func (s *Service) getOrganization(_ context.Context, id identifier.Identifier) (
 }
 
 func (s *Service) createOrganization(ctx context.Context, organization *Organization) errors.E {
-	ctx = context.WithValue(ctx, serviceContextKey, s)
-
-	errE := organization.Validate(ctx, nil)
+	errE := organization.Validate(ctx, nil, s)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrOrganizationValidationFailed)
 	}
@@ -697,9 +692,7 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 		return errors.WithDetails(ErrOrganizationUnauthorized, "id", organization.ID)
 	}
 
-	ctx = context.WithValue(ctx, serviceContextKey, s)
-
-	errE = organization.Validate(ctx, &existingOrganization)
+	errE = organization.Validate(ctx, &existingOrganization, s)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrOrganizationValidationFailed)
 	}
