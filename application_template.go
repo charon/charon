@@ -431,7 +431,7 @@ type ApplicationTemplateRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
-func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *ApplicationTemplatePublic) errors.E { //nolint:maintidx
+func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *ApplicationTemplatePublic) errors.E {
 	if existing == nil {
 		if a.ID != nil {
 			errE := errors.New("ID provided for new document")
