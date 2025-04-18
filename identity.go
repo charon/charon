@@ -52,8 +52,11 @@ func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityO
 			// assigned its organization-scoped IDs, but that would then mean that we would also have to prevent removing
 			// Charon organization and also users will not know which identities they have previously used with the
 			// Charon organization (as it would look like they used all of them). Instead, we use the identity ID as
-			// organization-scoped ID. This allows us to have an ID for use in Charon organization permissions even
-			// if the identity has not been added to the Charon organization.
+			// organization-scoped ID. This allows us to have an ID for use in Charon organization identity permissions
+			// even if the identity has not been added to the Charon organization. This also enables our approach of
+			// recording that identity's creator is an admin by adding the identity itself as an admin for itself.
+			// Otherwise we would not have an ID to do that, unless we would (again) add all identities to the Charon
+			// organization by default. We could use an extra field to record creator's admin permission, but that is uglier.
 			i.ID = identity.ID
 		} else {
 			id := identifier.New()

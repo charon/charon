@@ -875,13 +875,18 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 				return
 			}
 
-			// We do not want to expose the database ID.
+			// We do not want to expose the link between the database ID and the organization-scoped ID.
 			identity.IdentityPublic.ID = idOrg.ID
 		}
 
 		// TODO: Expose only those fields the access tokens have access to through its scopes.
 		//       E.g., backend access token might access e-mail address while frontend access token might not need access to e-mail address.
 		//       How can we support that the frontend access token accesses e-mail address of the currently signed-in user but not of all other users?
+
+		// TODO: Can we expose only those identities to which the user needs access but not to all of them?
+		//       (Because they are referenced by anything the user has access to.) On the other hand, the user can access only identities for which they know
+		//       their ID and presumably they learned those IDs by having access to something which referenced those IDs. So unless we enable identity enumeration,
+		//       how it is might be enough (and even then we would probably enable enumeration only to identities to which user needs access).
 
 		s.WriteJSON(w, req, identity.IdentityPublic, nil)
 		return
