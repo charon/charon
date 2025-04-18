@@ -16,24 +16,22 @@ const WithIdentityPublicDocument = WithDocument<IdentityPublic>
     <template #default="{ doc, url }">
       <div class="flex flex-row gap-4" :data-url="url">
         <div v-if="doc.pictureUrl" class="flex-none">
-          <router-link :to="{ name: 'IdentityGet', params: { id: doc.id } }" class="link">
-            <img :src="doc.pictureUrl" alt="picture" class="h-20 w-20 ring-2 ring-white rounded" />
-          </router-link>
+          <img :src="doc.pictureUrl" alt="picture" class="h-20 w-20 ring-2 ring-white rounded" />
         </div>
         <div class="flex-grow flex flex-col">
           <h2 v-if="doc.username" class="text-xl">
-            <router-link :to="{ name: 'IdentityGet', params: { id: doc.id } }" class="link">{{ doc.username }}</router-link>
+            {{ doc.username }}
             <span v-if="doc.email"> ({{ doc.email }})</span>
           </h2>
           <h2 v-else-if="doc.email" class="text-xl">
-            <router-link :to="{ name: 'IdentityGet', params: { id: doc.id } }" class="link">{{ doc.email }}</router-link>
+            {{ doc.email }}
           </h2>
           <h2 v-else-if="doc.givenName" class="text-xl">
-            <router-link :to="{ name: 'IdentityGet', params: { id: doc.id } }" class="link">{{ doc.givenName }}</router-link>
+            {{ doc.givenName }}
             <span v-if="doc.fullName"> ({{ doc.fullName }})</span>
           </h2>
           <h2 v-else-if="doc.fullName" class="text-xl">
-            <router-link :to="{ name: 'IdentityGet', params: { id: doc.id } }" class="link">{{ doc.fullName }}</router-link>
+            {{ doc.fullName }}
           </h2>
           <div v-if="doc.givenName && (doc.username || doc.email)" class="mt-1">
             {{ doc.givenName }}
