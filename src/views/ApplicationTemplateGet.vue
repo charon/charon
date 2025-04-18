@@ -521,7 +521,7 @@ function onAddClientService() {
 
 function canAdminsSubmit(): boolean {
   // Anything changed?
-  if (!equals(applicationTemplate.value!.admins, admins.value)) {
+  if (!equals(applicationTemplate.value!.admins || [], admins.value)) {
     return true
   }
 
@@ -926,7 +926,7 @@ function onAddAdmin() {
               </div>
             </form>
           </template>
-          <template v-if="metadata.can_update && (admins.length || canAdminsSubmit())">
+          <template v-if="metadata.can_update">
             <h2 class="text-xl font-bold">Admins</h2>
             <div v-if="adminsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
             <div v-else-if="adminsUpdated" class="text-success-600">Admins updated successfully.</div>

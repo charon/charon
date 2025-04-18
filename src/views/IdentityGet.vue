@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Ref } from "vue"
-import type { Identity, IdentityOrganization, Metadata, OrganizationRef, Organizations } from "@/types"
+import type { Identity, IdentityOrganization, IdentityRef, Metadata, OrganizationRef, Organizations } from "@/types"
 
 import { computed, nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useRouter } from "vue-router"
@@ -10,9 +10,11 @@ import Button from "@/components/Button.vue"
 import OrganizationListItem from "@/partials/OrganizationListItem.vue"
 import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
+import IdentityPublic from "@/partials/IdentityPublic.vue"
 import { getURL, postJSON } from "@/api"
 import { injectProgress } from "@/progress"
 import { clone, equals } from "@/utils"
+import siteContext from "@/context"
 
 const props = defineProps<{
   id: string
@@ -38,6 +40,14 @@ const fullName = ref("")
 const pictureUrl = ref("")
 const description = ref("")
 
+const usersUnexpectedError = ref("")
+const usersUpdated = ref(false)
+const users = ref<IdentityRef[]>([])
+
+const adminsUnexpectedError = ref("")
+const adminsUpdated = ref(false)
+const admins = ref<IdentityRef[]>([])
+
 const identityOrganizationsUnexpectedError = ref("")
 const identityOrganizationsUpdated = ref(false)
 const identityOrganizations = ref<IdentityOrganization[]>([])
@@ -59,6 +69,10 @@ function resetOnInteraction() {
   // We reset flags and errors on interaction.
   basicUnexpectedError.value = ""
   basicUpdated.value = false
+  usersUnexpectedError.value = ""
+  usersUpdated.value = false
+  adminsUnexpectedError.value = ""
+  adminsUpdated.value = false
   identityOrganizationsUnexpectedError.value = ""
   identityOrganizationsUpdated.value = false
   // dataLoading and dataLoadingError are not listed here on
@@ -71,7 +85,7 @@ function initWatchInteraction() {
     return
   }
 
-  const stop = watch([username, email, givenName, fullName, pictureUrl, description, identityOrganizations], resetOnInteraction, { deep: true })
+  const stop = watch([username, email, givenName, fullName, pictureUrl, description, identityOrganizations, users, admins], resetOnInteraction, { deep: true })
   if (watchInteractionStop !== null) {
     throw new Error("watchInteractionStop already set")
   }
@@ -86,7 +100,7 @@ onBeforeUnmount(() => {
   abortController.abort()
 })
 
-async function loadData(update: "init" | "basic" | "organizations" | null, dataError: Ref<string> | null) {
+async function loadData(update: "init" | "basic" | "users" | "admins" | "organizations" | null, dataError: Ref<string> | null) {
   if (abortController.signal.aborted) {
     return
   }
@@ -117,6 +131,12 @@ async function loadData(update: "init" | "basic" | "organizations" | null, dataE
       fullName.value = response.doc.fullName || ""
       pictureUrl.value = response.doc.pictureUrl || ""
       description.value = response.doc.description || ""
+    }
+    if (update === "init" || update === "users") {
+      users.value = clone(response.doc.users || [])
+    }
+    if (update === "init" || update === "admins") {
+      admins.value = clone(response.doc.admins || [])
     }
     if (update == "init" || update === "organizations") {
       identityOrganizations.value = clone(response.doc.organizations || [])
@@ -154,7 +174,7 @@ onBeforeMount(async () => {
   await loadData("init", dataLoadingError)
 })
 
-async function onSubmit(payload: Identity, update: "basic" | "organizations", updated: Ref<boolean>, unexpectedError: Ref<string>) {
+async function onSubmit(payload: Identity, update: "basic" | "users" | "admins" | "organizations", updated: Ref<boolean>, unexpectedError: Ref<string>) {
   if (abortController.signal.aborted) {
     return
   }
@@ -213,10 +233,7 @@ function canBasicSubmit(): boolean {
   if ((identity.value!.fullName || "") !== fullName.value) {
     return true
   }
-  if ((identity.value!.username || "") !== username.value) {
-    return true
-  }
-  if ((identity.value!.email || "") !== email.value) {
+  if ((identity.value!.pictureUrl || "") !== pictureUrl.value) {
     return true
   }
   if ((identity.value!.description || "") !== description.value) {
@@ -243,9 +260,95 @@ async function onBasicSubmit() {
   await onSubmit(payload, "basic", basicUpdated, basicUnexpectedError)
 }
 
+function canUsersSubmit(): boolean {
+  // Anything changed?
+  if (!equals(identity.value!.users || [], users.value)) {
+    return true
+  }
+
+  return false
+}
+
+async function onUsersSubmit() {
+  const payload: Identity = {
+    // We update only users.
+    id: props.id,
+    username: identity.value!.username,
+    email: identity.value!.email,
+    givenName: identity.value!.givenName,
+    fullName: identity.value!.fullName,
+    pictureUrl: identity.value!.pictureUrl,
+    description: identity.value!.description,
+    users: users.value,
+    admins: identity.value!.admins,
+    organizations: identity.value!.organizations,
+  }
+  await onSubmit(payload, "users", usersUpdated, usersUnexpectedError)
+}
+
+function onAddUser() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  // No need to call resetOnInteraction here because we modify variables
+  // which we watch to call resetOnInteraction.
+
+  users.value.push({
+    id: "",
+  })
+
+  nextTick(() => {
+    document.getElementById(`user-${users.value.length - 1}-id`)?.focus()
+  })
+}
+
+function canAdminsSubmit(): boolean {
+  // Anything changed?
+  if (!equals(identity.value!.admins || [], admins.value)) {
+    return true
+  }
+
+  return false
+}
+
+async function onAdminsSubmit() {
+  const payload: Identity = {
+    // We update only admins.
+    id: props.id,
+    username: identity.value!.username,
+    email: identity.value!.email,
+    givenName: identity.value!.givenName,
+    fullName: identity.value!.fullName,
+    pictureUrl: identity.value!.pictureUrl,
+    description: identity.value!.description,
+    users: identity.value!.users,
+    admins: admins.value,
+    organizations: identity.value!.organizations,
+  }
+  await onSubmit(payload, "admins", adminsUpdated, adminsUnexpectedError)
+}
+
+function onAddAdmin() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  // No need to call resetOnInteraction here because we modify variables
+  // which we watch to call resetOnInteraction.
+
+  admins.value.push({
+    id: "",
+  })
+
+  nextTick(() => {
+    document.getElementById(`admin-${admins.value.length - 1}-id`)?.focus()
+  })
+}
+
 function canOrganizationsSubmit(): boolean {
   // Anything changed?
-  if (!equals(identity.value!.organizations, identityOrganizations.value)) {
+  if (!equals(identity.value!.organizations || [], identityOrganizations.value)) {
     return true
   }
 
@@ -323,6 +426,66 @@ async function onAddOrganization(organization: OrganizationRef) {
               <Button type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">Update</Button>
             </div>
           </form>
+          <template v-if="metadata.can_update">
+            <h2 class="text-xl font-bold">Users</h2>
+            <div v-if="usersUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
+            <div v-else-if="usersUpdated" class="text-success-600">Users updated successfully.</div>
+            <form class="flex flex-col" novalidate @submit.prevent="onUsersSubmit">
+              <ol>
+                <li v-for="(user, i) of users" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
+                  <div>{{ i + 1 }}.</div>
+                  <div class="flex flex-col">
+                    <IdentityPublic v-if="identity?.users?.find((a) => a.id === user.id)" :item="user" :organization-id="siteContext.organizationId">
+                      <div class="flex flex-col items-start">
+                        <Button type="button" @click.prevent="users.splice(i, 1)">Remove</Button>
+                      </div>
+                    </IdentityPublic>
+                    <div v-else class="flex flex-row gap-4">
+                      <InputText :id="`user-${i}-id`" v-model="users[i].id" class="flex-grow flex-auto min-w-0" :progress="progress" required />
+                      <Button type="button" @click.prevent="users.splice(i, 1)">Remove</Button>
+                    </div>
+                  </div>
+                </li>
+              </ol>
+              <div class="flex flex-row justify-between gap-4">
+                <Button type="button" @click.prevent="onAddUser">Add user</Button>
+                <!--
+                  Button is on purpose not disabled on unexpectedError so that user can retry.
+                -->
+                <Button type="submit" primary :disabled="!canUsersSubmit()" :progress="progress">Update</Button>
+              </div>
+            </form>
+          </template>
+          <template v-if="metadata.can_update">
+            <h2 class="text-xl font-bold">Admins</h2>
+            <div v-if="adminsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
+            <div v-else-if="adminsUpdated" class="text-success-600">Admins updated successfully.</div>
+            <form class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
+              <ol>
+                <li v-for="(admin, i) of admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
+                  <div>{{ i + 1 }}.</div>
+                  <div class="flex flex-col">
+                    <IdentityPublic v-if="identity?.admins?.find((a) => a.id === admin.id)" :item="admin" :organization-id="siteContext.organizationId">
+                      <div class="flex flex-col items-start">
+                        <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>
+                      </div>
+                    </IdentityPublic>
+                    <div v-else class="flex flex-row gap-4">
+                      <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="flex-grow flex-auto min-w-0" :progress="progress" required />
+                      <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>
+                    </div>
+                  </div>
+                </li>
+              </ol>
+              <div class="flex flex-row justify-between gap-4">
+                <Button type="button" @click.prevent="onAddAdmin">Add admin</Button>
+                <!--
+                  Button is on purpose not disabled on unexpectedError so that user can retry.
+                -->
+                <Button type="submit" primary :disabled="!canAdminsSubmit()" :progress="progress">Update</Button>
+              </div>
+            </form>
+          </template>
           <template v-if="identityOrganizations.length || canOrganizationsSubmit()">
             <h2 class="text-xl font-bold">Added organizations</h2>
             <div v-if="identityOrganizationsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>

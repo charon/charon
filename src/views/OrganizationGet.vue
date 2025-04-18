@@ -315,7 +315,7 @@ function canApplicationsSubmit(): boolean {
   }
 
   // Anything changed?
-  if (!equals(organization.value!.applications, applications.value)) {
+  if (!equals(organization.value!.applications || [], applications.value)) {
     return true
   }
 
@@ -432,7 +432,7 @@ function getServiceClientDescription(application: OrganizationApplication, clien
 
 function canAdminsSubmit(): boolean {
   // Anything changed?
-  if (!equals(organization.value!.admins, admins.value)) {
+  if (!equals(organization.value!.admins || [], admins.value)) {
     return true
   }
 
@@ -741,7 +741,7 @@ async function onIdentitiesSubmit() {
               </li>
             </ul>
           </template>
-          <template v-if="metadata.can_update && (admins.length || canAdminsSubmit())">
+          <template v-if="metadata.can_update">
             <h2 class="text-xl font-bold">Admins</h2>
             <div v-if="adminsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
             <div v-else-if="adminsUpdated" class="text-success-600">Admins updated successfully.</div>
