@@ -23,10 +23,12 @@ import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
 import ApplicationTemplateListItem from "@/partials/ApplicationTemplateListItem.vue"
 import IdentityListItem from "@/partials/IdentityListItem.vue"
+import IdentityPublic from "@/partials/IdentityPublic.vue"
 import { getURL, postJSON } from "@/api"
 import { setupArgon2id } from "@/argon2id"
 import { clone, equals, getIdentityOrganization, getOrganization } from "@/utils"
 import { injectProgress } from "@/progress"
+import siteContext from "@/context"
 
 const props = defineProps<{
   id: string
@@ -56,6 +58,10 @@ const description = ref("")
 const applicationsUnexpectedError = ref("")
 const applicationsUpdated = ref(false)
 const applications = ref<OrganizationApplication[]>([])
+
+const adminsUnexpectedError = ref("")
+const adminsUpdated = ref(false)
+const admins = ref<IdentityRef[]>([])
 
 const organizationIdentitiesUnexpectedError = ref("")
 const organizationIdentitiesUpdated = ref(false)
@@ -90,6 +96,8 @@ function resetOnInteraction() {
   basicUpdated.value = false
   applicationsUnexpectedError.value = ""
   applicationsUpdated.value = false
+  adminsUnexpectedError.value = ""
+  adminsUpdated.value = false
   organizationIdentitiesUnexpectedError.value = ""
   organizationIdentitiesUpdated.value = false
   // dataLoading and dataLoadingError are not listed here on
@@ -102,7 +110,7 @@ function initWatchInteraction() {
     return
   }
 
-  const stop = watch([name, description, applications, organizationIdentities], resetOnInteraction, { deep: true })
+  const stop = watch([name, description, applications, admins, organizationIdentities], resetOnInteraction, { deep: true })
   if (watchInteractionStop !== null) {
     throw new Error("watchInteractionStop already set")
   }
@@ -117,7 +125,7 @@ onBeforeUnmount(() => {
   abortController.abort()
 })
 
-async function loadData(update: "init" | "basic" | "applications" | "identities" | null, dataError: Ref<string> | null) {
+async function loadData(update: "init" | "basic" | "applications" | "admins" | "identities" | null, dataError: Ref<string> | null) {
   if (abortController.signal.aborted) {
     return
   }
@@ -149,6 +157,9 @@ async function loadData(update: "init" | "basic" | "applications" | "identities"
       }
       if (update === "init" || update === "applications") {
         applications.value = clone(response.doc.applications || [])
+      }
+      if (update === "init" || update === "admins") {
+        admins.value = clone(response.doc.admins || [])
       }
     }
 
@@ -224,7 +235,7 @@ onBeforeMount(async () => {
   await loadData("init", dataLoadingError)
 })
 
-async function onSubmit(payload: Organization, update: "basic" | "applications", updated: Ref<boolean>, unexpectedError: Ref<string>) {
+async function onSubmit(payload: Organization, update: "basic" | "applications" | "admins", updated: Ref<boolean>, unexpectedError: Ref<string>) {
   if (abortController.signal.aborted) {
     return
   }
@@ -417,6 +428,44 @@ function getServiceClientDescription(application: OrganizationApplication, clien
     }
   }
   return ""
+}
+
+function canAdminsSubmit(): boolean {
+  // Anything changed?
+  if (!equals(organization.value!.admins, admins.value)) {
+    return true
+  }
+
+  return false
+}
+
+async function onAdminsSubmit() {
+  const payload: Organization = {
+    // We update only admins.
+    id: props.id,
+    name: organization.value!.name,
+    description: organization.value!.description,
+    admins: admins.value,
+    applications: organization.value!.applications,
+  }
+  await onSubmit(payload, "admins", adminsUpdated, adminsUnexpectedError)
+}
+
+function onAddAdmin() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  // No need to call resetOnInteraction here because we modify variables
+  // which we watch to call resetOnInteraction.
+
+  admins.value.push({
+    id: "",
+  })
+
+  nextTick(() => {
+    document.getElementById(`admin-${admins.value.length - 1}-id`)?.focus()
+  })
 }
 
 function canIdentitiesSubmit(): boolean {
@@ -691,6 +740,36 @@ async function onIdentitiesSubmit() {
                 </ApplicationTemplateListItem>
               </li>
             </ul>
+          </template>
+          <template v-if="metadata.can_update && (admins.length || canAdminsSubmit())">
+            <h2 class="text-xl font-bold">Admins</h2>
+            <div v-if="adminsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
+            <div v-else-if="adminsUpdated" class="text-success-600">Admins updated successfully.</div>
+            <form class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
+              <ol>
+                <li v-for="(admin, i) of admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
+                  <div>{{ i + 1 }}.</div>
+                  <div class="flex flex-col">
+                    <IdentityPublic v-if="organization?.admins?.find((a) => a.id === admin.id)" :item="admin" :organization-id="siteContext.organizationId">
+                      <div class="flex flex-col items-start">
+                        <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>
+                      </div>
+                    </IdentityPublic>
+                    <div v-else class="flex flex-row gap-4">
+                      <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="flex-grow flex-auto min-w-0" :progress="progress" required />
+                      <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>
+                    </div>
+                  </div>
+                </li>
+              </ol>
+              <div class="flex flex-row justify-between gap-4">
+                <Button type="button" @click.prevent="onAddAdmin">Add admin</Button>
+                <!--
+                  Button is on purpose not disabled on unexpectedError so that user can retry.
+                -->
+                <Button type="submit" primary :disabled="!canAdminsSubmit()" :progress="progress">Update</Button>
+              </div>
+            </form>
           </template>
           <template v-if="organizationIdentities.length || canIdentitiesSubmit()">
             <h2 class="text-xl font-bold">Added identities</h2>
