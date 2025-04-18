@@ -597,7 +597,7 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 	//       For now we have to allow all identities so that a user can add another identity before they decide to join the Charon organization.
 	//       With the invitation system, identities will be added to admins only after they have accepted the invitation.
 	//       With general permission system this field will be moved out of the organization document anyway, too.
-	unknown := service.hasIdentities(ctx, mapset.NewThreadUnsafeSet(o.Admins...))
+	unknown := service.hasIdentities(ctx, mapset.NewThreadUnsafeSet(o.Admins...), true)
 	if !unknown.IsEmpty() {
 		errE := errors.New("unknown identities")
 		identities := unknown.ToSlice()
