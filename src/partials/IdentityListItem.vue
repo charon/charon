@@ -5,29 +5,14 @@ import type { ComponentExposed } from "vue-component-type-helpers"
 import { ref } from "vue"
 import WithDocument from "@/components/WithDocument.vue"
 
-const props = defineProps<{
+defineProps<{
   item: IdentityRef
-  organizationId?: string
   flowId?: string
   labels?: string[]
 }>()
 
 const WithIdentityDocument = WithDocument<Identity>
 const identity = ref<ComponentExposed<typeof WithIdentityDocument> | null>(null)
-
-function isDisabled(): boolean {
-  if (!props.organizationId) {
-    return false
-  }
-
-  for (const idOrg of identity.value!.doc!.organizations) {
-    if (idOrg.organization.id === props.organizationId) {
-      return !idOrg.active
-    }
-  }
-
-  return false
-}
 </script>
 
 <template>
@@ -41,44 +26,39 @@ function isDisabled(): boolean {
         </div>
         <div class="flex-grow flex flex-col">
           <h2 v-if="doc.username" class="text-xl">
-            <ul v-if="metadata.can_update || isDisabled() || labels?.length" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm float-right">
+            <ul v-if="metadata.can_update || labels?.length" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm float-right">
               <li v-for="label in labels || []" :key="label" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{ label }}</li>
               <li v-if="metadata.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">admin</li>
-              <li v-if="isDisabled()" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">disabled</li>
             </ul>
             <router-link :to="{ name: 'IdentityGet', params: { id: doc.id } }" class="link">{{ doc.username }}</router-link>
             <span v-if="doc.email"> ({{ doc.email }})</span>
           </h2>
           <h2 v-else-if="doc.email" class="text-xl">
-            <ul v-if="metadata.can_update || isDisabled() || labels?.length" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm float-right">
+            <ul v-if="metadata.can_update || labels?.length" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm float-right">
               <li v-for="label in labels || []" :key="label" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{ label }}</li>
               <li v-if="metadata.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">admin</li>
-              <li v-if="isDisabled()" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">disabled</li>
             </ul>
             <router-link :to="{ name: 'IdentityGet', params: { id: doc.id } }" class="link">{{ doc.email }}</router-link>
           </h2>
           <h2 v-else-if="doc.givenName" class="text-xl">
-            <ul v-if="metadata.can_update || isDisabled() || labels?.length" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm float-right">
+            <ul v-if="metadata.can_update || labels?.length" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm float-right">
               <li v-for="label in labels || []" :key="label" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{ label }}</li>
               <li v-if="metadata.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">admin</li>
-              <li v-if="isDisabled()" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">disabled</li>
             </ul>
             <router-link :to="{ name: 'IdentityGet', params: { id: doc.id } }" class="link">{{ doc.givenName }}</router-link>
             <span v-if="doc.fullName"> ({{ doc.fullName }})</span>
           </h2>
           <h2 v-else-if="doc.fullName" class="text-xl">
-            <ul v-if="metadata.can_update || isDisabled() || labels?.length" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm float-right">
+            <ul v-if="metadata.can_update || labels?.length" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm float-right">
               <li v-for="label in labels || []" :key="label" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{ label }}</li>
               <li v-if="metadata.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">admin</li>
-              <li v-if="isDisabled()" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">disabled</li>
             </ul>
             <router-link :to="{ name: 'IdentityGet', params: { id: doc.id } }" class="link">{{ doc.fullName }}</router-link>
           </h2>
-          <div v-else-if="metadata.can_update || isDisabled() || labels?.length">
+          <div v-else-if="metadata.can_update || labels?.length">
             <ul class="flex flex-row flex-wrap content-start items-start gap-1 text-sm float-right">
               <li v-for="label in labels || []" :key="label" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{ label }}</li>
               <li v-if="metadata.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">admin</li>
-              <li v-if="isDisabled()" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">disabled</li>
             </ul>
           </div>
           <div v-if="doc.givenName && (doc.username || doc.email)" class="mt-1">

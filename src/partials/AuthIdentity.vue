@@ -231,7 +231,7 @@ function onIdentityCreated(identity: IdentityRef) {
       <div v-else-if="!usedIdentities.length" class="italic mb-4">You have not yet used any (active) identity with this organization.</div>
       <ul v-else>
         <li v-for="(identity, i) of usedIdentities" :key="identity.id" class="grid grid-cols-1 gap-4 mb-4">
-          <IdentityListItem :item="identity" :organization-id="flow.getOrganizationId()" :flow-id="flow.getId()">
+          <IdentityListItem :item="identity" :flow-id="flow.getId()">
             <div class="flex flex-col items-start">
               <Button :id="i === 0 ? 'first-identity' : null" primary type="button" tabindex="1" :progress="progress" @click.prevent="onSelect(identity.id)"
                 >Select</Button

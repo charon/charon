@@ -730,7 +730,7 @@ async function onIdentitiesSubmit() {
             <form class="flex flex-col" novalidate @submit.prevent="onIdentitiesSubmit">
               <ul>
                 <li v-for="(organizationIdentity, i) in organizationIdentities" :key="organizationIdentity.id || i" class="flex flex-col mb-4">
-                  <IdentityListItem :item="organizationIdentity.identity" :organization-id="id" />
+                  <IdentityListItem :item="organizationIdentity.identity" :labels="organizationIdentity.active ? [] : ['disabled']"/>
                   <div class="ml-4 mt-4 flex flew-row gap-4 justify-between items-start">
                     <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
                       <div>ID:</div>
@@ -766,7 +766,7 @@ async function onIdentitiesSubmit() {
             <h2 class="text-xl font-bold">Available identities</h2>
             <ul class="flex flex-col gap-4">
               <li v-for="identity in availableIdentities" :key="identity.id">
-                <IdentityListItem :item="identity" :organization-id="id">
+                <IdentityListItem :item="identity">
                   <template #default="{ doc }">
                     <div class="flex flex-col items-start">
                       <Button type="button" :progress="progress" primary @click.prevent="onAddIdentity(doc)">Add</Button>
