@@ -151,9 +151,8 @@ func (c *ApplicationTemplateClientPublic) Validate(ctx context.Context, existing
 		}
 	}
 
-	// We sort, remove duplicates and empty strings.
-	slices.Sort(c.AdditionalScopes)
-	c.AdditionalScopes = slices.Compact(c.AdditionalScopes)
+	// We remove duplicates and empty strings.
+	c.AdditionalScopes = removeDuplicates(c.AdditionalScopes)
 	c.AdditionalScopes = slices.DeleteFunc(c.AdditionalScopes, func(scope string) bool {
 		return scope == ""
 	})
@@ -213,9 +212,8 @@ func (c *ApplicationTemplateClientBackend) Validate(ctx context.Context, existin
 		}
 	}
 
-	// We sort, remove duplicates and empty strings.
-	slices.Sort(c.AdditionalScopes)
-	c.AdditionalScopes = slices.Compact(c.AdditionalScopes)
+	// We remove duplicates and empty strings.
+	c.AdditionalScopes = removeDuplicates(c.AdditionalScopes)
 	c.AdditionalScopes = slices.DeleteFunc(c.AdditionalScopes, func(scope string) bool {
 		return scope == ""
 	})
@@ -283,9 +281,8 @@ func (c *ApplicationTemplateClientService) Validate(_ context.Context, existing 
 		}
 	}
 
-	// We sort, remove duplicates and empty strings.
-	slices.Sort(c.AdditionalScopes)
-	c.AdditionalScopes = slices.Compact(c.AdditionalScopes)
+	// We remove duplicates and empty strings.
+	c.AdditionalScopes = removeDuplicates(c.AdditionalScopes)
 	c.AdditionalScopes = slices.DeleteFunc(c.AdditionalScopes, func(scope string) bool {
 		return scope == ""
 	})
@@ -474,9 +471,8 @@ func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *Appl
 		}
 	}
 
-	// We sort, remove duplicates and empty strings.
-	slices.Sort(a.IDScopes)
-	a.IDScopes = slices.Compact(a.IDScopes)
+	// We remove duplicates and empty strings.
+	a.IDScopes = removeDuplicates(a.IDScopes)
 	a.IDScopes = slices.DeleteFunc(a.IDScopes, func(scope string) bool {
 		return scope == ""
 	})
@@ -650,11 +646,8 @@ func (a *ApplicationTemplate) Validate(ctx context.Context, existing *Applicatio
 		a.Admins = append(a.Admins, identity)
 	}
 
-	// We sort and remove duplicates.
-	slices.SortFunc(a.Admins, func(a IdentityRef, b IdentityRef) int {
-		return bytes.Compare(a.ID[:], b.ID[:])
-	})
-	a.Admins = slices.Compact(a.Admins)
+	// We remove duplicates.
+	a.Admins = removeDuplicates(a.Admins)
 
 	// TODO: Validate that a.Admins really exist?
 

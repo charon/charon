@@ -22,6 +22,7 @@ import (
 	"strings"
 	"sync"
 
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/go-jose/go-jose/v3"
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/ory/fosite"
@@ -721,4 +722,16 @@ func withFositeError(err error) errors.E {
 	}
 
 	return errE
+}
+
+func removeDuplicates[T comparable](input []T) []T {
+	seen := mapset.NewThreadUnsafeSet[T]()
+	result := make([]T, 0, len(input))
+	for _, val := range input {
+		if !seen.Contains(val) {
+			result = append(result, val)
+			seen.Add(val)
+		}
+	}
+	return result
 }

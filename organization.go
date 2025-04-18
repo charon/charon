@@ -590,11 +590,8 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 		return errE
 	}
 
-	// We sort and remove duplicates.
-	slices.SortFunc(o.Admins, func(a IdentityRef, b IdentityRef) int {
-		return bytes.Compare(a.ID[:], b.ID[:])
-	})
-	o.Admins = slices.Compact(o.Admins)
+	// We remove duplicates.
+	o.Admins = removeDuplicates(o.Admins)
 
 	// TODO: Validate that o.Admins really exist?
 

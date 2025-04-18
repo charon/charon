@@ -292,15 +292,9 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity, service *Se
 		}
 	}
 
-	// We sort and remove duplicates.
-	slices.SortFunc(i.Admins, func(a IdentityRef, b IdentityRef) int {
-		return bytes.Compare(a.ID[:], b.ID[:])
-	})
-	i.Admins = slices.Compact(i.Admins)
-	slices.SortFunc(i.Users, func(a IdentityRef, b IdentityRef) int {
-		return bytes.Compare(a.ID[:], b.ID[:])
-	})
-	i.Users = slices.Compact(i.Users)
+	// We remove duplicates.
+	i.Admins = removeDuplicates(i.Admins)
+	i.Users = removeDuplicates(i.Users)
 
 	// Admins should not be users as well.
 	adminsSet := mapset.NewThreadUnsafeSet(i.Admins...)
