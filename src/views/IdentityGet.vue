@@ -236,7 +236,8 @@ async function onBasicSubmit() {
     fullName: fullName.value,
     pictureUrl: pictureUrl.value,
     description: description.value,
-    admins: [],
+    users: identity.value!.users,
+    admins: identity.value!.admins,
     organizations: identity.value!.organizations,
   }
   await onSubmit(payload, "basic", basicUpdated, basicUnexpectedError)
@@ -261,7 +262,8 @@ async function onOrganizationsSubmit() {
     fullName: identity.value!.fullName,
     pictureUrl: identity.value!.pictureUrl,
     description: identity.value!.description,
-    admins: [],
+    users: identity.value!.users,
+    admins: identity.value!.admins,
     organizations: identityOrganizations.value,
   }
   await onSubmit(payload, "organizations", identityOrganizationsUpdated, identityOrganizationsUnexpectedError)

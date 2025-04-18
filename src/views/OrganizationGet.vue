@@ -288,7 +288,7 @@ async function onBasicSubmit() {
     id: props.id,
     name: name.value,
     description: description.value,
-    admins: [],
+    admins: organization.value!.admins,
     applications: organization.value!.applications,
   }
   await onSubmit(payload, "basic", basicUpdated, basicUnexpectedError)
@@ -318,7 +318,7 @@ async function onApplicationsSubmit() {
     id: props.id,
     name: organization.value!.name,
     description: organization.value!.description,
-    admins: [],
+    admins: organization.value!.admins,
     applications: applications.value,
   }
   await onSubmit(payload, "applications", applicationsUpdated, applicationsUnexpectedError)
