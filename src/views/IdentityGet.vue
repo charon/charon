@@ -339,7 +339,9 @@ async function onAddOrganization(organization: OrganizationRef) {
                       </div>
                       <div v-else><span class="italic">confirm update to allocate</span></div>
                       <div>Status:</div>
-                      <div><strong>{{ identityOrganization.active ? 'active' : 'disabled' }}</strong></div>
+                      <div>
+                        <strong>{{ identityOrganization.active ? "active" : "disabled" }}</strong>
+                      </div>
                     </div>
                     <div v-if="identityOrganization.active" class="flex flew-row gap-4">
                       <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = false">Disable</Button>

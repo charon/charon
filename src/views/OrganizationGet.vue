@@ -739,7 +739,9 @@ async function onIdentitiesSubmit() {
                       </div>
                       <div v-else><span class="italic">confirm update to allocate</span></div>
                       <div>Status:</div>
-                      <div><strong>{{ organizationIdentity.active ? 'active' : 'disabled' }}</strong></div>
+                      <div>
+                        <strong>{{ organizationIdentity.active ? "active" : "disabled" }}</strong>
+                      </div>
                     </div>
                     <div v-if="organizationIdentity.active" class="flex flex-row gap-4">
                       <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = false">Disable</Button>
