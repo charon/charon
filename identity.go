@@ -866,7 +866,7 @@ func (s *Service) hasIdentities(_ context.Context, ids mapset.Set[IdentityRef], 
 	return unknown
 }
 
-func (s *Service) identityList(ctx context.Context, organization, notOrganization *identifier.Identifier, active bool) ([]IdentityRef, errors.E) {
+func (s *Service) identityList(ctx context.Context, organization, notOrganization *identifier.Identifier, active *bool) ([]IdentityRef, errors.E) {
 	accountID := mustGetAccountID(ctx)
 
 	result := []IdentityRef{}
@@ -903,8 +903,7 @@ func (s *Service) identityList(ctx context.Context, organization, notOrganizatio
 
 		if idOrg := identity.GetOrganization(organization); organization != nil && idOrg != nil {
 			// TODO: Do not filter in list endpoint but filter in search endpoint.
-			// Or only active identities are requested, or we return all.
-			if (active && idOrg.Active) || !active {
+			if active == nil || (*active && idOrg.Active) || (!*active && !idOrg.Active) {
 				result = append(result, i)
 			}
 		} else if idOrg := identity.GetOrganization(notOrganization); notOrganization != nil && idOrg == nil {
@@ -948,13 +947,15 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 		notOrganization = &o
 	}
 
-	active := false
+	var active *bool
 	if b := req.Form.Get("active"); b != "" {
 		switch b {
 		case "true":
-			active = true
+			a := true
+			active = &a
 		case "false":
-			active = false
+			a := false
+			active = &a
 		default:
 			s.BadRequestWithError(w, req, errors.New(`invalid "active" parameter`))
 			return

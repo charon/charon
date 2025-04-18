@@ -1,5 +1,5 @@
 import type { DeepReadonly, Ref } from "vue"
-import type { Mutable, QueryValuesWithOptional, QueryValues, OrganizationApplicationPublic } from "@/types"
+import type { Mutable, QueryValuesWithOptional, QueryValues, OrganizationApplicationPublic, Identity, IdentityOrganization } from "@/types"
 
 import { cloneDeep, isEqual } from "lodash-es"
 import { toRaw } from "vue"
@@ -165,4 +165,34 @@ export function interpolateVariables(template: string, values: Map<string, strin
 export function currentAbsoluteURL(): string {
   // We remove origin prefix from full URL to get absolute URL.
   return document.location.href.slice(document.location.origin.length)
+}
+
+// getIdentityOrganization should match implementation on the backend.
+export function getIdentityOrganization(identity: Identity, id: string | undefined): IdentityOrganization | null {
+  if (id === undefined) {
+    return null
+  }
+
+  for (const identityOrganization of identity.organizations) {
+    if (identityOrganization.id === id) {
+      return identityOrganization
+    }
+  }
+
+  return null
+}
+
+// getOrganization should match implementation on the backend.
+export function getOrganization(identity: Identity, id: string | undefined): IdentityOrganization | null {
+  if (id === undefined) {
+    return null
+  }
+
+  for (const identityOrganization of identity.organizations) {
+    if (identityOrganization.organization.id === id) {
+      return identityOrganization
+    }
+  }
+
+  return null
 }

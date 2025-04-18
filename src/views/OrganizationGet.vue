@@ -11,7 +11,6 @@ import type {
   IdentityRef,
   OrganizationIdentity,
   Identity,
-  IdentityOrganization,
 } from "@/types"
 
 import { computed, nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
@@ -26,7 +25,7 @@ import ApplicationTemplateListItem from "@/partials/ApplicationTemplateListItem.
 import IdentityListItem from "@/partials/IdentityListItem.vue"
 import { getURL, postJSON } from "@/api"
 import { setupArgon2id } from "@/argon2id"
-import { clone, equals } from "@/utils"
+import { clone, equals, getIdentityOrganization, getOrganization } from "@/utils"
 import { injectProgress } from "@/progress"
 
 const props = defineProps<{
@@ -449,36 +448,6 @@ async function onAddIdentity(identity: Identity | DeepReadonly<Identity>) {
   })
 }
 
-// getIdentityOrganization should match implementation on the backend.
-function getIdentityOrganization(identity: Identity, id: string | undefined): IdentityOrganization | null {
-  if (id === undefined) {
-    return null
-  }
-
-  for (const identityOrganization of identity.organizations) {
-    if (identityOrganization.id === id) {
-      return identityOrganization
-    }
-  }
-
-  return null
-}
-
-// getOrganization should match implementation on the backend.
-function getOrganization(identity: Identity, id: string | undefined): IdentityOrganization | null {
-  if (id === undefined) {
-    return null
-  }
-
-  for (const identityOrganization of identity.organizations) {
-    if (identityOrganization.organization.id === id) {
-      return identityOrganization
-    }
-  }
-
-  return null
-}
-
 async function onIdentitiesSubmit() {
   if (abortController.signal.aborted) {
     return
@@ -730,7 +699,7 @@ async function onIdentitiesSubmit() {
             <form class="flex flex-col" novalidate @submit.prevent="onIdentitiesSubmit">
               <ul>
                 <li v-for="(organizationIdentity, i) in organizationIdentities" :key="organizationIdentity.id || i" class="flex flex-col mb-4">
-                  <IdentityListItem :item="organizationIdentity.identity" :labels="organizationIdentity.active ? [] : ['disabled']"/>
+                  <IdentityListItem :item="organizationIdentity.identity" :labels="organizationIdentity.active ? [] : ['disabled']" />
                   <div class="ml-4 mt-4 flex flew-row gap-4 justify-between items-start">
                     <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
                       <div>ID:</div>
