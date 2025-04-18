@@ -836,7 +836,7 @@ func (s *Service) IdentityGetGet(w http.ResponseWriter, req *http.Request, param
 		// getIdentityFromID checked that user has user or admin access to the identity
 		// so here we know that they have both.
 		s.WriteJSON(w, req, identity, map[string]interface{}{
-			"can_get":    true,
+			"can_use":    true,
 			"can_update": true,
 		})
 		return
@@ -845,7 +845,7 @@ func (s *Service) IdentityGetGet(w http.ResponseWriter, req *http.Request, param
 	// getIdentityFromID checked that user has user or admin access to the identity
 	// so here we know that they have only user access.
 	s.WriteJSON(w, req, identity, map[string]interface{}{
-		"can_get": true,
+		"can_use": true,
 	})
 }
 

@@ -835,7 +835,7 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	_, _, errE = s.getIdentityFromRequest(w, req, organizationID.String())
+	_, accountID, errE := s.getIdentityFromRequest(w, req, organizationID.String())
 	if errors.Is(errE, ErrIdentityNotPresent) {
 		s.WithError(ctx, errE)
 		waf.Error(w, req, http.StatusUnauthorized)
@@ -907,7 +907,16 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 		//       their ID and presumably they learned those IDs by having access to something which referenced those IDs. So unless we enable identity enumeration,
 		//       how it is might be enough (and even then we would probably enable enumeration only to identities to which user needs access).
 
-		s.WriteJSON(w, req, identity.IdentityPublic, nil)
+		ids, isCreator, errE := s.getIdentitiesForAccount(ctx, accountID, IdentityRef{ID: *identity.ID})
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+
+		s.WriteJSON(w, req, identity.IdentityPublic, map[string]interface{}{
+			"can_use":    identity.HasUserAccess(ids),
+			"can_update": identity.HasAdminAccess(ids, isCreator),
+		})
 		return
 	}
 
