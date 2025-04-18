@@ -438,6 +438,11 @@ async function onAddIdentity(identity: Identity | DeepReadonly<Identity>) {
     active: false,
     identity,
   })
+  // Because list of all identities is sorted by ID, organizationIdentities itself is also sorted by identity ID. We do not want
+  // that after updating the list and retrieving the result from the backend, the list changes with identities changing the
+  // order. So we prefer to sort the list before sending it to the backend, in the same way the backend does. Ideally, we
+  // would have the order in which identities were added to the organization, but we do not have that information.
+  organizationIdentities.value.sort((a, b) => a.identity.id.localeCompare(b.identity.id))
 
   nextTick(() => {
     document.getElementById("identities-update")?.focus()
