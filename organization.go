@@ -593,7 +593,19 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 	// We remove duplicates.
 	o.Admins = removeDuplicates(o.Admins)
 
-	// TODO: Validate that o.Admins really exist?
+	// TODO: Once we have an invitation system, limit only to identities which have been joined the Charon organization.
+	//       For now we have to allow all identities so that a user can add another identity before they decide to join the Charon organization.
+	//       With the invitation system, identities will be added to admins only after they have accepted the invitation.
+	//       With general permission system this field will be moved out of the organization document anyway, too.
+	unknown := service.hasIdentities(ctx, mapset.NewThreadUnsafeSet(o.Admins...))
+	if !unknown.IsEmpty() {
+		errE := errors.New("unknown identities")
+		identities := unknown.ToSlice()
+		slices.SortFunc(identities, func(a IdentityRef, b IdentityRef) int {
+			return bytes.Compare(a.ID[:], b.ID[:])
+		})
+		errors.Details(errE)["identities"] = identities
+	}
 
 	if o.Applications == nil {
 		o.Applications = []OrganizationApplication{}
@@ -847,6 +859,16 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 		}
 
 		if co.ID == organizationID {
+			// TODO: This allows everyone to access data about an identity given only its database ID.
+			//       This is problematic because somebody might create an identity to be used only with a particular organization,
+			//       never to be shared with other users (so there is no need for identity to be available through this endpoint),
+			//       without giving any consent that data can be shared with others. While we do not expose all database IDs it is
+			//       still problematic that data is protected only by secrecy of the database ID. Currently we do this to allow
+			//       permissions between identities. But once we have an invitation system and general permission system,
+			//       then we can expose through this endpoint only identities a) which have joined the Charon organization, or
+			//       b) have accepted an invite to be added to a permission. Importantly, identities which have been invited but never
+			//       accepted the invite should not have their data revealed, only information provided by the inviter should be shown.
+
 			// A special case for Charon organization: organization-scoped identity ID is the same as the identity ID.
 			// We need a special case here because we want to return even identities which have not been added to the
 			// Charon organization (so that users can give permissions over identities to other users while those
@@ -890,6 +912,14 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 	}
 
 	s.NotFound(w, req)
+}
+
+func (s *Service) hasOrganization(_ context.Context, id OrganizationRef) bool {
+	s.organizationsMu.RLock()
+	defer s.organizationsMu.RUnlock()
+
+	_, ok := s.organizations[id.ID]
+	return ok
 }
 
 func (s *Service) OrganizationListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {

@@ -627,7 +627,7 @@ func (a *ApplicationTemplate) HasAdminAccess(identities ...IdentityRef) bool {
 }
 
 // Validate requires ctx with identityIDContextKey set.
-func (a *ApplicationTemplate) Validate(ctx context.Context, existing *ApplicationTemplate) errors.E {
+func (a *ApplicationTemplate) Validate(ctx context.Context, existing *ApplicationTemplate, service *Service) errors.E {
 	var e *ApplicationTemplatePublic
 	if existing == nil {
 		e = nil
@@ -649,7 +649,20 @@ func (a *ApplicationTemplate) Validate(ctx context.Context, existing *Applicatio
 	// We remove duplicates.
 	a.Admins = removeDuplicates(a.Admins)
 
-	// TODO: Validate that a.Admins really exist?
+	// TODO: Once we have an invitation system, limit only to identities which have been joined the Charon organization.
+	//       For now we have to allow all identities so that a user can add another identity before they decide to join the Charon organization.
+	//       With the invitation system, identities will be added to admins only after they have accepted the invitation.
+	//       With general permission system this field will be moved out of the organization document anyway, too.
+	unknown := service.hasIdentities(ctx, mapset.NewThreadUnsafeSet(a.Admins...))
+	if !unknown.IsEmpty() {
+		errE := errors.New("unknown identities")
+		identities := unknown.ToSlice()
+		slices.SortFunc(identities, func(a IdentityRef, b IdentityRef) int {
+			return bytes.Compare(a.ID[:], b.ID[:])
+		})
+		errors.Details(errE)["identities"] = identities
+		return errE
+	}
 
 	return nil
 }
@@ -672,7 +685,7 @@ func (s *Service) getApplicationTemplate(_ context.Context, id identifier.Identi
 }
 
 func (s *Service) createApplicationTemplate(ctx context.Context, applicationTemplate *ApplicationTemplate) errors.E {
-	errE := applicationTemplate.Validate(ctx, nil)
+	errE := applicationTemplate.Validate(ctx, nil, s)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrApplicationTemplateValidationFailed)
 	}
@@ -713,7 +726,7 @@ func (s *Service) updateApplicationTemplate(ctx context.Context, applicationTemp
 		return errors.WithDetails(ErrApplicationTemplateUnauthorized, "id", *applicationTemplate.ID)
 	}
 
-	errE = applicationTemplate.Validate(ctx, &existingApplicationTemplate)
+	errE = applicationTemplate.Validate(ctx, &existingApplicationTemplate, s)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrApplicationTemplateValidationFailed)
 	}

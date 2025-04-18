@@ -83,7 +83,11 @@ func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityO
 		return errE
 	}
 
-	// TODO: Validate that i.Organization really exists?
+	if !service.hasOrganization(ctx, i.Organization) {
+		errE := errors.New("unknown organization")
+		errors.Details(errE)["organization"] = i.Organization.ID
+		return errE
+	}
 
 	return nil
 }
@@ -302,7 +306,22 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity, service *Se
 		return adminsSet.Contains(ia)
 	})
 
-	// TODO: Validate that i.Users and i.Admins really exist?
+	// TODO: We will have to rethink this once we have an invitation system and general permission system.
+	//       Because users permissions will probably be per organization (e.g., you can use my identity for this
+	//       particular organization and not for all organizations I am using). But we will still want that
+	//       users are using identities from other users without those identities having to join the
+	//       Charon organization (but they have to join the target organization).
+	identities := mapset.NewThreadUnsafeSet(i.Users...)
+	identities.Append(i.Admins...)
+	unknown := service.hasIdentities(ctx, identities)
+	if !unknown.IsEmpty() {
+		errE := errors.New("unknown identities")
+		identities := unknown.ToSlice()
+		slices.SortFunc(identities, func(a IdentityRef, b IdentityRef) int {
+			return bytes.Compare(a.ID[:], b.ID[:])
+		})
+		errors.Details(errE)["identities"] = identities
+	}
 
 	if i.Organizations == nil {
 		i.Organizations = []IdentityOrganization{}
@@ -828,6 +847,21 @@ func (s *Service) IdentityGetGet(w http.ResponseWriter, req *http.Request, param
 	s.WriteJSON(w, req, identity, map[string]interface{}{
 		"can_get": true,
 	})
+}
+
+func (s *Service) hasIdentities(_ context.Context, ids mapset.Set[IdentityRef]) mapset.Set[IdentityRef] {
+	s.identitiesMu.RLock()
+	defer s.identitiesMu.RUnlock()
+
+	unknown := mapset.NewThreadUnsafeSet[IdentityRef]()
+
+	for id := range mapset.Elements(ids) {
+		if _, ok := s.identities[id.ID]; !ok {
+			unknown.Add(id)
+		}
+	}
+
+	return unknown
 }
 
 func (s *Service) identityList(ctx context.Context, organization, notOrganization *identifier.Identifier, active bool) ([]IdentityRef, errors.E) {
