@@ -284,6 +284,8 @@ async function onAddOrganization(organization: OrganizationRef) {
     document.getElementById("organizations-update")?.focus()
   })
 }
+
+// TODO: Remember previous organization-scoped identity IDs and reuse them if an organization is removed and then added back without calling update in-between.
 </script>
 
 <template>

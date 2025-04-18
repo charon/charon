@@ -567,7 +567,8 @@ async function onIdentitiesSubmit() {
   }
 }
 
-// TODO: Remember previous secrets and reuse them if an add application is removed and then added back.
+// TODO: Remember previous client ID and secrets and reuse them if an add application is removed and then added back without calling update in-between.
+// TODO: Remember previous organization-scoped identity IDs and reuse them if an identity is removed and then added back without calling update in-between.
 // TODO: Provide explicit buttons to rotate each secret.
 </script>
 
