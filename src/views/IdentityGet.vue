@@ -465,7 +465,12 @@ async function onAddOrganization(organization: OrganizationRef) {
                 <li v-for="(admin, i) of admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
-                    <IdentityPublic v-if="identity?.admins?.find((a) => a.id === admin.id)" :item="admin" :organization-id="siteContext.organizationId">
+                    <IdentityPublic
+                      v-if="identity?.admins?.find((a) => a.id === admin.id)"
+                      :item="admin"
+                      :organization-id="siteContext.organizationId"
+                      :labels="identity?.id === admin.id ? ['creator'] : []"
+                    >
                       <div class="flex flex-col items-start">
                         <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>
                       </div>
