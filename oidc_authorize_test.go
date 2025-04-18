@@ -138,9 +138,9 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 	idTokenLastTimestamps := map[string]time.Time{}
 
 	uniqueStrings := mapset.NewThreadUnsafeSet[string]()
-	assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, appID, sessionID, accessToken, accessTokenLastTimestamps, identityID)))
-	assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, appID, sessionID, nonce, accessToken, idToken, idTokenLastTimestamps, identityID)))
-	validateIntrospect(t, ts, service, now, clientID, appID, sessionID, refreshToken, "refresh_token", identityID)
+	assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, accessToken, accessTokenLastTimestamps, identityID)))
+	assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, nonce, accessToken, idToken, idTokenLastTimestamps, identityID)))
+	validateIntrospect(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, refreshToken, "refresh_token", identityID)
 	validateUserInfo(t, ts, service, accessToken, identityID)
 
 	// We use assert.WithinDuration with 2 seconds allowed delta, so in 10 iterations every
@@ -151,9 +151,9 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 
 		accessToken, idToken, refreshToken, now = exchangeRefreshTokenForTokens(t, ts, service, clientID, refreshToken, accessToken)
 
-		assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, appID, sessionID, accessToken, accessTokenLastTimestamps, identityID)))
-		assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, appID, sessionID, nonce, accessToken, idToken, idTokenLastTimestamps, identityID)))
-		validateIntrospect(t, ts, service, now, clientID, appID, sessionID, refreshToken, "refresh_token", identityID)
+		assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, accessToken, accessTokenLastTimestamps, identityID)))
+		assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, nonce, accessToken, idToken, idTokenLastTimestamps, identityID)))
+		validateIntrospect(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, refreshToken, "refresh_token", identityID)
 		validateUserInfo(t, ts, service, accessToken, identityID)
 	}
 }

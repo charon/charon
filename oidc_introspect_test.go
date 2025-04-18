@@ -44,7 +44,7 @@ type introspectRefreshTokenResponse struct {
 	ExpirationTime   jwt.NumericDate `json:"exp"`
 }
 
-func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, appID, token string, identityID identifier.Identifier) map[string]interface{} {
+func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, appID, organizationID, token string, identityID identifier.Identifier) map[string]interface{} {
 	t.Helper()
 
 	keySet := getKeys(t, ts, service)
@@ -60,7 +60,7 @@ func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now
 	err = claims.ValidateWithLeeway(jwt.Expected{
 		Subject:     identityID.String(),
 		Issuer:      ts.URL,
-		AnyAudience: []string{appID, clientID},
+		AnyAudience: []string{organizationID, appID, clientID},
 		Time:        now,
 	}, 0)
 	assert.NoError(t, err, claims)
@@ -68,7 +68,7 @@ func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now
 	return all
 }
 
-func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, appID, sessionID, token, typeHint string, identityID identifier.Identifier) *introspectAccessTokenResponse {
+func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, appID, organizationID, sessionID, token, typeHint string, identityID identifier.Identifier) *introspectAccessTokenResponse {
 	t.Helper()
 
 	oidcIntrospect, errE := service.ReverseAPI("OIDCIntrospect", nil, nil)
@@ -116,7 +116,7 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 	assert.WithinDuration(t, now, response.IssueTime.Time().UTC(), 2*time.Second)
 	assert.Equal(t, "openid profile email offline_access", response.Scope)
 	assert.Equal(t, identityID.String(), response.Subject)
-	assert.Equal(t, []string{appID, clientID}, response.Audience)
+	assert.Equal(t, []string{organizationID, appID, clientID}, response.Audience)
 	assert.Equal(t, ts.URL, response.Issuer)
 	_, errE = identifier.MaybeString(response.JTI)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -158,13 +158,13 @@ func validateNotValidIntrospect(t *testing.T, ts *httptest.Server, service *char
 
 func validateAccessToken(
 	t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time,
-	clientID, appID, sessionID, accessToken string,
+	clientID, appID, organizationID, sessionID, accessToken string,
 	lastTimestamps map[string]time.Time, identityID identifier.Identifier,
 ) string {
 	t.Helper()
-	response := validateIntrospect(t, ts, service, now, clientID, appID, sessionID, accessToken, "access_token", identityID)
+	response := validateIntrospect(t, ts, service, now, clientID, appID, organizationID, sessionID, accessToken, "access_token", identityID)
 
-	all := validateJWT(t, ts, service, now, clientID, appID, accessToken, identityID)
+	all := validateJWT(t, ts, service, now, clientID, appID, organizationID, accessToken, identityID)
 
 	timestamps := map[string]int64{}
 
@@ -193,7 +193,7 @@ func validateAccessToken(
 	delete(all, "jti")
 
 	assert.Equal(t, map[string]interface{}{
-		"aud":       []interface{}{appID, clientID},
+		"aud":       []interface{}{organizationID, appID, clientID},
 		"client_id": clientID,
 		"iss":       ts.URL,
 		"scope":     "openid profile email offline_access",
