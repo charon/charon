@@ -89,7 +89,9 @@ function initWatchInteraction() {
     return
   }
 
-  const stop = watch([name, description, homepageTemplate, idScopes, variables, clientsPublic, clientsBackend, clientsService, admins], resetOnInteraction, { deep: true })
+  const stop = watch([name, description, homepageTemplate, idScopes, variables, clientsPublic, clientsBackend, clientsService, admins], resetOnInteraction, {
+    deep: true,
+  })
   if (watchInteractionStop !== null) {
     throw new Error("watchInteractionStop already set")
   }
@@ -517,7 +519,6 @@ function onAddClientService() {
   })
 }
 
-
 function canAdminsSubmit(): boolean {
   // Anything changed?
   if (!equals(applicationTemplate.value!.admins, admins.value)) {
@@ -677,7 +678,9 @@ function onAddAdmin() {
                               :progress="progress"
                               required
                             />
-                            <Button v-if="metadata.can_update" type="button" :progress="progress" @click.prevent="client.redirectUriTemplates.splice(j, 1)">Remove</Button>
+                            <Button v-if="metadata.can_update" type="button" :progress="progress" @click.prevent="client.redirectUriTemplates.splice(j, 1)"
+                              >Remove</Button
+                            >
                           </div>
                         </li>
                       </ol>
@@ -752,7 +755,9 @@ function onAddAdmin() {
                               :progress="progress"
                               required
                             />
-                            <Button v-if="metadata.can_update" type="button" :progress="progress" @click.prevent="client.redirectUriTemplates.splice(j, 1)">Remove</Button>
+                            <Button v-if="metadata.can_update" type="button" :progress="progress" @click.prevent="client.redirectUriTemplates.splice(j, 1)"
+                              >Remove</Button
+                            >
                           </div>
                         </li>
                       </ol>
@@ -930,19 +935,13 @@ function onAddAdmin() {
                 <li v-for="(admin, i) of admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
-                    <IdentityPublic v-if="applicationTemplate?.admins?.find(a => a.id === admin.id)" :item="admin" :organization-id="siteContext.organizationId">
+                    <IdentityPublic v-if="applicationTemplate?.admins?.find((a) => a.id === admin.id)" :item="admin" :organization-id="siteContext.organizationId">
                       <div class="flex flex-col items-start">
                         <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>
                       </div>
                     </IdentityPublic>
                     <div v-else class="flex flex-row gap-4">
-                      <InputText
-                        :id="`admin-${i}-id`"
-                        v-model="admins[i].id"
-                        class="flex-grow flex-auto min-w-0"
-                        :progress="progress"
-                        required
-                      />
+                      <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="flex-grow flex-auto min-w-0" :progress="progress" required />
                       <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>
                     </div>
                   </div>

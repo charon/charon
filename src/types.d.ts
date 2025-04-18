@@ -318,14 +318,15 @@ export type OrganizationCreate = {
   name: string
 }
 
-export type Identity = IdentityCreate & IdentityPublic & {
-  // Identity is returned from API only when user can access it and can access
-  // its full document, including permissions and organizations, so we can be
-  // precise which fields are optional.
-  users?: IdentityRef[]
-  admins: IdentityRef[]
-  organizations: IdentityOrganization[]
-}
+export type Identity = IdentityCreate &
+  IdentityPublic & {
+    // Identity is returned from API only when user can access it and can access
+    // its full document, including permissions and organizations, so we can be
+    // precise which fields are optional.
+    users?: IdentityRef[]
+    admins: IdentityRef[]
+    organizations: IdentityOrganization[]
+  }
 
 type IdentityAttributes = {
   username?: string
