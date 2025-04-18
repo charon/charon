@@ -516,18 +516,18 @@ async function onAddOrganization(organization: OrganizationRef) {
                         <strong>{{ identityOrganization.active ? "active" : "disabled" }}</strong>
                       </div>
                     </div>
-                    <div v-if="identityOrganization.active" class="flex flew-row gap-4">
+                    <div v-if="metadata.can_update && identityOrganization.active" class="flex flew-row gap-4">
                       <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = false">Disable</Button>
                       <Button type="button" :progress="progress" @click.prevent="identityOrganizations.splice(i, 1)">Remove</Button>
                     </div>
-                    <div v-else class="flex flew-row gap-4">
+                    <div v-else-if="metadata.can_update" class="flex flew-row gap-4">
                       <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = true">Activate</Button>
                       <Button type="button" :progress="progress" @click.prevent="identityOrganizations.splice(i, 1)">Remove</Button>
                     </div>
                   </div>
                 </li>
               </ul>
-              <div class="flex flex-row justify-end">
+              <div v-if="metadata.can_update" class="flex flex-row justify-end">
                 <!--
                   Button is on purpose not disabled on unexpectedError so that user can retry.
                 -->
