@@ -2,11 +2,10 @@ import type { Ref } from "vue"
 import type { Router } from "vue-router"
 import type { Flow, SiteProvider, AuthFlowResponse, Completed } from "@/types"
 
-import { isEqual } from "lodash-es"
 // It is OK that we fetch siteContext here because the server sends preload header
 // so we have to fetch it always anyway. Generally this is already cached.
 import siteContext from "@/context"
-import { redirectServerSide } from "@/utils"
+import { equals, redirectServerSide } from "@/utils"
 
 export function getOIDCProvider(providers: string[]): SiteProvider | null {
   for (const provider of providers) {
@@ -128,7 +127,7 @@ export function processResponse(router: Router, response: AuthFlowResponse, flow
   } else {
     flow.setEmailOrUsername("")
   }
-  if (!isEqual(flow.getCompleted(), response.completed)) {
+  if (!equals(flow.getCompleted(), response.completed)) {
     processCompleted(router, flow, progress, response.completed)
     if (abortController) {
       abortController.abort()
