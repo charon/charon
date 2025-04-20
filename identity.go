@@ -866,6 +866,8 @@ func (s *Service) hasIdentities(_ context.Context, ids mapset.Set[IdentityRef], 
 	return unknown
 }
 
+// TODO: Do not filter in list endpoint but filter in search endpoint.
+
 func (s *Service) identityList(ctx context.Context, organization, notOrganization *identifier.Identifier, active *bool) ([]IdentityRef, errors.E) {
 	accountID := mustGetAccountID(ctx)
 
@@ -894,20 +896,26 @@ func (s *Service) identityList(ctx context.Context, organization, notOrganizatio
 			return nil, errE
 		}
 
-		// We could also just check if ids.Contains(i), but this matches the logic in
-		// getIdentity to minimize any chance of discrepancies.
-		// TODO: Do not filter in list endpoint but filter in search endpoint.
-		if !identity.HasUserAccess(ids) && !identity.HasAdminAccess(ids, isCreator) {
+		// We could also just check if ids.Contains(i), but this gives
+		// us information about the type of the access.
+		hasUserAccess := identity.HasUserAccess(ids)
+		hasAdminAccess := identity.HasAdminAccess(ids, isCreator)
+		if !hasUserAccess && !hasAdminAccess {
 			continue
 		}
 
 		if idOrg := identity.GetOrganization(organization); organization != nil && idOrg != nil {
-			// TODO: Do not filter in list endpoint but filter in search endpoint.
-			if active == nil || (*active && idOrg.Active) || (!*active && !idOrg.Active) {
+			// If identity is not active in the organization, then admin access is
+			// required to be able to enable it in the organization first.
+			if active == nil || (*active && idOrg.Active) || (!*active && !idOrg.Active && hasAdminAccess) {
 				result = append(result, i)
 			}
 		} else if idOrg := identity.GetOrganization(notOrganization); notOrganization != nil && idOrg == nil {
-			result = append(result, i)
+			// If identity is not already in the organization, then admin access is
+			// required to be able to join the organization first.
+			if hasAdminAccess {
+				result = append(result, i)
+			}
 		} else if organization == nil && notOrganization == nil {
 			result = append(result, i)
 		}
