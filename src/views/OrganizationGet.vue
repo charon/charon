@@ -90,6 +90,15 @@ function isIdentityAdded(identity: IdentityRef): boolean {
   return false
 }
 
+function getInitialOrganizationIdentity(identity: IdentityRef): OrganizationIdentity | null {
+  for (const organizationIdentity of organizationIdentitiesInitial) {
+    if (organizationIdentity.identity.id === identity.id) {
+      return organizationIdentity
+    }
+  }
+  return null
+}
+
 function resetOnInteraction() {
   // We reset flags and errors on interaction.
   basicUnexpectedError.value = ""
@@ -516,6 +525,12 @@ async function onIdentitiesSubmit() {
   try {
     try {
       for (const organizationIdentity of organizationIdentities.value) {
+        // Anything changed?
+        const initialOrganizationIdentity = getInitialOrganizationIdentity(organizationIdentity.identity)
+        if (initialOrganizationIdentity !== null && equals(initialOrganizationIdentity, organizationIdentity)) {
+          continue
+        }
+
         const payload = clone(organizationIdentity.identity)
         // Does there exist an entry with this ID? ID might be undefined which is fine.
         let identityOrganization = getIdentityOrganization(payload, organizationIdentity.id)
