@@ -736,7 +736,12 @@ function onAddAdmin() {
             <h2 class="text-xl font-bold">Backend clients</h2>
             <div v-if="clientsBackendUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
             <div v-else-if="clientsBackendUpdated" class="text-success-600">Backend clients updated successfully.</div>
-            <form v-if="metadata.can_update || clientsBackend.length || canClientsBackendSubmit()" class="flex flex-col" novalidate @submit.prevent="onClientsBackendSubmit">
+            <form
+              v-if="metadata.can_update || clientsBackend.length || canClientsBackendSubmit()"
+              class="flex flex-col"
+              novalidate
+              @submit.prevent="onClientsBackendSubmit"
+            >
               <ol>
                 <li v-for="(client, i) in clientsBackend" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
                   <div>{{ i + 1 }}.</div>
@@ -848,7 +853,12 @@ function onAddAdmin() {
             <h2 class="text-xl font-bold">Service clients</h2>
             <div v-if="clientsServiceUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
             <div v-else-if="clientsServiceUpdated" class="text-success-600">Service clients updated successfully.</div>
-            <form v-if="metadata.can_update || clientsService.length || canClientsServiceSubmit()" class="flex flex-col" novalidate @submit.prevent="onClientsServiceSubmit">
+            <form
+              v-if="metadata.can_update || clientsService.length || canClientsServiceSubmit()"
+              class="flex flex-col"
+              novalidate
+              @submit.prevent="onClientsServiceSubmit"
+            >
               <ol>
                 <li v-for="(client, i) in clientsService" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
                   <div>{{ i + 1 }}.</div>
