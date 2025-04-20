@@ -754,8 +754,8 @@ async function onIdentitiesSubmit() {
             <div v-if="adminsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
             <div v-else-if="adminsUpdated" class="text-success-600">Admins updated successfully.</div>
             <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
-              <ol>
-                <li v-for="(admin, i) of admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
+              <ol class="flex flex-col gap-y-4">
+                <li v-for="(admin, i) of admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
                     <IdentityPublic v-if="organization?.admins?.find((a) => a.id === admin.id)" :item="admin" :organization-id="siteContext.organizationId">
@@ -770,7 +770,7 @@ async function onIdentitiesSubmit() {
                   </div>
                 </li>
               </ol>
-              <div class="flex flex-row justify-between gap-4">
+              <div class="flex flex-row justify-between gap-4" :class="admins.length ? 'mt-4' : ''">
                 <Button type="button" @click.prevent="onAddAdmin">Add admin</Button>
                 <!--
                   Button is on purpose not disabled on adminsUnexpectedError so that user can retry.

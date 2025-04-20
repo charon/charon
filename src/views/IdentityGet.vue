@@ -426,76 +426,72 @@ async function onAddOrganization(organization: OrganizationRef) {
               <Button type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">Update</Button>
             </div>
           </form>
-          <template v-if="metadata.can_update || usersUnexpectedError || usersUpdated">
-            <h2 class="text-xl font-bold">Users</h2>
-            <div v-if="usersUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
-            <div v-else-if="usersUpdated" class="text-success-600">Users updated successfully.</div>
-            <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onUsersSubmit">
-              <ol>
-                <li v-for="(user, i) of users" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
-                  <div>{{ i + 1 }}.</div>
-                  <div class="flex flex-col">
-                    <IdentityPublic
-                      v-if="identity?.users?.find((a) => a.id === user.id)"
-                      :item="user"
-                      :organization-id="siteContext.organizationId"
-                      :labels="identity?.id === user.id ? ['creator'] : []"
-                    >
-                      <div class="flex flex-col items-start">
-                        <Button type="button" @click.prevent="users.splice(i, 1)">Remove</Button>
-                      </div>
-                    </IdentityPublic>
-                    <div v-else class="flex flex-row gap-4">
-                      <InputText :id="`user-${i}-id`" v-model="users[i].id" class="flex-grow flex-auto min-w-0" :progress="progress" required />
+          <h2 class="text-xl font-bold">Users</h2>
+          <div v-if="usersUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
+          <div v-else-if="usersUpdated" class="text-success-600">Users updated successfully.</div>
+          <form class="flex flex-col" novalidate @submit.prevent="onUsersSubmit">
+            <ol class="flex flex-col gap-y-4">
+              <li v-for="(user, i) of users" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
+                <div>{{ i + 1 }}.</div>
+                <div class="flex flex-col">
+                  <IdentityPublic
+                    v-if="identity?.users?.find((a) => a.id === user.id)"
+                    :item="user"
+                    :organization-id="siteContext.organizationId"
+                    :labels="identity?.id === user.id ? ['creator'] : []"
+                  >
+                    <div v-if="metadata.can_update" class="flex flex-col items-start">
                       <Button type="button" @click.prevent="users.splice(i, 1)">Remove</Button>
                     </div>
+                  </IdentityPublic>
+                  <div v-else-if="metadata.can_update" class="flex flex-row gap-4">
+                    <InputText :id="`user-${i}-id`" v-model="users[i].id" class="flex-grow flex-auto min-w-0" :progress="progress" required />
+                    <Button type="button" @click.prevent="users.splice(i, 1)">Remove</Button>
                   </div>
-                </li>
-              </ol>
-              <div class="flex flex-row justify-between gap-4">
-                <Button type="button" @click.prevent="onAddUser">Add user</Button>
-                <!--
-                  Button is on purpose not disabled on usersUnexpectedError so that user can retry.
-                -->
-                <Button type="submit" primary :disabled="!canUsersSubmit()" :progress="progress">Update</Button>
-              </div>
-            </form>
-          </template>
-          <template v-if="metadata.can_update || adminsUnexpectedError || adminsUpdated">
-            <h2 class="text-xl font-bold">Admins</h2>
-            <div v-if="adminsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
-            <div v-else-if="adminsUpdated" class="text-success-600">Admins updated successfully.</div>
-            <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
-              <ol>
-                <li v-for="(admin, i) of admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
-                  <div>{{ i + 1 }}.</div>
-                  <div class="flex flex-col">
-                    <IdentityPublic
-                      v-if="identity?.admins?.find((a) => a.id === admin.id)"
-                      :item="admin"
-                      :organization-id="siteContext.organizationId"
-                      :labels="identity?.id === admin.id ? ['creator'] : []"
-                    >
-                      <div class="flex flex-col items-start">
-                        <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>
-                      </div>
-                    </IdentityPublic>
-                    <div v-else class="flex flex-row gap-4">
-                      <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="flex-grow flex-auto min-w-0" :progress="progress" required />
+                </div>
+              </li>
+            </ol>
+            <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4" :class="users.length ? 'mt-4' : ''">
+              <Button type="button" @click.prevent="onAddUser">Add user</Button>
+              <!--
+                Button is on purpose not disabled on usersUnexpectedError so that user can retry.
+              -->
+              <Button type="submit" primary :disabled="!canUsersSubmit()" :progress="progress">Update</Button>
+            </div>
+          </form>
+          <h2 class="text-xl font-bold">Admins</h2>
+          <div v-if="adminsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
+          <div v-else-if="adminsUpdated" class="text-success-600">Admins updated successfully.</div>
+          <form class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
+            <ol class="flex flex-col gap-y-4">
+              <li v-for="(admin, i) of admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
+                <div>{{ i + 1 }}.</div>
+                <div class="flex flex-col">
+                  <IdentityPublic
+                    v-if="identity?.admins?.find((a) => a.id === admin.id)"
+                    :item="admin"
+                    :organization-id="siteContext.organizationId"
+                    :labels="identity?.id === admin.id ? ['creator'] : []"
+                  >
+                    <div v-if="metadata.can_update" class="flex flex-col items-start">
                       <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>
                     </div>
+                  </IdentityPublic>
+                  <div v-else-if="metadata.can_update" class="flex flex-row gap-4">
+                    <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="flex-grow flex-auto min-w-0" :progress="progress" required />
+                    <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>
                   </div>
-                </li>
-              </ol>
-              <div class="flex flex-row justify-between gap-4">
-                <Button type="button" @click.prevent="onAddAdmin">Add admin</Button>
-                <!--
-                  Button is on purpose not disabled on adminsUnexpectedError so that user can retry.
-                -->
-                <Button type="submit" primary :disabled="!canAdminsSubmit()" :progress="progress">Update</Button>
-              </div>
-            </form>
-          </template>
+                </div>
+              </li>
+            </ol>
+            <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4" :class="admins.length ? 'mt-4' : ''">
+              <Button type="button" @click.prevent="onAddAdmin">Add admin</Button>
+              <!--
+                Button is on purpose not disabled on adminsUnexpectedError so that user can retry.
+              -->
+              <Button type="submit" primary :disabled="!canAdminsSubmit()" :progress="progress">Update</Button>
+            </div>
+          </form>
           <template v-if="identityOrganizations.length || canOrganizationsSubmit() || identityOrganizationsUnexpectedError || identityOrganizationsUpdated">
             <h2 class="text-xl font-bold">Added organizations</h2>
             <div v-if="identityOrganizationsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
