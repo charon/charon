@@ -612,16 +612,16 @@ async function onIdentitiesSubmit() {
             <div v-else-if="basicUpdated" class="mt-4 text-success-600">Organization updated successfully.</div>
             <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
               <!--
-                Button is on purpose not disabled on unexpectedError so that user can retry.
+                Button is on purpose not disabled on basicUnexpectedError so that user can retry.
               -->
               <Button type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">Update</Button>
             </div>
           </form>
-          <template v-if="metadata.can_update && (applications.length || canApplicationsSubmit())">
+          <template v-if="metadata.can_update && (applications.length || canApplicationsSubmit()) || applicationsUnexpectedError || applicationsUpdated">
             <h2 class="text-xl font-bold">Added applications</h2>
             <div v-if="applicationsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
             <div v-else-if="applicationsUpdated" class="text-success-600">Added applications updated successfully.</div>
-            <form class="flex flex-col" novalidate @submit.prevent="onApplicationsSubmit">
+            <form v-if="metadata.can_update && (applications.length || canApplicationsSubmit())" class="flex flex-col" novalidate @submit.prevent="onApplicationsSubmit">
               <ul>
                 <li v-for="(application, i) in applications" :key="application.id || i" class="flex flex-col mb-4">
                   <ApplicationTemplateListItem :item="{ id: application.applicationTemplate.id }" :public-doc="application.applicationTemplate" h3 />
@@ -721,7 +721,7 @@ async function onIdentitiesSubmit() {
               </ul>
               <div class="flex flex-row justify-end">
                 <!--
-                  Button is on purpose not disabled on unexpectedError so that user can retry.
+                  Button is on purpose not disabled on applicationsUnexpectedError so that user can retry.
                 -->
                 <Button id="applications-update" type="submit" primary :disabled="!canApplicationsSubmit()" :progress="progress">Update</Button>
               </div>
@@ -741,11 +741,11 @@ async function onIdentitiesSubmit() {
               </li>
             </ul>
           </template>
-          <template v-if="metadata.can_update">
+          <template v-if="metadata.can_update || adminsUnexpectedError || adminsUpdated">
             <h2 class="text-xl font-bold">Admins</h2>
             <div v-if="adminsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
             <div v-else-if="adminsUpdated" class="text-success-600">Admins updated successfully.</div>
-            <form class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
+            <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
               <ol>
                 <li v-for="(admin, i) of admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
                   <div>{{ i + 1 }}.</div>
@@ -765,17 +765,17 @@ async function onIdentitiesSubmit() {
               <div class="flex flex-row justify-between gap-4">
                 <Button type="button" @click.prevent="onAddAdmin">Add admin</Button>
                 <!--
-                  Button is on purpose not disabled on unexpectedError so that user can retry.
+                  Button is on purpose not disabled on adminsUnexpectedError so that user can retry.
                 -->
                 <Button type="submit" primary :disabled="!canAdminsSubmit()" :progress="progress">Update</Button>
               </div>
             </form>
           </template>
-          <template v-if="organizationIdentities.length || canIdentitiesSubmit()">
+          <template v-if="organizationIdentities.length || canIdentitiesSubmit() || organizationIdentitiesUnexpectedError || organizationIdentitiesUpdated">
             <h2 class="text-xl font-bold">Added identities</h2>
             <div v-if="organizationIdentitiesUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
             <div v-else-if="organizationIdentitiesUpdated" class="text-success-600">Added identities updated successfully.</div>
-            <form class="flex flex-col" novalidate @submit.prevent="onIdentitiesSubmit">
+            <form v-if="organizationIdentities.length || canIdentitiesSubmit()" class="flex flex-col" novalidate @submit.prevent="onIdentitiesSubmit">
               <ul>
                 <li v-for="(organizationIdentity, i) in organizationIdentities" :key="organizationIdentity.id || i" class="flex flex-col mb-4">
                   <IdentityListItem :item="organizationIdentity.identity" :labels="organizationIdentity.active ? [] : ['disabled']" />
@@ -804,7 +804,7 @@ async function onIdentitiesSubmit() {
               </ul>
               <div class="flex flex-row justify-end">
                 <!--
-                  Button is on purpose not disabled on unexpectedError so that user can retry.
+                  Button is on purpose not disabled on organizationIdentitiesUnexpectedError so that user can retry.
                 -->
                 <Button id="identities-update" type="submit" primary :disabled="!canIdentitiesSubmit()" :progress="progress">Update</Button>
               </div>
