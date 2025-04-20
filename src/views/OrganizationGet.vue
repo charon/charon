@@ -47,7 +47,6 @@ const dataLoadingError = ref("")
 const organization = ref<Organization | null>(null)
 const metadata = ref<Metadata>({})
 const applicationTemplates = ref<ApplicationTemplates>([])
-const identities = ref<Identities>([])
 const generatedSecrets = ref(new Map<string, string>())
 
 const basicUnexpectedError = ref("")
@@ -68,8 +67,9 @@ const organizationIdentitiesUpdated = ref(false)
 let organizationIdentitiesInitial: OrganizationIdentity[] = []
 const organizationIdentities = ref<OrganizationIdentity[]>([])
 
+const notOrganizationIdentities = ref<Identities>([])
 const availableIdentities = computed(() => {
-  return identities.value.filter((identity) => !isIdentityAdded(identity))
+  return notOrganizationIdentities.value.filter((identity) => !isIdentityAdded(identity))
 })
 
 function isApplicationAdded(applicationTemplate: ApplicationTemplateRef): boolean {
@@ -168,28 +168,27 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
         name: "ApplicationTemplateList",
       }).href
 
-      const resp1 = await getURL<ApplicationTemplates>(applicationsURL, null, abortController.signal, progress)
+      const resp = await getURL<ApplicationTemplates>(applicationsURL, null, abortController.signal, progress)
       if (abortController.signal.aborted) {
         return
       }
 
-      applicationTemplates.value = resp1.doc
+      applicationTemplates.value = resp.doc
+    }
 
+    if (update === "init" || update === "identities") {
       const identitiesURL = router.apiResolve({
         name: "IdentityList",
       }).href
 
-      const resp2 = await getURL<Identities>(identitiesURL, null, abortController.signal, progress)
+      const resp = await getURL<Identities>(identitiesURL, null, abortController.signal, progress)
       if (abortController.signal.aborted) {
         return
       }
 
-      identities.value = resp2.doc
-    }
-
-    if (update === "init" || update === "identities") {
       const updatedOrganizationIdentities: OrganizationIdentity[] = []
-      for (const identity of identities.value) {
+      const updatedNotOrganizationIdentities: Identities = []
+      for (const identity of resp.doc) {
         const identityURL = router.apiResolve({
           name: "IdentityGet",
           params: {
@@ -202,6 +201,7 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
           return
         }
 
+        let inOrganization = false
         for (const identityOrganization of resp.doc.organizations) {
           if (identityOrganization.organization.id === props.id) {
             updatedOrganizationIdentities.push({
@@ -209,11 +209,19 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
               active: identityOrganization.active,
               identity: resp.doc,
             })
+            inOrganization = true
+            break
           }
+        }
+        // If identity is not already in the organization, then admin access is
+        // required to be able to join the organization first.
+        if (!inOrganization && resp.metadata.can_update) {
+          updatedNotOrganizationIdentities.push({ id: resp.doc.id })
         }
       }
       organizationIdentitiesInitial = clone(updatedOrganizationIdentities)
       organizationIdentities.value = updatedOrganizationIdentities
+      notOrganizationIdentities.value = updatedNotOrganizationIdentities
     }
   } catch (error) {
     if (abortController.signal.aborted) {
