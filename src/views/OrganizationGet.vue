@@ -733,7 +733,7 @@ async function onIdentitiesSubmit() {
               <li v-for="applicationTemplate in applicationTemplates" :key="applicationTemplate.id">
                 <ApplicationTemplateListItem :item="applicationTemplate" :labels="isApplicationAdded(applicationTemplate) ? ['added'] : []" h3>
                   <template #default="{ doc }">
-                    <div class="flex flex-col items-start">
+                    <div v-if="doc" class="flex flex-col items-start">
                       <Button type="button" :progress="progress" primary @click.prevent="onAddApplicationTemplate(doc)">Add</Button>
                     </div>
                   </template>
@@ -816,7 +816,7 @@ async function onIdentitiesSubmit() {
               <li v-for="identity in availableIdentities" :key="identity.id">
                 <IdentityListItem :item="identity">
                   <template #default="{ doc }">
-                    <div class="flex flex-col items-start">
+                    <div v-if="doc" class="flex flex-col items-start">
                       <Button type="button" :progress="progress" primary @click.prevent="onAddIdentity(doc)">Add</Button>
                     </div>
                   </template>

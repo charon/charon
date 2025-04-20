@@ -336,7 +336,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
           <li v-for="identity of disabledIdentities" :key="identity.id" class="grid grid-cols-1 gap-4 mb-4">
             <IdentityListItem :item="identity" :flow-id="flow.getId()" :labels="['disabled']">
               <template #default="{ doc }">
-                <div class="flex flex-col items-start">
+                <div v-if="doc" class="flex flex-col items-start">
                   <Button primary type="button" tabindex="3" :progress="progress" @click.prevent="onEnable(doc)">Enable</Button>
                 </div>
               </template>

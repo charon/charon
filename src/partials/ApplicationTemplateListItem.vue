@@ -38,5 +38,13 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
         {{ publicDoc ? publicDoc.description : doc.description }}
       </div>
     </template>
+    <template #error="{ url }">
+      <div class="flex flex-row gap-4" :data-url="url">
+        <div class="flex-grow flex">
+          <i class="text-error-600">loading data failed</i>
+        </div>
+        <slot :doc="undefined" :metadata="undefined"></slot>
+      </div>
+    </template>
   </WithApplicationTemplateDocument>
 </template>

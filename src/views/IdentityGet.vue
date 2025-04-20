@@ -540,9 +540,11 @@ async function onAddOrganization(organization: OrganizationRef) {
             <ul class="flex flex-col gap-4">
               <li v-for="organization in availableOrganizations" :key="organization.id">
                 <OrganizationListItem :item="organization" h3>
-                  <div class="flex flex-col items-start">
-                    <Button type="button" :progress="progress" primary @click.prevent="onAddOrganization(organization)">Add</Button>
-                  </div>
+                  <template #default="{ doc }">
+                    <div v-if="doc" class="flex flex-col items-start">
+                      <Button type="button" :progress="progress" primary @click.prevent="onAddOrganization(organization)">Add</Button>
+                    </div>
+                  </template>
                 </OrganizationListItem>
               </li>
             </ul>
