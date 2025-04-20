@@ -64,7 +64,7 @@ const WithIdentityPublicDocument = WithDocument<IdentityPublic>
             {{ doc.fullName }}
           </div>
         </div>
-        <slot :doc="doc"></slot>
+        <slot :doc="doc" :metadata="metadata"></slot>
       </div>
     </template>
     <template #error="{ url }">
@@ -72,7 +72,7 @@ const WithIdentityPublicDocument = WithDocument<IdentityPublic>
         <div class="flex-grow flex">
           <i class="text-error-600">loading data failed</i>
         </div>
-        <slot :doc="undefined"></slot>
+        <slot :doc="undefined" :metadata="undefined"></slot>
       </div>
     </template>
   </WithIdentityPublicDocument>
