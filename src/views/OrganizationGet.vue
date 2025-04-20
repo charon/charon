@@ -617,7 +617,7 @@ async function onIdentitiesSubmit() {
               <Button type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">Update</Button>
             </div>
           </form>
-          <template v-if="metadata.can_update && (applications.length || canApplicationsSubmit()) || applicationsUnexpectedError || applicationsUpdated">
+          <template v-if="(metadata.can_update && (applications.length || canApplicationsSubmit())) || applicationsUnexpectedError || applicationsUpdated">
             <h2 class="text-xl font-bold">Added applications</h2>
             <div v-if="applicationsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
             <div v-else-if="applicationsUpdated" class="text-success-600">Added applications updated successfully.</div>
