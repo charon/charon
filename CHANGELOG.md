@@ -7,8 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support for sharing identities between users. Identities can be shared at two levels:
+  "users" (can use the identity) and "admins" (can modify the identity and join organizations).
+- Support for sharing administration of organizations and application templates between users.
+
 ### Changed
 
+- Charon Dashboard is now an OIDC application which uses the same authentication flow as
+  other applications. Users can now use multiple identities with it as well.
 - Go 1.23.6 or newer is required.
 
 ## [0.2.0] - 2024-09-17

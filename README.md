@@ -16,9 +16,7 @@ exposed to apps. Apps do not have to worry about user management nor multi-tenan
   expose to apps.
   - Support for managing multiple identities per user
   - Support for selecting an identity when authenticating to an app
-- User impersonation: Implement user impersonation as a way to communicate to apps the relation between users
-  and identities.
-  - Expose relation between identity and user in JWTs send to apps, when not hidden by the user
+- Identity sharing: Support for sharing identities between users.
 - User management: Various management interfaces in Charon.
   - Admins can list users which authenticated in their organization, and which apps they used
   - Users can list organizations and apps they have authenticated to, and corresponding identities they used
