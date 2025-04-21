@@ -67,9 +67,17 @@ const organizationIdentitiesUpdated = ref(false)
 let organizationIdentitiesInitial: OrganizationIdentity[] = []
 const organizationIdentities = ref<OrganizationIdentity[]>([])
 
-const notOrganizationIdentities = ref<Identities>([])
+const allIdentities = ref<{identity: Identity, canUpdate: boolean}[]>([])
 const availableIdentities = computed(() => {
-  return notOrganizationIdentities.value.filter((identity) => !isIdentityAdded(identity))
+  const identities: Identity[] = []
+  for (const {identity, canUpdate} of allIdentities.value) {
+    // If identity is not already added, then admin access is
+    // required to be able to join the organization first.
+    if (!isIdentityAdded(identity) && canUpdate) {
+      identities.push(identity)
+    }
+  }
+  return identities
 })
 
 function isApplicationAdded(applicationTemplate: ApplicationTemplateRef): boolean {
@@ -196,7 +204,7 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
       }
 
       const updatedOrganizationIdentities: OrganizationIdentity[] = []
-      const updatedNotOrganizationIdentities: Identities = []
+      const updatedAllIdentities: {identity: Identity, canUpdate: boolean}[] = []
       for (const identity of resp.doc) {
         const identityURL = router.apiResolve({
           name: "IdentityGet",
@@ -210,28 +218,28 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
           return
         }
 
-        let inOrganization = false
+        updatedAllIdentities.push({
+          identity: resp.doc,
+          canUpdate: !!resp.metadata.can_update,
+        })
+
         for (const identityOrganization of resp.doc.organizations) {
           if (identityOrganization.organization.id === props.id) {
             updatedOrganizationIdentities.push({
               id: identityOrganization.id,
               active: identityOrganization.active,
-              identity: resp.doc,
+              // We clone so that object is not shared with updatedAllIdentities.
+              // Just in case we modify any of them.
+              identity: clone(resp.doc),
               canUpdate: !!resp.metadata.can_update,
             })
-            inOrganization = true
             break
           }
-        }
-        // If identity is not already in the organization, then admin access is
-        // required to be able to join the organization first.
-        if (!inOrganization && resp.metadata.can_update) {
-          updatedNotOrganizationIdentities.push({ id: resp.doc.id })
         }
       }
       organizationIdentitiesInitial = clone(updatedOrganizationIdentities)
       organizationIdentities.value = updatedOrganizationIdentities
-      notOrganizationIdentities.value = updatedNotOrganizationIdentities
+      allIdentities.value = updatedAllIdentities
     }
   } catch (error) {
     if (abortController.signal.aborted) {
