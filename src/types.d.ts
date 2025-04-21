@@ -294,6 +294,7 @@ export type OrganizationIdentity = {
   id?: string
   active: boolean
   identity: Identity | DeepReadonly<Identity>
+  canUpdate: boolean
 }
 
 export type IdentityOrganization = {

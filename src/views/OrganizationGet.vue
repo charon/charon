@@ -217,6 +217,7 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
               id: identityOrganization.id,
               active: identityOrganization.active,
               identity: resp.doc,
+              canUpdate: !!resp.metadata.can_update,
             })
             inOrganization = true
             break
@@ -502,6 +503,7 @@ async function onAddIdentity(identity: Identity | DeepReadonly<Identity>) {
   organizationIdentities.value.push({
     active: false,
     identity,
+    canUpdate: true,
   })
   // Because list of all identities is sorted by ID, organizationIdentities itself is also sorted by identity ID. We do not want
   // that after updating the list and retrieving the result from the backend, the list changes with identities changing the
@@ -799,8 +801,8 @@ async function onIdentitiesSubmit() {
             <div v-if="organizationIdentitiesUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
             <div v-else-if="organizationIdentitiesUpdated" class="text-success-600">Added identities updated successfully.</div>
             <form v-if="organizationIdentities.length || canIdentitiesSubmit()" class="flex flex-col" novalidate @submit.prevent="onIdentitiesSubmit">
-              <ul>
-                <li v-for="(organizationIdentity, i) in organizationIdentities" :key="organizationIdentity.id || i" class="flex flex-col mb-4">
+              <ul class="flex flex-col gap-y-4">
+                <li v-for="(organizationIdentity, i) in organizationIdentities" :key="organizationIdentity.id || i" class="flex flex-col">
                   <IdentityListItem :item="organizationIdentity.identity" :labels="organizationIdentity.active ? [] : ['disabled']" />
                   <div class="ml-4 mt-4 flex flew-row gap-4 justify-between items-start">
                     <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
@@ -814,18 +816,18 @@ async function onIdentitiesSubmit() {
                         <strong>{{ organizationIdentity.active ? "active" : "disabled" }}</strong>
                       </div>
                     </div>
-                    <div v-if="organizationIdentity.active" class="flex flex-row gap-4">
+                    <div v-if="organizationIdentity.canUpdate && organizationIdentity.active" class="flex flex-row gap-4">
                       <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = false">Disable</Button>
                       <Button type="button" :progress="progress" @click.prevent="organizationIdentities.splice(i, 1)">Remove</Button>
                     </div>
-                    <div v-else class="flex flex-row gap-4">
+                    <div v-else-if="organizationIdentity.canUpdate" class="flex flex-row gap-4">
                       <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = true">Activate</Button>
                       <Button type="button" :progress="progress" @click.prevent="organizationIdentities.splice(i, 1)">Remove</Button>
                     </div>
                   </div>
                 </li>
               </ul>
-              <div class="flex flex-row justify-end">
+              <div v-if="organizationIdentities.filter((oi) => oi.canUpdate).length || canIdentitiesSubmit()" class="flex flex-row justify-end" :class="organizationIdentities.length ? 'mt-4' : ''">
                 <!--
                   Button is on purpose not disabled on organizationIdentitiesUnexpectedError so that user can retry.
                 -->
