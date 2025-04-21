@@ -879,12 +879,12 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 				continue
 			}
 		} else {
-			idOrg := identity.GetIdentityOrganization(&identityID)
+			idOrg := identity.GetOrganization(&organizationID)
 			if idOrg == nil {
 				continue
 			}
 
-			if idOrg.Organization.ID != organizationID {
+			if *idOrg.ID != identityID {
 				s.NotFound(w, req)
 				return
 			}
