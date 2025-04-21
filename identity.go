@@ -820,6 +820,8 @@ func (s *Service) IdentityGetGet(w http.ResponseWriter, req *http.Request, param
 		return
 	}
 
+	currentIdentityID, hasCurrentIdentityID := getIdentityID(ctx)
+
 	identity, isAdmin, errE := s.getIdentityFromID(ctx, params["id"])
 	if errors.Is(errE, ErrIdentityUnauthorized) {
 		waf.Error(w, req, http.StatusUnauthorized)
@@ -838,6 +840,7 @@ func (s *Service) IdentityGetGet(w http.ResponseWriter, req *http.Request, param
 		s.WriteJSON(w, req, identity, map[string]interface{}{
 			"can_use":    true,
 			"can_update": true,
+			"is_current": hasCurrentIdentityID && *identity.ID == currentIdentityID,
 		})
 		return
 	}
@@ -845,7 +848,8 @@ func (s *Service) IdentityGetGet(w http.ResponseWriter, req *http.Request, param
 	// getIdentityFromID checked that user has user or admin access to the identity
 	// so here we know that they have only user access.
 	s.WriteJSON(w, req, identity, map[string]interface{}{
-		"can_use": true,
+		"can_use":    true,
+		"is_current": hasCurrentIdentityID && *identity.ID == currentIdentityID,
 	})
 }
 

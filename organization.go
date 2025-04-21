@@ -835,7 +835,7 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	_, accountID, errE := s.getIdentityFromRequest(w, req, organizationID.String())
+	currentIdentityID, accountID, errE := s.getIdentityFromRequest(w, req, organizationID.String())
 	if errors.Is(errE, ErrIdentityNotPresent) {
 		s.WithError(ctx, errE)
 		waf.Error(w, req, http.StatusUnauthorized)
@@ -916,6 +916,7 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 		s.WriteJSON(w, req, identity.IdentityPublic, map[string]interface{}{
 			"can_use":    identity.HasUserAccess(ids),
 			"can_update": identity.HasAdminAccess(ids, isCreator),
+			"is_current": *identity.ID == currentIdentityID,
 		})
 		return
 	}
