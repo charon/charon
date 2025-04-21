@@ -67,10 +67,10 @@ const organizationIdentitiesUpdated = ref(false)
 let organizationIdentitiesInitial: OrganizationIdentity[] = []
 const organizationIdentities = ref<OrganizationIdentity[]>([])
 
-const allIdentities = ref<{identity: Identity, canUpdate: boolean}[]>([])
+const allIdentities = ref<{ identity: Identity; canUpdate: boolean }[]>([])
 const availableIdentities = computed(() => {
   const identities: Identity[] = []
-  for (const {identity, canUpdate} of allIdentities.value) {
+  for (const { identity, canUpdate } of allIdentities.value) {
     // If identity is not already added, then admin access is
     // required to be able to join the organization first.
     if (!isIdentityAdded(identity) && canUpdate) {
@@ -204,7 +204,7 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
       }
 
       const updatedOrganizationIdentities: OrganizationIdentity[] = []
-      const updatedAllIdentities: {identity: Identity, canUpdate: boolean}[] = []
+      const updatedAllIdentities: { identity: Identity; canUpdate: boolean }[] = []
       for (const identity of resp.doc) {
         const identityURL = router.apiResolve({
           name: "IdentityGet",
@@ -835,7 +835,11 @@ async function onIdentitiesSubmit() {
                   </div>
                 </li>
               </ul>
-              <div v-if="organizationIdentities.filter((oi) => oi.canUpdate).length || canIdentitiesSubmit()" class="flex flex-row justify-end" :class="organizationIdentities.length ? 'mt-4' : ''">
+              <div
+                v-if="organizationIdentities.filter((oi) => oi.canUpdate).length || canIdentitiesSubmit()"
+                class="flex flex-row justify-end"
+                :class="organizationIdentities.length ? 'mt-4' : ''"
+              >
                 <!--
                   Button is on purpose not disabled on organizationIdentitiesUnexpectedError so that user can retry.
                 -->
