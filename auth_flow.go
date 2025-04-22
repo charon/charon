@@ -578,7 +578,7 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 	c := s.withAccountID(ctx, accountID)
 	c = s.withIdentityID(c, chooseIdentity.Identity.ID)
 
-	identity, errE := s.selectAndActivateIdentity(c, chooseIdentity.Identity.ID, flow.OrganizationID)
+	identity, errE := s.selectAndActivateIdentity(c, chooseIdentity.Identity.ID, flow.OrganizationID, flow.AppID)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return

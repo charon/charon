@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { Ref } from "vue"
-import type { Identity, IdentityOrganization, IdentityRef, Metadata, OrganizationRef, Organizations } from "@/types"
+import type { Identity, IdentityOrganization, IdentityRef, Metadata, OrganizationApplicationPublic, OrganizationRef, Organizations } from "@/types"
 
 import { computed, nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useRouter } from "vue-router"
+import WithDocument from "@/components/WithDocument.vue"
 import InputText from "@/components/InputText.vue"
 import TextArea from "@/components/TextArea.vue"
 import Button from "@/components/Button.vue"
@@ -13,7 +14,7 @@ import Footer from "@/partials/Footer.vue"
 import IdentityPublic from "@/partials/IdentityPublic.vue"
 import { getURL, postJSON } from "@/api"
 import { injectProgress } from "@/progress"
-import { clone, equals } from "@/utils"
+import { clone, equals, getHomepage } from "@/utils"
 import siteContext from "@/context"
 
 const props = defineProps<{
@@ -381,6 +382,7 @@ async function onAddOrganization(organization: OrganizationRef) {
     active: false,
     // We manually construct OrganizationRef in a case we got passed whole Organization.
     organization: { id: organization.id },
+    applications: [],
   })
 
   nextTick(() => {
@@ -389,6 +391,8 @@ async function onAddOrganization(organization: OrganizationRef) {
 }
 
 // TODO: Remember previous organization-scoped identity IDs and reuse them if an organization is removed and then added back without calling update in-between.
+
+const WithOrganizationApplicationDocument = WithDocument<OrganizationApplicationPublic>
 </script>
 
 <template>
@@ -511,6 +515,19 @@ async function onAddOrganization(organization: OrganizationRef) {
                       <div>
                         <strong>{{ identityOrganization.active ? "active" : "disabled" }}</strong>
                       </div>
+                      <div>Apps:</div>
+                      <ol v-if="identityOrganization.applications.length">
+                        <li v-for="application in identityOrganization.applications" :key="application.id">
+                          <WithOrganizationApplicationDocument :params="{ id: identityOrganization.organization.id, appId: application.id }" name="OrganizationApp">
+                            <template #default="{ doc }">
+                              <a :href="getHomepage(doc)" class="link"
+                                >{{ doc.applicationTemplate.name }}</a
+                              >
+                            </template>
+                          </WithOrganizationApplicationDocument>
+                        </li>
+                      </ol>
+                      <div v-else class="italic">none</div>
                     </div>
                     <div v-if="metadata.can_update && identityOrganization.active" class="flex flew-row gap-4">
                       <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = false">Disable</Button>

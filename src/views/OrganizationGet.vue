@@ -11,11 +11,13 @@ import type {
   IdentityRef,
   OrganizationIdentity,
   Identity,
+  OrganizationApplicationPublic,
 } from "@/types"
 
 import { computed, nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import { Identifier } from "@tozd/identifier"
+import WithDocument from "@/components/WithDocument.vue"
 import InputText from "@/components/InputText.vue"
 import TextArea from "@/components/TextArea.vue"
 import Button from "@/components/Button.vue"
@@ -26,7 +28,7 @@ import IdentityListItem from "@/partials/IdentityListItem.vue"
 import IdentityPublic from "@/partials/IdentityPublic.vue"
 import { getURL, postJSON } from "@/api"
 import { setupArgon2id } from "@/argon2id"
-import { clone, equals, getIdentityOrganization, getOrganization } from "@/utils"
+import { clone, equals, getIdentityOrganization, getOrganization, getHomepage } from "@/utils"
 import { injectProgress } from "@/progress"
 import siteContext from "@/context"
 
@@ -231,6 +233,7 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
               // We clone so that object is not shared with updatedAllIdentities.
               // Just in case we modify any of them.
               identity: clone(resp.doc),
+              applications: identityOrganization.applications,
               canUpdate: !!resp.metadata.can_update,
             })
             break
@@ -511,6 +514,7 @@ async function onAddIdentity(identity: Identity | DeepReadonly<Identity>) {
   organizationIdentities.value.push({
     active: false,
     identity,
+    applications: [],
     canUpdate: true,
   })
   // Because list of all identities is sorted by ID, organizationIdentities itself is also sorted by identity ID. We do not want
@@ -553,6 +557,7 @@ async function onIdentitiesSubmit() {
               id: organizationIdentity.id,
               active: organizationIdentity.active,
               organization: { id: props.id },
+              applications: [],
             })
           } else {
             // We could not find it by ID but we found it by organization's ID,
@@ -621,6 +626,8 @@ async function onIdentitiesSubmit() {
 // TODO: Remember previous client ID and secrets and reuse them if an add application is removed and then added back without calling update in-between.
 // TODO: Remember previous organization-scoped identity IDs and reuse them if an identity is removed and then added back without calling update in-between.
 // TODO: Provide explicit buttons to rotate each secret.
+
+const WithOrganizationApplicationDocument = WithDocument<OrganizationApplicationPublic>
 </script>
 
 <template>
@@ -823,6 +830,19 @@ async function onIdentitiesSubmit() {
                       <div>
                         <strong>{{ organizationIdentity.active ? "active" : "disabled" }}</strong>
                       </div>
+                      <div>Apps:</div>
+                      <ol v-if="organizationIdentity.applications.length">
+                        <li v-for="application in organizationIdentity.applications" :key="application.id">
+                          <WithOrganizationApplicationDocument :key="application.id" :params="{ id, appId: application.id }" name="OrganizationApp">
+                            <template #default="{ doc }">
+                              <a :href="getHomepage(doc)" class="link"
+                                >{{ doc.applicationTemplate.name }}</a
+                              >
+                            </template>
+                          </WithOrganizationApplicationDocument>
+                        </li>
+                      </ol>
+                      <div v-else class="italic">none</div>
                     </div>
                     <div v-if="organizationIdentity.canUpdate && organizationIdentity.active" class="flex flex-row gap-4">
                       <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = false">Disable</Button>

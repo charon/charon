@@ -31,7 +31,8 @@ type IdentityOrganization struct {
 
 	Active bool `json:"active"`
 
-	Organization OrganizationRef `json:"organization"`
+	Organization OrganizationRef          `json:"organization"`
+	Applications []ApplicationTemplateRef `json:"applications"`
 }
 
 func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityOrganization, service *Service, identity *Identity) errors.E {
@@ -743,17 +744,27 @@ func (s *Service) propagateAccountsUpdate(identity IdentityRef, identityBeforeAc
 }
 
 // TODO: This is full of races, use transactions once we use proper database to store identities.
-func (s *Service) selectAndActivateIdentity(ctx context.Context, identityID, organizationID identifier.Identifier) (*Identity, errors.E) {
+func (s *Service) selectAndActivateIdentity(ctx context.Context, identityID, organizationID, applicationID identifier.Identifier) (*Identity, errors.E) {
 	identity, _, errE := s.getIdentity(ctx, identityID)
 	if errE != nil {
 		return nil, errE
 	}
 
+	applicationRef := ApplicationTemplateRef{ID: applicationID}
+
 	idOrg := identity.GetOrganization(&organizationID)
 	if idOrg != nil {
 		if idOrg.Active {
-			// Organization already present and active, nothing to do.
-			return identity, nil
+			// Organization already present and active.
+			if slices.Contains(idOrg.Applications, applicationRef) {
+				// Application already present, nothing to do.
+				return identity, nil
+			}
+
+			// Application not present, we add it.
+			idOrg.Applications = append(idOrg.Applications, applicationRef)
+
+			return identity, s.updateIdentity(ctx, identity)
 		}
 		return nil, errors.New("identity not active for organization")
 	}
@@ -765,6 +776,7 @@ func (s *Service) selectAndActivateIdentity(ctx context.Context, identityID, org
 		Organization: OrganizationRef{
 			ID: organizationID,
 		},
+		Applications: []ApplicationTemplateRef{applicationRef},
 	})
 
 	return identity, s.updateIdentity(ctx, identity)
