@@ -814,6 +814,11 @@ func (s *Service) OrganizationAppGet(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
+	if !orgApp.Active {
+		s.NotFound(w, req)
+		return
+	}
+
 	s.WriteJSON(w, req, orgApp.OrganizationApplicationPublic, nil)
 }
 
