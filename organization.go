@@ -929,14 +929,6 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 	s.NotFound(w, req)
 }
 
-func (s *Service) hasOrganization(_ context.Context, id OrganizationRef) bool {
-	s.organizationsMu.RLock()
-	defer s.organizationsMu.RUnlock()
-
-	_, ok := s.organizations[id.ID]
-	return ok
-}
-
 func (s *Service) OrganizationListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	result := []OrganizationRef{}
 

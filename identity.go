@@ -84,10 +84,38 @@ func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityO
 		return errE
 	}
 
-	if !service.hasOrganization(ctx, i.Organization) {
-		errE := errors.New("unknown organization")
+	organization, errE := service.getOrganization(ctx, i.Organization.ID)
+	if errors.Is(errE, ErrOrganizationNotFound) {
+		errE = errors.New("unknown organization")
 		errors.Details(errE)["organization"] = i.Organization.ID
 		return errE
+	} else if errE != nil {
+		errors.Details(errE)["organization"] = i.Organization.ID
+		return errE
+	}
+
+	// We remove duplicates.
+	i.Applications = removeDuplicates(i.Applications)
+
+	existingApplications := mapset.NewThreadUnsafeSet[ApplicationTemplateRef]()
+	if existing != nil {
+		existingApplications.Append(existing.Applications...)
+	}
+
+	// We validate only added applications so that we do not error out on disabled or removed applications.
+	unknown := mapset.NewThreadUnsafeSet[ApplicationTemplateRef]()
+	for newApplication := range mapset.Elements(mapset.NewThreadUnsafeSet(i.Applications...).Difference(existingApplications)) {
+		if application := organization.GetApplication(&newApplication.ID); application == nil || !application.Active {
+			unknown.Add(newApplication)
+		}
+	}
+	if !unknown.IsEmpty() {
+		errE := errors.New("unknown applications")
+		applications := unknown.ToSlice()
+		slices.SortFunc(applications, func(a ApplicationTemplateRef, b ApplicationTemplateRef) int {
+			return bytes.Compare(a.ID[:], b.ID[:])
+		})
+		errors.Details(errE)["applications"] = applications
 	}
 
 	return nil
