@@ -520,9 +520,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                         <li v-for="application in identityOrganization.applications" :key="application.id">
                           <WithOrganizationApplicationDocument :params="{ id: identityOrganization.organization.id, appId: application.id }" name="OrganizationApp">
                             <template #default="{ doc }">
-                              <a :href="getHomepage(doc)" class="link"
-                                >{{ doc.applicationTemplate.name }}</a
-                              >
+                              <a :href="getHomepage(doc)" class="link">{{ doc.applicationTemplate.name }}</a>
                             </template>
                           </WithOrganizationApplicationDocument>
                         </li>
