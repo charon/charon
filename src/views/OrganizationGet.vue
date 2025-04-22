@@ -31,6 +31,7 @@ import { setupArgon2id } from "@/argon2id"
 import { clone, equals, getIdentityOrganization, getOrganization, getHomepage } from "@/utils"
 import { injectProgress } from "@/progress"
 import siteContext from "@/context"
+import { isSignedIn } from "@/auth"
 
 const props = defineProps<{
   id: string
@@ -196,50 +197,54 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
     }
 
     if (update === "init" || update === "identities") {
-      const identitiesURL = router.apiResolve({
-        name: "IdentityList",
-      }).href
-
-      const resp = await getURL<Identities>(identitiesURL, null, abortController.signal, progress)
-      if (abortController.signal.aborted) {
-        return
-      }
-
       const updatedOrganizationIdentities: OrganizationIdentity[] = []
       const updatedAllIdentities: { identity: Identity; canUpdate: boolean }[] = []
-      for (const identity of resp.doc) {
-        const identityURL = router.apiResolve({
-          name: "IdentityGet",
-          params: {
-            id: identity.id,
-          },
+
+      if (isSignedIn()) {
+        const identitiesURL = router.apiResolve({
+          name: "IdentityList",
         }).href
 
-        const resp = await getURL<Identity>(identityURL, null, abortController.signal, progress)
+        const resp = await getURL<Identities>(identitiesURL, null, abortController.signal, progress)
         if (abortController.signal.aborted) {
           return
         }
 
-        updatedAllIdentities.push({
-          identity: resp.doc,
-          canUpdate: !!resp.metadata.can_update,
-        })
+        for (const identity of resp.doc) {
+          const identityURL = router.apiResolve({
+            name: "IdentityGet",
+            params: {
+              id: identity.id,
+            },
+          }).href
 
-        for (const identityOrganization of resp.doc.organizations) {
-          if (identityOrganization.organization.id === props.id) {
-            updatedOrganizationIdentities.push({
-              id: identityOrganization.id,
-              active: identityOrganization.active,
-              // We clone so that object is not shared with updatedAllIdentities.
-              // Just in case we modify any of them.
-              identity: clone(resp.doc),
-              applications: identityOrganization.applications,
-              canUpdate: !!resp.metadata.can_update,
-            })
-            break
+          const resp = await getURL<Identity>(identityURL, null, abortController.signal, progress)
+          if (abortController.signal.aborted) {
+            return
+          }
+
+          updatedAllIdentities.push({
+            identity: resp.doc,
+            canUpdate: !!resp.metadata.can_update,
+          })
+
+          for (const identityOrganization of resp.doc.organizations) {
+            if (identityOrganization.organization.id === props.id) {
+              updatedOrganizationIdentities.push({
+                id: identityOrganization.id,
+                active: identityOrganization.active,
+                // We clone so that object is not shared with updatedAllIdentities.
+                // Just in case we modify any of them.
+                identity: clone(resp.doc),
+                applications: identityOrganization.applications,
+                canUpdate: !!resp.metadata.can_update,
+              })
+              break
+            }
           }
         }
       }
+
       organizationIdentitiesInitial = clone(updatedOrganizationIdentities)
       organizationIdentities.value = updatedOrganizationIdentities
       allIdentities.value = updatedAllIdentities
