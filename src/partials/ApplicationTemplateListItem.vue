@@ -41,7 +41,7 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
     <template #error="{ url }">
       <div class="flex flex-row gap-4" :data-url="url">
         <div class="flex-grow flex">
-          <i class="text-error-600">loading data failed</i>
+          <span class="text-error-600 italic">loading data failed</span>
         </div>
         <slot :doc="undefined" :metadata="undefined"></slot>
       </div>
