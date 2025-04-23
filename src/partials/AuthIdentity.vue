@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { DeepReadonly, Ref } from "vue"
-import type { AuthFlowChooseIdentityRequest, AuthFlowResponse, Flow, Identities, Identity, IdentityRef } from "@/types"
+import type { DeepReadonly } from "vue"
+import type { AllIdentity, AuthFlowChooseIdentityRequest, AuthFlowResponse, Flow, Identities, Identity, IdentityRef } from "@/types"
 
-import { ref, onBeforeUnmount, onMounted, getCurrentInstance } from "vue"
+import { ref, onBeforeUnmount, onMounted, getCurrentInstance, computed } from "vue"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
-import IdentityListItem from "@/partials/IdentityListItem.vue"
+import IdentityPublic from "@/partials/IdentityPublic.vue"
 import IdentityCreate from "@/partials/IdentityCreate.vue"
 import { injectProgress } from "@/progress"
 import { getURL, postJSON, restartAuth } from "@/api"
@@ -21,18 +21,47 @@ const router = useRouter()
 const progress = injectProgress()
 
 const abortController = new AbortController()
-const usedIdentitiesLoading = ref(true)
-const usedIdentitiesLoadingError = ref("")
-const usedIdentities = ref<Identities>([])
-const otherIdentitiesLoading = ref(true)
-const otherIdentitiesLoadingError = ref("")
-const otherIdentities = ref<Identities>([])
-const disabledIdentitiesLoading = ref(true)
-const disabledIdentitiesLoadingError = ref("")
-const disabledIdentities = ref<Identities>([])
+const allIdentitiesLoading = ref(true)
+const allIdentitiesLoadingError = ref("")
+const allIdentities = ref<AllIdentity[]>([])
 const createShown = ref(false)
 
 const unexpectedError = ref("")
+
+const usedIdentities = computed(() => {
+  const identities: AllIdentity[] = []
+  for (const allIdentity of allIdentities.value) {
+    const identityOrganization = getOrganization(allIdentity.identity, props.flow.getOrganizationId())
+    if (identityOrganization !== null && identityOrganization.active) {
+      identities.push(allIdentity)
+    }
+  }
+  return identities
+})
+const otherIdentities = computed(() => {
+  const identities: AllIdentity[] = []
+  for (const allIdentity of allIdentities.value) {
+    const identityOrganization = getOrganization(allIdentity.identity, props.flow.getOrganizationId())
+    // If identity is not already in the organization, then admin access is
+    // required to be able to join the organization first.
+    if (identityOrganization === null && allIdentity.canUpdate) {
+      identities.push(allIdentity)
+    }
+  }
+  return identities
+})
+const disabledIdentities = computed(() => {
+  const identities: AllIdentity[] = []
+  for (const allIdentity of allIdentities.value) {
+    const identityOrganization = getOrganization(allIdentity.identity, props.flow.getOrganizationId())
+    // If identity is not active in the organization, then admin access is
+    // required to be able to enable it in the organization first.
+    if (identityOrganization !== null && !identityOrganization.active && allIdentity.canUpdate) {
+      identities.push(allIdentity)
+    }
+  }
+  return identities
+})
 
 function resetOnInteraction() {
   // We reset the error on interaction.
@@ -53,64 +82,71 @@ defineExpose({
 
 onBeforeUnmount(onBeforeLeave)
 
-function onAfterEnter() {
-  // TODO: Make this work. This is too early because data is not yet loaded so there is nothing to focus.
-  document.getElementById("first-identity")?.focus()
+async function onAfterEnter() {
+  await getIdentities()
 
-  // Not using await so that update happens in parallel in the background.
-  getIdentities(props.flow.getOrganizationId(), false, true, usedIdentitiesLoading, usedIdentitiesLoadingError, usedIdentities)
-  getIdentities(props.flow.getOrganizationId(), false, false, disabledIdentitiesLoading, disabledIdentitiesLoadingError, disabledIdentities)
-  getIdentities(props.flow.getOrganizationId(), true, null, otherIdentitiesLoading, otherIdentitiesLoadingError, otherIdentities)
+  document.getElementById("first-identity")?.focus()
 }
 
 function onBeforeLeave() {
   abortController.abort()
 }
 
-async function getIdentities(
-  organizationId: string,
-  not: boolean,
-  active: boolean | null,
-  loading: Ref<boolean>,
-  loadingError: Ref<string>,
-  identities: Ref<Identities>,
-) {
+async function getIdentities() {
   if (abortController.signal.aborted) {
     return false
   }
 
   progress.value += 1
   try {
-    const q: { flow: string; active?: string; notorg?: string; org?: string } = {
-      flow: props.flow.getId(),
-    }
-    if (not) {
-      q["notorg"] = organizationId
-    } else {
-      q["org"] = organizationId
-    }
-    if (active !== null) {
-      q["active"] = active ? "true" : "false"
-    }
+    const updatedAllIdentities: AllIdentity[] = []
+
     const url = router.apiResolve({
       name: "IdentityList",
-      query: encodeQuery(q),
+      query: encodeQuery({
+        flow: props.flow.getId(),
+      }),
     }).href
 
-    const response = await getURL<Identities>(url, null, abortController.signal, progress)
+    const resp = await getURL<Identities>(url, null, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }
 
-    identities.value = response.doc
+    for (const identity of resp.doc) {
+      const identityURL = router.apiResolve({
+        name: "IdentityGet",
+        params: {
+          id: identity.id,
+        },
+        query: encodeQuery({
+          flow: props.flow.getId(),
+        }),
+      }).href
+
+      const resp = await getURL<Identity>(identityURL, null, abortController.signal, progress)
+      if (abortController.signal.aborted) {
+        return
+      }
+
+      updatedAllIdentities.push({
+        identity: resp.doc,
+        url: identityURL,
+        isCurrent: !!resp.metadata.is_current,
+        canUpdate: !!resp.metadata.can_update,
+      })
+    }
+
+    allIdentities.value = updatedAllIdentities
   } catch (error) {
     if (abortController.signal.aborted) {
       return
     }
     console.error("IdentityList.getIdentities", error)
-    loadingError.value = `${error}`
+    allIdentitiesLoadingError.value = `${error}`
   } finally {
-    loading.value = false
+    // We toggle allIdentitiesLoading only the first time.
+    allIdentitiesLoading.value = false
     progress.value -= 1
   }
 }
@@ -222,11 +258,11 @@ function onCreateShow() {
   createShown.value = true
 }
 
-function onIdentityCreated(identity: IdentityRef) {
+async function onIdentityCreated(identity: IdentityRef) {
   createShown.value = false
 
-  // Not using await so that update happens in the background.
-  getIdentities(props.flow.getOrganizationId(), true, null, otherIdentitiesLoading, otherIdentitiesLoadingError, otherIdentities)
+  // TODO: Fetch only the new identity instead of re-fetching all.
+  await getIdentities()
 
   // TODO: Focus "select" button for the new identity.
 }
@@ -262,9 +298,8 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
       }
     }
 
-    // Not using await so that update happens in parallel in the background.
-    getIdentities(props.flow.getOrganizationId(), false, true, usedIdentitiesLoading, usedIdentitiesLoadingError, usedIdentities)
-    getIdentities(props.flow.getOrganizationId(), false, false, disabledIdentitiesLoading, disabledIdentitiesLoadingError, disabledIdentities)
+    // TODO: Fetch only the updated identity instead of re-fetching all.
+    await getIdentities()
 
     // TODO: Focus "select" button for the enabled identity.
   } catch (error) {
@@ -288,61 +323,57 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
         Select the identity you want to continue with. Its information will be provided to the application and the organization. You can also create a new identity or
         decline to proceed.
       </div>
-      <h3 class="text-l font-bold mb-4">Previously used identities</h3>
-      <div v-if="usedIdentitiesLoading" class="mb-4">Loading...</div>
-      <div v-else-if="usedIdentitiesLoadingError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
-      <div v-else-if="usedIdentities.length + disabledIdentities.length === 0" class="italic mb-4">You have not yet used any identity with this organization.</div>
-      <div v-else-if="usedIdentities.length === 0" class="italic mb-4">All previously used identities with this organization are disabled.</div>
-      <ul v-else>
-        <li v-for="(identity, i) of usedIdentities" :key="identity.id" class="grid grid-cols-1 gap-4 mb-4">
-          <IdentityListItem :item="identity" :flow-id="flow.getId()">
-            <div class="flex flex-col items-start">
-              <Button :id="i === 0 ? 'first-identity' : null" primary type="button" tabindex="1" :progress="progress" @click.prevent="onSelect(identity.id)"
-                >Select</Button
-              >
-            </div>
-          </IdentityListItem>
-        </li>
-      </ul>
-      <h3 class="text-l font-bold mb-4">Other available identities</h3>
-      <div v-if="otherIdentitiesLoading" class="mb-4">Loading...</div>
-      <div v-else-if="otherIdentitiesLoadingError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
-      <div v-else-if="usedIdentities.length + otherIdentities.length + disabledIdentities.length === 0" class="italic mb-4">
-        There are no identities. Create the first one.
-      </div>
-      <div v-else-if="otherIdentities.length === 0" class="italic mb-4">There are no other identities. Create one.</div>
-      <ul v-else>
-        <li v-for="(identity, i) of otherIdentities" :key="identity.id" class="grid grid-cols-1 gap-4 mb-4">
-          <IdentityListItem :item="identity" :flow-id="flow.getId()">
-            <div class="flex flex-col items-start">
-              <Button
-                :id="usedIdentities.length + i === 0 ? 'first-identity' : null"
-                primary
-                type="button"
-                tabindex="2"
-                :progress="progress"
-                @click.prevent="onSelect(identity.id)"
-                >Select</Button
-              >
-            </div>
-          </IdentityListItem>
-        </li>
-      </ul>
-      <template v-if="disabledIdentities.length">
-        <h3 class="text-l font-bold mb-4">Disabled identities</h3>
-        <div v-if="disabledIdentitiesLoading" class="mb-4">Loading...</div>
-        <div v-else-if="disabledIdentitiesLoadingError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
+      <div v-if="allIdentitiesLoading" class="mb-4">Loading...</div>
+      <div v-else-if="allIdentitiesLoadingError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
+      <template v-else>
+        <h3 class="text-l font-bold mb-4">Previously used identities</h3>
+        <div v-if="usedIdentities.length + disabledIdentities.length === 0" class="italic mb-4">You have not yet used any identity with this organization.</div>
+        <div v-else-if="usedIdentities.length === 0" class="italic mb-4">All previously used identities with this organization are disabled.</div>
         <ul v-else>
-          <li v-for="identity of disabledIdentities" :key="identity.id" class="grid grid-cols-1 gap-4 mb-4">
-            <IdentityListItem :item="identity" :flow-id="flow.getId()" :labels="['disabled']">
-              <template #default="{ doc }">
-                <div v-if="doc" class="flex flex-col items-start">
-                  <Button primary type="button" tabindex="3" :progress="progress" @click.prevent="onEnable(doc)">Enable</Button>
-                </div>
-              </template>
-            </IdentityListItem>
+          <li v-for="(identity, i) of usedIdentities" :key="identity.identity.id" class="grid grid-cols-1 gap-4 mb-4">
+            <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate">
+              <div class="flex flex-col items-start">
+                <Button :id="i === 0 ? 'first-identity' : null" primary type="button" tabindex="1" :progress="progress" @click.prevent="onSelect(identity.identity.id)"
+                  >Select</Button
+                >
+              </div>
+            </IdentityPublic>
           </li>
         </ul>
+        <h3 class="text-l font-bold mb-4">Other available identities</h3>
+        <div v-if="usedIdentities.length + otherIdentities.length + disabledIdentities.length === 0" class="italic mb-4">
+          There are no identities. Create the first one.
+        </div>
+        <div v-else-if="otherIdentities.length === 0" class="italic mb-4">There are no other identities. Create one.</div>
+        <ul v-else>
+          <li v-for="(identity, i) of otherIdentities" :key="identity.identity.id" class="grid grid-cols-1 gap-4 mb-4">
+            <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate">
+              <div class="flex flex-col items-start">
+                <Button
+                  :id="usedIdentities.length + i === 0 ? 'first-identity' : null"
+                  primary
+                  type="button"
+                  tabindex="2"
+                  :progress="progress"
+                  @click.prevent="onSelect(identity.identity.id)"
+                  >Select</Button
+                >
+              </div>
+            </IdentityPublic>
+          </li>
+        </ul>
+        <template v-if="disabledIdentities.length">
+          <h3 class="text-l font-bold mb-4">Disabled identities</h3>
+          <ul>
+            <li v-for="identity of disabledIdentities" :key="identity.identity.id" class="grid grid-cols-1 gap-4 mb-4">
+              <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate" :labels="['disabled']">
+                <div class="flex flex-col items-start">
+                  <Button primary type="button" tabindex="3" :progress="progress" @click.prevent="onEnable(identity.identity)">Enable</Button>
+                </div>
+              </IdentityPublic>
+            </li>
+          </ul>
+        </template>
       </template>
       <div v-if="!createShown" class="flex flex-row justify-start gap-4 mb-4">
         <Button type="button" tabindex="3" :progress="progress" @click.prevent="onCreateShow">Create new identity</Button>

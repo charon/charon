@@ -274,21 +274,16 @@ func mustGetIdentityID(ctx context.Context) identifier.Identifier {
 }
 
 // RequireAuthenticated requires valid Authorization header with the OIDC access token
-// and returns context with access token's identity and account (if needed) IDs
-// stored in the context.
+// and returns context with access token's identity stored in the context.
 //
 // It is expected to be used from API calls.
-func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request, needsAccountID bool) context.Context {
+func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request) context.Context {
 	ctx := req.Context()
 	co := s.charonOrganization()
 
-	identityID, accountID, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
+	identityID, _, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
 	if errE == nil {
-		ctx = s.withIdentityID(ctx, identityID)
-		if needsAccountID {
-			ctx = s.withAccountID(ctx, accountID)
-		}
-		return ctx
+		return s.withIdentityID(ctx, identityID)
 	} else if !errors.Is(errE, ErrIdentityNotPresent) {
 		s.InternalServerErrorWithError(w, req, errE)
 		return nil

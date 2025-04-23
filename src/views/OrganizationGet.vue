@@ -12,6 +12,7 @@ import type {
   OrganizationIdentity,
   Identity,
   OrganizationApplicationPublic,
+  AllIdentity,
 } from "@/types"
 
 import { computed, nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
@@ -24,8 +25,8 @@ import Button from "@/components/Button.vue"
 import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
 import ApplicationTemplateListItem from "@/partials/ApplicationTemplateListItem.vue"
-import IdentityListItem from "@/partials/IdentityListItem.vue"
-import IdentityPublic from "@/partials/IdentityPublic.vue"
+import IdentityFull from "@/partials/IdentityFull.vue"
+import WithIdentityPublicDocument from "@/partials/WithIdentityPublicDocument.vue"
 import { getURL, postJSON } from "@/api"
 import { setupArgon2id } from "@/argon2id"
 import { clone, equals, getIdentityOrganization, getOrganization, getHomepage } from "@/utils"
@@ -70,14 +71,14 @@ const organizationIdentitiesUpdated = ref(false)
 let organizationIdentitiesInitial: OrganizationIdentity[] = []
 const organizationIdentities = ref<OrganizationIdentity[]>([])
 
-const allIdentities = ref<{ identity: Identity; canUpdate: boolean }[]>([])
+const allIdentities = ref<AllIdentity[]>([])
 const availableIdentities = computed(() => {
-  const identities: Identity[] = []
-  for (const { identity, canUpdate } of allIdentities.value) {
+  const identities: AllIdentity[] = []
+  for (const allIdentity of allIdentities.value) {
     // If identity is not already added, then admin access is
     // required to be able to join the organization first.
-    if (!isIdentityAdded(identity) && canUpdate) {
-      identities.push(identity)
+    if (!isIdentityAdded(allIdentity.identity) && allIdentity.canUpdate) {
+      identities.push(allIdentity)
     }
   }
   return identities
@@ -198,7 +199,7 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
 
     if (update === "init" || update === "identities") {
       const updatedOrganizationIdentities: OrganizationIdentity[] = []
-      const updatedAllIdentities: { identity: Identity; canUpdate: boolean }[] = []
+      const updatedAllIdentities: AllIdentity[] = []
 
       if (isSignedIn()) {
         const identitiesURL = router.apiResolve({
@@ -225,6 +226,8 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
 
           updatedAllIdentities.push({
             identity: resp.doc,
+            url: identityURL,
+            isCurrent: !!resp.metadata.is_current,
             canUpdate: !!resp.metadata.can_update,
           })
 
@@ -236,7 +239,9 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
                 // We clone so that object is not shared with updatedAllIdentities.
                 // Just in case we modify any of them.
                 identity: clone(resp.doc),
+                url: identityURL,
                 applications: identityOrganization.applications,
+                isCurrent: !!resp.metadata.is_current,
                 canUpdate: !!resp.metadata.can_update,
               })
               break
@@ -520,6 +525,8 @@ async function onAddIdentity(identity: Identity | DeepReadonly<Identity>) {
     active: false,
     identity,
     applications: [],
+    url: undefined,
+    isCurrent: false,
     canUpdate: true,
   })
   // Because list of all identities is sorted by ID, organizationIdentities itself is also sorted by identity ID. We do not want
@@ -795,11 +802,11 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                 <li v-for="(admin, i) of admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
-                    <IdentityPublic v-if="organization?.admins?.find((a) => a.id === admin.id)" :item="admin" :organization-id="siteContext.organizationId">
+                    <WithIdentityPublicDocument v-if="organization?.admins?.find((a) => a.id === admin.id)" :item="admin" :organization-id="siteContext.organizationId">
                       <div class="flex flex-col items-start">
                         <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>
                       </div>
-                    </IdentityPublic>
+                    </WithIdentityPublicDocument>
                     <div v-else class="flex flex-row gap-4">
                       <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="flex-grow flex-auto min-w-0" :progress="progress" required />
                       <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>
@@ -823,7 +830,13 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
             <form v-if="organizationIdentities.length || canIdentitiesSubmit()" class="flex flex-col" novalidate @submit.prevent="onIdentitiesSubmit">
               <ul class="flex flex-col gap-y-4">
                 <li v-for="(organizationIdentity, i) in organizationIdentities" :key="organizationIdentity.id || i" class="flex flex-col">
-                  <IdentityListItem :item="organizationIdentity.identity" :labels="organizationIdentity.active ? [] : ['disabled']" />
+                  <IdentityFull
+                    :identity="organizationIdentity.identity"
+                    :url="organizationIdentity.url"
+                    :is-current="organizationIdentity.isCurrent"
+                    :can-update="organizationIdentity.canUpdate"
+                    :labels="organizationIdentity.active ? [] : ['disabled']"
+                  />
                   <div class="ml-4 mt-4 flex flew-row gap-4 justify-between items-start">
                     <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
                       <div>ID:</div>
@@ -873,14 +886,12 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
           <template v-if="availableIdentities.length">
             <h2 class="text-xl font-bold">Available identities</h2>
             <ul class="flex flex-col gap-4">
-              <li v-for="identity in availableIdentities" :key="identity.id">
-                <IdentityListItem :item="identity">
-                  <template #default="{ doc }">
-                    <div v-if="doc" class="flex flex-col items-start">
-                      <Button type="button" :progress="progress" primary @click.prevent="onAddIdentity(doc)">Add</Button>
-                    </div>
-                  </template>
-                </IdentityListItem>
+              <li v-for="identity in availableIdentities" :key="identity.identity.id">
+                <IdentityFull :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate">
+                  <div class="flex flex-col items-start">
+                    <Button type="button" :progress="progress" primary @click.prevent="onAddIdentity(identity.identity)">Add</Button>
+                  </div>
+                </IdentityFull>
               </li>
             </ul>
           </template>

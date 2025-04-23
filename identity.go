@@ -912,7 +912,7 @@ func (s *Service) hasIdentities(_ context.Context, ids mapset.Set[IdentityRef], 
 
 // TODO: Do not filter in list endpoint but filter in search endpoint.
 
-func (s *Service) identityList(ctx context.Context, organization, notOrganization *identifier.Identifier, active *bool) ([]IdentityRef, errors.E) {
+func (s *Service) identityList(ctx context.Context) ([]IdentityRef, errors.E) {
 	accountID := mustGetAccountID(ctx)
 
 	result := []IdentityRef{}
@@ -948,21 +948,7 @@ func (s *Service) identityList(ctx context.Context, organization, notOrganizatio
 			continue
 		}
 
-		if idOrg := identity.GetOrganization(organization); organization != nil && idOrg != nil {
-			// If identity is not active in the organization, then admin access is
-			// required to be able to enable it in the organization first.
-			if active == nil || (*active && idOrg.Active) || (!*active && !idOrg.Active && hasAdminAccess) {
-				result = append(result, i)
-			}
-		} else if idOrg := identity.GetOrganization(notOrganization); notOrganization != nil && idOrg == nil {
-			// If identity is not already in the organization, then admin access is
-			// required to be able to join the organization first.
-			if hasAdminAccess {
-				result = append(result, i)
-			}
-		} else if organization == nil && notOrganization == nil {
-			result = append(result, i)
-		}
+		result = append(result, i)
 	}
 
 	slices.SortFunc(result, func(a IdentityRef, b IdentityRef) int {
@@ -979,42 +965,7 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 		return
 	}
 
-	var organization *identifier.Identifier
-	if org := req.Form.Get("org"); org != "" {
-		o, errE := identifier.MaybeString(org)
-		if errE != nil {
-			s.BadRequestWithError(w, req, errors.WithMessage(errE, `invalid "org" parameter`))
-			return
-		}
-		organization = &o
-	}
-
-	var notOrganization *identifier.Identifier
-	if org := req.Form.Get("notorg"); org != "" {
-		o, errE := identifier.MaybeString(org)
-		if errE != nil {
-			s.BadRequestWithError(w, req, errors.WithMessage(errE, `invalid "notorg" parameter`))
-			return
-		}
-		notOrganization = &o
-	}
-
-	var active *bool
-	if b := req.Form.Get("active"); b != "" {
-		switch b {
-		case "true":
-			a := true
-			active = &a
-		case "false":
-			a := false
-			active = &a
-		default:
-			s.BadRequestWithError(w, req, errors.New(`invalid "active" parameter`))
-			return
-		}
-	}
-
-	result, errE := s.identityList(ctx, organization, notOrganization, active)
+	result, errE := s.identityList(ctx)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return

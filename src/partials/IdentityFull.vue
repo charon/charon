@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { IdentityPublic } from "@/types"
+import type { Identity } from "@/types"
 import type { DeepReadonly } from "vue"
 
 defineProps<{
-  identity: IdentityPublic | DeepReadonly<IdentityPublic>
+  identity: Identity | DeepReadonly<Identity>
   url?: string
   isCurrent?: boolean
   canUpdate?: boolean
@@ -14,7 +14,9 @@ defineProps<{
 <template>
   <div class="flex flex-row gap-4" :data-url="url">
     <div v-if="identity.pictureUrl" class="flex-none">
-      <img :src="identity.pictureUrl" alt="picture" class="h-20 w-20 ring-2 ring-white rounded" />
+      <router-link :to="{ name: 'IdentityGet', params: { id: identity.id } }" class="link">
+        <img :src="identity.pictureUrl" alt="picture" class="h-20 w-20 ring-2 ring-white rounded" />
+      </router-link>
     </div>
     <div class="flex-grow flex flex-col">
       <h2 v-if="identity.username" class="text-xl">
@@ -23,7 +25,7 @@ defineProps<{
           <li v-if="isCurrent" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">current</li>
           <li v-if="canUpdate" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">admin</li>
         </ul>
-        {{ identity.username }}
+        <router-link :to="{ name: 'IdentityGet', params: { id: identity.id } }" class="link">{{ identity.username }}</router-link>
         <span v-if="identity.email"> ({{ identity.email }})</span>
       </h2>
       <h2 v-else-if="identity.email" class="text-xl">
@@ -32,7 +34,7 @@ defineProps<{
           <li v-if="isCurrent" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">current</li>
           <li v-if="canUpdate" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">admin</li>
         </ul>
-        {{ identity.email }}
+        <router-link :to="{ name: 'IdentityGet', params: { id: identity.id } }" class="link">{{ identity.email }}</router-link>
       </h2>
       <h2 v-else-if="identity.givenName" class="text-xl">
         <ul v-if="canUpdate || isCurrent || labels?.length" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm float-right">
@@ -40,7 +42,7 @@ defineProps<{
           <li v-if="isCurrent" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">current</li>
           <li v-if="canUpdate" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">admin</li>
         </ul>
-        {{ identity.givenName }}
+        <router-link :to="{ name: 'IdentityGet', params: { id: identity.id } }" class="link">{{ identity.givenName }}</router-link>
         <span v-if="identity.fullName"> ({{ identity.fullName }})</span>
       </h2>
       <h2 v-else-if="identity.fullName" class="text-xl">
@@ -49,7 +51,7 @@ defineProps<{
           <li v-if="isCurrent" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">current</li>
           <li v-if="canUpdate" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">admin</li>
         </ul>
-        {{ identity.fullName }}
+        <router-link :to="{ name: 'IdentityGet', params: { id: identity.id } }" class="link">{{ identity.fullName }}</router-link>
       </h2>
       <div v-else-if="canUpdate || isCurrent || labels?.length">
         <ul class="flex flex-row flex-wrap content-start items-start gap-1 text-sm float-right">
@@ -65,6 +67,7 @@ defineProps<{
       <div v-else-if="identity.fullName && (identity.username || identity.email)" class="mt-1">
         {{ identity.fullName }}
       </div>
+      <div v-if="identity.description" class="mt-1 whitespace-pre-line">{{ identity.description }}</div>
     </div>
     <slot :identity="identity" :is-current="isCurrent" :can-update="canUpdate"></slot>
   </div>

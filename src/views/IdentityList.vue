@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import type { Identities } from "@/types"
+import type { Identity, Identities } from "@/types"
 
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useRouter } from "vue-router"
+import WithDocument from "@/components/WithDocument.vue"
 import ButtonLink from "@/components/ButtonLink.vue"
-import IdentityListItem from "@/partials/IdentityListItem.vue"
+import IdentityFull from "@/partials/IdentityFull.vue"
 import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
 import { getURL } from "@/api"
@@ -50,6 +51,8 @@ onBeforeMount(async () => {
     progress.value -= 1
   }
 })
+
+const WithIdentityDocument = WithDocument<Identity>
 </script>
 
 <template>
@@ -71,7 +74,11 @@ onBeforeMount(async () => {
           There are no identities. {{ isSignedIn() ? "Create the first one." : "Sign-in or sign-up to create the first one." }}
         </div>
         <div v-for="identity of identities" :key="identity.id" class="w-full rounded border bg-white p-4 shadow grid grid-cols-1 gap-4">
-          <IdentityListItem :item="identity" />
+          <WithIdentityDocument :params="{ id: identity.id }" name="IdentityGet">
+            <template #default="{ doc, metadata, url }">
+              <IdentityFull :identity="doc" :url="url" :is-current="metadata.is_current" :can-update="metadata.can_update" />
+            </template>
+          </WithIdentityDocument>
         </div>
       </template>
     </div>

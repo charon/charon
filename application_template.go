@@ -834,7 +834,7 @@ func (s *Service) ApplicationTemplateUpdatePost(w http.ResponseWriter, req *http
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	ctx := s.RequireAuthenticated(w, req, false)
+	ctx := s.RequireAuthenticated(w, req)
 	if ctx == nil {
 		return
 	}
@@ -877,7 +877,7 @@ func (s *Service) ApplicationTemplateCreatePost(w http.ResponseWriter, req *http
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	ctx := s.RequireAuthenticated(w, req, false)
+	ctx := s.RequireAuthenticated(w, req)
 	if ctx == nil {
 		return
 	}

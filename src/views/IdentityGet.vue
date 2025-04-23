@@ -11,7 +11,7 @@ import Button from "@/components/Button.vue"
 import OrganizationListItem from "@/partials/OrganizationListItem.vue"
 import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
-import IdentityPublic from "@/partials/IdentityPublic.vue"
+import WithIdentityPublicDocument from "@/partials/WithIdentityPublicDocument.vue"
 import { getURL, postJSON } from "@/api"
 import { injectProgress } from "@/progress"
 import { clone, equals, getHomepage } from "@/utils"
@@ -438,7 +438,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
               <li v-for="(user, i) of users" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
                 <div>{{ i + 1 }}.</div>
                 <div class="flex flex-col">
-                  <IdentityPublic
+                  <WithIdentityPublicDocument
                     v-if="identity?.users?.find((a) => a.id === user.id)"
                     :item="user"
                     :organization-id="siteContext.organizationId"
@@ -447,7 +447,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                     <div v-if="metadata.can_update" class="flex flex-col items-start">
                       <Button type="button" @click.prevent="users.splice(i, 1)">Remove</Button>
                     </div>
-                  </IdentityPublic>
+                  </WithIdentityPublicDocument>
                   <div v-else-if="metadata.can_update" class="flex flex-row gap-4">
                     <InputText :id="`user-${i}-id`" v-model="users[i].id" class="flex-grow flex-auto min-w-0" :progress="progress" required />
                     <Button type="button" @click.prevent="users.splice(i, 1)">Remove</Button>
@@ -471,7 +471,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
               <li v-for="(admin, i) of admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
                 <div>{{ i + 1 }}.</div>
                 <div class="flex flex-col">
-                  <IdentityPublic
+                  <WithIdentityPublicDocument
                     v-if="identity?.admins?.find((a) => a.id === admin.id)"
                     :item="admin"
                     :organization-id="siteContext.organizationId"
@@ -480,7 +480,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                     <div v-if="metadata.can_update" class="flex flex-col items-start">
                       <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>
                     </div>
-                  </IdentityPublic>
+                  </WithIdentityPublicDocument>
                   <div v-else-if="metadata.can_update" class="flex flex-row gap-4">
                     <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="flex-grow flex-auto min-w-0" :progress="progress" required />
                     <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>

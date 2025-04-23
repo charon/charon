@@ -16,7 +16,7 @@ import InputText from "@/components/InputText.vue"
 import TextArea from "@/components/TextArea.vue"
 import Button from "@/components/Button.vue"
 import RadioButton from "@/components/RadioButton.vue"
-import IdentityPublic from "@/partials/IdentityPublic.vue"
+import WithIdentityPublicDocument from "@/partials/WithIdentityPublicDocument.vue"
 import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
 import { getURL, postJSON } from "@/api"
@@ -945,11 +945,15 @@ function onAddAdmin() {
                 <li v-for="(admin, i) of admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
-                    <IdentityPublic v-if="applicationTemplate?.admins?.find((a) => a.id === admin.id)" :item="admin" :organization-id="siteContext.organizationId">
+                    <WithIdentityPublicDocument
+                      v-if="applicationTemplate?.admins?.find((a) => a.id === admin.id)"
+                      :item="admin"
+                      :organization-id="siteContext.organizationId"
+                    >
                       <div class="flex flex-col items-start">
                         <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>
                       </div>
-                    </IdentityPublic>
+                    </WithIdentityPublicDocument>
                     <div v-else class="flex flex-row gap-4">
                       <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="flex-grow flex-auto min-w-0" :progress="progress" required />
                       <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>

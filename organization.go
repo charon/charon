@@ -840,6 +840,7 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
+	// We do not use RequireAuthenticated here, because we want to use a (possibly) non-Charon organization ID.
 	currentIdentityID, accountID, errE := s.getIdentityFromRequest(w, req, organizationID.String())
 	if errors.Is(errE, ErrIdentityNotPresent) {
 		s.WithError(ctx, errE)
@@ -950,7 +951,7 @@ func (s *Service) OrganizationUpdatePost(w http.ResponseWriter, req *http.Reques
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	ctx := s.RequireAuthenticated(w, req, false)
+	ctx := s.RequireAuthenticated(w, req)
 	if ctx == nil {
 		return
 	}
@@ -993,7 +994,7 @@ func (s *Service) OrganizationCreatePost(w http.ResponseWriter, req *http.Reques
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
-	ctx := s.RequireAuthenticated(w, req, false)
+	ctx := s.RequireAuthenticated(w, req)
 	if ctx == nil {
 		return
 	}

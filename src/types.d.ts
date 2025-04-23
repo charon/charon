@@ -294,7 +294,16 @@ export type OrganizationIdentity = {
   id?: string
   active: boolean
   identity: Identity | DeepReadonly<Identity>
+  url?: string
   applications: ApplicationTemplateRef[]
+  isCurrent: boolean
+  canUpdate: boolean
+}
+
+export type AllIdentity = {
+  identity: Identity
+  url: string
+  isCurrent: boolean
   canUpdate: boolean
 }
 

@@ -34,8 +34,7 @@ func (s *Service) TestingGetIdentity(ctx context.Context, id identifier.Identifi
 }
 
 func (s *Service) TestListIdentity(ctx context.Context) ([]IdentityRef, errors.E) {
-	a := false
-	return s.identityList(ctx, nil, nil, &a)
+	return s.identityList(ctx)
 }
 
 func (s *Service) TestingWithIdentityID(ctx context.Context, identityID identifier.Identifier) context.Context {
