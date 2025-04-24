@@ -910,8 +910,6 @@ func (s *Service) hasIdentities(_ context.Context, ids mapset.Set[IdentityRef], 
 	return unknown
 }
 
-// TODO: Do not filter in list endpoint but filter in search endpoint.
-
 func (s *Service) identityList(ctx context.Context) ([]IdentityRef, errors.E) {
 	accountID := mustGetAccountID(ctx)
 
