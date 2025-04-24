@@ -591,9 +591,7 @@ function onAddAdmin() {
               required
             />
             <label for="idScopes" class="mb-1 mt-4"
-              >Space-separated OpenID scopes the app might request<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">
-                (optional)</span
-              ></label
+              >Space-separated OpenID scopes the app might request<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label
             >
             <TextArea
               id="idScopes"
