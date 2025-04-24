@@ -32,7 +32,19 @@ const usedIdentities = computed(() => {
   const identities: AllIdentity[] = []
   for (const allIdentity of allIdentities.value) {
     const identityOrganization = getOrganization(allIdentity.identity, props.flow.getOrganizationId())
-    if (identityOrganization !== null && identityOrganization.active) {
+    if (identityOrganization !== null && identityOrganization.active && identityOrganization.applications.find((a) => a.id === props.flow.getAppId())) {
+      identities.push(allIdentity)
+    }
+  }
+  return identities
+})
+const addedIdentities = computed(() => {
+  const identities: AllIdentity[] = []
+  for (const allIdentity of allIdentities.value) {
+    const identityOrganization = getOrganization(allIdentity.identity, props.flow.getOrganizationId())
+    // If identity is not already in the organization using the app,
+    // then admin access is required to be able to add the app first.
+    if (identityOrganization !== null && identityOrganization.active && !identityOrganization.applications.find((a) => a.id === props.flow.getAppId()) && allIdentity.canUpdate) {
       identities.push(allIdentity)
     }
   }
@@ -320,15 +332,17 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
       <div v-if="flow.getCompleted().includes('signin')" class="mb-4"><strong>Congratulations.</strong> You successfully signed in into Charon.</div>
       <div v-else-if="flow.getCompleted().includes('signup')" class="mb-4"><strong>Congratulations.</strong> You successfully signed up into Charon.</div>
       <div class="mb-4">
-        Select the identity you want to continue with. Its information will be provided to the application and the organization. You can also create a new identity or
+        Select the identity you want to continue with. Its information will be provided to the app and the organization. You can also create a new identity or
         decline to proceed.
       </div>
       <div v-if="allIdentitiesLoading" class="mb-4">Loading...</div>
       <div v-else-if="allIdentitiesLoadingError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
       <template v-else>
         <h3 class="text-l font-bold mb-4">Previously used identities</h3>
-        <div v-if="usedIdentities.length + disabledIdentities.length === 0" class="italic mb-4">You have not yet used any identity with this organization.</div>
-        <div v-else-if="usedIdentities.length === 0" class="italic mb-4">All previously used identities with this organization are disabled.</div>
+        <div v-if="usedIdentities.length + addedIdentities.length + disabledIdentities.length === 0" class="italic mb-4">You have not yet used any identity with this organization.</div>
+        <div v-else-if="usedIdentities.length + disabledIdentities.length === 0" class="italic mb-4">You have not yet used any identity with this app in the organization.</div>
+        <div v-else-if="usedIdentities.length + addedIdentities.length === 0" class="italic mb-4">All previously used identities with this organization are disabled.</div>
+        <div v-else-if="usedIdentities.length === 0" class="italic mb-4">Previously used identities with this organization are disabled.</div>
         <ul v-else>
           <li v-for="(identity, i) of usedIdentities" :key="identity.identity.id" class="grid grid-cols-1 gap-4 mb-4">
             <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate">
@@ -340,8 +354,22 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
             </IdentityPublic>
           </li>
         </ul>
+        <template v-if="addedIdentities.length">
+          <h3 class="text-l font-bold mb-4">Identities used with the organization, but not the app</h3>
+          <ul>
+            <li v-for="(identity, i) of addedIdentities" :key="identity.identity.id" class="grid grid-cols-1 gap-4 mb-4">
+              <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate">
+                <div class="flex flex-col items-start">
+                  <Button :id="usedIdentities.length + i === 0 ? 'first-identity' : null" primary type="button" tabindex="1" :progress="progress" @click.prevent="onSelect(identity.identity.id)"
+                    >Select</Button
+                  >
+                </div>
+              </IdentityPublic>
+            </li>
+          </ul>
+        </template>
         <h3 class="text-l font-bold mb-4">Other available identities</h3>
-        <div v-if="usedIdentities.length + otherIdentities.length + disabledIdentities.length === 0" class="italic mb-4">
+        <div v-if="usedIdentities.length + addedIdentities.length + otherIdentities.length + disabledIdentities.length === 0" class="italic mb-4">
           There are no identities. Create the first one.
         </div>
         <div v-else-if="otherIdentities.length === 0" class="italic mb-4">There are no other identities. Create one.</div>
@@ -350,7 +378,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
             <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate">
               <div class="flex flex-col items-start">
                 <Button
-                  :id="usedIdentities.length + i === 0 ? 'first-identity' : null"
+                  :id="usedIdentities.length + addedIdentities.length + i === 0 ? 'first-identity' : null"
                   primary
                   type="button"
                   tabindex="2"
