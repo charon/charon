@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-06-16
+
 ### Added
 
 - Organization admins can list users which authenticated in their community and see which apps they used.
@@ -51,7 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Admins are able to create organizations and enable applications in them.
 - Users are able to authenticate to applications in organizations.
 
-[unreleased]: https://gitlab.com/charon/charon/-/compare/v0.3.0...main
+[unreleased]: https://gitlab.com/charon/charon/-/compare/v0.4.0...main
+[0.4.0]: https://gitlab.com/charon/charon/-/compare/v0.3.0...v0.4.0
 [0.3.0]: https://gitlab.com/charon/charon/-/compare/v0.2.0...v0.3.0
 [0.2.0]: https://gitlab.com/charon/charon/-/compare/v0.1.0...v0.2.0
 [0.1.0]: https://gitlab.com/charon/charon/-/tags/v0.1.0
