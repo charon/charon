@@ -87,7 +87,7 @@ On Debina/Ubuntu `media-types` package.
 
 To run Charon you need a HTTPS TLS certificate (as required by HTTP2). When running locally
 you can use [mkcert](https://github.com/FiloSottile/mkcert), a tool to create a local CA
-keypair which is then used to create a TLS certificate. Use Go 1.23.6 or newer.
+keypair which is then used to create a TLS certificate. Use Go 1.23.10 or newer.
 
 ```sh
 go install filippo.io/mkcert@latest

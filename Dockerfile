@@ -12,7 +12,7 @@ RUN \
   npm audit signatures && \
   make dist
 
-FROM golang:1.23.6-alpine3.21 AS go-build
+FROM golang:1.23.10-alpine3.21 AS go-build
 
 RUN apk --update add make bash git gcc musl-dev ca-certificates tzdata mailcap && \
   adduser -D -H -g "" -s /sbin/nologin -u 1000 user
