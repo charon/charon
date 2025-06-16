@@ -841,7 +841,14 @@ async function onIdentitiesSubmit() {
                     :can-update="organizationIdentity.canUpdate"
                     :labels="organizationIdentity.active ? [] : ['disabled']"
                   />
-                  <IdentityOrganization :identity-organization="{id: organizationIdentity.id, active: organizationIdentity.active, organization: { id }, applications: organizationIdentity.applications }">
+                  <IdentityOrganization
+                    :identity-organization="{
+                      id: organizationIdentity.id,
+                      active: organizationIdentity.active,
+                      organization: { id },
+                      applications: organizationIdentity.applications,
+                    }"
+                  >
                     <div v-if="organizationIdentity.canUpdate && organizationIdentity.active" class="flex flex-row gap-4">
                       <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = false">Disable</Button>
                       <Button type="button" :progress="progress" @click.prevent="organizationIdentities.splice(i, 1)">Remove</Button>
