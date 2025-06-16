@@ -972,7 +972,7 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 	s.WriteJSON(w, req, result, nil)
 }
 
-func (s *Service) IdentityUpdatePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+func (s *Service) IdentityUpdatePost(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
