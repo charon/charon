@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Organization admins can list users which authenticated in their community and see which apps they used.
+- Users can list organizations and apps they have authenticated to, and corresponding identities they used.
+  Similarly, for each identity they can see to which organizations and apps they have authenticated.
+
 ### Changed
 
 - Go 1.23.10 or newer is required.
