@@ -65,10 +65,10 @@ onBeforeMount(async () => {
       <div v-if="dataLoading" class="w-full rounded border bg-white p-4 shadow">Loading...</div>
       <div v-else-if="dataLoadingError" class="w-full rounded border bg-white p-4 shadow text-error-600">Unexpected error. Please try again.</div>
       <template v-else>
-        <div v-if="!organizations.length" class="w-full rounded border bg-white p-4 shadow grid grid-cols-1 gap-4 italic">
+        <div v-if="!organizations.length" class="w-full rounded border bg-white p-4 shadow italic">
           There are no organizations. {{ isSignedIn() ? "Create the first one." : "Sign-in or sign-up to create the first one." }}
         </div>
-        <div v-for="organization of organizations" :key="organization.id" class="w-full rounded border bg-white p-4 shadow grid grid-cols-1">
+        <div v-for="organization of organizations" :key="organization.id" class="w-full rounded border bg-white p-4 shadow">
           <OrganizationListItem :item="organization" />
         </div>
       </template>

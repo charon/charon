@@ -742,6 +742,14 @@ func (s *Service) OrganizationList(w http.ResponseWriter, req *http.Request, _ w
 	}
 }
 
+func (s *Service) OrganizationUsers(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	if s.ProxyStaticTo != "" {
+		s.Proxy(w, req)
+	} else {
+		s.ServeStaticFile(w, req, "/index.html")
+	}
+}
+
 func (s *Service) getOrganizationFromID(ctx context.Context, value string) (*Organization, errors.E) {
 	id, errE := identifier.MaybeString(value)
 	if errE != nil {
@@ -822,8 +830,18 @@ func (s *Service) OrganizationAppGet(w http.ResponseWriter, req *http.Request, p
 	s.WriteJSON(w, req, orgApp.OrganizationApplicationPublic, nil)
 }
 
+type OrganizationIdentity struct {
+	IdentityPublic
+
+	Organizations []IdentityOrganization `json:"organizations,omitempty"`
+}
+
 // Anyone with valid access token for the organization can access public data about any
 // identity in the organization given the organization-scoped identity ID.
+//
+// A special case is for admins of the organization, which can also authenticate using
+// valid Charon organization access token. In that case, also Organizations field is returned
+// with IdentityOrganization struct for just this organization.
 func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 	co := s.charonOrganization()
@@ -840,12 +858,39 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
+	hasOrganizationAccessToken := true
+
 	// We do not use RequireAuthenticated here, because we want to use a (possibly) non-Charon organization ID.
 	currentIdentityID, accountID, errE := s.getIdentityFromRequest(w, req, organizationID.String())
 	if errors.Is(errE, ErrIdentityNotPresent) {
-		s.WithError(ctx, errE)
-		waf.Error(w, req, http.StatusUnauthorized)
-		return
+		// User is not authenticated for this organization.
+		// Maybe they are authenticated using Charon organization and are admin of the organization.
+
+		hasOrganizationAccessToken = false
+
+		currentIdentityID, accountID, errE = s.getIdentityFromRequest(w, req, co.AppID.String())
+		if errors.Is(errE, ErrIdentityNotPresent) {
+			s.WithError(ctx, errE)
+			waf.Error(w, req, http.StatusUnauthorized)
+			return
+		} else if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+
+		organization, errE := s.getOrganizationFromID(ctx, params["id"]) //nolint:govet
+		if errors.Is(errE, ErrOrganizationNotFound) {
+			s.NotFound(w, req)
+			return
+		} else if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+
+		if !organization.HasAdminAccess(IdentityRef{ID: currentIdentityID}) {
+			waf.Error(w, req, http.StatusUnauthorized)
+			return
+		}
 	} else if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -863,6 +908,8 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
+
+		var idOrg *IdentityOrganization
 
 		if co.ID == organizationID {
 			// TODO: This allows everyone to access data about an identity given only its database ID.
@@ -885,7 +932,7 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 				continue
 			}
 		} else {
-			idOrg := identity.GetOrganization(&organizationID)
+			idOrg = identity.GetOrganization(&organizationID)
 			if idOrg == nil {
 				continue
 			}
@@ -901,7 +948,7 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 			}
 
 			// We do not want to expose the link between the database ID and the organization-scoped ID.
-			identity.IdentityPublic.ID = idOrg.ID
+			identity.ID = idOrg.ID
 		}
 
 		// TODO: Expose only those fields the access tokens have access to through its scopes.
@@ -919,10 +966,29 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 			return
 		}
 
-		s.WriteJSON(w, req, identity.IdentityPublic, map[string]interface{}{
+		if hasOrganizationAccessToken {
+			// Only when organization admin is requesting identity information,
+			// we return additional field Organizations.
+			idOrg = nil
+		}
+
+		organizations := []IdentityOrganization{}
+		if idOrg != nil {
+			organizations = append(organizations, *idOrg)
+		}
+
+		s.WriteJSON(w, req, OrganizationIdentity{
+			IdentityPublic: identity.IdentityPublic,
+			Organizations:  organizations,
+		}, map[string]interface{}{
 			"can_use":    identity.HasUserAccess(ids),
 			"can_update": identity.HasAdminAccess(ids, isCreator),
-			"is_current": *identity.ID == currentIdentityID,
+			// identity.ID is organization-scoped (we make it so above) and it makes sense to
+			// compare it with currentIdentityID only if currentIdentityID belongs to the same
+			// organization and not to Charon organization from the special case.
+			// (It might be that organization is in fact Charon organization, but that should be
+			// then handled as the first case and not as the special case.)
+			"is_current": hasOrganizationAccessToken && *identity.ID == currentIdentityID,
 		})
 		return
 	}
@@ -1021,4 +1087,52 @@ func (s *Service) OrganizationCreatePost(w http.ResponseWriter, req *http.Reques
 	}
 
 	s.returnOrganizationRef(ctx, w, req, &organization)
+}
+
+func (s *Service) OrganizationUsersGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	ctx := s.RequireAuthenticated(w, req)
+	if ctx == nil {
+		return
+	}
+
+	organization, errE := s.getOrganizationFromID(ctx, params["id"])
+	if errors.Is(errE, ErrOrganizationNotFound) {
+		s.NotFound(w, req)
+		return
+	} else if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	if !organization.HasAdminAccess(IdentityRef{ID: mustGetIdentityID(ctx)}) {
+		waf.Error(w, req, http.StatusUnauthorized)
+		return
+	}
+
+	result := []IdentityRef{}
+
+	s.identitiesMu.RLock()
+	defer s.identitiesMu.RUnlock()
+
+	for _, data := range s.identities {
+		var identity Identity
+		errE := x.UnmarshalWithoutUnknownFields(data, &identity)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+
+		idOrg := identity.GetOrganization(organization.ID)
+		// TODO: Should admins be able to see also users who have disabled organization, but have still joined in the past?
+		//       If we allow this, we should also change OrganizationIdentityGet to return disabled identities for admins, too.
+		if idOrg != nil && idOrg.Active {
+			result = append(result, IdentityRef{ID: *idOrg.ID})
+		}
+	}
+
+	slices.SortFunc(result, func(a IdentityRef, b IdentityRef) int {
+		return bytes.Compare(a.ID[:], b.ID[:])
+	})
+
+	s.WriteJSON(w, req, result, nil)
 }

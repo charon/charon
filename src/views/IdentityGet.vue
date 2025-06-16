@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import type { Ref } from "vue"
-import type { Identity, IdentityOrganization, IdentityRef, Metadata, OrganizationApplicationPublic, OrganizationRef, Organizations } from "@/types"
+import type { Identity, IdentityOrganization as IdentityOrganizationType, IdentityRef, Metadata, OrganizationRef, Organizations } from "@/types"
 
 import { computed, nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useRouter } from "vue-router"
-import WithDocument from "@/components/WithDocument.vue"
 import InputText from "@/components/InputText.vue"
 import TextArea from "@/components/TextArea.vue"
 import Button from "@/components/Button.vue"
@@ -12,9 +11,10 @@ import OrganizationListItem from "@/partials/OrganizationListItem.vue"
 import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
 import WithIdentityPublicDocument from "@/partials/WithIdentityPublicDocument.vue"
+import IdentityOrganization from "@/partials/IdentityOrganization.vue"
 import { getURL, postJSON } from "@/api"
 import { injectProgress } from "@/progress"
-import { clone, equals, getHomepage } from "@/utils"
+import { clone, equals } from "@/utils"
 import siteContext from "@/context"
 
 const props = defineProps<{
@@ -51,7 +51,7 @@ const admins = ref<IdentityRef[]>([])
 
 const identityOrganizationsUnexpectedError = ref("")
 const identityOrganizationsUpdated = ref(false)
-const identityOrganizations = ref<IdentityOrganization[]>([])
+const identityOrganizations = ref<IdentityOrganizationType[]>([])
 
 const availableOrganizations = computed(() => {
   return organizations.value.filter((organization) => !isOrganizationAdded(organization))
@@ -391,8 +391,6 @@ async function onAddOrganization(organization: OrganizationRef) {
 }
 
 // TODO: Remember previous organization-scoped identity IDs and reuse them if an organization is removed and then added back without calling update in-between.
-
-const WithOrganizationApplicationDocument = WithDocument<OrganizationApplicationPublic>
 </script>
 
 <template>
@@ -504,29 +502,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
               <ul>
                 <li v-for="(identityOrganization, i) in identityOrganizations" :key="identityOrganization.id || i" class="flex flex-col mb-4">
                   <OrganizationListItem :item="identityOrganization.organization" h3 />
-                  <div class="ml-4 mt-4 flex flew-row gap-4 justify-between items-start">
-                    <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
-                      <div>ID:</div>
-                      <div v-if="identityOrganization.id">
-                        <code>{{ identityOrganization.id }}</code>
-                      </div>
-                      <div v-else><span class="italic">confirm update to allocate</span></div>
-                      <div>Status:</div>
-                      <div>
-                        <strong>{{ identityOrganization.active ? "active" : "disabled" }}</strong>
-                      </div>
-                      <div>Apps:</div>
-                      <ol v-if="identityOrganization.applications.length">
-                        <li v-for="application in identityOrganization.applications" :key="application.id">
-                          <WithOrganizationApplicationDocument :params="{ id: identityOrganization.organization.id, appId: application.id }" name="OrganizationApp">
-                            <template #default="{ doc }">
-                              <a :href="getHomepage(doc)" class="link">{{ doc.applicationTemplate.name }}</a>
-                            </template>
-                          </WithOrganizationApplicationDocument>
-                        </li>
-                      </ol>
-                      <div v-else class="italic">none</div>
-                    </div>
+                  <IdentityOrganization :identity-organization="identityOrganization">
                     <div v-if="metadata.can_update && identityOrganization.active" class="flex flew-row gap-4">
                       <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = false">Disable</Button>
                       <Button type="button" :progress="progress" @click.prevent="identityOrganizations.splice(i, 1)">Remove</Button>
@@ -535,7 +511,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                       <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = true">Activate</Button>
                       <Button type="button" :progress="progress" @click.prevent="identityOrganizations.splice(i, 1)">Remove</Button>
                     </div>
-                  </div>
+                  </IdentityOrganization>
                 </li>
               </ul>
               <div v-if="metadata.can_update" class="flex flex-row justify-end">

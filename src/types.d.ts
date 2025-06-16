@@ -330,6 +330,10 @@ export type OrganizationCreate = {
   name: string
 }
 
+export type IdentityForAdmin = IdentityPublic & {
+  organizations: IdentityOrganization[]
+}
+
 export type Identity = IdentityCreate &
   IdentityPublic & {
     // Identity is returned from API only when user can access it and can access

@@ -268,6 +268,12 @@
       "get": null
     },
     {
+      "name": "OrganizationUsers",
+      "path": "/o/users/:id",
+      "api": {},
+      "get": {}
+    },
+    {
       "name": "IdentityList",
       "path": "/i",
       "api": {},

@@ -11,25 +11,25 @@ import type {
   IdentityRef,
   OrganizationIdentity,
   Identity,
-  OrganizationApplicationPublic,
   AllIdentity,
 } from "@/types"
 
 import { computed, nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import { Identifier } from "@tozd/identifier"
-import WithDocument from "@/components/WithDocument.vue"
 import InputText from "@/components/InputText.vue"
 import TextArea from "@/components/TextArea.vue"
 import Button from "@/components/Button.vue"
+import ButtonLink from "@/components/ButtonLink.vue"
 import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
 import ApplicationTemplateListItem from "@/partials/ApplicationTemplateListItem.vue"
 import IdentityFull from "@/partials/IdentityFull.vue"
 import WithIdentityPublicDocument from "@/partials/WithIdentityPublicDocument.vue"
+import IdentityOrganization from "@/partials/IdentityOrganization.vue"
 import { getURL, postJSON } from "@/api"
 import { setupArgon2id } from "@/argon2id"
-import { clone, equals, getIdentityOrganization, getOrganization, getHomepage } from "@/utils"
+import { clone, equals, getIdentityOrganization, getOrganization } from "@/utils"
 import { injectProgress } from "@/progress"
 import siteContext from "@/context"
 import { isSignedIn } from "@/auth"
@@ -638,8 +638,6 @@ async function onIdentitiesSubmit() {
 // TODO: Remember previous client ID and secrets and reuse them if an add application is removed and then added back without calling update in-between.
 // TODO: Remember previous organization-scoped identity IDs and reuse them if an identity is removed and then added back without calling update in-between.
 // TODO: Provide explicit buttons to rotate each secret.
-
-const WithOrganizationApplicationDocument = WithDocument<OrganizationApplicationPublic>
 </script>
 
 <template>
@@ -669,6 +667,12 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
               <Button type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">Update</Button>
             </div>
           </form>
+          <template v-if="metadata.can_update">
+            <h2 class="text-xl font-bold">Users</h2>
+            <div>
+              <ButtonLink :to="{ name: 'OrganizationUsers', params: { id } }" primary>Manage</ButtonLink>
+            </div>
+          </template>
           <template v-if="(metadata.can_update && (applications.length || canApplicationsSubmit())) || applicationsUnexpectedError || applicationsUpdated">
             <h2 class="text-xl font-bold">Added applications</h2>
             <div v-if="applicationsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
@@ -837,29 +841,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                     :can-update="organizationIdentity.canUpdate"
                     :labels="organizationIdentity.active ? [] : ['disabled']"
                   />
-                  <div class="ml-4 mt-4 flex flew-row gap-4 justify-between items-start">
-                    <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
-                      <div>ID:</div>
-                      <div v-if="organizationIdentity.id">
-                        <code>{{ organizationIdentity.id }}</code>
-                      </div>
-                      <div v-else><span class="italic">confirm update to allocate</span></div>
-                      <div>Status:</div>
-                      <div>
-                        <strong>{{ organizationIdentity.active ? "active" : "disabled" }}</strong>
-                      </div>
-                      <div>Apps:</div>
-                      <ol v-if="organizationIdentity.applications.length">
-                        <li v-for="application in organizationIdentity.applications" :key="application.id">
-                          <WithOrganizationApplicationDocument :key="application.id" :params="{ id, appId: application.id }" name="OrganizationApp">
-                            <template #default="{ doc }">
-                              <a :href="getHomepage(doc)" class="link">{{ doc.applicationTemplate.name }}</a>
-                            </template>
-                          </WithOrganizationApplicationDocument>
-                        </li>
-                      </ol>
-                      <div v-else class="italic">none</div>
-                    </div>
+                  <IdentityOrganization :identity-organization="{id: organizationIdentity.id, active: organizationIdentity.active, organization: { id }, applications: organizationIdentity.applications }">
                     <div v-if="organizationIdentity.canUpdate && organizationIdentity.active" class="flex flex-row gap-4">
                       <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = false">Disable</Button>
                       <Button type="button" :progress="progress" @click.prevent="organizationIdentities.splice(i, 1)">Remove</Button>
@@ -868,7 +850,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                       <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = true">Activate</Button>
                       <Button type="button" :progress="progress" @click.prevent="organizationIdentities.splice(i, 1)">Remove</Button>
                     </div>
-                  </div>
+                  </IdentityOrganization>
                 </li>
               </ul>
               <div
