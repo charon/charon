@@ -359,10 +359,11 @@ func (s *OIDCSession) SetSubject(subject string) {
 }
 
 var (
-	_ fosite.Client                   = (*OIDCClient)(nil)
-	_ fosite.OpenIDConnectClient      = (*OIDCClient)(nil)
-	_ fosite.ResponseModeClient       = (*OIDCClient)(nil)
-	_ fosite.ClientWithSecretRotation = (*OIDCClient)(nil)
+	_ fosite.Client                         = (*OIDCClient)(nil)
+	_ fosite.OpenIDConnectClient            = (*OIDCClient)(nil)
+	_ fosite.ResponseModeClient             = (*OIDCClient)(nil)
+	_ fosite.ClientWithSecretRotation       = (*OIDCClient)(nil)
+	_ fosite.ClientWithCustomTokenLifespans = (*OIDCClient)(nil)
 )
 
 // OIDCClient represents a configuration of the OIDC client for an app
@@ -376,6 +377,9 @@ type OIDCClient struct {
 	Scopes                  []string
 	RedirectURIs            []string
 	Secret                  []byte
+	AccessTokenLifespan     Duration
+	IDTokenLifespan         Duration
+	RefreshTokenLifespan    *Duration
 }
 
 // GetResponseModes implements fosite.ResponseModeClient.
@@ -477,4 +481,23 @@ func (c *OIDCClient) IsPublic() bool {
 func (*OIDCClient) GetRotatedHashes() [][]byte {
 	// We currently do not support secret rotation.
 	return nil
+}
+
+// GetEffectiveLifespan implements fosite.ClientWithCustomTokenLifespans.
+func (c *OIDCClient) GetEffectiveLifespan(_ fosite.GrantType, tt fosite.TokenType, fallback time.Duration) time.Duration {
+	switch tt {
+	case fosite.AccessToken:
+		return time.Duration(c.AccessTokenLifespan)
+	case fosite.RefreshToken:
+		if c.RefreshTokenLifespan == nil {
+			return -1
+		}
+		return time.Duration(*c.RefreshTokenLifespan)
+	case fosite.IDToken:
+		return time.Duration(c.IDTokenLifespan)
+	case fosite.AuthorizeCode, fosite.PushedAuthorizeRequestContext:
+		return fallback
+	default:
+		panic(errors.Errorf("unknown token type: %s", tt))
+	}
 }

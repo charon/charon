@@ -86,6 +86,9 @@ func (s *OIDCStore) GetClient(ctx context.Context, strID string) (fosite.Client,
 					Scopes:                  scopes,
 					RedirectURIs:            redirectURIs,
 					Secret:                  nil,
+					AccessTokenLifespan:     templateClientPublic.AccessTokenLifespan,
+					IDTokenLifespan:         templateClientPublic.IDTokenLifespan,
+					RefreshTokenLifespan:    templateClientPublic.RefreshTokenLifespan,
 				}, nil
 			}
 
@@ -127,6 +130,9 @@ func (s *OIDCStore) GetClient(ctx context.Context, strID string) (fosite.Client,
 					Scopes:                  scopes,
 					RedirectURIs:            redirectURIs,
 					Secret:                  []byte(clientBackend.Secret),
+					AccessTokenLifespan:     templateClientBackend.AccessTokenLifespan,
+					IDTokenLifespan:         templateClientBackend.IDTokenLifespan,
+					RefreshTokenLifespan:    templateClientBackend.RefreshTokenLifespan,
 				}, nil
 			}
 
@@ -149,6 +155,9 @@ func (s *OIDCStore) GetClient(ctx context.Context, strID string) (fosite.Client,
 					Scopes:                  scopes,
 					RedirectURIs:            nil,
 					Secret:                  []byte(clientService.Secret),
+					AccessTokenLifespan:     templateClientService.AccessTokenLifespan,
+					IDTokenLifespan:         templateClientService.IDTokenLifespan,
+					RefreshTokenLifespan:    templateClientService.RefreshTokenLifespan,
 				}, nil
 			}
 		}

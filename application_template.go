@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"regexp"
 	"slices"
+	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/ory/fosite"
@@ -106,6 +107,26 @@ type ClientRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
+type Duration time.Duration
+
+func (d Duration) MarshalJSON() ([]byte, error) {
+	return x.MarshalWithoutEscapeHTML(time.Duration(d).String())
+}
+
+func (d *Duration) UnmarshalJSON(b []byte) error {
+	var s string
+	errE := x.UnmarshalWithoutUnknownFields(b, &s)
+	if errE != nil {
+		return errE
+	}
+	tmp, err := time.ParseDuration(s)
+	if err != nil {
+		return errors.WithDetails(err, "duration", s)
+	}
+	*d = Duration(tmp)
+	return nil
+}
+
 type ApplicationTemplateClientPublic struct {
 	ID          *identifier.Identifier `json:"id"`
 	Description string                 `json:"description"`
@@ -113,6 +134,10 @@ type ApplicationTemplateClientPublic struct {
 	AdditionalScopes []string `json:"additionalScopes"`
 
 	RedirectURITemplates []string `json:"redirectUriTemplates"`
+
+	AccessTokenLifespan  Duration  `json:"accessTokenLifespan"`
+	IDTokenLifespan      Duration  `json:"idTokenLifespan"`
+	RefreshTokenLifespan *Duration `json:"refreshTokenLifespan,omitempty"`
 }
 
 func (c *ApplicationTemplateClientPublic) Validate(ctx context.Context, existing *ApplicationTemplateClientPublic, values map[string]string) errors.E {
@@ -163,6 +188,16 @@ func (c *ApplicationTemplateClientPublic) Validate(ctx context.Context, existing
 	}
 	c.RedirectURITemplates = redirectURIsTemplates
 
+	if c.AccessTokenLifespan <= 0 {
+		return errors.New("access token lifespan is not set")
+	}
+	if c.IDTokenLifespan <= 0 {
+		return errors.New("ID token lifespan is not set")
+	}
+	if c.RefreshTokenLifespan != nil && *c.RefreshTokenLifespan <= 0 {
+		return errors.New("refresh token lifespan is invalid")
+	}
+
 	return nil
 }
 
@@ -174,6 +209,10 @@ type ApplicationTemplateClientBackend struct {
 
 	TokenEndpointAuthMethod string   `json:"tokenEndpointAuthMethod"`
 	RedirectURITemplates    []string `json:"redirectUriTemplates"`
+
+	AccessTokenLifespan  Duration  `json:"accessTokenLifespan"`
+	IDTokenLifespan      Duration  `json:"idTokenLifespan"`
+	RefreshTokenLifespan *Duration `json:"refreshTokenLifespan,omitempty"`
 }
 
 func (c *ApplicationTemplateClientBackend) Validate(ctx context.Context, existing *ApplicationTemplateClientBackend, values map[string]string) errors.E {
@@ -233,6 +272,16 @@ func (c *ApplicationTemplateClientBackend) Validate(ctx context.Context, existin
 	}
 	c.RedirectURITemplates = redirectURIsTemplates
 
+	if c.AccessTokenLifespan <= 0 {
+		return errors.New("access token lifespan is not set")
+	}
+	if c.IDTokenLifespan <= 0 {
+		return errors.New("ID token lifespan is not set")
+	}
+	if c.RefreshTokenLifespan != nil && *c.RefreshTokenLifespan <= 0 {
+		return errors.New("refresh token lifespan is invalid")
+	}
+
 	return nil
 }
 
@@ -243,6 +292,10 @@ type ApplicationTemplateClientService struct {
 	AdditionalScopes []string `json:"additionalScopes"`
 
 	TokenEndpointAuthMethod string `json:"tokenEndpointAuthMethod"`
+
+	AccessTokenLifespan  Duration  `json:"accessTokenLifespan"`
+	IDTokenLifespan      Duration  `json:"idTokenLifespan"`
+	RefreshTokenLifespan *Duration `json:"refreshTokenLifespan,omitempty"`
 }
 
 func (c *ApplicationTemplateClientService) Validate(_ context.Context, existing *ApplicationTemplateClientService, _ map[string]string) errors.E {
@@ -294,6 +347,16 @@ func (c *ApplicationTemplateClientService) Validate(_ context.Context, existing 
 		errE := errors.New("unsupported token endpoint auth method")
 		errors.Details(errE)["method"] = c.TokenEndpointAuthMethod
 		return errE
+	}
+
+	if c.AccessTokenLifespan <= 0 {
+		return errors.New("access token lifespan is not set")
+	}
+	if c.IDTokenLifespan <= 0 {
+		return errors.New("ID token lifespan is not set")
+	}
+	if c.RefreshTokenLifespan != nil && *c.RefreshTokenLifespan <= 0 {
+		return errors.New("refresh token lifespan is invalid")
 	}
 
 	return nil

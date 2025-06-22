@@ -2,6 +2,7 @@ package charon
 
 import (
 	"context"
+	"time"
 
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
@@ -29,6 +30,8 @@ func initCharonOrganization(config *Config, service *Service, domain string) (fu
 		// do the same here to make sure redirect URIs match window.location.href in browsers.
 		uri := "https://" + host + "/"
 
+		refreshTokenLifespan := Duration(time.Hour * 24 * 30) //nolint:mnd
+
 		organization := Organization{
 			OrganizationPublic: OrganizationPublic{
 				ID:          &charonOrganizationID,
@@ -54,6 +57,11 @@ func initCharonOrganization(config *Config, service *Service, domain string) (fu
 									Description:          "",
 									AdditionalScopes:     []string{},
 									RedirectURITemplates: []string{uri},
+
+									// TODO: Configure lifespans based on what frontend expects.
+									AccessTokenLifespan:  Duration(time.Hour),
+									IDTokenLifespan:      Duration(time.Hour),
+									RefreshTokenLifespan: &refreshTokenLifespan,
 								},
 							},
 							ClientsBackend: []ApplicationTemplateClientBackend{},

@@ -202,6 +202,9 @@ export type ApplicationTemplateClientPublic = {
   description: string
   additionalScopes: string[]
   redirectUriTemplates: string[]
+  accessTokenLifespan: string
+  idTokenLifespan: string
+  refreshTokenLifespan?: string
 }
 
 export type ApplicationTemplateClientBackend = {
@@ -210,6 +213,9 @@ export type ApplicationTemplateClientBackend = {
   additionalScopes: string[]
   tokenEndpointAuthMethod: "client_secret_post" | "client_secret_basic"
   redirectUriTemplates: string[]
+  accessTokenLifespan: string
+  idTokenLifespan: string
+  refreshTokenLifespan?: string
 }
 
 export type ApplicationTemplateClientService = {
@@ -217,6 +223,9 @@ export type ApplicationTemplateClientService = {
   description: string
   additionalScopes: string[]
   tokenEndpointAuthMethod: "client_secret_post" | "client_secret_basic"
+  accessTokenLifespan: string
+  idTokenLifespan: string
+  refreshTokenLifespan?: string
 }
 
 export type ApplicationTemplateCreate = {

@@ -126,6 +126,20 @@ async function loadData(update: "init" | "basic" | "variables" | "clientsPublic"
       return
     }
 
+    for (const clientType of ["clientsPublic", "clientsBackend", "clientsService"] as const) {
+      for (const client of response.doc[clientType]) {
+        if (!client.accessTokenLifespan) {
+          client.accessTokenLifespan = ""
+        }
+        if (!client.idTokenLifespan) {
+          client.idTokenLifespan = ""
+        }
+        if (!client.refreshTokenLifespan) {
+          client.refreshTokenLifespan = ""
+        }
+      }
+    }
+
     applicationTemplate.value = response.doc
     metadata.value = response.metadata
 
@@ -335,6 +349,12 @@ function canClientsPublicSubmit(): boolean {
         return false
       }
     }
+    if (!client.accessTokenLifespan) {
+      return false
+    }
+    if (!client.idTokenLifespan) {
+      return false
+    }
   }
 
   // Anything changed?
@@ -346,6 +366,13 @@ function canClientsPublicSubmit(): boolean {
 }
 
 async function onClientsPublicSubmit() {
+  const c = clone(clientsPublic.value)
+  for (const client of c) {
+    if (!client.refreshTokenLifespan) {
+      delete client.refreshTokenLifespan
+    }
+  }
+
   const payload: ApplicationTemplate = {
     // We update only clientsPublic.
     id: props.id,
@@ -354,7 +381,7 @@ async function onClientsPublicSubmit() {
     homepageTemplate: applicationTemplate.value!.homepageTemplate,
     idScopes: applicationTemplate.value!.idScopes,
     variables: applicationTemplate.value!.variables,
-    clientsPublic: clientsPublic.value,
+    clientsPublic: c,
     clientsBackend: applicationTemplate.value!.clientsBackend,
     clientsService: applicationTemplate.value!.clientsService,
     admins: applicationTemplate.value!.admins,
@@ -377,6 +404,9 @@ function onAddClientPublic() {
         description: "",
         additionalScopes: [],
         redirectUriTemplates: ["{uriBase}/oidc/redirect"],
+        accessTokenLifespan: "1h0m0s",
+        idTokenLifespan: "1h0m0s",
+        refreshTokenLifespan: 24 * 30 + "h0m0s",
       })
 
       nextTick(() => {
@@ -391,6 +421,9 @@ function onAddClientPublic() {
     description: "",
     additionalScopes: [],
     redirectUriTemplates: [],
+    accessTokenLifespan: "1h0m0s",
+    idTokenLifespan: "1h0m0s",
+    refreshTokenLifespan: 24 * 30 + "h0m0s",
   })
 
   nextTick(() => {
@@ -409,6 +442,13 @@ function canClientsBackendSubmit(): boolean {
         return false
       }
     }
+
+    if (!client.accessTokenLifespan) {
+      return false
+    }
+    if (!client.idTokenLifespan) {
+      return false
+    }
   }
 
   // Anything changed?
@@ -420,6 +460,13 @@ function canClientsBackendSubmit(): boolean {
 }
 
 async function onClientsBackendSubmit() {
+  const c = clone(clientsBackend.value)
+  for (const client of c) {
+    if (!client.refreshTokenLifespan) {
+      delete client.refreshTokenLifespan
+    }
+  }
+
   const payload: ApplicationTemplate = {
     // We update only clientsBackend.
     id: props.id,
@@ -429,7 +476,7 @@ async function onClientsBackendSubmit() {
     idScopes: applicationTemplate.value!.idScopes,
     variables: applicationTemplate.value!.variables,
     clientsPublic: applicationTemplate.value!.clientsPublic,
-    clientsBackend: clientsBackend.value,
+    clientsBackend: c,
     clientsService: applicationTemplate.value!.clientsService,
     admins: applicationTemplate.value!.admins,
   }
@@ -452,6 +499,9 @@ function onAddClientBackend() {
         additionalScopes: [],
         tokenEndpointAuthMethod: "client_secret_post",
         redirectUriTemplates: ["{uriBase}/oidc/redirect"],
+        accessTokenLifespan: "1h0m0s",
+        idTokenLifespan: "1h0m0s",
+        refreshTokenLifespan: 24 * 30 + "h0m0s",
       })
 
       nextTick(() => {
@@ -467,6 +517,9 @@ function onAddClientBackend() {
     additionalScopes: [],
     tokenEndpointAuthMethod: "client_secret_post",
     redirectUriTemplates: [],
+    accessTokenLifespan: "1h0m0s",
+    idTokenLifespan: "1h0m0s",
+    refreshTokenLifespan: 24 * 30 + "h0m0s",
   })
 
   nextTick(() => {
@@ -475,6 +528,16 @@ function onAddClientBackend() {
 }
 
 function canClientsServiceSubmit(): boolean {
+  // Required fields.
+  for (const client of clientsService.value) {
+    if (!client.accessTokenLifespan) {
+      return false
+    }
+    if (!client.idTokenLifespan) {
+      return false
+    }
+  }
+
   // Anything changed?
   if (!equals(applicationTemplate.value!.clientsService, clientsService.value)) {
     return true
@@ -484,6 +547,13 @@ function canClientsServiceSubmit(): boolean {
 }
 
 async function onClientsServiceSubmit() {
+  const c = clone(clientsService.value)
+  for (const client of c) {
+    if (!client.refreshTokenLifespan) {
+      delete client.refreshTokenLifespan
+    }
+  }
+
   const payload: ApplicationTemplate = {
     // We update only clientsService.
     id: props.id,
@@ -494,7 +564,7 @@ async function onClientsServiceSubmit() {
     variables: applicationTemplate.value!.variables,
     clientsPublic: applicationTemplate.value!.clientsPublic,
     clientsBackend: applicationTemplate.value!.clientsBackend,
-    clientsService: clientsService.value,
+    clientsService: c,
     admins: applicationTemplate.value!.admins,
   }
   await onSubmit(payload, "clientsService", clientsServiceUpdated, clientsServiceUnexpectedError)
@@ -512,6 +582,9 @@ function onAddClientService() {
     description: "",
     additionalScopes: [],
     tokenEndpointAuthMethod: "client_secret_post",
+    accessTokenLifespan: "1h0m0s",
+    idTokenLifespan: "1h0m0s",
+    refreshTokenLifespan: 24 * 30 + "h0m0s",
   })
 
   nextTick(() => {
@@ -715,6 +788,32 @@ function onAddAdmin() {
                       :progress="progress"
                       @update:model-value="(v) => (client.additionalScopes = splitSpace(v))"
                     />
+                    <label :for="`client-public-${i}-accessTokenLifespan`" class="mb-1 mt-4">Access token lifespan</label>
+                    <TextArea
+                      :id="`client-public-${i}-accessTokenLifespan`"
+                      v-model="client.accessTokenLifespan"
+                      class="flex-grow flex-auto min-w-0"
+                      :readonly="!metadata.can_update"
+                      :progress="progress"
+                    />
+                    <label :for="`client-public-${i}-idTokenLifespan`" class="mb-1 mt-4">ID token lifespan</label>
+                    <TextArea
+                      :id="`client-public-${i}-idTokenLifespan`"
+                      v-model="client.idTokenLifespan"
+                      class="flex-grow flex-auto min-w-0"
+                      :readonly="!metadata.can_update"
+                      :progress="progress"
+                    />
+                    <label :for="`client-public-${i}-refreshTokenLifespan`" class="mb-1 mt-4"
+                      >Refresh token lifespan<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label
+                    >
+                    <TextArea
+                      :id="`client-public-${i}-refreshTokenLifespan`"
+                      v-model="client.refreshTokenLifespan"
+                      class="flex-grow flex-auto min-w-0"
+                      :readonly="!metadata.can_update"
+                      :progress="progress"
+                    />
                     <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
                       <Button type="button" :progress="progress" @click.prevent="clientsPublic.splice(i, 1)">Remove</Button>
                     </div>
@@ -832,6 +931,32 @@ function onAddAdmin() {
                       :progress="progress"
                       @update:model-value="(v) => (client.additionalScopes = splitSpace(v))"
                     />
+                    <label :for="`client-backend-${i}-accessTokenLifespan`" class="mb-1 mt-4">Access token lifespan</label>
+                    <TextArea
+                      :id="`client-backend-${i}-accessTokenLifespan`"
+                      v-model="client.accessTokenLifespan"
+                      class="flex-grow flex-auto min-w-0"
+                      :readonly="!metadata.can_update"
+                      :progress="progress"
+                    />
+                    <label :for="`client-backend-${i}-idTokenLifespan`" class="mb-1 mt-4">ID token lifespan</label>
+                    <TextArea
+                      :id="`client-backend-${i}-idTokenLifespan`"
+                      v-model="client.idTokenLifespan"
+                      class="flex-grow flex-auto min-w-0"
+                      :readonly="!metadata.can_update"
+                      :progress="progress"
+                    />
+                    <label :for="`client-backend-${i}-refreshTokenLifespan`" class="mb-1 mt-4"
+                      >Refresh token lifespan<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label
+                    >
+                    <TextArea
+                      :id="`client-backend-${i}-refreshTokenLifespan`"
+                      v-model="client.refreshTokenLifespan"
+                      class="flex-grow flex-auto min-w-0"
+                      :readonly="!metadata.can_update"
+                      :progress="progress"
+                    />
                     <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
                       <Button type="button" :progress="progress" @click.prevent="clientsBackend.splice(i, 1)">Remove</Button>
                     </div>
@@ -918,6 +1043,32 @@ function onAddAdmin() {
                       :readonly="!metadata.can_update"
                       :progress="progress"
                       @update:model-value="(v) => (client.additionalScopes = splitSpace(v))"
+                    />
+                    <label :for="`client-service-${i}-accessTokenLifespan`" class="mb-1 mt-4">Access token lifespan</label>
+                    <TextArea
+                      :id="`client-service-${i}-accessTokenLifespan`"
+                      v-model="client.accessTokenLifespan"
+                      class="flex-grow flex-auto min-w-0"
+                      :readonly="!metadata.can_update"
+                      :progress="progress"
+                    />
+                    <label :for="`client-service-${i}-idTokenLifespan`" class="mb-1 mt-4">ID token lifespan</label>
+                    <TextArea
+                      :id="`client-service-${i}-idTokenLifespan`"
+                      v-model="client.idTokenLifespan"
+                      class="flex-grow flex-auto min-w-0"
+                      :readonly="!metadata.can_update"
+                      :progress="progress"
+                    />
+                    <label :for="`client-service-${i}-refreshTokenLifespan`" class="mb-1 mt-4"
+                      >Refresh token lifespan<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label
+                    >
+                    <TextArea
+                      :id="`client-service-${i}-refreshTokenLifespan`"
+                      v-model="client.refreshTokenLifespan"
+                      class="flex-grow flex-auto min-w-0"
+                      :readonly="!metadata.can_update"
+                      :progress="progress"
                     />
                     <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
                       <Button type="button" :progress="progress" @click.prevent="clientsService.splice(i, 1)">Remove</Button>
