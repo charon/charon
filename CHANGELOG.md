@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Lifespan for access tokens, ID tokens, and refresh tokens can be configured for OIDC clients.
+
 ## [0.4.0] - 2025-06-16
 
 ### Added
