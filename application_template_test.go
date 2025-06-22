@@ -22,7 +22,7 @@ func createApplicationTemplate(t *testing.T, ts *httptest.Server, service *charo
 	applicationTemplateCreate, errE := service.ReverseAPI("ApplicationTemplateCreate", nil, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	refreshTokenLifespan := charon.Duration(time.Hour * 24 * 30) //nolint:mnd
+	refreshTokenLifespan := charon.Duration(time.Hour * 24 * 30)
 
 	applicationTemplate := charon.ApplicationTemplate{
 		ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
