@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -21,6 +22,8 @@ func createApplicationTemplate(t *testing.T, ts *httptest.Server, service *charo
 	applicationTemplateCreate, errE := service.ReverseAPI("ApplicationTemplateCreate", nil, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
+	refreshTokenLifespan := charon.Duration(time.Hour * 24 * 30) //nolint:mnd
+
 	applicationTemplate := charon.ApplicationTemplate{
 		ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
 			Name:             "Test application",
@@ -35,6 +38,9 @@ func createApplicationTemplate(t *testing.T, ts *httptest.Server, service *charo
 					AdditionalScopes:        []string{},
 					TokenEndpointAuthMethod: "client_secret_post",
 					RedirectURITemplates:    []string{"https://example.com/redirect"},
+					AccessTokenLifespan:     charon.Duration(time.Hour),
+					IDTokenLifespan:         charon.Duration(time.Hour),
+					RefreshTokenLifespan:    &refreshTokenLifespan,
 				},
 			},
 			ClientsService: []charon.ApplicationTemplateClientService{},
