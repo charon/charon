@@ -45,6 +45,7 @@ async function onSubmit() {
   try {
     const payload: ApplicationTemplateCreate = {
       name: name.value,
+      idScopes: ["openid"],
     }
     const url = router.apiResolve({
       name: "ApplicationTemplateCreate",
