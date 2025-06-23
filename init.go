@@ -57,6 +57,7 @@ func initCharonOrganization(config *Config, service *Service, domain string) (fu
 									Description:          "",
 									AdditionalScopes:     []string{},
 									RedirectURITemplates: []string{uri},
+									AccessTokenType:      HMACAccessTokenType,
 
 									// TODO: Configure lifespans based on what frontend expects.
 									AccessTokenLifespan:  Duration(time.Hour),

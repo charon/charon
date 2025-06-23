@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Access token type (HMAC or JWT) can be configured for OIDC clients.
 - Lifespan for access tokens, ID tokens, and refresh tokens can be configured for OIDC clients.
 
 ## [0.4.0] - 2025-06-16

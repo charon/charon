@@ -112,6 +112,98 @@ func (h *hmacSHAStrategy) ValidateAuthorizeCode(ctx context.Context, r fosite.Re
 	return h.HMACSHAStrategyUnPrefixed.ValidateAuthorizeCode(ctx, r, h.trimPrefix(token, SecretPrefixAuthorizeCode)) //nolint:wrapcheck
 }
 
+type AccessTokenType string
+
+const (
+	JWTAccessTokenType  AccessTokenType = "jwt"
+	HMACAccessTokenType AccessTokenType = "hmac"
+)
+
+var _ oauth2.CoreStrategy = (*configurableCoreStrategy)(nil)
+
+func newConfigurableCoreStrategy(
+	keyGetter func(context.Context) (interface{}, error), strategy oauth2.CoreStrategy, config fosite.Configurator,
+) *configurableCoreStrategy {
+	return &configurableCoreStrategy{
+		hmacStrategy: strategy,
+		jwtStrategy:  compose.NewOAuth2JWTStrategy(keyGetter, strategy, config),
+	}
+}
+
+type configurableCoreStrategy struct {
+	hmacStrategy oauth2.CoreStrategy
+	jwtStrategy  oauth2.CoreStrategy
+}
+
+// AccessTokenSignature implements oauth2.CoreStrategy.
+func (c *configurableCoreStrategy) AccessTokenSignature(ctx context.Context, token string) string {
+	count := strings.Count(token, ".")
+	switch count {
+	case 1:
+		return c.hmacStrategy.AccessTokenSignature(ctx, token)
+	case 2: //nolint:mnd
+		return c.jwtStrategy.AccessTokenSignature(ctx, token)
+	default:
+		return ""
+	}
+}
+
+// GenerateAccessToken implements oauth2.CoreStrategy.
+func (c *configurableCoreStrategy) GenerateAccessToken(ctx context.Context, requester fosite.Requester) (string, string, error) {
+	tt := requester.GetClient().(*OIDCClient).GetAccessTokenType() //nolint:errcheck,forcetypeassert
+	switch tt {
+	case JWTAccessTokenType:
+		return c.jwtStrategy.GenerateAccessToken(ctx, requester) //nolint:wrapcheck
+	case HMACAccessTokenType:
+		return c.hmacStrategy.GenerateAccessToken(ctx, requester) //nolint:wrapcheck
+	default:
+		panic(errors.Errorf("unknown access token type: %s", tt))
+	}
+}
+
+// ValidateAccessToken implements oauth2.CoreStrategy.
+func (c *configurableCoreStrategy) ValidateAccessToken(ctx context.Context, requester fosite.Requester, token string) error {
+	tt := requester.GetClient().(*OIDCClient).GetAccessTokenType() //nolint:errcheck,forcetypeassert
+	switch tt {
+	case JWTAccessTokenType:
+		return c.jwtStrategy.ValidateAccessToken(ctx, requester, token) //nolint:wrapcheck
+	case HMACAccessTokenType:
+		return c.hmacStrategy.ValidateAccessToken(ctx, requester, token) //nolint:wrapcheck
+	default:
+		panic(errors.Errorf("unknown access token type: %s", tt))
+	}
+}
+
+// AuthorizeCodeSignature implements oauth2.CoreStrategy.
+func (c *configurableCoreStrategy) AuthorizeCodeSignature(ctx context.Context, token string) string {
+	return c.hmacStrategy.AuthorizeCodeSignature(ctx, token)
+}
+
+// GenerateAuthorizeCode implements oauth2.CoreStrategy.
+func (c *configurableCoreStrategy) GenerateAuthorizeCode(ctx context.Context, requester fosite.Requester) (string, string, error) {
+	return c.hmacStrategy.GenerateAuthorizeCode(ctx, requester) //nolint:wrapcheck
+}
+
+// ValidateAuthorizeCode implements oauth2.CoreStrategy.
+func (c *configurableCoreStrategy) ValidateAuthorizeCode(ctx context.Context, requester fosite.Requester, token string) error {
+	return c.hmacStrategy.ValidateAuthorizeCode(ctx, requester, token) //nolint:wrapcheck
+}
+
+// RefreshTokenSignature implements oauth2.CoreStrategy.
+func (c *configurableCoreStrategy) RefreshTokenSignature(ctx context.Context, token string) string {
+	return c.hmacStrategy.RefreshTokenSignature(ctx, token)
+}
+
+// GenerateRefreshToken implements oauth2.CoreStrategy.
+func (c *configurableCoreStrategy) GenerateRefreshToken(ctx context.Context, requester fosite.Requester) (string, string, error) {
+	return c.hmacStrategy.GenerateRefreshToken(ctx, requester) //nolint:wrapcheck
+}
+
+// ValidateRefreshToken implements oauth2.CoreStrategy.
+func (c *configurableCoreStrategy) ValidateRefreshToken(ctx context.Context, requester fosite.Requester, token string) error {
+	return c.hmacStrategy.ValidateRefreshToken(ctx, requester, token) //nolint:wrapcheck
+}
+
 func initOIDC(config *Config, service *Service, domain string, hmacStrategy *hmac.HMACStrategy) (func() *fosite.Fosite, errors.E) {
 	return initWithHost(config, domain, func(host string) *fosite.Fosite {
 		tokenPath, errE := service.ReverseAPI("OIDCToken", nil, nil)
@@ -159,7 +251,7 @@ func initOIDC(config *Config, service *Service, domain string, hmacStrategy *hma
 			config,
 			oidcStore,
 			&compose.CommonStrategy{
-				CoreStrategy:               compose.NewOAuth2JWTStrategy(getPrivateKey, oAuth2HMACStrategy, config),
+				CoreStrategy:               newConfigurableCoreStrategy(getPrivateKey, oAuth2HMACStrategy, config),
 				OpenIDConnectTokenStrategy: compose.NewOpenIDConnectStrategy(getPrivateKey, config),
 				Signer: &jwt.DefaultSigner{
 					GetPrivateKey: getPrivateKey,
@@ -380,6 +472,7 @@ type OIDCClient struct {
 	AccessTokenLifespan     Duration
 	IDTokenLifespan         Duration
 	RefreshTokenLifespan    *Duration
+	AccessTokenType         AccessTokenType
 }
 
 // GetResponseModes implements fosite.ResponseModeClient.
@@ -500,4 +593,8 @@ func (c *OIDCClient) GetEffectiveLifespan(_ fosite.GrantType, tt fosite.TokenTyp
 	default:
 		panic(errors.Errorf("unknown token type: %s", tt))
 	}
+}
+
+func (c *OIDCClient) GetAccessTokenType() AccessTokenType {
+	return c.AccessTokenType
 }

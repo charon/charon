@@ -201,6 +201,7 @@ export type ApplicationTemplateClientPublic = {
   id?: string
   description: string
   additionalScopes: string[]
+  accessTokenType: "jwt" | "hmac"
   redirectUriTemplates: string[]
   accessTokenLifespan: string
   idTokenLifespan: string
@@ -211,6 +212,7 @@ export type ApplicationTemplateClientBackend = {
   id?: string
   description: string
   additionalScopes: string[]
+  accessTokenType: "jwt" | "hmac"
   tokenEndpointAuthMethod: "client_secret_post" | "client_secret_basic"
   redirectUriTemplates: string[]
   accessTokenLifespan: string
@@ -222,6 +224,7 @@ export type ApplicationTemplateClientService = {
   id?: string
   description: string
   additionalScopes: string[]
+  accessTokenType: "jwt" | "hmac"
   tokenEndpointAuthMethod: "client_secret_post" | "client_secret_basic"
   accessTokenLifespan: string
   idTokenLifespan: string
@@ -230,6 +233,7 @@ export type ApplicationTemplateClientService = {
 
 export type ApplicationTemplateCreate = {
   name: string
+  idScopes: string[]
 }
 
 export type ApplicationTemplatePublic = ApplicationTemplateCreate & {

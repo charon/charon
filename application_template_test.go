@@ -38,6 +38,7 @@ func createApplicationTemplate(t *testing.T, ts *httptest.Server, service *charo
 					AdditionalScopes:        []string{},
 					TokenEndpointAuthMethod: "client_secret_post",
 					RedirectURITemplates:    []string{"https://example.com/redirect"},
+					AccessTokenType:         charon.JWTAccessTokenType,
 					AccessTokenLifespan:     charon.Duration(time.Hour),
 					IDTokenLifespan:         charon.Duration(time.Hour),
 					RefreshTokenLifespan:    &refreshTokenLifespan,

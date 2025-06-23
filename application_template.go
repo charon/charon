@@ -133,6 +133,8 @@ type ApplicationTemplateClientPublic struct {
 
 	AdditionalScopes []string `json:"additionalScopes"`
 
+	AccessTokenType AccessTokenType `json:"accessTokenType"`
+
 	RedirectURITemplates []string `json:"redirectUriTemplates"`
 
 	AccessTokenLifespan  Duration  `json:"accessTokenLifespan"`
@@ -182,6 +184,15 @@ func (c *ApplicationTemplateClientPublic) Validate(ctx context.Context, existing
 		return scope == ""
 	})
 
+	switch c.AccessTokenType {
+	case JWTAccessTokenType:
+	case HMACAccessTokenType:
+	default:
+		errE := errors.New("unsupported access token type")
+		errors.Details(errE)["type"] = c.AccessTokenType
+		return errE
+	}
+
 	redirectURIsTemplates, errE := validateRedirectURITemplates(ctx, c.RedirectURITemplates, values)
 	if errE != nil {
 		return errE
@@ -206,6 +217,8 @@ type ApplicationTemplateClientBackend struct {
 	Description string                 `json:"description"`
 
 	AdditionalScopes []string `json:"additionalScopes"`
+
+	AccessTokenType AccessTokenType `json:"accessTokenType"`
 
 	TokenEndpointAuthMethod string   `json:"tokenEndpointAuthMethod"`
 	RedirectURITemplates    []string `json:"redirectUriTemplates"`
@@ -257,6 +270,15 @@ func (c *ApplicationTemplateClientBackend) Validate(ctx context.Context, existin
 		return scope == ""
 	})
 
+	switch c.AccessTokenType {
+	case JWTAccessTokenType:
+	case HMACAccessTokenType:
+	default:
+		errE := errors.New("unsupported access token type")
+		errors.Details(errE)["type"] = c.AccessTokenType
+		return errE
+	}
+
 	switch c.TokenEndpointAuthMethod {
 	case "client_secret_post":
 	case "client_secret_basic":
@@ -290,6 +312,8 @@ type ApplicationTemplateClientService struct {
 	Description string                 `json:"description"`
 
 	AdditionalScopes []string `json:"additionalScopes"`
+
+	AccessTokenType AccessTokenType `json:"accessTokenType"`
 
 	TokenEndpointAuthMethod string `json:"tokenEndpointAuthMethod"`
 
@@ -339,6 +363,15 @@ func (c *ApplicationTemplateClientService) Validate(_ context.Context, existing 
 	c.AdditionalScopes = slices.DeleteFunc(c.AdditionalScopes, func(scope string) bool {
 		return scope == ""
 	})
+
+	switch c.AccessTokenType {
+	case JWTAccessTokenType:
+	case HMACAccessTokenType:
+	default:
+		errE := errors.New("unsupported access token type")
+		errors.Details(errE)["type"] = c.AccessTokenType
+		return errE
+	}
 
 	switch c.TokenEndpointAuthMethod {
 	case "client_secret_post":

@@ -403,6 +403,7 @@ function onAddClientPublic() {
       clientsPublic.value.push({
         description: "",
         additionalScopes: [],
+        accessTokenType: "hmac",
         redirectUriTemplates: ["{uriBase}/oidc/redirect"],
         accessTokenLifespan: "1h0m0s",
         idTokenLifespan: "1h0m0s",
@@ -420,6 +421,7 @@ function onAddClientPublic() {
   clientsPublic.value.push({
     description: "",
     additionalScopes: [],
+    accessTokenType: "hmac",
     redirectUriTemplates: [],
     accessTokenLifespan: "1h0m0s",
     idTokenLifespan: "1h0m0s",
@@ -497,6 +499,7 @@ function onAddClientBackend() {
       clientsBackend.value.push({
         description: "",
         additionalScopes: [],
+        accessTokenType: "hmac",
         tokenEndpointAuthMethod: "client_secret_post",
         redirectUriTemplates: ["{uriBase}/oidc/redirect"],
         accessTokenLifespan: "1h0m0s",
@@ -515,6 +518,7 @@ function onAddClientBackend() {
   clientsBackend.value.push({
     description: "",
     additionalScopes: [],
+    accessTokenType: "hmac",
     tokenEndpointAuthMethod: "client_secret_post",
     redirectUriTemplates: [],
     accessTokenLifespan: "1h0m0s",
@@ -581,6 +585,7 @@ function onAddClientService() {
   clientsService.value.push({
     description: "",
     additionalScopes: [],
+    accessTokenType: "hmac",
     tokenEndpointAuthMethod: "client_secret_post",
     accessTokenLifespan: "1h0m0s",
     idTokenLifespan: "1h0m0s",
@@ -588,7 +593,7 @@ function onAddClientService() {
   })
 
   nextTick(() => {
-    document.getElementById(`client-service-${clientsService.value.length - 1}-tokenEndpointAuthMethod-client_secret_post`)?.focus()
+    document.getElementById(`client-service-${clientsService.value.length - 1}-description`)?.focus()
   })
 }
 
@@ -788,6 +793,41 @@ function onAddAdmin() {
                       :progress="progress"
                       @update:model-value="(v) => (client.additionalScopes = splitSpace(v))"
                     />
+                    <fieldset class="mt-4">
+                      <legend class="mb-1">Access token type</legend>
+                      <div class="flex flex-col gap-1">
+                        <div>
+                          <RadioButton
+                            :id="`client-public-${i}-accessTokenType-hmac`"
+                            v-model="client.accessTokenType"
+                            value="hmac"
+                            :disabled="!metadata.can_update"
+                            :progress="progress"
+                            class="mx-2"
+                          />
+                          <label
+                            :for="`client-public-${i}-accessTokenType-hmac`"
+                            :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                            >HMAC</label
+                          >
+                        </div>
+                        <div>
+                          <RadioButton
+                            :id="`client-public-${i}-accessTokenType-jwt`"
+                            v-model="client.accessTokenType"
+                            value="jwt"
+                            :disabled="!metadata.can_update"
+                            :progress="progress"
+                            class="mx-2"
+                          />
+                          <label
+                            :for="`client-public-${i}-accessTokenType-jwt`"
+                            :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                            >JWT</label
+                          >
+                        </div>
+                      </div>
+                    </fieldset>
                     <label :for="`client-public-${i}-accessTokenLifespan`" class="mb-1 mt-4">Access token lifespan</label>
                     <TextArea
                       :id="`client-public-${i}-accessTokenLifespan`"
@@ -873,6 +913,64 @@ function onAddAdmin() {
                         >Add redirect URI</Button
                       >
                     </div>
+                    <label :for="`client-backend-${i}-description`" class="mb-1 mt-4"
+                      >Description<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label
+                    >
+                    <TextArea
+                      :id="`client-backend-${i}-description`"
+                      v-model="client.description"
+                      class="flex-grow flex-auto min-w-0"
+                      :readonly="!metadata.can_update"
+                      :progress="progress"
+                    />
+                    <label :for="`client-backend-${i}-additionalScopes`" class="mb-1 mt-4"
+                      >Space-separated additional scopes the client might request<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">
+                        (optional)</span
+                      ></label
+                    >
+                    <TextArea
+                      :id="`client-backend-${i}-additionalScopes`"
+                      :model-value="client.additionalScopes.join(' ')"
+                      class="flex-grow flex-auto min-w-0"
+                      :readonly="!metadata.can_update"
+                      :progress="progress"
+                      @update:model-value="(v) => (client.additionalScopes = splitSpace(v))"
+                    />
+                    <fieldset class="mt-4">
+                      <legend class="mb-1">Access token type</legend>
+                      <div class="flex flex-col gap-1">
+                        <div>
+                          <RadioButton
+                            :id="`client-backend-${i}-accessTokenType-hmac`"
+                            v-model="client.accessTokenType"
+                            value="hmac"
+                            :disabled="!metadata.can_update"
+                            :progress="progress"
+                            class="mx-2"
+                          />
+                          <label
+                            :for="`client-backend-${i}-accessTokenType-hmac`"
+                            :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                            >HMAC</label
+                          >
+                        </div>
+                        <div>
+                          <RadioButton
+                            :id="`client-backend-${i}-accessTokenType-jwt`"
+                            v-model="client.accessTokenType"
+                            value="jwt"
+                            :disabled="!metadata.can_update"
+                            :progress="progress"
+                            class="mx-2"
+                          />
+                          <label
+                            :for="`client-backend-${i}-accessTokenType-jwt`"
+                            :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                            >JWT</label
+                          >
+                        </div>
+                      </div>
+                    </fieldset>
                     <fieldset class="mt-4">
                       <legend class="mb-1">Token endpoint authentication method</legend>
                       <div class="flex flex-col gap-1">
@@ -908,29 +1006,6 @@ function onAddAdmin() {
                         </div>
                       </div>
                     </fieldset>
-                    <label :for="`client-backend-${i}-description`" class="mb-1 mt-4"
-                      >Description<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label
-                    >
-                    <TextArea
-                      :id="`client-backend-${i}-description`"
-                      v-model="client.description"
-                      class="flex-grow flex-auto min-w-0"
-                      :readonly="!metadata.can_update"
-                      :progress="progress"
-                    />
-                    <label :for="`client-backend-${i}-additionalScopes`" class="mb-1 mt-4"
-                      >Space-separated additional scopes the client might request<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">
-                        (optional)</span
-                      ></label
-                    >
-                    <TextArea
-                      :id="`client-backend-${i}-additionalScopes`"
-                      :model-value="client.additionalScopes.join(' ')"
-                      class="flex-grow flex-auto min-w-0"
-                      :readonly="!metadata.can_update"
-                      :progress="progress"
-                      @update:model-value="(v) => (client.additionalScopes = splitSpace(v))"
-                    />
                     <label :for="`client-backend-${i}-accessTokenLifespan`" class="mb-1 mt-4">Access token lifespan</label>
                     <TextArea
                       :id="`client-backend-${i}-accessTokenLifespan`"
@@ -986,7 +1061,65 @@ function onAddAdmin() {
                 <li v-for="(client, i) in clientsService" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
-                    <fieldset>
+                    <label :for="`client-service-${i}-description`" class="mb-1"
+                      >Description<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label
+                    >
+                    <TextArea
+                      :id="`client-service-${i}-description`"
+                      v-model="client.description"
+                      class="flex-grow flex-auto min-w-0"
+                      :readonly="!metadata.can_update"
+                      :progress="progress"
+                    />
+                    <label :for="`client-service-${i}-additionalScopes`" class="mb-1 mt-4"
+                      >Space-separated additional scopes the client might request<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">
+                        (optional)</span
+                      ></label
+                    >
+                    <TextArea
+                      :id="`client-service-${i}-additionalScopes`"
+                      :model-value="client.additionalScopes.join(' ')"
+                      class="flex-grow flex-auto min-w-0"
+                      :readonly="!metadata.can_update"
+                      :progress="progress"
+                      @update:model-value="(v) => (client.additionalScopes = splitSpace(v))"
+                    />
+                    <fieldset class="mt-4">
+                      <legend class="mb-1">Access token type</legend>
+                      <div class="flex flex-col gap-1">
+                        <div>
+                          <RadioButton
+                            :id="`client-service-${i}-accessTokenType-hmac`"
+                            v-model="client.accessTokenType"
+                            value="hmac"
+                            :disabled="!metadata.can_update"
+                            :progress="progress"
+                            class="mx-2"
+                          />
+                          <label
+                            :for="`client-service-${i}-accessTokenType-hmac`"
+                            :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                            >HMAC</label
+                          >
+                        </div>
+                        <div>
+                          <RadioButton
+                            :id="`client-service-${i}-accessTokenType-jwt`"
+                            v-model="client.accessTokenType"
+                            value="jwt"
+                            :disabled="!metadata.can_update"
+                            :progress="progress"
+                            class="mx-2"
+                          />
+                          <label
+                            :for="`client-service-${i}-accessTokenType-jwt`"
+                            :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                            >JWT</label
+                          >
+                        </div>
+                      </div>
+                    </fieldset>
+                    <fieldset class="mt-4">
                       <legend class="mb-1">Token endpoint authentication method</legend>
                       <div class="flex flex-col gap-1">
                         <div>
@@ -1021,29 +1154,6 @@ function onAddAdmin() {
                         </div>
                       </div>
                     </fieldset>
-                    <label :for="`client-service-${i}-description`" class="mb-1 mt-4"
-                      >Description<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label
-                    >
-                    <TextArea
-                      :id="`client-service-${i}-description`"
-                      v-model="client.description"
-                      class="flex-grow flex-auto min-w-0"
-                      :readonly="!metadata.can_update"
-                      :progress="progress"
-                    />
-                    <label :for="`client-service-${i}-additionalScopes`" class="mb-1 mt-4"
-                      >Space-separated additional scopes the client might request<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">
-                        (optional)</span
-                      ></label
-                    >
-                    <TextArea
-                      :id="`client-service-${i}-additionalScopes`"
-                      :model-value="client.additionalScopes.join(' ')"
-                      class="flex-grow flex-auto min-w-0"
-                      :readonly="!metadata.can_update"
-                      :progress="progress"
-                      @update:model-value="(v) => (client.additionalScopes = splitSpace(v))"
-                    />
                     <label :for="`client-service-${i}-accessTokenLifespan`" class="mb-1 mt-4">Access token lifespan</label>
                     <TextArea
                       :id="`client-service-${i}-accessTokenLifespan`"
