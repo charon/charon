@@ -20,11 +20,26 @@ import (
 	"gitlab.com/charon/charon"
 )
 
+type testCase struct {
+	accessTokenType charon.AccessTokenType
+}
+
+func (t testCase) String() string {
+	return string(t.accessTokenType)
+}
+
 func TestOIDCAuthorizeAndToken(t *testing.T) {
 	t.Parallel()
 
-	for _, accessTokenType := range []charon.AccessTokenType{charon.AccessTokenTypeHMAC, charon.AccessTokenTypeJWT} {
-		t.Run(string(accessTokenType), func(t *testing.T) {
+	for _, tt := range []testCase{
+		{
+			charon.AccessTokenTypeHMAC,
+		},
+		{
+			charon.AccessTokenTypeJWT,
+		},
+	} {
+		t.Run(tt.String(), func(t *testing.T) {
 			t.Parallel()
 
 			ts, service, _, _ := startTestServer(t)
@@ -38,7 +53,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 			flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
 			accessToken, _ := signinUser(t, ts, service, username, charon.CompletedSignup, flowID, nonce, state, pkceVerifier, config, verifier)
 
-			applicationTemplate := createApplicationTemplate(t, ts, service, accessToken, accessTokenType)
+			applicationTemplate := createApplicationTemplate(t, ts, service, accessToken, tt.accessTokenType)
 
 			organization := createOrganization(t, ts, service, accessToken, applicationTemplate)
 
@@ -142,7 +157,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 			idTokenLastTimestamps := map[string]time.Time{}
 
 			uniqueStrings := mapset.NewThreadUnsafeSet[string]()
-			assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, accessToken, accessTokenLastTimestamps, identityID, accessTokenType)))
+			assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, accessToken, accessTokenLastTimestamps, identityID, tt.accessTokenType)))
 			assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, nonce, accessToken, idToken, idTokenLastTimestamps, identityID)))
 			validateIntrospect(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, refreshToken, "refresh_token", identityID)
 			validateUserInfo(t, ts, service, accessToken, identityID)
@@ -155,7 +170,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 
 				accessToken, idToken, refreshToken, now = exchangeRefreshTokenForTokens(t, ts, service, clientID, refreshToken, accessToken)
 
-				assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, accessToken, accessTokenLastTimestamps, identityID, accessTokenType)))
+				assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, accessToken, accessTokenLastTimestamps, identityID, tt.accessTokenType)))
 				assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, nonce, accessToken, idToken, idTokenLastTimestamps, identityID)))
 				validateIntrospect(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, refreshToken, "refresh_token", identityID)
 				validateUserInfo(t, ts, service, accessToken, identityID)
