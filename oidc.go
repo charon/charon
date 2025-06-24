@@ -115,8 +115,8 @@ func (h *hmacSHAStrategy) ValidateAuthorizeCode(ctx context.Context, r fosite.Re
 type AccessTokenType string
 
 const (
-	JWTAccessTokenType  AccessTokenType = "jwt"
-	HMACAccessTokenType AccessTokenType = "hmac"
+	AccessTokenTypeJWT  AccessTokenType = "jwt"
+	AccessTokenTypeHMAC AccessTokenType = "hmac"
 )
 
 var _ oauth2.CoreStrategy = (*configurableCoreStrategy)(nil)
@@ -133,6 +133,27 @@ func newConfigurableCoreStrategy(
 type configurableCoreStrategy struct {
 	hmacStrategy oauth2.CoreStrategy
 	jwtStrategy  oauth2.CoreStrategy
+}
+
+func (c *configurableCoreStrategy) initializeJWTClaims(ctx context.Context, requester fosite.Requester) {
+	// We initialize JWT claims because HMAC strategy does not do it, but we want introspection endpoint
+	// to return for both HMAC and JWT tokens similar response. This is the same to what
+	// fosite.handler.oauth2.DefaultJWTStrategy.generate does for initialization of JWT claims.
+	jwtSession := requester.GetSession().(*OIDCSession) //nolint:errcheck,forcetypeassert
+	h := c.jwtStrategy.(*oauth2.DefaultJWTStrategy)     //nolint:errcheck,forcetypeassert
+	jwtSession.GetJWTClaims().
+		With(
+			jwtSession.GetExpiresAt(fosite.AccessToken),
+			requester.GetGrantedScopes(),
+			requester.GetGrantedAudience(),
+		).
+		WithDefaults(
+			time.Now().UTC(),
+			h.Config.GetAccessTokenIssuer(ctx),
+		).
+		WithScopeField(
+			h.Config.GetJWTScopeField(ctx),
+		)
 }
 
 // AccessTokenSignature implements oauth2.CoreStrategy.
@@ -152,9 +173,10 @@ func (c *configurableCoreStrategy) AccessTokenSignature(ctx context.Context, tok
 func (c *configurableCoreStrategy) GenerateAccessToken(ctx context.Context, requester fosite.Requester) (string, string, error) {
 	tt := requester.GetClient().(*OIDCClient).GetAccessTokenType() //nolint:errcheck,forcetypeassert
 	switch tt {
-	case JWTAccessTokenType:
+	case AccessTokenTypeJWT:
 		return c.jwtStrategy.GenerateAccessToken(ctx, requester) //nolint:wrapcheck
-	case HMACAccessTokenType:
+	case AccessTokenTypeHMAC:
+		c.initializeJWTClaims(ctx, requester)
 		return c.hmacStrategy.GenerateAccessToken(ctx, requester) //nolint:wrapcheck
 	default:
 		panic(errors.Errorf("unknown access token type: %s", tt))
@@ -165,9 +187,9 @@ func (c *configurableCoreStrategy) GenerateAccessToken(ctx context.Context, requ
 func (c *configurableCoreStrategy) ValidateAccessToken(ctx context.Context, requester fosite.Requester, token string) error {
 	tt := requester.GetClient().(*OIDCClient).GetAccessTokenType() //nolint:errcheck,forcetypeassert
 	switch tt {
-	case JWTAccessTokenType:
+	case AccessTokenTypeJWT:
 		return c.jwtStrategy.ValidateAccessToken(ctx, requester, token) //nolint:wrapcheck
-	case HMACAccessTokenType:
+	case AccessTokenTypeHMAC:
 		return c.hmacStrategy.ValidateAccessToken(ctx, requester, token) //nolint:wrapcheck
 	default:
 		panic(errors.Errorf("unknown access token type: %s", tt))
@@ -440,7 +462,6 @@ func (s *OIDCSession) GetExtraClaims() map[string]interface{} {
 		return nil
 	}
 
-	// We make a clone so that WithScopeField does not change the original value.
 	return s.Clone().(*OIDCSession).JWTClaims.WithScopeField(jwt.JWTScopeFieldString).ToMapClaims() //nolint:forcetypeassert,errcheck
 }
 

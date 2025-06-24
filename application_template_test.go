@@ -16,7 +16,7 @@ import (
 	"gitlab.com/charon/charon"
 )
 
-func createApplicationTemplate(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string) *charon.ApplicationTemplate {
+func createApplicationTemplate(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string, accessTokenType charon.AccessTokenType) *charon.ApplicationTemplate {
 	t.Helper()
 
 	applicationTemplateCreate, errE := service.ReverseAPI("ApplicationTemplateCreate", nil, nil)
@@ -38,7 +38,7 @@ func createApplicationTemplate(t *testing.T, ts *httptest.Server, service *charo
 					AdditionalScopes:        []string{},
 					TokenEndpointAuthMethod: "client_secret_post",
 					RedirectURITemplates:    []string{"https://example.com/redirect"},
-					AccessTokenType:         charon.JWTAccessTokenType,
+					AccessTokenType:         accessTokenType,
 					AccessTokenLifespan:     charon.Duration(time.Hour),
 					IDTokenLifespan:         charon.Duration(time.Hour),
 					RefreshTokenLifespan:    &refreshTokenLifespan,

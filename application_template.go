@@ -185,8 +185,8 @@ func (c *ApplicationTemplateClientPublic) Validate(ctx context.Context, existing
 	})
 
 	switch c.AccessTokenType {
-	case JWTAccessTokenType:
-	case HMACAccessTokenType:
+	case AccessTokenTypeJWT:
+	case AccessTokenTypeHMAC:
 	default:
 		errE := errors.New("unsupported access token type")
 		errors.Details(errE)["type"] = c.AccessTokenType
@@ -271,8 +271,8 @@ func (c *ApplicationTemplateClientBackend) Validate(ctx context.Context, existin
 	})
 
 	switch c.AccessTokenType {
-	case JWTAccessTokenType:
-	case HMACAccessTokenType:
+	case AccessTokenTypeJWT:
+	case AccessTokenTypeHMAC:
 	default:
 		errE := errors.New("unsupported access token type")
 		errors.Details(errE)["type"] = c.AccessTokenType
@@ -365,8 +365,8 @@ func (c *ApplicationTemplateClientService) Validate(_ context.Context, existing 
 	})
 
 	switch c.AccessTokenType {
-	case JWTAccessTokenType:
-	case HMACAccessTokenType:
+	case AccessTokenTypeJWT:
+	case AccessTokenTypeHMAC:
 	default:
 		errE := errors.New("unsupported access token type")
 		errors.Details(errE)["type"] = c.AccessTokenType

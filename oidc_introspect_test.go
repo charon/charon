@@ -160,50 +160,53 @@ func validateAccessToken(
 	t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time,
 	clientID, appID, organizationID, sessionID, accessToken string,
 	lastTimestamps map[string]time.Time, identityID identifier.Identifier,
+	accessTokenType charon.AccessTokenType,
 ) string {
 	t.Helper()
 	response := validateIntrospect(t, ts, service, now, clientID, appID, organizationID, sessionID, accessToken, "access_token", identityID)
 
-	all := validateJWT(t, ts, service, now, clientID, appID, organizationID, accessToken, identityID)
+	if accessTokenType == charon.AccessTokenTypeJWT {
+		all := validateJWT(t, ts, service, now, clientID, appID, organizationID, accessToken, identityID)
 
-	timestamps := map[string]int64{}
+		timestamps := map[string]int64{}
 
-	for _, claim := range []string{"exp", "iat"} {
-		if assert.Contains(t, all, claim) {
-			claimTimeFloat, ok := all[claim].(float64)
-			if assert.True(t, ok, all[claim]) {
-				timestamp := int64(claimTimeFloat)
-				timestamps[claim] = timestamp
-				claimTime := time.Unix(timestamp, 0)
-				if !lastTimestamps[claim].IsZero() {
-					// New timestamp should be after the last timestamps.
-					assert.True(t, claimTime.After(lastTimestamps[claim]), claim)
+		for _, claim := range []string{"exp", "iat"} {
+			if assert.Contains(t, all, claim) {
+				claimTimeFloat, ok := all[claim].(float64)
+				if assert.True(t, ok, all[claim]) {
+					timestamp := int64(claimTimeFloat)
+					timestamps[claim] = timestamp
+					claimTime := time.Unix(timestamp, 0)
+					if !lastTimestamps[claim].IsZero() {
+						// New timestamp should be after the last timestamps.
+						assert.True(t, claimTime.After(lastTimestamps[claim]), claim)
+					}
+					lastTimestamps[claim] = claimTime
 				}
-				lastTimestamps[claim] = claimTime
+				delete(all, claim)
 			}
-			delete(all, claim)
 		}
+
+		require.Contains(t, all, "jti")
+		jti, ok := all["jti"].(string)
+		assert.True(t, ok, all["jti"])
+		_, errE := identifier.MaybeString(jti)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		delete(all, "jti")
+
+		assert.Equal(t, map[string]interface{}{
+			"aud":       []interface{}{organizationID, appID, clientID},
+			"client_id": clientID,
+			"iss":       ts.URL,
+			"scope":     "openid profile email offline_access",
+			"sid":       sessionID,
+			"sub":       identityID.String(),
+		}, all)
+
+		assert.Equal(t, jti, response.JTI)
+		assert.Equal(t, timestamps["exp"], int64(response.ExpirationTime))
+		assert.Equal(t, timestamps["iat"], int64(response.IssueTime))
 	}
 
-	require.Contains(t, all, "jti")
-	jti, ok := all["jti"].(string)
-	assert.True(t, ok, all["jti"])
-	_, errE := identifier.MaybeString(jti)
-	require.NoError(t, errE, "% -+#.1v", errE)
-	delete(all, "jti")
-
-	assert.Equal(t, map[string]interface{}{
-		"aud":       []interface{}{organizationID, appID, clientID},
-		"client_id": clientID,
-		"iss":       ts.URL,
-		"scope":     "openid profile email offline_access",
-		"sid":       sessionID,
-		"sub":       identityID.String(),
-	}, all)
-
-	assert.Equal(t, jti, response.JTI)
-	assert.Equal(t, timestamps["exp"], int64(response.ExpirationTime))
-	assert.Equal(t, timestamps["iat"], int64(response.IssueTime))
-
-	return jti
+	return response.JTI
 }
