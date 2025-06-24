@@ -38,10 +38,10 @@ type introspectAccessTokenResponse struct {
 
 //nolint:tagliatelle
 type introspectRefreshTokenResponse struct {
-	Error            string          `json:"error"`
-	ErrorDescription string          `json:"error_description"`
-	Active           bool            `json:"active"`
-	ExpirationTime   jwt.NumericDate `json:"exp"`
+	Error            string           `json:"error"`
+	ErrorDescription string           `json:"error_description"`
+	Active           bool             `json:"active"`
+	ExpirationTime   *jwt.NumericDate `json:"exp,omitempty"`
 }
 
 func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, appID, organizationID, token string, identityID identifier.Identifier) map[string]interface{} {
@@ -68,7 +68,7 @@ func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now
 	return all
 }
 
-func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, appID, organizationID, sessionID, token, typeHint string, identityID identifier.Identifier) *introspectAccessTokenResponse {
+func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, appID, organizationID, sessionID, token, typeHint string, identityID identifier.Identifier, lifespan *time.Duration) *introspectAccessTokenResponse {
 	t.Helper()
 
 	oidcIntrospect, errE := service.ReverseAPI("OIDCIntrospect", nil, nil)
@@ -99,7 +99,11 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 		assert.Empty(t, response.Error)
 		assert.Empty(t, response.ErrorDescription)
 		assert.True(t, response.Active)
-		assert.WithinDuration(t, now.Add(30*24*60*time.Minute), response.ExpirationTime.Time().UTC(), 2*time.Second)
+		if lifespan != nil {
+			assert.WithinDuration(t, now.Add(*lifespan), response.ExpirationTime.Time().UTC(), 2*time.Second)
+		} else {
+			assert.Nil(t, response.ExpirationTime)
+		}
 
 		return nil
 	}
@@ -112,7 +116,9 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 	assert.Empty(t, response.ErrorDescription)
 	assert.True(t, response.Active)
 	assert.Equal(t, clientID, response.ClientID)
-	assert.WithinDuration(t, now.Add(60*time.Minute), response.ExpirationTime.Time().UTC(), 2*time.Second)
+	if assert.NotNil(t, lifespan) {
+		assert.WithinDuration(t, now.Add(*lifespan), response.ExpirationTime.Time().UTC(), 2*time.Second)
+	}
 	assert.WithinDuration(t, now, response.IssueTime.Time().UTC(), 2*time.Second)
 	assert.Equal(t, "openid profile email offline_access", response.Scope)
 	assert.Equal(t, identityID.String(), response.Subject)
@@ -160,10 +166,10 @@ func validateAccessToken(
 	t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time,
 	clientID, appID, organizationID, sessionID, accessToken string,
 	lastTimestamps map[string]time.Time, identityID identifier.Identifier,
-	accessTokenType charon.AccessTokenType,
+	accessTokenType charon.AccessTokenType, lifespan time.Duration,
 ) string {
 	t.Helper()
-	response := validateIntrospect(t, ts, service, now, clientID, appID, organizationID, sessionID, accessToken, "access_token", identityID)
+	response := validateIntrospect(t, ts, service, now, clientID, appID, organizationID, sessionID, accessToken, "access_token", identityID, &lifespan)
 
 	if accessTokenType == charon.AccessTokenTypeJWT {
 		all := validateJWT(t, ts, service, now, clientID, appID, organizationID, accessToken, identityID)

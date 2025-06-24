@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -21,22 +22,39 @@ import (
 )
 
 type testCase struct {
-	accessTokenType charon.AccessTokenType
+	accessTokenType      charon.AccessTokenType
+	accessTokenLifespan  time.Duration
+	idTokenLifespan      time.Duration
+	refreshTokenLifespan *time.Duration
 }
 
 func (t testCase) String() string {
-	return string(t.accessTokenType)
+	return fmt.Sprintf("%s-%s-%s-%s", t.accessTokenType, t.accessTokenLifespan, t.idTokenLifespan, t.refreshTokenLifespan)
 }
 
 func TestOIDCAuthorizeAndToken(t *testing.T) {
 	t.Parallel()
 
+	days30 := time.Hour * 24 * 30
+
 	for _, tt := range []testCase{
 		{
 			charon.AccessTokenTypeHMAC,
+			time.Hour,
+			time.Hour,
+			&days30,
 		},
 		{
 			charon.AccessTokenTypeJWT,
+			time.Hour,
+			time.Hour,
+			&days30,
+		},
+		{
+			charon.AccessTokenTypeJWT,
+			days30,
+			days30,
+			nil,
 		},
 	} {
 		t.Run(tt.String(), func(t *testing.T) {
@@ -53,7 +71,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 			flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
 			accessToken, _ := signinUser(t, ts, service, username, charon.CompletedSignup, flowID, nonce, state, pkceVerifier, config, verifier)
 
-			applicationTemplate := createApplicationTemplate(t, ts, service, accessToken, tt.accessTokenType)
+			applicationTemplate := createApplicationTemplate(t, ts, service, accessToken, tt.accessTokenType, tt.accessTokenLifespan, tt.idTokenLifespan, tt.refreshTokenLifespan)
 
 			organization := createOrganization(t, ts, service, accessToken, applicationTemplate)
 
@@ -128,7 +146,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 			assert.NotEmpty(t, code)
 			assert.Equal(t, url.Values{"scope": []string{"openid profile email offline_access"}, "state": []string{state}}, locationQuery)
 
-			accessToken, idToken, refreshToken, now := exchangeCodeForTokens(t, ts, service, clientID, code, challenge)
+			accessToken, idToken, refreshToken, now := exchangeCodeForTokens(t, ts, service, clientID, code, challenge, tt.accessTokenLifespan)
 
 			u, err := url.Parse(ts.URL)
 			require.NoError(t, err)
@@ -157,9 +175,9 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 			idTokenLastTimestamps := map[string]time.Time{}
 
 			uniqueStrings := mapset.NewThreadUnsafeSet[string]()
-			assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, accessToken, accessTokenLastTimestamps, identityID, tt.accessTokenType)))
+			assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, accessToken, accessTokenLastTimestamps, identityID, tt.accessTokenType, tt.accessTokenLifespan)))
 			assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, nonce, accessToken, idToken, idTokenLastTimestamps, identityID)))
-			validateIntrospect(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, refreshToken, "refresh_token", identityID)
+			validateIntrospect(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, refreshToken, "refresh_token", identityID, tt.refreshTokenLifespan)
 			validateUserInfo(t, ts, service, accessToken, identityID)
 
 			// We use assert.WithinDuration with 2 seconds allowed delta, so in 10 iterations every
@@ -168,11 +186,11 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 				// We sleep for a second so that all timestamps increase (they are at second granularity).
 				time.Sleep(time.Second)
 
-				accessToken, idToken, refreshToken, now = exchangeRefreshTokenForTokens(t, ts, service, clientID, refreshToken, accessToken)
+				accessToken, idToken, refreshToken, now = exchangeRefreshTokenForTokens(t, ts, service, clientID, refreshToken, accessToken, tt.accessTokenLifespan)
 
-				assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, accessToken, accessTokenLastTimestamps, identityID, tt.accessTokenType)))
+				assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, accessToken, accessTokenLastTimestamps, identityID, tt.accessTokenType, tt.accessTokenLifespan)))
 				assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, nonce, accessToken, idToken, idTokenLastTimestamps, identityID)))
-				validateIntrospect(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, refreshToken, "refresh_token", identityID)
+				validateIntrospect(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, refreshToken, "refresh_token", identityID, tt.refreshTokenLifespan)
 				validateUserInfo(t, ts, service, accessToken, identityID)
 			}
 		})
