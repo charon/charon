@@ -166,7 +166,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 			assert.Equal(t, "application/json;charset=UTF-8", resp.Header.Get("Content-Type"))
 			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
-			assert.Equal(t, `{"active":false}`, string(body))
+			assert.Equal(t, `{"active":false}`+"\n", string(body))
 
 			accessToken, idToken, refreshToken, now := exchangeCodeForTokens(t, ts, service, clientID, code, challenge, tt.accessTokenLifespan)
 
