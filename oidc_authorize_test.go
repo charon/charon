@@ -146,6 +146,28 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 			assert.NotEmpty(t, code)
 			assert.Equal(t, url.Values{"scope": []string{"openid profile email offline_access"}, "state": []string{state}}, locationQuery)
 
+			// Introspection of the code should not be possible.
+			oidcIntrospect, errE := service.ReverseAPI("OIDCIntrospect", nil, nil)
+			require.NoError(t, errE, "% -+#.1v", errE)
+
+			data := url.Values{
+				"token": []string{code},
+			}
+
+			req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, ts.URL+oidcIntrospect, strings.NewReader(data.Encode()))
+			require.NoError(t, err)
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(clientID+":chc-"+applicationClientSecret)))
+			resp, err = ts.Client().Do(req) //nolint:bodyclose
+			require.NoError(t, err)
+			t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+			assert.Equal(t, 2, resp.ProtoMajor)
+			assert.Equal(t, "application/json;charset=UTF-8", resp.Header.Get("Content-Type"))
+			body, err := io.ReadAll(resp.Body)
+			require.NoError(t, err)
+			assert.Equal(t, `{"active":false}`, string(body))
+
 			accessToken, idToken, refreshToken, now := exchangeCodeForTokens(t, ts, service, clientID, code, challenge, tt.accessTokenLifespan)
 
 			u, err := url.Parse(ts.URL)
