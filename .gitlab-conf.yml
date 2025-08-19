@@ -257,12 +257,23 @@ protected_branches:
         group_id: null
         id: 46494375
         user_id: null
+      # Developers + Maintainers
+      - access_level: 30
+        group_id: null
+        id: 177835675
+        user_id: null
     allowed_to_push:
       # Maintainers
       - access_level: 40
         deploy_key_id: null
         group_id: null
         id: 46808016
+        user_id: null
+      # Developers + Maintainers
+      - access_level: 30
+        deploy_key_id: null
+        group_id: null
+        id: 217452253
         user_id: null
     allowed_to_unprotect: []
     code_owner_approval_required: false
