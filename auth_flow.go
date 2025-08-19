@@ -25,11 +25,11 @@ type AuthFlowResponse struct {
 	OrganizationID identifier.Identifier `json:"organizationId"`
 	AppID          identifier.Identifier `json:"appId"`
 
-	Providers       []Provider                    `json:"providers,omitempty"`
-	EmailOrUsername string                        `json:"emailOrUsername,omitempty"`
-	OIDCProvider    *AuthFlowResponseOIDCProvider `json:"oidcProvider,omitempty"`
-	Passkey         *AuthFlowResponsePasskey      `json:"passkey,omitempty"`
-	Password        *AuthFlowResponsePassword     `json:"password,omitempty"`
+	Providers          []Provider                          `json:"providers,omitempty"`
+	EmailOrUsername    string                              `json:"emailOrUsername,omitempty"`
+	ThirdPartyProvider *AuthFlowResponseThirdPartyProvider `json:"thirdPartyProvider,omitempty"`
+	Passkey            *AuthFlowResponsePasskey            `json:"passkey,omitempty"`
+	Password           *AuthFlowResponsePassword           `json:"password,omitempty"`
 
 	Error ErrorCode `json:"error,omitempty"`
 }
@@ -57,15 +57,15 @@ func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *Flow
 	s.WithError(ctx, failureErr)
 
 	response := AuthFlowResponse{
-		Completed:       flow.Completed,
-		OrganizationID:  flow.OrganizationID,
-		AppID:           flow.AppID,
-		Providers:       flow.Providers,
-		EmailOrUsername: flow.EmailOrUsername,
-		OIDCProvider:    nil,
-		Passkey:         nil,
-		Password:        nil,
-		Error:           errorCode,
+		Completed:          flow.Completed,
+		OrganizationID:     flow.OrganizationID,
+		AppID:              flow.AppID,
+		Providers:          flow.Providers,
+		EmailOrUsername:    flow.EmailOrUsername,
+		ThirdPartyProvider: nil,
+		Passkey:            nil,
+		Password:           nil,
+		Error:              errorCode,
 	}
 
 	encoded := s.PrepareJSON(w, req, response, nil)
@@ -115,15 +115,15 @@ func (s *Service) AuthFlowGetGet(w http.ResponseWriter, req *http.Request, param
 	}
 
 	response := AuthFlowResponse{
-		Completed:       flow.Completed,
-		OrganizationID:  flow.OrganizationID,
-		AppID:           flow.AppID,
-		Providers:       flow.Providers,
-		EmailOrUsername: flow.EmailOrUsername,
-		OIDCProvider:    nil,
-		Passkey:         nil,
-		Password:        nil,
-		Error:           "",
+		Completed:          flow.Completed,
+		OrganizationID:     flow.OrganizationID,
+		AppID:              flow.AppID,
+		Providers:          flow.Providers,
+		EmailOrUsername:    flow.EmailOrUsername,
+		ThirdPartyProvider: nil,
+		Passkey:            nil,
+		Password:           nil,
+		Error:              "",
 	}
 
 	// If auth step was successful (session is not nil), then we require that the session matches the one made by the flow.
@@ -333,15 +333,15 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 
 	if api {
 		response := AuthFlowResponse{
-			Completed:       flow.Completed,
-			OrganizationID:  flow.OrganizationID,
-			AppID:           flow.AppID,
-			Providers:       flow.Providers,
-			EmailOrUsername: flow.EmailOrUsername,
-			OIDCProvider:    nil,
-			Passkey:         nil,
-			Password:        nil,
-			Error:           "",
+			Completed:          flow.Completed,
+			OrganizationID:     flow.OrganizationID,
+			AppID:              flow.AppID,
+			Providers:          flow.Providers,
+			EmailOrUsername:    flow.EmailOrUsername,
+			ThirdPartyProvider: nil,
+			Passkey:            nil,
+			Password:           nil,
+			Error:              "",
 		}
 
 		s.WriteJSON(w, req, response, nil)
@@ -399,15 +399,15 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 		// This is similar to AuthFlowGet, only without fetching the flow and checking the session.
 
 		response := AuthFlowResponse{
-			Completed:       flow.Completed,
-			OrganizationID:  flow.OrganizationID,
-			AppID:           flow.AppID,
-			Providers:       flow.Providers,
-			EmailOrUsername: flow.EmailOrUsername,
-			OIDCProvider:    nil,
-			Passkey:         nil,
-			Password:        nil,
-			Error:           "",
+			Completed:          flow.Completed,
+			OrganizationID:     flow.OrganizationID,
+			AppID:              flow.AppID,
+			Providers:          flow.Providers,
+			EmailOrUsername:    flow.EmailOrUsername,
+			ThirdPartyProvider: nil,
+			Passkey:            nil,
+			Password:           nil,
+			Error:              "",
 		}
 
 		encoded := s.PrepareJSON(w, req, response, nil)
@@ -490,15 +490,15 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 	http.SetCookie(w, &cookie)
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Completed:       flow.Completed,
-		OrganizationID:  flow.OrganizationID,
-		AppID:           flow.AppID,
-		Providers:       flow.Providers,
-		EmailOrUsername: flow.EmailOrUsername,
-		OIDCProvider:    nil,
-		Passkey:         nil,
-		Password:        nil,
-		Error:           "",
+		Completed:          flow.Completed,
+		OrganizationID:     flow.OrganizationID,
+		AppID:              flow.AppID,
+		Providers:          flow.Providers,
+		EmailOrUsername:    flow.EmailOrUsername,
+		ThirdPartyProvider: nil,
+		Passkey:            nil,
+		Password:           nil,
+		Error:              "",
 	}, nil)
 }
 
@@ -535,15 +535,15 @@ func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, 
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Completed:       flow.Completed,
-		OrganizationID:  flow.OrganizationID,
-		AppID:           flow.AppID,
-		Providers:       flow.Providers,
-		EmailOrUsername: flow.EmailOrUsername,
-		OIDCProvider:    nil,
-		Passkey:         nil,
-		Password:        nil,
-		Error:           "",
+		Completed:          flow.Completed,
+		OrganizationID:     flow.OrganizationID,
+		AppID:              flow.AppID,
+		Providers:          flow.Providers,
+		EmailOrUsername:    flow.EmailOrUsername,
+		ThirdPartyProvider: nil,
+		Passkey:            nil,
+		Password:           nil,
+		Error:              "",
 	}, nil)
 }
 
@@ -593,15 +593,15 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Completed:       flow.Completed,
-		OrganizationID:  flow.OrganizationID,
-		AppID:           flow.AppID,
-		Providers:       flow.Providers,
-		EmailOrUsername: flow.EmailOrUsername,
-		OIDCProvider:    nil,
-		Passkey:         nil,
-		Password:        nil,
-		Error:           "",
+		Completed:          flow.Completed,
+		OrganizationID:     flow.OrganizationID,
+		AppID:              flow.AppID,
+		Providers:          flow.Providers,
+		EmailOrUsername:    flow.EmailOrUsername,
+		ThirdPartyProvider: nil,
+		Passkey:            nil,
+		Password:           nil,
+		Error:              "",
 	}, nil)
 }
 
@@ -643,14 +643,14 @@ func (s *Service) AuthFlowRedirectPost(w http.ResponseWriter, req *http.Request,
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Completed:       flow.Completed,
-		OrganizationID:  flow.OrganizationID,
-		AppID:           flow.AppID,
-		Providers:       flow.Providers,
-		EmailOrUsername: flow.EmailOrUsername,
-		OIDCProvider:    nil,
-		Passkey:         nil,
-		Password:        nil,
-		Error:           "",
+		Completed:          flow.Completed,
+		OrganizationID:     flow.OrganizationID,
+		AppID:              flow.AppID,
+		Providers:          flow.Providers,
+		EmailOrUsername:    flow.EmailOrUsername,
+		ThirdPartyProvider: nil,
+		Passkey:            nil,
+		Password:           nil,
+		Error:              "",
 	}, nil)
 }

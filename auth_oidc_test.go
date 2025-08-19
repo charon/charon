@@ -172,8 +172,8 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
 	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.Equal(t, []charon.Provider{"testing"}, authFlowResponse.Providers)
-	require.NotNil(t, authFlowResponse.OIDCProvider)
-	require.True(t, strings.HasPrefix(authFlowResponse.OIDCProvider.Location, oidcTS.URL), authFlowResponse.OIDCProvider.Location)
+	require.NotNil(t, authFlowResponse.ThirdPartyProvider)
+	require.True(t, strings.HasPrefix(authFlowResponse.ThirdPartyProvider.Location, oidcTS.URL), authFlowResponse.ThirdPartyProvider.Location)
 
 	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -185,7 +185,7 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	}
 
 	// Redirect to our testing provider.
-	resp, err = oidcClient.Get(authFlowResponse.OIDCProvider.Location) //nolint:noctx,bodyclose
+	resp, err = oidcClient.Get(authFlowResponse.ThirdPartyProvider.Location) //nolint:noctx,bodyclose
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	out, err := io.ReadAll(resp.Body)

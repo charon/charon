@@ -24,7 +24,7 @@ import WithDocument from "@/components/WithDocument.vue"
 import Stepper from "@/components/Stepper.vue"
 import Footer from "@/partials/Footer.vue"
 import AuthStart from "@/partials/AuthStart.vue"
-import AuthOIDCProvider from "@/partials/AuthOIDCProvider.vue"
+import AuthThirdPartyProvider from "@/partials/AuthThirdPartyProvider.vue"
 import AuthPassword from "@/partials/AuthPassword.vue"
 import AuthPasskeySignin from "@/partials/AuthPasskeySignin.vue"
 import AuthPasskeySignup from "@/partials/AuthPasskeySignup.vue"
@@ -58,7 +58,7 @@ const direction = ref<"forward" | "backward">("forward")
 const completed = ref<Completed[]>([])
 const organizationId = ref("")
 const appId = ref("")
-const oidcProvider = ref<SiteProvider | null>(null)
+const thirdPartyProvider = ref<SiteProvider | null>(null)
 const emailOrUsername = ref("")
 const publicKey = ref<Uint8Array>()
 const deriveOptions = ref<DeriveOptions>()
@@ -107,11 +107,11 @@ const flow: Flow = {
   setAppId(value: string) {
     appId.value = value
   },
-  getOIDCProvider(): SiteProvider | null {
-    return oidcProvider.value
+  getThirdPartyProvider(): SiteProvider | null {
+    return thirdPartyProvider.value
   },
-  setOIDCProvider(value: SiteProvider | null) {
-    oidcProvider.value = value
+  setThirdPartyProvider(value: SiteProvider | null) {
+    thirdPartyProvider.value = value
   },
   getEmailOrUsername(): string {
     return emailOrUsername.value
@@ -328,7 +328,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                     // if a user wants to redo authentication).
                     (!flow.getCompleted().includes('finished') &&
                       step.key != 'password' &&
-                      step.key != 'oidcProvider' &&
+                      step.key != 'thirdPartyProvider' &&
                       step.key != 'passkeySignin' &&
                       step.key != 'passkeySignup' &&
                       step.key != 'code'))
@@ -353,7 +353,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
             @leave-cancelled="onLeaveCancelled"
           >
             <AuthStart v-if="currentStep === 'start'" ref="component" :flow="flow" />
-            <AuthOIDCProvider v-else-if="currentStep === 'oidcProvider'" ref="component" :flow="flow" />
+            <AuthThirdPartyProvider v-else-if="currentStep === 'thirdPartyProvider'" ref="component" :flow="flow" />
             <AuthPasskeySignin v-else-if="currentStep === 'passkeySignin'" ref="component" :flow="flow" />
             <AuthPasskeySignup v-else-if="currentStep === 'passkeySignup'" ref="component" :flow="flow" />
             <AuthPassword v-else-if="currentStep === 'password'" ref="component" :flow="flow" />

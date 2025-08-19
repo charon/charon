@@ -191,7 +191,7 @@ export async function restartAuth(router: Router, flow: Flow, abort: AbortSignal
   }
 }
 
-export async function redirectOIDC(router: Router, flow: Flow, abortController: AbortController, progress: Ref<number>) {
+export async function redirectThirdPartyProvider(router: Router, flow: Flow, abortController: AbortController, progress: Ref<number>) {
   progress.value += 1
   try {
     const url = router.apiResolve({

@@ -118,7 +118,7 @@
       "get": null
     },
     {
-      "name": "AuthOIDCProvider",
+      "name": "AuthThirdPartyProvider",
       "path": "/auth/provider/:provider",
       "api": null,
       "get": {}

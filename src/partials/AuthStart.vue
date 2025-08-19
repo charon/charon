@@ -10,7 +10,7 @@ import { startPassword } from "@/api"
 import { isEmail } from "@/utils"
 import { injectProgress } from "@/progress"
 import siteContext from "@/context"
-import { getOIDCProvider } from "@/flow"
+import { getThirdPartyProvider } from "@/flow"
 
 const props = defineProps<{
   flow: Flow
@@ -117,18 +117,18 @@ async function onPasskey() {
   props.flow.forward("passkeySignin")
 }
 
-async function onOIDCProvider(provider: string) {
+async function onThirdPartyProvider(provider: string) {
   if (abortController.signal.aborted) {
     return
   }
 
-  const p = getOIDCProvider([provider])
+  const p = getThirdPartyProvider([provider])
   if (!p) {
     // This should not happen.
-    throw new Error(`unknown OIDC provider: ${provider}`)
+    throw new Error(`unknown third party provider: ${provider}`)
   }
-  props.flow.setOIDCProvider(p)
-  props.flow.forward("oidcProvider")
+  props.flow.setThirdPartyProvider(p)
+  props.flow.forward("thirdPartyProvider")
 }
 </script>
 
@@ -178,7 +178,7 @@ async function onOIDCProvider(provider: string) {
     </div>
     <h2 class="text-center m-4 text-xl font-bold uppercase">Or use</h2>
     <Button primary type="button" :disabled="!browserSupportsWebAuthn()" :progress="progress" @click.prevent="onPasskey">Passkey</Button>
-    <Button v-for="p of siteContext.providers" :key="p.key" primary type="button" class="mt-4" :progress="progress" @click.prevent="onOIDCProvider(p.key)">{{
+    <Button v-for="p of siteContext.providers" :key="p.key" primary type="button" class="mt-4" :progress="progress" @click.prevent="onThirdPartyProvider(p.key)">{{
       p.name
     }}</Button>
   </div>

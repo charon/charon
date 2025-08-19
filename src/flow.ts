@@ -7,7 +7,7 @@ import type { Flow, SiteProvider, AuthFlowResponse, Completed } from "@/types"
 import siteContext from "@/context"
 import { equals, redirectServerSide } from "@/utils"
 
-export function getOIDCProvider(providers: string[]): SiteProvider | null {
+export function getThirdPartyProvider(providers: string[]): SiteProvider | null {
   for (const provider of providers) {
     for (const p of siteContext.providers) {
       if (p.type === "oidc" && p.key === provider) {
@@ -49,8 +49,8 @@ export async function updateSteps(flow: Flow, targetStep: string, force?: boolea
       // later on remove the code step if it is not necessary.
       newSteps.push({ key: "password", name: "Provide password or passphrase" }, { key: "code", name: "Provide code" })
       break
-    case "oidcProvider":
-      newSteps.push({ key: "oidcProvider", name: `Redirect to ${flow.getOIDCProvider()!.name}` })
+    case "thirdPartyProvider":
+      newSteps.push({ key: "thirdPartyProvider", name: `Redirect to ${flow.getThirdPartyProvider()!.name}` })
       break
   }
 
@@ -118,9 +118,9 @@ export function processResponse(router: Router, response: AuthFlowResponse, flow
   flow.setOrganizationId(response.organizationId)
   flow.setAppId(response.appId)
   if (response.providers) {
-    flow.setOIDCProvider(getOIDCProvider(response.providers))
+    flow.setThirdPartyProvider(getThirdPartyProvider(response.providers))
   } else {
-    flow.setOIDCProvider(null)
+    flow.setThirdPartyProvider(null)
   }
   if (response.emailOrUsername) {
     flow.setEmailOrUsername(response.emailOrUsername)
@@ -141,16 +141,16 @@ export function processFirstResponse(router: Router, response: AuthFlowResponse,
   if (response.providers && response.providers.length > 0) {
     const targetSteps = []
     for (const provider of response.providers) {
-      const oidcProvider = getOIDCProvider([provider])
+      const thirdPartyProvider = getThirdPartyProvider([provider])
       if (provider === "code" || provider === "password") {
         targetSteps.push(provider)
       } else if (provider === "passkey") {
         targetSteps.push("passkeySignin")
-      } else if (oidcProvider) {
+      } else if (thirdPartyProvider) {
         // processResponse below will set the OIDC provider again,
         // but we set it here so that updateSteps can use it.
-        flow.setOIDCProvider(oidcProvider)
-        targetSteps.push("oidcProvider")
+        flow.setThirdPartyProvider(thirdPartyProvider)
+        targetSteps.push("thirdPartyProvider")
       } else {
         throw new Error(`unknown provider: ${provider}`)
       }
