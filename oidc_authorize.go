@@ -63,6 +63,14 @@ func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.
 		return
 	}
 
+	if !strings.Contains(authorizeRequest.GetID(), "-") {
+		// Use our identifiers but the default is UUID ID (which contains "-" in its string representation).
+		// Here we check that the default ID generation has really been used and panic if not. This way we know
+		// that we can safely set it to flow ID and we will not override some other ID which might have been set.
+		// TODO: Find a better way to override ID generator in accessRequest.GetID.
+		panic(errors.New("default ID generation has not been used"))
+	}
+
 	// We link authorization request with the flow by reusing ID.
 	id := identifier.New()
 	authorizeRequest.SetID(id.String())

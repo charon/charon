@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"strings"
 
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
@@ -32,9 +33,13 @@ func (s *Service) OIDCTokenPost(w http.ResponseWriter, req *http.Request, _ waf.
 		return
 	}
 
-	// Use our identifiers.
-	id := identifier.New()
-	accessRequest.SetID(id.String())
+	if strings.Contains(accessRequest.GetID(), "-") {
+		// Use our identifiers if ID is the default is UUID ID (which contains "-" in its string representation).
+		// We do not set ID unconditionally because it might be populated from a previous request with our ID.
+		// TODO: Find a better way to override ID generator in accessRequest.GetID.
+		id := identifier.New()
+		accessRequest.SetID(id.String())
+	}
 
 	if accessRequest.GetGrantTypes().ExactOne("client_credentials") {
 		// This is used by the client credentials grant type. For implicit

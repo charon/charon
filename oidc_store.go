@@ -3,6 +3,7 @@ package charon
 import (
 	"context"
 	"slices"
+	"strings"
 
 	"github.com/ory/fosite"
 	"github.com/ory/fosite/storage"
@@ -169,15 +170,52 @@ func (s *OIDCStore) GetClient(ctx context.Context, strID string) (fosite.Client,
 	return nil, errors.WithDetails(ErrClientNotFound, "id", id)
 }
 
-func (s *OIDCStore) RotateRefreshToken(ctx context.Context, _ string, refreshTokenSignature string) error {
-	// TODO: Remove once this is fixed in fosite.
-	//	     See: https://github.com/ory/fosite/pull/838/files#r2285127978
-	ts, err := s.GetRefreshTokenSession(ctx, refreshTokenSignature, nil)
-	if err != nil {
-		return errors.WithStack(err)
+func (s *OIDCStore) CreateOpenIDConnectSession(ctx context.Context, code string, req fosite.Requester) error {
+	// Use our identifiers if ID is the default is UUID ID (which contains "-" in its string representation).
+	// Here we check that we successfully set ID to our own ID generation and panic if not.
+	// TODO: Find a better way to override ID generator in accessRequest.GetID.
+	if strings.Contains(req.GetID(), "-") {
+		panic(errors.New("default ID generation has been used"))
 	}
-	if err := s.RevokeRefreshToken(ctx, ts.GetID()); err != nil {
-		return errors.WithStack(err)
+	return s.MemoryStore.CreateOpenIDConnectSession(ctx, code, req) //nolint:wrapcheck
+}
+
+func (s *OIDCStore) CreateAuthorizeCodeSession(ctx context.Context, code string, req fosite.Requester) error {
+	// Use our identifiers if ID is the default is UUID ID (which contains "-" in its string representation).
+	// Here we check that we successfully set ID to our own ID generation and panic if not.
+	// TODO: Find a better way to override ID generator in accessRequest.GetID.
+	if strings.Contains(req.GetID(), "-") {
+		panic(errors.New("default ID generation has been used"))
 	}
-	return errors.WithStack(s.RevokeAccessToken(ctx, ts.GetID()))
+	return s.MemoryStore.CreateAuthorizeCodeSession(ctx, code, req) //nolint:wrapcheck
+}
+
+func (s *OIDCStore) CreatePKCERequestSession(ctx context.Context, code string, req fosite.Requester) error {
+	// Use our identifiers if ID is the default is UUID ID (which contains "-" in its string representation).
+	// Here we check that we successfully set ID to our own ID generation and panic if not.
+	// TODO: Find a better way to override ID generator in accessRequest.GetID.
+	if strings.Contains(req.GetID(), "-") {
+		panic(errors.New("default ID generation has been used"))
+	}
+	return s.MemoryStore.CreatePKCERequestSession(ctx, code, req) //nolint:wrapcheck
+}
+
+func (s *OIDCStore) CreateAccessTokenSession(ctx context.Context, signature string, req fosite.Requester) error {
+	// Use our identifiers if ID is the default is UUID ID (which contains "-" in its string representation).
+	// Here we check that we successfully set ID to our own ID generation and panic if not.
+	// TODO: Find a better way to override ID generator in accessRequest.GetID.
+	if strings.Contains(req.GetID(), "-") {
+		panic(errors.New("default ID generation has been used"))
+	}
+	return s.MemoryStore.CreateAccessTokenSession(ctx, signature, req) //nolint:wrapcheck
+}
+
+func (s *OIDCStore) CreateRefreshTokenSession(ctx context.Context, signature, accessTokenSignature string, req fosite.Requester) error {
+	// Use our identifiers if ID is the default is UUID ID (which contains "-" in its string representation).
+	// Here we check that we successfully set ID to our own ID generation and panic if not.
+	// TODO: Find a better way to override ID generator in accessRequest.GetID.
+	if strings.Contains(req.GetID(), "-") {
+		panic(errors.New("default ID generation has been used"))
+	}
+	return s.MemoryStore.CreateRefreshTokenSession(ctx, signature, accessTokenSignature, req) //nolint:wrapcheck
 }
