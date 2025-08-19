@@ -174,10 +174,10 @@ func (s *OIDCStore) RotateRefreshToken(ctx context.Context, _ string, refreshTok
 	//	     See: https://github.com/ory/fosite/pull/838/files#r2285127978
 	ts, err := s.GetRefreshTokenSession(ctx, refreshTokenSignature, nil)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	if err := s.RevokeRefreshToken(ctx, ts.GetID()); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
-	return s.RevokeAccessToken(ctx, ts.GetID())
+	return errors.WithStack(s.RevokeAccessToken(ctx, ts.GetID()))
 }

@@ -274,6 +274,7 @@ func initOIDC(config *Config, service *Service, domain string, hmacStrategy *hma
 			oidcStore,
 			&compose.CommonStrategy{
 				CoreStrategy:               newConfigurableCoreStrategy(getPrivateKey, oAuth2HMACStrategy, config),
+				RFC8628CodeStrategy:        compose.NewDeviceStrategy(config),
 				OpenIDConnectTokenStrategy: compose.NewOpenIDConnectStrategy(getPrivateKey, config),
 				Signer: &jwt.DefaultSigner{
 					GetPrivateKey: getPrivateKey,
@@ -609,7 +610,7 @@ func (c *OIDCClient) GetEffectiveLifespan(_ fosite.GrantType, tt fosite.TokenTyp
 		return time.Duration(*c.RefreshTokenLifespan)
 	case fosite.IDToken:
 		return time.Duration(c.IDTokenLifespan)
-	case fosite.AuthorizeCode, fosite.PushedAuthorizeRequestContext:
+	case fosite.AuthorizeCode, fosite.PushedAuthorizeRequestContext, fosite.UserCode, fosite.DeviceCode:
 		return fallback
 	default:
 		panic(errors.Errorf("unknown token type: %s", tt))
