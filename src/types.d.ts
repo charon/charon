@@ -38,7 +38,7 @@ export type AuthFlowResponsePassword = {
   encryptOptions: EncryptOptions
 }
 
-export type AuthFlowResponseOIDCProvider = {
+export type AuthFlowResponseThirdPartyProvider = {
   location: string
 }
 
@@ -75,7 +75,7 @@ export type AuthFlowResponse = {
       error: ErrorCode
     }
   | {
-      oidcProvider: AuthFlowResponseOIDCProvider
+      thirdPartyProvider: AuthFlowResponseThirdPartyProvider
     }
   | {
       passkey: AuthFlowResponsePasskey
@@ -161,8 +161,8 @@ export type Flow = {
   setOrganizationId(value: string): void
   getAppId(): string
   setAppId(value: string): void
-  getOIDCProvider(): SiteProvider | null
-  setOIDCProvider(value: SiteProvider | null): void
+  getThirdPartyProvider(): SiteProvider | null
+  setThirdPartyProvider(value: SiteProvider | null): void
   getEmailOrUsername(): string
   setEmailOrUsername(value: string): void
 

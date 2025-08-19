@@ -262,15 +262,15 @@ func (s *Service) sendCode(
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Completed:       flow.Completed,
-		OrganizationID:  flow.OrganizationID,
-		AppID:           flow.AppID,
-		Providers:       flow.Providers,
-		EmailOrUsername: preservedEmailOrUsername,
-		OIDCProvider:    nil,
-		Passkey:         nil,
-		Password:        nil,
-		Error:           "",
+		Completed:          flow.Completed,
+		OrganizationID:     flow.OrganizationID,
+		AppID:              flow.AppID,
+		Providers:          flow.Providers,
+		EmailOrUsername:    preservedEmailOrUsername,
+		ThirdPartyProvider: nil,
+		Passkey:            nil,
+		Password:           nil,
+		Error:              "",
 	}, nil)
 }
 

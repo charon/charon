@@ -6,7 +6,7 @@ import { useRouter } from "vue-router"
 import WithDocument from "@/components/WithDocument.vue"
 import Button from "@/components/Button.vue"
 import { injectProgress } from "@/progress"
-import { redirectOIDC } from "@/api"
+import { redirectThirdPartyProvider } from "@/api"
 
 const props = defineProps<{
   flow: Flow
@@ -106,17 +106,17 @@ async function onRedirect() {
   interval = 0
   resetOnInteraction()
 
-  await doRedirectOIDC()
+  await doRedirectThirdPartyProvider()
 }
 
-async function doRedirectOIDC() {
+async function doRedirectThirdPartyProvider() {
   try {
-    await redirectOIDC(router, props.flow, abortController, progress)
+    await redirectThirdPartyProvider(router, props.flow, abortController, progress)
   } catch (error) {
     if (abortController.signal.aborted) {
       return
     }
-    console.error("AuthAutoRedirect.doRedirectOIDC", error)
+    console.error("AuthAutoRedirect.doRedirectThirdPartyProvider", error)
     unexpectedError.value = `${error}`
     // We reset the counter and pause it on an error.
     seconds.value = 3

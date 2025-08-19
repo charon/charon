@@ -8,7 +8,7 @@ import WithDocument from "@/components/WithDocument.vue"
 import Button from "@/components/Button.vue"
 import { injectProgress } from "@/progress"
 import { getHomepage, redirectServerSide } from "@/utils"
-import { redirectOIDC } from "@/api"
+import { redirectThirdPartyProvider } from "@/api"
 
 const props = defineProps<{
   flow: Flow
@@ -57,10 +57,10 @@ async function onRedirect() {
   resetOnInteraction()
 
   if (props.flow.getCompleted().includes("failed")) {
-    await doRedirectOIDC()
+    await doRedirectThirdPartyProvider()
   } else if (props.flow.getCompleted().includes("finished")) {
     // When flow is already finished, we can redirect just to the home page
-    // because the original OIDC flow has already been completed.
+    // because the original third party provider flow has already been completed.
     await doRedirectHomepage()
   } else {
     // Should not happen as defined in processCompleted.
@@ -68,14 +68,14 @@ async function onRedirect() {
   }
 }
 
-async function doRedirectOIDC() {
+async function doRedirectThirdPartyProvider() {
   try {
-    await redirectOIDC(router, props.flow, abortController, progress)
+    await redirectThirdPartyProvider(router, props.flow, abortController, progress)
   } catch (error) {
     if (abortController.signal.aborted) {
       return
     }
-    console.error("AuthManualRedirect.doRedirectOIDC", error)
+    console.error("AuthManualRedirect.doRedirectThirdPartyProvider", error)
     unexpectedError.value = `${error}`
   }
 }

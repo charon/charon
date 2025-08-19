@@ -17,7 +17,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-type AuthFlowResponseOIDCProvider struct {
+type AuthFlowResponseThirdPartyProvider struct {
 	Location string `json:"location"`
 }
 
@@ -36,7 +36,7 @@ func initOIDCProviders(config *Config, service *Service, domain string, provider
 		for _, p := range providers {
 			config.Logger.Debug().Msgf("enabling %s provider", p.Name)
 
-			path, errE := service.Reverse("AuthOIDCProvider", waf.Params{"provider": string(p.Key)}, nil)
+			path, errE := service.Reverse("AuthThirdPartyProvider", waf.Params{"provider": string(p.Key)}, nil)
 			if errE != nil {
 				// Internal error: this should never happen.
 				panic(errE)
@@ -171,7 +171,7 @@ func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Req
 		AppID:           flow.AppID,
 		Providers:       flow.Providers,
 		EmailOrUsername: flow.EmailOrUsername,
-		OIDCProvider: &AuthFlowResponseOIDCProvider{
+		ThirdPartyProvider: &AuthFlowResponseThirdPartyProvider{
 			Location: provider.Config.AuthCodeURL(flow.ID.String(), opts...),
 		},
 		Passkey:  nil,
@@ -180,7 +180,7 @@ func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Req
 	}, nil)
 }
 
-func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, params waf.Params) {
+func (s *Service) AuthThirdPartyProvider(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 
 	providerName := Provider(params["provider"])
@@ -206,7 +206,7 @@ func (s *Service) AuthOIDCProvider(w http.ResponseWriter, req *http.Request, par
 
 	flowOIDC := *flow.OIDCProvider
 
-	// We reset flow.OIDCProvider to nil always after this point, even if there is a failure,
+	// We reset flow.ThirdPartyProvider to nil always after this point, even if there is a failure,
 	// so that nonce cannot be reused.
 	flow.OIDCProvider = nil
 	errE := s.setFlow(ctx, flow)

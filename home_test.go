@@ -204,11 +204,11 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 		return http.ErrUseLastResponse
 	}
 
-	authOIDCProvider, errE := service.Reverse("AuthOIDCProvider", waf.Params{"provider": "testing"}, nil)
+	authThirdPartyProvider, errE := service.Reverse("AuthThirdPartyProvider", waf.Params{"provider": "testing"}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	// We have the location testing server listens on now, so we can set the redirect URI.
-	oidcStore.Clients[oidcTestingClientID].(*fosite.DefaultClient).RedirectURIs = []string{ts.URL + authOIDCProvider} //nolint:forcetypeassert,errcheck
+	oidcStore.Clients[oidcTestingClientID].(*fosite.DefaultClient).RedirectURIs = []string{ts.URL + authThirdPartyProvider} //nolint:forcetypeassert,errcheck
 
 	return ts, service, smtpServer, oidcTS
 }

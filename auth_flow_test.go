@@ -34,7 +34,7 @@ func assertFlowResponse(t *testing.T, ts *httptest.Server, service *charon.Servi
 	assert.Equal(t, completed, flowResponse.Completed)
 	assert.Equal(t, providers, flowResponse.Providers)
 	assert.Equal(t, emailOrUsername, flowResponse.EmailOrUsername)
-	assert.Nil(t, flowResponse.OIDCProvider)
+	assert.Nil(t, flowResponse.ThirdPartyProvider)
 	assert.Nil(t, flowResponse.Passkey)
 	assert.Nil(t, flowResponse.Password)
 	assert.Empty(t, flowResponse.Error)

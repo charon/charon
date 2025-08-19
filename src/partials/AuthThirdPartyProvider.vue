@@ -113,7 +113,7 @@ async function onRedirect() {
       },
     }).href
 
-    const provider = props.flow.getOIDCProvider()
+    const provider = props.flow.getThirdPartyProvider()
 
     const response = await postJSON<AuthFlowResponse>(
       url,
@@ -130,8 +130,8 @@ async function onRedirect() {
     if (processResponse(router, response, props.flow, progress, abortController)) {
       return
     }
-    if ("oidcProvider" in response) {
-      redirectServerSide(response.oidcProvider.location, true, progress)
+    if ("thirdPartyProvider" in response) {
+      redirectServerSide(response.thirdPartyProvider.location, true, progress)
       return
     }
     throw new Error("unexpected response")
@@ -139,7 +139,7 @@ async function onRedirect() {
     if (abortController.signal.aborted) {
       return
     }
-    console.error("AuthOIDCProvider.onRedirect", error)
+    console.error("AuthThirdPartyProvider.onRedirect", error)
     unexpectedError.value = `${error}`
     // We reset the counter and pause it on an error.
     seconds.value = 3
@@ -182,13 +182,13 @@ onBeforeUnmount(() => {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div>
-      You will be redirected to <strong>{{ flow.getOIDCProvider()!.name }}</strong> in {{ seconds === 1 ? "1 second" : `${seconds} seconds`
+      You will be redirected to <strong>{{ flow.getThirdPartyProvider()!.name }}</strong> in {{ seconds === 1 ? "1 second" : `${seconds} seconds`
       }}{{ paused ? " (paused)" : "" }}.
     </div>
     <div class="mt-4">Please follow instructions there to sign-in into Charon. Afterwards, you will be redirected back here.</div>
     <div class="mt-4">
-      You might have to sign-in into {{ flow.getOIDCProvider()!.name }} first. You might be redirected back by {{ flow.getOIDCProvider()!.name }} immediately, without
-      showing you anything.
+      You might have to sign-in into {{ flow.getThirdPartyProvider()!.name }} first. You might be redirected back by {{ flow.getThirdPartyProvider()!.name }} immediately,
+      without showing you anything.
     </div>
     <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
     <div class="mt-4 flex flex-row justify-between gap-4">

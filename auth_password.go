@@ -159,13 +159,13 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Completed:       flow.Completed,
-		OrganizationID:  flow.OrganizationID,
-		AppID:           flow.AppID,
-		Providers:       flow.Providers,
-		EmailOrUsername: flow.EmailOrUsername,
-		OIDCProvider:    nil,
-		Passkey:         nil,
+		Completed:          flow.Completed,
+		OrganizationID:     flow.OrganizationID,
+		AppID:              flow.AppID,
+		Providers:          flow.Providers,
+		EmailOrUsername:    flow.EmailOrUsername,
+		ThirdPartyProvider: nil,
+		Passkey:            nil,
 		Password: &AuthFlowResponsePassword{
 			PublicKey: privateKey.PublicKey().Bytes(),
 			DeriveOptions: AuthFlowResponsePasswordDeriveOptions{
