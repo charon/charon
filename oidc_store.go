@@ -168,3 +168,16 @@ func (s *OIDCStore) GetClient(ctx context.Context, strID string) (fosite.Client,
 
 	return nil, errors.WithDetails(ErrClientNotFound, "id", id)
 }
+
+func (s *OIDCStore) RotateRefreshToken(ctx context.Context, _ string, refreshTokenSignature string) error {
+	// TODO: Remove once this is fixed in fosite.
+	//	     See: https://github.com/ory/fosite/pull/838/files#r2285127978
+	ts, err := s.GetRefreshTokenSession(ctx, refreshTokenSignature, nil)
+	if err != nil {
+		return err
+	}
+	if err := s.RevokeRefreshToken(ctx, ts.GetID()); err != nil {
+		return err
+	}
+	return s.RevokeAccessToken(ctx, ts.GetID())
+}
