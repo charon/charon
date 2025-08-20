@@ -10,7 +10,7 @@ import { equals, redirectServerSide } from "@/utils"
 export function getThirdPartyProvider(providers: string[]): SiteProvider | null {
   for (const provider of providers) {
     for (const p of siteContext.providers) {
-      if (p.type === "oidc" && p.key === provider) {
+      if ((p.type === "oidc" && p.key === provider) || (p.type === "saml" && p.key === provider)) {
         return p
       }
     }

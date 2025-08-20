@@ -23,6 +23,8 @@ type SiteProvider struct {
 	oidcAuthURL   string
 	oidcTokenURL  string
 	oidcScopes    []string
+
+	metadataURL string
 }
 
 type Site struct {

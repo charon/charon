@@ -77,9 +77,17 @@ type GenericOIDCProvider struct {
 	TokenURL  string
 }
 
+type SAMLProviderConfig struct {
+	Key         Provider `yaml:"key"`
+	Name        string   `yaml:"name"`
+	MetadataURL string   `yaml:"metadataUrl"`
+}
+
 type Providers struct {
 	Google   OIDCProvider `embed:"" envprefix:"GOOGLE_"   prefix:"google."   set:"provider=Google"   yaml:"google"`
 	Facebook OIDCProvider `embed:"" envprefix:"FACEBOOK_" prefix:"facebook." set:"provider=Facebook" yaml:"facebook"`
+
+	SAMLProviders []SAMLProviderConfig `yaml:"samlProviders"`
 
 	// Exposed primarily for use in tests.
 	Testing GenericOIDCProvider `json:"-" kong:"-" yaml:"-"`
@@ -232,6 +240,7 @@ type Service struct {
 	oidcKeys *Keys
 
 	oidcProviders      func() map[Provider]oidcProvider
+	samlProviders      func() map[Provider]samlProvider
 	passkeyProvider    func() *webauthn.WebAuthn
 	codeProvider       func() *codeProvider
 	charonOrganization func() charonOrganization
@@ -367,6 +376,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcAuthURL:   "",
 			oidcTokenURL:  "",
 			oidcScopes:    []string{oidc.ScopeOpenID, "email", "profile"},
+			metadataURL: "",
 		})
 	}
 	if config.Providers.Facebook.ClientID != "" && config.Providers.Facebook.Secret != nil {
@@ -382,6 +392,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcAuthURL:   "",
 			oidcTokenURL:  "https://graph.facebook.com/oauth/access_token",
 			oidcScopes:    []string{oidc.ScopeOpenID, "email", "public_profile"},
+			metadataURL: "",
 		})
 	}
 	if config.Providers.Testing.ClientID != "" && config.Providers.Testing.Secret != nil && config.Providers.Testing.Issuer != "" {
@@ -397,8 +408,42 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcAuthURL:   config.Providers.Testing.AuthURL,
 			oidcTokenURL:  config.Providers.Testing.TokenURL,
 			oidcScopes:    []string{oidc.ScopeOpenID},
+			metadataURL: "",
 		})
 	}
+
+	if config.Server.Development {
+		providers = append(providers, SiteProvider{
+			Key:         "MockSAML",
+			Name:        "MockSAML",
+			Type:        "saml",
+			metadataURL: "https://mocksaml.com/api/namespace/charon/saml/metadata",
+			issuer:      "",
+			clientID:    "",
+			secret:      "",
+			forcePKCE:   false,
+			authURL:     "",
+			tokenURL:    "",
+			scopes:      nil,
+		})
+	}
+
+	for _, samlConfig := range config.Providers.SAMLProviders {
+		providers = append(providers, SiteProvider{
+			Key:         samlConfig.Key,
+			Name:        samlConfig.Name,
+			Type:        "saml",
+			metadataURL: samlConfig.MetadataURL,
+			oidcIssuer:      "",
+			oidcClientID:    "",
+			oidcSecret:      "",
+			oidcForcePKCE:   false,
+			oidcAuthURL:     "",
+			oidcTokenURL:    "",
+			oidcScopes:      nil,
+		})
+	}
+
 	for _, site := range sites {
 		site.Providers = providers
 	}
@@ -474,6 +519,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		oidc:                   nil,
 		oidcKeys:               &config.OIDC.Keys,
 		oidcProviders:          nil,
+		samlProviders:          nil,
 		passkeyProvider:        nil,
 		codeProvider:           nil,
 		charonOrganization:     nil,
@@ -545,6 +591,10 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 	if errE != nil {
 		return nil, nil, errE
 	}
+	service.samlProviders, errE = initSAMLProviders(config, service, domain, providers)
+	if errE != nil {
+		return nil, nil, errE
+	}
 	service.passkeyProvider, errE = initPasskeyProvider(config, domain)
 	if errE != nil {
 		return nil, nil, errE
@@ -569,6 +619,7 @@ func (config *Config) Run() errors.E {
 
 	// In the case when server's bind port is 0, we access values once to start
 	// delayed initialization (initialization will block until the server runs).
+	go service.samlProviders()
 	go service.oidc()
 	go service.oidcProviders()
 	go service.passkeyProvider()

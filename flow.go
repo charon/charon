@@ -55,6 +55,10 @@ type FlowCode struct {
 	Credentials []Credential
 }
 
+type FlowSAMLProvider struct {
+	ID identifier.Identifier
+}
+
 type Flow struct {
 	ID        identifier.Identifier
 	CreatedAt time.Time
@@ -75,6 +79,7 @@ type Flow struct {
 	Providers       []Provider
 	EmailOrUsername string
 	OIDCProvider    *FlowOIDCProvider
+	SAMLProvider    *FlowSAMLProvider
 	Passkey         *webauthn.SessionData
 	Password        *FlowPassword
 	Code            *FlowCode

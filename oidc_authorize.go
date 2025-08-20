@@ -104,6 +104,7 @@ func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.
 		Providers:       nil,
 		EmailOrUsername: "",
 		OIDCProvider:    nil,
+		SAMLProvider:    nil,
 		Passkey:         nil,
 		Password:        nil,
 		Code:            nil,
