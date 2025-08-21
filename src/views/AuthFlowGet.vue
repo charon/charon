@@ -293,7 +293,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
       <div v-if="unexpectedError" class="w-full rounded border bg-white p-4 shadow text-error-600">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
         <div class="w-full rounded border bg-white p-4 shadow">
-          <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">{{ t("navigation.signIn") }}</h2>
+          <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">{{ t("common.buttons.signIn") }}</h2>
           <div class="mb-4">
             <i18n-t keypath="views.AuthFlowGet.instructionsMessage" scope="global">
               <template #appLink>

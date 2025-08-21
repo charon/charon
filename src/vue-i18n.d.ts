@@ -20,6 +20,8 @@ declare module "vue-i18n" {
         activate: string
         addUser: string
         addAdmin: string
+        signOut: string
+        signIn: string
       }
       errors: {
         unexpected: string
@@ -47,13 +49,6 @@ declare module "vue-i18n" {
         added: string
         creator: string
       }
-    }
-    navigation: {
-      signOut: string
-      signIn: string
-      identities: string
-      applicationTemplates: string
-      organizations: string
     }
     partials: {
       Footer: {

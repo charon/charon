@@ -16,7 +16,9 @@
       "disable": "Disable",
       "activate": "Activate",
       "addUser": "Add user",
-      "addAdmin": "Add admin"
+      "addAdmin": "Add admin",
+      "signOut": "Sign-out",
+      "signIn": "Sign-in or sign-up"
     },
     "errors": {
       "unexpected": "Unexpected error. Please try again.",
@@ -44,13 +46,6 @@
       "added": "added",
       "creator": "creator"
     }
-  },
-  "navigation": {
-    "signOut": "Sign-out",
-    "signIn": "Sign-in or sign-up",
-    "identities": "Identities",
-    "applicationTemplates": "Application templates",
-    "organizations": "Organizations"
   },
   "partials": {
     "Footer": {

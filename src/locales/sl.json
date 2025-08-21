@@ -16,7 +16,9 @@
       "disable": "Onemogoči",
       "activate": "Aktiviraj",
       "addUser": "Dodaj uporabnika",
-      "addAdmin": "Dodaj administratorja"
+      "addAdmin": "Dodaj administratorja",
+      "signOut": "Izpis",
+      "signIn": "Prijava ali registracija"
     },
     "errors": {
       "unexpected": "Nepričakovana napaka. Prosimo, poskusite znova.",
@@ -44,13 +46,6 @@
       "added": "dodana",
       "creator": "ustvarjalec"
     }
-  },
-  "navigation": {
-    "signOut": "Izpis",
-    "signIn": "Prijava ali registracija",
-    "identities": "Identitete",
-    "applicationTemplates": "Predloge aplikacij",
-    "organizations": "Organizacije"
   },
   "partials": {
     "Footer": {
