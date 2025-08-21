@@ -73,6 +73,10 @@ Charon is a privacy-enabling account management and SSO solution built with Go b
 - **Internationalization**: All user-facing text must use `useI18n()` composition API with precompiled messages
 - **TypeScript**: Strict typing enabled with vue-i18n message schema validation
 - **Formatting**: Always run `npm run fmt` after making changes to maintain consistent code formatting
+  - Use double quotes (`"`) for strings, not single quotes (`'`)
+  - Multi-line Vue template attributes should break after `>` and before `<` on closing tags
+  - Files should end with newlines
+  - Consistent spacing and indentation per Prettier configuration
 
 ### Development Architecture
 - Backend serves as proxy to Vite dev server in development mode (`-D` flag)
