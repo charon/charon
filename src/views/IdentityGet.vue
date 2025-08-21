@@ -435,7 +435,7 @@ async function onAddOrganization(organization: OrganizationRef) {
             >
             <TextArea id="description" v-model="description" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <div v-if="basicUnexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
-            <div v-else-if="basicUpdated" class="mt-4 text-success-600">{{ t("messages.success.identityUpdated") }}</div>
+            <div v-else-if="basicUpdated" class="mt-4 text-success-600">{{ t("views.IdentityGet.identityUpdated") }}</div>
             <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
               <!--
                 Button is on purpose not disabled on basicUnexpectedError so that user can retry.
@@ -445,7 +445,7 @@ async function onAddOrganization(organization: OrganizationRef) {
           </form>
           <h2 class="text-xl font-bold">{{ t("views.OrganizationGet.users") }}</h2>
           <div v-if="usersUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
-          <div v-else-if="usersUpdated" class="text-success-600">{{ t("messages.success.usersUpdated") }}</div>
+          <div v-else-if="usersUpdated" class="text-success-600">{{ t("views.IdentityGet.usersUpdated") }}</div>
           <form class="flex flex-col" novalidate @submit.prevent="onUsersSubmit">
             <ol class="flex flex-col gap-y-4">
               <li v-for="(user, i) of users" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
@@ -478,7 +478,7 @@ async function onAddOrganization(organization: OrganizationRef) {
           </form>
           <h2 class="text-xl font-bold">{{ t("views.OrganizationGet.admins") }}</h2>
           <div v-if="adminsUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
-          <div v-else-if="adminsUpdated" class="text-success-600">{{ t("messages.success.adminsUpdated") }}</div>
+          <div v-else-if="adminsUpdated" class="text-success-600">{{ t("views.IdentityGet.adminsUpdated") }}</div>
           <form class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
             <ol class="flex flex-col gap-y-4">
               <li v-for="(admin, i) of admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
@@ -512,7 +512,7 @@ async function onAddOrganization(organization: OrganizationRef) {
           <template v-if="identityOrganizations.length || canOrganizationsSubmit() || identityOrganizationsUnexpectedError || identityOrganizationsUpdated">
             <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.addedOrganizations") }}</h2>
             <div v-if="identityOrganizationsUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
-            <div v-else-if="identityOrganizationsUpdated" class="text-success-600">{{ t("messages.success.organizationsUpdated") }}</div>
+            <div v-else-if="identityOrganizationsUpdated" class="text-success-600">{{ t("views.IdentityGet.organizationsUpdated") }}</div>
             <form v-if="identityOrganizations.length || canOrganizationsSubmit()" class="flex flex-col" novalidate @submit.prevent="onOrganizationsSubmit">
               <ul>
                 <li v-for="(identityOrganization, i) in identityOrganizations" :key="identityOrganization.id || i" class="flex flex-col mb-4">

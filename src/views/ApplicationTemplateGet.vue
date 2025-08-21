@@ -685,7 +685,7 @@ function onAddAdmin() {
               @update:model-value="(v) => (idScopes = splitSpace(v))"
             />
             <div v-if="basicUnexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
-            <div v-else-if="basicUpdated" class="mt-4 text-success-600">{{ t("messages.success.applicationsUpdated") }}</div>
+            <div v-else-if="basicUpdated" class="mt-4 text-success-600">{{ t("views.ApplicationTemplateGet.applicationsUpdated") }}</div>
             <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
               <!--
                 Button is on purpose not disabled on basicUnexpectedError so that user can retry.
@@ -696,7 +696,7 @@ function onAddAdmin() {
           <template v-if="metadata.can_update || variables.length || canVariablesSubmit() || variablesUnexpectedError || variablesUpdated">
             <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.variables") }}</h2>
             <div v-if="variablesUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
-            <div v-else-if="variablesUpdated" class="text-success-600">{{ t("messages.success.variablesUpdated") }}</div>
+            <div v-else-if="variablesUpdated" class="text-success-600">{{ t("views.ApplicationTemplateGet.variablesUpdated") }}</div>
             <form v-if="metadata.can_update || variables.length || canVariablesSubmit()" class="flex flex-col" novalidate @submit.prevent="onVariablesSubmit">
               <ol>
                 <li v-for="(variable, i) in variables" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
@@ -739,7 +739,7 @@ function onAddAdmin() {
           <template v-if="metadata.can_update || clientsPublic.length || canClientsPublicSubmit() || clientsPublicUnexpectedError || clientsPublicUpdated">
             <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.publicClients") }}</h2>
             <div v-if="clientsPublicUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
-            <div v-else-if="clientsPublicUpdated" class="text-success-600">{{ t("messages.success.publicClientsUpdated") }}</div>
+            <div v-else-if="clientsPublicUpdated" class="text-success-600">{{ t("views.ApplicationTemplateGet.publicClientsUpdated") }}</div>
             <form v-if="metadata.can_update || clientsPublic.length || canClientsPublicSubmit()" class="flex flex-col" novalidate @submit.prevent="onClientsPublicSubmit">
               <ol>
                 <li v-for="(client, i) in clientsPublic" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
@@ -877,7 +877,7 @@ function onAddAdmin() {
           <template v-if="metadata.can_update || clientsBackend.length || canClientsBackendSubmit() || clientsBackendUnexpectedError || clientsBackendUpdated">
             <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.backendClients") }}</h2>
             <div v-if="clientsBackendUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
-            <div v-else-if="clientsBackendUpdated" class="text-success-600">{{ t("messages.success.backendClientsUpdated") }}</div>
+            <div v-else-if="clientsBackendUpdated" class="text-success-600">{{ t("views.ApplicationTemplateGet.backendClientsUpdated") }}</div>
             <form
               v-if="metadata.can_update || clientsBackend.length || canClientsBackendSubmit()"
               class="flex flex-col"
@@ -1055,7 +1055,7 @@ function onAddAdmin() {
           <template v-if="metadata.can_update || clientsService.length || canClientsServiceSubmit() || clientsServiceUnexpectedError || clientsServiceUpdated">
             <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.serviceClients") }}</h2>
             <div v-if="clientsServiceUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
-            <div v-else-if="clientsServiceUpdated" class="text-success-600">{{ t("messages.success.serviceClientsUpdated") }}</div>
+            <div v-else-if="clientsServiceUpdated" class="text-success-600">{{ t("views.ApplicationTemplateGet.serviceClientsUpdated") }}</div>
             <form
               v-if="metadata.can_update || clientsService.length || canClientsServiceSubmit()"
               class="flex flex-col"
@@ -1203,7 +1203,7 @@ function onAddAdmin() {
           <template v-if="metadata.can_update || adminsUnexpectedError || adminsUpdated">
             <h2 class="text-xl font-bold">{{ t("views.OrganizationGet.admins") }}</h2>
             <div v-if="adminsUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
-            <div v-else-if="adminsUpdated" class="text-success-600">{{ t("messages.success.adminsUpdated") }}</div>
+            <div v-else-if="adminsUpdated" class="text-success-600">{{ t("views.ApplicationTemplateGet.adminsUpdated") }}</div>
             <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
               <ol class="flex flex-col gap-y-4">
                 <li v-for="(admin, i) of admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">

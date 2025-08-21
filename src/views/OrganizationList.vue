@@ -68,7 +68,7 @@ onBeforeMount(async () => {
       <div v-else-if="dataLoadingError" class="w-full rounded border bg-white p-4 shadow text-error-600">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
         <div v-if="!organizations.length" class="w-full rounded border bg-white p-4 shadow italic">
-          {{ isSignedIn() ? t("messages.empty.noOrganizationsCreate") : t("messages.empty.noOrganizationsSignIn") }}
+          {{ isSignedIn() ? t("views.OrganizationGet.noOrganizationsCreate") : t("views.OrganizationGet.noOrganizationsSignIn") }}
         </div>
         <div v-for="organization of organizations" :key="organization.id" class="w-full rounded border bg-white p-4 shadow">
           <OrganizationListItem :item="organization" />

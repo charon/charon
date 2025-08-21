@@ -220,6 +220,16 @@ declare module "vue-i18n" {
         availableApplications: string
         configuration: string
         homepageTemplate: string
+        applicationsUpdated: string
+        variablesUpdated: string
+        publicClientsUpdated: string
+        backendClientsUpdated: string
+        serviceClientsUpdated: string
+        adminsUpdated: string
+        noApplicationTemplates: string
+        noApplicationTemplatesCreate: string
+        noApplicationTemplatesSignIn: string
+        chooseApplicationTemplateName: string
       }
       Home: {
         identities: string
@@ -233,51 +243,34 @@ declare module "vue-i18n" {
         addedIdentities: string
         availableIdentities: string
         manage: string
+        identityUpdated: string
+        usersUpdated: string
+        adminsUpdated: string
+        organizationsUpdated: string
+        noIdentities: string
+        noIdentitiesCreate: string
+        noIdentitiesSignIn: string
+        noOtherIdentities: string
       }
       OrganizationGet: {
         organization: string
         usersForOrganization: string
         users: string
         admins: string
+        organizationUpdated: string
+        addedApplicationsUpdated: string
+        adminsUpdated: string
+        identitiesUpdated: string
+        noUsers: string
+        noOrganizations: string
+        noOrganizationsCreate: string
+        noOrganizationsSignIn: string
+        chooseOrganizationName: string
       }
       AuthIdentity: {
         previouslyUsedIdentities: string
         otherAvailableIdentities: string
         disabledIdentities: string
-      }
-    }
-    messages: {
-      success: {
-        organizationUpdated: string
-        applicationsUpdated: string
-        adminsUpdated: string
-        identitiesUpdated: string
-        identityUpdated: string
-        usersUpdated: string
-        organizationsUpdated: string
-        variablesUpdated: string
-        publicClientsUpdated: string
-        backendClientsUpdated: string
-        serviceClientsUpdated: string
-        addedApplicationsUpdated: string
-        addedApplicationsUpdatedSuccess: string
-      }
-      empty: {
-        noUsers: string
-        noIdentities: string
-        noIdentitiesCreate: string
-        noIdentitiesSignIn: string
-        noOrganizations: string
-        noOrganizationsCreate: string
-        noOrganizationsSignIn: string
-        noApplicationTemplates: string
-        noApplicationTemplatesCreate: string
-        noApplicationTemplatesSignIn: string
-        noOtherIdentities: string
-      }
-      help: {
-        chooseApplicationTemplateName: string
-        chooseOrganizationName: string
       }
     }
   }

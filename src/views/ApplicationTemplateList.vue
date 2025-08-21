@@ -68,7 +68,7 @@ onBeforeMount(async () => {
       <div v-else-if="dataLoadingError" class="w-full rounded border bg-white p-4 shadow text-error-600">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
         <div v-if="!applicationTemplates.length" class="w-full rounded border bg-white p-4 shadow italic">
-          {{ isSignedIn() ? t("messages.empty.noApplicationTemplatesCreate") : t("messages.empty.noApplicationTemplatesSignIn") }}
+          {{ isSignedIn() ? t("views.ApplicationTemplateGet.noApplicationTemplatesCreate") : t("views.ApplicationTemplateGet.noApplicationTemplatesSignIn") }}
         </div>
         <div v-for="applicationTemplate of applicationTemplates" :key="applicationTemplate.id" class="w-full rounded border bg-white p-4 shadow">
           <ApplicationTemplateListItem :item="applicationTemplate" />

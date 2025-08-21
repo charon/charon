@@ -664,7 +664,7 @@ async function onIdentitiesSubmit() {
             >
             <TextArea id="description" v-model="description" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <div v-if="basicUnexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
-            <div v-else-if="basicUpdated" class="mt-4 text-success-600">{{ t("messages.success.organizationUpdated") }}</div>
+            <div v-else-if="basicUpdated" class="mt-4 text-success-600">{{ t("views.OrganizationGet.organizationUpdated") }}</div>
             <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
               <!--
                 Button is on purpose not disabled on basicUnexpectedError so that user can retry.
@@ -681,7 +681,7 @@ async function onIdentitiesSubmit() {
           <template v-if="(metadata.can_update && (applications.length || canApplicationsSubmit())) || applicationsUnexpectedError || applicationsUpdated">
             <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.addedApplications") }}</h2>
             <div v-if="applicationsUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
-            <div v-else-if="applicationsUpdated" class="text-success-600">{{ t("messages.success.addedApplicationsUpdated") }}</div>
+            <div v-else-if="applicationsUpdated" class="text-success-600">{{ t("views.OrganizationGet.addedApplicationsUpdated") }}</div>
             <form v-if="metadata.can_update && (applications.length || canApplicationsSubmit())" class="flex flex-col" novalidate @submit.prevent="onApplicationsSubmit">
               <ul>
                 <li v-for="(application, i) in applications" :key="application.id || i" class="flex flex-col mb-4">
@@ -815,7 +815,7 @@ async function onIdentitiesSubmit() {
           <template v-if="metadata.can_update || adminsUnexpectedError || adminsUpdated">
             <h2 class="text-xl font-bold">{{ t("views.OrganizationGet.admins") }}</h2>
             <div v-if="adminsUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
-            <div v-else-if="adminsUpdated" class="text-success-600">{{ t("messages.success.adminsUpdated") }}</div>
+            <div v-else-if="adminsUpdated" class="text-success-600">{{ t("views.OrganizationGet.adminsUpdated") }}</div>
             <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
               <ol class="flex flex-col gap-y-4">
                 <li v-for="(admin, i) of admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
@@ -845,7 +845,7 @@ async function onIdentitiesSubmit() {
           <template v-if="organizationIdentities.length || canIdentitiesSubmit() || organizationIdentitiesUnexpectedError || organizationIdentitiesUpdated">
             <h2 class="text-xl font-bold">{{ t("views.IdentityGet.addedIdentities") }}</h2>
             <div v-if="organizationIdentitiesUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
-            <div v-else-if="organizationIdentitiesUpdated" class="text-success-600">{{ t("messages.success.identitiesUpdated") }}</div>
+            <div v-else-if="organizationIdentitiesUpdated" class="text-success-600">{{ t("views.OrganizationGet.identitiesUpdated") }}</div>
             <form v-if="organizationIdentities.length || canIdentitiesSubmit()" class="flex flex-col" novalidate @submit.prevent="onIdentitiesSubmit">
               <ul class="flex flex-col gap-y-4">
                 <li v-for="(organizationIdentity, i) in organizationIdentities" :key="organizationIdentity.id || i" class="flex flex-col">

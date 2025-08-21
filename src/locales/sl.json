@@ -216,7 +216,17 @@
       "addedApplications": "Dodane aplikacije",
       "availableApplications": "Razpoložljive aplikacije",
       "configuration": "Konfiguracija",
-      "homepageTemplate": "Predloga domače strani"
+      "homepageTemplate": "Predloga domače strani",
+      "applicationsUpdated": "Aplikacije so bile uspešno posodobljene.",
+      "variablesUpdated": "Spremenljivke so bile uspešno posodobljene.",
+      "publicClientsUpdated": "Javni odjemalci so bili uspešno posodobljeni.",
+      "backendClientsUpdated": "Zaledni odjemalci so bili uspešno posodobljeni.",
+      "serviceClientsUpdated": "Servisni odjemalci so bili uspešno posodobljeni.",
+      "adminsUpdated": "Administratorji so bili uspešno posodobljeni.",
+      "noApplicationTemplates": "Ni predlog aplikacij.",
+      "noApplicationTemplatesCreate": "Ni predlog aplikacij. Ustvarite prvo.",
+      "noApplicationTemplatesSignIn": "Ni predlog aplikacij. Prijavite se ali registrirajte, da ustvarite prvo.",
+      "chooseApplicationTemplateName": "Izberite ime. Po ustvaritvi boste lahko konfigurirali predlogo aplikacije."
     },
     "Home": {
       "identities": "Identitete",
@@ -229,52 +239,35 @@
       "createNewIdentity": "Ustvari novo identiteto",
       "addedIdentities": "Dodane identitete",
       "availableIdentities": "Razpoložljive identitete",
-      "manage": "Upravljaj"
+      "manage": "Upravljaj",
+      "identityUpdated": "Identiteta je bila uspešno posodobljena.",
+      "usersUpdated": "Uporabniki so bili uspešno posodobljeni.",
+      "adminsUpdated": "Administratorji so bili uspešno posodobljeni.",
+      "organizationsUpdated": "Dodane organizacije so bile uspešno posodobljene.",
+      "noIdentities": "Ni identitet.",
+      "noIdentitiesCreate": "Ni identitet. Ustvarite prvo.",
+      "noIdentitiesSignIn": "Ni identitet. Prijavite se ali registrirajte, da ustvarite prvo.",
+      "noOtherIdentities": "Ni drugih identitet. Ustvarite eno."
     },
     "OrganizationGet": {
       "organization": "Organizacija",
       "usersForOrganization": "Uporabniki za organizacijo",
       "users": "Uporabniki",
-      "admins": "Administratorji"
+      "admins": "Administratorji",
+      "organizationUpdated": "Organizacija je bila uspešno posodobljena.",
+      "addedApplicationsUpdated": "Dodane aplikacije so bile uspešno posodobljene.",
+      "adminsUpdated": "Administratorji so bili uspešno posodobljeni.",
+      "identitiesUpdated": "Identitete organizacije so bile uspešno posodobljene.",
+      "noUsers": "Ni uporabnikov.",
+      "noOrganizations": "Ni organizacij.",
+      "noOrganizationsCreate": "Ni organizacij. Ustvarite prvo.",
+      "noOrganizationsSignIn": "Ni organizacij. Prijavite se ali registrirajte, da ustvarite prvo.",
+      "chooseOrganizationName": "Izberite ime. Po ustvaritvi boste lahko konfigurirali organizacijo."
     },
     "AuthIdentity": {
       "previouslyUsedIdentities": "Prej uporabljene identitete",
       "otherAvailableIdentities": "Druge razpoložljive identitete",
       "disabledIdentities": "Onemogočene identitete"
-    }
-  },
-  "messages": {
-    "success": {
-      "organizationUpdated": "Organizacija je bila uspešno posodobljena.",
-      "applicationsUpdated": "Aplikacije so bile uspešno posodobljene.",
-      "adminsUpdated": "Administratorji so bili uspešno posodobljeni.",
-      "identitiesUpdated": "Identitete organizacije so bile uspešno posodobljene.",
-      "identityUpdated": "Identiteta je bila uspešno posodobljena.",
-      "usersUpdated": "Uporabniki so bili uspešno posodobljeni.",
-      "organizationsUpdated": "Dodane organizacije so bile uspešno posodobljene.",
-      "variablesUpdated": "Spremenljivke so bile uspešno posodobljene.",
-      "publicClientsUpdated": "Javni odjemalci so bili uspešno posodobljeni.",
-      "backendClientsUpdated": "Zaledni odjemalci so bili uspešno posodobljeni.",
-      "serviceClientsUpdated": "Servisni odjemalci so bili uspešno posodobljeni.",
-      "addedApplicationsUpdated": "Dodane aplikacije so bile uspešno posodobljene.",
-      "addedApplicationsUpdatedSuccess": "Dodane aplikacije so bile uspešno posodobljene."
-    },
-    "empty": {
-      "noIdentities": "Ni identitet.",
-      "noIdentitiesCreate": "Ni identitet. Ustvarite prvo.",
-      "noIdentitiesSignIn": "Ni identitet. Prijavite se ali registrirajte, da ustvarite prvo.",
-      "noOrganizations": "Ni organizacij.",
-      "noOrganizationsCreate": "Ni organizacij. Ustvarite prvo.",
-      "noOrganizationsSignIn": "Ni organizacij. Prijavite se ali registrirajte, da ustvarite prvo.",
-      "noApplicationTemplates": "Ni predlog aplikacij.",
-      "noApplicationTemplatesCreate": "Ni predlog aplikacij. Ustvarite prvo.",
-      "noApplicationTemplatesSignIn": "Ni predlog aplikacij. Prijavite se ali registrirajte, da ustvarite prvo.",
-      "noUsers": "Ni uporabnikov.",
-      "noOtherIdentities": "Ni drugih identitet. Ustvarite eno."
-    },
-    "help": {
-      "chooseApplicationTemplateName": "Izberite ime. Po ustvaritvi boste lahko konfigurirali predlogo aplikacije.",
-      "chooseOrganizationName": "Izberite ime. Po ustvaritvi boste lahko konfigurirali organizacijo."
     }
   }
 }
