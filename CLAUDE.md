@@ -92,6 +92,9 @@ management, and third-party authentication providers.
 - **Import Organization**: Type imports must be at the top with `import type`, followed by empty line, then regular imports
 - **Internationalization**: All user-facing text must use `useI18n()` composition API with precompiled messages
   - Never translate technical terms like "passkey" - hardcode them directly in components
+  - **Never put HTML in translated strings** - HTML formatting must always be in Vue templates, not translation files
+    - ❌ Wrong: `"message": "<strong>Success!</strong> Operation completed"`
+    - ✅ Correct: `"message": "{strong} Operation completed"` with `<i18n-t>` template interpolation
 - **TypeScript**: Strict typing enabled with vue-i18n message schema validation
 - **Formatting**: Always run `npm run fmt` after making changes to maintain consistent code formatting
   - Use double quotes (`"`) for strings, not single quotes (`'`)
