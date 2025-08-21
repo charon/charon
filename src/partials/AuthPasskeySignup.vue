@@ -160,7 +160,7 @@ async function onPasskeySignup() {
         <template #strong><strong>{{ t('auth.passkey.signin.strongPasskey') }}</strong></template>
       </i18n-t>
     </div>
-    <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t('auth.passkey.errors.unexpected') }}</div>
+    <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t('common.errors.unexpected') }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="2" @click.prevent="onBack">{{ t('auth.passkey.signup.retrySigninButton') }}</Button>
       <Button id="passkey-signup" primary type="button" tabindex="1" :progress="progress" @click.prevent="onPasskeySignup">{{ signupFailedAtLeastOnce ? t('auth.passkey.signup.retrySignupButton') : t('auth.passkey.signup.passkeySignupButton') }}</Button>

@@ -167,17 +167,17 @@ async function onThirdPartyProvider(provider: string) {
           client side so we might be counting characters differently here, leading to confusion.
           Button is on purpose not disabled on unexpectedError so that user can retry.
         -->
-        <Button primary type="submit" :disabled="!flow.getEmailOrUsername().trim() || !!passwordError" :progress="progress">{{ t('auth.start.nextButton') }}</Button>
+        <Button primary type="submit" :disabled="!flow.getEmailOrUsername().trim() || !!passwordError" :progress="progress">{{ t('common.buttons.next') }}</Button>
       </form>
-      <div v-if="passwordError === 'invalidEmailOrUsername' && isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">{{ t('auth.start.errors.invalidEmailAddress') }}</div>
-      <div v-else-if="passwordError === 'invalidEmailOrUsername' && !isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">{{ t('auth.start.errors.invalidUsername') }}</div>
+      <div v-if="passwordError === 'invalidEmailOrUsername' && isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">{{ t('common.errors.invalidEmailOrUsername.email') }}</div>
+      <div v-else-if="passwordError === 'invalidEmailOrUsername' && !isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">{{ t('common.errors.invalidEmailOrUsername.username') }}</div>
       <div v-else-if="passwordError === 'shortEmailOrUsername' && isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">
-        {{ t('auth.start.errors.shortEmailAddress') }}
+        {{ t('common.errors.shortEmailOrUsername.email') }}
       </div>
       <div v-else-if="passwordError === 'shortEmailOrUsername' && !isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">
-        {{ t('auth.start.errors.shortUsername') }}
+        {{ t('common.errors.shortEmailOrUsername.username') }}
       </div>
-      <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t('auth.start.errors.unexpected') }}</div>
+      <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t('common.errors.unexpected') }}</div>
     </div>
     <h2 class="text-center m-4 text-xl font-bold uppercase">{{ t('auth.start.orUse') }}</h2>
     <Button primary type="button" :disabled="!browserSupportsWebAuthn()" :progress="progress" @click.prevent="onPasskey">{{ t('auth.start.passkeyButton') }}</Button>

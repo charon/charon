@@ -1,4 +1,29 @@
 {
+  "common": {
+    "buttons": {
+      "next": "Naprej",
+      "back": "Nazaj",
+      "retry": "Poskusi znova",
+      "continue": "Nadaljuj"
+    },
+    "errors": {
+      "unexpected": "Nepričakovana napaka. Prosimo, poskusite znova.",
+      "wrongPassword": "Napačno geslo ali geslovni stavek za račun s podanim uporabniškim imenom.",
+      "invalidPassword": "Neveljavno geslo ali geslovni stavek.",
+      "shortPassword": "Geslo ali geslovni stavek mora biti dolg vsaj 8 znakov.",
+      "invalidCode": "Koda je neveljavna. Prosimo, poskusite znova.",
+      "noAccount": "Kode ne morete prejeti, ker ne obstaja račun s podanim uporabniškim imenom.",
+      "noEmails": "Kode ne morete prejeti, ker ni e-naslova, povezanega s podanim uporabniškim imenom.",
+      "invalidEmailOrUsername": {
+        "email": "Neveljaven e-naslov.",
+        "username": "Neveljavno uporabniško ime."
+      },
+      "shortEmailOrUsername": {
+        "email": "E-naslov mora biti dolg vsaj 3 znake.",
+        "username": "Uporabniško ime mora biti dolgo vsaj 3 znake."
+      }
+    }
+  },
   "navigation": {
     "signOut": "Izpis",
     "signIn": "Prijava ali registracija",
@@ -12,36 +37,18 @@
   "auth": {
     "start": {
       "emailOrUsernameLabel": "Vnesite uporabniško ime Charon ali vaš e-naslov",
-      "nextButton": "Naprej",
       "orUse": "Ali uporabite",
-      "passkeyButton": "Ključ",
-      "errors": {
-        "invalidEmailAddress": "Neveljaven e-naslov.",
-        "invalidUsername": "Neveljavno uporabniško ime.",
-        "shortEmailAddress": "E-naslov mora biti dolg vsaj 3 znake.",
-        "shortUsername": "Uporabniško ime mora biti dolgo vsaj 3 znake.",
-        "unexpected": "Nepričakovana napaka. Prosimo, poskusite znova."
-      }
+      "passkeyButton": "Ključ"
     },
     "password": {
       "emailAddressLabel": "Vaš e-naslov",
       "usernameLabel": "Uporabniško ime Charon",
       "passwordLabel": "Geslo ali geslovni stavek",
-      "nextButton": "Naprej",
-      "backButton": "Nazaj",
       "sendCodeButton": "Pošlji kodo",
       "instructions": {
         "emailAccount": "Če še nimate računa, bo ustvarjen za vas. Če vnesete napačno geslo ali geslovni stavek, se bo obnova izvedla samodejno s pošiljanjem kode na vaš e-naslov.",
         "usernameAccount": "Če še nimate računa, bo ustvarjen za vas. Uporabniško ime ne bo vidno drugim, vendar je mogoče ugotoviti, ali račun z uporabniškim imenom obstaja ali ne. Če vnesete napačno geslo ali geslovni stavek, se bo obnova izvedla samodejno s pošiljanjem kode na e-naslove, povezane z uporabniškim imenom, če obstajajo.",
         "skipPassword": "Lahko tudi preskočite vnos gesla ali geslovnega stavka in neposredno zaprosite za kodo."
-      },
-      "errors": {
-        "wrongPassword": "Napačno geslo ali geslovni stavek za račun s podanim uporabniškim imenom.",
-        "invalidPassword": "Neveljavno geslo ali geslovni stavek.",
-        "shortPassword": "Geslo ali geslovni stavek mora biti dolg vsaj 8 znakov.",
-        "noAccount": "Kode ne morete prejeti, ker ne obstaja račun s podanim uporabniškim imenom.",
-        "noEmails": "Kode ne morete prejeti, ker ni e-naslova, povezanega s podanim uporabniškim imenom.",
-        "unexpected": "Nepričakovana napaka. Prosimo, poskusite znova."
       },
       "troublePassword": "Če imate težave z pomnenjem gesla ali geslovnega stavka, poskusite {link}.",
       "differentSigninMethod": "drug način prijave"
@@ -51,8 +58,6 @@
       "codeSentUsername": "{sentCount} 6-mestno kodo na e-naslove, povezane z uporabniškim imenom Charon {username}. Vnesite jo za nadaljevanje:",
       "codeFromHashEmail": "Poslali smo naslednjo 6-mestno kodo na e-naslov {email}:",
       "codeFromHashUsername": "Poslali smo naslednjo 6-mestno kodo na e-naslove, povezane z uporabniškim imenom Charon {username}:",
-      "nextButton": "Naprej",
-      "backButton": "Nazaj",
       "resendButton": "Ponovno pošlji kodo",
       "sent": "Poslali smo",
       "sentMultiple": "Poslali smo ({count}x)",
@@ -63,10 +68,6 @@
         "strongDont": "ne",
         "troubleEmail": "Če imate težave z dostopom do e-pošte, poskusite {link}.",
         "differentMethod": "drug način prijave ali registracije"
-      },
-      "errors": {
-        "invalidCode": "Koda je neveljavna. Prosimo, poskusite znova.",
-        "unexpected": "Nepričakovana napaka. Prosimo, poskusite znova."
       }
     },
     "passkey": {
@@ -74,9 +75,7 @@
         "instructions": "Prijavite se z uporabo vašega {strong}.",
         "strongPasskey": "ključa",
         "failed": "Prijava z uporabo {strong} ni uspela.",
-        "retryButton": "Poskusi znova",
-        "signupButton": "Registriraj se namesto tega",
-        "backButton": "Nazaj"
+        "signupButton": "Registriraj se namesto tega"
       },
       "signup": {
         "instructions": "Prijava z uporabo {strong} ni uspela. Se želite registrirati namesto tega?",
@@ -86,16 +85,11 @@
         "retrySigninButton": "Poskusi prijavo znova",
         "passkeySignupButton": "Registracija s ključem",
         "retrySignupButton": "Poskusi registracijo znova"
-      },
-      "errors": {
-        "unexpected": "Nepričakovana napaka. Prosimo, poskusite znova."
       }
     },
     "thirdParty": {
       "redirecting": "Preusmerjamo vas na {provider}. Prosimo, sledite navodilom vašega brskalnika.",
-      "failed": "Prijava z uporabo {provider} ni uspela.",
-      "retryButton": "Poskusi znova",
-      "backButton": "Nazaj"
+      "failed": "Prijava z uporabo {provider} ni uspela."
     },
     "redirect": {
       "auto": {
@@ -104,20 +98,12 @@
         "here": "tukaj"
       },
       "manual": {
-        "message": "Prijava ali registracija je zaključena. Kliknite {link} za nadaljevanje na {appName}.",
-        "continueButton": "Nadaljuj"
+        "message": "Prijava ali registracija je zaključena. Kliknite {link} za nadaljevanje na {appName}."
       }
     },
     "identity": {
       "selectIdentity": "Izberite identiteto za uporabo z {appName}:",
-      "continueButton": "Nadaljuj",
-      "backButton": "Nazaj",
       "newIdentityButton": "Ustvari novo identiteto"
-    }
-  },
-  "common": {
-    "errors": {
-      "unexpected": "Nepričakovana napaka. Prosimo, poskusite znova."
     }
   }
 }

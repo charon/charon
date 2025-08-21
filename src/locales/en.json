@@ -1,4 +1,29 @@
 {
+  "common": {
+    "buttons": {
+      "next": "Next",
+      "back": "Back",
+      "retry": "Retry",
+      "continue": "Continue"
+    },
+    "errors": {
+      "unexpected": "Unexpected error. Please try again.",
+      "wrongPassword": "Wrong password or passphrase for the account with the provided username.",
+      "invalidPassword": "Invalid password or passphrase.",
+      "shortPassword": "Password or passphrase should be at least 8 characters.",
+      "invalidCode": "Code is invalid. Please try again.",
+      "noAccount": "You cannot receive the code because there is no account with the provided username.",
+      "noEmails": "You cannot receive the code because there is no e-mail address associated with the provided username.",
+      "invalidEmailOrUsername": {
+        "email": "Invalid e-mail address.",
+        "username": "Invalid username."
+      },
+      "shortEmailOrUsername": {
+        "email": "E-mail address should be at least 3 characters.",
+        "username": "Username should be at least 3 characters."
+      }
+    }
+  },
   "navigation": {
     "signOut": "Sign-out",
     "signIn": "Sign-in or sign-up",
@@ -12,36 +37,18 @@
   "auth": {
     "start": {
       "emailOrUsernameLabel": "Enter Charon username or your e-mail address",
-      "nextButton": "Next",
       "orUse": "Or use",
-      "passkeyButton": "Passkey",
-      "errors": {
-        "invalidEmailAddress": "Invalid e-mail address.",
-        "invalidUsername": "Invalid username.",
-        "shortEmailAddress": "E-mail address should be at least 3 characters.",
-        "shortUsername": "Username should be at least 3 characters.",
-        "unexpected": "Unexpected error. Please try again."
-      }
+      "passkeyButton": "Passkey"
     },
     "password": {
       "emailAddressLabel": "Your e-mail address",
       "usernameLabel": "Charon username",
       "passwordLabel": "Password or passphrase",
-      "nextButton": "Next",
-      "backButton": "Back",
       "sendCodeButton": "Send code",
       "instructions": {
         "emailAccount": "If you do not yet have an account, it will be created for you. If you enter wrong password or passphrase, recovery will be done automatically for you by sending you a code to your e-mail address.",
         "usernameAccount": "If you do not yet have an account, it will be created for you. Username will not be visible to others, but it is possible to determine if an account with a username exists or not. If you enter wrong password or passphrase, recovery will be done automatically for you by sending you a code to e-mail address(es) associated with the username, if any.",
         "skipPassword": "You can also skip entering password or passphrase and directly request the code."
-      },
-      "errors": {
-        "wrongPassword": "Wrong password or passphrase for the account with the provided username.",
-        "invalidPassword": "Invalid password or passphrase.",
-        "shortPassword": "Password or passphrase should be at least 8 characters.",
-        "noAccount": "You cannot receive the code because there is no account with the provided username.",
-        "noEmails": "You cannot receive the code because there is no e-mail address associated with the provided username.",
-        "unexpected": "Unexpected error. Please try again."
       },
       "troublePassword": "If you have trouble remembering your password or passphrase, try a {link}.",
       "differentSigninMethod": "different sign-in method"
@@ -51,8 +58,6 @@
       "codeSentUsername": "We {sentCount} a 6-digit code to e-mail address(es) associated with the Charon username {username}. Please enter it to continue:",
       "codeFromHashEmail": "We sent the following 6-digit code to {email} e-mail address:",
       "codeFromHashUsername": "We sent the following 6-digit code to e-mail address(es) associated with the Charon username {username}:",
-      "nextButton": "Next",
-      "backButton": "Back",
       "resendButton": "Resend code",
       "sent": "sent",
       "sentMultiple": "sent ({count}x)",
@@ -63,10 +68,6 @@
         "strongDont": "do not",
         "troubleEmail": "If you have trouble accessing your e-mail, try a {link}.",
         "differentMethod": "different sign-in or sign-up method"
-      },
-      "errors": {
-        "invalidCode": "Code is invalid. Please try again.",
-        "unexpected": "Unexpected error. Please try again."
       }
     },
     "passkey": {
@@ -74,9 +75,7 @@
         "instructions": "Sign in using your {strong}.",
         "strongPasskey": "passkey",
         "failed": "Signing in using {strong} failed.",
-        "retryButton": "Retry",
-        "signupButton": "Sign-up instead",
-        "backButton": "Back"
+        "signupButton": "Sign-up instead"
       },
       "signup": {
         "instructions": "Signing in using {strong} failed. Do you want to sign up instead?",
@@ -86,16 +85,11 @@
         "retrySigninButton": "Retry sign-in",
         "passkeySignupButton": "Passkey sign-up",
         "retrySignupButton": "Retry sign-up"
-      },
-      "errors": {
-        "unexpected": "Unexpected error. Please try again."
       }
     },
     "thirdParty": {
       "redirecting": "Redirecting you to {provider}. Please follow instructions by your browser.",
-      "failed": "Signing in using {provider} failed.",
-      "retryButton": "Retry",
-      "backButton": "Back"
+      "failed": "Signing in using {provider} failed."
     },
     "redirect": {
       "auto": {
@@ -104,20 +98,12 @@
         "here": "here"
       },
       "manual": {
-        "message": "Sign-in or sign-up completed. Click {link} to continue to {appName}.",
-        "continueButton": "Continue"
+        "message": "Sign-in or sign-up completed. Click {link} to continue to {appName}."
       }
     },
     "identity": {
       "selectIdentity": "Select identity to use with {appName}:",
-      "continueButton": "Continue",
-      "backButton": "Back",
       "newIdentityButton": "Create new identity"
-    }
-  },
-  "common": {
-    "errors": {
-      "unexpected": "Unexpected error. Please try again."
     }
   }
 }

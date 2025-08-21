@@ -366,13 +366,13 @@ async function onCode() {
           client side so we might be counting characters differently here, leading to confusion.
           Button is on purpose not disabled on unexpectedPasswordError so that user can retry.
         -->
-        <Button primary type="submit" tabindex="2" :disabled="!password || keyProgress > 0 || !!passwordError" :progress="progress">{{ t('auth.password.nextButton') }}</Button>
+        <Button primary type="submit" tabindex="2" :disabled="!password || keyProgress > 0 || !!passwordError" :progress="progress">{{ t('common.buttons.next') }}</Button>
       </form>
     </div>
     <template v-if="passwordError">
-      <div v-if="passwordError === 'wrongPassword'" class="mt-4 text-error-600">{{ t('auth.password.errors.wrongPassword') }}</div>
-      <div v-else-if="passwordError === 'invalidPassword'" class="mt-4 text-error-600">{{ t('auth.password.errors.invalidPassword') }}</div>
-      <div v-else-if="passwordError === 'shortPassword'" class="mt-4 text-error-600">{{ t('auth.password.errors.shortPassword') }}</div>
+      <div v-if="passwordError === 'wrongPassword'" class="mt-4 text-error-600">{{ t('common.errors.wrongPassword') }}</div>
+      <div v-else-if="passwordError === 'invalidPassword'" class="mt-4 text-error-600">{{ t('common.errors.invalidPassword') }}</div>
+      <div v-else-if="passwordError === 'shortPassword'" class="mt-4 text-error-600">{{ t('common.errors.shortPassword') }}</div>
       <div v-if="passwordError === 'wrongPassword'" class="mt-4">
         <i18n-t keypath="auth.password.troublePassword">
           <template #link>
@@ -381,7 +381,7 @@ async function onCode() {
         </i18n-t>
       </div>
     </template>
-    <div v-else-if="unexpectedPasswordError" class="mt-4 text-error-600">{{ t('auth.password.errors.unexpected') }}</div>
+    <div v-else-if="unexpectedPasswordError" class="mt-4 text-error-600">{{ t('common.errors.unexpected') }}</div>
     <div v-else-if="isEmail(flow.getEmailOrUsername())" class="mt-4">
       {{ t('auth.password.instructions.emailAccount') }}
     </div>
@@ -389,15 +389,15 @@ async function onCode() {
       {{ t('auth.password.instructions.usernameAccount') }}
     </div>
     <div v-if="codeError === 'noAccount'" class="mt-4" :class="codeErrorOnce ? 'text-error-600' : ''">
-      {{ t('auth.password.errors.noAccount') }}
+      {{ t('common.errors.noAccount') }}
     </div>
     <div v-else-if="codeError === 'noEmails'" class="mt-4" :class="codeErrorOnce ? 'text-error-600' : ''">
-      {{ t('auth.password.errors.noEmails') }}
+      {{ t('common.errors.noEmails') }}
     </div>
-    <div v-else-if="unexpectedCodeError" class="mt-4 text-error-600">{{ t('auth.password.errors.unexpected') }}</div>
+    <div v-else-if="unexpectedCodeError" class="mt-4 text-error-600">{{ t('common.errors.unexpected') }}</div>
     <div v-else class="mt-4">{{ t('auth.password.instructions.skipPassword') }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" tabindex="4" @click.prevent="onBack">{{ t('auth.password.backButton') }}</Button>
+      <Button type="button" tabindex="4" @click.prevent="onBack">{{ t('common.buttons.back') }}</Button>
       <!--
         Button is on purpose not disabled on unexpectedCodeError so that user can retry.
       -->

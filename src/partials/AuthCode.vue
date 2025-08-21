@@ -244,11 +244,11 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
           is not enabled.
           Button is on purpose not disabled on unexpectedError so that user can retry.
         -->
-        <Button id="submit-code" primary type="submit" tabindex="2" :disabled="!code.replaceAll(/\s/g, '') || !!codeError" :progress="progress">{{ t('auth.code.nextButton') }}</Button>
+        <Button id="submit-code" primary type="submit" tabindex="2" :disabled="!code.replaceAll(/\s/g, '') || !!codeError" :progress="progress">{{ t('common.buttons.next') }}</Button>
       </form>
     </div>
-    <div v-if="codeError === 'invalidCode'" class="mt-4 text-error-600">{{ t('auth.code.errors.invalidCode') }}</div>
-    <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t('auth.code.errors.unexpected') }}</div>
+    <div v-if="codeError === 'invalidCode'" class="mt-4 text-error-600">{{ t('common.errors.invalidCode') }}</div>
+    <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t('common.errors.unexpected') }}</div>
     <div v-else-if="codeFromHash" class="mt-4">{{ t('auth.code.instructions.confirmCode') }}</div>
     <div v-else class="mt-4">{{ t('auth.code.instructions.waitForCode') }}</div>
     <div v-if="codeFromHash" class="mt-4">
@@ -269,7 +269,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
       </i18n-t>
     </div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" tabindex="4" @click.prevent="onBack">{{ t('auth.code.backButton') }}</Button>
+      <Button type="button" tabindex="4" @click.prevent="onBack">{{ t('common.buttons.back') }}</Button>
       <Button type="button" tabindex="3" :progress="progress" @click.prevent="onResend">{{ t('auth.code.resendButton') }}</Button>
     </div>
   </div>
