@@ -9,7 +9,7 @@ const messages = {
   sl,
 }
 
-export const i18n = createI18n<[MessageSchema], "en">({
+export const i18n = createI18n<[MessageSchema], "en" | "sl">({
   legacy: false,
   locale: "en",
   fallbackLocale: "en",
