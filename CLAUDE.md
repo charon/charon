@@ -67,6 +67,11 @@ Charon is a privacy-enabling account management and SSO solution built with Go b
 - `src/types.d.ts` - TypeScript type definitions
 - `src/flow.ts`, `src/auth.ts` - Authentication flow logic
 
+### Frontend Code Style
+- **Import Convention**: Always use `@/` alias for internal imports, never relative paths (`./`, `../`)
+- **Internationalization**: All user-facing text must use `useI18n()` composition API with precompiled messages
+- **TypeScript**: Strict typing enabled with vue-i18n message schema validation
+
 ### Development Architecture
 - Backend serves as proxy to Vite dev server in development mode (`-D` flag)
 - Production builds embed frontend files into Go binary via `embed.FS`
