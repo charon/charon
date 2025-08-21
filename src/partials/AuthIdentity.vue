@@ -355,13 +355,13 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
       <template v-else>
         <h3 class="text-l font-bold mb-4">{{ t("titles.previouslyUsedIdentities") }}</h3>
         <div v-if="usedIdentities.length + addedIdentities.length + disabledIdentities.length === 0" class="italic mb-4">
-          You have not yet used any identity with this organization.
+          {{ t("auth.identity.statusMessages.noIdentityUsed") }}
         </div>
         <div v-else-if="usedIdentities.length + disabledIdentities.length === 0" class="italic mb-4">
-          You have not yet used any identity with this app in the organization.
+          {{ t("auth.identity.statusMessages.noIdentityUsedWithApp") }}
         </div>
         <div v-else-if="usedIdentities.length + addedIdentities.length === 0" class="italic mb-4">
-          All previously used identities with this organization are disabled.
+          {{ t("auth.identity.statusMessages.allPreviousDisabled") }}
         </div>
         <div v-else-if="usedIdentities.length === 0" class="italic mb-4">{{ t("auth.identity.previouslyUsedDisabled") }}</div>
         <ul v-else>
@@ -376,7 +376,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
           </li>
         </ul>
         <template v-if="addedIdentities.length">
-          <h3 class="text-l font-bold mb-4">Identities used with the organization, but not the app</h3>
+          <h3 class="text-l font-bold mb-4">{{ t("auth.identity.sectionTitles.identitiesUsedWithOrg") }}</h3>
           <ul>
             <li v-for="(identity, i) of addedIdentities" :key="identity.identity.id" class="mb-4">
               <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate">
@@ -418,7 +418,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
           </li>
         </ul>
         <template v-if="disabledIdentities.length">
-          <h3 class="text-l font-bold mb-4">Disabled identities</h3>
+          <h3 class="text-l font-bold mb-4">{{ t("auth.identity.sectionTitles.disabledIdentities") }}</h3>
           <ul>
             <li v-for="identity of disabledIdentities" :key="identity.identity.id" class="mb-4">
               <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate" :labels="['disabled']">

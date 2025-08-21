@@ -125,6 +125,18 @@ declare module "vue-i18n" {
         noIdentitiesCreateFirst: string
         noOtherIdentitiesCreateOne: string
         selectInstructions: string
+        statusMessages: {
+          noIdentityUsed: string
+          noIdentityUsedWithApp: string
+          allPreviousDisabled: string
+        }
+        sectionTitles: {
+          identitiesUsedWithOrg: string
+          disabledIdentities: string
+        }
+      }
+      authFlow: {
+        instructionsMessage: string
       }
       autoRedirect: {
         congratulations: string
@@ -186,6 +198,10 @@ declare module "vue-i18n" {
       idTokenLifespan: string
       refreshTokenLifespan: string
       tokenEndpointAuthMethod: string
+      oidcRedirectUriTemplates: string
+      addRedirectUri: string
+      hmac: string
+      jwt: string
     }
     titles: {
       organizations: string

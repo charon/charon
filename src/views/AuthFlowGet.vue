@@ -295,22 +295,26 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
         <div class="w-full rounded border bg-white p-4 shadow">
           <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">{{ t("navigation.signIn") }}</h2>
           <div class="mb-4">
-            <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationApp">
-              <template #default="{ doc }">
-                <a :href="getHomepage(doc)" class="link"
-                  ><strong>{{ doc.applicationTemplate.name }}</strong></a
-                >
+            <i18n-t keypath="auth.authFlow.instructionsMessage">
+              <template #appLink>
+                <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationApp">
+                  <template #default="{ doc }">
+                    <a :href="getHomepage(doc)" class="link"
+                      ><strong>{{ doc.applicationTemplate.name }}</strong></a
+                    >
+                  </template>
+                </WithOrganizationApplicationDocument>
               </template>
-            </WithOrganizationApplicationDocument>
-            from organization
-            <WithOrganizationDocument :params="{ id: organizationId }" name="OrganizationGet">
-              <template #default="{ doc, url }">
-                <router-link :to="{ name: 'OrganizationGet', params: { id: organizationId } }" :data-url="url" class="link"
-                  ><strong>{{ doc.name }}</strong></router-link
-                >
+              <template #orgLink>
+                <WithOrganizationDocument :params="{ id: organizationId }" name="OrganizationGet">
+                  <template #default="{ doc, url }">
+                    <router-link :to="{ name: 'OrganizationGet', params: { id: organizationId } }" :data-url="url" class="link"
+                      ><strong>{{ doc.name }}</strong></router-link
+                    >
+                  </template>
+                </WithOrganizationDocument>
               </template>
-            </WithOrganizationDocument>
-            is using Charon to ask you to sign-in or sign-up. Please follow the steps below to do so, or to decline.
+            </i18n-t>
           </div>
           <Stepper v-if="steps.length" v-slot="{ step, active, beforeActive }" :steps="steps" :current-step="currentStep">
             <!--

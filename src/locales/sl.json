@@ -121,7 +121,19 @@
       "otherAvailableIdentities": "Druge razpoložljive identitete",
       "noIdentitiesCreateFirst": "Ni identitet. Ustvarite prvo.",
       "noOtherIdentitiesCreateOne": "Ni drugih identitet. Ustvarite eno.",
-      "selectInstructions": "Izberite identiteto, s katero želite nadaljevati. Njene informacije bodo posredovane aplikaciji in organizaciji. Lahko tudi ustvarite novo identiteto ali zavrnete nadaljevanje."
+      "selectInstructions": "Izberite identiteto, s katero želite nadaljevati. Njene informacije bodo posredovane aplikaciji in organizaciji. Lahko tudi ustvarite novo identiteto ali zavrnete nadaljevanje.",
+      "statusMessages": {
+        "noIdentityUsed": "Še niste uporabili nobene identitete s to organizacijo.",
+        "noIdentityUsedWithApp": "Še niste uporabili nobene identitete s to aplikacijo v organizaciji.",
+        "allPreviousDisabled": "Vse prej uporabljene identitete s to organizacijo so onemogočene."
+      },
+      "sectionTitles": {
+        "identitiesUsedWithOrg": "Identitete uporabljene z organizacijo, vendar ne z aplikacijo",
+        "disabledIdentities": "Onemogočene identitete"
+      }
+    },
+    "authFlow": {
+      "instructionsMessage": "{appLink} iz organizacije {orgLink} uporablja Charon, da vas prosi za prijavo ali registracijo. Prosimo, sledite spodnjim korakom za nadaljevanje ali zavrnitev."
     },
     "autoRedirect": {
       "congratulations": "{strong} Vse je pripravljeno za vašo prijavo ali registracijo v {appName} z izbrano identiteto.",
@@ -176,6 +188,10 @@
     "addAdmin": "Dodaj administratorja",
     "addVariable": "Dodaj spremenljivko",
     "addClient": "Dodaj odjemalca",
+    "addRedirectUri": "Dodaj URI za preusmeritev",
+    "oidcRedirectUriTemplates": "OIDC predloge URI-jev za preusmeritev",
+    "hmac": "HMAC",
+    "jwt": "JWT",
     "spaceSeparatedScopes": "Z znaki ločeni OpenID dosegi, ki jih lahko aplikacija zahteva",
     "spaceSeparatedAdditionalScopes": "Z znaki ločeni dodatni dosegi, ki jih lahko odjemalec zahteva",
     "accessTokenType": "Tip dostopovnega žetona",

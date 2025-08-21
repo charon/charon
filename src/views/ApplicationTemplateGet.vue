@@ -746,7 +746,7 @@ function onAddAdmin() {
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
                     <fieldset>
-                      <legend>OIDC redirect URI templates</legend>
+                      <legend>{{ t("labels.oidcRedirectUriTemplates") }}</legend>
                       <ol>
                         <li v-for="(_, j) in client.redirectUriTemplates" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
                           <div>{{ j + 1 }}.</div>
@@ -772,7 +772,7 @@ function onAddAdmin() {
                         type="button"
                         :progress="progress"
                         @click.prevent="addRedirectUriTemplate(client, `client-public-${i}-redirectUriTemplates-`)"
-                        >{{ t("common.buttons.add") }} redirect URI</Button
+                        >{{ t("labels.addRedirectUri") }}</Button
                       >
                     </div>
                     <label :for="`client-public-${i}-description`" class="mb-1 mt-4"
@@ -813,7 +813,7 @@ function onAddAdmin() {
                           <label
                             :for="`client-public-${i}-accessTokenType-hmac`"
                             :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                            >HMAC</label
+                            >{{ t("labels.hmac") }}</label
                           >
                         </div>
                         <div>
@@ -828,7 +828,7 @@ function onAddAdmin() {
                           <label
                             :for="`client-public-${i}-accessTokenType-jwt`"
                             :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                            >JWT</label
+                            >{{ t("labels.jwt") }}</label
                           >
                         </div>
                       </div>
@@ -889,7 +889,7 @@ function onAddAdmin() {
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
                     <fieldset>
-                      <legend>OIDC redirect URI templates</legend>
+                      <legend>{{ t("labels.oidcRedirectUriTemplates") }}</legend>
                       <ol>
                         <li v-for="(_, j) in client.redirectUriTemplates" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
                           <div>{{ j + 1 }}.</div>
@@ -915,7 +915,7 @@ function onAddAdmin() {
                         type="button"
                         :progress="progress"
                         @click.prevent="addRedirectUriTemplate(client, `client-backend-${i}-redirectUriTemplates-`)"
-                        >{{ t("common.buttons.add") }} redirect URI</Button
+                        >{{ t("labels.addRedirectUri") }}</Button
                       >
                     </div>
                     <label :for="`client-backend-${i}-description`" class="mb-1 mt-4"
@@ -956,7 +956,7 @@ function onAddAdmin() {
                           <label
                             :for="`client-backend-${i}-accessTokenType-hmac`"
                             :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                            >HMAC</label
+                            >{{ t("labels.hmac") }}</label
                           >
                         </div>
                         <div>
@@ -971,7 +971,7 @@ function onAddAdmin() {
                           <label
                             :for="`client-backend-${i}-accessTokenType-jwt`"
                             :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                            >JWT</label
+                            >{{ t("labels.jwt") }}</label
                           >
                         </div>
                       </div>
@@ -1104,7 +1104,7 @@ function onAddAdmin() {
                           <label
                             :for="`client-service-${i}-accessTokenType-hmac`"
                             :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                            >HMAC</label
+                            >{{ t("labels.hmac") }}</label
                           >
                         </div>
                         <div>
@@ -1119,7 +1119,7 @@ function onAddAdmin() {
                           <label
                             :for="`client-service-${i}-accessTokenType-jwt`"
                             :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                            >JWT</label
+                            >{{ t("labels.jwt") }}</label
                           >
                         </div>
                       </div>
