@@ -3,6 +3,7 @@ import type { Flow } from "@/types"
 
 import { ref, computed, watch, onBeforeUnmount, onMounted, getCurrentInstance } from "vue"
 import { useRouter } from "vue-router"
+import { useI18n } from "vue-i18n"
 import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
@@ -11,6 +12,8 @@ import { isEmail } from "@/utils"
 import { injectProgress } from "@/progress"
 import siteContext from "@/context"
 import { getThirdPartyProvider } from "@/flow"
+
+const { t } = useI18n()
 
 const props = defineProps<{
   flow: Flow
@@ -135,7 +138,7 @@ async function onThirdPartyProvider(provider: string) {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div class="flex flex-col">
-      <label for="email" class="mb-1">Enter Charon username or your e-mail address</label>
+      <label for="email" class="mb-1">{{ t('auth.start.emailOrUsernameLabel') }}</label>
       <!--
         We set novalidate because we do not UA to show hints.
         We show them ourselves when we want them.
@@ -164,20 +167,20 @@ async function onThirdPartyProvider(provider: string) {
           client side so we might be counting characters differently here, leading to confusion.
           Button is on purpose not disabled on unexpectedError so that user can retry.
         -->
-        <Button primary type="submit" :disabled="!flow.getEmailOrUsername().trim() || !!passwordError" :progress="progress">Next</Button>
+        <Button primary type="submit" :disabled="!flow.getEmailOrUsername().trim() || !!passwordError" :progress="progress">{{ t('auth.start.nextButton') }}</Button>
       </form>
-      <div v-if="passwordError === 'invalidEmailOrUsername' && isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">Invalid e-mail address.</div>
-      <div v-else-if="passwordError === 'invalidEmailOrUsername' && !isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">Invalid username.</div>
+      <div v-if="passwordError === 'invalidEmailOrUsername' && isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">{{ t('auth.start.errors.invalidEmailAddress') }}</div>
+      <div v-else-if="passwordError === 'invalidEmailOrUsername' && !isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">{{ t('auth.start.errors.invalidUsername') }}</div>
       <div v-else-if="passwordError === 'shortEmailOrUsername' && isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">
-        E-mail address should be at least 3 characters.
+        {{ t('auth.start.errors.shortEmailAddress') }}
       </div>
       <div v-else-if="passwordError === 'shortEmailOrUsername' && !isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">
-        Username should be at least 3 characters.
+        {{ t('auth.start.errors.shortUsername') }}
       </div>
-      <div v-else-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
+      <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t('auth.start.errors.unexpected') }}</div>
     </div>
-    <h2 class="text-center m-4 text-xl font-bold uppercase">Or use</h2>
-    <Button primary type="button" :disabled="!browserSupportsWebAuthn()" :progress="progress" @click.prevent="onPasskey">Passkey</Button>
+    <h2 class="text-center m-4 text-xl font-bold uppercase">{{ t('auth.start.orUse') }}</h2>
+    <Button primary type="button" :disabled="!browserSupportsWebAuthn()" :progress="progress" @click.prevent="onPasskey">{{ t('auth.start.passkeyButton') }}</Button>
     <Button v-for="p of siteContext.providers" :key="p.key" primary type="button" class="mt-4" :progress="progress" @click.prevent="onThirdPartyProvider(p.key)">{{
       p.name
     }}</Button>

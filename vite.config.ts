@@ -1,6 +1,7 @@
 import { defineConfig } from "vitest/config"
 import vue from "@vitejs/plugin-vue"
 import license from "rollup-plugin-license"
+import VueI18n from "@intlify/unplugin-vue-i18n/vite"
 import path from "path"
 
 // https://vitejs.dev/config/
@@ -8,6 +9,13 @@ import path from "path"
 export default defineConfig({
   plugins: [
     vue(),
+    VueI18n({
+      include: [path.resolve(__dirname, "src/locales/**")],
+      runtimeOnly: true,
+      compositionOnly: true,
+      fullInstall: false,
+      forceStringify: true,
+    }),
     license({
       sourcemap: true,
       thirdParty: {

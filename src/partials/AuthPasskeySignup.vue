@@ -3,11 +3,14 @@ import type { AuthFlowPasskeyCreateCompleteRequest, AuthFlowResponse, Flow } fro
 
 import { getCurrentInstance, nextTick, onMounted, onBeforeUnmount, ref } from "vue"
 import { useRouter } from "vue-router"
+import { useI18n } from "vue-i18n"
 import { startRegistration, WebAuthnAbortService } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
 import { postJSON } from "@/api"
 import { processResponse } from "@/flow"
 import { injectProgress } from "@/progress"
+
+const { t } = useI18n()
 
 const props = defineProps<{
   flow: Flow
@@ -142,15 +145,25 @@ async function onPasskeySignup() {
 
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
-    <div v-if="signupAttempted && signupFailed">Signing up using <strong>passkey</strong> failed.</div>
-    <div v-else-if="signupAttempted">Signing you up using <strong>passkey</strong>. Please follow instructions by your browser and/or device.</div>
-    <div v-else>Signing in using <strong>passkey</strong> failed. Do you want to sign up instead?</div>
-    <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
+    <div v-if="signupAttempted && signupFailed">
+      <i18n-t keypath="auth.passkey.signup.failed" tag="div">
+        <template #strong><strong>{{ t('auth.passkey.signin.strongPasskey') }}</strong></template>
+      </i18n-t>
+    </div>
+    <div v-else-if="signupAttempted">
+      <i18n-t keypath="auth.passkey.signup.signingUp" tag="div">
+        <template #strong><strong>{{ t('auth.passkey.signin.strongPasskey') }}</strong></template>
+      </i18n-t>
+    </div>
+    <div v-else>
+      <i18n-t keypath="auth.passkey.signup.instructions" tag="div">
+        <template #strong><strong>{{ t('auth.passkey.signin.strongPasskey') }}</strong></template>
+      </i18n-t>
+    </div>
+    <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t('auth.passkey.errors.unexpected') }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" tabindex="2" @click.prevent="onBack">Retry sign-in</Button>
-      <Button id="passkey-signup" primary type="button" tabindex="1" :progress="progress" @click.prevent="onPasskeySignup">{{
-        signupFailedAtLeastOnce ? "Retry sign-up" : "Passkey sign-up"
-      }}</Button>
+      <Button type="button" tabindex="2" @click.prevent="onBack">{{ t('auth.passkey.signup.retrySigninButton') }}</Button>
+      <Button id="passkey-signup" primary type="button" tabindex="1" :progress="progress" @click.prevent="onPasskeySignup">{{ signupFailedAtLeastOnce ? t('auth.passkey.signup.retrySignupButton') : t('auth.passkey.signup.passkeySignupButton') }}</Button>
     </div>
   </div>
 </template>

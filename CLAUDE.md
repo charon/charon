@@ -56,11 +56,14 @@ Charon is a privacy-enabling account management and SSO solution built with Go b
 - **Styling**: Tailwind CSS with custom components
 - **Router**: Vue Router for SPA navigation
 - **API Layer**: Custom fetch wrappers in `src/api.ts`
+- **Internationalization**: Vue-i18n v11 with precompiled messages (English and Slovenian support)
 
 ### Frontend Structure
 - `src/views/` - Main page components
 - `src/partials/` - Reusable page sections  
 - `src/components/` - UI components (Button, Input, etc.)
+- `src/locales/` - Translation files (en.json, sl.json)
+- `src/i18n.ts` - Vue-i18n configuration
 - `src/types.d.ts` - TypeScript type definitions
 - `src/flow.ts`, `src/auth.ts` - Authentication flow logic
 
