@@ -6,7 +6,7 @@ import { progressKey } from "@/progress"
 import { routes } from "@/../routes.json"
 import i18n from "@/i18n"
 import "@/app.css"
-import { processOIDCRedirect } from "./auth"
+import { processOIDCRedirect } from "@/auth"
 
 // Facebook Login returns adds a hash on its callback. Here we remove it before
 // we create Vue router so that Vue router gets clean route (it might matter if
@@ -26,7 +26,7 @@ const router = createRouter({
     .map((route) => ({
       path: route.path,
       name: route.name,
-      component: () => import(`./views/${route.name}.vue`),
+      component: () => import(`@/views/${route.name}.vue`),
       props: true,
       strict: true,
     })),

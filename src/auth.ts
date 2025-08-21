@@ -5,7 +5,7 @@ import * as client from "openid-client"
 // It is OK that we fetch siteContext here because the server sends preload header
 // so we have to fetch it always anyway. Generally this is already cached.
 import siteContext from "@/context"
-import { currentAbsoluteURL, redirectServerSide, replaceLocationSearch } from "./utils"
+import { currentAbsoluteURL, redirectServerSide, replaceLocationSearch } from "@/utils"
 
 const config = await client.discovery(new URL(document.location.origin), siteContext.clientId)
 

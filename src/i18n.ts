@@ -1,7 +1,7 @@
 import { createI18n } from "vue-i18n"
-import type { MessageSchema } from "./vue-i18n"
-import en from "./locales/en.json"
-import sl from "./locales/sl.json"
+import type { MessageSchema } from "@/vue-i18n"
+import en from "@/locales/en.json"
+import sl from "@/locales/sl.json"
 
 const messages = {
   en,

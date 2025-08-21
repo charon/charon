@@ -1,4 +1,4 @@
-import en from "./locales/en.json"
+import en from "@/locales/en.json"
 
 declare module "vue-i18n" {
   export interface DefineLocaleMessage {
