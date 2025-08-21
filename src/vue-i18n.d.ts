@@ -49,6 +49,10 @@ declare module "vue-i18n" {
         added: string
         creator: string
       }
+      loading: {
+        dataLoading: string
+        loadingDataFailed: string
+      }
     }
     partials: {
       Footer: {
@@ -165,10 +169,6 @@ declare module "vue-i18n" {
         homepage: string
         return: string
       }
-    }
-    loading: {
-      dataLoading: string
-      loadingDataFailed: string
     }
     views: {
       AuthFlowGet: {

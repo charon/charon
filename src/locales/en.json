@@ -45,6 +45,10 @@
       "disabled": "disabled",
       "added": "added",
       "creator": "creator"
+    },
+    "loading": {
+      "dataLoading": "Loading...",
+      "loadingDataFailed": "loading data failed"
     }
   },
   "partials": {
@@ -162,10 +166,6 @@
       "homepage": "Homepage",
       "return": "Return"
     }
-  },
-  "loading": {
-    "dataLoading": "Loading...",
-    "loadingDataFailed": "loading data failed"
   },
   "views": {
     "AuthFlowGet": {

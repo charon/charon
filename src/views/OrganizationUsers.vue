@@ -79,7 +79,7 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
           </div>
         </div>
       </div>
-      <div v-if="dataLoading" class="w-full rounded border bg-white p-4 shadow">{{ t("loading.dataLoading") }}</div>
+      <div v-if="dataLoading" class="w-full rounded border bg-white p-4 shadow">{{ t("common.loading.dataLoading") }}</div>
       <div v-else-if="dataLoadingError" class="w-full rounded border bg-white p-4 shadow text-error-600">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
         <div v-if="!users.length" class="w-full rounded border bg-white p-4 shadow italic">{{ t("views.OrganizationGet.noUsers") }}</div>

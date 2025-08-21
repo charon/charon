@@ -45,6 +45,10 @@
       "disabled": "onemogočena",
       "added": "dodana",
       "creator": "ustvarjalec"
+    },
+    "loading": {
+      "dataLoading": "Nalaganje...",
+      "loadingDataFailed": "nalaganje podatkov neuspešno"
     }
   },
   "partials": {
@@ -162,10 +166,6 @@
       "homepage": "Domača stran",
       "return": "Vrni se"
     }
-  },
-  "loading": {
-    "dataLoading": "Nalaganje...",
-    "loadingDataFailed": "nalaganje podatkov neuspešno"
   },
   "views": {
     "AuthFlowGet": {
