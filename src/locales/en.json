@@ -52,7 +52,7 @@
     "applicationTemplates": "Application templates",
     "organizations": "Organizations"
   },
-  "components": {
+  "partials": {
     "Footer": {
       "poweredBy": "Powered by {name}"
     },
@@ -144,9 +144,6 @@
         "disabledIdentities": "Disabled identities"
       }
     },
-    "AuthFlowGet": {
-      "instructionsMessage": "{appLink} from organization {orgLink} is using Charon to ask you to sign-in or sign-up. Please follow the steps below to do so, or to decline."
-    },
     "AuthAutoRedirect": {
       "congratulations": "{strong} Everything is ready to sign you in or sign you up into {appName} using the identity you have chosen.",
       "declined": "You decided to {strong} into {appName} using Charon.",
@@ -176,6 +173,9 @@
     "loadingDataFailed": "loading data failed"
   },
   "views": {
+    "AuthFlowGet": {
+      "instructionsMessage": "{appLink} from organization {orgLink} is using Charon to ask you to sign-in or sign-up. Please follow the steps below to do so, or to decline."
+    },
     "IdentityCreate": {
       "applicationTemplateName": "Application template name",
       "organizationName": "Organization name",

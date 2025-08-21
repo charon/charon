@@ -146,25 +146,25 @@ async function onPasskeySignup() {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div v-if="signupAttempted && signupFailed">
-      <i18n-t keypath="components.AuthPasskey.signup.failed" scope="global">
+      <i18n-t keypath="partials.AuthPasskey.signup.failed" scope="global">
         <template #strong><strong>passkey</strong></template>
       </i18n-t>
     </div>
     <div v-else-if="signupAttempted">
-      <i18n-t keypath="components.AuthPasskey.signup.signingUp" scope="global">
+      <i18n-t keypath="partials.AuthPasskey.signup.signingUp" scope="global">
         <template #strong><strong>passkey</strong></template>
       </i18n-t>
     </div>
     <div v-else>
-      <i18n-t keypath="components.AuthPasskey.signup.instructions" scope="global">
+      <i18n-t keypath="partials.AuthPasskey.signup.instructions" scope="global">
         <template #strong><strong>passkey</strong></template>
       </i18n-t>
     </div>
     <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" tabindex="2" @click.prevent="onBack">{{ t("components.AuthPasskey.signup.retrySigninButton") }}</Button>
+      <Button type="button" tabindex="2" @click.prevent="onBack">{{ t("partials.AuthPasskey.signup.retrySigninButton") }}</Button>
       <Button id="passkey-signup" primary type="button" tabindex="1" :progress="progress" @click.prevent="onPasskeySignup">{{
-        signupFailedAtLeastOnce ? t("components.AuthPasskey.signup.retrySignupButton") : t("components.AuthPasskey.signup.passkeySignupButton")
+        signupFailedAtLeastOnce ? t("partials.AuthPasskey.signup.retrySignupButton") : t("partials.AuthPasskey.signup.passkeySignupButton")
       }}</Button>
     </div>
   </div>

@@ -316,14 +316,14 @@ async function onCode() {
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div class="flex flex-col">
       <label for="email-or-username" class="mb-1">{{
-        isEmail(flow.getEmailOrUsername()) ? t("components.AuthPassword.emailAddressLabel") : t("components.AuthPassword.usernameLabel")
+        isEmail(flow.getEmailOrUsername()) ? t("partials.AuthPassword.emailAddressLabel") : t("partials.AuthPassword.usernameLabel")
       }}</label>
       <InputTextButton id="email-or-username" class="flex-grow" tabindex="5" @click.prevent="onBack">
         {{ flow.getEmailOrUsername() }}
       </InputTextButton>
     </div>
     <div class="flex flex-col mt-4">
-      <label for="current-password" class="mb-1">{{ t("components.AuthPassword.passwordLabel") }}</label>
+      <label for="current-password" class="mb-1">{{ t("partials.AuthPassword.passwordLabel") }}</label>
       <!--
         We set novalidate because we do not UA to show hints.
         We show them ourselves when we want them.
@@ -378,19 +378,19 @@ async function onCode() {
       <div v-else-if="passwordError === 'invalidPassword'" class="mt-4 text-error-600">{{ t("common.errors.invalidPassword") }}</div>
       <div v-else-if="passwordError === 'shortPassword'" class="mt-4 text-error-600">{{ t("common.errors.shortPassword") }}</div>
       <div v-if="passwordError === 'wrongPassword'" class="mt-4">
-        <i18n-t keypath="components.AuthPassword.troublePassword" scope="global">
+        <i18n-t keypath="partials.AuthPassword.troublePassword" scope="global">
           <template #link>
-            <a href="" class="link" @click.prevent="onRedo">{{ t("components.AuthPassword.differentSigninMethod") }}</a>
+            <a href="" class="link" @click.prevent="onRedo">{{ t("partials.AuthPassword.differentSigninMethod") }}</a>
           </template>
         </i18n-t>
       </div>
     </template>
     <div v-else-if="unexpectedPasswordError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div v-else-if="isEmail(flow.getEmailOrUsername())" class="mt-4">
-      {{ t("components.AuthPassword.instructions.emailAccount") }}
+      {{ t("partials.AuthPassword.instructions.emailAccount") }}
     </div>
     <div v-else class="mt-4">
-      {{ t("components.AuthPassword.instructions.usernameAccount") }}
+      {{ t("partials.AuthPassword.instructions.usernameAccount") }}
     </div>
     <div v-if="codeError === 'noAccount'" class="mt-4" :class="codeErrorOnce ? 'text-error-600' : ''">
       {{ t("common.errors.noAccount") }}
@@ -399,13 +399,13 @@ async function onCode() {
       {{ t("common.errors.noEmails") }}
     </div>
     <div v-else-if="unexpectedCodeError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
-    <div v-else class="mt-4">{{ t("components.AuthPassword.instructions.skipPassword") }}</div>
+    <div v-else class="mt-4">{{ t("partials.AuthPassword.instructions.skipPassword") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="4" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
       <!--
         Button is on purpose not disabled on unexpectedCodeError so that user can retry.
       -->
-      <Button type="button" primary tabindex="3" :disabled="!!codeError" :progress="progress" @click.prevent="onCode">{{ t("components.AuthPassword.sendCodeButton") }}</Button>
+      <Button type="button" primary tabindex="3" :disabled="!!codeError" :progress="progress" @click.prevent="onCode">{{ t("partials.AuthPassword.sendCodeButton") }}</Button>
     </div>
   </div>
 </template>

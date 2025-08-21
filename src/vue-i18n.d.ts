@@ -55,7 +55,7 @@ declare module "vue-i18n" {
       applicationTemplates: string
       organizations: string
     }
-    components: {
+    partials: {
       Footer: {
         poweredBy: string
       }
@@ -147,9 +147,6 @@ declare module "vue-i18n" {
           disabledIdentities: string
         }
       }
-      AuthFlowGet: {
-        instructionsMessage: string
-      }
       AuthAutoRedirect: {
         congratulations: string
         declined: string
@@ -179,6 +176,9 @@ declare module "vue-i18n" {
       loadingDataFailed: string
     }
     views: {
+      AuthFlowGet: {
+        instructionsMessage: string
+      }
       IdentityCreate: {
         applicationTemplateName: string
         organizationName: string

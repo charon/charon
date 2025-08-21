@@ -210,30 +210,30 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div class="flex flex-col">
       <label v-if="codeFromHash && isEmail(flow.getEmailOrUsername())" for="code" class="mb-1">
-        <i18n-t keypath="components.AuthCode.codeFromHashEmail" scope="global">
+        <i18n-t keypath="partials.AuthCode.codeFromHashEmail" scope="global">
           <template #strongEmail
             ><strong>{{ flow.getEmailOrUsername() }}</strong></template
           >
         </i18n-t>
       </label>
       <label v-else-if="codeFromHash" for="code" class="mb-1">
-        <i18n-t keypath="components.AuthCode.codeFromHashUsername" scope="global">
+        <i18n-t keypath="partials.AuthCode.codeFromHashUsername" scope="global">
           <template #strongUsername
             ><strong>{{ flow.getEmailOrUsername() }}</strong></template
           >
         </i18n-t>
       </label>
       <label v-else-if="!codeFromHash && isEmail(flow.getEmailOrUsername())" for="code" class="mb-1">
-        <i18n-t keypath="components.AuthCode.codeSentEmail" scope="global">
-          <template #sentCount>{{ sendCounter > 1 ? t("components.AuthCode.sentMultiple", { count: sendCounter }) : t("components.AuthCode.sent") }}</template>
+        <i18n-t keypath="partials.AuthCode.codeSentEmail" scope="global">
+          <template #sentCount>{{ sendCounter > 1 ? t("partials.AuthCode.sentMultiple", { count: sendCounter }) : t("partials.AuthCode.sent") }}</template>
           <template #strongEmail
             ><strong>{{ flow.getEmailOrUsername() }}</strong></template
           >
         </i18n-t>
       </label>
       <label v-else-if="!codeFromHash" for="code" class="mb-1">
-        <i18n-t keypath="components.AuthCode.codeSentUsername" scope="global">
-          <template #sentCount>{{ sendCounter > 1 ? t("components.AuthCode.sentMultiple", { count: sendCounter }) : t("components.AuthCode.sent") }}</template>
+        <i18n-t keypath="partials.AuthCode.codeSentUsername" scope="global">
+          <template #sentCount>{{ sendCounter > 1 ? t("partials.AuthCode.sentMultiple", { count: sendCounter }) : t("partials.AuthCode.sent") }}</template>
           <template #strongUsername
             ><strong>{{ flow.getEmailOrUsername() }}</strong></template
           >
@@ -269,30 +269,30 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
     </div>
     <div v-if="codeError === 'invalidCode'" class="mt-4 text-error-600">{{ t("common.errors.invalidCode") }}</div>
     <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
-    <div v-else-if="codeFromHash" class="mt-4">{{ t("components.AuthCode.instructions.confirmCode") }}</div>
-    <div v-else class="mt-4">{{ t("components.AuthCode.instructions.waitForCode") }}</div>
+    <div v-else-if="codeFromHash" class="mt-4">{{ t("partials.AuthCode.instructions.confirmCode") }}</div>
+    <div v-else class="mt-4">{{ t("partials.AuthCode.instructions.waitForCode") }}</div>
     <div v-if="codeFromHash" class="mt-4">
       <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationApp">
         <template #default="{ doc }">
-          <i18n-t keypath="components.AuthCode.instructions.securityWarning" scope="global">
+          <i18n-t keypath="partials.AuthCode.instructions.securityWarning" scope="global">
             <template #appName>{{ doc.applicationTemplate.name }}</template>
             <template #strongDont
-              ><strong>{{ t("components.AuthCode.instructions.strongDont") }}</strong></template
+              ><strong>{{ t("partials.AuthCode.instructions.strongDont") }}</strong></template
             >
           </i18n-t>
         </template>
       </WithOrganizationApplicationDocument>
     </div>
     <div v-else class="mt-4">
-      <i18n-t keypath="components.AuthCode.instructions.troubleEmail" scope="global">
+      <i18n-t keypath="partials.AuthCode.instructions.troubleEmail" scope="global">
         <template #link>
-          <a href="" class="link" @click.prevent="onRedo">{{ t("components.AuthCode.instructions.differentMethod") }}</a>
+          <a href="" class="link" @click.prevent="onRedo">{{ t("partials.AuthCode.instructions.differentMethod") }}</a>
         </template>
       </i18n-t>
     </div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="4" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
-      <Button type="button" tabindex="3" :progress="progress" @click.prevent="onResend">{{ t("components.AuthCode.resendButton") }}</Button>
+      <Button type="button" tabindex="3" :progress="progress" @click.prevent="onResend">{{ t("partials.AuthCode.resendButton") }}</Button>
     </div>
   </div>
 </template>

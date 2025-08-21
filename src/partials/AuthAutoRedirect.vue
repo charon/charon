@@ -164,25 +164,25 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
     <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationApp">
       <template #default="{ doc }">
         <div v-if="flow.getCompleted().includes('identity')" class="mb-4">
-          <i18n-t keypath="components.AuthAutoRedirect.congratulations" scope="global" :app-name="doc.applicationTemplate.name">
+          <i18n-t keypath="partials.AuthAutoRedirect.congratulations" scope="global" :app-name="doc.applicationTemplate.name">
             <template #strong
-              ><strong>{{ t("components.AuthIdentity.congratulations") }}</strong></template
+              ><strong>{{ t("partials.AuthIdentity.congratulations") }}</strong></template
             >
           </i18n-t>
         </div>
         <div v-else-if="flow.getCompleted().includes('declined')" class="mb-4">
-          <i18n-t keypath="components.AuthAutoRedirect.declined" scope="global" :app-name="doc.applicationTemplate.name">
+          <i18n-t keypath="partials.AuthAutoRedirect.declined" scope="global" :app-name="doc.applicationTemplate.name">
             <template #strong
-              ><strong>{{ t("components.AuthIdentity.declineSignInOrSignUp") }}</strong></template
+              ><strong>{{ t("partials.AuthIdentity.declineSignInOrSignUp") }}</strong></template
             >
           </i18n-t>
         </div>
         <div>
           {{
-            t("components.AuthAutoRedirect.redirectMessage", {
+            t("partials.AuthAutoRedirect.redirectMessage", {
               appName: doc.applicationTemplate.name,
-              time: seconds === 1 ? t("components.AuthAutoRedirect.oneSecond") : t("components.AuthAutoRedirect.seconds", { count: seconds }),
-              pausedText: paused ? t("components.AuthAutoRedirect.paused") : "",
+              time: seconds === 1 ? t("partials.AuthAutoRedirect.oneSecond") : t("partials.AuthAutoRedirect.seconds", { count: seconds }),
+              pausedText: paused ? t("partials.AuthAutoRedirect.paused") : "",
             })
           }}
         </div>
@@ -193,9 +193,9 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
       <Button type="button" tabindex="3" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
       <div class="flex flex-row gap-4">
         <Button type="button" tabindex="2" :progress="progress" @click.prevent="onPauseResume">{{
-          paused ? t("components.AuthAutoRedirect.resume") : t("components.AuthAutoRedirect.pause")
+          paused ? t("partials.AuthAutoRedirect.resume") : t("partials.AuthAutoRedirect.pause")
         }}</Button>
-        <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">{{ t("components.AuthAutoRedirect.redirect") }}</Button>
+        <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">{{ t("partials.AuthAutoRedirect.redirect") }}</Button>
       </div>
     </div>
   </div>
