@@ -2,6 +2,7 @@
 import type { AuthFlowProviderStartRequest, AuthFlowResponse, Flow } from "@/types"
 
 import { ref, onBeforeUnmount, onMounted, getCurrentInstance } from "vue"
+import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import { postJSON } from "@/api"
@@ -14,6 +15,8 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+
+const { t } = useI18n()
 
 const progress = injectProgress()
 
@@ -182,20 +185,20 @@ onBeforeUnmount(() => {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div>
-      You will be redirected to <strong>{{ flow.getThirdPartyProvider()!.name }}</strong> in {{ seconds === 1 ? "1 second" : `${seconds} seconds`
-      }}{{ paused ? " (paused)" : "" }}.
+      <i18n-t keypath="auth.thirdPartyRedirect.redirectMessage" :provider="flow.getThirdPartyProvider()!.name" :time="seconds === 1 ? t('auth.autoRedirect.oneSecond') : t('auth.autoRedirect.seconds', { count: seconds })" :pausedText="paused ? t('auth.autoRedirect.paused') : ''">
+        <template #strong><strong>{{ flow.getThirdPartyProvider()!.name }}</strong></template>
+      </i18n-t>
     </div>
-    <div class="mt-4">Please follow instructions there to sign-in into Charon. Afterwards, you will be redirected back here.</div>
+    <div class="mt-4">{{ t("auth.thirdPartyRedirect.instructions") }}</div>
     <div class="mt-4">
-      You might have to sign-in into {{ flow.getThirdPartyProvider()!.name }} first. You might be redirected back by {{ flow.getThirdPartyProvider()!.name }} immediately,
-      without showing you anything.
+      {{ t("auth.thirdPartyRedirect.additionalInfo", { provider: flow.getThirdPartyProvider()!.name }) }}
     </div>
-    <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
+    <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" tabindex="3" @click.prevent="onBack">Back</Button>
+      <Button type="button" tabindex="3" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
       <div class="flex flex-row gap-4">
-        <Button type="button" tabindex="2" :progress="progress" @click.prevent="onPauseResume">{{ paused ? "Resume" : "Pause" }}</Button>
-        <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">Redirect</Button>
+        <Button type="button" tabindex="2" :progress="progress" @click.prevent="onPauseResume">{{ paused ? t("auth.autoRedirect.resume") : t("auth.autoRedirect.pause") }}</Button>
+        <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">{{ t("auth.autoRedirect.redirect") }}</Button>
       </div>
     </div>
   </div>

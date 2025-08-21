@@ -160,7 +160,7 @@ async function onCancel() {
         <template #strong><strong>passkey</strong></template>
       </i18n-t>
     </div>
-    <div class="mt-4">If you have not yet signed up with passkey, this will fail. In that case Charon will offer you to sign up instead.</div>
+    <div class="mt-4">{{ t("auth.passkey.signin.signupInfo") }}</div>
     <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="2" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>

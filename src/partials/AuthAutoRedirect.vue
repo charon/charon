@@ -2,6 +2,7 @@
 import type { Flow, OrganizationApplicationPublic } from "@/types"
 
 import { ref, onBeforeUnmount, onMounted, getCurrentInstance } from "vue"
+import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 import WithDocument from "@/components/WithDocument.vue"
 import Button from "@/components/Button.vue"
@@ -13,6 +14,8 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+
+const { t } = useI18n()
 
 const progress = injectProgress()
 
@@ -161,22 +164,30 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
     <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationApp">
       <template #default="{ doc }">
         <div v-if="flow.getCompleted().includes('identity')" class="mb-4">
-          <strong>Congratulations.</strong> Everything is ready to sign you in or sign you up into {{ doc.applicationTemplate.name }} using the identity you have chosen.
+          <i18n-t keypath="auth.autoRedirect.congratulations" :appName="doc.applicationTemplate.name">
+            <template #strong><strong>Congratulations.</strong></template>
+          </i18n-t>
         </div>
         <div v-else-if="flow.getCompleted().includes('declined')" class="mb-4">
-          You decided to <strong>decline sign-in or sign-up</strong> into {{ doc.applicationTemplate.name }} using Charon.
+          <i18n-t keypath="auth.autoRedirect.declined" :appName="doc.applicationTemplate.name">
+            <template #strong><strong>decline sign-in or sign-up</strong></template>
+          </i18n-t>
         </div>
         <div>
-          You will be now redirected to {{ doc.applicationTemplate.name }} in {{ seconds === 1 ? "1 second" : `${seconds} seconds` }}{{ paused ? " (paused)" : "" }}.
+          {{ t("auth.autoRedirect.redirectMessage", { 
+            appName: doc.applicationTemplate.name, 
+            time: seconds === 1 ? t("auth.autoRedirect.oneSecond") : t("auth.autoRedirect.seconds", { count: seconds }),
+            pausedText: paused ? t("auth.autoRedirect.paused") : ""
+          }) }}
         </div>
       </template>
     </WithOrganizationApplicationDocument>
-    <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
+    <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row gap-4 justify-between">
-      <Button type="button" tabindex="3" @click.prevent="onBack">Back</Button>
+      <Button type="button" tabindex="3" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
       <div class="flex flex-row gap-4">
-        <Button type="button" tabindex="2" :progress="progress" @click.prevent="onPauseResume">{{ paused ? "Resume" : "Pause" }}</Button>
-        <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">Redirect</Button>
+        <Button type="button" tabindex="2" :progress="progress" @click.prevent="onPauseResume">{{ paused ? t("auth.autoRedirect.resume") : t("auth.autoRedirect.pause") }}</Button>
+        <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">{{ t("auth.autoRedirect.redirect") }}</Button>
       </div>
     </div>
   </div>

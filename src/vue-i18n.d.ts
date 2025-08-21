@@ -87,6 +87,7 @@ declare module "vue-i18n" {
           instructions: string
           failed: string
           signupButton: string
+          signupInfo: string
         }
         signup: {
           instructions: string
@@ -114,6 +115,35 @@ declare module "vue-i18n" {
       identity: {
         selectIdentity: string
         newIdentityButton: string
+        signinSuccess: string
+        signupSuccess: string
+        previouslyUsedDisabled: string
+        otherAvailableIdentities: string
+        noIdentitiesCreateFirst: string
+        noOtherIdentitiesCreateOne: string
+      }
+      autoRedirect: {
+        congratulations: string
+        declined: string
+        redirectMessage: string
+        oneSecond: string
+        seconds: string
+        paused: string
+        resume: string
+        pause: string
+        redirect: string
+      }
+      thirdPartyRedirect: {
+        redirectMessage: string
+        instructions: string
+        additionalInfo: string
+      }
+      manualRedirect: {
+        failed: string
+        tryAgain: string
+        completed: string
+        homepage: string
+        return: string
       }
     }
     loading: {
@@ -142,6 +172,17 @@ declare module "vue-i18n" {
       name: string
       id: string
       confirmUpdateToAllocate: string
+      addAdmin: string
+      addVariable: string
+      addClient: string
+      spaceSeparatedScopes: string
+      spaceSeparatedAdditionalScopes: string
+      description: string
+      accessTokenType: string
+      accessTokenLifespan: string
+      idTokenLifespan: string
+      refreshTokenLifespan: string
+      tokenEndpointAuthMethod: string
     }
     titles: {
       organizations: string
@@ -177,7 +218,9 @@ declare module "vue-i18n" {
         variablesUpdated: string
         publicClientsUpdated: string
         backendClientsUpdated: string
+        serviceClientsUpdated: string
         addedApplicationsUpdated: string
+        addedApplicationsUpdatedSuccess: string
       }
       empty: {
         noUsers: string

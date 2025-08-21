@@ -83,7 +83,8 @@
       "signin": {
         "instructions": "Prijavite se z uporabo vašega {strong}.",
         "failed": "Prijava z uporabo {strong} ni uspela.",
-        "signupButton": "Registriraj se namesto tega"
+        "signupButton": "Registriraj se namesto tega",
+        "signupInfo": "Če se še niste registrirali s passkey, bo to neuspešno. V tem primeru vam bo Charon ponudil registracijo."
       },
       "signup": {
         "instructions": "Prijava z uporabo {strong} ni uspela. Se želite registrirati namesto tega?",
@@ -110,7 +111,36 @@
     },
     "identity": {
       "selectIdentity": "Izberite identiteto za uporabo z {appName}:",
-      "newIdentityButton": "Ustvari novo identiteto"
+      "newIdentityButton": "Ustvari novo identiteto",
+      "signinSuccess": "<strong>Čestitamo.</strong> Uspešno ste se prijavili v Charon.",
+      "signupSuccess": "<strong>Čestitamo.</strong> Uspešno ste se registrirali v Charon.",
+      "previouslyUsedDisabled": "Prej uporabljene identitete s to organizacijo so onemogočene.",
+      "otherAvailableIdentities": "Druge razpoložljive identitete",
+      "noIdentitiesCreateFirst": "Ni identitet. Ustvarite prvo.",
+      "noOtherIdentitiesCreateOne": "Ni drugih identitet. Ustvarite eno."
+    },
+    "autoRedirect": {
+      "congratulations": "<strong>Čestitamo.</strong> Vse je pripravljeno za vašo prijavo ali registracijo v {appName} z izbrano identiteto.",
+      "declined": "Odločili ste se <strong>zavrniti prijavo ali registracijo</strong> v {appName} z uporabo Charon.",
+      "redirectMessage": "Sedaj boste preusmerjeni v {appName} čez {time}{pausedText}.",
+      "oneSecond": "1 sekundo",
+      "seconds": "{count} sekund",
+      "paused": " (pavzirano)",
+      "resume": "Nadaljuj",
+      "pause": "Pavziraj",
+      "redirect": "Preusmeri"
+    },
+    "thirdPartyRedirect": {
+      "redirectMessage": "Preusmerjeni boste k <strong>{provider}</strong> čez {time}{pausedText}.",
+      "instructions": "Prosimo, sledite navodilom tam za prijavo v Charon. Nato boste preusmerjeni nazaj sem.",
+      "additionalInfo": "Morda se boste morali najprej prijaviti v {provider}. Morda vas bo {provider} takoj preusmeril nazaj, ne da bi vam pokazal karkoli."
+    },
+    "manualRedirect": {
+      "failed": "<strong>Oprostite.</strong> Prijava ali registracija ni uspela.",
+      "tryAgain": "Lahko se vrnete v {appName} in poskusite znova.",
+      "completed": "Že ste bili preusmerjeni v {appName} in dokončali postopek. Sedaj lahko greste na domačo stran.",
+      "homepage": "Domača stran",
+      "return": "Vrni se"
     }
   },
   "loading": {
@@ -138,7 +168,18 @@
     "clientSecret": "Skrivnost odjemalca:",
     "name": "Ime",
     "id": "ID:",
-    "confirmUpdateToAllocate": "potrdite posodobitev za dodelitev"
+    "confirmUpdateToAllocate": "potrdite posodobitev za dodelitev",
+    "addAdmin": "Dodaj administratorja",
+    "addVariable": "Dodaj spremenljivko",
+    "addClient": "Dodaj odjemalca",
+    "spaceSeparatedScopes": "Z znaki ločeni OpenID dosegi, ki jih lahko aplikacija zahteva",
+    "spaceSeparatedAdditionalScopes": "Z znaki ločeni dodatni dosegi, ki jih lahko odjemalec zahteva",
+    "description": "Opis",
+    "accessTokenType": "Tip dostopovnega žetona",
+    "accessTokenLifespan": "Življenjska doba dostopovnega žetona",
+    "idTokenLifespan": "Življenjska doba ID žetona",
+    "refreshTokenLifespan": "Življenjska doba osvežitvenega žetona",
+    "tokenEndpointAuthMethod": "Metoda overjanja končne točke žetona"
   },
   "titles": {
     "organizations": "Organizacije",
@@ -187,7 +228,9 @@
       "variablesUpdated": "Spremenljivke so bile uspešno posodobljene.",
       "publicClientsUpdated": "Javni odjemalci so bili uspešno posodobljeni.",
       "backendClientsUpdated": "Zaledni odjemalci so bili uspešno posodobljeni.",
-      "addedApplicationsUpdated": "Dodane aplikacije so bile uspešno posodobljene."
+      "serviceClientsUpdated": "Servisni odjemalci so bili uspešno posodobljeni.",
+      "addedApplicationsUpdated": "Dodane aplikacije so bile uspešno posodobljene.",
+      "addedApplicationsUpdatedSuccess": "Dodane aplikacije so bile uspešno posodobljene."
     },
     "empty": {
       "noIdentities": "Ni identitet.",

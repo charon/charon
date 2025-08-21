@@ -83,7 +83,8 @@
       "signin": {
         "instructions": "Sign in using your {strong}.",
         "failed": "Signing in using {strong} failed.",
-        "signupButton": "Sign-up instead"
+        "signupButton": "Sign-up instead",
+        "signupInfo": "If you have not yet signed up with passkey, this will fail. In that case Charon will offer you to sign up instead."
       },
       "signup": {
         "instructions": "Signing in using {strong} failed. Do you want to sign up instead?",
@@ -110,7 +111,36 @@
     },
     "identity": {
       "selectIdentity": "Select identity to use with {appName}:",
-      "newIdentityButton": "Create new identity"
+      "newIdentityButton": "Create new identity",
+      "signinSuccess": "<strong>Congratulations.</strong> You successfully signed in into Charon.",
+      "signupSuccess": "<strong>Congratulations.</strong> You successfully signed up into Charon.",
+      "previouslyUsedDisabled": "Previously used identities with this organization are disabled.",
+      "otherAvailableIdentities": "Other available identities",
+      "noIdentitiesCreateFirst": "There are no identities. Create the first one.",
+      "noOtherIdentitiesCreateOne": "There are no other identities. Create one."
+    },
+    "autoRedirect": {
+      "congratulations": "<strong>Congratulations.</strong> Everything is ready to sign you in or sign you up into {appName} using the identity you have chosen.",
+      "declined": "You decided to <strong>decline sign-in or sign-up</strong> into {appName} using Charon.",
+      "redirectMessage": "You will be now redirected to {appName} in {time}{pausedText}.",
+      "oneSecond": "1 second",
+      "seconds": "{count} seconds",
+      "paused": " (paused)",
+      "resume": "Resume",
+      "pause": "Pause",
+      "redirect": "Redirect"
+    },
+    "thirdPartyRedirect": {
+      "redirectMessage": "You will be redirected to <strong>{provider}</strong> in {time}{pausedText}.",
+      "instructions": "Please follow instructions there to sign-in into Charon. Afterwards, you will be redirected back here.",
+      "additionalInfo": "You might have to sign-in into {provider} first. You might be redirected back by {provider} immediately, without showing you anything."
+    },
+    "manualRedirect": {
+      "failed": "<strong>Sorry.</strong> Signing in or signing up failed.",
+      "tryAgain": "You can return to {appName} and try again.",
+      "completed": "You have already been redirected to {appName} and completed the flow. You can now instead go to its homepage.",
+      "homepage": "Homepage",
+      "return": "Return"
     }
   },
   "loading": {
@@ -138,7 +168,18 @@
     "clientSecret": "Client secret:",
     "name": "Name",
     "id": "ID:",
-    "confirmUpdateToAllocate": "confirm update to allocate"
+    "confirmUpdateToAllocate": "confirm update to allocate",
+    "addAdmin": "Add admin",
+    "addVariable": "Add variable",
+    "addClient": "Add client",
+    "spaceSeparatedScopes": "Space-separated OpenID scopes the app might request",
+    "spaceSeparatedAdditionalScopes": "Space-separated additional scopes the client might request",
+    "description": "Description",
+    "accessTokenType": "Access token type",
+    "accessTokenLifespan": "Access token lifespan",
+    "idTokenLifespan": "ID token lifespan",
+    "refreshTokenLifespan": "Refresh token lifespan",
+    "tokenEndpointAuthMethod": "Token endpoint authentication method"
   },
   "titles": {
     "organizations": "Organizations",
@@ -187,7 +228,9 @@
       "variablesUpdated": "Variables updated successfully.",
       "publicClientsUpdated": "Public clients updated successfully.",
       "backendClientsUpdated": "Backend clients updated successfully.",
-      "addedApplicationsUpdated": "Added applications updated successfully."
+      "serviceClientsUpdated": "Service clients updated successfully.",
+      "addedApplicationsUpdated": "Added applications updated successfully.",
+      "addedApplicationsUpdatedSuccess": "Added applications updated successfully."
     },
     "empty": {
       "noIdentities": "There are no identities.",

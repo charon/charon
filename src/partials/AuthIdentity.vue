@@ -337,11 +337,12 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div class="flex flex-col">
-      <div v-if="flow.getCompleted().includes('signin')" class="mb-4"><strong>Congratulations.</strong> You successfully signed in into Charon.</div>
-      <div v-else-if="flow.getCompleted().includes('signup')" class="mb-4"><strong>Congratulations.</strong> You successfully signed up into Charon.</div>
+      <div v-if="flow.getCompleted().includes('signin')" class="mb-4" v-html="t('auth.identity.signinSuccess')"></div>
+      <div v-else-if="flow.getCompleted().includes('signup')" class="mb-4" v-html="t('auth.identity.signupSuccess')"></div>
       <div class="mb-4">
-        Select the identity you want to continue with. Its information will be provided to the app and the organization. You can also create a new identity or decline to
-        proceed.
+        <i18n-t keypath="auth.identity.selectIdentity" :appName="flow.getAppName()">
+          <template #appName><strong>{{ flow.getAppName() }}</strong></template>
+        </i18n-t>
       </div>
       <div v-if="allIdentitiesLoading" class="mb-4">{{ t("loading.dataLoading") }}</div>
       <div v-else-if="allIdentitiesLoadingError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
@@ -356,7 +357,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
         <div v-else-if="usedIdentities.length + addedIdentities.length === 0" class="italic mb-4">
           All previously used identities with this organization are disabled.
         </div>
-        <div v-else-if="usedIdentities.length === 0" class="italic mb-4">Previously used identities with this organization are disabled.</div>
+        <div v-else-if="usedIdentities.length === 0" class="italic mb-4">{{ t("auth.identity.previouslyUsedDisabled") }}</div>
         <ul v-else>
           <li v-for="(identity, i) of usedIdentities" :key="identity.identity.id" class="mb-4">
             <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate">
@@ -388,11 +389,11 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
             </li>
           </ul>
         </template>
-        <h3 class="text-l font-bold mb-4">Other available identities</h3>
+        <h3 class="text-l font-bold mb-4">{{ t("auth.identity.otherAvailableIdentities") }}</h3>
         <div v-if="usedIdentities.length + addedIdentities.length + otherIdentities.length + disabledIdentities.length === 0" class="italic mb-4">
-          There are no identities. Create the first one.
+          {{ t("auth.identity.noIdentitiesCreateFirst") }}
         </div>
-        <div v-else-if="otherIdentities.length === 0" class="italic mb-4">There are no other identities. Create one.</div>
+        <div v-else-if="otherIdentities.length === 0" class="italic mb-4">{{ t("auth.identity.noOtherIdentitiesCreateOne") }}</div>
         <ul v-else>
           <li v-for="(identity, i) of otherIdentities" :key="identity.identity.id" class="mb-4">
             <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate">
