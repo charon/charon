@@ -210,21 +210,21 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div class="flex flex-col">
       <label v-if="codeFromHash && isEmail(flow.getEmailOrUsername())" for="code" class="mb-1">
-        <i18n-t keypath="auth.code.codeFromHashEmail">
+        <i18n-t keypath="auth.code.codeFromHashEmail" scope="global">
           <template #strongEmail
             ><strong>{{ flow.getEmailOrUsername() }}</strong></template
           >
         </i18n-t>
       </label>
       <label v-else-if="codeFromHash" for="code" class="mb-1">
-        <i18n-t keypath="auth.code.codeFromHashUsername">
+        <i18n-t keypath="auth.code.codeFromHashUsername" scope="global">
           <template #strongUsername
             ><strong>{{ flow.getEmailOrUsername() }}</strong></template
           >
         </i18n-t>
       </label>
       <label v-else-if="!codeFromHash && isEmail(flow.getEmailOrUsername())" for="code" class="mb-1">
-        <i18n-t keypath="auth.code.codeSentEmail">
+        <i18n-t keypath="auth.code.codeSentEmail" scope="global">
           <template #sentCount>{{ sendCounter > 1 ? t("auth.code.sentMultiple", { count: sendCounter }) : t("auth.code.sent") }}</template>
           <template #strongEmail
             ><strong>{{ flow.getEmailOrUsername() }}</strong></template
@@ -232,7 +232,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
         </i18n-t>
       </label>
       <label v-else-if="!codeFromHash" for="code" class="mb-1">
-        <i18n-t keypath="auth.code.codeSentUsername">
+        <i18n-t keypath="auth.code.codeSentUsername" scope="global">
           <template #sentCount>{{ sendCounter > 1 ? t("auth.code.sentMultiple", { count: sendCounter }) : t("auth.code.sent") }}</template>
           <template #strongUsername
             ><strong>{{ flow.getEmailOrUsername() }}</strong></template
@@ -274,7 +274,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
     <div v-if="codeFromHash" class="mt-4">
       <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationApp">
         <template #default="{ doc }">
-          <i18n-t keypath="auth.code.instructions.securityWarning">
+          <i18n-t keypath="auth.code.instructions.securityWarning" scope="global">
             <template #appName>{{ doc.applicationTemplate.name }}</template>
             <template #strongDont
               ><strong>{{ t("auth.code.instructions.strongDont") }}</strong></template
@@ -284,7 +284,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
       </WithOrganizationApplicationDocument>
     </div>
     <div v-else class="mt-4">
-      <i18n-t keypath="auth.code.instructions.troubleEmail">
+      <i18n-t keypath="auth.code.instructions.troubleEmail" scope="global">
         <template #link>
           <a href="" class="link" @click.prevent="onRedo">{{ t("auth.code.instructions.differentMethod") }}</a>
         </template>

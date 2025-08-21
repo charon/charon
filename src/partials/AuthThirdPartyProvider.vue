@@ -185,7 +185,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div>
-      <i18n-t keypath="auth.thirdPartyRedirect.redirectMessage" :provider="flow.getThirdPartyProvider()!.name" :time="seconds === 1 ? t('auth.autoRedirect.oneSecond') : t('auth.autoRedirect.seconds', { count: seconds })" :paused-text="paused ? t('auth.autoRedirect.paused') : ''">
+      <i18n-t keypath="auth.thirdPartyRedirect.redirectMessage" scope="global" :provider="flow.getThirdPartyProvider()!.name" :time="seconds === 1 ? t('auth.autoRedirect.oneSecond') : t('auth.autoRedirect.seconds', { count: seconds })" :paused-text="paused ? t('auth.autoRedirect.paused') : ''">
         <template #strong><strong>{{ flow.getThirdPartyProvider()!.name }}</strong></template>
       </i18n-t>
     </div>

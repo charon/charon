@@ -156,7 +156,7 @@ async function onCancel() {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div>
-      <i18n-t keypath="passkey.signingIn">
+      <i18n-t keypath="passkey.signingIn" scope="global">
         <template #strong><strong>passkey</strong></template>
       </i18n-t>
     </div>

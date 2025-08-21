@@ -8,7 +8,7 @@
     </ul>
     <ul class="flex gap-x-2 sm:gap-x-4">
       <li class="text-neutral-500">
-        <i18n-t keypath="footer.poweredBy">
+        <i18n-t keypath="footer.poweredBy" scope="global">
           <template #name>
             <a href="https://gitlab.com/charon/charon" class="link">Charon</a>
           </template>
