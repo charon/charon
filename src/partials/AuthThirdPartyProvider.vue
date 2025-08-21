@@ -186,29 +186,29 @@ onBeforeUnmount(() => {
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div>
       <i18n-t
-        keypath="auth.thirdPartyRedirect.redirectMessage"
+        keypath="components.AuthThirdPartyRedirect.redirectMessage"
         scope="global"
         :provider="flow.getThirdPartyProvider()!.name"
-        :time="seconds === 1 ? t('auth.autoRedirect.oneSecond') : t('auth.autoRedirect.seconds', { count: seconds })"
-        :paused-text="paused ? t('auth.autoRedirect.paused') : ''"
+        :time="seconds === 1 ? t('components.AuthAutoRedirect.oneSecond') : t('components.AuthAutoRedirect.seconds', { count: seconds })"
+        :paused-text="paused ? t('components.AuthAutoRedirect.paused') : ''"
       >
         <template #strong
           ><strong>{{ flow.getThirdPartyProvider()!.name }}</strong></template
         >
       </i18n-t>
     </div>
-    <div class="mt-4">{{ t("auth.thirdPartyRedirect.instructions") }}</div>
+    <div class="mt-4">{{ t("components.AuthThirdPartyRedirect.instructions") }}</div>
     <div class="mt-4">
-      {{ t("auth.thirdPartyRedirect.additionalInfo", { provider: flow.getThirdPartyProvider()!.name }) }}
+      {{ t("components.AuthThirdPartyRedirect.additionalInfo", { provider: flow.getThirdPartyProvider()!.name }) }}
     </div>
     <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="3" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
       <div class="flex flex-row gap-4">
         <Button type="button" tabindex="2" :progress="progress" @click.prevent="onPauseResume">{{
-          paused ? t("auth.autoRedirect.resume") : t("auth.autoRedirect.pause")
+          paused ? t("components.AuthAutoRedirect.resume") : t("components.AuthAutoRedirect.pause")
         }}</Button>
-        <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">{{ t("auth.autoRedirect.redirect") }}</Button>
+        <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">{{ t("components.AuthAutoRedirect.redirect") }}</Button>
       </div>
     </div>
   </div>

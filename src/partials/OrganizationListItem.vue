@@ -22,7 +22,7 @@ const WithOrganizationDocument = WithDocument<Organization>
         <component :is="h3 ? 'h3' : 'h2'" class="flex flex-row items-center gap-1" :class="h3 ? 'text-lg' : 'text-xl'">
           <router-link :to="{ name: 'OrganizationGet', params: { id: doc.id } }" class="link">{{ doc.name }}</router-link>
           <span v-for="label in labels || []" :key="label" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{ label }}</span>
-          <span v-if="metadata.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{ t("labels.admin") }}</span>
+          <span v-if="metadata.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{ t("common.labels.admin") }}</span>
         </component>
         <slot :doc="doc" :metadata="metadata"></slot>
       </div>

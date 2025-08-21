@@ -156,11 +156,11 @@ async function onCancel() {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div>
-      <i18n-t keypath="passkey.signingIn" scope="global">
+      <i18n-t keypath="components.AuthPasskey.signingIn" scope="global">
         <template #strong><strong>passkey</strong></template>
       </i18n-t>
     </div>
-    <div class="mt-4">{{ t("auth.passkey.signin.signupInfo") }}</div>
+    <div class="mt-4">{{ t("components.AuthPasskey.signin.signupInfo") }}</div>
     <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="2" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>

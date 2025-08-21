@@ -73,7 +73,7 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
     <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
       <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
         <div class="flex flex-col gap-4">
-          <h1 class="text-2xl font-bold">{{ t("titles.usersForOrganization") }}</h1>
+          <h1 class="text-2xl font-bold">{{ t("views.OrganizationGet.usersForOrganization") }}</h1>
           <div>
             <OrganizationListItem :item="{ id }" />
           </div>

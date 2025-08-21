@@ -652,19 +652,19 @@ function onAddAdmin() {
     <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
       <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
         <div class="flex flex-row items-center">
-          <h1 class="text-2xl font-bold">{{ t("titles.applicationTemplates") }}</h1>
+          <h1 class="text-2xl font-bold">{{ t("views.Home.applicationTemplates") }}</h1>
         </div>
         <div v-if="dataLoading">{{ t("loading.dataLoading") }}</div>
         <div v-else-if="dataLoadingError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
         <template v-else>
           <form class="flex flex-col" novalidate @submit.prevent="onBasicSubmit">
-            <label for="name" class="mb-1">{{ t("labels.applicationTemplateName") }}</label>
+            <label for="name" class="mb-1">{{ t("views.IdentityCreate.applicationTemplateName") }}</label>
             <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" required />
             <label for="description" class="mb-1 mt-4"
-              >{{ t("labels.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
+              >{{ t("views.IdentityCreate.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
             >
             <TextArea id="description" v-model="description" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
-            <label for="homepageTemplate" class="mb-1 mt-4">{{ t("titles.homepageTemplate") }}</label>
+            <label for="homepageTemplate" class="mb-1 mt-4">{{ t("views.ApplicationTemplateGet.homepageTemplate") }}</label>
             <InputText
               id="homepageTemplate"
               v-model="homepageTemplate"
@@ -674,7 +674,7 @@ function onAddAdmin() {
               required
             />
             <label for="idScopes" class="mb-1 mt-4"
-              >{{ t("labels.spaceSeparatedScopes") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
+              >{{ t("views.ApplicationTemplateGet.spaceSeparatedScopes") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
             >
             <TextArea
               id="idScopes"
@@ -694,7 +694,7 @@ function onAddAdmin() {
             </div>
           </form>
           <template v-if="metadata.can_update || variables.length || canVariablesSubmit() || variablesUnexpectedError || variablesUpdated">
-            <h2 class="text-xl font-bold">{{ t("titles.variables") }}</h2>
+            <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.variables") }}</h2>
             <div v-if="variablesUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="variablesUpdated" class="text-success-600">{{ t("messages.success.variablesUpdated") }}</div>
             <form v-if="metadata.can_update || variables.length || canVariablesSubmit()" class="flex flex-col" novalidate @submit.prevent="onVariablesSubmit">
@@ -702,7 +702,7 @@ function onAddAdmin() {
                 <li v-for="(variable, i) in variables" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
-                    <label :for="`variable-${i}-name`" class="mb-1">{{ t("labels.name") }}</label>
+                    <label :for="`variable-${i}-name`" class="mb-1">{{ t("views.ApplicationTemplateGet.name") }}</label>
                     <InputText
                       :id="`variable-${i}-name`"
                       v-model="variable.name"
@@ -712,7 +712,7 @@ function onAddAdmin() {
                       required
                     />
                     <label :for="`variable-${i}-description`" class="mb-1 mt-4"
-                      >{{ t("labels.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
+                      >{{ t("views.IdentityCreate.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`variable-${i}-description`"
@@ -728,7 +728,7 @@ function onAddAdmin() {
                 </li>
               </ol>
               <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
-                <Button type="button" @click.prevent="onAddVariable">{{ t("labels.addVariable") }}</Button>
+                <Button type="button" @click.prevent="onAddVariable">{{ t("views.ApplicationTemplateGet.addVariable") }}</Button>
                 <!--
                   Button is on purpose not disabled on variablesUnexpectedError so that user can retry.
                 -->
@@ -737,7 +737,7 @@ function onAddAdmin() {
             </form>
           </template>
           <template v-if="metadata.can_update || clientsPublic.length || canClientsPublicSubmit() || clientsPublicUnexpectedError || clientsPublicUpdated">
-            <h2 class="text-xl font-bold">{{ t("titles.publicClients") }}</h2>
+            <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.publicClients") }}</h2>
             <div v-if="clientsPublicUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="clientsPublicUpdated" class="text-success-600">{{ t("messages.success.publicClientsUpdated") }}</div>
             <form v-if="metadata.can_update || clientsPublic.length || canClientsPublicSubmit()" class="flex flex-col" novalidate @submit.prevent="onClientsPublicSubmit">
@@ -746,7 +746,7 @@ function onAddAdmin() {
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
                     <fieldset>
-                      <legend>{{ t("labels.oidcRedirectUriTemplates") }}</legend>
+                      <legend>{{ t("views.ApplicationTemplateGet.oidcRedirectUriTemplates") }}</legend>
                       <ol>
                         <li v-for="(_, j) in client.redirectUriTemplates" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
                           <div>{{ j + 1 }}.</div>
@@ -772,11 +772,11 @@ function onAddAdmin() {
                         type="button"
                         :progress="progress"
                         @click.prevent="addRedirectUriTemplate(client, `client-public-${i}-redirectUriTemplates-`)"
-                        >{{ t("labels.addRedirectUri") }}</Button
+                        >{{ t("views.ApplicationTemplateGet.addRedirectUri") }}</Button
                       >
                     </div>
                     <label :for="`client-public-${i}-description`" class="mb-1 mt-4"
-                      >{{ t("labels.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
+                      >{{ t("views.IdentityCreate.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-public-${i}-description`"
@@ -786,8 +786,8 @@ function onAddAdmin() {
                       :progress="progress"
                     />
                     <label :for="`client-public-${i}-additionalScopes`" class="mb-1 mt-4"
-                      >{{ t("labels.spaceSeparatedAdditionalScopes")
-                      }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
+                      >{{ t("views.ApplicationTemplateGet.spaceSeparatedAdditionalScopes")
+                      }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-public-${i}-additionalScopes`"
@@ -798,7 +798,7 @@ function onAddAdmin() {
                       @update:model-value="(v) => (client.additionalScopes = splitSpace(v))"
                     />
                     <fieldset class="mt-4">
-                      <legend class="mb-1">{{ t("labels.accessTokenType") }}</legend>
+                      <legend class="mb-1">{{ t("views.ApplicationTemplateGet.accessTokenType") }}</legend>
                       <div class="flex flex-col gap-1">
                         <div>
                           <RadioButton
@@ -812,7 +812,7 @@ function onAddAdmin() {
                           <label
                             :for="`client-public-${i}-accessTokenType-hmac`"
                             :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                            >{{ t("labels.hmac") }}</label
+                            >{{ t("views.ApplicationTemplateGet.hmac") }}</label
                           >
                         </div>
                         <div>
@@ -827,12 +827,12 @@ function onAddAdmin() {
                           <label
                             :for="`client-public-${i}-accessTokenType-jwt`"
                             :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                            >{{ t("labels.jwt") }}</label
+                            >{{ t("views.ApplicationTemplateGet.jwt") }}</label
                           >
                         </div>
                       </div>
                     </fieldset>
-                    <label :for="`client-public-${i}-accessTokenLifespan`" class="mb-1 mt-4">{{ t("labels.accessTokenLifespan") }}</label>
+                    <label :for="`client-public-${i}-accessTokenLifespan`" class="mb-1 mt-4">{{ t("views.ApplicationTemplateGet.accessTokenLifespan") }}</label>
                     <TextArea
                       :id="`client-public-${i}-accessTokenLifespan`"
                       v-model="client.accessTokenLifespan"
@@ -840,7 +840,7 @@ function onAddAdmin() {
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
-                    <label :for="`client-public-${i}-idTokenLifespan`" class="mb-1 mt-4">{{ t("labels.idTokenLifespan") }}</label>
+                    <label :for="`client-public-${i}-idTokenLifespan`" class="mb-1 mt-4">{{ t("views.ApplicationTemplateGet.idTokenLifespan") }}</label>
                     <TextArea
                       :id="`client-public-${i}-idTokenLifespan`"
                       v-model="client.idTokenLifespan"
@@ -849,8 +849,8 @@ function onAddAdmin() {
                       :progress="progress"
                     />
                     <label :for="`client-public-${i}-refreshTokenLifespan`" class="mb-1 mt-4"
-                      >{{ t("labels.refreshTokenLifespan")
-                      }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
+                      >{{ t("views.ApplicationTemplateGet.refreshTokenLifespan")
+                      }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-public-${i}-refreshTokenLifespan`"
@@ -866,7 +866,7 @@ function onAddAdmin() {
                 </li>
               </ol>
               <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
-                <Button type="button" @click.prevent="onAddClientPublic">{{ t("labels.addClient") }}</Button>
+                <Button type="button" @click.prevent="onAddClientPublic">{{ t("views.ApplicationTemplateGet.addClient") }}</Button>
                 <!--
                   Button is on purpose not disabled on clientsPublicUnexpectedError so that user can retry.
                 -->
@@ -875,7 +875,7 @@ function onAddAdmin() {
             </form>
           </template>
           <template v-if="metadata.can_update || clientsBackend.length || canClientsBackendSubmit() || clientsBackendUnexpectedError || clientsBackendUpdated">
-            <h2 class="text-xl font-bold">{{ t("titles.backendClients") }}</h2>
+            <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.backendClients") }}</h2>
             <div v-if="clientsBackendUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="clientsBackendUpdated" class="text-success-600">{{ t("messages.success.backendClientsUpdated") }}</div>
             <form
@@ -889,7 +889,7 @@ function onAddAdmin() {
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
                     <fieldset>
-                      <legend>{{ t("labels.oidcRedirectUriTemplates") }}</legend>
+                      <legend>{{ t("views.ApplicationTemplateGet.oidcRedirectUriTemplates") }}</legend>
                       <ol>
                         <li v-for="(_, j) in client.redirectUriTemplates" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
                           <div>{{ j + 1 }}.</div>
@@ -915,11 +915,11 @@ function onAddAdmin() {
                         type="button"
                         :progress="progress"
                         @click.prevent="addRedirectUriTemplate(client, `client-backend-${i}-redirectUriTemplates-`)"
-                        >{{ t("labels.addRedirectUri") }}</Button
+                        >{{ t("views.ApplicationTemplateGet.addRedirectUri") }}</Button
                       >
                     </div>
                     <label :for="`client-backend-${i}-description`" class="mb-1 mt-4"
-                      >{{ t("labels.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
+                      >{{ t("views.IdentityCreate.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-backend-${i}-description`"
@@ -929,8 +929,8 @@ function onAddAdmin() {
                       :progress="progress"
                     />
                     <label :for="`client-backend-${i}-additionalScopes`" class="mb-1 mt-4"
-                      >{{ t("labels.spaceSeparatedAdditionalScopes")
-                      }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
+                      >{{ t("views.ApplicationTemplateGet.spaceSeparatedAdditionalScopes")
+                      }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-backend-${i}-additionalScopes`"
@@ -941,7 +941,7 @@ function onAddAdmin() {
                       @update:model-value="(v) => (client.additionalScopes = splitSpace(v))"
                     />
                     <fieldset class="mt-4">
-                      <legend class="mb-1">{{ t("labels.accessTokenType") }}</legend>
+                      <legend class="mb-1">{{ t("views.ApplicationTemplateGet.accessTokenType") }}</legend>
                       <div class="flex flex-col gap-1">
                         <div>
                           <RadioButton
@@ -955,7 +955,7 @@ function onAddAdmin() {
                           <label
                             :for="`client-backend-${i}-accessTokenType-hmac`"
                             :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                            >{{ t("labels.hmac") }}</label
+                            >{{ t("views.ApplicationTemplateGet.hmac") }}</label
                           >
                         </div>
                         <div>
@@ -970,13 +970,13 @@ function onAddAdmin() {
                           <label
                             :for="`client-backend-${i}-accessTokenType-jwt`"
                             :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                            >{{ t("labels.jwt") }}</label
+                            >{{ t("views.ApplicationTemplateGet.jwt") }}</label
                           >
                         </div>
                       </div>
                     </fieldset>
                     <fieldset class="mt-4">
-                      <legend class="mb-1">{{ t("labels.tokenEndpointAuthMethod") }}</legend>
+                      <legend class="mb-1">{{ t("views.ApplicationTemplateGet.tokenEndpointAuthMethod") }}</legend>
                       <div class="flex flex-col gap-1">
                         <div>
                           <RadioButton
@@ -1010,7 +1010,7 @@ function onAddAdmin() {
                         </div>
                       </div>
                     </fieldset>
-                    <label :for="`client-backend-${i}-accessTokenLifespan`" class="mb-1 mt-4">{{ t("labels.accessTokenLifespan") }}</label>
+                    <label :for="`client-backend-${i}-accessTokenLifespan`" class="mb-1 mt-4">{{ t("views.ApplicationTemplateGet.accessTokenLifespan") }}</label>
                     <TextArea
                       :id="`client-backend-${i}-accessTokenLifespan`"
                       v-model="client.accessTokenLifespan"
@@ -1018,7 +1018,7 @@ function onAddAdmin() {
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
-                    <label :for="`client-backend-${i}-idTokenLifespan`" class="mb-1 mt-4">{{ t("labels.idTokenLifespan") }}</label>
+                    <label :for="`client-backend-${i}-idTokenLifespan`" class="mb-1 mt-4">{{ t("views.ApplicationTemplateGet.idTokenLifespan") }}</label>
                     <TextArea
                       :id="`client-backend-${i}-idTokenLifespan`"
                       v-model="client.idTokenLifespan"
@@ -1027,8 +1027,8 @@ function onAddAdmin() {
                       :progress="progress"
                     />
                     <label :for="`client-backend-${i}-refreshTokenLifespan`" class="mb-1 mt-4"
-                      >{{ t("labels.refreshTokenLifespan")
-                      }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
+                      >{{ t("views.ApplicationTemplateGet.refreshTokenLifespan")
+                      }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-backend-${i}-refreshTokenLifespan`"
@@ -1044,7 +1044,7 @@ function onAddAdmin() {
                 </li>
               </ol>
               <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
-                <Button type="button" @click.prevent="onAddClientBackend">{{ t("labels.addClient") }}</Button>
+                <Button type="button" @click.prevent="onAddClientBackend">{{ t("views.ApplicationTemplateGet.addClient") }}</Button>
                 <!--
                   Button is on purpose not disabled on clientsBackendUnexpectedError so that user can retry.
                 -->
@@ -1053,7 +1053,7 @@ function onAddAdmin() {
             </form>
           </template>
           <template v-if="metadata.can_update || clientsService.length || canClientsServiceSubmit() || clientsServiceUnexpectedError || clientsServiceUpdated">
-            <h2 class="text-xl font-bold">{{ t("titles.serviceClients") }}</h2>
+            <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.serviceClients") }}</h2>
             <div v-if="clientsServiceUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="clientsServiceUpdated" class="text-success-600">{{ t("messages.success.serviceClientsUpdated") }}</div>
             <form
@@ -1067,7 +1067,7 @@ function onAddAdmin() {
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
                     <label :for="`client-service-${i}-description`" class="mb-1"
-                      >{{ t("labels.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
+                      >{{ t("views.IdentityCreate.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-service-${i}-description`"
@@ -1077,8 +1077,8 @@ function onAddAdmin() {
                       :progress="progress"
                     />
                     <label :for="`client-service-${i}-additionalScopes`" class="mb-1 mt-4"
-                      >{{ t("labels.spaceSeparatedAdditionalScopes")
-                      }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
+                      >{{ t("views.ApplicationTemplateGet.spaceSeparatedAdditionalScopes")
+                      }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-service-${i}-additionalScopes`"
@@ -1089,7 +1089,7 @@ function onAddAdmin() {
                       @update:model-value="(v) => (client.additionalScopes = splitSpace(v))"
                     />
                     <fieldset class="mt-4">
-                      <legend class="mb-1">{{ t("labels.accessTokenType") }}</legend>
+                      <legend class="mb-1">{{ t("views.ApplicationTemplateGet.accessTokenType") }}</legend>
                       <div class="flex flex-col gap-1">
                         <div>
                           <RadioButton
@@ -1103,7 +1103,7 @@ function onAddAdmin() {
                           <label
                             :for="`client-service-${i}-accessTokenType-hmac`"
                             :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                            >{{ t("labels.hmac") }}</label
+                            >{{ t("views.ApplicationTemplateGet.hmac") }}</label
                           >
                         </div>
                         <div>
@@ -1118,13 +1118,13 @@ function onAddAdmin() {
                           <label
                             :for="`client-service-${i}-accessTokenType-jwt`"
                             :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                            >{{ t("labels.jwt") }}</label
+                            >{{ t("views.ApplicationTemplateGet.jwt") }}</label
                           >
                         </div>
                       </div>
                     </fieldset>
                     <fieldset class="mt-4">
-                      <legend class="mb-1">{{ t("labels.tokenEndpointAuthMethod") }}</legend>
+                      <legend class="mb-1">{{ t("views.ApplicationTemplateGet.tokenEndpointAuthMethod") }}</legend>
                       <div class="flex flex-col gap-1">
                         <div>
                           <RadioButton
@@ -1158,7 +1158,7 @@ function onAddAdmin() {
                         </div>
                       </div>
                     </fieldset>
-                    <label :for="`client-service-${i}-accessTokenLifespan`" class="mb-1 mt-4">{{ t("labels.accessTokenLifespan") }}</label>
+                    <label :for="`client-service-${i}-accessTokenLifespan`" class="mb-1 mt-4">{{ t("views.ApplicationTemplateGet.accessTokenLifespan") }}</label>
                     <TextArea
                       :id="`client-service-${i}-accessTokenLifespan`"
                       v-model="client.accessTokenLifespan"
@@ -1166,7 +1166,7 @@ function onAddAdmin() {
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
-                    <label :for="`client-service-${i}-idTokenLifespan`" class="mb-1 mt-4">{{ t("labels.idTokenLifespan") }}</label>
+                    <label :for="`client-service-${i}-idTokenLifespan`" class="mb-1 mt-4">{{ t("views.ApplicationTemplateGet.idTokenLifespan") }}</label>
                     <TextArea
                       :id="`client-service-${i}-idTokenLifespan`"
                       v-model="client.idTokenLifespan"
@@ -1175,8 +1175,8 @@ function onAddAdmin() {
                       :progress="progress"
                     />
                     <label :for="`client-service-${i}-refreshTokenLifespan`" class="mb-1 mt-4"
-                      >{{ t("labels.refreshTokenLifespan")
-                      }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
+                      >{{ t("views.ApplicationTemplateGet.refreshTokenLifespan")
+                      }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-service-${i}-refreshTokenLifespan`"
@@ -1192,7 +1192,7 @@ function onAddAdmin() {
                 </li>
               </ol>
               <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
-                <Button type="button" @click.prevent="onAddClientService">{{ t("labels.addClient") }}</Button>
+                <Button type="button" @click.prevent="onAddClientService">{{ t("views.ApplicationTemplateGet.addClient") }}</Button>
                 <!--
                   Button is on purpose not disabled on clientsServiceUnexpectedError so that user can retry.
                 -->
@@ -1201,7 +1201,7 @@ function onAddAdmin() {
             </form>
           </template>
           <template v-if="metadata.can_update || adminsUnexpectedError || adminsUpdated">
-            <h2 class="text-xl font-bold">{{ t("titles.admins") }}</h2>
+            <h2 class="text-xl font-bold">{{ t("views.OrganizationGet.admins") }}</h2>
             <div v-if="adminsUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="adminsUpdated" class="text-success-600">{{ t("messages.success.adminsUpdated") }}</div>
             <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
@@ -1226,7 +1226,7 @@ function onAddAdmin() {
                 </li>
               </ol>
               <div class="flex flex-row justify-between gap-4" :class="admins.length ? 'mt-4' : ''">
-                <Button type="button" @click.prevent="onAddAdmin">{{ t("labels.addAdmin") }}</Button>
+                <Button type="button" @click.prevent="onAddAdmin">{{ t("views.ApplicationTemplateGet.addAdmin") }}</Button>
                 <!--
                   Button is on purpose not disabled on adminsUnexpectedError so that user can retry.
                 -->

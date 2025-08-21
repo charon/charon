@@ -338,36 +338,36 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div class="flex flex-col">
       <div v-if="flow.getCompleted().includes('signin')" class="mb-4">
-        <i18n-t keypath="auth.identity.signinSuccess" scope="global">
+        <i18n-t keypath="components.AuthIdentity.signinSuccess" scope="global">
           <template #strong
-            ><strong>{{ t("auth.identity.congratulations") }}</strong></template
+            ><strong>{{ t("components.AuthIdentity.congratulations") }}</strong></template
           >
         </i18n-t>
       </div>
       <div v-else-if="flow.getCompleted().includes('signup')" class="mb-4">
-        <i18n-t keypath="auth.identity.signupSuccess" scope="global">
+        <i18n-t keypath="components.AuthIdentity.signupSuccess" scope="global">
           <template #strong
-            ><strong>{{ t("auth.identity.congratulations") }}</strong></template
+            ><strong>{{ t("components.AuthIdentity.congratulations") }}</strong></template
           >
         </i18n-t>
       </div>
       <div class="mb-4">
-        {{ t("auth.identity.selectInstructions") }}
+        {{ t("components.AuthIdentity.selectInstructions") }}
       </div>
       <div v-if="allIdentitiesLoading" class="mb-4">{{ t("loading.dataLoading") }}</div>
       <div v-else-if="allIdentitiesLoadingError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
-        <h3 class="text-l font-bold mb-4">{{ t("titles.previouslyUsedIdentities") }}</h3>
+        <h3 class="text-l font-bold mb-4">{{ t("views.AuthIdentity.previouslyUsedIdentities") }}</h3>
         <div v-if="usedIdentities.length + addedIdentities.length + disabledIdentities.length === 0" class="italic mb-4">
-          {{ t("auth.identity.statusMessages.noIdentityUsed") }}
+          {{ t("components.AuthIdentity.statusMessages.noIdentityUsed") }}
         </div>
         <div v-else-if="usedIdentities.length + disabledIdentities.length === 0" class="italic mb-4">
-          {{ t("auth.identity.statusMessages.noIdentityUsedWithApp") }}
+          {{ t("components.AuthIdentity.statusMessages.noIdentityUsedWithApp") }}
         </div>
         <div v-else-if="usedIdentities.length + addedIdentities.length === 0" class="italic mb-4">
-          {{ t("auth.identity.statusMessages.allPreviousDisabled") }}
+          {{ t("components.AuthIdentity.statusMessages.allPreviousDisabled") }}
         </div>
-        <div v-else-if="usedIdentities.length === 0" class="italic mb-4">{{ t("auth.identity.previouslyUsedDisabled") }}</div>
+        <div v-else-if="usedIdentities.length === 0" class="italic mb-4">{{ t("components.AuthIdentity.previouslyUsedDisabled") }}</div>
         <ul v-else>
           <li v-for="(identity, i) of usedIdentities" :key="identity.identity.id" class="mb-4">
             <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate">
@@ -380,7 +380,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
           </li>
         </ul>
         <template v-if="addedIdentities.length">
-          <h3 class="text-l font-bold mb-4">{{ t("auth.identity.sectionTitles.identitiesUsedWithOrg") }}</h3>
+          <h3 class="text-l font-bold mb-4">{{ t("components.AuthIdentity.sectionTitles.identitiesUsedWithOrg") }}</h3>
           <ul>
             <li v-for="(identity, i) of addedIdentities" :key="identity.identity.id" class="mb-4">
               <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate">
@@ -399,11 +399,11 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
             </li>
           </ul>
         </template>
-        <h3 class="text-l font-bold mb-4">{{ t("auth.identity.otherAvailableIdentities") }}</h3>
+        <h3 class="text-l font-bold mb-4">{{ t("components.AuthIdentity.otherAvailableIdentities") }}</h3>
         <div v-if="usedIdentities.length + addedIdentities.length + otherIdentities.length + disabledIdentities.length === 0" class="italic mb-4">
-          {{ t("auth.identity.noIdentitiesCreateFirst") }}
+          {{ t("components.AuthIdentity.noIdentitiesCreateFirst") }}
         </div>
-        <div v-else-if="otherIdentities.length === 0" class="italic mb-4">{{ t("auth.identity.noOtherIdentitiesCreateOne") }}</div>
+        <div v-else-if="otherIdentities.length === 0" class="italic mb-4">{{ t("components.AuthIdentity.noOtherIdentitiesCreateOne") }}</div>
         <ul v-else>
           <li v-for="(identity, i) of otherIdentities" :key="identity.identity.id" class="mb-4">
             <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate">
@@ -422,7 +422,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
           </li>
         </ul>
         <template v-if="disabledIdentities.length">
-          <h3 class="text-l font-bold mb-4">{{ t("auth.identity.sectionTitles.disabledIdentities") }}</h3>
+          <h3 class="text-l font-bold mb-4">{{ t("components.AuthIdentity.sectionTitles.disabledIdentities") }}</h3>
           <ul>
             <li v-for="identity of disabledIdentities" :key="identity.identity.id" class="mb-4">
               <IdentityPublic
@@ -430,7 +430,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
                 :url="identity.url"
                 :is-current="identity.isCurrent"
                 :can-update="identity.canUpdate"
-                :labels="[t('labels.disabled')]"
+                :labels="[t('common.labels.disabled')]"
               >
                 <div class="flex flex-col items-start">
                   <Button primary type="button" tabindex="3" :progress="progress" @click.prevent="onEnable(identity.identity)">{{ t("common.buttons.enable") }}</Button>
@@ -441,10 +441,10 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
         </template>
       </template>
       <div v-if="!createShown" class="flex flex-row justify-start gap-4 mb-4">
-        <Button type="button" tabindex="3" :progress="progress" @click.prevent="onCreateShow">{{ t("auth.identity.newIdentityButton") }}</Button>
+        <Button type="button" tabindex="3" :progress="progress" @click.prevent="onCreateShow">{{ t("components.AuthIdentity.newIdentityButton") }}</Button>
       </div>
       <template v-if="createShown">
-        <h3 class="text-l font-bold mb-4">{{ t("titles.createNewIdentity") }}</h3>
+        <h3 class="text-l font-bold mb-4">{{ t("views.IdentityGet.createNewIdentity") }}</h3>
         <IdentityCreate class="mb-4" :flow-id="flow.getId()" @created="onIdentityCreated" />
       </template>
       <div v-if="unexpectedError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>

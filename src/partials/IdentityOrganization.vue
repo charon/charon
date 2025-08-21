@@ -18,18 +18,18 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
 <template>
   <div class="ml-4 mt-4 flex flew-row gap-4 justify-between items-start">
     <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
-      <div>{{ t("labels.id") }}</div>
+      <div>{{ t("views.ApplicationTemplateGet.id") }}</div>
       <div v-if="identityOrganization.id">
         <code>{{ identityOrganization.id }}</code>
       </div>
       <div v-else>
-        <span class="italic">{{ t("labels.confirmUpdateToAllocate") }}</span>
+        <span class="italic">{{ t("views.ApplicationTemplateGet.confirmUpdateToAllocate") }}</span>
       </div>
-      <div>{{ t("labels.status") }}</div>
+      <div>{{ t("views.ApplicationTemplateGet.status") }}</div>
       <div>
-        <strong>{{ identityOrganization.active ? t("labels.active") : t("labels.disabled") }}</strong>
+        <strong>{{ identityOrganization.active ? t("common.labels.active") : t("common.labels.disabled") }}</strong>
       </div>
-      <div>{{ t("labels.apps") }}</div>
+      <div>{{ t("views.ApplicationTemplateGet.apps") }}</div>
       <ol v-if="identityOrganization.applications.length">
         <li v-for="application in identityOrganization.applications" :key="application.id">
           <WithOrganizationApplicationDocument :params="{ id: identityOrganization.organization.id, appId: application.id }" name="OrganizationApp">
@@ -39,7 +39,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
           </WithOrganizationApplicationDocument>
         </li>
       </ol>
-      <div v-else class="italic">{{ t("labels.none") }}</div>
+      <div v-else class="italic">{{ t("views.ApplicationTemplateGet.none") }}</div>
     </div>
     <slot />
   </div>

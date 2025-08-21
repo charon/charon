@@ -101,21 +101,21 @@ const withOrganizationApplicationDocument = ref<ComponentExposed<typeof WithOrga
       <template #default="{ doc }">
         <template v-if="flow.getCompleted().includes('failed')">
           <div class="text-error-600 mb-4">
-            <i18n-t keypath="auth.manualRedirect.failed" scope="global">
+            <i18n-t keypath="components.AuthManualRedirect.failed" scope="global">
               <template #strong
-                ><strong>{{ t("auth.identity.sorry") }}</strong></template
+                ><strong>{{ t("components.AuthIdentity.sorry") }}</strong></template
               >
             </i18n-t>
           </div>
-          <div class="mb-4">{{ t("auth.manualRedirect.tryAgain", { appName: doc.applicationTemplate.name }) }}</div>
+          <div class="mb-4">{{ t("components.AuthManualRedirect.tryAgain", { appName: doc.applicationTemplate.name }) }}</div>
         </template>
         <div v-else-if="flow.getCompleted().includes('finished')" class="mb-4">
-          {{ t("auth.manualRedirect.completed", { appName: doc.applicationTemplate.name }) }}
+          {{ t("components.AuthManualRedirect.completed", { appName: doc.applicationTemplate.name }) }}
         </div>
         <div v-if="unexpectedError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
         <div class="flex flex-row justify-end gap-4">
           <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">{{
-            flow.getCompleted().includes("finished") ? t("auth.manualRedirect.homepage") : t("auth.manualRedirect.return")
+            flow.getCompleted().includes("finished") ? t("components.AuthManualRedirect.homepage") : t("components.AuthManualRedirect.return")
           }}</Button>
         </div>
       </template>

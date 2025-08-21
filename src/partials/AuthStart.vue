@@ -138,7 +138,7 @@ async function onThirdPartyProvider(provider: string) {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div class="flex flex-col">
-      <label for="email" class="mb-1">{{ t("auth.start.emailOrUsernameLabel") }}</label>
+      <label for="email" class="mb-1">{{ t("components.AuthStart.emailOrUsernameLabel") }}</label>
       <!--
         We set novalidate because we do not UA to show hints.
         We show them ourselves when we want them.
@@ -183,7 +183,7 @@ async function onThirdPartyProvider(provider: string) {
       </div>
       <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     </div>
-    <h2 class="text-center m-4 text-xl font-bold uppercase">{{ t("auth.start.orUse") }}</h2>
+    <h2 class="text-center m-4 text-xl font-bold uppercase">{{ t("components.AuthStart.orUse") }}</h2>
     <Button primary type="button" :disabled="!browserSupportsWebAuthn()" :progress="progress" @click.prevent="onPasskey">Passkey</Button>
     <Button v-for="p of siteContext.providers" :key="p.key" primary type="button" class="mt-4" :progress="progress" @click.prevent="onThirdPartyProvider(p.key)">{{
       p.name

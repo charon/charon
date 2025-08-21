@@ -34,6 +34,15 @@
         "email": "E-mail address should be at least 3 characters.",
         "username": "Username should be at least 3 characters."
       }
+    },
+    "labels": {
+      "optional": "(optional)",
+      "admin": "admin",
+      "current": "current",
+      "active": "active",
+      "disabled": "disabled",
+      "added": "added",
+      "creator": "creator"
     }
   },
   "navigation": {
@@ -43,15 +52,15 @@
     "applicationTemplates": "Application templates",
     "organizations": "Organizations"
   },
-  "footer": {
-    "poweredBy": "Powered by {name}"
-  },
-  "auth": {
-    "start": {
+  "components": {
+    "Footer": {
+      "poweredBy": "Powered by {name}"
+    },
+    "AuthStart": {
       "emailOrUsernameLabel": "Enter Charon username or your e-mail address",
       "orUse": "Or use"
     },
-    "password": {
+    "AuthPassword": {
       "emailAddressLabel": "Your e-mail address",
       "usernameLabel": "Charon username",
       "passwordLabel": "Password or passphrase",
@@ -64,7 +73,7 @@
       "troublePassword": "If you have trouble remembering your password or passphrase, try a {link}.",
       "differentSigninMethod": "different sign-in method"
     },
-    "code": {
+    "AuthCode": {
       "codeSentEmail": "We {sentCount} a 6-digit code to {strongEmail} e-mail address. Please enter it to continue:",
       "codeSentUsername": "We {sentCount} a 6-digit code to e-mail address(es) associated with the Charon username {strongUsername}. Please enter it to continue:",
       "codeFromHashEmail": "We sent the following 6-digit code to {strongEmail} e-mail address:",
@@ -81,7 +90,8 @@
         "differentMethod": "different sign-in or sign-up method"
       }
     },
-    "passkey": {
+    "AuthPasskey": {
+      "signingIn": "Signing you in using {strong}. Please follow instructions by your browser and/or device.",
       "signin": {
         "instructions": "Sign in using your {strong}.",
         "failed": "Signing in using {strong} failed.",
@@ -97,11 +107,11 @@
         "retrySignupButton": "Retry sign-up"
       }
     },
-    "thirdParty": {
+    "AuthThirdParty": {
       "redirecting": "Redirecting you to {provider}. Please follow instructions by your browser.",
       "failed": "Signing in using {provider} failed."
     },
-    "redirect": {
+    "AuthRedirect": {
       "auto": {
         "message": "Redirecting you back to {appName}.",
         "manualRedirect": "Click {link} if you are not automatically redirected.",
@@ -111,7 +121,7 @@
         "message": "Sign-in or sign-up completed. Click {link} to continue to {appName}."
       }
     },
-    "identity": {
+    "AuthIdentity": {
       "selectIdentity": "Select identity to use with {appName}:",
       "newIdentityButton": "Create new identity",
       "signinSuccess": "{strong} You successfully signed in into Charon.",
@@ -134,10 +144,10 @@
         "disabledIdentities": "Disabled identities"
       }
     },
-    "authFlow": {
+    "AuthFlowGet": {
       "instructionsMessage": "{appLink} from organization {orgLink} is using Charon to ask you to sign-in or sign-up. Please follow the steps below to do so, or to decline."
     },
-    "autoRedirect": {
+    "AuthAutoRedirect": {
       "congratulations": "{strong} Everything is ready to sign you in or sign you up into {appName} using the identity you have chosen.",
       "declined": "You decided to {strong} into {appName} using Charon.",
       "redirectMessage": "You will be now redirected to {appName} in {time}{pausedText}.",
@@ -148,12 +158,12 @@
       "pause": "Pause",
       "redirect": "Redirect"
     },
-    "thirdPartyRedirect": {
+    "AuthThirdPartyRedirect": {
       "redirectMessage": "You will be redirected to {strong} in {time}{pausedText}.",
       "instructions": "Please follow instructions there to sign-in into Charon. Afterwards, you will be redirected back here.",
       "additionalInfo": "You might have to sign-in into {provider} first. You might be redirected back by {provider} immediately, without showing you anything."
     },
-    "manualRedirect": {
+    "AuthManualRedirect": {
       "failed": "{strong} Signing in or signing up failed.",
       "tryAgain": "You can return to {appName} and try again.",
       "completed": "You have already been redirected to {appName} and completed the flow. You can now instead go to its homepage.",
@@ -165,77 +175,78 @@
     "dataLoading": "Loading...",
     "loadingDataFailed": "loading data failed"
   },
-  "labels": {
-    "optional": "(optional)",
-    "applicationTemplateName": "Application template name",
-    "organizationName": "Organization name",
-    "username": "Username",
-    "givenName": "Given name",
-    "fullName": "Full name",
-    "pictureUrl": "Picture URL",
-    "description": "Description",
-    "email": "E-mail address",
-    "current": "current",
-    "admin": "admin",
-    "active": "active",
-    "disabled": "disabled",
-    "added": "added",
-    "creator": "creator",
-    "status": "Status:",
-    "apps": "Apps:",
-    "none": "none",
-    "clientId": "Client ID:",
-    "clientSecret": "Client secret:",
-    "name": "Name",
-    "id": "ID:",
-    "confirmUpdateToAllocate": "confirm update to allocate",
-    "addAdmin": "Add admin",
-    "addVariable": "Add variable",
-    "addClient": "Add client",
-    "addRedirectUri": "Add redirect URI",
-    "oidcRedirectUriTemplates": "OIDC redirect URI templates",
-    "hmac": "HMAC",
-    "jwt": "JWT",
-    "spaceSeparatedScopes": "Space-separated OpenID scopes the app might request",
-    "spaceSeparatedAdditionalScopes": "Space-separated additional scopes the client might request",
-    "accessTokenType": "Access token type",
-    "accessTokenLifespan": "Access token lifespan",
-    "idTokenLifespan": "ID token lifespan",
-    "refreshTokenLifespan": "Refresh token lifespan",
-    "tokenEndpointAuthMethod": "Token endpoint authentication method"
-  },
-  "titles": {
-    "organizations": "Organizations",
-    "identities": "Identities",
-    "applicationTemplates": "Application templates",
-    "organization": "Organization",
-    "identity": "Identity",
-    "createOrganization": "Create organization",
-    "createApplicationTemplate": "Create application template",
-    "createIdentity": "Create identity",
-    "createNewIdentity": "Create new identity",
-    "usersForOrganization": "Users for organization",
-    "previouslyUsedIdentities": "Previously used identities",
-    "otherAvailableIdentities": "Other available identities",
-    "disabledIdentities": "Disabled identities",
-    "users": "Users",
-    "admins": "Admins",
-    "addedOrganizations": "Added organizations",
-    "availableOrganizations": "Available organizations",
-    "variables": "Variables",
-    "publicClients": "Public clients",
-    "backendClients": "Backend clients",
-    "serviceClients": "Service clients",
-    "addedApplications": "Added applications",
-    "availableApplications": "Available applications",
-    "addedIdentities": "Added identities",
-    "availableIdentities": "Available identities",
-    "configuration": "Configuration",
-    "homepageTemplate": "Homepage template",
-    "manage": "Manage"
-  },
-  "passkey": {
-    "signingIn": "Signing you in using {strong}. Please follow instructions by your browser and/or device."
+  "views": {
+    "IdentityCreate": {
+      "applicationTemplateName": "Application template name",
+      "organizationName": "Organization name",
+      "username": "Username",
+      "givenName": "Given name",
+      "fullName": "Full name",
+      "pictureUrl": "Picture URL",
+      "description": "Description",
+      "email": "E-mail address"
+    },
+    "ApplicationTemplateGet": {
+      "status": "Status:",
+      "apps": "Apps:",
+      "none": "none",
+      "clientId": "Client ID:",
+      "clientSecret": "Client secret:",
+      "name": "Name",
+      "id": "ID:",
+      "confirmUpdateToAllocate": "confirm update to allocate",
+      "addAdmin": "Add admin",
+      "addVariable": "Add variable",
+      "addClient": "Add client",
+      "addRedirectUri": "Add redirect URI",
+      "oidcRedirectUriTemplates": "OIDC redirect URI templates",
+      "hmac": "HMAC",
+      "jwt": "JWT",
+      "spaceSeparatedScopes": "Space-separated OpenID scopes the app might request",
+      "spaceSeparatedAdditionalScopes": "Space-separated additional scopes the client might request",
+      "accessTokenType": "Access token type",
+      "accessTokenLifespan": "Access token lifespan",
+      "idTokenLifespan": "ID token lifespan",
+      "refreshTokenLifespan": "Refresh token lifespan",
+      "tokenEndpointAuthMethod": "Token endpoint authentication method",
+      "organizations": "Organizations",
+      "createOrganization": "Create organization",
+      "createApplicationTemplate": "Create application template",
+      "addedOrganizations": "Added organizations",
+      "availableOrganizations": "Available organizations",
+      "variables": "Variables",
+      "publicClients": "Public clients",
+      "backendClients": "Backend clients",
+      "serviceClients": "Service clients",
+      "addedApplications": "Added applications",
+      "availableApplications": "Available applications",
+      "configuration": "Configuration",
+      "homepageTemplate": "Homepage template"
+    },
+    "Home": {
+      "identities": "Identities",
+      "applicationTemplates": "Application templates",
+      "organizations": "Organizations"
+    },
+    "IdentityGet": {
+      "identity": "Identity",
+      "createIdentity": "Create identity",
+      "createNewIdentity": "Create new identity",
+      "addedIdentities": "Added identities",
+      "availableIdentities": "Available identities",
+      "manage": "Manage"
+    },
+    "OrganizationGet": {
+      "organization": "Organization",
+      "usersForOrganization": "Users for organization",
+      "users": "Users",
+      "admins": "Admins"
+    },
+    "AuthIdentity": {
+      "previouslyUsedIdentities": "Previously used identities",
+      "otherAvailableIdentities": "Other available identities",
+      "disabledIdentities": "Disabled identities"
+    }
   },
   "messages": {
     "success": {

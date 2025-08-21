@@ -38,6 +38,15 @@ declare module "vue-i18n" {
           username: string
         }
       }
+      labels: {
+        optional: string
+        admin: string
+        current: string
+        active: string
+        disabled: string
+        added: string
+        creator: string
+      }
     }
     navigation: {
       signOut: string
@@ -46,15 +55,15 @@ declare module "vue-i18n" {
       applicationTemplates: string
       organizations: string
     }
-    footer: {
-      poweredBy: string
-    }
-    auth: {
-      start: {
+    components: {
+      Footer: {
+        poweredBy: string
+      }
+      AuthStart: {
         emailOrUsernameLabel: string
         orUse: string
       }
-      password: {
+      AuthPassword: {
         emailAddressLabel: string
         usernameLabel: string
         passwordLabel: string
@@ -67,7 +76,7 @@ declare module "vue-i18n" {
         troublePassword: string
         differentSigninMethod: string
       }
-      code: {
+      AuthCode: {
         codeSentEmail: string
         codeSentUsername: string
         codeFromHashEmail: string
@@ -84,7 +93,8 @@ declare module "vue-i18n" {
           differentMethod: string
         }
       }
-      passkey: {
+      AuthPasskey: {
+        signingIn: string
         signin: {
           instructions: string
           failed: string
@@ -100,11 +110,11 @@ declare module "vue-i18n" {
           retrySignupButton: string
         }
       }
-      thirdParty: {
+      AuthThirdParty: {
         redirecting: string
         failed: string
       }
-      redirect: {
+      AuthRedirect: {
         auto: {
           message: string
           manualRedirect: string
@@ -114,7 +124,7 @@ declare module "vue-i18n" {
           message: string
         }
       }
-      identity: {
+      AuthIdentity: {
         selectIdentity: string
         newIdentityButton: string
         signinSuccess: string
@@ -137,10 +147,10 @@ declare module "vue-i18n" {
           disabledIdentities: string
         }
       }
-      authFlow: {
+      AuthFlowGet: {
         instructionsMessage: string
       }
-      autoRedirect: {
+      AuthAutoRedirect: {
         congratulations: string
         declined: string
         redirectMessage: string
@@ -151,12 +161,12 @@ declare module "vue-i18n" {
         pause: string
         redirect: string
       }
-      thirdPartyRedirect: {
+      AuthThirdPartyRedirect: {
         redirectMessage: string
         instructions: string
         additionalInfo: string
       }
-      manualRedirect: {
+      AuthManualRedirect: {
         failed: string
         tryAgain: string
         completed: string
@@ -168,77 +178,78 @@ declare module "vue-i18n" {
       dataLoading: string
       loadingDataFailed: string
     }
-    labels: {
-      optional: string
-      applicationTemplateName: string
-      organizationName: string
-      username: string
-      givenName: string
-      fullName: string
-      pictureUrl: string
-      description: string
-      email: string
-      current: string
-      admin: string
-      active: string
-      disabled: string
-      added: string
-      creator: string
-      status: string
-      apps: string
-      none: string
-      clientId: string
-      clientSecret: string
-      name: string
-      id: string
-      confirmUpdateToAllocate: string
-      addAdmin: string
-      addVariable: string
-      addClient: string
-      spaceSeparatedScopes: string
-      spaceSeparatedAdditionalScopes: string
-      accessTokenType: string
-      accessTokenLifespan: string
-      idTokenLifespan: string
-      refreshTokenLifespan: string
-      tokenEndpointAuthMethod: string
-      oidcRedirectUriTemplates: string
-      addRedirectUri: string
-      hmac: string
-      jwt: string
-    }
-    titles: {
-      organizations: string
-      identities: string
-      applicationTemplates: string
-      organization: string
-      identity: string
-      createOrganization: string
-      createApplicationTemplate: string
-      createIdentity: string
-      createNewIdentity: string
-      usersForOrganization: string
-      previouslyUsedIdentities: string
-      otherAvailableIdentities: string
-      disabledIdentities: string
-      users: string
-      admins: string
-      addedOrganizations: string
-      availableOrganizations: string
-      variables: string
-      publicClients: string
-      backendClients: string
-      serviceClients: string
-      addedApplications: string
-      availableApplications: string
-      addedIdentities: string
-      availableIdentities: string
-      configuration: string
-      homepageTemplate: string
-      manage: string
-    }
-    passkey: {
-      signingIn: string
+    views: {
+      IdentityCreate: {
+        applicationTemplateName: string
+        organizationName: string
+        username: string
+        givenName: string
+        fullName: string
+        pictureUrl: string
+        description: string
+        email: string
+      }
+      ApplicationTemplateGet: {
+        status: string
+        apps: string
+        none: string
+        clientId: string
+        clientSecret: string
+        name: string
+        id: string
+        confirmUpdateToAllocate: string
+        addAdmin: string
+        addVariable: string
+        addClient: string
+        addRedirectUri: string
+        oidcRedirectUriTemplates: string
+        hmac: string
+        jwt: string
+        spaceSeparatedScopes: string
+        spaceSeparatedAdditionalScopes: string
+        accessTokenType: string
+        accessTokenLifespan: string
+        idTokenLifespan: string
+        refreshTokenLifespan: string
+        tokenEndpointAuthMethod: string
+        organizations: string
+        createOrganization: string
+        createApplicationTemplate: string
+        addedOrganizations: string
+        availableOrganizations: string
+        variables: string
+        publicClients: string
+        backendClients: string
+        serviceClients: string
+        addedApplications: string
+        availableApplications: string
+        configuration: string
+        homepageTemplate: string
+      }
+      Home: {
+        identities: string
+        applicationTemplates: string
+        organizations: string
+      }
+      IdentityGet: {
+        identity: string
+        createIdentity: string
+        createNewIdentity: string
+        addedIdentities: string
+        availableIdentities: string
+        manage: string
+      }
+      OrganizationGet: {
+        organization: string
+        usersForOrganization: string
+        users: string
+        admins: string
+      }
+      AuthIdentity: {
+        previouslyUsedIdentities: string
+        otherAvailableIdentities: string
+        disabledIdentities: string
+      }
     }
     messages: {
       success: {

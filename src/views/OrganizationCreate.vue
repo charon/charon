@@ -78,10 +78,10 @@ async function onSubmit() {
     <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
       <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
         <div class="flex flex-row items-center">
-          <h1 class="text-2xl font-bold">{{ t("titles.createOrganization") }}</h1>
+          <h1 class="text-2xl font-bold">{{ t("views.ApplicationTemplateGet.createOrganization") }}</h1>
         </div>
         <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
-          <label for="name" class="mb-1">{{ t("labels.organizationName") }}</label>
+          <label for="name" class="mb-1">{{ t("views.IdentityCreate.organizationName") }}</label>
           <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :progress="progress" required />
           <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
           <div v-else class="mt-4">{{ t("messages.help.chooseOrganizationName") }}</div>

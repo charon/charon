@@ -34,6 +34,15 @@
         "email": "E-naslov mora biti dolg vsaj 3 znake.",
         "username": "Uporabniško ime mora biti dolgo vsaj 3 znake."
       }
+    },
+    "labels": {
+      "optional": "(neobvezno)",
+      "admin": "administrator",
+      "current": "trenutna",
+      "active": "aktivna",
+      "disabled": "onemogočena",
+      "added": "dodana",
+      "creator": "ustvarjalec"
     }
   },
   "navigation": {
@@ -43,15 +52,15 @@
     "applicationTemplates": "Predloge aplikacij",
     "organizations": "Organizacije"
   },
-  "footer": {
-    "poweredBy": "Zagotavlja {name}"
-  },
-  "auth": {
-    "start": {
+  "components": {
+    "Footer": {
+      "poweredBy": "Zagotavlja {name}"
+    },
+    "AuthStart": {
       "emailOrUsernameLabel": "Vnesite uporabniško ime Charon ali vaš e-naslov",
       "orUse": "Ali uporabite"
     },
-    "password": {
+    "AuthPassword": {
       "emailAddressLabel": "Vaš e-naslov",
       "usernameLabel": "Uporabniško ime Charon",
       "passwordLabel": "Geslo ali geslovni stavek",
@@ -64,7 +73,7 @@
       "troublePassword": "Če imate težave z pomnenjem gesla ali geslovnega stavka, poskusite {link}.",
       "differentSigninMethod": "drug način prijave"
     },
-    "code": {
+    "AuthCode": {
       "codeSentEmail": "{sentCount} 6-mestno kodo na e-naslov {strongEmail}. Vnesite jo za nadaljevanje:",
       "codeSentUsername": "{sentCount} 6-mestno kodo na e-naslove, povezane z uporabniškim imenom Charon {strongUsername}. Vnesite jo za nadaljevanje:",
       "codeFromHashEmail": "Poslali smo naslednjo 6-mestno kodo na e-naslov {strongEmail}:",
@@ -81,7 +90,8 @@
         "differentMethod": "drug način prijave ali registracije"
       }
     },
-    "passkey": {
+    "AuthPasskey": {
+      "signingIn": "Prijavljamo vas z uporabo {strong}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave.",
       "signin": {
         "instructions": "Prijavite se z uporabo vašega {strong}.",
         "failed": "Prijava z uporabo {strong} ni uspela.",
@@ -97,11 +107,11 @@
         "retrySignupButton": "Poskusi registracijo znova"
       }
     },
-    "thirdParty": {
+    "AuthThirdParty": {
       "redirecting": "Preusmerjamo vas na {provider}. Prosimo, sledite navodilom vašega brskalnika.",
       "failed": "Prijava z uporabo {provider} ni uspela."
     },
-    "redirect": {
+    "AuthRedirect": {
       "auto": {
         "message": "Preusmerjamo vas nazaj na {appName}.",
         "manualRedirect": "Kliknite {link}, če niste samodejno preusmerjeni.",
@@ -111,7 +121,7 @@
         "message": "Prijava ali registracija je zaključena. Kliknite {link} za nadaljevanje na {appName}."
       }
     },
-    "identity": {
+    "AuthIdentity": {
       "selectIdentity": "Izberite identiteto za uporabo z {appName}:",
       "newIdentityButton": "Ustvari novo identiteto",
       "signinSuccess": "{strong} Uspešno ste se prijavili v Charon.",
@@ -134,10 +144,10 @@
         "disabledIdentities": "Onemogočene identitete"
       }
     },
-    "authFlow": {
+    "AuthFlowGet": {
       "instructionsMessage": "{appLink} iz organizacije {orgLink} uporablja Charon, da vas prosi za prijavo ali registracijo. Prosimo, sledite spodnjim korakom za nadaljevanje ali zavrnitev."
     },
-    "autoRedirect": {
+    "AuthAutoRedirect": {
       "congratulations": "{strong} Vse je pripravljeno za vašo prijavo ali registracijo v {appName} z izbrano identiteto.",
       "declined": "Odločili ste se {strong} v {appName} z uporabo Charon.",
       "redirectMessage": "Sedaj boste preusmerjeni v {appName} čez {time}{pausedText}.",
@@ -148,12 +158,12 @@
       "pause": "Pavziraj",
       "redirect": "Preusmeri"
     },
-    "thirdPartyRedirect": {
+    "AuthThirdPartyRedirect": {
       "redirectMessage": "Preusmerjeni boste k {strong} čez {time}{pausedText}.",
       "instructions": "Prosimo, sledite navodilom tam za prijavo v Charon. Nato boste preusmerjeni nazaj sem.",
       "additionalInfo": "Morda se boste morali najprej prijaviti v {provider}. Morda vas bo {provider} takoj preusmeril nazaj, ne da bi vam pokazal karkoli."
     },
-    "manualRedirect": {
+    "AuthManualRedirect": {
       "failed": "{strong} Prijava ali registracija ni uspela.",
       "tryAgain": "Lahko se vrnete v {appName} in poskusite znova.",
       "completed": "Že ste bili preusmerjeni v {appName} in dokončali postopek. Sedaj lahko greste na domačo stran.",
@@ -165,77 +175,78 @@
     "dataLoading": "Nalaganje...",
     "loadingDataFailed": "nalaganje podatkov neuspešno"
   },
-  "labels": {
-    "optional": "(neobvezno)",
-    "applicationTemplateName": "Ime predloge aplikacije",
-    "organizationName": "Ime organizacije",
-    "username": "Uporabniško ime",
-    "givenName": "Ime",
-    "fullName": "Polno ime",
-    "pictureUrl": "URL slike",
-    "description": "Opis",
-    "email": "E-naslov",
-    "current": "trenutna",
-    "admin": "administrator",
-    "active": "aktivna",
-    "disabled": "onemogočena",
-    "added": "dodana",
-    "creator": "ustvarjalec",
-    "status": "Status:",
-    "apps": "Aplikacije:",
-    "none": "brez",
-    "clientId": "ID odjemalca:",
-    "clientSecret": "Skrivnost odjemalca:",
-    "name": "Ime",
-    "id": "ID:",
-    "confirmUpdateToAllocate": "potrdite posodobitev za dodelitev",
-    "addAdmin": "Dodaj administratorja",
-    "addVariable": "Dodaj spremenljivko",
-    "addClient": "Dodaj odjemalca",
-    "addRedirectUri": "Dodaj URI za preusmeritev",
-    "oidcRedirectUriTemplates": "OIDC predloge URI-jev za preusmeritev",
-    "hmac": "HMAC",
-    "jwt": "JWT",
-    "spaceSeparatedScopes": "Z znaki ločeni OpenID dosegi, ki jih lahko aplikacija zahteva",
-    "spaceSeparatedAdditionalScopes": "Z znaki ločeni dodatni dosegi, ki jih lahko odjemalec zahteva",
-    "accessTokenType": "Tip dostopovnega žetona",
-    "accessTokenLifespan": "Življenjska doba dostopovnega žetona",
-    "idTokenLifespan": "Življenjska doba ID žetona",
-    "refreshTokenLifespan": "Življenjska doba osvežitvenega žetona",
-    "tokenEndpointAuthMethod": "Metoda overjanja končne točke žetona"
-  },
-  "titles": {
-    "organizations": "Organizacije",
-    "identities": "Identitete",
-    "applicationTemplates": "Predloge aplikacij",
-    "organization": "Organizacija",
-    "createOrganization": "Ustvari organizacijo",
-    "createApplicationTemplate": "Ustvari predlogo aplikacije",
-    "createIdentity": "Ustvari identiteto",
-    "createNewIdentity": "Ustvari novo identiteto",
-    "usersForOrganization": "Uporabniki za organizacijo",
-    "previouslyUsedIdentities": "Prej uporabljene identitete",
-    "otherAvailableIdentities": "Druge razpoložljive identitete",
-    "disabledIdentities": "Onemogočene identitete",
-    "identity": "Identiteta",
-    "users": "Uporabniki",
-    "admins": "Administratorji",
-    "addedOrganizations": "Dodane organizacije",
-    "availableOrganizations": "Razpoložljive organizacije",
-    "variables": "Spremenljivke",
-    "publicClients": "Javni odjemalci",
-    "backendClients": "Zaledni odjemalci",
-    "serviceClients": "Servisni odjemalci",
-    "addedApplications": "Dodane aplikacije",
-    "availableApplications": "Razpoložljive aplikacije",
-    "addedIdentities": "Dodane identitete",
-    "availableIdentities": "Razpoložljive identitete",
-    "configuration": "Konfiguracija",
-    "homepageTemplate": "Predloga domače strani",
-    "manage": "Upravljaj"
-  },
-  "passkey": {
-    "signingIn": "Prijavljamo vas z uporabo {strong}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave."
+  "views": {
+    "IdentityCreate": {
+      "applicationTemplateName": "Ime predloge aplikacije",
+      "organizationName": "Ime organizacije",
+      "username": "Uporabniško ime",
+      "givenName": "Ime",
+      "fullName": "Polno ime",
+      "pictureUrl": "URL slike",
+      "description": "Opis",
+      "email": "E-naslov"
+    },
+    "ApplicationTemplateGet": {
+      "status": "Status:",
+      "apps": "Aplikacije:",
+      "none": "brez",
+      "clientId": "ID odjemalca:",
+      "clientSecret": "Skrivnost odjemalca:",
+      "name": "Ime",
+      "id": "ID:",
+      "confirmUpdateToAllocate": "potrdite posodobitev za dodelitev",
+      "addAdmin": "Dodaj administratorja",
+      "addVariable": "Dodaj spremenljivko",
+      "addClient": "Dodaj odjemalca",
+      "addRedirectUri": "Dodaj URI za preusmeritev",
+      "oidcRedirectUriTemplates": "OIDC predloge URI-jev za preusmeritev",
+      "hmac": "HMAC",
+      "jwt": "JWT",
+      "spaceSeparatedScopes": "Z znaki ločeni OpenID dosegi, ki jih lahko aplikacija zahteva",
+      "spaceSeparatedAdditionalScopes": "Z znaki ločeni dodatni dosegi, ki jih lahko odjemalec zahteva",
+      "accessTokenType": "Tip dostopovnega žetona",
+      "accessTokenLifespan": "Življenjska doba dostopovnega žetona",
+      "idTokenLifespan": "Življenjska doba ID žetona",
+      "refreshTokenLifespan": "Življenjska doba osvežitvenega žetona",
+      "tokenEndpointAuthMethod": "Metoda overjanja končne točke žetona",
+      "organizations": "Organizacije",
+      "createOrganization": "Ustvari organizacijo",
+      "createApplicationTemplate": "Ustvari predlogo aplikacije",
+      "addedOrganizations": "Dodane organizacije",
+      "availableOrganizations": "Razpoložljive organizacije",
+      "variables": "Spremenljivke",
+      "publicClients": "Javni odjemalci",
+      "backendClients": "Zaledni odjemalci",
+      "serviceClients": "Servisni odjemalci",
+      "addedApplications": "Dodane aplikacije",
+      "availableApplications": "Razpoložljive aplikacije",
+      "configuration": "Konfiguracija",
+      "homepageTemplate": "Predloga domače strani"
+    },
+    "Home": {
+      "identities": "Identitete",
+      "applicationTemplates": "Predloge aplikacij",
+      "organizations": "Organizacije"
+    },
+    "IdentityGet": {
+      "identity": "Identiteta",
+      "createIdentity": "Ustvari identiteto",
+      "createNewIdentity": "Ustvari novo identiteto",
+      "addedIdentities": "Dodane identitete",
+      "availableIdentities": "Razpoložljive identitete",
+      "manage": "Upravljaj"
+    },
+    "OrganizationGet": {
+      "organization": "Organizacija",
+      "usersForOrganization": "Uporabniki za organizacijo",
+      "users": "Uporabniki",
+      "admins": "Administratorji"
+    },
+    "AuthIdentity": {
+      "previouslyUsedIdentities": "Prej uporabljene identitete",
+      "otherAvailableIdentities": "Druge razpoložljive identitete",
+      "disabledIdentities": "Onemogočene identitete"
+    }
   },
   "messages": {
     "success": {

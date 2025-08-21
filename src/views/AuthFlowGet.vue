@@ -295,7 +295,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
         <div class="w-full rounded border bg-white p-4 shadow">
           <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">{{ t("navigation.signIn") }}</h2>
           <div class="mb-4">
-            <i18n-t keypath="auth.authFlow.instructionsMessage" scope="global">
+            <i18n-t keypath="components.AuthFlowGet.instructionsMessage" scope="global">
               <template #appLink>
                 <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationApp">
                   <template #default="{ doc }">
