@@ -13,6 +13,8 @@ export const i18n = createI18n<[MessageSchema], "en" | "sl">({
   legacy: false,
   locale: "en",
   fallbackLocale: "en",
+  globalInjection: false,
+  escapeParameter: true,
   messages,
   pluralRules: {
     sl: (choice: number, choicesLength: number) => {
