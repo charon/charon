@@ -1,5 +1,3 @@
-<script setup lang="ts"></script>
-
 <template>
   <div class="flex justify-between gap-x-2 p-2 leading-none sm:gap-x-4 sm:p-4">
     <ul class="flex gap-x-2 sm:gap-x-4">
