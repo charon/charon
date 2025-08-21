@@ -14,7 +14,7 @@ const { t } = useI18n()
     </ul>
     <ul class="flex gap-x-2 sm:gap-x-4">
       <li class="text-neutral-500">
-        <i18n-t keypath="footer.poweredBy" tag="span">
+        <i18n-t keypath="footer.poweredBy">
           <template #name>
             <a href="https://gitlab.com/charon/charon" class="link">Charon</a>
           </template>

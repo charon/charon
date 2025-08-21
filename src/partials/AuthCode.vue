@@ -254,7 +254,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
     <div v-if="codeFromHash" class="mt-4">
       <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationApp">
         <template #default="{ doc }">
-          <i18n-t keypath="auth.code.instructions.securityWarning" tag="div">
+          <i18n-t keypath="auth.code.instructions.securityWarning">
             <template #appName>{{ doc.applicationTemplate.name }}</template>
             <template #strongDont><strong>{{ t('auth.code.instructions.strongDont') }}</strong></template>
           </i18n-t>
@@ -262,7 +262,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
       </WithOrganizationApplicationDocument>
     </div>
     <div v-else class="mt-4">
-      <i18n-t keypath="auth.code.instructions.troubleEmail" tag="div">
+      <i18n-t keypath="auth.code.instructions.troubleEmail">
         <template #link>
           <a href="" class="link" @click.prevent="onRedo">{{ t('auth.code.instructions.differentMethod') }}</a>
         </template>

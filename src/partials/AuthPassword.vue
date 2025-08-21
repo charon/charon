@@ -374,7 +374,7 @@ async function onCode() {
       <div v-else-if="passwordError === 'invalidPassword'" class="mt-4 text-error-600">{{ t('auth.password.errors.invalidPassword') }}</div>
       <div v-else-if="passwordError === 'shortPassword'" class="mt-4 text-error-600">{{ t('auth.password.errors.shortPassword') }}</div>
       <div v-if="passwordError === 'wrongPassword'" class="mt-4">
-        <i18n-t keypath="auth.password.troublePassword" tag="div">
+        <i18n-t keypath="auth.password.troublePassword">
           <template #link>
             <a href="" class="link" @click.prevent="onRedo">{{ t('auth.password.differentSigninMethod') }}</a>
           </template>
