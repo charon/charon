@@ -115,6 +115,8 @@
       "signinSuccess": "{strong} You successfully signed in into Charon.",
       "signupSuccess": "{strong} You successfully signed up into Charon.",
       "congratulations": "Congratulations.",
+      "declineSignInOrSignUp": "decline sign-in or sign-up",
+      "sorry": "Sorry.",
       "previouslyUsedDisabled": "Previously used identities with this organization are disabled.",
       "otherAvailableIdentities": "Other available identities",
       "noIdentitiesCreateFirst": "There are no identities. Create the first one.",
@@ -122,8 +124,8 @@
       "selectInstructions": "Select the identity you want to continue with. Its information will be provided to the app and the organization. You can also create a new identity or decline to proceed."
     },
     "autoRedirect": {
-      "congratulations": "<strong>Congratulations.</strong> Everything is ready to sign you in or sign you up into {appName} using the identity you have chosen.",
-      "declined": "You decided to <strong>decline sign-in or sign-up</strong> into {appName} using Charon.",
+      "congratulations": "{strong} Everything is ready to sign you in or sign you up into {appName} using the identity you have chosen.",
+      "declined": "You decided to {strong} into {appName} using Charon.",
       "redirectMessage": "You will be now redirected to {appName} in {time}{pausedText}.",
       "oneSecond": "1 second",
       "seconds": "{count} seconds",
@@ -133,12 +135,12 @@
       "redirect": "Redirect"
     },
     "thirdPartyRedirect": {
-      "redirectMessage": "You will be redirected to <strong>{provider}</strong> in {time}{pausedText}.",
+      "redirectMessage": "You will be redirected to {strong} in {time}{pausedText}.",
       "instructions": "Please follow instructions there to sign-in into Charon. Afterwards, you will be redirected back here.",
       "additionalInfo": "You might have to sign-in into {provider} first. You might be redirected back by {provider} immediately, without showing you anything."
     },
     "manualRedirect": {
-      "failed": "<strong>Sorry.</strong> Signing in or signing up failed.",
+      "failed": "{strong} Signing in or signing up failed.",
       "tryAgain": "You can return to {appName} and try again.",
       "completed": "You have already been redirected to {appName} and completed the flow. You can now instead go to its homepage.",
       "homepage": "Homepage",

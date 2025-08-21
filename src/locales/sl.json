@@ -115,6 +115,8 @@
       "signinSuccess": "{strong} Uspešno ste se prijavili v Charon.",
       "signupSuccess": "{strong} Uspešno ste se registrirali v Charon.",
       "congratulations": "Čestitamo.",
+      "declineSignInOrSignUp": "zavrniti prijavo ali registracijo",
+      "sorry": "Oprostite.",
       "previouslyUsedDisabled": "Prej uporabljene identitete s to organizacijo so onemogočene.",
       "otherAvailableIdentities": "Druge razpoložljive identitete",
       "noIdentitiesCreateFirst": "Ni identitet. Ustvarite prvo.",
@@ -122,8 +124,8 @@
       "selectInstructions": "Izberite identiteto, s katero želite nadaljevati. Njene informacije bodo posredovane aplikaciji in organizaciji. Lahko tudi ustvarite novo identiteto ali zavrnete nadaljevanje."
     },
     "autoRedirect": {
-      "congratulations": "<strong>Čestitamo.</strong> Vse je pripravljeno za vašo prijavo ali registracijo v {appName} z izbrano identiteto.",
-      "declined": "Odločili ste se <strong>zavrniti prijavo ali registracijo</strong> v {appName} z uporabo Charon.",
+      "congratulations": "{strong} Vse je pripravljeno za vašo prijavo ali registracijo v {appName} z izbrano identiteto.",
+      "declined": "Odločili ste se {strong} v {appName} z uporabo Charon.",
       "redirectMessage": "Sedaj boste preusmerjeni v {appName} čez {time}{pausedText}.",
       "oneSecond": "1 sekundo",
       "seconds": "{count} sekund",
@@ -133,12 +135,12 @@
       "redirect": "Preusmeri"
     },
     "thirdPartyRedirect": {
-      "redirectMessage": "Preusmerjeni boste k <strong>{provider}</strong> čez {time}{pausedText}.",
+      "redirectMessage": "Preusmerjeni boste k {strong} čez {time}{pausedText}.",
       "instructions": "Prosimo, sledite navodilom tam za prijavo v Charon. Nato boste preusmerjeni nazaj sem.",
       "additionalInfo": "Morda se boste morali najprej prijaviti v {provider}. Morda vas bo {provider} takoj preusmeril nazaj, ne da bi vam pokazal karkoli."
     },
     "manualRedirect": {
-      "failed": "<strong>Oprostite.</strong> Prijava ali registracija ni uspela.",
+      "failed": "{strong} Prijava ali registracija ni uspela.",
       "tryAgain": "Lahko se vrnete v {appName} in poskusite znova.",
       "completed": "Že ste bili preusmerjeni v {appName} in dokončali postopek. Sedaj lahko greste na domačo stran.",
       "homepage": "Domača stran",

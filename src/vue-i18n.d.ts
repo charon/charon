@@ -118,6 +118,8 @@ declare module "vue-i18n" {
         signinSuccess: string
         signupSuccess: string
         congratulations: string
+        declineSignInOrSignUp: string
+        sorry: string
         previouslyUsedDisabled: string
         otherAvailableIdentities: string
         noIdentitiesCreateFirst: string
