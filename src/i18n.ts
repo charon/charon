@@ -19,9 +19,6 @@ export const i18n = createI18n<[MessageSchema], "en">({
       if (choice === 0) {
         return 0
       }
-      if (choicesLength < 4) {
-        return choice < 2 ? 1 : 2
-      }
       if (choice % 100 === 1) {
         return 1
       }
