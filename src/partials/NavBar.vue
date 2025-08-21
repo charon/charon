@@ -13,7 +13,7 @@ import { injectProgress } from "@/progress"
 import { currentAbsoluteURL, redirectServerSide } from "@/utils"
 import { accessToken, signIn, isSignedIn } from "@/auth"
 
-const { t } = useI18n()
+const { t } = useI18n({ useScope: 'global' })
 
 const { ref: navbar, attrs: navbarAttrs } = useNavbar()
 

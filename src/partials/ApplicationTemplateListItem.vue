@@ -5,7 +5,7 @@ import type { ApplicationTemplate, ApplicationTemplatePublic, ApplicationTemplat
 import { useI18n } from "vue-i18n"
 import WithDocument from "@/components/WithDocument.vue"
 
-const { t } = useI18n()
+const { t } = useI18n({ useScope: 'global' })
 
 defineProps<{
   item: ApplicationTemplateRef

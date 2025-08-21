@@ -13,7 +13,7 @@ import { getURL, postJSON, restartAuth } from "@/api"
 import { clone, encodeQuery, getOrganization } from "@/utils"
 import { processResponse } from "@/flow"
 
-const { t } = useI18n()
+const { t } = useI18n({ useScope: 'global' })
 
 const props = defineProps<{
   flow: Flow

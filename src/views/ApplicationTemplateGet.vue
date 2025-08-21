@@ -31,7 +31,7 @@ const props = defineProps<{
 
 const router = useRouter()
 
-const { t } = useI18n()
+const { t } = useI18n({ useScope: 'global' })
 
 const progress = injectProgress()
 

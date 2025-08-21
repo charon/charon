@@ -13,7 +13,7 @@ import { getURL } from "@/api"
 import { injectProgress } from "@/progress"
 import { isSignedIn } from "@/auth"
 
-const { t } = useI18n()
+const { t } = useI18n({ useScope: 'global' })
 const router = useRouter()
 
 const progress = injectProgress()

@@ -35,7 +35,7 @@ import { injectProgress } from "@/progress"
 import siteContext from "@/context"
 import { isSignedIn } from "@/auth"
 
-const { t } = useI18n()
+const { t } = useI18n({ useScope: 'global' })
 
 const props = defineProps<{
   id: string

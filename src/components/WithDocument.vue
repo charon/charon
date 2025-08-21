@@ -8,7 +8,7 @@ import { getURL } from "@/api"
 import { injectMainProgress } from "@/progress"
 import { encodeQuery } from "@/utils"
 
-const { t } = useI18n()
+const { t } = useI18n({ useScope: 'global' })
 
 const props = withDefaults(
   defineProps<{

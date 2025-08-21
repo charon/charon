@@ -11,7 +11,7 @@ import Footer from "@/partials/Footer.vue"
 import { postJSON } from "@/api"
 import { injectProgress } from "@/progress"
 
-const { t } = useI18n()
+const { t } = useI18n({ useScope: 'global' })
 const router = useRouter()
 
 const progress = injectProgress()

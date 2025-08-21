@@ -6,7 +6,7 @@ import { useI18n } from "vue-i18n"
 import WithDocument from "@/components/WithDocument.vue"
 import { getHomepage } from "@/utils"
 
-const { t } = useI18n()
+const { t } = useI18n({ useScope: 'global' })
 
 defineProps<{
   identityOrganization: IdentityOrganization | DeepReadonly<IdentityOrganization>
