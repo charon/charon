@@ -27,7 +27,8 @@ management, and third-party authentication providers.
 
 - `make test` - Run Go tests with coverage
 - `make test-ci` - Run tests with CI output formats
-- `npm run test` - Run frontend tests with Vitest
+- `npm run test-ci` - Run frontend tests with Vitest (CI mode - exits after completion)
+- `npm run test` - Run frontend tests with Vitest (watch mode - never exits, do NOT use in CI)
 - `npm run coverage` - Generate frontend test coverage
 
 ### Linting and Formatting
