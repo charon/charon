@@ -211,24 +211,32 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
     <div class="flex flex-col">
       <label v-if="codeFromHash && isEmail(flow.getEmailOrUsername())" for="code" class="mb-1">
         <i18n-t keypath="auth.code.codeFromHashEmail">
-          <template #strongEmail><strong>{{ flow.getEmailOrUsername() }}</strong></template>
+          <template #strongEmail
+            ><strong>{{ flow.getEmailOrUsername() }}</strong></template
+          >
         </i18n-t>
       </label>
       <label v-else-if="codeFromHash" for="code" class="mb-1">
         <i18n-t keypath="auth.code.codeFromHashUsername">
-          <template #strongUsername><strong>{{ flow.getEmailOrUsername() }}</strong></template>
+          <template #strongUsername
+            ><strong>{{ flow.getEmailOrUsername() }}</strong></template
+          >
         </i18n-t>
       </label>
       <label v-else-if="!codeFromHash && isEmail(flow.getEmailOrUsername())" for="code" class="mb-1">
         <i18n-t keypath="auth.code.codeSentEmail">
-          <template #sentCount>{{ sendCounter > 1 ? t('auth.code.sentMultiple', { count: sendCounter }) : t('auth.code.sent') }}</template>
-          <template #strongEmail><strong>{{ flow.getEmailOrUsername() }}</strong></template>
+          <template #sentCount>{{ sendCounter > 1 ? t("auth.code.sentMultiple", { count: sendCounter }) : t("auth.code.sent") }}</template>
+          <template #strongEmail
+            ><strong>{{ flow.getEmailOrUsername() }}</strong></template
+          >
         </i18n-t>
       </label>
       <label v-else-if="!codeFromHash" for="code" class="mb-1">
         <i18n-t keypath="auth.code.codeSentUsername">
-          <template #sentCount>{{ sendCounter > 1 ? t('auth.code.sentMultiple', { count: sendCounter }) : t('auth.code.sent') }}</template>
-          <template #strongUsername><strong>{{ flow.getEmailOrUsername() }}</strong></template>
+          <template #sentCount>{{ sendCounter > 1 ? t("auth.code.sentMultiple", { count: sendCounter }) : t("auth.code.sent") }}</template>
+          <template #strongUsername
+            ><strong>{{ flow.getEmailOrUsername() }}</strong></template
+          >
         </i18n-t>
       </label>
       <!--
@@ -254,19 +262,23 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
           is not enabled.
           Button is on purpose not disabled on unexpectedError so that user can retry.
         -->
-        <Button id="submit-code" primary type="submit" tabindex="2" :disabled="!code.replaceAll(/\s/g, '') || !!codeError" :progress="progress">{{ t('common.buttons.next') }}</Button>
+        <Button id="submit-code" primary type="submit" tabindex="2" :disabled="!code.replaceAll(/\s/g, '') || !!codeError" :progress="progress">{{
+          t("common.buttons.next")
+        }}</Button>
       </form>
     </div>
-    <div v-if="codeError === 'invalidCode'" class="mt-4 text-error-600">{{ t('common.errors.invalidCode') }}</div>
-    <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t('common.errors.unexpected') }}</div>
-    <div v-else-if="codeFromHash" class="mt-4">{{ t('auth.code.instructions.confirmCode') }}</div>
-    <div v-else class="mt-4">{{ t('auth.code.instructions.waitForCode') }}</div>
+    <div v-if="codeError === 'invalidCode'" class="mt-4 text-error-600">{{ t("common.errors.invalidCode") }}</div>
+    <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
+    <div v-else-if="codeFromHash" class="mt-4">{{ t("auth.code.instructions.confirmCode") }}</div>
+    <div v-else class="mt-4">{{ t("auth.code.instructions.waitForCode") }}</div>
     <div v-if="codeFromHash" class="mt-4">
       <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationApp">
         <template #default="{ doc }">
           <i18n-t keypath="auth.code.instructions.securityWarning">
             <template #appName>{{ doc.applicationTemplate.name }}</template>
-            <template #strongDont><strong>{{ t('auth.code.instructions.strongDont') }}</strong></template>
+            <template #strongDont
+              ><strong>{{ t("auth.code.instructions.strongDont") }}</strong></template
+            >
           </i18n-t>
         </template>
       </WithOrganizationApplicationDocument>
@@ -274,13 +286,13 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
     <div v-else class="mt-4">
       <i18n-t keypath="auth.code.instructions.troubleEmail">
         <template #link>
-          <a href="" class="link" @click.prevent="onRedo">{{ t('auth.code.instructions.differentMethod') }}</a>
+          <a href="" class="link" @click.prevent="onRedo">{{ t("auth.code.instructions.differentMethod") }}</a>
         </template>
       </i18n-t>
     </div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" tabindex="4" @click.prevent="onBack">{{ t('common.buttons.back') }}</Button>
-      <Button type="button" tabindex="3" :progress="progress" @click.prevent="onResend">{{ t('auth.code.resendButton') }}</Button>
+      <Button type="button" tabindex="4" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
+      <Button type="button" tabindex="3" :progress="progress" @click.prevent="onResend">{{ t("auth.code.resendButton") }}</Button>
     </div>
   </div>
 </template>

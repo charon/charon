@@ -147,23 +147,31 @@ async function onPasskeySignup() {
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div v-if="signupAttempted && signupFailed">
       <i18n-t keypath="auth.passkey.signup.failed">
-        <template #strong><strong>{{ t('auth.passkey.signin.strongPasskey') }}</strong></template>
+        <template #strong
+          ><strong>{{ t("auth.passkey.signin.strongPasskey") }}</strong></template
+        >
       </i18n-t>
     </div>
     <div v-else-if="signupAttempted">
       <i18n-t keypath="auth.passkey.signup.signingUp">
-        <template #strong><strong>{{ t('auth.passkey.signin.strongPasskey') }}</strong></template>
+        <template #strong
+          ><strong>{{ t("auth.passkey.signin.strongPasskey") }}</strong></template
+        >
       </i18n-t>
     </div>
     <div v-else>
       <i18n-t keypath="auth.passkey.signup.instructions">
-        <template #strong><strong>{{ t('auth.passkey.signin.strongPasskey') }}</strong></template>
+        <template #strong
+          ><strong>{{ t("auth.passkey.signin.strongPasskey") }}</strong></template
+        >
       </i18n-t>
     </div>
-    <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t('common.errors.unexpected') }}</div>
+    <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" tabindex="2" @click.prevent="onBack">{{ t('auth.passkey.signup.retrySigninButton') }}</Button>
-      <Button id="passkey-signup" primary type="button" tabindex="1" :progress="progress" @click.prevent="onPasskeySignup">{{ signupFailedAtLeastOnce ? t('auth.passkey.signup.retrySignupButton') : t('auth.passkey.signup.passkeySignupButton') }}</Button>
+      <Button type="button" tabindex="2" @click.prevent="onBack">{{ t("auth.passkey.signup.retrySigninButton") }}</Button>
+      <Button id="passkey-signup" primary type="button" tabindex="1" :progress="progress" @click.prevent="onPasskeySignup">{{
+        signupFailedAtLeastOnce ? t("auth.passkey.signup.retrySignupButton") : t("auth.passkey.signup.passkeySignupButton")
+      }}</Button>
     </div>
   </div>
 </template>

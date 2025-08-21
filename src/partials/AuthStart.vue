@@ -138,7 +138,7 @@ async function onThirdPartyProvider(provider: string) {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div class="flex flex-col">
-      <label for="email" class="mb-1">{{ t('auth.start.emailOrUsernameLabel') }}</label>
+      <label for="email" class="mb-1">{{ t("auth.start.emailOrUsernameLabel") }}</label>
       <!--
         We set novalidate because we do not UA to show hints.
         We show them ourselves when we want them.
@@ -167,20 +167,24 @@ async function onThirdPartyProvider(provider: string) {
           client side so we might be counting characters differently here, leading to confusion.
           Button is on purpose not disabled on unexpectedError so that user can retry.
         -->
-        <Button primary type="submit" :disabled="!flow.getEmailOrUsername().trim() || !!passwordError" :progress="progress">{{ t('common.buttons.next') }}</Button>
+        <Button primary type="submit" :disabled="!flow.getEmailOrUsername().trim() || !!passwordError" :progress="progress">{{ t("common.buttons.next") }}</Button>
       </form>
-      <div v-if="passwordError === 'invalidEmailOrUsername' && isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">{{ t('common.errors.invalidEmailOrUsername.email') }}</div>
-      <div v-else-if="passwordError === 'invalidEmailOrUsername' && !isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">{{ t('common.errors.invalidEmailOrUsername.username') }}</div>
+      <div v-if="passwordError === 'invalidEmailOrUsername' && isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">
+        {{ t("common.errors.invalidEmailOrUsername.email") }}
+      </div>
+      <div v-else-if="passwordError === 'invalidEmailOrUsername' && !isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">
+        {{ t("common.errors.invalidEmailOrUsername.username") }}
+      </div>
       <div v-else-if="passwordError === 'shortEmailOrUsername' && isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">
-        {{ t('common.errors.shortEmailOrUsername.email') }}
+        {{ t("common.errors.shortEmailOrUsername.email") }}
       </div>
       <div v-else-if="passwordError === 'shortEmailOrUsername' && !isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">
-        {{ t('common.errors.shortEmailOrUsername.username') }}
+        {{ t("common.errors.shortEmailOrUsername.username") }}
       </div>
-      <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t('common.errors.unexpected') }}</div>
+      <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     </div>
-    <h2 class="text-center m-4 text-xl font-bold uppercase">{{ t('auth.start.orUse') }}</h2>
-    <Button primary type="button" :disabled="!browserSupportsWebAuthn()" :progress="progress" @click.prevent="onPasskey">{{ t('auth.start.passkeyButton') }}</Button>
+    <h2 class="text-center m-4 text-xl font-bold uppercase">{{ t("auth.start.orUse") }}</h2>
+    <Button primary type="button" :disabled="!browserSupportsWebAuthn()" :progress="progress" @click.prevent="onPasskey">{{ t("auth.start.passkeyButton") }}</Button>
     <Button v-for="p of siteContext.providers" :key="p.key" primary type="button" class="mt-4" :progress="progress" @click.prevent="onThirdPartyProvider(p.key)">{{
       p.name
     }}</Button>

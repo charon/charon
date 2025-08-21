@@ -72,6 +72,7 @@ Charon is a privacy-enabling account management and SSO solution built with Go b
 - **Import Organization**: Type imports must be at the top with `import type`, followed by empty line, then regular imports
 - **Internationalization**: All user-facing text must use `useI18n()` composition API with precompiled messages
 - **TypeScript**: Strict typing enabled with vue-i18n message schema validation
+- **Formatting**: Always run `npm run fmt` after making changes to maintain consistent code formatting
 
 ### Development Architecture
 - Backend serves as proxy to Vite dev server in development mode (`-D` flag)
