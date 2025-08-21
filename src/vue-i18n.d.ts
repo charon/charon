@@ -132,6 +132,16 @@ declare module "vue-i18n" {
       email: string
       current: string
       admin: string
+      active: string
+      disabled: string
+      status: string
+      apps: string
+      none: string
+      clientId: string
+      clientSecret: string
+      name: string
+      id: string
+      confirmUpdateToAllocate: string
     }
     titles: {
       organizations: string
@@ -164,6 +174,20 @@ declare module "vue-i18n" {
         identityUpdated: string
         usersUpdated: string
         organizationsUpdated: string
+        variablesUpdated: string
+        publicClientsUpdated: string
+        backendClientsUpdated: string
+        addedApplicationsUpdated: string
+      }
+      empty: {
+        noUsers: string
+        noIdentities: string
+        noOrganizations: string
+        noApplicationTemplates: string
+      }
+      help: {
+        chooseApplicationTemplateName: string
+        chooseOrganizationName: string
       }
     }
   }

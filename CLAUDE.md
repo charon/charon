@@ -200,3 +200,26 @@ grep -r "alternative pattern" src/
 5. **Testing**: Run linting and formatting to ensure code quality
 
 This approach prevents partial implementations and ensures thorough, complete changes.
+
+### 6. Always Complete Tasks Fully
+
+**Never stop in the middle of a task and ask if you should continue.** When given a task, complete it entirely:
+
+❌ **Wrong approach:**
+- Complete 30% of the work
+- Ask: "Would you like me to continue with the remaining files?"
+- Leave the task in a partial state
+
+✅ **Correct approach:**  
+- Work systematically through the entire task
+- Complete all identified work without interruption
+- Only ask for clarification if the requirements are genuinely unclear
+- Present the completed work as a finished deliverable
+
+**Examples of when to continue vs. when to ask:**
+- ✅ Continue: You have a clear list of 20 files to update with similar changes
+- ✅ Continue: The pattern is established and you can apply it systematically  
+- ❌ Ask: The user provides conflicting requirements that need clarification
+- ❌ Ask: You encounter technical limitations that prevent completion
+
+**Key principle:** Treat tasks like a professional developer would - complete the work fully before presenting results.

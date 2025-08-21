@@ -73,7 +73,7 @@ const WithIdentityDocument = WithDocument<Identity>
       <div v-else-if="dataLoadingError" class="w-full rounded border bg-white p-4 shadow text-error-600">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
         <div v-if="!identities.length" class="w-full rounded border bg-white p-4 shadow italic">
-          There are no identities. {{ isSignedIn() ? "Create the first one." : "Sign-in or sign-up to create the first one." }}
+          {{ isSignedIn() ? t("messages.empty.noIdentitiesCreate") : t("messages.empty.noIdentitiesSignIn") }}
         </div>
         <div v-for="identity of identities" :key="identity.id" class="w-full rounded border bg-white p-4 shadow">
           <WithIdentityDocument :params="{ id: identity.id }" name="IdentityGet">

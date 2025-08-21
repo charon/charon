@@ -128,7 +128,17 @@
     "description": "Opis",
     "email": "E-naslov",
     "current": "trenutna",
-    "admin": "administrator"
+    "admin": "administrator",
+    "active": "aktivna",
+    "disabled": "onemogočena",
+    "status": "Status:",
+    "apps": "Aplikacije:",
+    "none": "brez",
+    "clientId": "ID odjemalca:",
+    "clientSecret": "Skrivnost odjemalca:",
+    "name": "Ime",
+    "id": "ID:",
+    "confirmUpdateToAllocate": "potrdite posodobitev za dodelitev"
   },
   "titles": {
     "organizations": "Organizacije",
@@ -147,7 +157,20 @@
     "users": "Uporabniki",
     "admins": "Administratorji",
     "addedOrganizations": "Dodane organizacije",
-    "availableOrganizations": "Razpoložljive organizacije"
+    "availableOrganizations": "Razpoložljive organizacije",
+    "variables": "Spremenljivke",
+    "publicClients": "Javni odjemalci",
+    "backendClients": "Zaledni odjemalci",
+    "serviceClients": "Servisni odjemalci",
+    "addedApplications": "Dodane aplikacije",
+    "availableApplications": "Razpoložljive aplikacije",
+    "addedIdentities": "Dodane identitete",
+    "availableIdentities": "Razpoložljive identitete",
+    "previouslyUsedIdentities": "Prej uporabljene identitete",
+    "otherAvailableIdentities": "Druge razpoložljive identitete",
+    "configuration": "Konfiguracija",
+    "homepageTemplate": "Predloga domače strani",
+    "manage": "Upravljaj"
   },
   "passkey": {
     "signingIn": "Prijavljamo vas z uporabo {strong}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave."
@@ -160,7 +183,28 @@
       "identitiesUpdated": "Identitete organizacije so bile uspešno posodobljene.",
       "identityUpdated": "Identiteta je bila uspešno posodobljena.",
       "usersUpdated": "Uporabniki so bili uspešno posodobljeni.",
-      "organizationsUpdated": "Dodane organizacije so bile uspešno posodobljene."
+      "organizationsUpdated": "Dodane organizacije so bile uspešno posodobljene.",
+      "variablesUpdated": "Spremenljivke so bile uspešno posodobljene.",
+      "publicClientsUpdated": "Javni odjemalci so bili uspešno posodobljeni.",
+      "backendClientsUpdated": "Zaledni odjemalci so bili uspešno posodobljeni.",
+      "addedApplicationsUpdated": "Dodane aplikacije so bile uspešno posodobljene."
+    },
+    "empty": {
+      "noIdentities": "Ni identitet.",
+      "noIdentitiesCreate": "Ni identitet. Ustvarite prvo.",
+      "noIdentitiesSignIn": "Ni identitet. Prijavite se ali registrirajte, da ustvarite prvo.",
+      "noOrganizations": "Ni organizacij.",
+      "noOrganizationsCreate": "Ni organizacij. Ustvarite prvo.",
+      "noOrganizationsSignIn": "Ni organizacij. Prijavite se ali registrirajte, da ustvarite prvo.",
+      "noApplicationTemplates": "Ni predlog aplikacij.",
+      "noApplicationTemplatesCreate": "Ni predlog aplikacij. Ustvarite prvo.",
+      "noApplicationTemplatesSignIn": "Ni predlog aplikacij. Prijavite se ali registrirajte, da ustvarite prvo.",
+      "noUsers": "Ni uporabnikov.",
+      "noOtherIdentities": "Ni drugih identitet. Ustvarite eno."
+    },
+    "help": {
+      "chooseApplicationTemplateName": "Izberite ime. Po ustvaritvi boste lahko konfigurirali predlogo aplikacije.",
+      "chooseOrganizationName": "Izberite ime. Po ustvaritvi boste lahko konfigurirali organizacijo."
     }
   }
 }

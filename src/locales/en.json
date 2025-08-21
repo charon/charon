@@ -128,7 +128,17 @@
     "description": "Description",
     "email": "E-mail address",
     "current": "current",
-    "admin": "admin"
+    "admin": "admin",
+    "active": "active",
+    "disabled": "disabled",
+    "status": "Status:",
+    "apps": "Apps:",
+    "none": "none",
+    "clientId": "Client ID:",
+    "clientSecret": "Client secret:",
+    "name": "Name",
+    "id": "ID:",
+    "confirmUpdateToAllocate": "confirm update to allocate"
   },
   "titles": {
     "organizations": "Organizations",
@@ -147,7 +157,20 @@
     "users": "Users",
     "admins": "Admins",
     "addedOrganizations": "Added organizations",
-    "availableOrganizations": "Available organizations"
+    "availableOrganizations": "Available organizations",
+    "variables": "Variables",
+    "publicClients": "Public clients",
+    "backendClients": "Backend clients",
+    "serviceClients": "Service clients",
+    "addedApplications": "Added applications",
+    "availableApplications": "Available applications",
+    "addedIdentities": "Added identities",
+    "availableIdentities": "Available identities",
+    "previouslyUsedIdentities": "Previously used identities",
+    "otherAvailableIdentities": "Other available identities",
+    "configuration": "Configuration",
+    "homepageTemplate": "Homepage template",
+    "manage": "Manage"
   },
   "passkey": {
     "signingIn": "Signing you in using {strong}. Please follow instructions by your browser and/or device."
@@ -160,7 +183,28 @@
       "identitiesUpdated": "Organization identities updated successfully.",
       "identityUpdated": "Identity updated successfully.",
       "usersUpdated": "Users updated successfully.",
-      "organizationsUpdated": "Added organizations updated successfully."
+      "organizationsUpdated": "Added organizations updated successfully.",
+      "variablesUpdated": "Variables updated successfully.",
+      "publicClientsUpdated": "Public clients updated successfully.",
+      "backendClientsUpdated": "Backend clients updated successfully.",
+      "addedApplicationsUpdated": "Added applications updated successfully."
+    },
+    "empty": {
+      "noIdentities": "There are no identities.",
+      "noIdentitiesCreate": "There are no identities. Create the first one.",
+      "noIdentitiesSignIn": "There are no identities. Sign-in or sign-up to create the first one.",
+      "noOrganizations": "There are no organizations.",
+      "noOrganizationsCreate": "There are no organizations. Create the first one.",
+      "noOrganizationsSignIn": "There are no organizations. Sign-in or sign-up to create the first one.",
+      "noApplicationTemplates": "There are no application templates.",
+      "noApplicationTemplatesCreate": "There are no application templates. Create the first one.",
+      "noApplicationTemplatesSignIn": "There are no application templates. Sign-in or sign-up to create the first one.",
+      "noUsers": "There are no users.",
+      "noOtherIdentities": "There are no other identities. Create one."
+    },
+    "help": {
+      "chooseApplicationTemplateName": "Choose a name. You will be able to configure the application template after it is created.",
+      "chooseOrganizationName": "Choose a name. You will be able to configure the organization after it is created."
     }
   }
 }

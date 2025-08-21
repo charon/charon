@@ -85,7 +85,7 @@ async function onSubmit() {
           <label for="name" class="mb-1">{{ t("labels.applicationTemplateName") }}</label>
           <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :progress="progress" required />
           <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
-          <div v-else class="mt-4">Choose a name. You will be able to configure the application template after it is created.</div>
+          <div v-else class="mt-4">{{ t("messages.help.chooseApplicationTemplateName") }}</div>
           <div class="mt-4 flex flex-row justify-end">
             <!--
               Button is on purpose not disabled on unexpectedError so that user can retry.
