@@ -112,8 +112,9 @@
     "identity": {
       "selectIdentity": "Izberite identiteto za uporabo z {appName}:",
       "newIdentityButton": "Ustvari novo identiteto",
-      "signinSuccess": "<strong>Čestitamo.</strong> Uspešno ste se prijavili v Charon.",
-      "signupSuccess": "<strong>Čestitamo.</strong> Uspešno ste se registrirali v Charon.",
+      "signinSuccess": "{strong} Uspešno ste se prijavili v Charon.",
+      "signupSuccess": "{strong} Uspešno ste se registrirali v Charon.",
+      "congratulations": "Čestitamo.",
       "previouslyUsedDisabled": "Prej uporabljene identitete s to organizacijo so onemogočene.",
       "otherAvailableIdentities": "Druge razpoložljive identitete",
       "noIdentitiesCreateFirst": "Ni identitet. Ustvarite prvo.",

@@ -117,6 +117,7 @@ declare module "vue-i18n" {
         newIdentityButton: string
         signinSuccess: string
         signupSuccess: string
+        congratulations: string
         previouslyUsedDisabled: string
         otherAvailableIdentities: string
         noIdentitiesCreateFirst: string

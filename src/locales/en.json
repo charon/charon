@@ -112,8 +112,9 @@
     "identity": {
       "selectIdentity": "Select identity to use with {appName}:",
       "newIdentityButton": "Create new identity",
-      "signinSuccess": "<strong>Congratulations.</strong> You successfully signed in into Charon.",
-      "signupSuccess": "<strong>Congratulations.</strong> You successfully signed up into Charon.",
+      "signinSuccess": "{strong} You successfully signed in into Charon.",
+      "signupSuccess": "{strong} You successfully signed up into Charon.",
+      "congratulations": "Congratulations.",
       "previouslyUsedDisabled": "Previously used identities with this organization are disabled.",
       "otherAvailableIdentities": "Other available identities",
       "noIdentitiesCreateFirst": "There are no identities. Create the first one.",

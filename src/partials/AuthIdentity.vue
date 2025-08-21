@@ -337,8 +337,16 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div class="flex flex-col">
-      <div v-if="flow.getCompleted().includes('signin')" class="mb-4" v-html="t('auth.identity.signinSuccess')"></div>
-      <div v-else-if="flow.getCompleted().includes('signup')" class="mb-4" v-html="t('auth.identity.signupSuccess')"></div>
+      <div v-if="flow.getCompleted().includes('signin')" class="mb-4">
+        <i18n-t keypath="auth.identity.signinSuccess">
+          <template #strong><strong>{{ t("auth.identity.congratulations") }}</strong></template>
+        </i18n-t>
+      </div>
+      <div v-else-if="flow.getCompleted().includes('signup')" class="mb-4">
+        <i18n-t keypath="auth.identity.signupSuccess">
+          <template #strong><strong>{{ t("auth.identity.congratulations") }}</strong></template>
+        </i18n-t>
+      </div>
       <div class="mb-4">
         {{ t("auth.identity.selectInstructions") }}
       </div>
