@@ -58,6 +58,15 @@ management, and third-party authentication providers.
 - `config.go` - Application configuration and CLI setup
 - `init.go` - System initialization and bootstrapping
 
+### Backend Code Style
+
+- **CI Commands**: For backend-only changes, run these commands to match CI validation:
+  - `make lint` - Go linter (golangci-lint) with auto-fix
+  - `make fmt` - Go code formatting with gofumpt and goimports
+  - `make test` - Go tests with coverage
+  - `make lint-docs` - Documentation linting (affects whole repo)
+  - `make audit` - Go security audit with nancy
+
 ### Frontend (Vue 3 + TypeScript)
 
 - **Framework**: Vue 3 with Composition API and TypeScript
@@ -88,6 +97,14 @@ management, and third-party authentication providers.
   - Multi-line Vue template attributes should break after `>` and before `<` on closing tags
   - Files should end with newlines
   - Consistent spacing and indentation per Prettier configuration
+- **CI Commands**: For frontend-only changes, run these commands to match CI validation:
+  - `npm run lint` - ESLint with auto-fix
+  - `npm run lint-vue` - Vue TypeScript compilation check
+  - `npm run lint-style` - Stylelint with auto-fix
+  - `npm run fmt` - Prettier formatting
+  - `npm run test-ci` - Frontend tests with coverage
+  - `make lint-docs` - Documentation linting (affects whole repo)
+  - `npm audit` - Security audit
 
 ### Development Architecture
 
