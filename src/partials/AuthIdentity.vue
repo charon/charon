@@ -340,9 +340,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
       <div v-if="flow.getCompleted().includes('signin')" class="mb-4" v-html="t('auth.identity.signinSuccess')"></div>
       <div v-else-if="flow.getCompleted().includes('signup')" class="mb-4" v-html="t('auth.identity.signupSuccess')"></div>
       <div class="mb-4">
-        <i18n-t keypath="auth.identity.selectIdentity" :appName="flow.getAppName()">
-          <template #appName><strong>{{ flow.getAppName() }}</strong></template>
-        </i18n-t>
+        {{ t("auth.identity.selectInstructions") }}
       </div>
       <div v-if="allIdentitiesLoading" class="mb-4">{{ t("loading.dataLoading") }}</div>
       <div v-else-if="allIdentitiesLoadingError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>

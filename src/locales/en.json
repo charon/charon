@@ -117,7 +117,8 @@
       "previouslyUsedDisabled": "Previously used identities with this organization are disabled.",
       "otherAvailableIdentities": "Other available identities",
       "noIdentitiesCreateFirst": "There are no identities. Create the first one.",
-      "noOtherIdentitiesCreateOne": "There are no other identities. Create one."
+      "noOtherIdentitiesCreateOne": "There are no other identities. Create one.",
+      "selectInstructions": "Select the identity you want to continue with. Its information will be provided to the app and the organization. You can also create a new identity or decline to proceed."
     },
     "autoRedirect": {
       "congratulations": "<strong>Congratulations.</strong> Everything is ready to sign you in or sign you up into {appName} using the identity you have chosen.",

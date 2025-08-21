@@ -121,6 +121,7 @@ declare module "vue-i18n" {
         otherAvailableIdentities: string
         noIdentitiesCreateFirst: string
         noOtherIdentitiesCreateOne: string
+        selectInstructions: string
       }
       autoRedirect: {
         congratulations: string
