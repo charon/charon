@@ -133,3 +133,70 @@ management, and third-party authentication providers.
 - Node.js 20+ required  
 - TLS certificates needed (recommend mkcert for local development)
 - CompileDaemon for backend auto-reload during development
+
+## Systematic Task Approach
+
+For large-scale refactoring or comprehensive code changes (like internationalization, dependency updates, or architectural changes), always use this systematic approach:
+
+### 1. Discovery Phase First
+
+**Never start implementing until you have a complete picture of the scope.**
+
+```bash
+# Example: Search for ALL files that need work
+grep -r "hardcoded pattern" src/
+find src/ -name "*.vue" -exec grep -l "pattern" {} \;
+```
+
+### 2. Use Task Tool for Complex Searches
+
+For comprehensive searches across large codebases, delegate to the `general-purpose` agent:
+
+```
+Task tool with subagent_type: "general-purpose"  
+Prompt: "Search the entire src/ directory for all Vue files containing hardcoded strings that need internationalization. Return a complete list of files and the specific strings that need translation, with line numbers."
+```
+
+### 3. Create Complete Todo Lists Upfront
+
+Instead of vague tasks like "Update remaining files", create enumerated lists:
+
+❌ **Bad approach:**
+- Update IdentityGet.vue
+- Update remaining files
+- Final search
+
+✅ **Systematic approach:**
+- Search all Vue files for hardcoded strings
+- Update IdentityGet.vue (strings on lines 23, 45, 67)
+- Update ApplicationTemplateGet.vue (strings on lines 12, 34, 89, 123)
+- Update AuthPassword.vue (strings on lines 5, 78)
+- Update OrganizationListItem.vue (admin label on line 22)
+- Verify no remaining hardcoded strings
+
+### 4. Batch Operations When Possible
+
+- Use `MultiEdit` for similar changes across multiple files
+- Use `grep` with `replace_all` patterns for systematic replacements  
+- Process files systematically in order of complexity
+
+### 5. Always Verify Completeness
+
+Before marking any comprehensive task as complete:
+
+```bash
+# Search for remaining patterns with multiple approaches
+grep -r "pattern1" src/
+grep -r "pattern2" src/  
+grep -r "alternative pattern" src/
+```
+
+### Example: Internationalization Task
+
+1. **Discovery**: Search all `.vue` files for hardcoded English strings
+2. **Cataloging**: List every file and specific strings that need translation
+3. **Implementation**: Work through files systematically, updating translation keys
+4. **Verification**: Multiple grep searches to confirm no strings were missed
+5. **Testing**: Run linting and formatting to ensure code quality
+
+This approach prevents partial implementations and ensures thorough, complete changes.
