@@ -54,10 +54,10 @@
       "differentSigninMethod": "drug način prijave"
     },
     "code": {
-      "codeSentEmail": "{sentCount} 6-mestno kodo na e-naslov {email}. Vnesite jo za nadaljevanje:",
-      "codeSentUsername": "{sentCount} 6-mestno kodo na e-naslove, povezane z uporabniškim imenom Charon {username}. Vnesite jo za nadaljevanje:",
-      "codeFromHashEmail": "Poslali smo naslednjo 6-mestno kodo na e-naslov {email}:",
-      "codeFromHashUsername": "Poslali smo naslednjo 6-mestno kodo na e-naslove, povezane z uporabniškim imenom Charon {username}:",
+      "codeSentEmail": "{sentCount} 6-mestno kodo na e-naslov {strongEmail}. Vnesite jo za nadaljevanje:",
+      "codeSentUsername": "{sentCount} 6-mestno kodo na e-naslove, povezane z uporabniškim imenom Charon {strongUsername}. Vnesite jo za nadaljevanje:",
+      "codeFromHashEmail": "Poslali smo naslednjo 6-mestno kodo na e-naslov {strongEmail}:",
+      "codeFromHashUsername": "Poslali smo naslednjo 6-mestno kodo na e-naslove, povezane z uporabniškim imenom Charon {strongUsername}:",
       "resendButton": "Ponovno pošlji kodo",
       "sent": "Poslali smo",
       "sentMultiple": "Poslali smo ({count}x)",

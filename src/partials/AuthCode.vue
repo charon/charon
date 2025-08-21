@@ -209,18 +209,28 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div class="flex flex-col">
-      <label v-if="codeFromHash && isEmail(flow.getEmailOrUsername())" for="code" class="mb-1"
-        >{{ t('auth.code.codeFromHashEmail', { email: flow.getEmailOrUsername() }) }}</label
-      >
+      <label v-if="codeFromHash && isEmail(flow.getEmailOrUsername())" for="code" class="mb-1">
+        <i18n-t keypath="auth.code.codeFromHashEmail">
+          <template #strongEmail><strong>{{ flow.getEmailOrUsername() }}</strong></template>
+        </i18n-t>
+      </label>
       <label v-else-if="codeFromHash" for="code" class="mb-1">
-        {{ t('auth.code.codeFromHashUsername', { username: flow.getEmailOrUsername() }) }}</label
-      >
-      <label v-else-if="!codeFromHash && isEmail(flow.getEmailOrUsername())" for="code" class="mb-1"
-        >{{ t('auth.code.codeSentEmail', { sentCount: sendCounter > 1 ? t('auth.code.sentMultiple', { count: sendCounter }) : t('auth.code.sent'), email: flow.getEmailOrUsername() }) }}</label
-      >
+        <i18n-t keypath="auth.code.codeFromHashUsername">
+          <template #strongUsername><strong>{{ flow.getEmailOrUsername() }}</strong></template>
+        </i18n-t>
+      </label>
+      <label v-else-if="!codeFromHash && isEmail(flow.getEmailOrUsername())" for="code" class="mb-1">
+        <i18n-t keypath="auth.code.codeSentEmail">
+          <template #sentCount>{{ sendCounter > 1 ? t('auth.code.sentMultiple', { count: sendCounter }) : t('auth.code.sent') }}</template>
+          <template #strongEmail><strong>{{ flow.getEmailOrUsername() }}</strong></template>
+        </i18n-t>
+      </label>
       <label v-else-if="!codeFromHash" for="code" class="mb-1">
-        {{ t('auth.code.codeSentUsername', { sentCount: sendCounter > 1 ? t('auth.code.sentMultiple', { count: sendCounter }) : t('auth.code.sent'), username: flow.getEmailOrUsername() }) }}</label
-      >
+        <i18n-t keypath="auth.code.codeSentUsername">
+          <template #sentCount>{{ sendCounter > 1 ? t('auth.code.sentMultiple', { count: sendCounter }) : t('auth.code.sent') }}</template>
+          <template #strongUsername><strong>{{ flow.getEmailOrUsername() }}</strong></template>
+        </i18n-t>
+      </label>
       <!--
         We set novalidate because we do not UA to show hints.
         We show them ourselves when we want them.

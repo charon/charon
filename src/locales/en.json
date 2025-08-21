@@ -54,10 +54,10 @@
       "differentSigninMethod": "different sign-in method"
     },
     "code": {
-      "codeSentEmail": "We {sentCount} a 6-digit code to {email} e-mail address. Please enter it to continue:",
-      "codeSentUsername": "We {sentCount} a 6-digit code to e-mail address(es) associated with the Charon username {username}. Please enter it to continue:",
-      "codeFromHashEmail": "We sent the following 6-digit code to {email} e-mail address:",
-      "codeFromHashUsername": "We sent the following 6-digit code to e-mail address(es) associated with the Charon username {username}:",
+      "codeSentEmail": "We {sentCount} a 6-digit code to {strongEmail} e-mail address. Please enter it to continue:",
+      "codeSentUsername": "We {sentCount} a 6-digit code to e-mail address(es) associated with the Charon username {strongUsername}. Please enter it to continue:",
+      "codeFromHashEmail": "We sent the following 6-digit code to {strongEmail} e-mail address:",
+      "codeFromHashUsername": "We sent the following 6-digit code to e-mail address(es) associated with the Charon username {strongUsername}:",
       "resendButton": "Resend code",
       "sent": "sent",
       "sentMultiple": "sent ({count}x)",
