@@ -10,7 +10,11 @@
       "select": "Izberi",
       "enable": "Omogoči",
       "decline": "Zavrni",
-      "cancel": "Prekliči"
+      "cancel": "Prekliči",
+      "add": "Dodaj",
+      "remove": "Odstrani",
+      "disable": "Onemogoči",
+      "activate": "Aktiviraj"
     },
     "errors": {
       "unexpected": "Nepričakovana napaka. Prosimo, poskusite znova.",
@@ -121,7 +125,10 @@
     "givenName": "Ime",
     "fullName": "Polno ime",
     "pictureUrl": "URL slike",
-    "description": "Opis"
+    "description": "Opis",
+    "email": "E-naslov",
+    "current": "trenutna",
+    "admin": "administrator"
   },
   "titles": {
     "organizations": "Organizacije",
@@ -135,9 +142,25 @@
     "usersForOrganization": "Uporabniki za organizacijo",
     "previouslyUsedIdentities": "Prej uporabljene identitete",
     "otherAvailableIdentities": "Druge razpoložljive identitete",
-    "disabledIdentities": "Onemogočene identitete"
+    "disabledIdentities": "Onemogočene identitete",
+    "identity": "Identiteta",
+    "users": "Uporabniki",
+    "admins": "Administratorji",
+    "addedOrganizations": "Dodane organizacije",
+    "availableOrganizations": "Razpoložljive organizacije"
   },
   "passkey": {
     "signingIn": "Prijavljamo vas z uporabo {strong}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave."
+  },
+  "messages": {
+    "success": {
+      "organizationUpdated": "Organizacija je bila uspešno posodobljena.",
+      "applicationsUpdated": "Aplikacije so bile uspešno posodobljene.",
+      "adminsUpdated": "Administratorji so bili uspešno posodobljeni.",
+      "identitiesUpdated": "Identitete organizacije so bile uspešno posodobljene.",
+      "identityUpdated": "Identiteta je bila uspešno posodobljena.",
+      "usersUpdated": "Uporabniki so bili uspešno posodobljeni.",
+      "organizationsUpdated": "Dodane organizacije so bile uspešno posodobljene."
+    }
   }
 }

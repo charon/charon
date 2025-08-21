@@ -11,6 +11,7 @@ import type {
 } from "@/types"
 
 import { nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
+import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 import InputText from "@/components/InputText.vue"
 import TextArea from "@/components/TextArea.vue"
@@ -29,6 +30,8 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+
+const { t } = useI18n()
 
 const progress = injectProgress()
 
@@ -649,15 +652,17 @@ function onAddAdmin() {
     <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
       <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
         <div class="flex flex-row items-center">
-          <h1 class="text-2xl font-bold">Application template</h1>
+          <h1 class="text-2xl font-bold">{{ t("titles.applicationTemplates") }}</h1>
         </div>
-        <div v-if="dataLoading">Loading...</div>
-        <div v-else-if="dataLoadingError" class="text-error-600">Unexpected error. Please try again.</div>
+        <div v-if="dataLoading">{{ t("loading.dataLoading") }}</div>
+        <div v-else-if="dataLoadingError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
         <template v-else>
           <form class="flex flex-col" novalidate @submit.prevent="onBasicSubmit">
-            <label for="name" class="mb-1">Application template name</label>
+            <label for="name" class="mb-1">{{ t("labels.applicationTemplateName") }}</label>
             <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" required />
-            <label for="description" class="mb-1 mt-4">Description<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label>
+            <label for="description" class="mb-1 mt-4"
+              >{{ t("labels.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
+            >
             <TextArea id="description" v-model="description" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <label for="homepageTemplate" class="mb-1 mt-4">Homepage template</label>
             <InputText
@@ -679,18 +684,18 @@ function onAddAdmin() {
               :progress="progress"
               @update:model-value="(v) => (idScopes = splitSpace(v))"
             />
-            <div v-if="basicUnexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
-            <div v-else-if="basicUpdated" class="mt-4 text-success-600">Application template updated successfully.</div>
+            <div v-if="basicUnexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
+            <div v-else-if="basicUpdated" class="mt-4 text-success-600">{{ t("messages.success.applicationsUpdated") }}</div>
             <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
               <!--
                 Button is on purpose not disabled on basicUnexpectedError so that user can retry.
               -->
-              <Button type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">Update</Button>
+              <Button type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
             </div>
           </form>
           <template v-if="metadata.can_update || variables.length || canVariablesSubmit() || variablesUnexpectedError || variablesUpdated">
             <h2 class="text-xl font-bold">Variables</h2>
-            <div v-if="variablesUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
+            <div v-if="variablesUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="variablesUpdated" class="text-success-600">Variables updated successfully.</div>
             <form v-if="metadata.can_update || variables.length || canVariablesSubmit()" class="flex flex-col" novalidate @submit.prevent="onVariablesSubmit">
               <ol>
@@ -707,7 +712,7 @@ function onAddAdmin() {
                       required
                     />
                     <label :for="`variable-${i}-description`" class="mb-1 mt-4"
-                      >Description<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label
+                      >{{ t("labels.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`variable-${i}-description`"
@@ -717,23 +722,23 @@ function onAddAdmin() {
                       :progress="progress"
                     />
                     <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
-                      <Button type="button" :progress="progress" @click.prevent="variables.splice(i, 1)">Remove</Button>
+                      <Button type="button" :progress="progress" @click.prevent="variables.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                     </div>
                   </div>
                 </li>
               </ol>
               <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
-                <Button type="button" @click.prevent="onAddVariable">Add variable</Button>
+                <Button type="button" @click.prevent="onAddVariable">{{ t("common.buttons.add") }} variable</Button>
                 <!--
                   Button is on purpose not disabled on variablesUnexpectedError so that user can retry.
                 -->
-                <Button type="submit" primary :disabled="!canVariablesSubmit()" :progress="progress">Update</Button>
+                <Button type="submit" primary :disabled="!canVariablesSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
               </div>
             </form>
           </template>
           <template v-if="metadata.can_update || clientsPublic.length || canClientsPublicSubmit() || clientsPublicUnexpectedError || clientsPublicUpdated">
             <h2 class="text-xl font-bold">Public clients</h2>
-            <div v-if="clientsPublicUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
+            <div v-if="clientsPublicUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="clientsPublicUpdated" class="text-success-600">Public clients updated successfully.</div>
             <form v-if="metadata.can_update || clientsPublic.length || canClientsPublicSubmit()" class="flex flex-col" novalidate @submit.prevent="onClientsPublicSubmit">
               <ol>
@@ -1196,9 +1201,9 @@ function onAddAdmin() {
             </form>
           </template>
           <template v-if="metadata.can_update || adminsUnexpectedError || adminsUpdated">
-            <h2 class="text-xl font-bold">Admins</h2>
-            <div v-if="adminsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
-            <div v-else-if="adminsUpdated" class="text-success-600">Admins updated successfully.</div>
+            <h2 class="text-xl font-bold">{{ t("titles.admins") }}</h2>
+            <div v-if="adminsUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
+            <div v-else-if="adminsUpdated" class="text-success-600">{{ t("messages.success.adminsUpdated") }}</div>
             <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
               <ol class="flex flex-col gap-y-4">
                 <li v-for="(admin, i) of admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
@@ -1210,22 +1215,22 @@ function onAddAdmin() {
                       :organization-id="siteContext.organizationId"
                     >
                       <div class="flex flex-col items-start">
-                        <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>
+                        <Button type="button" @click.prevent="admins.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                       </div>
                     </WithIdentityPublicDocument>
                     <div v-else class="flex flex-row gap-4">
                       <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="flex-grow flex-auto min-w-0" :progress="progress" required />
-                      <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>
+                      <Button type="button" @click.prevent="admins.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                     </div>
                   </div>
                 </li>
               </ol>
               <div class="flex flex-row justify-between gap-4" :class="admins.length ? 'mt-4' : ''">
-                <Button type="button" @click.prevent="onAddAdmin">Add admin</Button>
+                <Button type="button" @click.prevent="onAddAdmin">{{ t("common.buttons.add") }} admin</Button>
                 <!--
                   Button is on purpose not disabled on adminsUnexpectedError so that user can retry.
                 -->
-                <Button type="submit" primary :disabled="!canAdminsSubmit()" :progress="progress">Update</Button>
+                <Button type="submit" primary :disabled="!canAdminsSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
               </div>
             </form>
           </template>

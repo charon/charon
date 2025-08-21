@@ -3,6 +3,7 @@ import type { Ref } from "vue"
 import type { Identity, IdentityOrganization as IdentityOrganizationType, IdentityRef, Metadata, OrganizationRef, Organizations } from "@/types"
 
 import { computed, nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
+import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 import InputText from "@/components/InputText.vue"
 import TextArea from "@/components/TextArea.vue"
@@ -16,6 +17,8 @@ import { getURL, postJSON } from "@/api"
 import { injectProgress } from "@/progress"
 import { clone, equals } from "@/utils"
 import siteContext from "@/context"
+
+const { t } = useI18n()
 
 const props = defineProps<{
   id: string
@@ -401,36 +404,48 @@ async function onAddOrganization(organization: OrganizationRef) {
     <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
       <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
         <div class="flex flex-row items-center">
-          <h1 class="text-2xl font-bold">Identity</h1>
+          <h1 class="text-2xl font-bold">{{ t("titles.identity") }}</h1>
         </div>
-        <div v-if="dataLoading">Loading...</div>
-        <div v-else-if="dataLoadingError" class="text-error-600">Unexpected error. Please try again.</div>
+        <div v-if="dataLoading">{{ t("loading.dataLoading") }}</div>
+        <div v-else-if="dataLoadingError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
         <template v-else>
           <form class="flex flex-col" novalidate @submit.prevent="onBasicSubmit">
-            <label for="username" class="mb-1">Username<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label>
+            <label for="username" class="mb-1"
+              >{{ t("labels.username") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
+            >
             <InputText id="username" v-model="username" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
-            <label for="email" class="mb-1 mt-4">E-mail<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label>
+            <label for="email" class="mb-1 mt-4"
+              >{{ t("labels.email") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
+            >
             <InputText id="email" v-model="email" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
-            <label for="givenName" class="mb-1 mt-4">Given name<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label>
+            <label for="givenName" class="mb-1 mt-4"
+              >{{ t("labels.givenName") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
+            >
             <InputText id="givenName" v-model="givenName" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
-            <label for="fullName" class="mb-1 mt-4">Full name<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label>
+            <label for="fullName" class="mb-1 mt-4"
+              >{{ t("labels.fullName") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
+            >
             <InputText id="fullName" v-model="fullName" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
-            <label for="pictureUrl" class="mb-1 mt-4">Picture URL<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label>
+            <label for="pictureUrl" class="mb-1 mt-4"
+              >{{ t("labels.pictureUrl") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
+            >
             <InputText id="pictureUrl" v-model="pictureUrl" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
-            <label for="description" class="mb-1 mt-4">Description<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label>
+            <label for="description" class="mb-1 mt-4"
+              >{{ t("labels.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
+            >
             <TextArea id="description" v-model="description" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
-            <div v-if="basicUnexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
-            <div v-else-if="basicUpdated" class="mt-4 text-success-600">Identity updated successfully.</div>
+            <div v-if="basicUnexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
+            <div v-else-if="basicUpdated" class="mt-4 text-success-600">{{ t("messages.success.identityUpdated") }}</div>
             <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
               <!--
                 Button is on purpose not disabled on basicUnexpectedError so that user can retry.
               -->
-              <Button type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">Update</Button>
+              <Button type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
             </div>
           </form>
-          <h2 class="text-xl font-bold">Users</h2>
-          <div v-if="usersUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
-          <div v-else-if="usersUpdated" class="text-success-600">Users updated successfully.</div>
+          <h2 class="text-xl font-bold">{{ t("titles.users") }}</h2>
+          <div v-if="usersUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
+          <div v-else-if="usersUpdated" class="text-success-600">{{ t("messages.success.usersUpdated") }}</div>
           <form class="flex flex-col" novalidate @submit.prevent="onUsersSubmit">
             <ol class="flex flex-col gap-y-4">
               <li v-for="(user, i) of users" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
@@ -443,27 +458,27 @@ async function onAddOrganization(organization: OrganizationRef) {
                     :labels="identity?.id === user.id ? ['creator'] : []"
                   >
                     <div v-if="metadata.can_update" class="flex flex-col items-start">
-                      <Button type="button" @click.prevent="users.splice(i, 1)">Remove</Button>
+                      <Button type="button" @click.prevent="users.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                     </div>
                   </WithIdentityPublicDocument>
                   <div v-else-if="metadata.can_update" class="flex flex-row gap-4">
                     <InputText :id="`user-${i}-id`" v-model="users[i].id" class="flex-grow flex-auto min-w-0" :progress="progress" required />
-                    <Button type="button" @click.prevent="users.splice(i, 1)">Remove</Button>
+                    <Button type="button" @click.prevent="users.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                   </div>
                 </div>
               </li>
             </ol>
             <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4" :class="users.length ? 'mt-4' : ''">
-              <Button type="button" @click.prevent="onAddUser">Add user</Button>
+              <Button type="button" @click.prevent="onAddUser">{{ t("common.buttons.add") }} user</Button>
               <!--
                 Button is on purpose not disabled on usersUnexpectedError so that user can retry.
               -->
-              <Button type="submit" primary :disabled="!canUsersSubmit()" :progress="progress">Update</Button>
+              <Button type="submit" primary :disabled="!canUsersSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
             </div>
           </form>
-          <h2 class="text-xl font-bold">Admins</h2>
-          <div v-if="adminsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
-          <div v-else-if="adminsUpdated" class="text-success-600">Admins updated successfully.</div>
+          <h2 class="text-xl font-bold">{{ t("titles.admins") }}</h2>
+          <div v-if="adminsUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
+          <div v-else-if="adminsUpdated" class="text-success-600">{{ t("messages.success.adminsUpdated") }}</div>
           <form class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
             <ol class="flex flex-col gap-y-4">
               <li v-for="(admin, i) of admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
@@ -476,40 +491,40 @@ async function onAddOrganization(organization: OrganizationRef) {
                     :labels="identity?.id === admin.id ? ['creator'] : []"
                   >
                     <div v-if="metadata.can_update" class="flex flex-col items-start">
-                      <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>
+                      <Button type="button" @click.prevent="admins.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                     </div>
                   </WithIdentityPublicDocument>
                   <div v-else-if="metadata.can_update" class="flex flex-row gap-4">
                     <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="flex-grow flex-auto min-w-0" :progress="progress" required />
-                    <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>
+                    <Button type="button" @click.prevent="admins.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                   </div>
                 </div>
               </li>
             </ol>
             <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4" :class="admins.length ? 'mt-4' : ''">
-              <Button type="button" @click.prevent="onAddAdmin">Add admin</Button>
+              <Button type="button" @click.prevent="onAddAdmin">{{ t("common.buttons.add") }} admin</Button>
               <!--
                 Button is on purpose not disabled on adminsUnexpectedError so that user can retry.
               -->
-              <Button type="submit" primary :disabled="!canAdminsSubmit()" :progress="progress">Update</Button>
+              <Button type="submit" primary :disabled="!canAdminsSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
             </div>
           </form>
           <template v-if="identityOrganizations.length || canOrganizationsSubmit() || identityOrganizationsUnexpectedError || identityOrganizationsUpdated">
-            <h2 class="text-xl font-bold">Added organizations</h2>
-            <div v-if="identityOrganizationsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
-            <div v-else-if="identityOrganizationsUpdated" class="text-success-600">Added organizations updated successfully.</div>
+            <h2 class="text-xl font-bold">{{ t("titles.addedOrganizations") }}</h2>
+            <div v-if="identityOrganizationsUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
+            <div v-else-if="identityOrganizationsUpdated" class="text-success-600">{{ t("messages.success.organizationsUpdated") }}</div>
             <form v-if="identityOrganizations.length || canOrganizationsSubmit()" class="flex flex-col" novalidate @submit.prevent="onOrganizationsSubmit">
               <ul>
                 <li v-for="(identityOrganization, i) in identityOrganizations" :key="identityOrganization.id || i" class="flex flex-col mb-4">
                   <OrganizationListItem :item="identityOrganization.organization" h3 />
                   <IdentityOrganization :identity-organization="identityOrganization">
                     <div v-if="metadata.can_update && identityOrganization.active" class="flex flew-row gap-4">
-                      <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = false">Disable</Button>
-                      <Button type="button" :progress="progress" @click.prevent="identityOrganizations.splice(i, 1)">Remove</Button>
+                      <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = false">{{ t("common.buttons.disable") }}</Button>
+                      <Button type="button" :progress="progress" @click.prevent="identityOrganizations.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                     </div>
                     <div v-else-if="metadata.can_update" class="flex flew-row gap-4">
-                      <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = true">Activate</Button>
-                      <Button type="button" :progress="progress" @click.prevent="identityOrganizations.splice(i, 1)">Remove</Button>
+                      <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = true">{{ t("common.buttons.activate") }}</Button>
+                      <Button type="button" :progress="progress" @click.prevent="identityOrganizations.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                     </div>
                   </IdentityOrganization>
                 </li>
@@ -518,18 +533,20 @@ async function onAddOrganization(organization: OrganizationRef) {
                 <!--
                   Button is on purpose not disabled on identityOrganizationsUnexpectedError so that user can retry.
                 -->
-                <Button id="organizations-update" type="submit" primary :disabled="!canOrganizationsSubmit()" :progress="progress">Update</Button>
+                <Button id="organizations-update" type="submit" primary :disabled="!canOrganizationsSubmit()" :progress="progress">{{
+                  t("common.buttons.update")
+                }}</Button>
               </div>
             </form>
           </template>
           <template v-if="metadata.can_update && availableOrganizations.length">
-            <h2 class="text-xl font-bold">Available organizations</h2>
+            <h2 class="text-xl font-bold">{{ t("titles.availableOrganizations") }}</h2>
             <ul class="flex flex-col gap-4">
               <li v-for="organization in availableOrganizations" :key="organization.id">
                 <OrganizationListItem :item="organization" h3>
                   <template #default="{ doc }">
                     <div v-if="doc" class="flex flex-col items-start">
-                      <Button type="button" :progress="progress" primary @click.prevent="onAddOrganization(organization)">Add</Button>
+                      <Button type="button" :progress="progress" primary @click.prevent="onAddOrganization(organization)">{{ t("common.buttons.add") }}</Button>
                     </div>
                   </template>
                 </OrganizationListItem>

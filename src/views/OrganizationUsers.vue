@@ -2,6 +2,7 @@
 import type { IdentityForAdmin, Identities } from "@/types"
 
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
+import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 import WithDocument from "@/components/WithDocument.vue"
 import OrganizationListItem from "@/partials/OrganizationListItem.vue"
@@ -17,6 +18,8 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+
+const { t } = useI18n()
 
 const progress = injectProgress()
 
@@ -70,14 +73,14 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
     <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
       <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
         <div class="flex flex-col gap-4">
-          <h1 class="text-2xl font-bold">Users for organization</h1>
+          <h1 class="text-2xl font-bold">{{ t("titles.usersForOrganization") }}</h1>
           <div>
             <OrganizationListItem :item="{ id }" />
           </div>
         </div>
       </div>
-      <div v-if="dataLoading" class="w-full rounded border bg-white p-4 shadow">Loading...</div>
-      <div v-else-if="dataLoadingError" class="w-full rounded border bg-white p-4 shadow text-error-600">Unexpected error. Please try again.</div>
+      <div v-if="dataLoading" class="w-full rounded border bg-white p-4 shadow">{{ t("loading.dataLoading") }}</div>
+      <div v-else-if="dataLoadingError" class="w-full rounded border bg-white p-4 shadow text-error-600">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
         <div v-if="!users.length" class="w-full rounded border bg-white p-4 shadow italic">There are no users.</div>
         <div v-for="user of users" :key="user.id" class="w-full rounded border bg-white p-4 shadow">

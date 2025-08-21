@@ -2,6 +2,10 @@
 import type { Identity } from "@/types"
 import type { DeepReadonly } from "vue"
 
+import { useI18n } from "vue-i18n"
+
+const { t } = useI18n()
+
 defineProps<{
   identity: Identity | DeepReadonly<Identity>
   url?: string
@@ -22,8 +26,8 @@ defineProps<{
       <h2 v-if="identity.username" class="text-xl">
         <ul v-if="canUpdate || isCurrent || labels?.length" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm float-right">
           <li v-for="label in labels || []" :key="label" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{ label }}</li>
-          <li v-if="isCurrent" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">current</li>
-          <li v-if="canUpdate" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">admin</li>
+          <li v-if="isCurrent" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">{{ t("labels.current") }}</li>
+          <li v-if="canUpdate" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">{{ t("labels.admin") }}</li>
         </ul>
         <router-link :to="{ name: 'IdentityGet', params: { id: identity.id } }" class="link">{{ identity.username }}</router-link>
         <span v-if="identity.email"> ({{ identity.email }})</span>
@@ -31,16 +35,16 @@ defineProps<{
       <h2 v-else-if="identity.email" class="text-xl">
         <ul v-if="canUpdate || isCurrent || labels?.length" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm float-right">
           <li v-for="label in labels || []" :key="label" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{ label }}</li>
-          <li v-if="isCurrent" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">current</li>
-          <li v-if="canUpdate" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">admin</li>
+          <li v-if="isCurrent" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">{{ t("labels.current") }}</li>
+          <li v-if="canUpdate" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">{{ t("labels.admin") }}</li>
         </ul>
         <router-link :to="{ name: 'IdentityGet', params: { id: identity.id } }" class="link">{{ identity.email }}</router-link>
       </h2>
       <h2 v-else-if="identity.givenName" class="text-xl">
         <ul v-if="canUpdate || isCurrent || labels?.length" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm float-right">
           <li v-for="label in labels || []" :key="label" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{ label }}</li>
-          <li v-if="isCurrent" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">current</li>
-          <li v-if="canUpdate" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">admin</li>
+          <li v-if="isCurrent" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">{{ t("labels.current") }}</li>
+          <li v-if="canUpdate" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">{{ t("labels.admin") }}</li>
         </ul>
         <router-link :to="{ name: 'IdentityGet', params: { id: identity.id } }" class="link">{{ identity.givenName }}</router-link>
         <span v-if="identity.fullName"> ({{ identity.fullName }})</span>
@@ -48,16 +52,16 @@ defineProps<{
       <h2 v-else-if="identity.fullName" class="text-xl">
         <ul v-if="canUpdate || isCurrent || labels?.length" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm float-right">
           <li v-for="label in labels || []" :key="label" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{ label }}</li>
-          <li v-if="isCurrent" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">current</li>
-          <li v-if="canUpdate" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">admin</li>
+          <li v-if="isCurrent" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">{{ t("labels.current") }}</li>
+          <li v-if="canUpdate" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">{{ t("labels.admin") }}</li>
         </ul>
         <router-link :to="{ name: 'IdentityGet', params: { id: identity.id } }" class="link">{{ identity.fullName }}</router-link>
       </h2>
       <div v-else-if="canUpdate || isCurrent || labels?.length">
         <ul class="flex flex-row flex-wrap content-start items-start gap-1 text-sm float-right">
           <li v-for="label in labels || []" :key="label" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{ label }}</li>
-          <li v-if="isCurrent" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">current</li>
-          <li v-if="canUpdate" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">admin</li>
+          <li v-if="isCurrent" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">{{ t("labels.current") }}</li>
+          <li v-if="canUpdate" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm leading-none">{{ t("labels.admin") }}</li>
         </ul>
       </div>
       <div v-if="identity.givenName && (identity.username || identity.email)" class="mt-1">

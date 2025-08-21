@@ -14,6 +14,10 @@ declare module "vue-i18n" {
         enable: string
         decline: string
         cancel: string
+        add: string
+        remove: string
+        disable: string
+        activate: string
       }
       errors: {
         unexpected: string
@@ -125,12 +129,16 @@ declare module "vue-i18n" {
       fullName: string
       pictureUrl: string
       description: string
+      email: string
+      current: string
+      admin: string
     }
     titles: {
       organizations: string
       identities: string
       applicationTemplates: string
       organization: string
+      identity: string
       createOrganization: string
       createApplicationTemplate: string
       createIdentity: string
@@ -139,9 +147,21 @@ declare module "vue-i18n" {
       previouslyUsedIdentities: string
       otherAvailableIdentities: string
       disabledIdentities: string
+      users: string
+      admins: string
+      addedOrganizations: string
+      availableOrganizations: string
     }
     passkey: {
       signingIn: string
+    }
+    messages: {
+      success: {
+        organizationUpdated: string
+        applicationsUpdated: string
+        adminsUpdated: string
+        identitiesUpdated: string
+      }
     }
   }
 }

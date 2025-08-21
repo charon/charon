@@ -19,6 +19,7 @@ elements and links but that should not change how components look.
 import type { AuthFlowResponse, AuthFlowStep, Completed, DeriveOptions, EncryptOptions, Flow, Organization, OrganizationApplicationPublic, SiteProvider } from "@/types"
 
 import { onBeforeMount, onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 import WithDocument from "@/components/WithDocument.vue"
 import Stepper from "@/components/Stepper.vue"
@@ -38,6 +39,8 @@ import { getURL, restartAuth } from "@/api"
 import { updateSteps, processFirstResponse } from "@/flow"
 import { getHomepage } from "@/utils"
 import { injectProgress } from "@/progress"
+
+const { t } = useI18n()
 
 const props = defineProps<{
   id: string
@@ -287,7 +290,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
       but allow contents to shrink if necessary to fit into the smaller window width.
     -->
     <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
-      <div v-if="unexpectedError" class="w-full rounded border bg-white p-4 shadow text-error-600">Unexpected error. Please try again.</div>
+      <div v-if="unexpectedError" class="w-full rounded border bg-white p-4 shadow text-error-600">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
         <div class="w-full rounded border bg-white p-4 shadow">
           <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">Sign-in or sign-up</h2>

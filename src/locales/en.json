@@ -10,7 +10,11 @@
       "select": "Select",
       "enable": "Enable",
       "decline": "Decline",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "add": "Add",
+      "remove": "Remove",
+      "disable": "Disable",
+      "activate": "Activate"
     },
     "errors": {
       "unexpected": "Unexpected error. Please try again.",
@@ -121,13 +125,17 @@
     "givenName": "Given name",
     "fullName": "Full name",
     "pictureUrl": "Picture URL",
-    "description": "Description"
+    "description": "Description",
+    "email": "E-mail address",
+    "current": "current",
+    "admin": "admin"
   },
   "titles": {
     "organizations": "Organizations",
     "identities": "Identities",
     "applicationTemplates": "Application templates",
     "organization": "Organization",
+    "identity": "Identity",
     "createOrganization": "Create organization",
     "createApplicationTemplate": "Create application template",
     "createIdentity": "Create identity",
@@ -135,9 +143,24 @@
     "usersForOrganization": "Users for organization",
     "previouslyUsedIdentities": "Previously used identities",
     "otherAvailableIdentities": "Other available identities",
-    "disabledIdentities": "Disabled identities"
+    "disabledIdentities": "Disabled identities",
+    "users": "Users",
+    "admins": "Admins",
+    "addedOrganizations": "Added organizations",
+    "availableOrganizations": "Available organizations"
   },
   "passkey": {
     "signingIn": "Signing you in using {strong}. Please follow instructions by your browser and/or device."
+  },
+  "messages": {
+    "success": {
+      "organizationUpdated": "Organization updated successfully.",
+      "applicationsUpdated": "Applications updated successfully.",
+      "adminsUpdated": "Admins updated successfully.",
+      "identitiesUpdated": "Organization identities updated successfully.",
+      "identityUpdated": "Identity updated successfully.",
+      "usersUpdated": "Users updated successfully.",
+      "organizationsUpdated": "Added organizations updated successfully."
+    }
   }
 }
