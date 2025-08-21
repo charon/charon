@@ -14,7 +14,9 @@
       "add": "Add",
       "remove": "Remove",
       "disable": "Disable",
-      "activate": "Activate"
+      "activate": "Activate",
+      "addUser": "Add user",
+      "addAdmin": "Add admin"
     },
     "errors": {
       "unexpected": "Unexpected error. Please try again.",
@@ -177,6 +179,8 @@
     "admin": "admin",
     "active": "active",
     "disabled": "disabled",
+    "added": "added",
+    "creator": "creator",
     "status": "Status:",
     "apps": "Apps:",
     "none": "none",

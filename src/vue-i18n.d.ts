@@ -18,6 +18,8 @@ declare module "vue-i18n" {
         remove: string
         disable: string
         activate: string
+        addUser: string
+        addAdmin: string
       }
       errors: {
         unexpected: string
@@ -180,6 +182,8 @@ declare module "vue-i18n" {
       admin: string
       active: string
       disabled: string
+      added: string
+      creator: string
       status: string
       apps: string
       none: string

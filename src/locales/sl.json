@@ -14,7 +14,9 @@
       "add": "Dodaj",
       "remove": "Odstrani",
       "disable": "Onemogoči",
-      "activate": "Aktiviraj"
+      "activate": "Aktiviraj",
+      "addUser": "Dodaj uporabnika",
+      "addAdmin": "Dodaj administratorja"
     },
     "errors": {
       "unexpected": "Nepričakovana napaka. Prosimo, poskusite znova.",
@@ -177,6 +179,8 @@
     "admin": "administrator",
     "active": "aktivna",
     "disabled": "onemogočena",
+    "added": "dodana",
+    "creator": "ustvarjalec",
     "status": "Status:",
     "apps": "Aplikacije:",
     "none": "brez",

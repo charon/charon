@@ -421,7 +421,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
           <h3 class="text-l font-bold mb-4">{{ t("auth.identity.sectionTitles.disabledIdentities") }}</h3>
           <ul>
             <li v-for="identity of disabledIdentities" :key="identity.identity.id" class="mb-4">
-              <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate" :labels="['disabled']">
+              <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate" :labels="[t('labels.disabled')]">
                 <div class="flex flex-col items-start">
                   <Button primary type="button" tabindex="3" :progress="progress" @click.prevent="onEnable(identity.identity)">{{ t("common.buttons.enable") }}</Button>
                 </div>

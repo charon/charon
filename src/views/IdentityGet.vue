@@ -455,7 +455,7 @@ async function onAddOrganization(organization: OrganizationRef) {
                     v-if="identity?.users?.find((a) => a.id === user.id)"
                     :item="user"
                     :organization-id="siteContext.organizationId"
-                    :labels="identity?.id === user.id ? ['creator'] : []"
+                    :labels="identity?.id === user.id ? [t('labels.creator')] : []"
                   >
                     <div v-if="metadata.can_update" class="flex flex-col items-start">
                       <Button type="button" @click.prevent="users.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
@@ -469,7 +469,7 @@ async function onAddOrganization(organization: OrganizationRef) {
               </li>
             </ol>
             <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4" :class="users.length ? 'mt-4' : ''">
-              <Button type="button" @click.prevent="onAddUser">{{ t("common.buttons.add") }} user</Button>
+              <Button type="button" @click.prevent="onAddUser">{{ t("common.buttons.addUser") }}</Button>
               <!--
                 Button is on purpose not disabled on usersUnexpectedError so that user can retry.
               -->
@@ -488,7 +488,7 @@ async function onAddOrganization(organization: OrganizationRef) {
                     v-if="identity?.admins?.find((a) => a.id === admin.id)"
                     :item="admin"
                     :organization-id="siteContext.organizationId"
-                    :labels="identity?.id === admin.id ? ['creator'] : []"
+                    :labels="identity?.id === admin.id ? [t('labels.creator')] : []"
                   >
                     <div v-if="metadata.can_update" class="flex flex-col items-start">
                       <Button type="button" @click.prevent="admins.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
@@ -502,7 +502,7 @@ async function onAddOrganization(organization: OrganizationRef) {
               </li>
             </ol>
             <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4" :class="admins.length ? 'mt-4' : ''">
-              <Button type="button" @click.prevent="onAddAdmin">{{ t("common.buttons.add") }} admin</Button>
+              <Button type="button" @click.prevent="onAddAdmin">{{ t("common.buttons.addAdmin") }}</Button>
               <!--
                 Button is on purpose not disabled on adminsUnexpectedError so that user can retry.
               -->

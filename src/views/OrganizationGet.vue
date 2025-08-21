@@ -732,7 +732,7 @@ async function onIdentitiesSubmit() {
                             </div>
                             <div v-else><span class="italic">{{ t("labels.confirmUpdateToAllocate") }}</span></div>
                             <template v-if="client.id && generatedSecrets.has(client.client.id)">
-                              <div>Client secret:</div>
+                              <div>{{ t("labels.clientSecret") }}</div>
                               <div>
                                 <code>{{ generatedSecrets.get(client.client.id) }}</code>
                               </div>
@@ -754,7 +754,7 @@ async function onIdentitiesSubmit() {
                             </div>
                             <div v-else><span class="italic">{{ t("labels.confirmUpdateToAllocate") }}</span></div>
                             <template v-if="client.id && generatedSecrets.has(client.client.id)">
-                              <div>Client secret:</div>
+                              <div>{{ t("labels.clientSecret") }}</div>
                               <div>
                                 <code>{{ generatedSecrets.get(client.client.id) }}</code>
                               </div>
@@ -792,7 +792,7 @@ async function onIdentitiesSubmit() {
             <h2 class="text-xl font-bold">{{ t("titles.availableApplications") }}</h2>
             <ul class="flex flex-col gap-4">
               <li v-for="applicationTemplate in applicationTemplates" :key="applicationTemplate.id">
-                <ApplicationTemplateListItem :item="applicationTemplate" :labels="isApplicationAdded(applicationTemplate) ? ['added'] : []" h3>
+                <ApplicationTemplateListItem :item="applicationTemplate" :labels="isApplicationAdded(applicationTemplate) ? [t('labels.added')] : []" h3>
                   <template #default="{ doc }">
                     <div v-if="doc" class="flex flex-col items-start">
                       <Button type="button" :progress="progress" primary @click.prevent="onAddApplicationTemplate(doc)">{{ t("common.buttons.add") }}</Button>
@@ -844,7 +844,7 @@ async function onIdentitiesSubmit() {
                     :url="organizationIdentity.url"
                     :is-current="organizationIdentity.isCurrent"
                     :can-update="organizationIdentity.canUpdate"
-                    :labels="organizationIdentity.active ? [] : ['disabled']"
+                    :labels="organizationIdentity.active ? [] : [t('labels.disabled')]"
                   />
                   <IdentityOrganization
                     :identity-organization="{
