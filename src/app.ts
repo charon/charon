@@ -26,7 +26,7 @@ const router = createRouter({
     .map((route) => ({
       path: route.path,
       name: route.name,
-      component: () => import(`@/views/${route.name}.vue`),
+      component: () => import(`./views/${route.name}.vue`),
       props: true,
       strict: true,
     })),
