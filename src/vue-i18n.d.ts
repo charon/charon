@@ -177,7 +177,6 @@ declare module "vue-i18n" {
       addClient: string
       spaceSeparatedScopes: string
       spaceSeparatedAdditionalScopes: string
-      description: string
       accessTokenType: string
       accessTokenLifespan: string
       idTokenLifespan: string
@@ -202,6 +201,17 @@ declare module "vue-i18n" {
       admins: string
       addedOrganizations: string
       availableOrganizations: string
+      variables: string
+      publicClients: string
+      backendClients: string
+      serviceClients: string
+      addedApplications: string
+      availableApplications: string
+      addedIdentities: string
+      availableIdentities: string
+      configuration: string
+      homepageTemplate: string
+      manage: string
     }
     passkey: {
       signingIn: string
@@ -225,8 +235,15 @@ declare module "vue-i18n" {
       empty: {
         noUsers: string
         noIdentities: string
+        noIdentitiesCreate: string
+        noIdentitiesSignIn: string
         noOrganizations: string
+        noOrganizationsCreate: string
+        noOrganizationsSignIn: string
         noApplicationTemplates: string
+        noApplicationTemplatesCreate: string
+        noApplicationTemplatesSignIn: string
+        noOtherIdentities: string
       }
       help: {
         chooseApplicationTemplateName: string
