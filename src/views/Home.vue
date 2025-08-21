@@ -5,7 +5,7 @@ import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
 import { isSignedIn } from "@/auth"
 
-const { t } = useI18n({ useScope: 'global' })
+const { t } = useI18n({ useScope: "global" })
 </script>
 
 <template>

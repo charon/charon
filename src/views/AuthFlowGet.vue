@@ -40,7 +40,7 @@ import { updateSteps, processFirstResponse } from "@/flow"
 import { getHomepage } from "@/utils"
 import { injectProgress } from "@/progress"
 
-const { t } = useI18n({ useScope: 'global' })
+const { t } = useI18n({ useScope: "global" })
 
 const props = defineProps<{
   id: string

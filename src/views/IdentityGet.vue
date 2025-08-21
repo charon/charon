@@ -18,7 +18,7 @@ import { injectProgress } from "@/progress"
 import { clone, equals } from "@/utils"
 import siteContext from "@/context"
 
-const { t } = useI18n({ useScope: 'global' })
+const { t } = useI18n({ useScope: "global" })
 
 const props = defineProps<{
   id: string

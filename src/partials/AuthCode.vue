@@ -12,7 +12,7 @@ import { isEmail } from "@/utils"
 import { injectProgress } from "@/progress"
 import { processResponse } from "@/flow"
 
-const { t } = useI18n({ useScope: 'global' })
+const { t } = useI18n({ useScope: "global" })
 
 const props = defineProps<{
   flow: Flow

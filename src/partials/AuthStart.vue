@@ -13,7 +13,7 @@ import { injectProgress } from "@/progress"
 import siteContext from "@/context"
 import { getThirdPartyProvider } from "@/flow"
 
-const { t } = useI18n({ useScope: 'global' })
+const { t } = useI18n({ useScope: "global" })
 
 const props = defineProps<{
   flow: Flow

@@ -4,7 +4,7 @@ import type { Organization, OrganizationRef } from "@/types"
 import { useI18n } from "vue-i18n"
 import WithDocument from "@/components/WithDocument.vue"
 
-const { t } = useI18n({ useScope: 'global' })
+const { t } = useI18n({ useScope: "global" })
 
 defineProps<{
   item: OrganizationRef

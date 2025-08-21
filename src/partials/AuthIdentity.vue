@@ -13,7 +13,7 @@ import { getURL, postJSON, restartAuth } from "@/api"
 import { clone, encodeQuery, getOrganization } from "@/utils"
 import { processResponse } from "@/flow"
 
-const { t } = useI18n({ useScope: 'global' })
+const { t } = useI18n({ useScope: "global" })
 
 const props = defineProps<{
   flow: Flow
@@ -339,12 +339,16 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
     <div class="flex flex-col">
       <div v-if="flow.getCompleted().includes('signin')" class="mb-4">
         <i18n-t keypath="auth.identity.signinSuccess" scope="global">
-          <template #strong><strong>{{ t("auth.identity.congratulations") }}</strong></template>
+          <template #strong
+            ><strong>{{ t("auth.identity.congratulations") }}</strong></template
+          >
         </i18n-t>
       </div>
       <div v-else-if="flow.getCompleted().includes('signup')" class="mb-4">
         <i18n-t keypath="auth.identity.signupSuccess" scope="global">
-          <template #strong><strong>{{ t("auth.identity.congratulations") }}</strong></template>
+          <template #strong
+            ><strong>{{ t("auth.identity.congratulations") }}</strong></template
+          >
         </i18n-t>
       </div>
       <div class="mb-4">
@@ -421,7 +425,13 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
           <h3 class="text-l font-bold mb-4">{{ t("auth.identity.sectionTitles.disabledIdentities") }}</h3>
           <ul>
             <li v-for="identity of disabledIdentities" :key="identity.identity.id" class="mb-4">
-              <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate" :labels="[t('labels.disabled')]">
+              <IdentityPublic
+                :identity="identity.identity"
+                :url="identity.url"
+                :is-current="identity.isCurrent"
+                :can-update="identity.canUpdate"
+                :labels="[t('labels.disabled')]"
+              >
                 <div class="flex flex-col items-start">
                   <Button primary type="button" tabindex="3" :progress="progress" @click.prevent="onEnable(identity.identity)">{{ t("common.buttons.enable") }}</Button>
                 </div>

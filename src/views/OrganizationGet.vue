@@ -35,7 +35,7 @@ import { injectProgress } from "@/progress"
 import siteContext from "@/context"
 import { isSignedIn } from "@/auth"
 
-const { t } = useI18n({ useScope: 'global' })
+const { t } = useI18n({ useScope: "global" })
 
 const props = defineProps<{
   id: string
@@ -714,7 +714,9 @@ async function onIdentitiesSubmit() {
                             <div v-if="client.id">
                               <code>{{ client.id }}</code>
                             </div>
-                            <div v-else><span class="italic">{{ t("labels.confirmUpdateToAllocate") }}</span></div>
+                            <div v-else>
+                              <span class="italic">{{ t("labels.confirmUpdateToAllocate") }}</span>
+                            </div>
                           </div>
                         </div>
                       </li>
@@ -730,7 +732,9 @@ async function onIdentitiesSubmit() {
                             <div v-if="client.id">
                               <code>{{ client.id }}</code>
                             </div>
-                            <div v-else><span class="italic">{{ t("labels.confirmUpdateToAllocate") }}</span></div>
+                            <div v-else>
+                              <span class="italic">{{ t("labels.confirmUpdateToAllocate") }}</span>
+                            </div>
                             <template v-if="client.id && generatedSecrets.has(client.client.id)">
                               <div>{{ t("labels.clientSecret") }}</div>
                               <div>
@@ -752,7 +756,9 @@ async function onIdentitiesSubmit() {
                             <div v-if="client.id">
                               <code>{{ client.id }}</code>
                             </div>
-                            <div v-else><span class="italic">{{ t("labels.confirmUpdateToAllocate") }}</span></div>
+                            <div v-else>
+                              <span class="italic">{{ t("labels.confirmUpdateToAllocate") }}</span>
+                            </div>
                             <template v-if="client.id && generatedSecrets.has(client.client.id)">
                               <div>{{ t("labels.clientSecret") }}</div>
                               <div>
@@ -764,14 +770,18 @@ async function onIdentitiesSubmit() {
                       </li>
                     </ol>
                     <div v-if="application.active" class="flex flew-row justify-between items-center gap-4 mt-4">
-                      <div>{{ t("labels.status") }} <strong>{{ t("labels.active") }}</strong></div>
+                      <div>
+                        {{ t("labels.status") }} <strong>{{ t("labels.active") }}</strong>
+                      </div>
                       <div class="flex flex-row gap-4">
                         <Button type="button" :progress="progress" @click.prevent="application.active = false">{{ t("common.buttons.disable") }}</Button>
                         <Button type="button" :progress="progress" @click.prevent="applications.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                       </div>
                     </div>
                     <div v-else class="flex flew-row justify-between items-center gap-4 mt-4">
-                      <div>{{ t("labels.status") }} <strong>{{ t("labels.disabled") }}</strong></div>
+                      <div>
+                        {{ t("labels.status") }} <strong>{{ t("labels.disabled") }}</strong>
+                      </div>
                       <div class="flex flex-row gap-4">
                         <Button type="button" :progress="progress" @click.prevent="application.active = true">{{ t("common.buttons.activate") }}</Button>
                         <Button type="button" :progress="progress" @click.prevent="applications.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>

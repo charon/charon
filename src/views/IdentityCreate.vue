@@ -7,7 +7,7 @@ import IdentityCreate from "@/partials/IdentityCreate.vue"
 import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
 
-const { t } = useI18n({ useScope: 'global' })
+const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
 
 function onCreated(identity: IdentityRef) {

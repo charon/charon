@@ -31,7 +31,7 @@ const props = defineProps<{
 
 const router = useRouter()
 
-const { t } = useI18n({ useScope: 'global' })
+const { t } = useI18n({ useScope: "global" })
 
 const progress = injectProgress()
 
@@ -759,9 +759,9 @@ function onAddAdmin() {
                               :progress="progress"
                               required
                             />
-                            <Button v-if="metadata.can_update" type="button" :progress="progress" @click.prevent="client.redirectUriTemplates.splice(j, 1)"
-                              >{{ t("common.buttons.remove") }}</Button
-                            >
+                            <Button v-if="metadata.can_update" type="button" :progress="progress" @click.prevent="client.redirectUriTemplates.splice(j, 1)">{{
+                              t("common.buttons.remove")
+                            }}</Button>
                           </div>
                         </li>
                       </ol>
@@ -786,9 +786,8 @@ function onAddAdmin() {
                       :progress="progress"
                     />
                     <label :for="`client-public-${i}-additionalScopes`" class="mb-1 mt-4"
-                      >{{ t("labels.spaceSeparatedAdditionalScopes") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">
-                        {{ t("labels.optional") }}</span
-                      ></label
+                      >{{ t("labels.spaceSeparatedAdditionalScopes")
+                      }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-public-${i}-additionalScopes`"
@@ -850,7 +849,8 @@ function onAddAdmin() {
                       :progress="progress"
                     />
                     <label :for="`client-public-${i}-refreshTokenLifespan`" class="mb-1 mt-4"
-                      >{{ t("labels.refreshTokenLifespan") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
+                      >{{ t("labels.refreshTokenLifespan")
+                      }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-public-${i}-refreshTokenLifespan`"
@@ -902,9 +902,9 @@ function onAddAdmin() {
                               :progress="progress"
                               required
                             />
-                            <Button v-if="metadata.can_update" type="button" :progress="progress" @click.prevent="client.redirectUriTemplates.splice(j, 1)"
-                              >{{ t("common.buttons.remove") }}</Button
-                            >
+                            <Button v-if="metadata.can_update" type="button" :progress="progress" @click.prevent="client.redirectUriTemplates.splice(j, 1)">{{
+                              t("common.buttons.remove")
+                            }}</Button>
                           </div>
                         </li>
                       </ol>
@@ -929,9 +929,8 @@ function onAddAdmin() {
                       :progress="progress"
                     />
                     <label :for="`client-backend-${i}-additionalScopes`" class="mb-1 mt-4"
-                      >{{ t("labels.spaceSeparatedAdditionalScopes") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">
-                        {{ t("labels.optional") }}</span
-                      ></label
+                      >{{ t("labels.spaceSeparatedAdditionalScopes")
+                      }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-backend-${i}-additionalScopes`"
@@ -1028,7 +1027,8 @@ function onAddAdmin() {
                       :progress="progress"
                     />
                     <label :for="`client-backend-${i}-refreshTokenLifespan`" class="mb-1 mt-4"
-                      >{{ t("labels.refreshTokenLifespan") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
+                      >{{ t("labels.refreshTokenLifespan")
+                      }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-backend-${i}-refreshTokenLifespan`"
@@ -1077,9 +1077,8 @@ function onAddAdmin() {
                       :progress="progress"
                     />
                     <label :for="`client-service-${i}-additionalScopes`" class="mb-1 mt-4"
-                      >{{ t("labels.spaceSeparatedAdditionalScopes") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">
-                        {{ t("labels.optional") }}</span
-                      ></label
+                      >{{ t("labels.spaceSeparatedAdditionalScopes")
+                      }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-service-${i}-additionalScopes`"
@@ -1176,7 +1175,8 @@ function onAddAdmin() {
                       :progress="progress"
                     />
                     <label :for="`client-service-${i}-refreshTokenLifespan`" class="mb-1 mt-4"
-                      >{{ t("labels.refreshTokenLifespan") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
+                      >{{ t("labels.refreshTokenLifespan")
+                      }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-service-${i}-refreshTokenLifespan`"

@@ -5,7 +5,7 @@ import { useI18n } from "vue-i18n"
 import WithDocument from "@/components/WithDocument.vue"
 import IdentityPublic from "@/partials/IdentityPublic.vue"
 
-const { t } = useI18n({ useScope: 'global' })
+const { t } = useI18n({ useScope: "global" })
 
 defineProps<{
   item: IdentityRef

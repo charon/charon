@@ -16,7 +16,7 @@ const props = defineProps<{
 
 const router = useRouter()
 
-const { t } = useI18n({ useScope: 'global' })
+const { t } = useI18n({ useScope: "global" })
 
 const progress = injectProgress()
 
@@ -185,8 +185,16 @@ onBeforeUnmount(() => {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div>
-      <i18n-t keypath="auth.thirdPartyRedirect.redirectMessage" scope="global" :provider="flow.getThirdPartyProvider()!.name" :time="seconds === 1 ? t('auth.autoRedirect.oneSecond') : t('auth.autoRedirect.seconds', { count: seconds })" :paused-text="paused ? t('auth.autoRedirect.paused') : ''">
-        <template #strong><strong>{{ flow.getThirdPartyProvider()!.name }}</strong></template>
+      <i18n-t
+        keypath="auth.thirdPartyRedirect.redirectMessage"
+        scope="global"
+        :provider="flow.getThirdPartyProvider()!.name"
+        :time="seconds === 1 ? t('auth.autoRedirect.oneSecond') : t('auth.autoRedirect.seconds', { count: seconds })"
+        :paused-text="paused ? t('auth.autoRedirect.paused') : ''"
+      >
+        <template #strong
+          ><strong>{{ flow.getThirdPartyProvider()!.name }}</strong></template
+        >
       </i18n-t>
     </div>
     <div class="mt-4">{{ t("auth.thirdPartyRedirect.instructions") }}</div>
@@ -197,7 +205,9 @@ onBeforeUnmount(() => {
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="3" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
       <div class="flex flex-row gap-4">
-        <Button type="button" tabindex="2" :progress="progress" @click.prevent="onPauseResume">{{ paused ? t("auth.autoRedirect.resume") : t("auth.autoRedirect.pause") }}</Button>
+        <Button type="button" tabindex="2" :progress="progress" @click.prevent="onPauseResume">{{
+          paused ? t("auth.autoRedirect.resume") : t("auth.autoRedirect.pause")
+        }}</Button>
         <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">{{ t("auth.autoRedirect.redirect") }}</Button>
       </div>
     </div>

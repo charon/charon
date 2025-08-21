@@ -21,7 +21,7 @@ const $emit = defineEmits<{
 
 const router = useRouter()
 
-const { t } = useI18n({ useScope: 'global' })
+const { t } = useI18n({ useScope: "global" })
 
 const progress = injectProgress()
 

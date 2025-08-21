@@ -15,7 +15,7 @@ const props = defineProps<{
 
 const router = useRouter()
 
-const { t } = useI18n({ useScope: 'global' })
+const { t } = useI18n({ useScope: "global" })
 
 const progress = injectProgress()
 
@@ -165,20 +165,26 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
       <template #default="{ doc }">
         <div v-if="flow.getCompleted().includes('identity')" class="mb-4">
           <i18n-t keypath="auth.autoRedirect.congratulations" scope="global" :app-name="doc.applicationTemplate.name">
-            <template #strong><strong>{{ t("auth.identity.congratulations") }}</strong></template>
+            <template #strong
+              ><strong>{{ t("auth.identity.congratulations") }}</strong></template
+            >
           </i18n-t>
         </div>
         <div v-else-if="flow.getCompleted().includes('declined')" class="mb-4">
           <i18n-t keypath="auth.autoRedirect.declined" scope="global" :app-name="doc.applicationTemplate.name">
-            <template #strong><strong>{{ t("auth.identity.declineSignInOrSignUp") }}</strong></template>
+            <template #strong
+              ><strong>{{ t("auth.identity.declineSignInOrSignUp") }}</strong></template
+            >
           </i18n-t>
         </div>
         <div>
-          {{ t("auth.autoRedirect.redirectMessage", { 
-            appName: doc.applicationTemplate.name, 
-            time: seconds === 1 ? t("auth.autoRedirect.oneSecond") : t("auth.autoRedirect.seconds", { count: seconds }),
-            pausedText: paused ? t("auth.autoRedirect.paused") : ""
-          }) }}
+          {{
+            t("auth.autoRedirect.redirectMessage", {
+              appName: doc.applicationTemplate.name,
+              time: seconds === 1 ? t("auth.autoRedirect.oneSecond") : t("auth.autoRedirect.seconds", { count: seconds }),
+              pausedText: paused ? t("auth.autoRedirect.paused") : "",
+            })
+          }}
         </div>
       </template>
     </WithOrganizationApplicationDocument>
@@ -186,7 +192,9 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
     <div class="mt-4 flex flex-row gap-4 justify-between">
       <Button type="button" tabindex="3" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
       <div class="flex flex-row gap-4">
-        <Button type="button" tabindex="2" :progress="progress" @click.prevent="onPauseResume">{{ paused ? t("auth.autoRedirect.resume") : t("auth.autoRedirect.pause") }}</Button>
+        <Button type="button" tabindex="2" :progress="progress" @click.prevent="onPauseResume">{{
+          paused ? t("auth.autoRedirect.resume") : t("auth.autoRedirect.pause")
+        }}</Button>
         <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">{{ t("auth.autoRedirect.redirect") }}</Button>
       </div>
     </div>
