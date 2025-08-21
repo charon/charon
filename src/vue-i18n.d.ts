@@ -8,6 +8,12 @@ declare module "vue-i18n" {
         back: string
         retry: string
         continue: string
+        create: string
+        update: string
+        select: string
+        enable: string
+        decline: string
+        cancel: string
       }
       errors: {
         unexpected: string
@@ -105,6 +111,37 @@ declare module "vue-i18n" {
         selectIdentity: string
         newIdentityButton: string
       }
+    }
+    loading: {
+      dataLoading: string
+      loadingDataFailed: string
+    }
+    labels: {
+      optional: string
+      applicationTemplateName: string
+      organizationName: string
+      username: string
+      givenName: string
+      fullName: string
+      pictureUrl: string
+      description: string
+    }
+    titles: {
+      organizations: string
+      identities: string
+      applicationTemplates: string
+      organization: string
+      createOrganization: string
+      createApplicationTemplate: string
+      createIdentity: string
+      createNewIdentity: string
+      usersForOrganization: string
+      previouslyUsedIdentities: string
+      otherAvailableIdentities: string
+      disabledIdentities: string
+    }
+    passkey: {
+      signingIn: string
     }
   }
 }

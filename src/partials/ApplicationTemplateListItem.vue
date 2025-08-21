@@ -2,7 +2,10 @@
 import type { DeepReadonly } from "vue"
 import type { ApplicationTemplate, ApplicationTemplatePublic, ApplicationTemplateRef } from "@/types"
 
+import { useI18n } from "vue-i18n"
 import WithDocument from "@/components/WithDocument.vue"
+
+const { t } = useI18n()
 
 defineProps<{
   item: ApplicationTemplateRef
@@ -41,7 +44,7 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
     <template #error="{ url }">
       <div class="flex flex-row gap-4" :data-url="url">
         <div class="flex-grow flex">
-          <span class="text-error-600 italic">loading data failed</span>
+          <span class="text-error-600 italic">{{ t("loading.loadingDataFailed") }}</span>
         </div>
         <slot :doc="undefined" :metadata="undefined"></slot>
       </div>

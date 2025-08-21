@@ -91,6 +91,7 @@ management, and third-party authentication providers.
 - **Import Convention**: Always use `@/` alias for internal imports, never relative paths (`./`, `../`)
 - **Import Organization**: Type imports must be at the top with `import type`, followed by empty line, then regular imports
 - **Internationalization**: All user-facing text must use `useI18n()` composition API with precompiled messages
+  - Never translate technical terms like "passkey" - hardcode them directly in components
 - **TypeScript**: Strict typing enabled with vue-i18n message schema validation
 - **Formatting**: Always run `npm run fmt` after making changes to maintain consistent code formatting
   - Use double quotes (`"`) for strings, not single quotes (`'`)

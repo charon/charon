@@ -4,7 +4,13 @@
       "next": "Naprej",
       "back": "Nazaj",
       "retry": "Poskusi znova",
-      "continue": "Nadaljuj"
+      "continue": "Nadaljuj",
+      "create": "Ustvari",
+      "update": "Posodobi",
+      "select": "Izberi",
+      "enable": "Omogoči",
+      "decline": "Zavrni",
+      "cancel": "Prekliči"
     },
     "errors": {
       "unexpected": "Nepričakovana napaka. Prosimo, poskusite znova.",
@@ -102,5 +108,36 @@
       "selectIdentity": "Izberite identiteto za uporabo z {appName}:",
       "newIdentityButton": "Ustvari novo identiteto"
     }
+  },
+  "loading": {
+    "dataLoading": "Nalaganje...",
+    "loadingDataFailed": "nalaganje podatkov neuspešno"
+  },
+  "labels": {
+    "optional": "(neobvezno)",
+    "applicationTemplateName": "Ime predloge aplikacije",
+    "organizationName": "Ime organizacije",
+    "username": "Uporabniško ime",
+    "givenName": "Ime",
+    "fullName": "Polno ime",
+    "pictureUrl": "URL slike",
+    "description": "Opis"
+  },
+  "titles": {
+    "organizations": "Organizacije",
+    "identities": "Identitete",
+    "applicationTemplates": "Predloge aplikacij",
+    "organization": "Organizacija",
+    "createOrganization": "Ustvari organizacijo",
+    "createApplicationTemplate": "Ustvari predlogo aplikacije",
+    "createIdentity": "Ustvari identiteto",
+    "createNewIdentity": "Ustvari novo identiteto",
+    "usersForOrganization": "Uporabniki za organizacijo",
+    "previouslyUsedIdentities": "Prej uporabljene identitete",
+    "otherAvailableIdentities": "Druge razpoložljive identitete",
+    "disabledIdentities": "Onemogočene identitete"
+  },
+  "passkey": {
+    "signingIn": "Prijavljamo vas z uporabo {strong}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave."
   }
 }

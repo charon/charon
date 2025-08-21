@@ -2,6 +2,7 @@
 import type { Organizations } from "@/types"
 
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
+import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 import ButtonLink from "@/components/ButtonLink.vue"
 import OrganizationListItem from "@/partials/OrganizationListItem.vue"
@@ -11,6 +12,7 @@ import { getURL } from "@/api"
 import { injectProgress } from "@/progress"
 import { isSignedIn } from "@/auth"
 
+const { t } = useI18n()
 const router = useRouter()
 
 const progress = injectProgress()
@@ -58,12 +60,12 @@ onBeforeMount(async () => {
     <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
       <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
         <div class="flex flex-row justify-between items-center gap-4">
-          <h1 class="text-2xl font-bold">Organizations</h1>
-          <ButtonLink v-if="isSignedIn()" :to="{ name: 'OrganizationCreate' }" :progress="progress" primary>Create</ButtonLink>
+          <h1 class="text-2xl font-bold">{{ t("titles.organizations") }}</h1>
+          <ButtonLink v-if="isSignedIn()" :to="{ name: 'OrganizationCreate' }" :progress="progress" primary>{{ t("common.buttons.create") }}</ButtonLink>
         </div>
       </div>
-      <div v-if="dataLoading" class="w-full rounded border bg-white p-4 shadow">Loading...</div>
-      <div v-else-if="dataLoadingError" class="w-full rounded border bg-white p-4 shadow text-error-600">Unexpected error. Please try again.</div>
+      <div v-if="dataLoading" class="w-full rounded border bg-white p-4 shadow">{{ t("loading.dataLoading") }}</div>
+      <div v-else-if="dataLoadingError" class="w-full rounded border bg-white p-4 shadow text-error-600">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
         <div v-if="!organizations.length" class="w-full rounded border bg-white p-4 shadow italic">
           There are no organizations. {{ isSignedIn() ? "Create the first one." : "Sign-in or sign-up to create the first one." }}

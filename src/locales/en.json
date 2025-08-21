@@ -4,7 +4,13 @@
       "next": "Next",
       "back": "Back",
       "retry": "Retry",
-      "continue": "Continue"
+      "continue": "Continue",
+      "create": "Create",
+      "update": "Update",
+      "select": "Select",
+      "enable": "Enable",
+      "decline": "Decline",
+      "cancel": "Cancel"
     },
     "errors": {
       "unexpected": "Unexpected error. Please try again.",
@@ -102,5 +108,36 @@
       "selectIdentity": "Select identity to use with {appName}:",
       "newIdentityButton": "Create new identity"
     }
+  },
+  "loading": {
+    "dataLoading": "Loading...",
+    "loadingDataFailed": "loading data failed"
+  },
+  "labels": {
+    "optional": "(optional)",
+    "applicationTemplateName": "Application template name",
+    "organizationName": "Organization name",
+    "username": "Username",
+    "givenName": "Given name",
+    "fullName": "Full name",
+    "pictureUrl": "Picture URL",
+    "description": "Description"
+  },
+  "titles": {
+    "organizations": "Organizations",
+    "identities": "Identities",
+    "applicationTemplates": "Application templates",
+    "organization": "Organization",
+    "createOrganization": "Create organization",
+    "createApplicationTemplate": "Create application template",
+    "createIdentity": "Create identity",
+    "createNewIdentity": "Create new identity",
+    "usersForOrganization": "Users for organization",
+    "previouslyUsedIdentities": "Previously used identities",
+    "otherAvailableIdentities": "Other available identities",
+    "disabledIdentities": "Disabled identities"
+  },
+  "passkey": {
+    "signingIn": "Signing you in using {strong}. Please follow instructions by your browser and/or device."
   }
 }

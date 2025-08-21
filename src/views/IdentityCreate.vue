@@ -2,10 +2,12 @@
 import type { IdentityRef } from "@/types"
 
 import { useRouter } from "vue-router"
+import { useI18n } from "vue-i18n"
 import IdentityCreate from "@/partials/IdentityCreate.vue"
 import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
 
+const { t } = useI18n()
 const router = useRouter()
 
 function onCreated(identity: IdentityRef) {
@@ -21,7 +23,7 @@ function onCreated(identity: IdentityRef) {
     <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
       <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
         <div class="flex flex-row items-center">
-          <h1 class="text-2xl font-bold">Create identity</h1>
+          <h1 class="text-2xl font-bold">{{ t("titles.createIdentity") }}</h1>
         </div>
         <IdentityCreate @created="onCreated" />
       </div>

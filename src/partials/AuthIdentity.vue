@@ -3,6 +3,7 @@ import type { DeepReadonly } from "vue"
 import type { AllIdentity, AuthFlowChooseIdentityRequest, AuthFlowResponse, Flow, Identities, Identity, IdentityRef } from "@/types"
 
 import { ref, onBeforeUnmount, onMounted, getCurrentInstance, computed } from "vue"
+import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 import Button from "@/components/Button.vue"
 import IdentityPublic from "@/partials/IdentityPublic.vue"
@@ -11,6 +12,8 @@ import { injectProgress } from "@/progress"
 import { getURL, postJSON, restartAuth } from "@/api"
 import { clone, encodeQuery, getOrganization } from "@/utils"
 import { processResponse } from "@/flow"
+
+const { t } = useI18n()
 
 const props = defineProps<{
   flow: Flow
@@ -340,10 +343,10 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
         Select the identity you want to continue with. Its information will be provided to the app and the organization. You can also create a new identity or decline to
         proceed.
       </div>
-      <div v-if="allIdentitiesLoading" class="mb-4">Loading...</div>
-      <div v-else-if="allIdentitiesLoadingError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
+      <div v-if="allIdentitiesLoading" class="mb-4">{{ t("loading.dataLoading") }}</div>
+      <div v-else-if="allIdentitiesLoadingError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
-        <h3 class="text-l font-bold mb-4">Previously used identities</h3>
+        <h3 class="text-l font-bold mb-4">{{ t("titles.previouslyUsedIdentities") }}</h3>
         <div v-if="usedIdentities.length + addedIdentities.length + disabledIdentities.length === 0" class="italic mb-4">
           You have not yet used any identity with this organization.
         </div>
@@ -358,9 +361,9 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
           <li v-for="(identity, i) of usedIdentities" :key="identity.identity.id" class="mb-4">
             <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate">
               <div class="flex flex-col items-start">
-                <Button :id="i === 0 ? 'first-identity' : null" primary type="button" tabindex="1" :progress="progress" @click.prevent="onSelect(identity.identity.id)"
-                  >Select</Button
-                >
+                <Button :id="i === 0 ? 'first-identity' : null" primary type="button" tabindex="1" :progress="progress" @click.prevent="onSelect(identity.identity.id)">{{
+                  t("common.buttons.select")
+                }}</Button>
               </div>
             </IdentityPublic>
           </li>
@@ -378,7 +381,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
                     tabindex="1"
                     :progress="progress"
                     @click.prevent="onSelect(identity.identity.id)"
-                    >Select</Button
+                    >{{ t("common.buttons.select") }}</Button
                   >
                 </div>
               </IdentityPublic>
@@ -401,7 +404,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
                   tabindex="2"
                   :progress="progress"
                   @click.prevent="onSelect(identity.identity.id)"
-                  >Select</Button
+                  >{{ t("common.buttons.select") }}</Button
                 >
               </div>
             </IdentityPublic>
@@ -413,7 +416,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
             <li v-for="identity of disabledIdentities" :key="identity.identity.id" class="mb-4">
               <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate" :labels="['disabled']">
                 <div class="flex flex-col items-start">
-                  <Button primary type="button" tabindex="3" :progress="progress" @click.prevent="onEnable(identity.identity)">Enable</Button>
+                  <Button primary type="button" tabindex="3" :progress="progress" @click.prevent="onEnable(identity.identity)">{{ t("common.buttons.enable") }}</Button>
                 </div>
               </IdentityPublic>
             </li>
@@ -421,16 +424,16 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
         </template>
       </template>
       <div v-if="!createShown" class="flex flex-row justify-start gap-4 mb-4">
-        <Button type="button" tabindex="3" :progress="progress" @click.prevent="onCreateShow">Create new identity</Button>
+        <Button type="button" tabindex="3" :progress="progress" @click.prevent="onCreateShow">{{ t("auth.identity.newIdentityButton") }}</Button>
       </div>
       <template v-if="createShown">
-        <h3 class="text-l font-bold mb-4">Create new identity</h3>
+        <h3 class="text-l font-bold mb-4">{{ t("titles.createNewIdentity") }}</h3>
         <IdentityCreate class="mb-4" :flow-id="flow.getId()" @created="onIdentityCreated" />
       </template>
-      <div v-if="unexpectedError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
+      <div v-if="unexpectedError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
       <div class="flex flex-row justify-between gap-4">
-        <Button type="button" tabindex="5" @click.prevent="onBack">Back</Button>
-        <Button type="button" tabindex="4" :progress="progress" @click.prevent="onDecline">Decline</Button>
+        <Button type="button" tabindex="5" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
+        <Button type="button" tabindex="4" :progress="progress" @click.prevent="onDecline">{{ t("common.buttons.decline") }}</Button>
       </div>
     </div>
   </div>
