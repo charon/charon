@@ -13,6 +13,7 @@ export default defineConfig({
       include: [path.resolve(__dirname, "src/locales/**")],
       runtimeOnly: true,
       compositionOnly: true,
+      dropMessageCompiler: true,
       fullInstall: false,
       forceStringify: true,
     }),
