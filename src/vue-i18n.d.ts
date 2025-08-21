@@ -161,6 +161,9 @@ declare module "vue-i18n" {
         applicationsUpdated: string
         adminsUpdated: string
         identitiesUpdated: string
+        identityUpdated: string
+        usersUpdated: string
+        organizationsUpdated: string
       }
     }
   }
