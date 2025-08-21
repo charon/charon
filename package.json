@@ -31,7 +31,6 @@
   "dependencies": {
     "@headlessui/vue": "^1.7.23",
     "@heroicons/vue": "^2.2.0",
-    "@intlify/unplugin-vue-i18n": "^6.0.8",
     "@simplewebauthn/browser": "^10.0.0",
     "@tozd/identifier": "^0.4.0",
     "argon2id": "^1.0.1",
@@ -47,6 +46,7 @@
     "@eslint/compat": "^1.2.6",
     "@eslint/js": "^9.19.0",
     "@headlessui/tailwindcss": "^0.2.1",
+    "@intlify/unplugin-vue-i18n": "^6.0.8",
     "@simplewebauthn/types": "^10.0.0",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/typography": "^0.5.16",
