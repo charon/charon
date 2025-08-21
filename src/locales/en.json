@@ -178,7 +178,6 @@
     "addClient": "Add client",
     "spaceSeparatedScopes": "Space-separated OpenID scopes the app might request",
     "spaceSeparatedAdditionalScopes": "Space-separated additional scopes the client might request",
-    "description": "Description",
     "accessTokenType": "Access token type",
     "accessTokenLifespan": "Access token lifespan",
     "idTokenLifespan": "ID token lifespan",

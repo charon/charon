@@ -178,7 +178,6 @@
     "addClient": "Dodaj odjemalca",
     "spaceSeparatedScopes": "Z znaki ločeni OpenID dosegi, ki jih lahko aplikacija zahteva",
     "spaceSeparatedAdditionalScopes": "Z znaki ločeni dodatni dosegi, ki jih lahko odjemalec zahteva",
-    "description": "Opis",
     "accessTokenType": "Tip dostopovnega žetona",
     "accessTokenLifespan": "Življenjska doba dostopovnega žetona",
     "idTokenLifespan": "Življenjska doba ID žetona",
