@@ -14,7 +14,7 @@ export default defineConfig({
       runtimeOnly: true,
       compositionOnly: true,
       dropMessageCompiler: true,
-      fullInstall: false,
+      fullInstall: true,
       forceStringify: true,
     }),
     license({
