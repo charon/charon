@@ -37,8 +37,7 @@
   "auth": {
     "start": {
       "emailOrUsernameLabel": "Vnesite uporabniško ime Charon ali vaš e-naslov",
-      "orUse": "Ali uporabite",
-      "passkeyButton": "Ključ"
+      "orUse": "Ali uporabite"
     },
     "password": {
       "emailAddressLabel": "Vaš e-naslov",
@@ -73,17 +72,15 @@
     "passkey": {
       "signin": {
         "instructions": "Prijavite se z uporabo vašega {strong}.",
-        "strongPasskey": "ključa",
         "failed": "Prijava z uporabo {strong} ni uspela.",
         "signupButton": "Registriraj se namesto tega"
       },
       "signup": {
         "instructions": "Prijava z uporabo {strong} ni uspela. Se želite registrirati namesto tega?",
-        "strongPasskey": "ključa",
         "signingUp": "Registriramo vas z uporabo {strong}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave.",
         "failed": "Registracija z uporabo {strong} ni uspela.",
         "retrySigninButton": "Poskusi prijavo znova",
-        "passkeySignupButton": "Registracija s ključem",
+        "passkeySignupButton": "Registracija s passkey",
         "retrySignupButton": "Poskusi registracijo znova"
       }
     },

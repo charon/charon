@@ -41,7 +41,6 @@ declare module "vue-i18n" {
       start: {
         emailOrUsernameLabel: string
         orUse: string
-        passkeyButton: string
       }
       password: {
         emailAddressLabel: string
@@ -76,13 +75,11 @@ declare module "vue-i18n" {
       passkey: {
         signin: {
           instructions: string
-          strongPasskey: string
           failed: string
           signupButton: string
         }
         signup: {
           instructions: string
-          strongPasskey: string
           signingUp: string
           failed: string
           retrySigninButton: string

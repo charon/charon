@@ -184,7 +184,7 @@ async function onThirdPartyProvider(provider: string) {
       <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     </div>
     <h2 class="text-center m-4 text-xl font-bold uppercase">{{ t("auth.start.orUse") }}</h2>
-    <Button primary type="button" :disabled="!browserSupportsWebAuthn()" :progress="progress" @click.prevent="onPasskey">{{ t("auth.start.passkeyButton") }}</Button>
+    <Button primary type="button" :disabled="!browserSupportsWebAuthn()" :progress="progress" @click.prevent="onPasskey">Passkey</Button>
     <Button v-for="p of siteContext.providers" :key="p.key" primary type="button" class="mt-4" :progress="progress" @click.prevent="onThirdPartyProvider(p.key)">{{
       p.name
     }}</Button>

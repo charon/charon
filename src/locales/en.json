@@ -37,8 +37,7 @@
   "auth": {
     "start": {
       "emailOrUsernameLabel": "Enter Charon username or your e-mail address",
-      "orUse": "Or use",
-      "passkeyButton": "Passkey"
+      "orUse": "Or use"
     },
     "password": {
       "emailAddressLabel": "Your e-mail address",
@@ -73,13 +72,11 @@
     "passkey": {
       "signin": {
         "instructions": "Sign in using your {strong}.",
-        "strongPasskey": "passkey",
         "failed": "Signing in using {strong} failed.",
         "signupButton": "Sign-up instead"
       },
       "signup": {
         "instructions": "Signing in using {strong} failed. Do you want to sign up instead?",
-        "strongPasskey": "passkey",
         "signingUp": "Signing you up using {strong}. Please follow instructions by your browser and/or device.",
         "failed": "Signing up using {strong} failed.",
         "retrySigninButton": "Retry sign-in",

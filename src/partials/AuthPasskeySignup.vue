@@ -147,23 +147,17 @@ async function onPasskeySignup() {
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div v-if="signupAttempted && signupFailed">
       <i18n-t keypath="auth.passkey.signup.failed">
-        <template #strong
-          ><strong>{{ t("auth.passkey.signin.strongPasskey") }}</strong></template
-        >
+        <template #strong><strong>passkey</strong></template>
       </i18n-t>
     </div>
     <div v-else-if="signupAttempted">
       <i18n-t keypath="auth.passkey.signup.signingUp">
-        <template #strong
-          ><strong>{{ t("auth.passkey.signin.strongPasskey") }}</strong></template
-        >
+        <template #strong><strong>passkey</strong></template>
       </i18n-t>
     </div>
     <div v-else>
       <i18n-t keypath="auth.passkey.signup.instructions">
-        <template #strong
-          ><strong>{{ t("auth.passkey.signin.strongPasskey") }}</strong></template
-        >
+        <template #strong><strong>passkey</strong></template>
       </i18n-t>
     </div>
     <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
