@@ -143,6 +143,7 @@ declare module "vue-i18n" {
       AuthPasskeySignin: {
         signingIn: string
         signupInfo: string
+        passkey: string
       }
       AuthPasskeySignup: {
         instructions: string
@@ -151,6 +152,7 @@ declare module "vue-i18n" {
         retrySigninButton: string
         passkeySignupButton: string
         retrySignupButton: string
+        passkey: string
       }
       AuthPassword: {
         emailAddressLabel: string
