@@ -772,7 +772,11 @@ async function onIdentitiesSubmit() {
                     </ol>
                     <div class="flex flew-row justify-between items-center gap-4 mt-4">
                       <div>
-                        {{ t("views.OrganizationGet.status") }} <strong>{{ application.active ? t("common.labels.active") : t("common.labels.disabled") }}</strong>
+                        <i18n-t keypath="views.OrganizationGet.status" scope="global">
+                          <template #strongStatus>
+                            <strong>{{ application.active ? t("common.labels.active") : t("common.labels.disabled") }}</strong>
+                          </template>
+                        </i18n-t>
                       </div>
                       <div class="flex flex-row gap-4">
                         <Button type="button" :progress="progress" @click.prevent="application.active = !application.active">

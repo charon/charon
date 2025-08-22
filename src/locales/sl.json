@@ -247,7 +247,7 @@
       "configuration": "Konfiguracija",
       "publicClients": "@:views.ApplicationTemplateGet.publicClients",
       "serviceClients": "@:views.ApplicationTemplateGet.serviceClients",
-      "status": "Status:"
+      "status": "Status: {strongStatus}"
     },
     "OrganizationList": {
       "noOrganizationsCreate": "Ni organizacij. Ustvarite prvo.",
