@@ -285,7 +285,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
     </div>
     <div v-else class="mt-4">
       <i18n-t keypath="partials.AuthCode.troubleEmail" scope="global">
-        <template #link>
+        <template #linkDifferentMethod>
           <a href="" class="link" @click.prevent="onRedo">{{ t("partials.AuthCode.differentMethod") }}</a>
         </template>
       </i18n-t>
