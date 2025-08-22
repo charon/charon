@@ -224,16 +224,14 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
         </i18n-t>
       </label>
       <label v-else-if="!codeFromHash && isEmail(flow.getEmailOrUsername())" for="code" class="mb-1">
-        <i18n-t keypath="partials.AuthCode.codeSentEmail" scope="global">
-          <template #sentCount>{{ t("partials.AuthCode.sentCount", sendCounter) }}</template>
+        <i18n-t keypath="partials.AuthCode.codeSentEmail" scope="global" :sent-count="t('partials.AuthCode.sentCount', sendCounter)">
           <template #strongEmail
             ><strong>{{ flow.getEmailOrUsername() }}</strong></template
           >
         </i18n-t>
       </label>
       <label v-else-if="!codeFromHash" for="code" class="mb-1">
-        <i18n-t keypath="partials.AuthCode.codeSentUsername" scope="global">
-          <template #sentCount>{{ t("partials.AuthCode.sentCount", sendCounter) }}</template>
+        <i18n-t keypath="partials.AuthCode.codeSentUsername" scope="global" :sent-count="t('partials.AuthCode.sentCount', sendCounter)">
           <template #strongUsername
             ><strong>{{ flow.getEmailOrUsername() }}</strong></template
           >
@@ -274,8 +272,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
     <div v-if="codeFromHash" class="mt-4">
       <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationApp">
         <template #default="{ doc }">
-          <i18n-t keypath="partials.AuthCode.securityWarning" scope="global">
-            <template #appName>{{ doc.applicationTemplate.name }}</template>
+          <i18n-t keypath="partials.AuthCode.securityWarning" scope="global" :app-name="doc.applicationTemplate.name">
             <template #strongDont
               ><strong>{{ t("partials.AuthCode.dont") }}</strong></template
             >

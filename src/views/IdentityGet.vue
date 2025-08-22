@@ -427,13 +427,13 @@ async function onAddOrganization(organization: OrganizationRef) {
             >
             <InputText id="fullName" v-model="fullName" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <label for="pictureUrl" class="mb-1 mt-4"
-              >{{ t("common.fields.pictureUrl")
-              }} <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
+              >{{ t("common.fields.pictureUrl") }}
+              <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
             >
             <InputText id="pictureUrl" v-model="pictureUrl" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <label for="description" class="mb-1 mt-4"
-              >{{ t("common.fields.description")
-              }} <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
+              >{{ t("common.fields.description") }}
+              <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
             >
             <TextArea id="description" v-model="description" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <div v-if="basicUnexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>

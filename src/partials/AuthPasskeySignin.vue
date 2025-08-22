@@ -157,7 +157,9 @@ async function onCancel() {
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div>
       <i18n-t keypath="partials.AuthPasskeySignin.signingIn" scope="global">
-        <template #strongPasskey><strong>{{ t("partials.AuthPasskeySignin.passkey") }}</strong></template>
+        <template #strongPasskey
+          ><strong>{{ t("partials.AuthPasskeySignin.passkey") }}</strong></template
+        >
       </i18n-t>
     </div>
     <div class="mt-4">{{ t("partials.AuthPasskeySignin.signupInfo") }}</div>
