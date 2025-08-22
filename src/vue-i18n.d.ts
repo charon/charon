@@ -20,6 +20,7 @@ declare module "vue-i18n" {
         activate: string
         addUser: string
         addAdmin: string
+        manage: string
         signOut: string
         signIn: string
       }
@@ -233,7 +234,6 @@ declare module "vue-i18n" {
         createNewIdentity: string
         addedIdentities: string
         availableIdentities: string
-        manage: string
         identityUpdated: string
         usersUpdated: string
         adminsUpdated: string
@@ -270,7 +270,6 @@ declare module "vue-i18n" {
         clientId: string
         clientSecret: string
         configuration: string
-        manage: string
         publicClients: string
         serviceClients: string
         status: string

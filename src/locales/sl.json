@@ -17,6 +17,7 @@
       "activate": "Aktiviraj",
       "addUser": "Dodaj uporabnika",
       "addAdmin": "Dodaj administratorja",
+      "manage": "Upravljaj",
       "signOut": "Izpis",
       "signIn": "Prijava ali registracija"
     },
@@ -230,7 +231,6 @@
       "createNewIdentity": "Ustvari novo identiteto",
       "addedIdentities": "Dodane identitete",
       "availableIdentities": "Razpoložljive identitete",
-      "manage": "Upravljaj",
       "identityUpdated": "Identiteta je bila uspešno posodobljena.",
       "usersUpdated": "Uporabniki so bili uspešno posodobljeni.",
       "adminsUpdated": "Administratorji so bili uspešno posodobljeni.",
@@ -265,7 +265,6 @@
       "clientId": "ID odjemalca:",
       "clientSecret": "Skrivnost odjemalca:",
       "configuration": "Konfiguracija",
-      "manage": "Upravljaj",
       "publicClients": "Javni odjemalci",
       "serviceClients": "Servisni odjemalci",
       "status": "Status:"

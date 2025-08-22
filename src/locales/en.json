@@ -17,6 +17,7 @@
       "activate": "Activate",
       "addUser": "Add user",
       "addAdmin": "Add admin",
+      "manage": "Manage",
       "signOut": "Sign-out",
       "signIn": "Sign-in or sign-up"
     },
@@ -229,7 +230,6 @@
       "createNewIdentity": "Create new identity",
       "addedIdentities": "Added identities",
       "availableIdentities": "Available identities",
-      "manage": "Manage",
       "identityUpdated": "Identity updated successfully.",
       "usersUpdated": "Users updated successfully.",
       "adminsUpdated": "Admins updated successfully.",
@@ -264,7 +264,6 @@
       "clientId": "Client ID:",
       "clientSecret": "Client secret:",
       "configuration": "Configuration",
-      "manage": "Manage",
       "publicClients": "Public clients",
       "serviceClients": "Service clients",
       "status": "Status:"

@@ -675,7 +675,7 @@ async function onIdentitiesSubmit() {
           <template v-if="metadata.can_update">
             <h2 class="text-xl font-bold">{{ t("common.entities.users") }}</h2>
             <div>
-              <ButtonLink :to="{ name: 'OrganizationUsers', params: { id } }" primary>{{ t("views.OrganizationGet.manage") }}</ButtonLink>
+              <ButtonLink :to="{ name: 'OrganizationUsers', params: { id } }" primary>{{ t("common.buttons.manage") }}</ButtonLink>
             </div>
           </template>
           <template v-if="(metadata.can_update && (applications.length || canApplicationsSubmit())) || applicationsUnexpectedError || applicationsUpdated">
