@@ -27,8 +27,9 @@ management, and third-party authentication providers.
 
 - `npm run generate-vue-i18n` - Generate TypeScript definitions for vue-i18n from `src/locales/en.json`
 
-**Important**: The file `src/vue-i18n.d.ts` is automatically generated and should NOT be edited manually. 
+**Important**: The file `src/vue-i18n.d.ts` is automatically generated and should NOT be edited manually.
 To update internationalization TypeScript definitions:
+
 1. Modify `src/locales/en.json` with your locale changes
 2. Run `npm run generate-vue-i18n` to regenerate the TypeScript definitions
 3. The script `generate-vue-i18n.js` uses Vue i18n Global resource schema approach for type safety
