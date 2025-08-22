@@ -23,6 +23,16 @@ management, and third-party authentication providers.
 - `npm run serve` - Start Vite dev server (runs on port 5173, proxied through backend on 8080)
 - `npm run build` - Build frontend for production (output to `dist/`)
 
+### Internationalization (i18n)
+
+- `npm run generate-vue-i18n` - Generate TypeScript definitions for vue-i18n from `src/locales/en.json`
+
+**Important**: The file `src/vue-i18n.d.ts` is automatically generated and should NOT be edited manually. 
+To update internationalization TypeScript definitions:
+1. Modify `src/locales/en.json` with your locale changes
+2. Run `npm run generate-vue-i18n` to regenerate the TypeScript definitions
+3. The script `generate-vue-i18n.js` uses Vue i18n Global resource schema approach for type safety
+
 ### Testing and Quality
 
 - `make test` - Run Go tests with coverage
