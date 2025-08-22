@@ -193,9 +193,9 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
       <Button type="button" tabindex="3" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
       <div class="flex flex-row gap-4">
         <Button type="button" tabindex="2" :progress="progress" @click.prevent="onPauseResume">{{
-          paused ? t("partials.AuthAutoRedirect.resume") : t("partials.AuthAutoRedirect.pause")
+          paused ? t("common.buttons.resume") : t("common.buttons.pause")
         }}</Button>
-        <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">{{ t("partials.AuthAutoRedirect.redirect") }}</Button>
+        <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">{{ t("common.buttons.redirect") }}</Button>
       </div>
     </div>
   </div>

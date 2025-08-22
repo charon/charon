@@ -18,7 +18,10 @@
       "addAdmin": "Dodaj administratorja",
       "manage": "Upravljaj",
       "signOut": "Izpis",
-      "signIn": "Prijava ali registracija"
+      "signIn": "Prijava ali registracija",
+      "resume": "Nadaljuj",
+      "pause": "Ustavi",
+      "redirect": "Preusmeri"
     },
     "errors": {
       "unexpected": "Nepričakovana napaka. Prosimo, poskusite znova.",
@@ -77,9 +80,6 @@
       "redirectMessage": "Sedaj boste preusmerjeni v {appName} čez {time}{pausedText}.",
       "seconds": "1 sekundo | {count} sekundi | {count} sekunde | {count} sekund",
       "paused": " (pavzirano)",
-      "resume": "Nadaljuj",
-      "pause": "Pavziraj",
-      "redirect": "Preusmeri",
       "congratulationsWord": "Čestitamo.",
       "declineSignInOrSignUp": "zavrniti prijavo ali registracijo"
     },
@@ -167,10 +167,7 @@
       "redirecting": "Preusmerjamo vas na {provider}. Prosimo, sledite navodilom vašega brskalnika.",
       "failed": "Prijava z uporabo {provider} ni uspela.",
       "seconds": "1 sekundo | {count} sekundi | {count} sekunde | {count} sekund",
-      "paused": " (pavzirano)",
-      "resume": "Nadaljuj",
-      "pause": "Pavziraj",
-      "redirect": "Preusmeri"
+      "paused": " (pavzirano)"
     },
     "Footer": {
       "poweredBy": "Zagotavlja {name}"

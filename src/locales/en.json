@@ -18,7 +18,10 @@
       "addAdmin": "Add admin",
       "manage": "Manage",
       "signOut": "Sign-out",
-      "signIn": "Sign-in or sign-up"
+      "signIn": "Sign-in or sign-up",
+      "resume": "Resume",
+      "pause": "Pause",
+      "redirect": "Redirect"
     },
     "errors": {
       "unexpected": "Unexpected error. Please try again.",
@@ -77,9 +80,6 @@
       "redirectMessage": "You will be now redirected to {appName} in {time}{pausedText}.",
       "seconds": "1 second | {count} seconds",
       "paused": " (paused)",
-      "resume": "Resume",
-      "pause": "Pause",
-      "redirect": "Redirect",
       "congratulationsWord": "Congratulations.",
       "declineSignInOrSignUp": "decline sign-in or sign-up"
     },
@@ -167,10 +167,7 @@
       "redirecting": "Redirecting you to {provider}. Please follow instructions by your browser.",
       "failed": "Signing in using {provider} failed.",
       "seconds": "1 second | {count} seconds",
-      "paused": " (paused)",
-      "resume": "Resume",
-      "pause": "Pause",
-      "redirect": "Redirect"
+      "paused": " (paused)"
     },
     "Footer": {
       "poweredBy": "Powered by {name}"

@@ -30,6 +30,9 @@ declare module "vue-i18n" {
         manage: string
         signOut: string
         signIn: string
+        resume: string
+        pause: string
+        redirect: string
       }
       errors: {
         unexpected: string
@@ -88,9 +91,6 @@ declare module "vue-i18n" {
         redirectMessage: string
         seconds: string
         paused: string
-        resume: string
-        pause: string
-        redirect: string
         congratulationsWord: string
         declineSignInOrSignUp: string
       }
@@ -179,9 +179,6 @@ declare module "vue-i18n" {
         failed: string
         seconds: string
         paused: string
-        resume: string
-        pause: string
-        redirect: string
       }
       Footer: {
         poweredBy: string
