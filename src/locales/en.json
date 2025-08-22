@@ -79,6 +79,9 @@
     "time": {
       "seconds": "1 second | {count} seconds",
       "paused": " (paused)"
+    },
+    "accessibility": {
+      "picture": "picture"
     }
   },
   "partials": {

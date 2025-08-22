@@ -79,6 +79,9 @@
     "time": {
       "seconds": "1 sekundo | {count} sekundi | {count} sekunde | {count} sekund",
       "paused": " (pavzirano)"
+    },
+    "accessibility": {
+      "picture": "slika"
     }
   },
   "partials": {

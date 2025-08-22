@@ -91,6 +91,9 @@ declare module "vue-i18n" {
         seconds: string
         paused: string
       }
+      accessibility: {
+        picture: string
+      }
     }
     partials: {
       AuthAutoRedirect: {
