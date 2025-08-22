@@ -52,7 +52,8 @@
     "data": {
       "dataLoading": "Nalaganje...",
       "loadingDataFailed": "nalaganje podatkov neuspešno",
-      "confirmUpdateToAllocate": "potrdite posodobitev za dodelitev"
+      "confirmUpdateToAllocate": "potrdite posodobitev za dodelitev",
+      "adminsUpdated": "Administratorji so bili uspešno posodobljeni."
     },
     "fields": {
       "description": "Opis",
@@ -198,8 +199,7 @@
       "variablesUpdated": "Spremenljivke so bile uspešno posodobljene.",
       "publicClientsUpdated": "Javni odjemalci so bili uspešno posodobljeni.",
       "backendClientsUpdated": "Zaledni odjemalci so bili uspešno posodobljeni.",
-      "serviceClientsUpdated": "Servisni odjemalci so bili uspešno posodobljeni.",
-      "adminsUpdated": "Administratorji so bili uspešno posodobljeni."
+      "serviceClientsUpdated": "Servisni odjemalci so bili uspešno posodobljeni."
     },
     "ApplicationTemplateList": {
       "noApplicationTemplatesCreate": "Ni predlog aplikacij. Ustvarite prvo.",
@@ -214,7 +214,6 @@
     "IdentityGet": {
       "identityUpdated": "Identiteta je bila uspešno posodobljena.",
       "usersUpdated": "Uporabniki so bili uspešno posodobljeni.",
-      "adminsUpdated": "Administratorji so bili uspešno posodobljeni.",
       "organizationsUpdated": "Dodane organizacije so bile uspešno posodobljene.",
       "addedOrganizations": "Dodane organizacije",
       "availableOrganizations": "Razpoložljive organizacije"
@@ -232,18 +231,17 @@
       "organizationName": "Ime organizacije",
       "organizationUpdated": "Organizacija je bila uspešno posodobljena.",
       "addedApplicationsUpdated": "Dodane aplikacije so bile uspešno posodobljene.",
-      "adminsUpdated": "Administratorji so bili uspešno posodobljeni.",
       "identitiesUpdated": "Identitete organizacije so bile uspešno posodobljene.",
       "addedApplications": "Dodane aplikacije",
       "availableApplications": "Razpoložljive aplikacije",
       "addedIdentities": "Dodane identitete",
       "availableIdentities": "Razpoložljive identitete",
-      "backendClients": "Zaledni odjemalci",
+      "backendClients": "@:views.ApplicationTemplateGet.backendClients",
       "clientId": "ID odjemalca:",
       "clientSecret": "Skrivnost odjemalca:",
       "configuration": "Konfiguracija",
-      "publicClients": "Javni odjemalci",
-      "serviceClients": "Servisni odjemalci",
+      "publicClients": "@:views.ApplicationTemplateGet.publicClients",
+      "serviceClients": "@:views.ApplicationTemplateGet.serviceClients",
       "status": "Status:"
     },
     "OrganizationList": {

@@ -64,6 +64,7 @@ declare module "vue-i18n" {
         dataLoading: string
         loadingDataFailed: string
         confirmUpdateToAllocate: string
+        adminsUpdated: string
       }
       fields: {
         description: string
@@ -210,7 +211,6 @@ declare module "vue-i18n" {
         publicClientsUpdated: string
         backendClientsUpdated: string
         serviceClientsUpdated: string
-        adminsUpdated: string
       }
       ApplicationTemplateList: {
         noApplicationTemplatesCreate: string
@@ -225,7 +225,6 @@ declare module "vue-i18n" {
       IdentityGet: {
         identityUpdated: string
         usersUpdated: string
-        adminsUpdated: string
         organizationsUpdated: string
         addedOrganizations: string
         availableOrganizations: string
@@ -243,7 +242,6 @@ declare module "vue-i18n" {
         organizationName: string
         organizationUpdated: string
         addedApplicationsUpdated: string
-        adminsUpdated: string
         identitiesUpdated: string
         addedApplications: string
         availableApplications: string

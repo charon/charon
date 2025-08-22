@@ -1209,7 +1209,7 @@ function onAddAdmin() {
           <template v-if="metadata.can_update || adminsUnexpectedError || adminsUpdated">
             <h2 class="text-xl font-bold">{{ t("common.entities.admins") }}</h2>
             <div v-if="adminsUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
-            <div v-else-if="adminsUpdated" class="text-success-600">{{ t("views.ApplicationTemplateGet.adminsUpdated") }}</div>
+            <div v-else-if="adminsUpdated" class="text-success-600">{{ t("common.data.adminsUpdated") }}</div>
             <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
               <ol class="flex flex-col gap-y-4">
                 <li v-for="(admin, i) of admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">

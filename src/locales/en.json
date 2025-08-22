@@ -52,7 +52,8 @@
     "data": {
       "dataLoading": "Loading...",
       "loadingDataFailed": "loading data failed",
-      "confirmUpdateToAllocate": "confirm update to allocate"
+      "confirmUpdateToAllocate": "confirm update to allocate",
+      "adminsUpdated": "Admins updated successfully."
     },
     "fields": {
       "description": "Description",
@@ -107,7 +108,7 @@
       "signupSuccess": "{strongCongratulations} You successfully signed up into Charon.",
       "previouslyUsedDisabled": "Previously used identities with this organization are disabled.",
       "otherAvailableIdentities": "Other available identities",
-      "noIdentitiesCreateFirst": "There are no identities. Create the first one.",
+      "noIdentitiesCreateFirst": "@:views.IdentityList.noIdentitiesCreate",
       "noOtherIdentitiesCreateOne": "There are no other identities. Create one.",
       "selectInstructions": "Select the identity you want to continue with. Its information will be provided to the app and the organization. You can also create a new identity or decline to proceed.",
       "previouslyUsedIdentities": "Previously used identities",
@@ -198,8 +199,7 @@
       "variablesUpdated": "Variables updated successfully.",
       "publicClientsUpdated": "Public clients updated successfully.",
       "backendClientsUpdated": "Backend clients updated successfully.",
-      "serviceClientsUpdated": "Service clients updated successfully.",
-      "adminsUpdated": "Admins updated successfully."
+      "serviceClientsUpdated": "Service clients updated successfully."
     },
     "ApplicationTemplateList": {
       "noApplicationTemplatesCreate": "There are no application templates. Create the first one.",
@@ -214,7 +214,6 @@
     "IdentityGet": {
       "identityUpdated": "Identity updated successfully.",
       "usersUpdated": "Users updated successfully.",
-      "adminsUpdated": "Admins updated successfully.",
       "organizationsUpdated": "Added organizations updated successfully.",
       "addedOrganizations": "Added organizations",
       "availableOrganizations": "Available organizations"
@@ -232,18 +231,17 @@
       "organizationName": "Organization name",
       "organizationUpdated": "Organization updated successfully.",
       "addedApplicationsUpdated": "Added applications updated successfully.",
-      "adminsUpdated": "Admins updated successfully.",
       "identitiesUpdated": "Organization identities updated successfully.",
       "addedApplications": "Added applications",
       "availableApplications": "Available applications",
       "addedIdentities": "Added identities",
       "availableIdentities": "Available identities",
-      "backendClients": "Backend clients",
+      "backendClients": "@:views.ApplicationTemplateGet.backendClients",
       "clientId": "Client ID:",
       "clientSecret": "Client secret:",
       "configuration": "Configuration",
-      "publicClients": "Public clients",
-      "serviceClients": "Service clients",
+      "publicClients": "@:views.ApplicationTemplateGet.publicClients",
+      "serviceClients": "@:views.ApplicationTemplateGet.serviceClients",
       "status": "Status:"
     },
     "OrganizationList": {
