@@ -26,6 +26,7 @@
     "test": "vitest",
     "coverage": "vitest --coverage",
     "test-ci": "vitest run --reporter junit --reporter default --outputFile tests.xml --coverage",
+    "generate-vue-i18n": "node generate-vue-i18n.js",
     "upgrade": "ncu -u"
   },
   "dependencies": {
