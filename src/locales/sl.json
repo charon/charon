@@ -129,20 +129,6 @@
       "passkeySignupButton": "Registracija s passkey",
       "retrySignupButton": "Poskusi registracijo znova"
     },
-    "AuthPasskey": {
-      "signingIn": "Prijavljamo vas z uporabo {strong}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave.",
-      "signin": {
-        "signupInfo": "Če se še niste registrirali s passkey, bo to neuspešno. V tem primeru vam bo Charon ponudil registracijo."
-      },
-      "signup": {
-        "instructions": "Prijava z uporabo {strong} ni uspela. Se želite registrirati namesto tega?",
-        "signingUp": "Registriramo vas z uporabo {strong}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave.",
-        "failed": "Registracija z uporabo {strong} ni uspela.",
-        "retrySigninButton": "Poskusi prijavo znova",
-        "passkeySignupButton": "Registracija s passkey",
-        "retrySignupButton": "Poskusi registracijo znova"
-      }
-    },
     "AuthPassword": {
       "emailAddressLabel": "Vaš e-naslov",
       "usernameLabel": "Uporabniško ime Charon",
@@ -225,8 +211,7 @@
       "serviceClients": "Servisni odjemalci",
       "serviceClientsUpdated": "Servisni odjemalci so bili uspešno posodobljeni.",
       "admins": "Administratorji",
-      "adminsUpdated": "Administratorji so bili uspešno posodobljeni.",
-      "addAdmin": "Dodaj administratorja"
+      "adminsUpdated": "Administratorji so bili uspešno posodobljeni."
     },
     "ApplicationTemplateList": {
       "applicationTemplates": "Predloge aplikacij",
@@ -294,7 +279,6 @@
       "availableApplications": "Razpoložljive aplikacije",
       "addedIdentities": "Dodane identitete",
       "availableIdentities": "Razpoložljive identitete",
-      "addAdmin": "Dodaj administratorja",
       "backendClients": "Zaledni odjemalci",
       "clientId": "ID odjemalca:",
       "clientSecret": "Skrivnost odjemalca:",

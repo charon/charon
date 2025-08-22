@@ -834,7 +834,7 @@ async function onIdentitiesSubmit() {
                 </li>
               </ol>
               <div class="flex flex-row justify-between gap-4" :class="admins.length ? 'mt-4' : ''">
-                <Button type="button" @click.prevent="onAddAdmin">{{ t("views.OrganizationGet.addAdmin") }}</Button>
+                <Button type="button" @click.prevent="onAddAdmin">{{ t("common.buttons.addAdmin") }}</Button>
                 <!--
                   Button is on purpose not disabled on adminsUnexpectedError so that user can retry.
                 -->

@@ -132,20 +132,6 @@ declare module "vue-i18n" {
         passkeySignupButton: string
         retrySignupButton: string
       }
-      AuthPasskey: {
-        signingIn: string
-        signin: {
-          signupInfo: string
-        }
-        signup: {
-          instructions: string
-          signingUp: string
-          failed: string
-          retrySigninButton: string
-          passkeySignupButton: string
-          retrySignupButton: string
-        }
-      }
       AuthPassword: {
         emailAddressLabel: string
         usernameLabel: string
@@ -229,7 +215,6 @@ declare module "vue-i18n" {
         serviceClientsUpdated: string
         admins: string
         adminsUpdated: string
-        addAdmin: string
       }
       ApplicationTemplateList: {
         applicationTemplates: string
@@ -297,7 +282,6 @@ declare module "vue-i18n" {
         availableApplications: string
         addedIdentities: string
         availableIdentities: string
-        addAdmin: string
         backendClients: string
         clientId: string
         clientSecret: string

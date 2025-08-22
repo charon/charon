@@ -129,20 +129,6 @@
       "passkeySignupButton": "Passkey sign-up",
       "retrySignupButton": "Retry sign-up"
     },
-    "AuthPasskey": {
-      "signingIn": "Signing you in using {strong}. Please follow instructions by your browser and/or device.",
-      "signin": {
-        "signupInfo": "If you have not yet signed up with passkey, this will fail. In that case Charon will offer you to sign up instead."
-      },
-      "signup": {
-        "instructions": "Signing in using {strong} failed. Do you want to sign up instead?",
-        "signingUp": "Signing you up using {strong}. Please follow instructions by your browser and/or device.",
-        "failed": "Signing up using {strong} failed.",
-        "retrySigninButton": "Retry sign-in",
-        "passkeySignupButton": "Passkey sign-up",
-        "retrySignupButton": "Retry sign-up"
-      }
-    },
     "AuthPassword": {
       "emailAddressLabel": "Your e-mail address",
       "usernameLabel": "Charon username",
@@ -225,8 +211,7 @@
       "serviceClients": "Service clients",
       "serviceClientsUpdated": "Service clients updated successfully.",
       "admins": "Admins",
-      "adminsUpdated": "Admins updated successfully.",
-      "addAdmin": "Add admin"
+      "adminsUpdated": "Admins updated successfully."
     },
     "ApplicationTemplateList": {
       "applicationTemplates": "Application templates",
@@ -294,7 +279,6 @@
       "availableApplications": "Available applications",
       "addedIdentities": "Added identities",
       "availableIdentities": "Available identities",
-      "addAdmin": "Add admin",
       "backendClients": "Backend clients",
       "clientId": "Client ID:",
       "clientSecret": "Client secret:",
