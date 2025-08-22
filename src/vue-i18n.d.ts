@@ -80,7 +80,6 @@ declare module "vue-i18n" {
         identities: string
         organization: string
         organizations: string
-        applications: string
         applicationTemplates: string
       }
     }
@@ -110,20 +109,15 @@ declare module "vue-i18n" {
         differentMethod: string
       }
       AuthIdentity: {
-        selectIdentity: string
         newIdentityButton: string
         signinSuccess: string
         signupSuccess: string
         congratulations: string
-        declineSignInOrSignUp: string
-        sorry: string
         previouslyUsedDisabled: string
         otherAvailableIdentities: string
         noIdentitiesCreateFirst: string
         noOtherIdentitiesCreateOne: string
         selectInstructions: string
-        identitiesUsedWithOrg: string
-        disabledIdentities: string
         previouslyUsedIdentities: string
         createNewIdentity: string
         sectionTitles: {
@@ -175,8 +169,6 @@ declare module "vue-i18n" {
         redirectMessage: string
         instructions: string
         additionalInfo: string
-        redirecting: string
-        failed: string
         seconds: string
         paused: string
       }
@@ -217,6 +209,12 @@ declare module "vue-i18n" {
         backendClients: string
         tokenEndpointAuthMethod: string
         serviceClients: string
+        applicationsUpdated: string
+        variablesUpdated: string
+        publicClientsUpdated: string
+        backendClientsUpdated: string
+        serviceClientsUpdated: string
+        adminsUpdated: string
       }
       ApplicationTemplateList: {
         noApplicationTemplatesCreate: string
@@ -229,16 +227,10 @@ declare module "vue-i18n" {
         createIdentity: string
       }
       IdentityGet: {
-        addedIdentities: string
-        availableIdentities: string
         identityUpdated: string
         usersUpdated: string
         adminsUpdated: string
         organizationsUpdated: string
-        noIdentities: string
-        noIdentitiesCreate: string
-        noIdentitiesSignIn: string
-        noOtherIdentities: string
         addedOrganizations: string
         availableOrganizations: string
       }
@@ -247,11 +239,11 @@ declare module "vue-i18n" {
         noIdentitiesSignIn: string
       }
       OrganizationCreate: {
+        createOrganization: string
         organizationName: string
         chooseOrganizationName: string
       }
       OrganizationGet: {
-        usersForOrganization: string
         organizationName: string
         organizationUpdated: string
         addedApplicationsUpdated: string

@@ -69,7 +69,6 @@
       "identities": "Identities",
       "organization": "Organization",
       "organizations": "Organizations",
-      "applications": "Applications",
       "applicationTemplates": "Application templates"
     }
   },
@@ -99,20 +98,15 @@
       "differentMethod": "different sign-in or sign-up method"
     },
     "AuthIdentity": {
-      "selectIdentity": "Select identity to use with {appName}:",
       "newIdentityButton": "Create new identity",
       "signinSuccess": "{strongCongratulations} You successfully signed in into Charon.",
       "signupSuccess": "{strongCongratulations} You successfully signed up into Charon.",
       "congratulations": "Congratulations.",
-      "declineSignInOrSignUp": "decline sign-in or sign-up",
-      "sorry": "Sorry.",
       "previouslyUsedDisabled": "Previously used identities with this organization are disabled.",
       "otherAvailableIdentities": "Other available identities",
       "noIdentitiesCreateFirst": "There are no identities. Create the first one.",
       "noOtherIdentitiesCreateOne": "There are no other identities. Create one.",
       "selectInstructions": "Select the identity you want to continue with. Its information will be provided to the app and the organization. You can also create a new identity or decline to proceed.",
-      "identitiesUsedWithOrg": "Identities used with the organization, but not the app",
-      "disabledIdentities": "Disabled identities",
       "previouslyUsedIdentities": "Previously used identities",
       "createNewIdentity": "Create new identity",
       "sectionTitles": {
@@ -164,8 +158,6 @@
       "redirectMessage": "You will be redirected to {strongProvider} in {time}{pausedText}.",
       "instructions": "Please follow instructions there to sign-in into Charon. Afterwards, you will be redirected back here.",
       "additionalInfo": "You might have to sign-in into {provider} first. You might be redirected back by {provider} immediately, without showing you anything.",
-      "redirecting": "Redirecting you to {provider}. Please follow instructions by your browser.",
-      "failed": "Signing in using {provider} failed.",
       "seconds": "1 second | {count} seconds",
       "paused": " (paused)"
     },
@@ -205,7 +197,13 @@
       "addClient": "Add client",
       "backendClients": "Backend clients",
       "tokenEndpointAuthMethod": "Token endpoint authentication method",
-      "serviceClients": "Service clients"
+      "serviceClients": "Service clients",
+      "applicationsUpdated": "Application template updated successfully.",
+      "variablesUpdated": "Variables updated successfully.",
+      "publicClientsUpdated": "Public clients updated successfully.",
+      "backendClientsUpdated": "Backend clients updated successfully.",
+      "serviceClientsUpdated": "Service clients updated successfully.",
+      "adminsUpdated": "Admins updated successfully."
     },
     "ApplicationTemplateList": {
       "noApplicationTemplatesCreate": "There are no application templates. Create the first one.",
@@ -218,16 +216,10 @@
       "createIdentity": "Create identity"
     },
     "IdentityGet": {
-      "addedIdentities": "Added identities",
-      "availableIdentities": "Available identities",
       "identityUpdated": "Identity updated successfully.",
       "usersUpdated": "Users updated successfully.",
       "adminsUpdated": "Admins updated successfully.",
       "organizationsUpdated": "Added organizations updated successfully.",
-      "noIdentities": "There are no identities.",
-      "noIdentitiesCreate": "There are no identities. Create the first one.",
-      "noIdentitiesSignIn": "There are no identities. Sign-in or sign-up to create the first one.",
-      "noOtherIdentities": "There are no other identities. Create one.",
       "addedOrganizations": "Added organizations",
       "availableOrganizations": "Available organizations"
     },
@@ -236,11 +228,11 @@
       "noIdentitiesSignIn": "There are no identities. Sign-in or sign-up to create the first one."
     },
     "OrganizationCreate": {
+      "createOrganization": "Create organization",
       "organizationName": "Organization name",
       "chooseOrganizationName": "Choose a name. You will be able to configure the organization after it is created."
     },
     "OrganizationGet": {
-      "usersForOrganization": "Users for organization",
       "organizationName": "Organization name",
       "organizationUpdated": "Organization updated successfully.",
       "addedApplicationsUpdated": "Added applications updated successfully.",

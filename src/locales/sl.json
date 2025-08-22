@@ -69,7 +69,6 @@
       "identities": "Identitete",
       "organization": "Organizacija",
       "organizations": "Organizacije",
-      "applications": "Aplikacije",
       "applicationTemplates": "Predloge aplikacij"
     }
   },
@@ -99,20 +98,15 @@
       "differentMethod": "drug način prijave ali registracije"
     },
     "AuthIdentity": {
-      "selectIdentity": "Izberite identiteto za uporabo z {appName}:",
       "newIdentityButton": "Ustvari novo identiteto",
       "signinSuccess": "{strongCongratulations} Uspešno ste se prijavili v Charon.",
       "signupSuccess": "{strongCongratulations} Uspešno ste se registrirali v Charon.",
       "congratulations": "Čestitamo.",
-      "declineSignInOrSignUp": "zavrniti prijavo ali registracijo",
-      "sorry": "Oprostite.",
       "previouslyUsedDisabled": "Prej uporabljene identitete s to organizacijo so onemogočene.",
       "otherAvailableIdentities": "Druge razpoložljive identitete",
       "noIdentitiesCreateFirst": "Ni identitet. Ustvarite prvo.",
       "noOtherIdentitiesCreateOne": "Ni drugih identitet. Ustvarite eno.",
       "selectInstructions": "Izberite identiteto, s katero želite nadaljevati. Njene informacije bodo posredovane aplikaciji in organizaciji. Lahko tudi ustvarite novo identiteto ali zavrnete nadaljevanje.",
-      "identitiesUsedWithOrg": "Identitete uporabljene z organizacijo, vendar ne z aplikacijo",
-      "disabledIdentities": "Onemogočene identitete",
       "previouslyUsedIdentities": "Prej uporabljene identitete",
       "createNewIdentity": "Ustvari novo identiteto",
       "sectionTitles": {
@@ -164,8 +158,6 @@
       "redirectMessage": "Preusmerjeni boste k {strongProvider} čez {time}{pausedText}.",
       "instructions": "Prosimo, sledite navodilom tam za prijavo v Charon. Nato boste preusmerjeni nazaj sem.",
       "additionalInfo": "Morda se boste morali najprej prijaviti v {provider}. Morda vas bo {provider} takoj preusmeril nazaj, ne da bi vam pokazal karkoli.",
-      "redirecting": "Preusmerjamo vas na {provider}. Prosimo, sledite navodilom vašega brskalnika.",
-      "failed": "Prijava z uporabo {provider} ni uspela.",
       "seconds": "1 sekundo | {count} sekundi | {count} sekunde | {count} sekund",
       "paused": " (pavzirano)"
     },
@@ -205,7 +197,13 @@
       "addClient": "Dodaj odjemalca",
       "backendClients": "Zaledni odjemalci",
       "tokenEndpointAuthMethod": "Metoda overjanja končne točke žetona",
-      "serviceClients": "Servisni odjemalci"
+      "serviceClients": "Servisni odjemalci",
+      "applicationsUpdated": "Predloga aplikacije je bila uspešno posodobljena.",
+      "variablesUpdated": "Spremenljivke so bile uspešno posodobljene.",
+      "publicClientsUpdated": "Javni odjemalci so bili uspešno posodobljeni.",
+      "backendClientsUpdated": "Zaledni odjemalci so bili uspešno posodobljeni.",
+      "serviceClientsUpdated": "Servisni odjemalci so bili uspešno posodobljeni.",
+      "adminsUpdated": "Administratorji so bili uspešno posodobljeni."
     },
     "ApplicationTemplateList": {
       "noApplicationTemplatesCreate": "Ni predlog aplikacij. Ustvarite prvo.",
@@ -218,16 +216,10 @@
       "createIdentity": "Ustvari identiteto"
     },
     "IdentityGet": {
-      "addedIdentities": "Dodane identitete",
-      "availableIdentities": "Razpoložljive identitete",
       "identityUpdated": "Identiteta je bila uspešno posodobljena.",
       "usersUpdated": "Uporabniki so bili uspešno posodobljeni.",
       "adminsUpdated": "Administratorji so bili uspešno posodobljeni.",
       "organizationsUpdated": "Dodane organizacije so bile uspešno posodobljene.",
-      "noIdentities": "Ni identitet.",
-      "noIdentitiesCreate": "Ni identitet. Ustvarite prvo.",
-      "noIdentitiesSignIn": "Ni identitet. Prijavite se ali registrirajte, da ustvariti prvo.",
-      "noOtherIdentities": "Ni drugih identitet. Ustvarite eno.",
       "addedOrganizations": "Dodane organizacije",
       "availableOrganizations": "Razpoložljive organizacije"
     },
@@ -236,11 +228,11 @@
       "noIdentitiesSignIn": "Ni identitet. Prijavite se ali registrirajte, da ustvarite prvo."
     },
     "OrganizationCreate": {
+      "createOrganization": "Ustvari organizacijo",
       "organizationName": "Ime organizacije",
       "chooseOrganizationName": "Izberite ime. Po ustvaritvi boste lahko konfigurirali organizacijo."
     },
     "OrganizationGet": {
-      "usersForOrganization": "Uporabniki za organizacijo",
       "organizationName": "Ime organizacije",
       "organizationUpdated": "Organizacija je bila uspešno posodobljena.",
       "addedApplicationsUpdated": "Dodane aplikacije so bile uspešno posodobljene.",
