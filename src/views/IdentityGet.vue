@@ -411,27 +411,27 @@ async function onAddOrganization(organization: OrganizationRef) {
         <template v-else>
           <form class="flex flex-col" novalidate @submit.prevent="onBasicSubmit">
             <label for="username" class="mb-1"
-              >{{ t("views.IdentityGet.username") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+              >{{ t("common.fields.username") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
             >
             <InputText id="username" v-model="username" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <label for="email" class="mb-1 mt-4"
-              >{{ t("views.IdentityGet.email") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+              >{{ t("common.fields.email") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
             >
             <InputText id="email" v-model="email" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <label for="givenName" class="mb-1 mt-4"
-              >{{ t("views.IdentityGet.givenName") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+              >{{ t("common.fields.givenName") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
             >
             <InputText id="givenName" v-model="givenName" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <label for="fullName" class="mb-1 mt-4"
-              >{{ t("views.IdentityGet.fullName") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+              >{{ t("common.fields.fullName") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
             >
             <InputText id="fullName" v-model="fullName" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <label for="pictureUrl" class="mb-1 mt-4"
-              >{{ t("views.IdentityGet.pictureUrl") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+              >{{ t("common.fields.pictureUrl") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
             >
             <InputText id="pictureUrl" v-model="pictureUrl" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <label for="description" class="mb-1 mt-4"
-              >{{ t("views.IdentityGet.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+              >{{ t("common.fields.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
             >
             <TextArea id="description" v-model="description" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <div v-if="basicUnexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
@@ -443,7 +443,7 @@ async function onAddOrganization(organization: OrganizationRef) {
               <Button type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
             </div>
           </form>
-          <h2 class="text-xl font-bold">{{ t("views.IdentityGet.users") }}</h2>
+          <h2 class="text-xl font-bold">{{ t("common.entities.users") }}</h2>
           <div v-if="usersUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
           <div v-else-if="usersUpdated" class="text-success-600">{{ t("views.IdentityGet.usersUpdated") }}</div>
           <form class="flex flex-col" novalidate @submit.prevent="onUsersSubmit">
@@ -476,7 +476,7 @@ async function onAddOrganization(organization: OrganizationRef) {
               <Button type="submit" primary :disabled="!canUsersSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
             </div>
           </form>
-          <h2 class="text-xl font-bold">{{ t("views.IdentityGet.admins") }}</h2>
+          <h2 class="text-xl font-bold">{{ t("common.entities.admins") }}</h2>
           <div v-if="adminsUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
           <div v-else-if="adminsUpdated" class="text-success-600">{{ t("views.IdentityGet.adminsUpdated") }}</div>
           <form class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">

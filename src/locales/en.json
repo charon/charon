@@ -49,6 +49,22 @@
     "loading": {
       "dataLoading": "Loading...",
       "loadingDataFailed": "loading data failed"
+    },
+    "fields": {
+      "description": "Description",
+      "username": "Username",
+      "email": "E-mail address",
+      "givenName": "Given name",
+      "fullName": "Full name",
+      "pictureUrl": "Picture URL"
+    },
+    "entities": {
+      "admins": "Admins",
+      "users": "Users",
+      "identities": "Identities",
+      "organizations": "Organizations",
+      "applications": "Applications",
+      "applicationTemplates": "Application templates"
     }
   },
   "partials": {
@@ -160,14 +176,6 @@
     "Footer": {
       "poweredBy": "Powered by {name}"
     },
-    "IdentityCreate": {
-      "username": "Username",
-      "email": "E-mail address",
-      "givenName": "Given name",
-      "fullName": "Full name",
-      "pictureUrl": "Picture URL",
-      "description": "Description"
-    },
     "IdentityOrganization": {
       "id": "ID:",
       "confirmUpdateToAllocate": "confirm update to allocate",
@@ -183,18 +191,13 @@
       "chooseApplicationTemplateName": "Choose a name. You will be able to configure the application template after it is created."
     },
     "ApplicationTemplateGet": {
-      "applicationTemplates": "Application templates",
       "applicationTemplateName": "Application template name",
-      "description": "Description",
       "homepageTemplate": "Homepage template",
       "spaceSeparatedScopes": "Space-separated OpenID scopes the app might request",
-      "applicationsUpdated": "Applications updated successfully.",
       "variables": "Variables",
-      "variablesUpdated": "Variables updated successfully.",
       "name": "Name",
       "addVariable": "Add variable",
       "publicClients": "Public clients",
-      "publicClientsUpdated": "Public clients updated successfully.",
       "oidcRedirectUriTemplates": "OIDC redirect URI templates",
       "addRedirectUri": "Add redirect URI",
       "spaceSeparatedAdditionalScopes": "Space-separated additional scopes the client might request",
@@ -206,15 +209,10 @@
       "refreshTokenLifespan": "Refresh token lifespan",
       "addClient": "Add client",
       "backendClients": "Backend clients",
-      "backendClientsUpdated": "Backend clients updated successfully.",
       "tokenEndpointAuthMethod": "Token endpoint authentication method",
-      "serviceClients": "Service clients",
-      "serviceClientsUpdated": "Service clients updated successfully.",
-      "admins": "Admins",
-      "adminsUpdated": "Admins updated successfully."
+      "serviceClients": "Service clients"
     },
     "ApplicationTemplateList": {
-      "applicationTemplates": "Application templates",
       "noApplicationTemplatesCreate": "There are no application templates. Create the first one.",
       "noApplicationTemplatesSignIn": "There are no application templates. Sign-in or sign-up to create the first one."
     },
@@ -245,17 +243,9 @@
       "noIdentitiesSignIn": "There are no identities. Sign-in or sign-up to create the first one.",
       "noOtherIdentities": "There are no other identities. Create one.",
       "addedOrganizations": "Added organizations",
-      "availableOrganizations": "Available organizations",
-      "description": "Description",
-      "email": "E-mail address",
-      "fullName": "Full name",
-      "givenName": "Given name",
-      "pictureUrl": "Picture URL",
-      "username": "Username",
-      "users": "Users"
+      "availableOrganizations": "Available organizations"
     },
     "IdentityList": {
-      "identities": "Identities",
       "noIdentitiesCreate": "There are no identities. Create the first one.",
       "noIdentitiesSignIn": "There are no identities. Sign-in or sign-up to create the first one."
     },
@@ -267,10 +257,7 @@
     "OrganizationGet": {
       "organization": "Organization",
       "usersForOrganization": "Users for organization",
-      "users": "Users",
-      "admins": "Admins",
       "organizationName": "Organization name",
-      "description": "Description",
       "organizationUpdated": "Organization updated successfully.",
       "addedApplicationsUpdated": "Added applications updated successfully.",
       "adminsUpdated": "Admins updated successfully.",
@@ -290,7 +277,6 @@
       "status": "Status:"
     },
     "OrganizationList": {
-      "organizations": "Organizations",
       "noOrganizationsCreate": "There are no organizations. Create the first one.",
       "noOrganizationsSignIn": "There are no organizations. Sign-in or sign-up to create the first one."
     },

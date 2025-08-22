@@ -60,7 +60,7 @@ onBeforeMount(async () => {
     <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
       <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
         <div class="flex flex-row justify-between items-center gap-4">
-          <h1 class="text-2xl font-bold">{{ t("views.ApplicationTemplateList.applicationTemplates") }}</h1>
+          <h1 class="text-2xl font-bold">{{ t("common.entities.applicationTemplates") }}</h1>
           <ButtonLink v-if="isSignedIn()" :to="{ name: 'ApplicationTemplateCreate' }" :progress="progress" primary>{{ t("common.buttons.create") }}</ButtonLink>
         </div>
       </div>

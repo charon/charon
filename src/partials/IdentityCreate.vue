@@ -97,27 +97,27 @@ async function onSubmit() {
 <template>
   <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
     <label for="username" class="mb-1"
-      >{{ t("partials.IdentityCreate.username") }}<span class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+      >{{ t("common.fields.username") }}<span class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
     >
     <InputText id="username" v-model="username" class="flex-grow flex-auto min-w-0" :progress="progress" />
     <label for="email" class="mb-1 mt-4"
-      >{{ t("partials.IdentityCreate.email") }}<span class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+      >{{ t("common.fields.email") }}<span class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
     >
     <InputText id="email" v-model="email" class="flex-grow flex-auto min-w-0" :progress="progress" />
     <label for="givenName" class="mb-1 mt-4"
-      >{{ t("partials.IdentityCreate.givenName") }}<span class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+      >{{ t("common.fields.givenName") }}<span class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
     >
     <InputText id="givenName" v-model="givenName" class="flex-grow flex-auto min-w-0" :progress="progress" />
     <label for="fullName" class="mb-1 mt-4"
-      >{{ t("partials.IdentityCreate.fullName") }}<span class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+      >{{ t("common.fields.fullName") }}<span class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
     >
     <InputText id="fullName" v-model="fullName" class="flex-grow flex-auto min-w-0" :progress="progress" />
     <label for="pictureUrl" class="mb-1 mt-4"
-      >{{ t("partials.IdentityCreate.pictureUrl") }}<span class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+      >{{ t("common.fields.pictureUrl") }}<span class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
     >
     <InputText id="pictureUrl" v-model="pictureUrl" class="flex-grow flex-auto min-w-0" :progress="progress" />
     <label for="description" class="mb-1 mt-4"
-      >{{ t("partials.IdentityCreate.description") }}<span class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+      >{{ t("common.fields.description") }}<span class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
     >
     <TextArea id="description" v-model="description" class="flex-grow flex-auto min-w-0" :progress="progress" />
     <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>

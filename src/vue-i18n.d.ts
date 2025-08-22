@@ -53,6 +53,22 @@ declare module "vue-i18n" {
         dataLoading: string
         loadingDataFailed: string
       }
+      fields: {
+        description: string
+        username: string
+        email: string
+        givenName: string
+        fullName: string
+        pictureUrl: string
+      }
+      entities: {
+        admins: string
+        users: string
+        identities: string
+        organizations: string
+        applications: string
+        applicationTemplates: string
+      }
     }
     partials: {
       AuthAutoRedirect: {
@@ -163,14 +179,6 @@ declare module "vue-i18n" {
       Footer: {
         poweredBy: string
       }
-      IdentityCreate: {
-        username: string
-        email: string
-        givenName: string
-        fullName: string
-        pictureUrl: string
-        description: string
-      }
       IdentityOrganization: {
         id: string
         confirmUpdateToAllocate: string
@@ -186,18 +194,13 @@ declare module "vue-i18n" {
         chooseApplicationTemplateName: string
       }
       ApplicationTemplateGet: {
-        applicationTemplates: string
         applicationTemplateName: string
-        description: string
         homepageTemplate: string
         spaceSeparatedScopes: string
-        applicationsUpdated: string
         variables: string
-        variablesUpdated: string
         name: string
         addVariable: string
         publicClients: string
-        publicClientsUpdated: string
         oidcRedirectUriTemplates: string
         addRedirectUri: string
         spaceSeparatedAdditionalScopes: string
@@ -209,25 +212,15 @@ declare module "vue-i18n" {
         refreshTokenLifespan: string
         addClient: string
         backendClients: string
-        backendClientsUpdated: string
         tokenEndpointAuthMethod: string
         serviceClients: string
-        serviceClientsUpdated: string
-        admins: string
-        adminsUpdated: string
       }
       ApplicationTemplateList: {
-        applicationTemplates: string
         noApplicationTemplatesCreate: string
         noApplicationTemplatesSignIn: string
       }
       AuthFlowGet: {
         instructionsMessage: string
-      }
-      Home: {
-        identities: string
-        applicationTemplates: string
-        organizations: string
       }
       IdentityCreate: {
         createIdentity: string
@@ -249,16 +242,8 @@ declare module "vue-i18n" {
         noOtherIdentities: string
         addedOrganizations: string
         availableOrganizations: string
-        description: string
-        email: string
-        fullName: string
-        givenName: string
-        pictureUrl: string
-        username: string
-        users: string
       }
       IdentityList: {
-        identities: string
         noIdentitiesCreate: string
         noIdentitiesSignIn: string
       }
@@ -270,10 +255,7 @@ declare module "vue-i18n" {
       OrganizationGet: {
         organization: string
         usersForOrganization: string
-        users: string
-        admins: string
         organizationName: string
-        description: string
         organizationUpdated: string
         addedApplicationsUpdated: string
         adminsUpdated: string
@@ -293,7 +275,6 @@ declare module "vue-i18n" {
         status: string
       }
       OrganizationList: {
-        organizations: string
         noOrganizationsCreate: string
         noOrganizationsSignIn: string
       }

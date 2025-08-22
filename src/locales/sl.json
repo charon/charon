@@ -49,6 +49,22 @@
     "loading": {
       "dataLoading": "Nalaganje...",
       "loadingDataFailed": "nalaganje podatkov neuspešno"
+    },
+    "fields": {
+      "description": "Opis",
+      "username": "Uporabniško ime",
+      "email": "E-naslov",
+      "givenName": "Ime",
+      "fullName": "Polno ime",
+      "pictureUrl": "URL slike"
+    },
+    "entities": {
+      "admins": "Administratorji",
+      "users": "Uporabniki",
+      "identities": "Identitete",
+      "organizations": "Organizacije",
+      "applications": "Aplikacije",
+      "applicationTemplates": "Predloge aplikacij"
     }
   },
   "partials": {
@@ -160,14 +176,6 @@
     "Footer": {
       "poweredBy": "Zagotavlja {name}"
     },
-    "IdentityCreate": {
-      "username": "Uporabniško ime",
-      "email": "E-naslov",
-      "givenName": "Ime",
-      "fullName": "Polno ime",
-      "pictureUrl": "URL slike",
-      "description": "Opis"
-    },
     "IdentityOrganization": {
       "id": "ID:",
       "confirmUpdateToAllocate": "potrdite posodobitev za dodelitev",
@@ -183,18 +191,13 @@
       "chooseApplicationTemplateName": "Izberite ime. Po ustvaritvi boste lahko konfigurirali predlogo aplikacije."
     },
     "ApplicationTemplateGet": {
-      "applicationTemplates": "Predloge aplikacij",
       "applicationTemplateName": "Ime predloge aplikacije",
-      "description": "Opis",
       "homepageTemplate": "Predloga domače strani",
       "spaceSeparatedScopes": "Z znaki ločeni OpenID dosegi, ki jih lahko aplikacija zahteva",
-      "applicationsUpdated": "Aplikacije so bile uspešno posodobljene.",
       "variables": "Spremenljivke",
-      "variablesUpdated": "Spremenljivke so bile uspešno posodobljene.",
       "name": "Ime",
       "addVariable": "Dodaj spremenljivko",
       "publicClients": "Javni odjemalci",
-      "publicClientsUpdated": "Javni odjemalci so bili uspešno posodobljeni.",
       "oidcRedirectUriTemplates": "OIDC predloge URI-jev za preusmeritev",
       "addRedirectUri": "Dodaj URI za preusmeritev",
       "spaceSeparatedAdditionalScopes": "Z znaki ločeni dodatni dosegi, ki jih lahko odjemalec zahteva",
@@ -206,12 +209,8 @@
       "refreshTokenLifespan": "Življenjska doba osvežitvenega žetona",
       "addClient": "Dodaj odjemalca",
       "backendClients": "Zaledni odjemalci",
-      "backendClientsUpdated": "Zaledni odjemalci so bili uspešno posodobljeni.",
       "tokenEndpointAuthMethod": "Metoda overjanja končne točke žetona",
-      "serviceClients": "Servisni odjemalci",
-      "serviceClientsUpdated": "Servisni odjemalci so bili uspešno posodobljeni.",
-      "admins": "Administratorji",
-      "adminsUpdated": "Administratorji so bili uspešno posodobljeni."
+      "serviceClients": "Servisni odjemalci"
     },
     "ApplicationTemplateList": {
       "applicationTemplates": "Predloge aplikacij",
@@ -246,16 +245,8 @@
       "noOtherIdentities": "Ni drugih identitet. Ustvarite eno.",
       "addedOrganizations": "Dodane organizacije",
       "availableOrganizations": "Razpoložljive organizacije",
-      "description": "Opis",
-      "email": "E-naslov",
-      "fullName": "Polno ime",
-      "givenName": "Ime",
-      "pictureUrl": "URL slike",
-      "username": "Uporabniško ime",
-      "users": "Uporabniki"
     },
     "IdentityList": {
-      "identities": "Identitete",
       "noIdentitiesCreate": "Ni identitet. Ustvarite prvo.",
       "noIdentitiesSignIn": "Ni identitet. Prijavite se ali registrirajte, da ustvarite prvo."
     },
@@ -267,10 +258,7 @@
     "OrganizationGet": {
       "organization": "Organizacija",
       "usersForOrganization": "Uporabniki za organizacijo",
-      "users": "Uporabniki",
-      "admins": "Administratorji",
       "organizationName": "Ime organizacije",
-      "description": "Opis",
       "organizationUpdated": "Organizacija je bila uspešno posodobljena.",
       "addedApplicationsUpdated": "Dodane aplikacije so bile uspešno posodobljene.",
       "adminsUpdated": "Administratorji so bili uspešno posodobljeni.",
@@ -290,7 +278,6 @@
       "status": "Status:"
     },
     "OrganizationList": {
-      "organizations": "Organizacije",
       "noOrganizationsCreate": "Ni organizacij. Ustvarite prvo.",
       "noOrganizationsSignIn": "Ni organizacij. Prijavite se ali registrirajte, da ustvarite prvo."
     },

@@ -660,7 +660,7 @@ async function onIdentitiesSubmit() {
             <label for="name" class="mb-1">{{ t("views.OrganizationGet.organizationName") }}</label>
             <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" required />
             <label for="description" class="mb-1 mt-4"
-              >{{ t("views.OrganizationGet.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+              >{{ t("common.fields.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
             >
             <TextArea id="description" v-model="description" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <div v-if="basicUnexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
@@ -673,7 +673,7 @@ async function onIdentitiesSubmit() {
             </div>
           </form>
           <template v-if="metadata.can_update">
-            <h2 class="text-xl font-bold">{{ t("views.OrganizationGet.users") }}</h2>
+            <h2 class="text-xl font-bold">{{ t("common.entities.users") }}</h2>
             <div>
               <ButtonLink :to="{ name: 'OrganizationUsers', params: { id } }" primary>{{ t("views.OrganizationGet.manage") }}</ButtonLink>
             </div>
@@ -813,7 +813,7 @@ async function onIdentitiesSubmit() {
             </ul>
           </template>
           <template v-if="metadata.can_update || adminsUnexpectedError || adminsUpdated">
-            <h2 class="text-xl font-bold">{{ t("views.OrganizationGet.admins") }}</h2>
+            <h2 class="text-xl font-bold">{{ t("common.entities.admins") }}</h2>
             <div v-if="adminsUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="adminsUpdated" class="text-success-600">{{ t("views.OrganizationGet.adminsUpdated") }}</div>
             <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
