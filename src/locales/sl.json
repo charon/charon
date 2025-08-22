@@ -74,6 +74,10 @@
     "messages": {
       "congratulations": "Čestitamo.",
       "sorry": "Oprostite."
+    },
+    "time": {
+      "seconds": "1 sekundo | {count} sekundi | {count} sekunde | {count} sekund",
+      "paused": " (pavzirano)"
     }
   },
   "partials": {
@@ -81,8 +85,6 @@
       "congratulations": "{strongCongratulations} Vse je pripravljeno za vašo prijavo ali registracijo v {appName} z izbrano identiteto.",
       "declined": "Odločili ste se {strongDeclineSignInOrSignUp} v {appName} z uporabo Charon.",
       "redirectMessage": "Sedaj boste preusmerjeni v {appName} čez {time}{pausedText}.",
-      "seconds": "1 sekundo | {count} sekundi | {count} sekunde | {count} sekund",
-      "paused": " (pavzirano)",
       "declineSignInOrSignUp": "zavrniti prijavo ali registracijo"
     },
     "AuthCode": {
@@ -153,9 +155,7 @@
     "AuthThirdPartyProvider": {
       "redirectMessage": "Preusmerjeni boste k {strongProvider} čez {time}{pausedText}.",
       "instructions": "Prosimo, sledite navodilom tam za prijavo v Charon. Nato boste preusmerjeni nazaj sem.",
-      "additionalInfo": "Morda se boste morali najprej prijaviti v {provider}. Morda vas bo {provider} takoj preusmeril nazaj, ne da bi vam pokazal karkoli.",
-      "seconds": "1 sekundo | {count} sekundi | {count} sekunde | {count} sekund",
-      "paused": " (pavzirano)"
+      "additionalInfo": "Morda se boste morali najprej prijaviti v {provider}. Morda vas bo {provider} takoj preusmeril nazaj, ne da bi vam pokazal karkoli."
     },
     "Footer": {
       "poweredBy": "Zagotavlja {name}"

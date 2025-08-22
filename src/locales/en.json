@@ -74,6 +74,10 @@
     "messages": {
       "congratulations": "Congratulations.",
       "sorry": "Sorry."
+    },
+    "time": {
+      "seconds": "1 second | {count} seconds",
+      "paused": " (paused)"
     }
   },
   "partials": {
@@ -81,8 +85,6 @@
       "congratulations": "{strongCongratulations} Everything is ready to sign you in or sign you up into {appName} using the identity you have chosen.",
       "declined": "You decided to {strongDeclineSignInOrSignUp} into {appName} using Charon.",
       "redirectMessage": "You will be now redirected to {appName} in {time}{pausedText}.",
-      "seconds": "1 second | {count} seconds",
-      "paused": " (paused)",
       "declineSignInOrSignUp": "decline sign-in or sign-up"
     },
     "AuthCode": {
@@ -153,9 +155,7 @@
     "AuthThirdPartyProvider": {
       "redirectMessage": "You will be redirected to {strongProvider} in {time}{pausedText}.",
       "instructions": "Please follow instructions there to sign-in into Charon. Afterwards, you will be redirected back here.",
-      "additionalInfo": "You might have to sign-in into {provider} first. You might be redirected back by {provider} immediately, without showing you anything.",
-      "seconds": "1 second | {count} seconds",
-      "paused": " (paused)"
+      "additionalInfo": "You might have to sign-in into {provider} first. You might be redirected back by {provider} immediately, without showing you anything."
     },
     "Footer": {
       "poweredBy": "Powered by {name}"
