@@ -5,17 +5,17 @@
  * based on the structure of src/locales/en.json.
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from "fs"
+import path from "path"
+import { fileURLToPath } from "url"
 
 // Get current directory for ES modules.
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 // File paths.
-const EN_JSON_PATH = path.join(__dirname, 'src', 'locales', 'en.json');
-const VUE_I18N_DEFS_PATH = path.join(__dirname, 'src', 'vue-i18n.d.ts');
+const EN_JSON_PATH = path.join(__dirname, "src", "locales", "en.json")
+const VUE_I18N_DEFS_PATH = path.join(__dirname, "src", "vue-i18n.d.ts")
 
 /**
  * Convert a JSON object structure to TypeScript interface properties.
@@ -24,34 +24,34 @@ const VUE_I18N_DEFS_PATH = path.join(__dirname, 'src', 'vue-i18n.d.ts');
  * @returns {string} TypeScript interface properties.
  */
 function jsonToTypeScript(obj, indent = 0) {
-  const indentStr = '  '.repeat(indent);
+  const indentStr = "  ".repeat(indent)
 
-  if (typeof obj === 'string') {
-    return 'string';
+  if (typeof obj === "string") {
+    return "string"
   }
 
   if (Array.isArray(obj)) {
     // Handle arrays (shouldn't occur in locale files, but just in case).
-    return 'string[]';
+    return "string[]"
   }
 
-  if (typeof obj === 'object' && obj !== null) {
-    const entries = Object.entries(obj);
+  if (typeof obj === "object" && obj !== null) {
+    const entries = Object.entries(obj)
     const properties = entries.map(([key, value]) => {
-      if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      if (typeof value === "object" && value !== null && !Array.isArray(value)) {
         // Nested object.
-        const nestedContent = jsonToTypeScript(value, indent + 1);
-        return `${indentStr}${key}: {\n${nestedContent}\n${indentStr}}`;
+        const nestedContent = jsonToTypeScript(value, indent + 1)
+        return `${indentStr}${key}: {\n${nestedContent}\n${indentStr}}`
       } else {
         // Simple property.
-        return `${indentStr}${key}: string`;
+        return `${indentStr}${key}: string`
       }
-    });
+    })
 
-    return properties.join('\n');
+    return properties.join("\n")
   }
 
-  return 'string';
+  return "string"
 }
 
 /**
@@ -60,7 +60,7 @@ function jsonToTypeScript(obj, indent = 0) {
  * @returns {string} Complete TypeScript definition file content.
  */
 function generateTypeScriptDefinitions(localeData) {
-  const interfaceContent = jsonToTypeScript(localeData, 2); // Start with 2-level indentation for proper formatting.
+  const interfaceContent = jsonToTypeScript(localeData, 2) // Start with 2-level indentation for proper formatting.
 
   return `/**
  * AUTOMATICALLY GENERATED FILE - DO NOT EDIT MANUALLY
@@ -77,7 +77,7 @@ declare module "vue-i18n" {
 ${interfaceContent}
   }
 }
-`;
+`
 }
 
 /**
@@ -85,44 +85,43 @@ ${interfaceContent}
  */
 function main() {
   try {
-    console.log('🔍 Reading en.json file...');
+    console.log("🔍 Reading en.json file...")
 
     // Check if en.json exists
     if (!fs.existsSync(EN_JSON_PATH)) {
-      console.error(`❌ Error: ${EN_JSON_PATH} not found!`);
-      process.exit(1);
+      console.error(`❌ Error: ${EN_JSON_PATH} not found!`)
+      process.exit(1)
     }
 
     // Read and parse en.json
-    const rawData = fs.readFileSync(EN_JSON_PATH, 'utf8');
-    const localeData = JSON.parse(rawData);
+    const rawData = fs.readFileSync(EN_JSON_PATH, "utf8")
+    const localeData = JSON.parse(rawData)
 
-    console.log('✅ Successfully parsed en.json');
-    console.log('🛠️  Generating TypeScript definitions...');
+    console.log("✅ Successfully parsed en.json")
+    console.log("🛠️  Generating TypeScript definitions...")
 
     // Generate TypeScript definitions
-    const typeScriptContent = generateTypeScriptDefinitions(localeData);
+    const typeScriptContent = generateTypeScriptDefinitions(localeData)
 
     // Write to vue-i18n.d.ts
-    fs.writeFileSync(VUE_I18N_DEFS_PATH, typeScriptContent, 'utf8');
+    fs.writeFileSync(VUE_I18N_DEFS_PATH, typeScriptContent, "utf8")
 
-    console.log('✅ Successfully generated vue-i18n.d.ts');
-    console.log(`📁 Written to: ${VUE_I18N_DEFS_PATH}`);
+    console.log("✅ Successfully generated vue-i18n.d.ts")
+    console.log(`📁 Written to: ${VUE_I18N_DEFS_PATH}`)
 
     // Validate the generated file
     if (fs.existsSync(VUE_I18N_DEFS_PATH)) {
-      const generatedSize = fs.statSync(VUE_I18N_DEFS_PATH).size;
-      console.log(`📊 Generated file size: ${generatedSize} bytes`);
-      console.log('🎉 Generation completed successfully!');
+      const generatedSize = fs.statSync(VUE_I18N_DEFS_PATH).size
+      console.log(`📊 Generated file size: ${generatedSize} bytes`)
+      console.log("🎉 Generation completed successfully!")
     }
-
   } catch (error) {
-    console.error('❌ Error generating vue-i18n.d.ts:', error.message);
-    process.exit(1);
+    console.error("❌ Error generating vue-i18n.d.ts:", error.message)
+    process.exit(1)
   }
 }
 
 // Run the script if executed directly.
-main();
+main()
 
-export { main, jsonToTypeScript, generateTypeScriptDefinitions };
+export { main, jsonToTypeScript, generateTypeScriptDefinitions }
