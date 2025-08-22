@@ -77,7 +77,6 @@ declare module "vue-i18n" {
       AuthAutoRedirect: {
         declined: string
         redirectMessage: string
-        oneSecond: string
         seconds: string
         paused: string
         resume: string
@@ -170,7 +169,6 @@ declare module "vue-i18n" {
         additionalInfo: string
         redirecting: string
         failed: string
-        oneSecond: string
         seconds: string
         paused: string
         resume: string

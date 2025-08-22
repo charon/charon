@@ -189,7 +189,7 @@ onBeforeUnmount(() => {
         keypath="partials.AuthThirdPartyProvider.redirectMessage"
         scope="global"
         :provider="flow.getThirdPartyProvider()!.name"
-        :time="seconds === 1 ? t('partials.AuthThirdPartyProvider.oneSecond') : t('partials.AuthThirdPartyProvider.seconds', { count: seconds })"
+        :time="t('partials.AuthThirdPartyProvider.seconds', seconds)"
         :paused-text="paused ? t('partials.AuthThirdPartyProvider.paused') : ''"
       >
         <template #strongProvider

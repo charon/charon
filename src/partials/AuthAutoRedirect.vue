@@ -181,7 +181,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
           {{
             t("partials.AuthAutoRedirect.redirectMessage", {
               appName: doc.applicationTemplate.name,
-              time: seconds === 1 ? t("partials.AuthAutoRedirect.oneSecond") : t("partials.AuthAutoRedirect.seconds", { count: seconds }),
+              time: t("partials.AuthAutoRedirect.seconds", seconds),
               pausedText: paused ? t("partials.AuthAutoRedirect.paused") : "",
             })
           }}
