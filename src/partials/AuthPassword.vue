@@ -405,7 +405,9 @@ async function onCode() {
       <!--
         Button is on purpose not disabled on unexpectedCodeError so that user can retry.
       -->
-      <Button type="button" primary tabindex="3" :disabled="!!codeError" :progress="progress" @click.prevent="onCode">{{ t("partials.AuthPassword.sendCodeButton") }}</Button>
+      <Button type="button" primary tabindex="3" :disabled="!!codeError" :progress="progress" @click.prevent="onCode">{{
+        t("partials.AuthPassword.sendCodeButton")
+      }}</Button>
     </div>
   </div>
 </template>

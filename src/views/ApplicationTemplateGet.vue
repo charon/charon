@@ -661,7 +661,8 @@ function onAddAdmin() {
             <label for="name" class="mb-1">{{ t("views.ApplicationTemplateGet.applicationTemplateName") }}</label>
             <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" required />
             <label for="description" class="mb-1 mt-4"
-              >{{ t("common.fields.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+              >{{ t("common.fields.description")
+              }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
             >
             <TextArea id="description" v-model="description" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <label for="homepageTemplate" class="mb-1 mt-4">{{ t("views.ApplicationTemplateGet.homepageTemplate") }}</label>
@@ -674,7 +675,8 @@ function onAddAdmin() {
               required
             />
             <label for="idScopes" class="mb-1 mt-4"
-              >{{ t("views.ApplicationTemplateGet.spaceSeparatedScopes") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+              >{{ t("views.ApplicationTemplateGet.spaceSeparatedScopes")
+              }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
             >
             <TextArea
               id="idScopes"
@@ -712,7 +714,8 @@ function onAddAdmin() {
                       required
                     />
                     <label :for="`variable-${i}-description`" class="mb-1 mt-4"
-                      >{{ t("common.fields.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+                      >{{ t("common.fields.description")
+                      }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`variable-${i}-description`"
@@ -776,7 +779,8 @@ function onAddAdmin() {
                       >
                     </div>
                     <label :for="`client-public-${i}-description`" class="mb-1 mt-4"
-                      >{{ t("common.fields.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+                      >{{ t("common.fields.description")
+                      }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-public-${i}-description`"
@@ -919,7 +923,8 @@ function onAddAdmin() {
                       >
                     </div>
                     <label :for="`client-backend-${i}-description`" class="mb-1 mt-4"
-                      >{{ t("common.fields.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+                      >{{ t("common.fields.description")
+                      }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-backend-${i}-description`"
@@ -1067,7 +1072,8 @@ function onAddAdmin() {
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
                     <label :for="`client-service-${i}-description`" class="mb-1"
-                      >{{ t("common.fields.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+                      >{{ t("common.fields.description")
+                      }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-service-${i}-description`"
