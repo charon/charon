@@ -357,7 +357,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
       <div v-if="allIdentitiesLoading" class="mb-4">{{ t("common.loading.dataLoading") }}</div>
       <div v-else-if="allIdentitiesLoadingError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
-        <h3 class="text-l font-bold mb-4">{{ t("views.AuthIdentity.previouslyUsedIdentities") }}</h3>
+        <h3 class="text-l font-bold mb-4">{{ t("partials.AuthIdentity.previouslyUsedIdentities") }}</h3>
         <div v-if="usedIdentities.length + addedIdentities.length + disabledIdentities.length === 0" class="italic mb-4">
           {{ t("partials.AuthIdentity.statusMessages.noIdentityUsed") }}
         </div>
@@ -444,7 +444,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
         <Button type="button" tabindex="3" :progress="progress" @click.prevent="onCreateShow">{{ t("partials.AuthIdentity.newIdentityButton") }}</Button>
       </div>
       <template v-if="createShown">
-        <h3 class="text-l font-bold mb-4">{{ t("views.IdentityGet.createNewIdentity") }}</h3>
+        <h3 class="text-l font-bold mb-4">{{ t("partials.AuthIdentity.createNewIdentity") }}</h3>
         <IdentityCreate class="mb-4" :flow-id="flow.getId()" @created="onIdentityCreated" />
       </template>
       <div v-if="unexpectedError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>

@@ -65,7 +65,7 @@ const WithIdentityDocument = WithDocument<Identity>
     <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
       <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
         <div class="flex flex-row justify-between items-center gap-4">
-          <h1 class="text-2xl font-bold">{{ t("views.Home.identities") }}</h1>
+          <h1 class="text-2xl font-bold">{{ t("views.IdentityList.identities") }}</h1>
           <ButtonLink v-if="isSignedIn()" :to="{ name: 'IdentityCreate' }" :progress="progress" primary>{{ t("common.buttons.create") }}</ButtonLink>
         </div>
       </div>
@@ -73,7 +73,7 @@ const WithIdentityDocument = WithDocument<Identity>
       <div v-else-if="dataLoadingError" class="w-full rounded border bg-white p-4 shadow text-error-600">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
         <div v-if="!identities.length" class="w-full rounded border bg-white p-4 shadow italic">
-          {{ isSignedIn() ? t("views.IdentityGet.noIdentitiesCreate") : t("views.IdentityGet.noIdentitiesSignIn") }}
+          {{ isSignedIn() ? t("views.IdentityList.noIdentitiesCreate") : t("views.IdentityList.noIdentitiesSignIn") }}
         </div>
         <div v-for="identity of identities" :key="identity.id" class="w-full rounded border bg-white p-4 shadow">
           <WithIdentityDocument :params="{ id: identity.id }" name="IdentityGet">

@@ -652,16 +652,16 @@ function onAddAdmin() {
     <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
       <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
         <div class="flex flex-row items-center">
-          <h1 class="text-2xl font-bold">{{ t("views.Home.applicationTemplates") }}</h1>
+          <h1 class="text-2xl font-bold">{{ t("views.ApplicationTemplateGet.applicationTemplates") }}</h1>
         </div>
         <div v-if="dataLoading">{{ t("common.loading.dataLoading") }}</div>
         <div v-else-if="dataLoadingError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
         <template v-else>
           <form class="flex flex-col" novalidate @submit.prevent="onBasicSubmit">
-            <label for="name" class="mb-1">{{ t("views.IdentityCreate.applicationTemplateName") }}</label>
+            <label for="name" class="mb-1">{{ t("views.ApplicationTemplateGet.applicationTemplateName") }}</label>
             <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" required />
             <label for="description" class="mb-1 mt-4"
-              >{{ t("views.IdentityCreate.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+              >{{ t("views.ApplicationTemplateGet.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
             >
             <TextArea id="description" v-model="description" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <label for="homepageTemplate" class="mb-1 mt-4">{{ t("views.ApplicationTemplateGet.homepageTemplate") }}</label>
@@ -712,7 +712,7 @@ function onAddAdmin() {
                       required
                     />
                     <label :for="`variable-${i}-description`" class="mb-1 mt-4"
-                      >{{ t("views.IdentityCreate.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+                      >{{ t("views.ApplicationTemplateGet.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`variable-${i}-description`"
@@ -776,7 +776,7 @@ function onAddAdmin() {
                       >
                     </div>
                     <label :for="`client-public-${i}-description`" class="mb-1 mt-4"
-                      >{{ t("views.IdentityCreate.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+                      >{{ t("views.ApplicationTemplateGet.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-public-${i}-description`"
@@ -919,7 +919,7 @@ function onAddAdmin() {
                       >
                     </div>
                     <label :for="`client-backend-${i}-description`" class="mb-1 mt-4"
-                      >{{ t("views.IdentityCreate.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+                      >{{ t("views.ApplicationTemplateGet.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-backend-${i}-description`"
@@ -1067,7 +1067,7 @@ function onAddAdmin() {
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
                     <label :for="`client-service-${i}-description`" class="mb-1"
-                      >{{ t("views.IdentityCreate.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
+                      >{{ t("views.ApplicationTemplateGet.description") }}<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> {{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-service-${i}-description`"
@@ -1201,7 +1201,7 @@ function onAddAdmin() {
             </form>
           </template>
           <template v-if="metadata.can_update || adminsUnexpectedError || adminsUpdated">
-            <h2 class="text-xl font-bold">{{ t("views.OrganizationGet.admins") }}</h2>
+            <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.admins") }}</h2>
             <div v-if="adminsUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="adminsUpdated" class="text-success-600">{{ t("views.ApplicationTemplateGet.adminsUpdated") }}</div>
             <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">

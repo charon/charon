@@ -189,8 +189,8 @@ onBeforeUnmount(() => {
         keypath="partials.AuthThirdPartyRedirect.redirectMessage"
         scope="global"
         :provider="flow.getThirdPartyProvider()!.name"
-        :time="seconds === 1 ? t('partials.AuthAutoRedirect.oneSecond') : t('partials.AuthAutoRedirect.seconds', { count: seconds })"
-        :paused-text="paused ? t('partials.AuthAutoRedirect.paused') : ''"
+        :time="seconds === 1 ? t('partials.AuthThirdPartyProvider.oneSecond') : t('partials.AuthThirdPartyProvider.seconds', { count: seconds })"
+        :paused-text="paused ? t('partials.AuthThirdPartyProvider.paused') : ''"
       >
         <template #strong
           ><strong>{{ flow.getThirdPartyProvider()!.name }}</strong></template
@@ -206,9 +206,9 @@ onBeforeUnmount(() => {
       <Button type="button" tabindex="3" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
       <div class="flex flex-row gap-4">
         <Button type="button" tabindex="2" :progress="progress" @click.prevent="onPauseResume">{{
-          paused ? t("partials.AuthAutoRedirect.resume") : t("partials.AuthAutoRedirect.pause")
+          paused ? t("partials.AuthThirdPartyProvider.resume") : t("partials.AuthThirdPartyProvider.pause")
         }}</Button>
-        <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">{{ t("partials.AuthAutoRedirect.redirect") }}</Button>
+        <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">{{ t("partials.AuthThirdPartyProvider.redirect") }}</Button>
       </div>
     </div>
   </div>

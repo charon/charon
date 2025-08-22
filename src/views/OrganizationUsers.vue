@@ -73,7 +73,7 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
     <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
       <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
         <div class="flex flex-col gap-4">
-          <h1 class="text-2xl font-bold">{{ t("views.OrganizationGet.usersForOrganization") }}</h1>
+          <h1 class="text-2xl font-bold">{{ t("views.OrganizationUsers.usersForOrganization") }}</h1>
           <div>
             <OrganizationListItem :item="{ id }" />
           </div>
@@ -82,7 +82,7 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
       <div v-if="dataLoading" class="w-full rounded border bg-white p-4 shadow">{{ t("common.loading.dataLoading") }}</div>
       <div v-else-if="dataLoadingError" class="w-full rounded border bg-white p-4 shadow text-error-600">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
-        <div v-if="!users.length" class="w-full rounded border bg-white p-4 shadow italic">{{ t("views.OrganizationGet.noUsers") }}</div>
+        <div v-if="!users.length" class="w-full rounded border bg-white p-4 shadow italic">{{ t("views.OrganizationUsers.noUsers") }}</div>
         <div v-for="user of users" :key="user.id" class="w-full rounded border bg-white p-4 shadow">
           <WithIdentityForAdminDocument :params="{ id, identityId: user.id }" name="OrganizationIdentity">
             <template #default="{ doc, metadata, url }">

@@ -52,25 +52,18 @@
     }
   },
   "partials": {
-    "Footer": {
-      "poweredBy": "Powered by {name}"
-    },
-    "AuthStart": {
-      "emailOrUsernameLabel": "Enter Charon username or your e-mail address",
-      "orUse": "Or use"
-    },
-    "AuthPassword": {
-      "emailAddressLabel": "Your e-mail address",
-      "usernameLabel": "Charon username",
-      "passwordLabel": "Password or passphrase",
-      "sendCodeButton": "Send code",
-      "instructions": {
-        "emailAccount": "If you do not yet have an account, it will be created for you. If you enter wrong password or passphrase, recovery will be done automatically for you by sending you a code to your e-mail address.",
-        "usernameAccount": "If you do not yet have an account, it will be created for you. Username will not be visible to others, but it is possible to determine if an account with a username exists or not. If you enter wrong password or passphrase, recovery will be done automatically for you by sending you a code to e-mail address(es) associated with the username, if any.",
-        "skipPassword": "You can also skip entering password or passphrase and directly request the code."
-      },
-      "troublePassword": "If you have trouble remembering your password or passphrase, try a {link}.",
-      "differentSigninMethod": "different sign-in method"
+    "AuthAutoRedirect": {
+      "congratulations": "{strong} Everything is ready to sign you in or sign you up into {appName} using the identity you have chosen.",
+      "declined": "You decided to {strong} into {appName} using Charon.",
+      "redirectMessage": "You will be now redirected to {appName} in {time}{pausedText}.",
+      "oneSecond": "1 second",
+      "seconds": "{count} seconds",
+      "paused": " (paused)",
+      "resume": "Resume",
+      "pause": "Pause",
+      "redirect": "Redirect",
+      "congratulationsFromIdentity": "Congratulations.",
+      "declineSignInOrSignUp": "decline sign-in or sign-up"
     },
     "AuthCode": {
       "codeSentEmail": "We {sentCount} a 6-digit code to {strongEmail} e-mail address. Please enter it to continue:",
@@ -80,45 +73,12 @@
       "resendButton": "Resend code",
       "sent": "sent",
       "sentMultiple": "sent ({count}x)",
-      "instructions": {
-        "confirmCode": "Please confirm the code to continue.",
-        "waitForCode": "Please allow few minutes for the code to arrive. Check spam or junk folder.",
-        "securityWarning": "If you were not signing in or signing up into {appName}, please disregard the e-mail and {strongDont} confirm the code.",
-        "strongDont": "do not",
-        "troubleEmail": "If you have trouble accessing your e-mail, try a {link}.",
-        "differentMethod": "different sign-in or sign-up method"
-      }
-    },
-    "AuthPasskey": {
-      "signingIn": "Signing you in using {strong}. Please follow instructions by your browser and/or device.",
-      "signin": {
-        "instructions": "Sign in using your {strong}.",
-        "failed": "Signing in using {strong} failed.",
-        "signupButton": "Sign-up instead",
-        "signupInfo": "If you have not yet signed up with passkey, this will fail. In that case Charon will offer you to sign up instead."
-      },
-      "signup": {
-        "instructions": "Signing in using {strong} failed. Do you want to sign up instead?",
-        "signingUp": "Signing you up using {strong}. Please follow instructions by your browser and/or device.",
-        "failed": "Signing up using {strong} failed.",
-        "retrySigninButton": "Retry sign-in",
-        "passkeySignupButton": "Passkey sign-up",
-        "retrySignupButton": "Retry sign-up"
-      }
-    },
-    "AuthThirdParty": {
-      "redirecting": "Redirecting you to {provider}. Please follow instructions by your browser.",
-      "failed": "Signing in using {provider} failed."
-    },
-    "AuthRedirect": {
-      "auto": {
-        "message": "Redirecting you back to {appName}.",
-        "manualRedirect": "Click {link} if you are not automatically redirected.",
-        "here": "here"
-      },
-      "manual": {
-        "message": "Sign-in or sign-up completed. Click {link} to continue to {appName}."
-      }
+      "confirmCode": "Please confirm the code to continue.",
+      "waitForCode": "Please allow few minutes for the code to arrive. Check spam or junk folder.",
+      "securityWarning": "If you were not signing in or signing up into {appName}, please disregard the e-mail and {strongDont} confirm the code.",
+      "strongDont": "do not",
+      "troubleEmail": "If you have trouble accessing your e-mail, try a {link}.",
+      "differentMethod": "different sign-in or sign-up method"
     },
     "AuthIdentity": {
       "selectIdentity": "Select identity to use with {appName}:",
@@ -133,31 +93,12 @@
       "noIdentitiesCreateFirst": "There are no identities. Create the first one.",
       "noOtherIdentitiesCreateOne": "There are no other identities. Create one.",
       "selectInstructions": "Select the identity you want to continue with. Its information will be provided to the app and the organization. You can also create a new identity or decline to proceed.",
-      "statusMessages": {
-        "noIdentityUsed": "You have not yet used any identity with this organization.",
-        "noIdentityUsedWithApp": "You have not yet used any identity with this app in the organization.",
-        "allPreviousDisabled": "All previously used identities with this organization are disabled."
-      },
-      "sectionTitles": {
-        "identitiesUsedWithOrg": "Identities used with the organization, but not the app",
-        "disabledIdentities": "Disabled identities"
-      }
-    },
-    "AuthAutoRedirect": {
-      "congratulations": "{strong} Everything is ready to sign you in or sign you up into {appName} using the identity you have chosen.",
-      "declined": "You decided to {strong} into {appName} using Charon.",
-      "redirectMessage": "You will be now redirected to {appName} in {time}{pausedText}.",
-      "oneSecond": "1 second",
-      "seconds": "{count} seconds",
-      "paused": " (paused)",
-      "resume": "Resume",
-      "pause": "Pause",
-      "redirect": "Redirect"
-    },
-    "AuthThirdPartyRedirect": {
-      "redirectMessage": "You will be redirected to {strong} in {time}{pausedText}.",
-      "instructions": "Please follow instructions there to sign-in into Charon. Afterwards, you will be redirected back here.",
-      "additionalInfo": "You might have to sign-in into {provider} first. You might be redirected back by {provider} immediately, without showing you anything."
+      "noIdentityUsed": "You have not yet used any identity with this organization.",
+      "noIdentityUsedWithApp": "You have not yet used any identity with this app in the organization.",
+      "allPreviousDisabled": "All previously used identities with this organization are disabled.",
+      "identitiesUsedWithOrg": "Identities used with the organization, but not the app",
+      "disabledIdentities": "Disabled identities",
+      "previouslyUsedIdentities": "Previously used identities"
     },
     "AuthManualRedirect": {
       "failed": "{strong} Signing in or signing up failed.",
@@ -165,73 +106,106 @@
       "completed": "You have already been redirected to {appName} and completed the flow. You can now instead go to its homepage.",
       "homepage": "Homepage",
       "return": "Return"
-    }
-  },
-  "views": {
-    "AuthFlowGet": {
-      "instructionsMessage": "{appLink} from organization {orgLink} is using Charon to ask you to sign-in or sign-up. Please follow the steps below to do so, or to decline."
+    },
+    "AuthPasskeySignin": {
+      "signingIn": "Signing you in using {strong}. Please follow instructions by your browser and/or device.",
+      "signupInfo": "If you have not yet signed up with passkey, this will fail. In that case Charon will offer you to sign up instead."
+    },
+    "AuthPasskeySignup": {
+      "instructions": "Signing in using {strong} failed. Do you want to sign up instead?",
+      "signingUp": "Signing you up using {strong}. Please follow instructions by your browser and/or device.",
+      "failed": "Signing up using {strong} failed.",
+      "retrySigninButton": "Retry sign-in",
+      "passkeySignupButton": "Passkey sign-up",
+      "retrySignupButton": "Retry sign-up"
+    },
+    "AuthPassword": {
+      "emailAddressLabel": "Your e-mail address",
+      "usernameLabel": "Charon username",
+      "passwordLabel": "Password or passphrase",
+      "sendCodeButton": "Send code",
+      "emailAccount": "If you do not yet have an account, it will be created for you. If you enter wrong password or passphrase, recovery will be done automatically for you by sending you a code to your e-mail address.",
+      "usernameAccount": "If you do not yet have an account, it will be created for you. Username will not be visible to others, but it is possible to determine if an account with a username exists or not. If you enter wrong password or passphrase, recovery will be done automatically for you by sending you a code to e-mail address(es) associated with the username, if any.",
+      "skipPassword": "You can also skip entering password or passphrase and directly request the code.",
+      "troublePassword": "If you have trouble remembering your password or passphrase, try a {link}.",
+      "differentSigninMethod": "different sign-in method"
+    },
+    "AuthStart": {
+      "emailOrUsernameLabel": "Enter Charon username or your e-mail address",
+      "orUse": "Or use"
+    },
+    "AuthThirdPartyProvider": {
+      "redirectMessage": "You will be redirected to {strong} in {time}{pausedText}.",
+      "instructions": "Please follow instructions there to sign-in into Charon. Afterwards, you will be redirected back here.",
+      "additionalInfo": "You might have to sign-in into {provider} first. You might be redirected back by {provider} immediately, without showing you anything.",
+      "redirecting": "Redirecting you to {provider}. Please follow instructions by your browser.",
+      "failed": "Signing in using {provider} failed."
+    },
+    "Footer": {
+      "poweredBy": "Powered by {name}"
     },
     "IdentityCreate": {
-      "applicationTemplateName": "Application template name",
-      "organizationName": "Organization name",
       "username": "Username",
+      "email": "E-mail address",
       "givenName": "Given name",
       "fullName": "Full name",
       "pictureUrl": "Picture URL",
-      "description": "Description",
-      "email": "E-mail address"
+      "description": "Description"
+    },
+  },
+  "views": {
+    "ApplicationTemplateCreate": {
+      "createApplicationTemplate": "Create application template",
+      "applicationTemplateName": "Application template name",
+      "chooseApplicationTemplateName": "Choose a name. You will be able to configure the application template after it is created."
     },
     "ApplicationTemplateGet": {
-      "status": "Status:",
-      "apps": "Apps:",
-      "none": "none",
-      "clientId": "Client ID:",
-      "clientSecret": "Client secret:",
-      "name": "Name",
-      "id": "ID:",
-      "confirmUpdateToAllocate": "confirm update to allocate",
-      "addAdmin": "Add admin",
-      "addVariable": "Add variable",
-      "addClient": "Add client",
-      "addRedirectUri": "Add redirect URI",
-      "oidcRedirectUriTemplates": "OIDC redirect URI templates",
-      "hmac": "HMAC",
-      "jwt": "JWT",
+      "applicationTemplates": "Application templates",
+      "applicationTemplateName": "Application template name",
+      "description": "Description",
+      "homepageTemplate": "Homepage template",
       "spaceSeparatedScopes": "Space-separated OpenID scopes the app might request",
+      "applicationsUpdated": "Applications updated successfully.",
+      "variables": "Variables",
+      "variablesUpdated": "Variables updated successfully.",
+      "name": "Name",
+      "addVariable": "Add variable",
+      "publicClients": "Public clients",
+      "publicClientsUpdated": "Public clients updated successfully.",
+      "oidcRedirectUriTemplates": "OIDC redirect URI templates",
+      "addRedirectUri": "Add redirect URI",
       "spaceSeparatedAdditionalScopes": "Space-separated additional scopes the client might request",
       "accessTokenType": "Access token type",
+      "hmac": "HMAC",
+      "jwt": "JWT",
       "accessTokenLifespan": "Access token lifespan",
       "idTokenLifespan": "ID token lifespan",
       "refreshTokenLifespan": "Refresh token lifespan",
-      "tokenEndpointAuthMethod": "Token endpoint authentication method",
-      "organizations": "Organizations",
-      "createOrganization": "Create organization",
-      "createApplicationTemplate": "Create application template",
-      "addedOrganizations": "Added organizations",
-      "availableOrganizations": "Available organizations",
-      "variables": "Variables",
-      "publicClients": "Public clients",
+      "addClient": "Add client",
       "backendClients": "Backend clients",
-      "serviceClients": "Service clients",
-      "addedApplications": "Added applications",
-      "availableApplications": "Available applications",
-      "configuration": "Configuration",
-      "homepageTemplate": "Homepage template",
-      "applicationsUpdated": "Applications updated successfully.",
-      "variablesUpdated": "Variables updated successfully.",
-      "publicClientsUpdated": "Public clients updated successfully.",
       "backendClientsUpdated": "Backend clients updated successfully.",
+      "tokenEndpointAuthMethod": "Token endpoint authentication method",
+      "serviceClients": "Service clients",
       "serviceClientsUpdated": "Service clients updated successfully.",
+      "admins": "Admins",
       "adminsUpdated": "Admins updated successfully.",
-      "noApplicationTemplates": "There are no application templates.",
+      "addAdmin": "Add admin"
+    },
+    "ApplicationTemplateList": {
+      "applicationTemplates": "Application templates",
       "noApplicationTemplatesCreate": "There are no application templates. Create the first one.",
-      "noApplicationTemplatesSignIn": "There are no application templates. Sign-in or sign-up to create the first one.",
-      "chooseApplicationTemplateName": "Choose a name. You will be able to configure the application template after it is created."
+      "noApplicationTemplatesSignIn": "There are no application templates. Sign-in or sign-up to create the first one."
+    },
+    "AuthFlowGet": {
+      "instructionsMessage": "{appLink} from organization {orgLink} is using Charon to ask you to sign-in or sign-up. Please follow the steps below to do so, or to decline."
     },
     "Home": {
       "identities": "Identities",
       "applicationTemplates": "Application templates",
       "organizations": "Organizations"
+    },
+    "IdentityCreate": {
+      "createIdentity": "Create identity"
     },
     "IdentityGet": {
       "identity": "Identity",
@@ -249,25 +223,40 @@
       "noIdentitiesSignIn": "There are no identities. Sign-in or sign-up to create the first one.",
       "noOtherIdentities": "There are no other identities. Create one."
     },
+    "IdentityList": {
+      "identities": "Identities",
+      "noIdentitiesCreate": "There are no identities. Create the first one.",
+      "noIdentitiesSignIn": "There are no identities. Sign-in or sign-up to create the first one."
+    },
+    "OrganizationCreate": {
+      "organization": "Organization",
+      "organizationName": "Organization name",
+      "chooseOrganizationName": "Choose a name. You will be able to configure the organization after it is created."
+    },
     "OrganizationGet": {
       "organization": "Organization",
       "usersForOrganization": "Users for organization",
       "users": "Users",
       "admins": "Admins",
+      "organizationName": "Organization name",
+      "description": "Description",
       "organizationUpdated": "Organization updated successfully.",
       "addedApplicationsUpdated": "Added applications updated successfully.",
       "adminsUpdated": "Admins updated successfully.",
       "identitiesUpdated": "Organization identities updated successfully.",
-      "noUsers": "There are no users.",
-      "noOrganizations": "There are no organizations.",
-      "noOrganizationsCreate": "There are no organizations. Create the first one.",
-      "noOrganizationsSignIn": "There are no organizations. Sign-in or sign-up to create the first one.",
-      "chooseOrganizationName": "Choose a name. You will be able to configure the organization after it is created."
+      "addedApplications": "Added applications",
+      "availableApplications": "Available applications",
+      "addedIdentities": "Added identities",
+      "availableIdentities": "Available identities"
     },
-    "AuthIdentity": {
-      "previouslyUsedIdentities": "Previously used identities",
-      "otherAvailableIdentities": "Other available identities",
-      "disabledIdentities": "Disabled identities"
+    "OrganizationList": {
+      "organizations": "Organizations",
+      "noOrganizationsCreate": "There are no organizations. Create the first one.",
+      "noOrganizationsSignIn": "There are no organizations. Sign-in or sign-up to create the first one."
+    },
+    "OrganizationUsers": {
+      "usersForOrganization": "Users for organization",
+      "noUsers": "There are no users."
     }
   }
 }
