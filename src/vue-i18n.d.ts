@@ -83,6 +83,7 @@ declare module "vue-i18n" {
         resume: string
         pause: string
         redirect: string
+        congratulations: string
         congratulationsWord: string
         declineSignInOrSignUp: string
       }

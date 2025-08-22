@@ -72,8 +72,8 @@
   },
   "partials": {
     "AuthAutoRedirect": {
-      "congratulations": "{strong} Everything is ready to sign you in or sign you up into {appName} using the identity you have chosen.",
-      "declined": "You decided to {strong} into {appName} using Charon.",
+      "congratulations": "{strongCongratulations} Everything is ready to sign you in or sign you up into {appName} using the identity you have chosen.",
+      "declined": "You decided to {strongDeclineSignInOrSignUp} into {appName} using Charon.",
       "redirectMessage": "You will be now redirected to {appName} in {time}{pausedText}.",
       "oneSecond": "1 second",
       "seconds": "{count} seconds",
@@ -102,8 +102,8 @@
     "AuthIdentity": {
       "selectIdentity": "Select identity to use with {appName}:",
       "newIdentityButton": "Create new identity",
-      "signinSuccess": "{strong} You successfully signed in into Charon.",
-      "signupSuccess": "{strong} You successfully signed up into Charon.",
+      "signinSuccess": "{strongCongratulations} You successfully signed in into Charon.",
+      "signupSuccess": "{strongCongratulations} You successfully signed up into Charon.",
       "congratulations": "Congratulations.",
       "declineSignInOrSignUp": "decline sign-in or sign-up",
       "sorry": "Sorry.",
@@ -127,7 +127,7 @@
       }
     },
     "AuthManualRedirect": {
-      "failed": "{strong} Signing in or signing up failed.",
+      "failed": "{strongSorry} Signing in or signing up failed.",
       "tryAgain": "You can return to {appName} and try again.",
       "completed": "You have already been redirected to {appName} and completed the flow. You can now instead go to its homepage.",
       "homepage": "Homepage",
@@ -135,13 +135,13 @@
       "sorry": "Sorry."
     },
     "AuthPasskeySignin": {
-      "signingIn": "Signing you in using {strong}. Please follow instructions by your browser and/or device.",
+      "signingIn": "Signing you in using {strongPasskey}. Please follow instructions by your browser and/or device.",
       "signupInfo": "If you have not yet signed up with passkey, this will fail. In that case Charon will offer you to sign up instead."
     },
     "AuthPasskeySignup": {
-      "instructions": "Signing in using {strong} failed. Do you want to sign up instead?",
-      "signingUp": "Signing you up using {strong}. Please follow instructions by your browser and/or device.",
-      "failed": "Signing up using {strong} failed.",
+      "instructions": "Signing in using {strongPasskey} failed. Do you want to sign up instead?",
+      "signingUp": "Signing you up using {strongPasskey}. Please follow instructions by your browser and/or device.",
+      "failed": "Signing up using {strongPasskey} failed.",
       "retrySigninButton": "Retry sign-in",
       "passkeySignupButton": "Passkey sign-up",
       "retrySignupButton": "Retry sign-up"
@@ -162,7 +162,7 @@
       "orUse": "Or use"
     },
     "AuthThirdPartyProvider": {
-      "redirectMessage": "You will be redirected to {strong} in {time}{pausedText}.",
+      "redirectMessage": "You will be redirected to {strongProvider} in {time}{pausedText}.",
       "instructions": "Please follow instructions there to sign-in into Charon. Afterwards, you will be redirected back here.",
       "additionalInfo": "You might have to sign-in into {provider} first. You might be redirected back by {provider} immediately, without showing you anything.",
       "redirecting": "Redirecting you to {provider}. Please follow instructions by your browser.",

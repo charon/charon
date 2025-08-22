@@ -72,8 +72,8 @@
   },
   "partials": {
     "AuthAutoRedirect": {
-      "congratulations": "{strong} Vse je pripravljeno za vašo prijavo ali registracijo v {appName} z izbrano identiteto.",
-      "declined": "Odločili ste se {strong} v {appName} z uporabo Charon.",
+      "congratulations": "{strongCongratulations} Vse je pripravljeno za vašo prijavo ali registracijo v {appName} z izbrano identiteto.",
+      "declined": "Odločili ste se {strongDeclineSignInOrSignUp} v {appName} z uporabo Charon.",
       "redirectMessage": "Sedaj boste preusmerjeni v {appName} čez {time}{pausedText}.",
       "oneSecond": "1 sekundo",
       "seconds": "{count} sekund",
@@ -102,8 +102,8 @@
     "AuthIdentity": {
       "selectIdentity": "Izberite identiteto za uporabo z {appName}:",
       "newIdentityButton": "Ustvari novo identiteto",
-      "signinSuccess": "{strong} Uspešno ste se prijavili v Charon.",
-      "signupSuccess": "{strong} Uspešno ste se registrirali v Charon.",
+      "signinSuccess": "{strongCongratulations} Uspešno ste se prijavili v Charon.",
+      "signupSuccess": "{strongCongratulations} Uspešno ste se registrirali v Charon.",
       "congratulations": "Čestitamo.",
       "declineSignInOrSignUp": "zavrniti prijavo ali registracijo",
       "sorry": "Oprostite.",
@@ -127,7 +127,7 @@
       }
     },
     "AuthManualRedirect": {
-      "failed": "{strong} Prijava ali registracija ni uspela.",
+      "failed": "{strongSorry} Prijava ali registracija ni uspela.",
       "tryAgain": "Lahko se vrnete v {appName} in poskusite znova.",
       "completed": "Že ste bili preusmerjeni v {appName} in dokončali postopek. Sedaj lahko greste na domačo stran.",
       "homepage": "Domača stran",
@@ -135,13 +135,13 @@
       "sorry": "Oprostite."
     },
     "AuthPasskeySignin": {
-      "signingIn": "Prijavljamo vas z uporabo {strong}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave.",
+      "signingIn": "Prijavljamo vas z uporabo {strongPasskey}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave.",
       "signupInfo": "Če se še niste registrirali s passkey, bo to neuspešno. V tem primeru vam bo Charon ponudil registracijo."
     },
     "AuthPasskeySignup": {
-      "instructions": "Prijava z uporabo {strong} ni uspela. Se želite registrirati namesto tega?",
-      "signingUp": "Registriramo vas z uporabo {strong}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave.",
-      "failed": "Registracija z uporabo {strong} ni uspela.",
+      "instructions": "Prijava z uporabo {strongPasskey} ni uspela. Se želite registrirati namesto tega?",
+      "signingUp": "Registriramo vas z uporabo {strongPasskey}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave.",
+      "failed": "Registracija z uporabo {strongPasskey} ni uspela.",
       "retrySigninButton": "Poskusi prijavo znova",
       "passkeySignupButton": "Registracija s passkey",
       "retrySignupButton": "Poskusi registracijo znova"
@@ -162,7 +162,7 @@
       "orUse": "Ali uporabite"
     },
     "AuthThirdPartyProvider": {
-      "redirectMessage": "Preusmerjeni boste k {strong} čez {time}{pausedText}.",
+      "redirectMessage": "Preusmerjeni boste k {strongProvider} čez {time}{pausedText}.",
       "instructions": "Prosimo, sledite navodilom tam za prijavo v Charon. Nato boste preusmerjeni nazaj sem.",
       "additionalInfo": "Morda se boste morali najprej prijaviti v {provider}. Morda vas bo {provider} takoj preusmeril nazaj, ne da bi vam pokazal karkoli.",
       "redirecting": "Preusmerjamo vas na {provider}. Prosimo, sledite navodilom vašega brskalnika.",

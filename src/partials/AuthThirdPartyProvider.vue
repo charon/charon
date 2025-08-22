@@ -192,7 +192,7 @@ onBeforeUnmount(() => {
         :time="seconds === 1 ? t('partials.AuthThirdPartyProvider.oneSecond') : t('partials.AuthThirdPartyProvider.seconds', { count: seconds })"
         :paused-text="paused ? t('partials.AuthThirdPartyProvider.paused') : ''"
       >
-        <template #strong
+        <template #strongProvider
           ><strong>{{ flow.getThirdPartyProvider()!.name }}</strong></template
         >
       </i18n-t>

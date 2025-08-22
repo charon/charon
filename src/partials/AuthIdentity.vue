@@ -339,14 +339,14 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
     <div class="flex flex-col">
       <div v-if="flow.getCompleted().includes('signin')" class="mb-4">
         <i18n-t keypath="partials.AuthIdentity.signinSuccess" scope="global">
-          <template #strong
+          <template #strongCongratulations
             ><strong>{{ t("partials.AuthIdentity.congratulations") }}</strong></template
           >
         </i18n-t>
       </div>
       <div v-else-if="flow.getCompleted().includes('signup')" class="mb-4">
         <i18n-t keypath="partials.AuthIdentity.signupSuccess" scope="global">
-          <template #strong
+          <template #strongCongratulations
             ><strong>{{ t("partials.AuthIdentity.congratulations") }}</strong></template
           >
         </i18n-t>

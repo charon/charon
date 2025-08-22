@@ -102,7 +102,7 @@ const withOrganizationApplicationDocument = ref<ComponentExposed<typeof WithOrga
         <template v-if="flow.getCompleted().includes('failed')">
           <div class="text-error-600 mb-4">
             <i18n-t keypath="partials.AuthManualRedirect.failed" scope="global">
-              <template #strong
+              <template #strongSorry
                 ><strong>{{ t("partials.AuthManualRedirect.sorry") }}</strong></template
               >
             </i18n-t>
