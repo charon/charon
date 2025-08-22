@@ -269,24 +269,24 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
     </div>
     <div v-if="codeError === 'invalidCode'" class="mt-4 text-error-600">{{ t("common.errors.invalidCode") }}</div>
     <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
-    <div v-else-if="codeFromHash" class="mt-4">{{ t("partials.AuthCode.instructions.confirmCode") }}</div>
-    <div v-else class="mt-4">{{ t("partials.AuthCode.instructions.waitForCode") }}</div>
+    <div v-else-if="codeFromHash" class="mt-4">{{ t("partials.AuthCode.confirmCode") }}</div>
+    <div v-else class="mt-4">{{ t("partials.AuthCode.waitForCode") }}</div>
     <div v-if="codeFromHash" class="mt-4">
       <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationApp">
         <template #default="{ doc }">
-          <i18n-t keypath="partials.AuthCode.instructions.securityWarning" scope="global">
+          <i18n-t keypath="partials.AuthCode.securityWarning" scope="global">
             <template #appName>{{ doc.applicationTemplate.name }}</template>
             <template #strongDont
-              ><strong>{{ t("partials.AuthCode.instructions.strongDont") }}</strong></template
+              ><strong>{{ t("partials.AuthCode.strongDont") }}</strong></template
             >
           </i18n-t>
         </template>
       </WithOrganizationApplicationDocument>
     </div>
     <div v-else class="mt-4">
-      <i18n-t keypath="partials.AuthCode.instructions.troubleEmail" scope="global">
+      <i18n-t keypath="partials.AuthCode.troubleEmail" scope="global">
         <template #link>
-          <a href="" class="link" @click.prevent="onRedo">{{ t("partials.AuthCode.instructions.differentMethod") }}</a>
+          <a href="" class="link" @click.prevent="onRedo">{{ t("partials.AuthCode.differentMethod") }}</a>
         </template>
       </i18n-t>
     </div>

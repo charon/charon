@@ -387,10 +387,10 @@ async function onCode() {
     </template>
     <div v-else-if="unexpectedPasswordError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div v-else-if="isEmail(flow.getEmailOrUsername())" class="mt-4">
-      {{ t("partials.AuthPassword.instructions.emailAccount") }}
+      {{ t("partials.AuthPassword.emailAccount") }}
     </div>
     <div v-else class="mt-4">
-      {{ t("partials.AuthPassword.instructions.usernameAccount") }}
+      {{ t("partials.AuthPassword.usernameAccount") }}
     </div>
     <div v-if="codeError === 'noAccount'" class="mt-4" :class="codeErrorOnce ? 'text-error-600' : ''">
       {{ t("common.errors.noAccount") }}
@@ -399,7 +399,7 @@ async function onCode() {
       {{ t("common.errors.noEmails") }}
     </div>
     <div v-else-if="unexpectedCodeError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
-    <div v-else class="mt-4">{{ t("partials.AuthPassword.instructions.skipPassword") }}</div>
+    <div v-else class="mt-4">{{ t("partials.AuthPassword.skipPassword") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="4" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
       <!--

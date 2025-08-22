@@ -4,7 +4,6 @@
       "next": "Naprej",
       "back": "Nazaj",
       "retry": "Poskusi znova",
-      "continue": "Nadaljuj",
       "create": "Ustvari",
       "update": "Posodobi",
       "select": "Izberi",
@@ -82,7 +81,6 @@
       "resume": "Nadaljuj",
       "pause": "Pavziraj",
       "redirect": "Preusmeri",
-      "congratulationsFromIdentity": "Čestitamo.",
       "declineSignInOrSignUp": "zavrniti prijavo ali registracijo"
     },
     "AuthCode": {

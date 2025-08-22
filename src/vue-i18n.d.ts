@@ -7,7 +7,6 @@ declare module "vue-i18n" {
         next: string
         back: string
         retry: string
-        continue: string
         create: string
         update: string
         select: string
@@ -85,7 +84,6 @@ declare module "vue-i18n" {
         resume: string
         pause: string
         redirect: string
-        congratulationsFromIdentity: string
         declineSignInOrSignUp: string
       }
       AuthCode: {

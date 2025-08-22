@@ -4,7 +4,6 @@
       "next": "Next",
       "back": "Back",
       "retry": "Retry",
-      "continue": "Continue",
       "create": "Create",
       "update": "Update",
       "select": "Select",
@@ -82,7 +81,6 @@
       "resume": "Resume",
       "pause": "Pause",
       "redirect": "Redirect",
-      "congratulationsFromIdentity": "Congratulations.",
       "declineSignInOrSignUp": "decline sign-in or sign-up"
     },
     "AuthCode": {
