@@ -166,7 +166,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
         <div v-if="flow.getCompleted().includes('identity')" class="mb-4">
           <i18n-t keypath="partials.AuthAutoRedirect.congratulations" scope="global" :app-name="doc.applicationTemplate.name">
             <template #strongCongratulations
-              ><strong>{{ t("partials.AuthAutoRedirect.congratulationsWord") }}</strong></template
+              ><strong>{{ t("common.messages.congratulations") }}</strong></template
             >
           </i18n-t>
         </div>

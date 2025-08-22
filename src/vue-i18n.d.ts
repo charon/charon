@@ -82,6 +82,10 @@ declare module "vue-i18n" {
         organizations: string
         applicationTemplates: string
       }
+      messages: {
+        congratulations: string
+        sorry: string
+      }
     }
     partials: {
       AuthAutoRedirect: {
@@ -90,7 +94,6 @@ declare module "vue-i18n" {
         redirectMessage: string
         seconds: string
         paused: string
-        congratulationsWord: string
         declineSignInOrSignUp: string
       }
       AuthCode: {
@@ -112,7 +115,6 @@ declare module "vue-i18n" {
         newIdentityButton: string
         signinSuccess: string
         signupSuccess: string
-        congratulations: string
         previouslyUsedDisabled: string
         otherAvailableIdentities: string
         noIdentitiesCreateFirst: string
@@ -136,7 +138,6 @@ declare module "vue-i18n" {
         completed: string
         homepage: string
         return: string
-        sorry: string
       }
       AuthPasskeySignin: {
         signingIn: string

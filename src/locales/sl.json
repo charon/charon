@@ -70,6 +70,10 @@
       "organization": "Organizacija",
       "organizations": "Organizacije",
       "applicationTemplates": "Predloge aplikacij"
+    },
+    "messages": {
+      "congratulations": "Čestitamo.",
+      "sorry": "Oprostite."
     }
   },
   "partials": {
@@ -79,7 +83,6 @@
       "redirectMessage": "Sedaj boste preusmerjeni v {appName} čez {time}{pausedText}.",
       "seconds": "1 sekundo | {count} sekundi | {count} sekunde | {count} sekund",
       "paused": " (pavzirano)",
-      "congratulationsWord": "Čestitamo.",
       "declineSignInOrSignUp": "zavrniti prijavo ali registracijo"
     },
     "AuthCode": {
@@ -101,7 +104,6 @@
       "newIdentityButton": "Ustvari novo identiteto",
       "signinSuccess": "{strongCongratulations} Uspešno ste se prijavili v Charon.",
       "signupSuccess": "{strongCongratulations} Uspešno ste se registrirali v Charon.",
-      "congratulations": "Čestitamo.",
       "previouslyUsedDisabled": "Prej uporabljene identitete s to organizacijo so onemogočene.",
       "otherAvailableIdentities": "Druge razpoložljive identitete",
       "noIdentitiesCreateFirst": "Ni identitet. Ustvarite prvo.",
@@ -124,8 +126,7 @@
       "tryAgain": "Lahko se vrnete v {appName} in poskusite znova.",
       "completed": "Že ste bili preusmerjeni v {appName} in dokončali postopek. Sedaj lahko greste na domačo stran.",
       "homepage": "Domača stran",
-      "return": "Vrni se",
-      "sorry": "Oprostite."
+      "return": "Vrni se"
     },
     "AuthPasskeySignin": {
       "signingIn": "Prijavljamo vas z uporabo {strongPasskey}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave.",

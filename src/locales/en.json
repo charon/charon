@@ -70,6 +70,10 @@
       "organization": "Organization",
       "organizations": "Organizations",
       "applicationTemplates": "Application templates"
+    },
+    "messages": {
+      "congratulations": "Congratulations.",
+      "sorry": "Sorry."
     }
   },
   "partials": {
@@ -79,7 +83,6 @@
       "redirectMessage": "You will be now redirected to {appName} in {time}{pausedText}.",
       "seconds": "1 second | {count} seconds",
       "paused": " (paused)",
-      "congratulationsWord": "Congratulations.",
       "declineSignInOrSignUp": "decline sign-in or sign-up"
     },
     "AuthCode": {
@@ -101,7 +104,6 @@
       "newIdentityButton": "Create new identity",
       "signinSuccess": "{strongCongratulations} You successfully signed in into Charon.",
       "signupSuccess": "{strongCongratulations} You successfully signed up into Charon.",
-      "congratulations": "Congratulations.",
       "previouslyUsedDisabled": "Previously used identities with this organization are disabled.",
       "otherAvailableIdentities": "Other available identities",
       "noIdentitiesCreateFirst": "There are no identities. Create the first one.",
@@ -124,8 +126,7 @@
       "tryAgain": "You can return to {appName} and try again.",
       "completed": "You have already been redirected to {appName} and completed the flow. You can now instead go to its homepage.",
       "homepage": "Homepage",
-      "return": "Return",
-      "sorry": "Sorry."
+      "return": "Return"
     },
     "AuthPasskeySignin": {
       "signingIn": "Signing you in using {strongPasskey}. Please follow instructions by your browser and/or device.",
