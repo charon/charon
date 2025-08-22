@@ -162,7 +162,7 @@
       "additionalInfo": "You might have to sign-in into {provider} first. You might be redirected back by {provider} immediately, without showing you anything."
     },
     "Footer": {
-      "poweredBy": "Powered by {name}"
+      "poweredBy": "Powered by {linkName}"
     },
     "IdentityOrganization": {
       "id": "ID:",

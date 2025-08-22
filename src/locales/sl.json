@@ -162,7 +162,7 @@
       "additionalInfo": "Morda se boste morali najprej prijaviti v {provider}. Morda vas bo {provider} takoj preusmeril nazaj, ne da bi vam pokazal karkoli."
     },
     "Footer": {
-      "poweredBy": "Zagotavlja {name}"
+      "poweredBy": "Zagotavlja {linkName}"
     },
     "IdentityOrganization": {
       "id": "ID:",
