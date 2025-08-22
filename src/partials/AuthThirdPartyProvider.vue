@@ -208,9 +208,7 @@ onBeforeUnmount(() => {
         <Button type="button" tabindex="2" :progress="progress" @click.prevent="onPauseResume">{{
           paused ? t("common.buttons.resume") : t("common.buttons.pause")
         }}</Button>
-        <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">{{
-          t("common.buttons.redirect")
-        }}</Button>
+        <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">{{ t("common.buttons.redirect") }}</Button>
       </div>
     </div>
   </div>
