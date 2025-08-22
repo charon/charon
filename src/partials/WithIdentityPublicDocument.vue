@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import type { IdentityPublic as IdentityPublicType, IdentityRef } from "@/types"
 
+import { useI18n } from "vue-i18n"
 import WithDocument from "@/components/WithDocument.vue"
 import IdentityPublic from "@/partials/IdentityPublic.vue"
+
+const { t } = useI18n({ useScope: "global" })
 
 defineProps<{
   item: IdentityRef
@@ -21,7 +24,7 @@ const WithIdentityPublicDocument = WithDocument<IdentityPublicType>
     <template #error="{ url }">
       <div class="flex flex-row gap-4" :data-url="url">
         <div class="flex-grow flex">
-          <span class="text-error-600 italic">loading data failed</span>
+          <span class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
         </div>
         <slot :identity="undefined" :is-current="undefined" :can-update="undefined"></slot>
       </div>

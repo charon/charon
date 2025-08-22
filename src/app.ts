@@ -4,8 +4,9 @@ import App from "@/App.vue"
 import { replaceLocationHash } from "@/utils"
 import { progressKey } from "@/progress"
 import { routes } from "@/../routes.json"
+import i18n from "@/i18n"
 import "@/app.css"
-import { processOIDCRedirect } from "./auth"
+import { processOIDCRedirect } from "@/auth"
 
 // Facebook Login returns adds a hash on its callback. Here we remove it before
 // we create Vue router so that Vue router gets clean route (it might matter if
@@ -46,4 +47,4 @@ const apiRouter = createRouter({
 
 router.apiResolve = apiRouter.resolve.bind(apiRouter)
 
-createApp(App).use(router).provide(progressKey, ref(0)).mount("main")
+createApp(App).use(router).use(i18n).provide(progressKey, ref(0)).mount("main")

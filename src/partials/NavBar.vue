@@ -3,6 +3,7 @@ import type { AuthSignoutRequest, AuthSignoutResponse } from "@/types"
 
 import { onBeforeUnmount } from "vue"
 import { useRouter } from "vue-router"
+import { useI18n } from "vue-i18n"
 import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
 import { GlobeAltIcon } from "@heroicons/vue/24/outline"
 import Button from "@/components/Button.vue"
@@ -11,6 +12,8 @@ import { postJSON } from "@/api"
 import { injectProgress } from "@/progress"
 import { currentAbsoluteURL, redirectServerSide } from "@/utils"
 import { accessToken, signIn, isSignedIn } from "@/auth"
+
+const { t } = useI18n({ useScope: "global" })
 
 const { ref: navbar, attrs: navbarAttrs } = useNavbar()
 
@@ -84,7 +87,7 @@ async function onSignIn() {
       <GlobeAltIcon class="m-1 sm:m-4 sm:h-10 sm:w-10 h-7 w-7 rounded group-focus:ring-2 group-focus:ring-primary-500" />
     </router-link>
     <slot><div class="flex-grow"></div></slot>
-    <Button v-if="isSignedIn()" primary type="button" :progress="progress" @click.prevent="onSignOut">Sign-out</Button>
-    <Button v-else primary type="button" :progress="progress" @click.prevent="onSignIn">Sign-in or sign-up</Button>
+    <Button v-if="isSignedIn()" primary type="button" :progress="progress" @click.prevent="onSignOut">{{ t("common.buttons.signOut") }}</Button>
+    <Button v-else primary type="button" :progress="progress" @click.prevent="onSignIn">{{ t("common.buttons.signIn") }}</Button>
   </div>
 </template>

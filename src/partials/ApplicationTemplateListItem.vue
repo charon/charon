@@ -2,7 +2,10 @@
 import type { DeepReadonly } from "vue"
 import type { ApplicationTemplate, ApplicationTemplatePublic, ApplicationTemplateRef } from "@/types"
 
+import { useI18n } from "vue-i18n"
 import WithDocument from "@/components/WithDocument.vue"
+
+const { t } = useI18n({ useScope: "global" })
 
 defineProps<{
   item: ApplicationTemplateRef
@@ -30,7 +33,9 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
         <component :is="h3 ? 'h3' : 'h2'" class="flex flex-row items-center gap-1" :class="h3 ? 'text-lg' : 'text-xl'">
           <router-link :to="{ name: 'ApplicationTemplateGet', params: { id: item.id } }" class="link">{{ publicDoc ? publicDoc.name : doc.name }}</router-link>
           <span v-for="label in labels || []" :key="label" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{ label }}</span>
-          <span v-if="metadata.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">admin</span>
+          <span v-if="metadata.can_update" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{
+            t("common.labels.admin")
+          }}</span>
         </component>
         <slot :doc="doc" :metadata="metadata"></slot>
       </div>
@@ -41,7 +46,7 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
     <template #error="{ url }">
       <div class="flex flex-row gap-4" :data-url="url">
         <div class="flex-grow flex">
-          <span class="text-error-600 italic">loading data failed</span>
+          <span class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
         </div>
         <slot :doc="undefined" :metadata="undefined"></slot>
       </div>

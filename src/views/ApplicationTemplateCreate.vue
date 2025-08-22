@@ -2,6 +2,7 @@
 import type { ApplicationTemplateCreate, ApplicationTemplateRef } from "@/types"
 
 import { onMounted, onBeforeUnmount, ref, watch } from "vue"
+import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 import InputText from "@/components/InputText.vue"
 import Button from "@/components/Button.vue"
@@ -10,6 +11,7 @@ import Footer from "@/partials/Footer.vue"
 import { postJSON } from "@/api"
 import { injectProgress } from "@/progress"
 
+const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
 
 const progress = injectProgress()
@@ -77,18 +79,18 @@ async function onSubmit() {
     <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
       <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
         <div class="flex flex-row items-center">
-          <h1 class="text-2xl font-bold">Create application template</h1>
+          <h1 class="text-2xl font-bold">{{ t("views.ApplicationTemplateCreate.createApplicationTemplate") }}</h1>
         </div>
         <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
-          <label for="name" class="mb-1">Application template name</label>
+          <label for="name" class="mb-1">{{ t("views.ApplicationTemplateCreate.applicationTemplateName") }}</label>
           <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :progress="progress" required />
-          <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
-          <div v-else class="mt-4">Choose a name. You will be able to configure the application template after it is created.</div>
+          <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
+          <div v-else class="mt-4">{{ t("views.ApplicationTemplateCreate.chooseApplicationTemplateName") }}</div>
           <div class="mt-4 flex flex-row justify-end">
             <!--
               Button is on purpose not disabled on unexpectedError so that user can retry.
             -->
-            <Button type="submit" primary :disabled="!name" :progress="progress">Create</Button>
+            <Button type="submit" primary :disabled="!name" :progress="progress">{{ t("common.buttons.create") }}</Button>
           </div>
         </form>
       </div>

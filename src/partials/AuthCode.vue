@@ -3,6 +3,7 @@ import type { AuthFlowCodeCompleteRequest, AuthFlowCodeStartRequest, AuthFlowRes
 
 import { ref, watch, onBeforeUnmount, onMounted, getCurrentInstance } from "vue"
 import { useRoute, useRouter } from "vue-router"
+import { useI18n } from "vue-i18n"
 import WithDocument from "@/components/WithDocument.vue"
 import Button from "@/components/Button.vue"
 import InputCode from "@/components/InputCode.vue"
@@ -10,6 +11,8 @@ import { postJSON } from "@/api"
 import { isEmail } from "@/utils"
 import { injectProgress } from "@/progress"
 import { processResponse } from "@/flow"
+
+const { t } = useI18n({ useScope: "global" })
 
 const props = defineProps<{
   flow: Flow
@@ -206,23 +209,34 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div class="flex flex-col">
-      <label v-if="codeFromHash && isEmail(flow.getEmailOrUsername())" for="code" class="mb-1"
-        >We sent the following 6-digit code to <strong>{{ flow.getEmailOrUsername() }}</strong> e-mail address:</label
-      >
+      <label v-if="codeFromHash && isEmail(flow.getEmailOrUsername())" for="code" class="mb-1">
+        <i18n-t keypath="partials.AuthCode.codeFromHashEmail" scope="global">
+          <template #strongEmail
+            ><strong>{{ flow.getEmailOrUsername() }}</strong></template
+          >
+        </i18n-t>
+      </label>
       <label v-else-if="codeFromHash" for="code" class="mb-1">
-        We sent the following 6-digit code to e-mail address(es) associated with the Charon username
-        <strong>{{ flow.getEmailOrUsername() }}</strong
-        >:</label
-      >
-      <label v-else-if="!codeFromHash && isEmail(flow.getEmailOrUsername())" for="code" class="mb-1"
-        >We {{ sendCounter > 1 ? `sent (${sendCounter}x)` : "sent" }} a 6-digit code to <strong>{{ flow.getEmailOrUsername() }}</strong> e-mail address. Please enter it
-        to continue:</label
-      >
+        <i18n-t keypath="partials.AuthCode.codeFromHashUsername" scope="global">
+          <template #strongUsername
+            ><strong>{{ flow.getEmailOrUsername() }}</strong></template
+          >
+        </i18n-t>
+      </label>
+      <label v-else-if="!codeFromHash && isEmail(flow.getEmailOrUsername())" for="code" class="mb-1">
+        <i18n-t keypath="partials.AuthCode.codeSentEmail" scope="global" :sent-count="t('partials.AuthCode.sentCount', sendCounter)">
+          <template #strongEmail
+            ><strong>{{ flow.getEmailOrUsername() }}</strong></template
+          >
+        </i18n-t>
+      </label>
       <label v-else-if="!codeFromHash" for="code" class="mb-1">
-        We {{ sendCounter > 1 ? `sent (${sendCounter}x)` : "sent" }} a 6-digit code to e-mail address(es) associated with the Charon username
-        <strong>{{ flow.getEmailOrUsername() }}</strong
-        >. Please enter it to continue:</label
-      >
+        <i18n-t keypath="partials.AuthCode.codeSentUsername" scope="global" :sent-count="t('partials.AuthCode.sentCount', sendCounter)">
+          <template #strongUsername
+            ><strong>{{ flow.getEmailOrUsername() }}</strong></template
+          >
+        </i18n-t>
+      </label>
       <!--
         We set novalidate because we do not UA to show hints.
         We show them ourselves when we want them.
@@ -246,27 +260,36 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
           is not enabled.
           Button is on purpose not disabled on unexpectedError so that user can retry.
         -->
-        <Button id="submit-code" primary type="submit" tabindex="2" :disabled="!code.replaceAll(/\s/g, '') || !!codeError" :progress="progress">Next</Button>
+        <Button id="submit-code" primary type="submit" tabindex="2" :disabled="!code.replaceAll(/\s/g, '') || !!codeError" :progress="progress">{{
+          t("common.buttons.next")
+        }}</Button>
       </form>
     </div>
-    <div v-if="codeError === 'invalidCode'" class="mt-4 text-error-600">Code is invalid. Please try again.</div>
-    <div v-else-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
-    <div v-else-if="codeFromHash" class="mt-4">Please confirm the code to continue.</div>
-    <div v-else class="mt-4">Please allow few minutes for the code to arrive. Check spam or junk folder.</div>
+    <div v-if="codeError === 'invalidCode'" class="mt-4 text-error-600">{{ t("common.errors.invalidCode") }}</div>
+    <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
+    <div v-else-if="codeFromHash" class="mt-4">{{ t("partials.AuthCode.confirmCode") }}</div>
+    <div v-else class="mt-4">{{ t("partials.AuthCode.waitForCode") }}</div>
     <div v-if="codeFromHash" class="mt-4">
       <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationApp">
         <template #default="{ doc }">
-          If you were not signing in or signing up into {{ doc.applicationTemplate.name }}, please disregard the e-mail and <strong>do not</strong> confirm the code.
+          <i18n-t keypath="partials.AuthCode.securityWarning" scope="global" :app-name="doc.applicationTemplate.name">
+            <template #strongDont
+              ><strong>{{ t("partials.AuthCode.dont") }}</strong></template
+            >
+          </i18n-t>
         </template>
       </WithOrganizationApplicationDocument>
     </div>
     <div v-else class="mt-4">
-      If you have trouble accessing your e-mail, try a
-      <a href="" class="link" @click.prevent="onRedo">different sign-in or sign-up method</a>.
+      <i18n-t keypath="partials.AuthCode.troubleEmail" scope="global">
+        <template #linkDifferentMethod>
+          <a href="" class="link" @click.prevent="onRedo">{{ t("partials.AuthCode.differentMethod") }}</a>
+        </template>
+      </i18n-t>
     </div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" tabindex="4" @click.prevent="onBack">Back</Button>
-      <Button type="button" tabindex="3" :progress="progress" @click.prevent="onResend">Resend code</Button>
+      <Button type="button" tabindex="4" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
+      <Button type="button" tabindex="3" :progress="progress" @click.prevent="onResend">{{ t("partials.AuthCode.resendButton") }}</Button>
     </div>
   </div>
 </template>

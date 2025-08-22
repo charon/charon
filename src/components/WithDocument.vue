@@ -2,10 +2,13 @@
 import type { Metadata, QueryValues } from "@/types"
 
 import { ref, watch, readonly, onMounted, onUpdated, onUnmounted, getCurrentInstance, Ref, DeepReadonly } from "vue"
+import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 import { getURL } from "@/api"
 import { injectMainProgress } from "@/progress"
 import { encodeQuery } from "@/utils"
+
+const { t } = useI18n({ useScope: "global" })
 
 const props = withDefaults(
   defineProps<{
@@ -117,7 +120,7 @@ defineSlots<{
 <template>
   <slot v-if="doc" :doc="doc" :metadata="metadata" :url="url!"></slot>
   <slot v-else-if="error" name="error" :error="error" :url="url">
-    <i class="text-error-600" :data-url="url">loading data failed</i>
+    <i class="text-error-600" :data-url="url">{{ t("common.data.loadingDataFailed") }}</i>
   </slot>
   <slot v-else name="loading" :url="url"></slot>
 </template>

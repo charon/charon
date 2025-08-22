@@ -7,7 +7,13 @@
       <li><router-link :to="{ name: 'Home' }" class="link">Terms</router-link></li> -->
     </ul>
     <ul class="flex gap-x-2 sm:gap-x-4">
-      <li class="text-neutral-500">Powered by <a href="https://gitlab.com/charon/charon" class="link">Charon</a></li>
+      <li class="text-neutral-500">
+        <i18n-t keypath="partials.Footer.poweredBy" scope="global">
+          <template #linkName>
+            <a href="https://gitlab.com/charon/charon" class="link">Charon</a>
+          </template>
+        </i18n-t>
+      </li>
     </ul>
   </div>
 </template>

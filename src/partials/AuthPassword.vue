@@ -3,6 +3,7 @@ import type { AuthFlowCodeStartRequest, AuthFlowPasswordCompleteRequest, AuthFlo
 
 import { ref, watch, onBeforeUnmount, onMounted, getCurrentInstance } from "vue"
 import { useRouter } from "vue-router"
+import { useI18n } from "vue-i18n"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import InputTextButton from "@/components/InputTextButton.vue"
@@ -10,6 +11,8 @@ import { postJSON, startPassword } from "@/api"
 import { toBase64, isEmail } from "@/utils"
 import { removeSteps, processResponse } from "@/flow"
 import { injectProgress } from "@/progress"
+
+const { t } = useI18n({ useScope: "global" })
 
 const props = defineProps<{
   flow: Flow
@@ -312,13 +315,15 @@ async function onCode() {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div class="flex flex-col">
-      <label for="email-or-username" class="mb-1">{{ isEmail(flow.getEmailOrUsername()) ? "Your e-mail address" : "Charon username" }}</label>
+      <label for="email-or-username" class="mb-1">{{
+        isEmail(flow.getEmailOrUsername()) ? t("partials.AuthPassword.emailAddressLabel") : t("partials.AuthPassword.usernameLabel")
+      }}</label>
       <InputTextButton id="email-or-username" class="flex-grow" tabindex="5" @click.prevent="onBack">
         {{ flow.getEmailOrUsername() }}
       </InputTextButton>
     </div>
     <div class="flex flex-col mt-4">
-      <label for="current-password" class="mb-1">Password or passphrase</label>
+      <label for="current-password" class="mb-1">{{ t("partials.AuthPassword.passwordLabel") }}</label>
       <!--
         We set novalidate because we do not UA to show hints.
         We show them ourselves when we want them.
@@ -363,42 +368,43 @@ async function onCode() {
           client side so we might be counting characters differently here, leading to confusion.
           Button is on purpose not disabled on unexpectedPasswordError so that user can retry.
         -->
-        <Button primary type="submit" tabindex="2" :disabled="!password || keyProgress > 0 || !!passwordError" :progress="progress">Next</Button>
+        <Button primary type="submit" tabindex="2" :disabled="!password || keyProgress > 0 || !!passwordError" :progress="progress">{{
+          t("common.buttons.next")
+        }}</Button>
       </form>
     </div>
     <template v-if="passwordError">
-      <div v-if="passwordError === 'wrongPassword'" class="mt-4 text-error-600">Wrong password or passphrase for the account with the provided username.</div>
-      <div v-else-if="passwordError === 'invalidPassword'" class="mt-4 text-error-600">Invalid password or passphrase.</div>
-      <div v-else-if="passwordError === 'shortPassword'" class="mt-4 text-error-600">Password or passphrase should be at least 8 characters.</div>
+      <div v-if="passwordError === 'wrongPassword'" class="mt-4 text-error-600">{{ t("common.errors.wrongPassword") }}</div>
+      <div v-else-if="passwordError === 'invalidPassword'" class="mt-4 text-error-600">{{ t("common.errors.invalidPassword") }}</div>
+      <div v-else-if="passwordError === 'shortPassword'" class="mt-4 text-error-600">{{ t("common.errors.shortPassword") }}</div>
       <div v-if="passwordError === 'wrongPassword'" class="mt-4">
-        If you have trouble remembering your password or passphrase, try a
-        <a href="" class="link" @click.prevent="onRedo">different sign-in method</a>.
+        <i18n-t keypath="partials.AuthPassword.troublePassword" scope="global">
+          <template #linkDifferentSigninMethod>
+            <a href="" class="link" @click.prevent="onRedo">{{ t("partials.AuthPassword.differentSigninMethod") }}</a>
+          </template>
+        </i18n-t>
       </div>
     </template>
-    <div v-else-if="unexpectedPasswordError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
-    <div v-else-if="isEmail(flow.getEmailOrUsername())" class="mt-4">
-      If you do not yet have an account, it will be created for you. If you enter wrong password or passphrase, recovery will be done automatically for you by sending you
-      a code to your e-mail address.
-    </div>
+    <div v-else-if="unexpectedPasswordError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div v-else class="mt-4">
-      If you do not yet have an account, it will be created for you. Username will not be visible to others, but it is possible to determine if an account with a username
-      exists or not. If you enter wrong password or passphrase, recovery will be done automatically for you by sending you a code to e-mail address(es) associated with
-      the username, if any.
+      {{ isEmail(flow.getEmailOrUsername()) ? t("partials.AuthPassword.emailAccount") : t("partials.AuthPassword.usernameAccount") }}
     </div>
     <div v-if="codeError === 'noAccount'" class="mt-4" :class="codeErrorOnce ? 'text-error-600' : ''">
-      You cannot receive the code because there is no account with the provided username.
+      {{ t("common.errors.noAccount") }}
     </div>
     <div v-else-if="codeError === 'noEmails'" class="mt-4" :class="codeErrorOnce ? 'text-error-600' : ''">
-      You cannot receive the code because there is no e-mail address associated with the provided username.
+      {{ t("common.errors.noEmails") }}
     </div>
-    <div v-else-if="unexpectedCodeError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
-    <div v-else class="mt-4">You can also skip entering password or passphrase and directly request the code.</div>
+    <div v-else-if="unexpectedCodeError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
+    <div v-else class="mt-4">{{ t("partials.AuthPassword.skipPassword") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" tabindex="4" @click.prevent="onBack">Back</Button>
+      <Button type="button" tabindex="4" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
       <!--
         Button is on purpose not disabled on unexpectedCodeError so that user can retry.
       -->
-      <Button type="button" primary tabindex="3" :disabled="!!codeError" :progress="progress" @click.prevent="onCode">Send code</Button>
+      <Button type="button" primary tabindex="3" :disabled="!!codeError" :progress="progress" @click.prevent="onCode">{{
+        t("partials.AuthPassword.sendCodeButton")
+      }}</Button>
     </div>
   </div>
 </template>

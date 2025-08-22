@@ -3,6 +3,7 @@ import type { Flow, OrganizationApplicationPublic } from "@/types"
 import type { ComponentExposed } from "vue-component-type-helpers"
 
 import { ref, onBeforeUnmount, onMounted, getCurrentInstance } from "vue"
+import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 import WithDocument from "@/components/WithDocument.vue"
 import Button from "@/components/Button.vue"
@@ -15,6 +16,8 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+
+const { t } = useI18n({ useScope: "global" })
 
 const progress = injectProgress()
 
@@ -97,16 +100,22 @@ const withOrganizationApplicationDocument = ref<ComponentExposed<typeof WithOrga
     >
       <template #default="{ doc }">
         <template v-if="flow.getCompleted().includes('failed')">
-          <div class="text-error-600 mb-4"><strong>Sorry.</strong> Signing in or signing up failed.</div>
-          <div class="mb-4">You can return to {{ doc.applicationTemplate.name }} and try again.</div>
+          <div class="text-error-600 mb-4">
+            <i18n-t keypath="partials.AuthManualRedirect.failed" scope="global">
+              <template #strongSorry
+                ><strong>{{ t("common.messages.sorry") }}</strong></template
+              >
+            </i18n-t>
+          </div>
+          <div class="mb-4">{{ t("partials.AuthManualRedirect.tryAgain", { appName: doc.applicationTemplate.name }) }}</div>
         </template>
         <div v-else-if="flow.getCompleted().includes('finished')" class="mb-4">
-          You have already been redirected to {{ doc.applicationTemplate.name }} and completed the flow. You can now instead go to its homepage.
+          {{ t("partials.AuthManualRedirect.completed", { appName: doc.applicationTemplate.name }) }}
         </div>
-        <div v-if="unexpectedError" class="mb-4 text-error-600">Unexpected error. Please try again.</div>
+        <div v-if="unexpectedError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
         <div class="flex flex-row justify-end gap-4">
           <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">{{
-            flow.getCompleted().includes("finished") ? "Homepage" : "Return"
+            flow.getCompleted().includes("finished") ? t("partials.AuthManualRedirect.homepage") : t("partials.AuthManualRedirect.return")
           }}</Button>
         </div>
       </template>

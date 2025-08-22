@@ -15,6 +15,7 @@ import type {
 } from "@/types"
 
 import { computed, nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
+import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 import { Identifier } from "@tozd/identifier"
 import InputText from "@/components/InputText.vue"
@@ -33,6 +34,8 @@ import { clone, equals, getIdentityOrganization, getOrganization } from "@/utils
 import { injectProgress } from "@/progress"
 import siteContext from "@/context"
 import { isSignedIn } from "@/auth"
+
+const { t } = useI18n({ useScope: "global" })
 
 const props = defineProps<{
   id: string
@@ -648,42 +651,45 @@ async function onIdentitiesSubmit() {
     <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
       <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
         <div class="flex flex-row items-center">
-          <h1 class="text-2xl font-bold">Organization</h1>
+          <h1 class="text-2xl font-bold">{{ t("common.entities.organization") }}</h1>
         </div>
-        <div v-if="dataLoading">Loading...</div>
-        <div v-else-if="dataLoadingError" class="text-error-600">Unexpected error. Please try again.</div>
+        <div v-if="dataLoading">{{ t("common.data.dataLoading") }}</div>
+        <div v-else-if="dataLoadingError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
         <template v-else>
           <form class="flex flex-col" novalidate @submit.prevent="onBasicSubmit">
-            <label for="name" class="mb-1">Organization name</label>
+            <label for="name" class="mb-1">{{ t("views.OrganizationGet.organizationName") }}</label>
             <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" required />
-            <label for="description" class="mb-1 mt-4">Description<span v-if="metadata.can_update" class="text-neutral-500 italic text-sm"> (optional)</span></label>
+            <label for="description" class="mb-1 mt-4"
+              >{{ t("common.fields.description") }}
+              <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
+            >
             <TextArea id="description" v-model="description" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
-            <div v-if="basicUnexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
-            <div v-else-if="basicUpdated" class="mt-4 text-success-600">Organization updated successfully.</div>
+            <div v-if="basicUnexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
+            <div v-else-if="basicUpdated" class="mt-4 text-success-600">{{ t("views.OrganizationGet.organizationUpdated") }}</div>
             <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
               <!--
                 Button is on purpose not disabled on basicUnexpectedError so that user can retry.
               -->
-              <Button type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">Update</Button>
+              <Button type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
             </div>
           </form>
           <template v-if="metadata.can_update">
-            <h2 class="text-xl font-bold">Users</h2>
+            <h2 class="text-xl font-bold">{{ t("common.entities.users") }}</h2>
             <div>
-              <ButtonLink :to="{ name: 'OrganizationUsers', params: { id } }" primary>Manage</ButtonLink>
+              <ButtonLink :to="{ name: 'OrganizationUsers', params: { id } }" primary>{{ t("common.buttons.manage") }}</ButtonLink>
             </div>
           </template>
           <template v-if="(metadata.can_update && (applications.length || canApplicationsSubmit())) || applicationsUnexpectedError || applicationsUpdated">
-            <h2 class="text-xl font-bold">Added applications</h2>
-            <div v-if="applicationsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
-            <div v-else-if="applicationsUpdated" class="text-success-600">Added applications updated successfully.</div>
+            <h2 class="text-xl font-bold">{{ t("views.OrganizationGet.addedApplications") }}</h2>
+            <div v-if="applicationsUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
+            <div v-else-if="applicationsUpdated" class="text-success-600">{{ t("views.OrganizationGet.addedApplicationsUpdated") }}</div>
             <form v-if="metadata.can_update && (applications.length || canApplicationsSubmit())" class="flex flex-col" novalidate @submit.prevent="onApplicationsSubmit">
               <ul>
                 <li v-for="(application, i) in applications" :key="application.id || i" class="flex flex-col mb-4">
                   <ApplicationTemplateListItem :item="{ id: application.applicationTemplate.id }" :public-doc="application.applicationTemplate" h3 />
                   <div class="ml-4">
                     <fieldset v-if="application.values.length" class="mt-4">
-                      <legend class="font-bold">Configuration</legend>
+                      <legend class="font-bold">{{ t("views.OrganizationGet.configuration") }}</legend>
                       <ol>
                         <li v-for="(value, j) in application.values" :key="value.name" class="flex flex-col mt-4">
                           <code>{{ value.name }}</code>
@@ -698,36 +704,40 @@ async function onIdentitiesSubmit() {
                         </li>
                       </ol>
                     </fieldset>
-                    <h4 v-if="application.clientsPublic?.length" class="font-bold mt-4">Public clients</h4>
+                    <h4 v-if="application.clientsPublic?.length" class="font-bold mt-4">{{ t("views.OrganizationGet.publicClients") }}</h4>
                     <ol v-if="application.clientsPublic?.length">
                       <li v-for="(client, j) in application.clientsPublic" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
                         <div>{{ j + 1 }}.</div>
                         <div class="flex flex-col gap-4">
                           <div v-if="getPublicClientDescription(application, client.client.id)">{{ getPublicClientDescription(application, client.client.id) }}</div>
                           <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
-                            <div>Client ID:</div>
+                            <div>{{ t("views.OrganizationGet.clientId") }}</div>
                             <div v-if="client.id">
                               <code>{{ client.id }}</code>
                             </div>
-                            <div v-else><span class="italic">confirm update to allocate</span></div>
+                            <div v-else>
+                              <span class="italic">{{ t("common.data.confirmUpdateToAllocate") }}</span>
+                            </div>
                           </div>
                         </div>
                       </li>
                     </ol>
-                    <h4 v-if="application.clientsBackend?.length" class="font-bold mt-4">Backend clients</h4>
+                    <h4 v-if="application.clientsBackend?.length" class="font-bold mt-4">{{ t("views.OrganizationGet.backendClients") }}</h4>
                     <ol v-if="application.clientsBackend?.length">
                       <li v-for="(client, j) in application.clientsBackend" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
                         <div>{{ j + 1 }}.</div>
                         <div class="flex flex-col gap-4">
                           <div v-if="getBackendClientDescription(application, client.client.id)">{{ getBackendClientDescription(application, client.client.id) }}</div>
                           <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
-                            <div>Client ID:</div>
+                            <div>{{ t("views.OrganizationGet.clientId") }}</div>
                             <div v-if="client.id">
                               <code>{{ client.id }}</code>
                             </div>
-                            <div v-else><span class="italic">confirm update to allocate</span></div>
+                            <div v-else>
+                              <span class="italic">{{ t("common.data.confirmUpdateToAllocate") }}</span>
+                            </div>
                             <template v-if="client.id && generatedSecrets.has(client.client.id)">
-                              <div>Client secret:</div>
+                              <div>{{ t("views.OrganizationGet.clientSecret") }}</div>
                               <div>
                                 <code>{{ generatedSecrets.get(client.client.id) }}</code>
                               </div>
@@ -736,20 +746,22 @@ async function onIdentitiesSubmit() {
                         </div>
                       </li>
                     </ol>
-                    <h4 v-if="application.clientsService?.length" class="font-bold mt-4">Service clients</h4>
+                    <h4 v-if="application.clientsService?.length" class="font-bold mt-4">{{ t("views.OrganizationGet.serviceClients") }}</h4>
                     <ol v-if="application.clientsService?.length">
                       <li v-for="(client, j) in application.clientsService" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
                         <div>{{ j + 1 }}.</div>
                         <div class="flex flex-col gap-4">
                           <div v-if="getServiceClientDescription(application, client.client.id)">{{ getServiceClientDescription(application, client.client.id) }}</div>
                           <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
-                            <div>Client ID:</div>
+                            <div>{{ t("views.OrganizationGet.clientId") }}</div>
                             <div v-if="client.id">
                               <code>{{ client.id }}</code>
                             </div>
-                            <div v-else><span class="italic">confirm update to allocate</span></div>
+                            <div v-else>
+                              <span class="italic">{{ t("common.data.confirmUpdateToAllocate") }}</span>
+                            </div>
                             <template v-if="client.id && generatedSecrets.has(client.client.id)">
-                              <div>Client secret:</div>
+                              <div>{{ t("views.OrganizationGet.clientSecret") }}</div>
                               <div>
                                 <code>{{ generatedSecrets.get(client.client.id) }}</code>
                               </div>
@@ -758,18 +770,19 @@ async function onIdentitiesSubmit() {
                         </div>
                       </li>
                     </ol>
-                    <div v-if="application.active" class="flex flew-row justify-between items-center gap-4 mt-4">
-                      <div>Status: <strong>active</strong></div>
-                      <div class="flex flex-row gap-4">
-                        <Button type="button" :progress="progress" @click.prevent="application.active = false">Disable</Button>
-                        <Button type="button" :progress="progress" @click.prevent="applications.splice(i, 1)">Remove</Button>
+                    <div class="flex flew-row justify-between items-center gap-4 mt-4">
+                      <div>
+                        <i18n-t keypath="views.OrganizationGet.status" scope="global">
+                          <template #strongStatus>
+                            <strong>{{ application.active ? t("common.labels.active") : t("common.labels.disabled") }}</strong>
+                          </template>
+                        </i18n-t>
                       </div>
-                    </div>
-                    <div v-else class="flex flew-row justify-between items-center gap-4 mt-4">
-                      <div>Status: <strong>disabled</strong></div>
                       <div class="flex flex-row gap-4">
-                        <Button type="button" :progress="progress" @click.prevent="application.active = true">Activate</Button>
-                        <Button type="button" :progress="progress" @click.prevent="applications.splice(i, 1)">Remove</Button>
+                        <Button type="button" :progress="progress" @click.prevent="application.active = !application.active">
+                          {{ application.active ? t("common.buttons.disable") : t("common.buttons.activate") }}
+                        </Button>
+                        <Button type="button" :progress="progress" @click.prevent="applications.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                       </div>
                     </div>
                   </div>
@@ -779,18 +792,18 @@ async function onIdentitiesSubmit() {
                 <!--
                   Button is on purpose not disabled on applicationsUnexpectedError so that user can retry.
                 -->
-                <Button id="applications-update" type="submit" primary :disabled="!canApplicationsSubmit()" :progress="progress">Update</Button>
+                <Button id="applications-update" type="submit" primary :disabled="!canApplicationsSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
               </div>
             </form>
           </template>
           <template v-if="metadata.can_update && applicationTemplates.length">
-            <h2 class="text-xl font-bold">Available applications</h2>
+            <h2 class="text-xl font-bold">{{ t("views.OrganizationGet.availableApplications") }}</h2>
             <ul class="flex flex-col gap-4">
               <li v-for="applicationTemplate in applicationTemplates" :key="applicationTemplate.id">
-                <ApplicationTemplateListItem :item="applicationTemplate" :labels="isApplicationAdded(applicationTemplate) ? ['added'] : []" h3>
+                <ApplicationTemplateListItem :item="applicationTemplate" :labels="isApplicationAdded(applicationTemplate) ? [t('common.labels.added')] : []" h3>
                   <template #default="{ doc }">
                     <div v-if="doc" class="flex flex-col items-start">
-                      <Button type="button" :progress="progress" primary @click.prevent="onAddApplicationTemplate(doc)">Add</Button>
+                      <Button type="button" :progress="progress" primary @click.prevent="onAddApplicationTemplate(doc)">{{ t("common.buttons.add") }}</Button>
                     </div>
                   </template>
                 </ApplicationTemplateListItem>
@@ -798,9 +811,9 @@ async function onIdentitiesSubmit() {
             </ul>
           </template>
           <template v-if="metadata.can_update || adminsUnexpectedError || adminsUpdated">
-            <h2 class="text-xl font-bold">Admins</h2>
-            <div v-if="adminsUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
-            <div v-else-if="adminsUpdated" class="text-success-600">Admins updated successfully.</div>
+            <h2 class="text-xl font-bold">{{ t("common.entities.admins") }}</h2>
+            <div v-if="adminsUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
+            <div v-else-if="adminsUpdated" class="text-success-600">{{ t("common.data.adminsUpdated") }}</div>
             <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
               <ol class="flex flex-col gap-y-4">
                 <li v-for="(admin, i) of admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
@@ -808,29 +821,29 @@ async function onIdentitiesSubmit() {
                   <div class="flex flex-col">
                     <WithIdentityPublicDocument v-if="organization?.admins?.find((a) => a.id === admin.id)" :item="admin" :organization-id="siteContext.organizationId">
                       <div class="flex flex-col items-start">
-                        <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>
+                        <Button type="button" @click.prevent="admins.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                       </div>
                     </WithIdentityPublicDocument>
                     <div v-else class="flex flex-row gap-4">
                       <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="flex-grow flex-auto min-w-0" :progress="progress" required />
-                      <Button type="button" @click.prevent="admins.splice(i, 1)">Remove</Button>
+                      <Button type="button" @click.prevent="admins.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                     </div>
                   </div>
                 </li>
               </ol>
               <div class="flex flex-row justify-between gap-4" :class="admins.length ? 'mt-4' : ''">
-                <Button type="button" @click.prevent="onAddAdmin">Add admin</Button>
+                <Button type="button" @click.prevent="onAddAdmin">{{ t("common.buttons.addAdmin") }}</Button>
                 <!--
                   Button is on purpose not disabled on adminsUnexpectedError so that user can retry.
                 -->
-                <Button type="submit" primary :disabled="!canAdminsSubmit()" :progress="progress">Update</Button>
+                <Button type="submit" primary :disabled="!canAdminsSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
               </div>
             </form>
           </template>
           <template v-if="organizationIdentities.length || canIdentitiesSubmit() || organizationIdentitiesUnexpectedError || organizationIdentitiesUpdated">
-            <h2 class="text-xl font-bold">Added identities</h2>
-            <div v-if="organizationIdentitiesUnexpectedError" class="text-error-600">Unexpected error. Please try again.</div>
-            <div v-else-if="organizationIdentitiesUpdated" class="text-success-600">Added identities updated successfully.</div>
+            <h2 class="text-xl font-bold">{{ t("views.OrganizationGet.addedIdentities") }}</h2>
+            <div v-if="organizationIdentitiesUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
+            <div v-else-if="organizationIdentitiesUpdated" class="text-success-600">{{ t("views.OrganizationGet.identitiesUpdated") }}</div>
             <form v-if="organizationIdentities.length || canIdentitiesSubmit()" class="flex flex-col" novalidate @submit.prevent="onIdentitiesSubmit">
               <ul class="flex flex-col gap-y-4">
                 <li v-for="(organizationIdentity, i) in organizationIdentities" :key="organizationIdentity.id || i" class="flex flex-col">
@@ -839,7 +852,7 @@ async function onIdentitiesSubmit() {
                     :url="organizationIdentity.url"
                     :is-current="organizationIdentity.isCurrent"
                     :can-update="organizationIdentity.canUpdate"
-                    :labels="organizationIdentity.active ? [] : ['disabled']"
+                    :labels="organizationIdentity.active ? [] : [t('common.labels.disabled')]"
                   />
                   <IdentityOrganization
                     :identity-organization="{
@@ -849,13 +862,11 @@ async function onIdentitiesSubmit() {
                       applications: organizationIdentity.applications,
                     }"
                   >
-                    <div v-if="organizationIdentity.canUpdate && organizationIdentity.active" class="flex flex-row gap-4">
-                      <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = false">Disable</Button>
-                      <Button type="button" :progress="progress" @click.prevent="organizationIdentities.splice(i, 1)">Remove</Button>
-                    </div>
-                    <div v-else-if="organizationIdentity.canUpdate" class="flex flex-row gap-4">
-                      <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = true">Activate</Button>
-                      <Button type="button" :progress="progress" @click.prevent="organizationIdentities.splice(i, 1)">Remove</Button>
+                    <div v-if="organizationIdentity.canUpdate" class="flex flex-row gap-4">
+                      <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = !organizationIdentity.active">
+                        {{ organizationIdentity.active ? t("common.buttons.disable") : t("common.buttons.activate") }}
+                      </Button>
+                      <Button type="button" :progress="progress" @click.prevent="organizationIdentities.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                     </div>
                   </IdentityOrganization>
                 </li>
@@ -868,17 +879,17 @@ async function onIdentitiesSubmit() {
                 <!--
                   Button is on purpose not disabled on organizationIdentitiesUnexpectedError so that user can retry.
                 -->
-                <Button id="identities-update" type="submit" primary :disabled="!canIdentitiesSubmit()" :progress="progress">Update</Button>
+                <Button id="identities-update" type="submit" primary :disabled="!canIdentitiesSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
               </div>
             </form>
           </template>
           <template v-if="availableIdentities.length">
-            <h2 class="text-xl font-bold">Available identities</h2>
+            <h2 class="text-xl font-bold">{{ t("views.OrganizationGet.availableIdentities") }}</h2>
             <ul class="flex flex-col gap-4">
               <li v-for="identity in availableIdentities" :key="identity.identity.id">
                 <IdentityFull :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate">
                   <div class="flex flex-col items-start">
-                    <Button type="button" :progress="progress" primary @click.prevent="onAddIdentity(identity.identity)">Add</Button>
+                    <Button type="button" :progress="progress" primary @click.prevent="onAddIdentity(identity.identity)">{{ t("common.buttons.add") }}</Button>
                   </div>
                 </IdentityFull>
               </li>

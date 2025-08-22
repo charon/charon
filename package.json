@@ -26,6 +26,7 @@
     "test": "vitest",
     "coverage": "vitest --coverage",
     "test-ci": "vitest run --reporter junit --reporter default --outputFile tests.xml --coverage",
+    "generate-vue-i18n": "node generate-vue-i18n.js",
     "upgrade": "ncu -u"
   },
   "dependencies": {
@@ -38,6 +39,7 @@
     "openid-client": "^6.3.4",
     "structured-field-values": "^2.0.4",
     "vue": "^3.5.13",
+    "vue-i18n": "^11.1.11",
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
@@ -45,6 +47,8 @@
     "@eslint/compat": "^1.2.6",
     "@eslint/js": "^9.19.0",
     "@headlessui/tailwindcss": "^0.2.1",
+    "@intlify/devtools-types": "^11.1.11",
+    "@intlify/unplugin-vue-i18n": "^6.0.8",
     "@simplewebauthn/types": "^10.0.0",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/typography": "^0.5.16",

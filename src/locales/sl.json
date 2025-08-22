@@ -1,0 +1,261 @@
+{
+  "common": {
+    "buttons": {
+      "next": "Naprej",
+      "back": "Nazaj",
+      "retry": "Poskusi znova",
+      "create": "Ustvari",
+      "update": "Posodobi",
+      "select": "Izberi",
+      "enable": "Omogoči",
+      "decline": "Zavrni",
+      "cancel": "Prekliči",
+      "add": "Dodaj",
+      "remove": "Odstrani",
+      "disable": "Onemogoči",
+      "activate": "Aktiviraj",
+      "addUser": "Dodaj uporabnika",
+      "addAdmin": "Dodaj administratorja",
+      "manage": "Upravljaj",
+      "signOut": "Izpis",
+      "signIn": "Prijava ali registracija",
+      "resume": "Nadaljuj",
+      "pause": "Ustavi",
+      "redirect": "Preusmeri"
+    },
+    "errors": {
+      "unexpected": "Nepričakovana napaka. Prosimo, poskusite znova.",
+      "wrongPassword": "Napačno geslo ali geslovni stavek za račun s podanim uporabniškim imenom.",
+      "invalidPassword": "Neveljavno geslo ali geslovni stavek.",
+      "shortPassword": "Geslo ali geslovni stavek mora biti dolg vsaj 8 znakov.",
+      "invalidCode": "Koda je neveljavna. Prosimo, poskusite znova.",
+      "noAccount": "Kode ne morete prejeti, ker ne obstaja račun s podanim uporabniškim imenom.",
+      "noEmails": "Kode ne morete prejeti, ker ni e-naslova, povezanega s podanim uporabniškim imenom.",
+      "invalidEmailOrUsername": {
+        "email": "Neveljaven e-naslov.",
+        "username": "Neveljavno uporabniško ime."
+      },
+      "shortEmailOrUsername": {
+        "email": "E-naslov mora biti dolg vsaj 3 znake.",
+        "username": "Uporabniško ime mora biti dolgo vsaj 3 znake."
+      }
+    },
+    "labels": {
+      "optional": "(neobvezno)",
+      "admin": "administrator",
+      "current": "trenutna",
+      "active": "aktivna",
+      "disabled": "onemogočena",
+      "added": "dodana",
+      "creator": "ustvarjalec"
+    },
+    "data": {
+      "dataLoading": "Nalaganje...",
+      "loadingDataFailed": "nalaganje podatkov neuspešno",
+      "confirmUpdateToAllocate": "potrdite posodobitev za dodelitev",
+      "adminsUpdated": "Administratorji so bili uspešno posodobljeni."
+    },
+    "fields": {
+      "description": "Opis",
+      "username": "Uporabniško ime",
+      "email": "E-naslov",
+      "givenName": "Ime",
+      "fullName": "Polno ime",
+      "pictureUrl": "URL slike"
+    },
+    "entities": {
+      "admins": "Administratorji",
+      "users": "Uporabniki",
+      "identity": "Identiteta",
+      "identities": "Identitete",
+      "organization": "Organizacija",
+      "organizations": "Organizacije",
+      "applicationTemplates": "Predloge aplikacij"
+    },
+    "messages": {
+      "congratulations": "Čestitamo.",
+      "sorry": "Oprostite."
+    },
+    "time": {
+      "seconds": "1 sekundo | {count} sekundi | {count} sekunde | {count} sekund",
+      "paused": " (pavzirano)"
+    },
+    "accessibility": {
+      "picture": "slika"
+    }
+  },
+  "partials": {
+    "AuthAutoRedirect": {
+      "congratulations": "{strongCongratulations} Vse je pripravljeno za vašo prijavo ali registracijo v {appName} z izbrano identiteto.",
+      "declined": "Odločili ste se {strongDeclineSignInOrSignUp} v {appName} z uporabo Charon.",
+      "redirectMessage": "Sedaj boste preusmerjeni v {appName} čez {time}{pausedText}.",
+      "declineSignInOrSignUp": "zavrniti prijavo ali registracijo"
+    },
+    "AuthCode": {
+      "codeSentEmail": "{sentCount} 6-mestno kodo na e-naslov {strongEmail}. Vnesite jo za nadaljevanje:",
+      "codeSentUsername": "{sentCount} 6-mestno kodo na e-naslove, povezane z uporabniškim imenom Charon {strongUsername}. Vnesite jo za nadaljevanje:",
+      "codeFromHashEmail": "Poslali smo naslednjo 6-mestno kodo na e-naslov {strongEmail}:",
+      "codeFromHashUsername": "Poslali smo naslednjo 6-mestno kodo na e-naslove, povezane z uporabniškim imenom Charon {strongUsername}:",
+      "resendButton": "Ponovno pošlji kodo",
+      "sentCount": "Poslali smo | Poslali smo ({count}x)",
+      "confirmCode": "Prosimo, potrdite kodo za nadaljevanje.",
+      "waitForCode": "Prosimo, počakajte nekaj minut, da koda prispe. Preverite mapo za nezaželeno pošto.",
+      "securityWarning": "Če se niste prijavljali ali registrirali v {appName}, prosimo, prezrite e-pošto in {strongDont} potrdite kode.",
+      "dont": "ne",
+      "troubleEmail": "Če imate težave z dostopom do e-pošte, poskusite {linkDifferentMethod}.",
+      "differentMethod": "drug način prijave ali registracije"
+    },
+    "AuthIdentity": {
+      "newIdentityButton": "Ustvari novo identiteto",
+      "signinSuccess": "{strongCongratulations} Uspešno ste se prijavili v Charon.",
+      "signupSuccess": "{strongCongratulations} Uspešno ste se registrirali v Charon.",
+      "previouslyUsedDisabled": "Prej uporabljene identitete s to organizacijo so onemogočene.",
+      "otherAvailableIdentities": "Druge razpoložljive identitete",
+      "noIdentitiesCreateFirst": "Ni identitet. Ustvarite prvo.",
+      "noOtherIdentitiesCreateOne": "Ni drugih identitet. Ustvarite eno.",
+      "selectInstructions": "Izberite identiteto, s katero želite nadaljevati. Njene informacije bodo posredovane aplikaciji in organizaciji. Lahko tudi ustvarite novo identiteto ali zavrnete nadaljevanje.",
+      "previouslyUsedIdentities": "Prej uporabljene identitete",
+      "createNewIdentity": "@:partials.AuthIdentity.newIdentityButton",
+      "identitiesUsedWithOrg": "Identitete uporabljene z organizacijo, vendar ne z aplikacijo",
+      "disabledIdentities": "Onemogočene identitete",
+      "noIdentityUsed": "Še niste uporabili nobene identitete s to organizacijo.",
+      "noIdentityUsedWithApp": "Še niste uporabili nobene identitete s to aplikacijo v organizaciji.",
+      "allPreviousDisabled": "Vse prej uporabljene identitete s to organizacijo so onemogočene."
+    },
+    "AuthManualRedirect": {
+      "failed": "{strongSorry} Prijava ali registracija ni uspela.",
+      "tryAgain": "Lahko se vrnete v {appName} in poskusite znova.",
+      "completed": "Že ste bili preusmerjeni v {appName} in dokončali postopek. Sedaj lahko greste na domačo stran.",
+      "homepage": "Domača stran",
+      "return": "Vrni se"
+    },
+    "AuthPasskeySignin": {
+      "signingIn": "Prijavljamo vas z uporabo {strongPasskey}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave.",
+      "signupInfo": "Če se še niste registrirali s passkey, bo to neuspešno. V tem primeru vam bo Charon ponudil registracijo.",
+      "passkey": "@:partials.AuthPasskeySignup.passkey"
+    },
+    "AuthPasskeySignup": {
+      "instructions": "Prijava z uporabo {strongPasskey} ni uspela. Se želite registrirati namesto tega?",
+      "signingUp": "Registriramo vas z uporabo {strongPasskey}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave.",
+      "failed": "Registracija z uporabo {strongPasskey} ni uspela.",
+      "retrySigninButton": "Poskusi prijavo znova",
+      "passkeySignupButton": "Registracija s passkey",
+      "retrySignupButton": "Poskusi registracijo znova",
+      "passkey": "passkey"
+    },
+    "AuthPassword": {
+      "emailAddressLabel": "Vaš e-naslov",
+      "usernameLabel": "Uporabniško ime Charon",
+      "passwordLabel": "Geslo ali geslovni stavek",
+      "sendCodeButton": "Pošlji kodo",
+      "emailAccount": "Če še nimate računa, bo ustvarjen za vas. Če vnesete napačno geslo ali geslovni stavek, se bo obnova izvedla samodejno s pošiljanjem kode na vaš e-naslov.",
+      "usernameAccount": "Če še nimate računa, bo ustvarjen za vas. Uporabniško ime ne bo vidno drugim, vendar je mogoče ugotoviti, ali račun z uporabniškim imenom obstaja ali ne. Če vnesete napačno geslo ali geslovni stavek, se bo obnova izvedla samodejno s pošiljanjem kode na e-naslove, povezane z uporabniškim imenom, če obstajajo.",
+      "skipPassword": "Lahko tudi preskočite vnos gesla ali geslovnega stavka in neposredno zaprosite za kodo.",
+      "troublePassword": "Če imate težave z pomnenjem gesla ali geslovnega stavka, poskusite {linkDifferentSigninMethod}.",
+      "differentSigninMethod": "drug način prijave"
+    },
+    "AuthStart": {
+      "emailOrUsernameLabel": "Vnesite uporabniško ime Charon ali vaš e-naslov",
+      "orUse": "Ali uporabite"
+    },
+    "AuthThirdPartyProvider": {
+      "redirectMessage": "Preusmerjeni boste k {strongProvider} čez {time}{pausedText}.",
+      "instructions": "Prosimo, sledite navodilom tam za prijavo v Charon. Nato boste preusmerjeni nazaj sem.",
+      "additionalInfo": "Morda se boste morali najprej prijaviti v {provider}. Morda vas bo {provider} takoj preusmeril nazaj, ne da bi vam pokazal karkoli."
+    },
+    "Footer": {
+      "poweredBy": "Zagotavlja {linkName}"
+    },
+    "IdentityOrganization": {
+      "id": "ID:",
+      "status": "Status:",
+      "apps": "Aplikacije:",
+      "noApps": "brez"
+    }
+  },
+  "views": {
+    "ApplicationTemplateCreate": {
+      "createApplicationTemplate": "Ustvari predlogo aplikacije",
+      "applicationTemplateName": "@:views.ApplicationTemplateGet.applicationTemplateName",
+      "chooseApplicationTemplateName": "Izberite ime. Po ustvaritvi boste lahko konfigurirali predlogo aplikacije."
+    },
+    "ApplicationTemplateGet": {
+      "applicationTemplateName": "Ime predloge aplikacije",
+      "homepageTemplate": "Predloga domače strani",
+      "spaceSeparatedScopes": "Z znaki ločeni OpenID dosegi, ki jih lahko aplikacija zahteva",
+      "variables": "Spremenljivke",
+      "name": "Ime",
+      "addVariable": "Dodaj spremenljivko",
+      "publicClients": "Javni odjemalci",
+      "oidcRedirectUriTemplates": "OIDC predloge URI-jev za preusmeritev",
+      "addRedirectUri": "Dodaj URI za preusmeritev",
+      "spaceSeparatedAdditionalScopes": "Z znaki ločeni dodatni dosegi, ki jih lahko odjemalec zahteva",
+      "accessTokenType": "Tip dostopovnega žetona",
+      "hmac": "HMAC",
+      "jwt": "JWT",
+      "accessTokenLifespan": "Življenjska doba dostopovnega žetona",
+      "idTokenLifespan": "Življenjska doba ID žetona",
+      "refreshTokenLifespan": "Življenjska doba osvežitvenega žetona",
+      "addClient": "Dodaj odjemalca",
+      "backendClients": "Zaledni odjemalci",
+      "tokenEndpointAuthMethod": "Metoda overjanja končne točke žetona",
+      "serviceClients": "Servisni odjemalci",
+      "applicationsUpdated": "Predloga aplikacije je bila uspešno posodobljena.",
+      "variablesUpdated": "Spremenljivke so bile uspešno posodobljene.",
+      "publicClientsUpdated": "Javni odjemalci so bili uspešno posodobljeni.",
+      "backendClientsUpdated": "Zaledni odjemalci so bili uspešno posodobljeni.",
+      "serviceClientsUpdated": "Servisni odjemalci so bili uspešno posodobljeni."
+    },
+    "ApplicationTemplateList": {
+      "noApplicationTemplatesCreate": "Ni predlog aplikacij. Ustvarite prvo.",
+      "noApplicationTemplatesSignIn": "Ni predlog aplikacij. Prijavite se ali registrirajte, da ustvarite prvo."
+    },
+    "AuthFlowGet": {
+      "instructionsMessage": "{appLink} iz organizacije {orgLink} uporablja Charon, da vas prosi za prijavo ali registracijo. Prosimo, sledite spodnjim korakom za nadaljevanje ali zavrnitev."
+    },
+    "IdentityCreate": {
+      "createIdentity": "Ustvari identiteto"
+    },
+    "IdentityGet": {
+      "identityUpdated": "Identiteta je bila uspešno posodobljena.",
+      "usersUpdated": "Uporabniki so bili uspešno posodobljeni.",
+      "organizationsUpdated": "Dodane organizacije so bile uspešno posodobljene.",
+      "addedOrganizations": "Dodane organizacije",
+      "availableOrganizations": "Razpoložljive organizacije"
+    },
+    "IdentityList": {
+      "noIdentitiesCreate": "Ni identitet. Ustvarite prvo.",
+      "noIdentitiesSignIn": "Ni identitet. Prijavite se ali registrirajte, da ustvarite prvo."
+    },
+    "OrganizationCreate": {
+      "createOrganization": "Ustvari organizacijo",
+      "organizationName": "@:views.OrganizationGet.organizationName",
+      "chooseOrganizationName": "Izberite ime. Po ustvaritvi boste lahko konfigurirali organizacijo."
+    },
+    "OrganizationGet": {
+      "organizationName": "Ime organizacije",
+      "organizationUpdated": "Organizacija je bila uspešno posodobljena.",
+      "addedApplicationsUpdated": "Dodane aplikacije so bile uspešno posodobljene.",
+      "identitiesUpdated": "Identitete organizacije so bile uspešno posodobljene.",
+      "addedApplications": "Dodane aplikacije",
+      "availableApplications": "Razpoložljive aplikacije",
+      "addedIdentities": "Dodane identitete",
+      "availableIdentities": "Razpoložljive identitete",
+      "backendClients": "@:views.ApplicationTemplateGet.backendClients",
+      "clientId": "ID odjemalca:",
+      "clientSecret": "Skrivnost odjemalca:",
+      "configuration": "Konfiguracija",
+      "publicClients": "@:views.ApplicationTemplateGet.publicClients",
+      "serviceClients": "@:views.ApplicationTemplateGet.serviceClients",
+      "status": "Status: {strongStatus}"
+    },
+    "OrganizationList": {
+      "noOrganizationsCreate": "Ni organizacij. Ustvarite prvo.",
+      "noOrganizationsSignIn": "Ni organizacij. Prijavite se ali registrirajte, da ustvarite prvo."
+    },
+    "OrganizationUsers": {
+      "usersForOrganization": "Uporabniki za organizacijo",
+      "noUsers": "Ni uporabnikov."
+    }
+  }
+}

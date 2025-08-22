@@ -2,12 +2,15 @@
 import type { AuthFlowPasskeyGetCompleteRequest, AuthFlowResponse, Flow } from "@/types"
 
 import { getCurrentInstance, onMounted, onBeforeUnmount, ref } from "vue"
+import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 import { startAuthentication, WebAuthnAbortService } from "@simplewebauthn/browser"
 import Button from "@/components/Button.vue"
 import { postJSON } from "@/api"
 import { processResponse } from "@/flow"
 import { injectProgress } from "@/progress"
+
+const { t } = useI18n({ useScope: "global" })
 
 const props = defineProps<{
   flow: Flow
@@ -152,13 +155,19 @@ async function onCancel() {
 
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
-    <div>Signing you in using <strong>passkey</strong>. Please follow instructions by your browser and/or device.</div>
-    <div class="mt-4">If you have not yet signed up with passkey, this will fail. In that case Charon will offer you to sign up instead.</div>
-    <div v-if="unexpectedError" class="mt-4 text-error-600">Unexpected error. Please try again.</div>
+    <div>
+      <i18n-t keypath="partials.AuthPasskeySignin.signingIn" scope="global">
+        <template #strongPasskey
+          ><strong>{{ t("partials.AuthPasskeySignin.passkey") }}</strong></template
+        >
+      </i18n-t>
+    </div>
+    <div class="mt-4">{{ t("partials.AuthPasskeySignin.signupInfo") }}</div>
+    <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" tabindex="2" @click.prevent="onBack">Back</Button>
-      <Button v-if="unexpectedError" primary type="button" tabindex="1" @click.prevent="onRetry">Retry</Button>
-      <Button v-else type="button" tabindex="1" :progress="progress" @click.prevent="onCancel">Cancel</Button>
+      <Button type="button" tabindex="2" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
+      <Button v-if="unexpectedError" primary type="button" tabindex="1" @click.prevent="onRetry">{{ t("common.buttons.retry") }}</Button>
+      <Button v-else type="button" tabindex="1" :progress="progress" @click.prevent="onCancel">{{ t("common.buttons.cancel") }}</Button>
     </div>
   </div>
 </template>
