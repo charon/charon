@@ -131,7 +131,8 @@
     },
     "AuthPasskeySignin": {
       "signingIn": "Prijavljamo vas z uporabo {strongPasskey}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave.",
-      "signupInfo": "Če se še niste registrirali s passkey, bo to neuspešno. V tem primeru vam bo Charon ponudil registracijo."
+      "signupInfo": "Če se še niste registrirali s passkey, bo to neuspešno. V tem primeru vam bo Charon ponudil registracijo.",
+      "passkey": "@:partials.AuthPasskeySignup.passkey"
     },
     "AuthPasskeySignup": {
       "instructions": "Prijava z uporabo {strongPasskey} ni uspela. Se želite registrirati namesto tega?",
@@ -139,7 +140,8 @@
       "failed": "Registracija z uporabo {strongPasskey} ni uspela.",
       "retrySigninButton": "Poskusi prijavo znova",
       "passkeySignupButton": "Registracija s passkey",
-      "retrySignupButton": "Poskusi registracijo znova"
+      "retrySignupButton": "Poskusi registracijo znova",
+      "passkey": "passkey"
     },
     "AuthPassword": {
       "emailAddressLabel": "Vaš e-naslov",

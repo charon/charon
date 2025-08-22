@@ -105,7 +105,7 @@ To update internationalization TypeScript definitions:
 - **Internationalization**: All user-facing text must use vue-i18n with global scope
   - **useI18n**: Always use `useI18n({ useScope: 'global' })` instead of `useI18n()`
   - **i18n-t components**: Always include `scope="global"` attribute: `<i18n-t keypath="..." scope="global">`
-  - Never translate technical terms like "passkey" - hardcode them directly in components
+  - Technical terms like "passkey" should be extracted into translatable strings but not translated across languages
   - **Never put HTML in translated strings** - HTML formatting must always be in Vue templates, not translation files
     - ❌ Wrong: `"message": "<strong>Success!</strong> Operation completed"`
     - ✅ Correct: `"message": "{strong} Operation completed"` with `<i18n-t>` template interpolation
