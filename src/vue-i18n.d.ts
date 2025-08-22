@@ -224,7 +224,6 @@ declare module "vue-i18n" {
         createIdentity: string
       }
       IdentityGet: {
-        identity: string
         addedIdentities: string
         availableIdentities: string
         identityUpdated: string
@@ -243,12 +242,10 @@ declare module "vue-i18n" {
         noIdentitiesSignIn: string
       }
       OrganizationCreate: {
-        organization: string
         organizationName: string
         chooseOrganizationName: string
       }
       OrganizationGet: {
-        organization: string
         usersForOrganization: string
         organizationName: string
         organizationUpdated: string
