@@ -98,7 +98,17 @@
       "allPreviousDisabled": "Vse prej uporabljene identitete s to organizacijo so onemogočene.",
       "identitiesUsedWithOrg": "Identitete uporabljene z organizacijo, vendar ne z aplikacijo",
       "disabledIdentities": "Onemogočene identitete",
-      "previouslyUsedIdentities": "Prej uporabljene identitete"
+      "previouslyUsedIdentities": "Prej uporabljene identitete",
+      "createNewIdentity": "Ustvari novo identiteto",
+      "sectionTitles": {
+        "identitiesUsedWithOrg": "Identitete uporabljene z organizacijo, vendar ne z aplikacijo",
+        "disabledIdentities": "Onemogočene identitete"
+      },
+      "statusMessages": {
+        "noIdentityUsed": "Še niste uporabili nobene identitete s to organizacijo.",
+        "noIdentityUsedWithApp": "Še niste uporabili nobene identitete s to aplikacijo v organizaciji.",
+        "allPreviousDisabled": "Vse prej uporabljene identitete s to organizacijo so onemogočene."
+      }
     },
     "AuthManualRedirect": {
       "failed": "{strong} Prijava ali registracija ni uspela.",
@@ -118,6 +128,20 @@
       "retrySigninButton": "Poskusi prijavo znova",
       "passkeySignupButton": "Registracija s passkey",
       "retrySignupButton": "Poskusi registracijo znova"
+    },
+    "AuthPasskey": {
+      "signingIn": "Prijavljamo vas z uporabo {strong}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave.",
+      "signin": {
+        "signupInfo": "Če se še niste registrirali s passkey, bo to neuspešno. V tem primeru vam bo Charon ponudil registracijo."
+      },
+      "signup": {
+        "instructions": "Prijava z uporabo {strong} ni uspela. Se želite registrirati namesto tega?",
+        "signingUp": "Registriramo vas z uporabo {strong}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave.",
+        "failed": "Registracija z uporabo {strong} ni uspela.",
+        "retrySigninButton": "Poskusi prijavo znova",
+        "passkeySignupButton": "Registracija s passkey",
+        "retrySignupButton": "Poskusi registracijo znova"
+      }
     },
     "AuthPassword": {
       "emailAddressLabel": "Vaš e-naslov",
@@ -139,7 +163,13 @@
       "instructions": "Prosimo, sledite navodilom tam za prijavo v Charon. Nato boste preusmerjeni nazaj sem.",
       "additionalInfo": "Morda se boste morali najprej prijaviti v {provider}. Morda vas bo {provider} takoj preusmeril nazaj, ne da bi vam pokazal karkoli.",
       "redirecting": "Preusmerjamo vas na {provider}. Prosimo, sledite navodilom vašega brskalnika.",
-      "failed": "Prijava z uporabo {provider} ni uspela."
+      "failed": "Prijava z uporabo {provider} ni uspela.",
+      "oneSecond": "1 sekundo",
+      "seconds": "{count} sekund",
+      "paused": " (pavzirano)",
+      "resume": "Nadaljuj",
+      "pause": "Pavziraj",
+      "redirect": "Preusmeri"
     },
     "Footer": {
       "poweredBy": "Zagotavlja {name}"
@@ -151,6 +181,13 @@
       "fullName": "Polno ime",
       "pictureUrl": "URL slike",
       "description": "Opis"
+    },
+    "IdentityOrganization": {
+      "id": "ID:",
+      "confirmUpdateToAllocate": "potrdite posodobitev za dodelitev",
+      "status": "Status:",
+      "apps": "Aplikacije:",
+      "none": "brez"
     }
   },
   "views": {
@@ -221,7 +258,16 @@
       "noIdentities": "Ni identitet.",
       "noIdentitiesCreate": "Ni identitet. Ustvarite prvo.",
       "noIdentitiesSignIn": "Ni identitet. Prijavite se ali registrirajte, da ustvariti prvo.",
-      "noOtherIdentities": "Ni drugih identitet. Ustvarite eno."
+      "noOtherIdentities": "Ni drugih identitet. Ustvarite eno.",
+      "addedOrganizations": "Dodane organizacije",
+      "availableOrganizations": "Razpoložljive organizacije",
+      "description": "Opis",
+      "email": "E-naslov",
+      "fullName": "Polno ime",
+      "givenName": "Ime",
+      "pictureUrl": "URL slike",
+      "username": "Uporabniško ime",
+      "users": "Uporabniki"
     },
     "IdentityList": {
       "identities": "Identitete",
@@ -247,7 +293,17 @@
       "addedApplications": "Dodane aplikacije",
       "availableApplications": "Razpoložljive aplikacije",
       "addedIdentities": "Dodane identitete",
-      "availableIdentities": "Razpoložljive identitete"
+      "availableIdentities": "Razpoložljive identitete",
+      "addAdmin": "Dodaj administratorja",
+      "backendClients": "Zaledni odjemalci",
+      "clientId": "ID odjemalca:",
+      "clientSecret": "Skrivnost odjemalca:",
+      "configuration": "Konfiguracija",
+      "confirmUpdateToAllocate": "potrdite posodobitev za dodelitev",
+      "manage": "Upravljaj",
+      "publicClients": "Javni odjemalci",
+      "serviceClients": "Servisni odjemalci",
+      "status": "Status:"
     },
     "OrganizationList": {
       "organizations": "Organizacije",

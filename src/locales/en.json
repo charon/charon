@@ -98,7 +98,17 @@
       "allPreviousDisabled": "All previously used identities with this organization are disabled.",
       "identitiesUsedWithOrg": "Identities used with the organization, but not the app",
       "disabledIdentities": "Disabled identities",
-      "previouslyUsedIdentities": "Previously used identities"
+      "previouslyUsedIdentities": "Previously used identities",
+      "createNewIdentity": "Create new identity",
+      "sectionTitles": {
+        "identitiesUsedWithOrg": "Identities used with the organization, but not the app",
+        "disabledIdentities": "Disabled identities"
+      },
+      "statusMessages": {
+        "noIdentityUsed": "You have not yet used any identity with this organization.",
+        "noIdentityUsedWithApp": "You have not yet used any identity with this app in the organization.",
+        "allPreviousDisabled": "All previously used identities with this organization are disabled."
+      }
     },
     "AuthManualRedirect": {
       "failed": "{strong} Signing in or signing up failed.",
@@ -118,6 +128,20 @@
       "retrySigninButton": "Retry sign-in",
       "passkeySignupButton": "Passkey sign-up",
       "retrySignupButton": "Retry sign-up"
+    },
+    "AuthPasskey": {
+      "signingIn": "Signing you in using {strong}. Please follow instructions by your browser and/or device.",
+      "signin": {
+        "signupInfo": "If you have not yet signed up with passkey, this will fail. In that case Charon will offer you to sign up instead."
+      },
+      "signup": {
+        "instructions": "Signing in using {strong} failed. Do you want to sign up instead?",
+        "signingUp": "Signing you up using {strong}. Please follow instructions by your browser and/or device.",
+        "failed": "Signing up using {strong} failed.",
+        "retrySigninButton": "Retry sign-in",
+        "passkeySignupButton": "Passkey sign-up",
+        "retrySignupButton": "Retry sign-up"
+      }
     },
     "AuthPassword": {
       "emailAddressLabel": "Your e-mail address",
@@ -139,7 +163,13 @@
       "instructions": "Please follow instructions there to sign-in into Charon. Afterwards, you will be redirected back here.",
       "additionalInfo": "You might have to sign-in into {provider} first. You might be redirected back by {provider} immediately, without showing you anything.",
       "redirecting": "Redirecting you to {provider}. Please follow instructions by your browser.",
-      "failed": "Signing in using {provider} failed."
+      "failed": "Signing in using {provider} failed.",
+      "oneSecond": "1 second",
+      "seconds": "{count} seconds",
+      "paused": " (paused)",
+      "resume": "Resume",
+      "pause": "Pause",
+      "redirect": "Redirect"
     },
     "Footer": {
       "poweredBy": "Powered by {name}"
@@ -152,6 +182,13 @@
       "pictureUrl": "Picture URL",
       "description": "Description"
     },
+    "IdentityOrganization": {
+      "id": "ID:",
+      "confirmUpdateToAllocate": "confirm update to allocate",
+      "status": "Status:",
+      "apps": "Apps:",
+      "none": "none"
+    }
   },
   "views": {
     "ApplicationTemplateCreate": {
@@ -221,7 +258,16 @@
       "noIdentities": "There are no identities.",
       "noIdentitiesCreate": "There are no identities. Create the first one.",
       "noIdentitiesSignIn": "There are no identities. Sign-in or sign-up to create the first one.",
-      "noOtherIdentities": "There are no other identities. Create one."
+      "noOtherIdentities": "There are no other identities. Create one.",
+      "addedOrganizations": "Added organizations",
+      "availableOrganizations": "Available organizations",
+      "description": "Description",
+      "email": "E-mail address",
+      "fullName": "Full name",
+      "givenName": "Given name",
+      "pictureUrl": "Picture URL",
+      "username": "Username",
+      "users": "Users"
     },
     "IdentityList": {
       "identities": "Identities",
@@ -247,7 +293,17 @@
       "addedApplications": "Added applications",
       "availableApplications": "Available applications",
       "addedIdentities": "Added identities",
-      "availableIdentities": "Available identities"
+      "availableIdentities": "Available identities",
+      "addAdmin": "Add admin",
+      "backendClients": "Backend clients",
+      "clientId": "Client ID:",
+      "clientSecret": "Client secret:",
+      "configuration": "Configuration",
+      "confirmUpdateToAllocate": "confirm update to allocate",
+      "manage": "Manage",
+      "publicClients": "Public clients",
+      "serviceClients": "Service clients",
+      "status": "Status:"
     },
     "OrganizationList": {
       "organizations": "Organizations",
