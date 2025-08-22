@@ -80,8 +80,7 @@
       "paused": " (pavzirano)",
       "resume": "Nadaljuj",
       "pause": "Pavziraj",
-      "redirect": "Preusmeri",
-      "declineSignInOrSignUp": "zavrniti prijavo ali registracijo"
+      "redirect": "Preusmeri"
     },
     "AuthCode": {
       "codeSentEmail": "{sentCount} 6-mestno kodo na e-naslov {strongEmail}. Vnesite jo za nadaljevanje:",
@@ -111,9 +110,6 @@
       "noIdentitiesCreateFirst": "Ni identitet. Ustvarite prvo.",
       "noOtherIdentitiesCreateOne": "Ni drugih identitet. Ustvarite eno.",
       "selectInstructions": "Izberite identiteto, s katero želite nadaljevati. Njene informacije bodo posredovane aplikaciji in organizaciji. Lahko tudi ustvarite novo identiteto ali zavrnete nadaljevanje.",
-      "noIdentityUsed": "Še niste uporabili nobene identitete s to organizacijo.",
-      "noIdentityUsedWithApp": "Še niste uporabili nobene identitete s to aplikacijo v organizaciji.",
-      "allPreviousDisabled": "Vse prej uporabljene identitete s to organizacijo so onemogočene.",
       "identitiesUsedWithOrg": "Identitete uporabljene z organizacijo, vendar ne z aplikacijo",
       "disabledIdentities": "Onemogočene identitete",
       "previouslyUsedIdentities": "Prej uporabljene identitete",
@@ -214,7 +210,6 @@
       "serviceClients": "Servisni odjemalci"
     },
     "ApplicationTemplateList": {
-      "applicationTemplates": "Predloge aplikacij",
       "noApplicationTemplatesCreate": "Ni predlog aplikacij. Ustvarite prvo.",
       "noApplicationTemplatesSignIn": "Ni predlog aplikacij. Prijavite se ali registrirajte, da ustvarite prvo."
     },
@@ -225,8 +220,6 @@
       "createIdentity": "Ustvari identiteto"
     },
     "IdentityGet": {
-      "createIdentity": "Ustvari identiteto",
-      "createNewIdentity": "Ustvari novo identiteto",
       "addedIdentities": "Dodane identitete",
       "availableIdentities": "Razpoložljive identitete",
       "identityUpdated": "Identiteta je bila uspešno posodobljena.",
@@ -238,7 +231,7 @@
       "noIdentitiesSignIn": "Ni identitet. Prijavite se ali registrirajte, da ustvariti prvo.",
       "noOtherIdentities": "Ni drugih identitet. Ustvarite eno.",
       "addedOrganizations": "Dodane organizacije",
-      "availableOrganizations": "Razpoložljive organizacije",
+      "availableOrganizations": "Razpoložljive organizacije"
     },
     "IdentityList": {
       "noIdentitiesCreate": "Ni identitet. Ustvarite prvo.",

@@ -186,7 +186,7 @@ onBeforeUnmount(() => {
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div>
       <i18n-t
-        keypath="partials.AuthThirdPartyRedirect.redirectMessage"
+        keypath="partials.AuthThirdPartyProvider.redirectMessage"
         scope="global"
         :provider="flow.getThirdPartyProvider()!.name"
         :time="seconds === 1 ? t('partials.AuthThirdPartyProvider.oneSecond') : t('partials.AuthThirdPartyProvider.seconds', { count: seconds })"
@@ -197,9 +197,9 @@ onBeforeUnmount(() => {
         >
       </i18n-t>
     </div>
-    <div class="mt-4">{{ t("partials.AuthThirdPartyRedirect.instructions") }}</div>
+    <div class="mt-4">{{ t("partials.AuthThirdPartyProvider.instructions") }}</div>
     <div class="mt-4">
-      {{ t("partials.AuthThirdPartyRedirect.additionalInfo", { provider: flow.getThirdPartyProvider()!.name }) }}
+      {{ t("partials.AuthThirdPartyProvider.additionalInfo", { provider: flow.getThirdPartyProvider()!.name }) }}
     </div>
     <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">

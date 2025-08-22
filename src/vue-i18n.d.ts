@@ -84,7 +84,6 @@ declare module "vue-i18n" {
         resume: string
         pause: string
         redirect: string
-        declineSignInOrSignUp: string
       }
       AuthCode: {
         codeSentEmail: string
@@ -114,9 +113,6 @@ declare module "vue-i18n" {
         noIdentitiesCreateFirst: string
         noOtherIdentitiesCreateOne: string
         selectInstructions: string
-        noIdentityUsed: string
-        noIdentityUsedWithApp: string
-        allPreviousDisabled: string
         identitiesUsedWithOrg: string
         disabledIdentities: string
         previouslyUsedIdentities: string
@@ -228,8 +224,6 @@ declare module "vue-i18n" {
       }
       IdentityGet: {
         identity: string
-        createIdentity: string
-        createNewIdentity: string
         addedIdentities: string
         availableIdentities: string
         identityUpdated: string

@@ -80,8 +80,7 @@
       "paused": " (paused)",
       "resume": "Resume",
       "pause": "Pause",
-      "redirect": "Redirect",
-      "declineSignInOrSignUp": "decline sign-in or sign-up"
+      "redirect": "Redirect"
     },
     "AuthCode": {
       "codeSentEmail": "We {sentCount} a 6-digit code to {strongEmail} e-mail address. Please enter it to continue:",
@@ -111,9 +110,6 @@
       "noIdentitiesCreateFirst": "There are no identities. Create the first one.",
       "noOtherIdentitiesCreateOne": "There are no other identities. Create one.",
       "selectInstructions": "Select the identity you want to continue with. Its information will be provided to the app and the organization. You can also create a new identity or decline to proceed.",
-      "noIdentityUsed": "You have not yet used any identity with this organization.",
-      "noIdentityUsedWithApp": "You have not yet used any identity with this app in the organization.",
-      "allPreviousDisabled": "All previously used identities with this organization are disabled.",
       "identitiesUsedWithOrg": "Identities used with the organization, but not the app",
       "disabledIdentities": "Disabled identities",
       "previouslyUsedIdentities": "Previously used identities",
@@ -224,8 +220,6 @@
       "createIdentity": "Create identity"
     },
     "IdentityGet": {
-      "createIdentity": "Create identity",
-      "createNewIdentity": "Create new identity",
       "addedIdentities": "Added identities",
       "availableIdentities": "Available identities",
       "identityUpdated": "Identity updated successfully.",
