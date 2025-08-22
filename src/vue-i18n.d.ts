@@ -1,4 +1,5 @@
-import en from "@/locales/en.json"
+// This empty export makes TypeScript treat this file as a module.
+export {}
 
 declare module "vue-i18n" {
   export interface DefineLocaleMessage {
@@ -275,5 +276,3 @@ declare module "vue-i18n" {
     }
   }
 }
-
-export type MessageSchema = typeof en
