@@ -81,7 +81,7 @@
       "resume": "Nadaljuj",
       "pause": "Pavziraj",
       "redirect": "Preusmeri",
-      "congratulations": "Čestitamo.",
+      "congratulationsWord": "Čestitamo.",
       "declineSignInOrSignUp": "zavrniti prijavo ali registracijo"
     },
     "AuthCode": {

@@ -81,7 +81,7 @@
       "resume": "Resume",
       "pause": "Pause",
       "redirect": "Redirect",
-      "congratulations": "Congratulations.",
+      "congratulationsWord": "Congratulations.",
       "declineSignInOrSignUp": "decline sign-in or sign-up"
     },
     "AuthCode": {
