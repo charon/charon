@@ -221,11 +221,6 @@
     "AuthFlowGet": {
       "instructionsMessage": "{appLink} from organization {orgLink} is using Charon to ask you to sign-in or sign-up. Please follow the steps below to do so, or to decline."
     },
-    "Home": {
-      "identities": "Identities",
-      "applicationTemplates": "Application templates",
-      "organizations": "Organizations"
-    },
     "IdentityCreate": {
       "createIdentity": "Create identity"
     },

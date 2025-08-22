@@ -222,11 +222,6 @@
     "AuthFlowGet": {
       "instructionsMessage": "{appLink} iz organizacije {orgLink} uporablja Charon, da vas prosi za prijavo ali registracijo. Prosimo, sledite spodnjim korakom za nadaljevanje ali zavrnitev."
     },
-    "Home": {
-      "identities": "Identitete",
-      "applicationTemplates": "Predloge aplikacij",
-      "organizations": "Organizacije"
-    },
     "IdentityCreate": {
       "createIdentity": "Ustvari identiteto"
     },
