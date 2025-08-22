@@ -166,14 +166,14 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
         <div v-if="flow.getCompleted().includes('identity')" class="mb-4">
           <i18n-t keypath="partials.AuthAutoRedirect.congratulations" scope="global" :app-name="doc.applicationTemplate.name">
             <template #strong
-              ><strong>{{ t("partials.AuthIdentity.congratulations") }}</strong></template
+              ><strong>{{ t("partials.AuthAutoRedirect.congratulations") }}</strong></template
             >
           </i18n-t>
         </div>
         <div v-else-if="flow.getCompleted().includes('declined')" class="mb-4">
           <i18n-t keypath="partials.AuthAutoRedirect.declined" scope="global" :app-name="doc.applicationTemplate.name">
             <template #strong
-              ><strong>{{ t("partials.AuthIdentity.declineSignInOrSignUp") }}</strong></template
+              ><strong>{{ t("partials.AuthAutoRedirect.declineSignInOrSignUp") }}</strong></template
             >
           </i18n-t>
         </div>

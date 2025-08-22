@@ -80,7 +80,9 @@
       "paused": " (pavzirano)",
       "resume": "Nadaljuj",
       "pause": "Pavziraj",
-      "redirect": "Preusmeri"
+      "redirect": "Preusmeri",
+      "congratulations": "Čestitamo.",
+      "declineSignInOrSignUp": "zavrniti prijavo ali registracijo"
     },
     "AuthCode": {
       "codeSentEmail": "{sentCount} 6-mestno kodo na e-naslov {strongEmail}. Vnesite jo za nadaljevanje:",
@@ -129,7 +131,8 @@
       "tryAgain": "Lahko se vrnete v {appName} in poskusite znova.",
       "completed": "Že ste bili preusmerjeni v {appName} in dokončali postopek. Sedaj lahko greste na domačo stran.",
       "homepage": "Domača stran",
-      "return": "Vrni se"
+      "return": "Vrni se",
+      "sorry": "Oprostite."
     },
     "AuthPasskeySignin": {
       "signingIn": "Prijavljamo vas z uporabo {strong}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave.",

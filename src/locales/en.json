@@ -80,7 +80,9 @@
       "paused": " (paused)",
       "resume": "Resume",
       "pause": "Pause",
-      "redirect": "Redirect"
+      "redirect": "Redirect",
+      "congratulations": "Congratulations.",
+      "declineSignInOrSignUp": "decline sign-in or sign-up"
     },
     "AuthCode": {
       "codeSentEmail": "We {sentCount} a 6-digit code to {strongEmail} e-mail address. Please enter it to continue:",
@@ -129,7 +131,8 @@
       "tryAgain": "You can return to {appName} and try again.",
       "completed": "You have already been redirected to {appName} and completed the flow. You can now instead go to its homepage.",
       "homepage": "Homepage",
-      "return": "Return"
+      "return": "Return",
+      "sorry": "Sorry."
     },
     "AuthPasskeySignin": {
       "signingIn": "Signing you in using {strong}. Please follow instructions by your browser and/or device.",

@@ -75,7 +75,6 @@ declare module "vue-i18n" {
     }
     partials: {
       AuthAutoRedirect: {
-        congratulations: string
         declined: string
         redirectMessage: string
         oneSecond: string
@@ -84,6 +83,8 @@ declare module "vue-i18n" {
         resume: string
         pause: string
         redirect: string
+        congratulations: string
+        declineSignInOrSignUp: string
       }
       AuthCode: {
         codeSentEmail: string
@@ -133,6 +134,7 @@ declare module "vue-i18n" {
         completed: string
         homepage: string
         return: string
+        sorry: string
       }
       AuthPasskeySignin: {
         signingIn: string

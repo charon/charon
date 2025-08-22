@@ -103,7 +103,7 @@ const withOrganizationApplicationDocument = ref<ComponentExposed<typeof WithOrga
           <div class="text-error-600 mb-4">
             <i18n-t keypath="partials.AuthManualRedirect.failed" scope="global">
               <template #strong
-                ><strong>{{ t("partials.AuthIdentity.sorry") }}</strong></template
+                ><strong>{{ t("partials.AuthManualRedirect.sorry") }}</strong></template
               >
             </i18n-t>
           </div>
