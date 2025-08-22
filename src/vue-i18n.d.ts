@@ -121,15 +121,11 @@ declare module "vue-i18n" {
         selectInstructions: string
         previouslyUsedIdentities: string
         createNewIdentity: string
-        sectionTitles: {
-          identitiesUsedWithOrg: string
-          disabledIdentities: string
-        }
-        statusMessages: {
-          noIdentityUsed: string
-          noIdentityUsedWithApp: string
-          allPreviousDisabled: string
-        }
+        identitiesUsedWithOrg: string
+        disabledIdentities: string
+        noIdentityUsed: string
+        noIdentityUsedWithApp: string
+        allPreviousDisabled: string
       }
       AuthManualRedirect: {
         failed: string

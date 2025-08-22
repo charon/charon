@@ -359,13 +359,13 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
       <template v-else>
         <h3 class="text-l font-bold mb-4">{{ t("partials.AuthIdentity.previouslyUsedIdentities") }}</h3>
         <div v-if="usedIdentities.length + addedIdentities.length + disabledIdentities.length === 0" class="italic mb-4">
-          {{ t("partials.AuthIdentity.statusMessages.noIdentityUsed") }}
+          {{ t("partials.AuthIdentity.noIdentityUsed") }}
         </div>
         <div v-else-if="usedIdentities.length + disabledIdentities.length === 0" class="italic mb-4">
-          {{ t("partials.AuthIdentity.statusMessages.noIdentityUsedWithApp") }}
+          {{ t("partials.AuthIdentity.noIdentityUsedWithApp") }}
         </div>
         <div v-else-if="usedIdentities.length + addedIdentities.length === 0" class="italic mb-4">
-          {{ t("partials.AuthIdentity.statusMessages.allPreviousDisabled") }}
+          {{ t("partials.AuthIdentity.allPreviousDisabled") }}
         </div>
         <div v-else-if="usedIdentities.length === 0" class="italic mb-4">{{ t("partials.AuthIdentity.previouslyUsedDisabled") }}</div>
         <ul v-else>
@@ -380,7 +380,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
           </li>
         </ul>
         <template v-if="addedIdentities.length">
-          <h3 class="text-l font-bold mb-4">{{ t("partials.AuthIdentity.sectionTitles.identitiesUsedWithOrg") }}</h3>
+          <h3 class="text-l font-bold mb-4">{{ t("partials.AuthIdentity.identitiesUsedWithOrg") }}</h3>
           <ul>
             <li v-for="(identity, i) of addedIdentities" :key="identity.identity.id" class="mb-4">
               <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate">
@@ -422,7 +422,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
           </li>
         </ul>
         <template v-if="disabledIdentities.length">
-          <h3 class="text-l font-bold mb-4">{{ t("partials.AuthIdentity.sectionTitles.disabledIdentities") }}</h3>
+          <h3 class="text-l font-bold mb-4">{{ t("partials.AuthIdentity.disabledIdentities") }}</h3>
           <ul>
             <li v-for="identity of disabledIdentities" :key="identity.identity.id" class="mb-4">
               <IdentityPublic

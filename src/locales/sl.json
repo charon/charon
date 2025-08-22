@@ -110,15 +110,11 @@
       "selectInstructions": "Izberite identiteto, s katero želite nadaljevati. Njene informacije bodo posredovane aplikaciji in organizaciji. Lahko tudi ustvarite novo identiteto ali zavrnete nadaljevanje.",
       "previouslyUsedIdentities": "Prej uporabljene identitete",
       "createNewIdentity": "Ustvari novo identiteto",
-      "sectionTitles": {
-        "identitiesUsedWithOrg": "Identitete uporabljene z organizacijo, vendar ne z aplikacijo",
-        "disabledIdentities": "Onemogočene identitete"
-      },
-      "statusMessages": {
-        "noIdentityUsed": "Še niste uporabili nobene identitete s to organizacijo.",
-        "noIdentityUsedWithApp": "Še niste uporabili nobene identitete s to aplikacijo v organizaciji.",
-        "allPreviousDisabled": "Vse prej uporabljene identitete s to organizacijo so onemogočene."
-      }
+      "identitiesUsedWithOrg": "Identitete uporabljene z organizacijo, vendar ne z aplikacijo",
+      "disabledIdentities": "Onemogočene identitete",
+      "noIdentityUsed": "Še niste uporabili nobene identitete s to organizacijo.",
+      "noIdentityUsedWithApp": "Še niste uporabili nobene identitete s to aplikacijo v organizaciji.",
+      "allPreviousDisabled": "Vse prej uporabljene identitete s to organizacijo so onemogočene."
     },
     "AuthManualRedirect": {
       "failed": "{strongSorry} Prijava ali registracija ni uspela.",
