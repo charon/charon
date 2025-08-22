@@ -95,7 +95,7 @@
       "confirmCode": "Prosimo, potrdite kodo za nadaljevanje.",
       "waitForCode": "Prosimo, počakajte nekaj minut, da koda prispe. Preverite mapo za nezaželeno pošto.",
       "securityWarning": "Če se niste prijavljali ali registrirali v {appName}, prosimo, prezrite e-pošto in {strongDont} potrdite kode.",
-      "strongDont": "ne",
+      "dont": "ne",
       "troubleEmail": "Če imate težave z dostopom do e-pošte, poskusite {link}.",
       "differentMethod": "drug način prijave ali registracije"
     },

@@ -98,7 +98,7 @@ declare module "vue-i18n" {
         confirmCode: string
         waitForCode: string
         securityWarning: string
-        strongDont: string
+        dont: string
         troubleEmail: string
         differentMethod: string
       }

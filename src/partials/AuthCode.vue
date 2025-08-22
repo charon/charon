@@ -277,7 +277,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
           <i18n-t keypath="partials.AuthCode.securityWarning" scope="global">
             <template #appName>{{ doc.applicationTemplate.name }}</template>
             <template #strongDont
-              ><strong>{{ t("partials.AuthCode.strongDont") }}</strong></template
+              ><strong>{{ t("partials.AuthCode.dont") }}</strong></template
             >
           </i18n-t>
         </template>

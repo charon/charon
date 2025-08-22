@@ -95,7 +95,7 @@
       "confirmCode": "Please confirm the code to continue.",
       "waitForCode": "Please allow few minutes for the code to arrive. Check spam or junk folder.",
       "securityWarning": "If you were not signing in or signing up into {appName}, please disregard the e-mail and {strongDont} confirm the code.",
-      "strongDont": "do not",
+      "dont": "do not",
       "troubleEmail": "If you have trouble accessing your e-mail, try a {link}.",
       "differentMethod": "different sign-in or sign-up method"
     },
