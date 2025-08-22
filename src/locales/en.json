@@ -62,7 +62,9 @@
     "entities": {
       "admins": "Admins",
       "users": "Users",
+      "identity": "Identity",
       "identities": "Identities",
+      "organization": "Organization",
       "organizations": "Organizations",
       "applications": "Applications",
       "applicationTemplates": "Application templates"
@@ -228,7 +230,6 @@
       "createIdentity": "Create identity"
     },
     "IdentityGet": {
-      "identity": "Identity",
       "createIdentity": "Create identity",
       "createNewIdentity": "Create new identity",
       "addedIdentities": "Added identities",
@@ -250,12 +251,10 @@
       "noIdentitiesSignIn": "There are no identities. Sign-in or sign-up to create the first one."
     },
     "OrganizationCreate": {
-      "organization": "Organization",
       "organizationName": "Organization name",
       "chooseOrganizationName": "Choose a name. You will be able to configure the organization after it is created."
     },
     "OrganizationGet": {
-      "organization": "Organization",
       "usersForOrganization": "Users for organization",
       "organizationName": "Organization name",
       "organizationUpdated": "Organization updated successfully.",

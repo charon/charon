@@ -651,7 +651,7 @@ async function onIdentitiesSubmit() {
     <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
       <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
         <div class="flex flex-row items-center">
-          <h1 class="text-2xl font-bold">{{ t("views.OrganizationGet.organization") }}</h1>
+          <h1 class="text-2xl font-bold">{{ t("common.entities.organization") }}</h1>
         </div>
         <div v-if="dataLoading">{{ t("common.data.dataLoading") }}</div>
         <div v-else-if="dataLoadingError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>

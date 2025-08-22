@@ -62,7 +62,9 @@
     "entities": {
       "admins": "Administratorji",
       "users": "Uporabniki",
+      "identity": "Identiteta",
       "identities": "Identitete",
+      "organization": "Organizacija",
       "organizations": "Organizacije",
       "applications": "Aplikacije",
       "applicationTemplates": "Predloge aplikacij"
@@ -229,7 +231,6 @@
       "createIdentity": "Ustvari identiteto"
     },
     "IdentityGet": {
-      "identity": "Identiteta",
       "createIdentity": "Ustvari identiteto",
       "createNewIdentity": "Ustvari novo identiteto",
       "addedIdentities": "Dodane identitete",
@@ -251,12 +252,10 @@
       "noIdentitiesSignIn": "Ni identitet. Prijavite se ali registrirajte, da ustvarite prvo."
     },
     "OrganizationCreate": {
-      "organization": "Organizacija",
       "organizationName": "Ime organizacije",
       "chooseOrganizationName": "Izberite ime. Po ustvaritvi boste lahko konfigurirali organizacijo."
     },
     "OrganizationGet": {
-      "organization": "Organizacija",
       "usersForOrganization": "Uporabniki za organizacijo",
       "organizationName": "Ime organizacije",
       "organizationUpdated": "Organizacija je bila uspešno posodobljena.",

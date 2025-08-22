@@ -65,7 +65,9 @@ declare module "vue-i18n" {
       entities: {
         admins: string
         users: string
+        identity: string
         identities: string
+        organization: string
         organizations: string
         applications: string
         applicationTemplates: string
