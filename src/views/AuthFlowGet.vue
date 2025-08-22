@@ -298,8 +298,8 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
             <i18n-t keypath="views.AuthFlowGet.instructionsMessage" scope="global">
               <template #appLink>
                 <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationApp">
-                  <template #default="{ doc }">
-                    <a :href="getHomepage(doc)" class="link"
+                  <template #default="{ doc, url }">
+                    <a :href="getHomepage(doc)" :data-url="url" class="link"
                       ><strong>{{ doc.applicationTemplate.name }}</strong></a
                     >
                   </template>
