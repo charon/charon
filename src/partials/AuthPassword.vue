@@ -386,11 +386,8 @@ async function onCode() {
       </div>
     </template>
     <div v-else-if="unexpectedPasswordError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
-    <div v-else-if="isEmail(flow.getEmailOrUsername())" class="mt-4">
-      {{ t("partials.AuthPassword.emailAccount") }}
-    </div>
     <div v-else class="mt-4">
-      {{ t("partials.AuthPassword.usernameAccount") }}
+      {{ isEmail(flow.getEmailOrUsername()) ? t("partials.AuthPassword.emailAccount") : t("partials.AuthPassword.usernameAccount") }}
     </div>
     <div v-if="codeError === 'noAccount'" class="mt-4" :class="codeErrorOnce ? 'text-error-600' : ''">
       {{ t("common.errors.noAccount") }}

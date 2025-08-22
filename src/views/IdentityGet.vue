@@ -520,12 +520,10 @@ async function onAddOrganization(organization: OrganizationRef) {
                 <li v-for="(identityOrganization, i) in identityOrganizations" :key="identityOrganization.id || i" class="flex flex-col mb-4">
                   <OrganizationListItem :item="identityOrganization.organization" h3 />
                   <IdentityOrganization :identity-organization="identityOrganization">
-                    <div v-if="metadata.can_update && identityOrganization.active" class="flex flew-row gap-4">
-                      <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = false">{{ t("common.buttons.disable") }}</Button>
-                      <Button type="button" :progress="progress" @click.prevent="identityOrganizations.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
-                    </div>
-                    <div v-else-if="metadata.can_update" class="flex flew-row gap-4">
-                      <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = true">{{ t("common.buttons.activate") }}</Button>
+                    <div v-if="metadata.can_update" class="flex flew-row gap-4">
+                      <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = !identityOrganization.active">
+                        {{ identityOrganization.active ? t("common.buttons.disable") : t("common.buttons.activate") }}
+                      </Button>
                       <Button type="button" :progress="progress" @click.prevent="identityOrganizations.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                     </div>
                   </IdentityOrganization>

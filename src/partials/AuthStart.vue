@@ -169,17 +169,11 @@ async function onThirdPartyProvider(provider: string) {
         -->
         <Button primary type="submit" :disabled="!flow.getEmailOrUsername().trim() || !!passwordError" :progress="progress">{{ t("common.buttons.next") }}</Button>
       </form>
-      <div v-if="passwordError === 'invalidEmailOrUsername' && isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">
-        {{ t("common.errors.invalidEmailOrUsername.email") }}
+      <div v-if="passwordError === 'invalidEmailOrUsername'" class="mt-4 text-error-600">
+        {{ isEmail(flow.getEmailOrUsername()) ? t("common.errors.invalidEmailOrUsername.email") : t("common.errors.invalidEmailOrUsername.username") }}
       </div>
-      <div v-else-if="passwordError === 'invalidEmailOrUsername' && !isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">
-        {{ t("common.errors.invalidEmailOrUsername.username") }}
-      </div>
-      <div v-else-if="passwordError === 'shortEmailOrUsername' && isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">
-        {{ t("common.errors.shortEmailOrUsername.email") }}
-      </div>
-      <div v-else-if="passwordError === 'shortEmailOrUsername' && !isEmail(flow.getEmailOrUsername())" class="mt-4 text-error-600">
-        {{ t("common.errors.shortEmailOrUsername.username") }}
+      <div v-else-if="passwordError === 'shortEmailOrUsername'" class="mt-4 text-error-600">
+        {{ isEmail(flow.getEmailOrUsername()) ? t("common.errors.shortEmailOrUsername.email") : t("common.errors.shortEmailOrUsername.username") }}
       </div>
       <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     </div>

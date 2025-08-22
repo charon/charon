@@ -770,21 +770,14 @@ async function onIdentitiesSubmit() {
                         </div>
                       </li>
                     </ol>
-                    <div v-if="application.active" class="flex flew-row justify-between items-center gap-4 mt-4">
+                    <div class="flex flew-row justify-between items-center gap-4 mt-4">
                       <div>
-                        {{ t("views.OrganizationGet.status") }} <strong>{{ t("common.labels.active") }}</strong>
+                        {{ t("views.OrganizationGet.status") }} <strong>{{ application.active ? t("common.labels.active") : t("common.labels.disabled") }}</strong>
                       </div>
                       <div class="flex flex-row gap-4">
-                        <Button type="button" :progress="progress" @click.prevent="application.active = false">{{ t("common.buttons.disable") }}</Button>
-                        <Button type="button" :progress="progress" @click.prevent="applications.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
-                      </div>
-                    </div>
-                    <div v-else class="flex flew-row justify-between items-center gap-4 mt-4">
-                      <div>
-                        {{ t("views.OrganizationGet.status") }} <strong>{{ t("common.labels.disabled") }}</strong>
-                      </div>
-                      <div class="flex flex-row gap-4">
-                        <Button type="button" :progress="progress" @click.prevent="application.active = true">{{ t("common.buttons.activate") }}</Button>
+                        <Button type="button" :progress="progress" @click.prevent="application.active = !application.active">
+                          {{ application.active ? t("common.buttons.disable") : t("common.buttons.activate") }}
+                        </Button>
                         <Button type="button" :progress="progress" @click.prevent="applications.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                       </div>
                     </div>
@@ -865,12 +858,10 @@ async function onIdentitiesSubmit() {
                       applications: organizationIdentity.applications,
                     }"
                   >
-                    <div v-if="organizationIdentity.canUpdate && organizationIdentity.active" class="flex flex-row gap-4">
-                      <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = false">{{ t("common.buttons.disable") }}</Button>
-                      <Button type="button" :progress="progress" @click.prevent="organizationIdentities.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
-                    </div>
-                    <div v-else-if="organizationIdentity.canUpdate" class="flex flex-row gap-4">
-                      <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = true">{{ t("common.buttons.activate") }}</Button>
+                    <div v-if="organizationIdentity.canUpdate" class="flex flex-row gap-4">
+                      <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = !organizationIdentity.active">
+                        {{ organizationIdentity.active ? t("common.buttons.disable") : t("common.buttons.activate") }}
+                      </Button>
                       <Button type="button" :progress="progress" @click.prevent="organizationIdentities.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                     </div>
                   </IdentityOrganization>
