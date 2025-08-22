@@ -16,6 +16,12 @@ export const i18n = createI18n({
   messages,
   pluralRules: {
     sl: (choice: number, choicesLength: number) => {
+      if (choicesLength === 1) {
+        return 0
+      }
+      if (choicesLength === 2) {
+        return choice === 1 ? 0 : 1
+      }
       if (choice % 100 === 1) {
         return 0
       }

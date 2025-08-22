@@ -102,8 +102,7 @@ declare module "vue-i18n" {
         codeFromHashEmail: string
         codeFromHashUsername: string
         resendButton: string
-        sent: string
-        sentMultiple: string
+        sentCount: string
         confirmCode: string
         waitForCode: string
         securityWarning: string

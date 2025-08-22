@@ -225,7 +225,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
       </label>
       <label v-else-if="!codeFromHash && isEmail(flow.getEmailOrUsername())" for="code" class="mb-1">
         <i18n-t keypath="partials.AuthCode.codeSentEmail" scope="global">
-          <template #sentCount>{{ sendCounter > 1 ? t("partials.AuthCode.sentMultiple", { count: sendCounter }) : t("partials.AuthCode.sent") }}</template>
+          <template #sentCount>{{ t("partials.AuthCode.sentCount", sendCounter) }}</template>
           <template #strongEmail
             ><strong>{{ flow.getEmailOrUsername() }}</strong></template
           >
@@ -233,7 +233,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
       </label>
       <label v-else-if="!codeFromHash" for="code" class="mb-1">
         <i18n-t keypath="partials.AuthCode.codeSentUsername" scope="global">
-          <template #sentCount>{{ sendCounter > 1 ? t("partials.AuthCode.sentMultiple", { count: sendCounter }) : t("partials.AuthCode.sent") }}</template>
+          <template #sentCount>{{ t("partials.AuthCode.sentCount", sendCounter) }}</template>
           <template #strongUsername
             ><strong>{{ flow.getEmailOrUsername() }}</strong></template
           >
