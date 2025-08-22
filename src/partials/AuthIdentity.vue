@@ -354,7 +354,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
       <div class="mb-4">
         {{ t("partials.AuthIdentity.selectInstructions") }}
       </div>
-      <div v-if="allIdentitiesLoading" class="mb-4">{{ t("common.loading.dataLoading") }}</div>
+      <div v-if="allIdentitiesLoading" class="mb-4">{{ t("common.data.dataLoading") }}</div>
       <div v-else-if="allIdentitiesLoadingError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
         <h3 class="text-l font-bold mb-4">{{ t("partials.AuthIdentity.previouslyUsedIdentities") }}</h3>

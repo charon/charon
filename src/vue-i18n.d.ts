@@ -49,9 +49,10 @@ declare module "vue-i18n" {
         added: string
         creator: string
       }
-      loading: {
+      data: {
         dataLoading: string
         loadingDataFailed: string
+        confirmUpdateToAllocate: string
       }
       fields: {
         description: string
@@ -181,7 +182,6 @@ declare module "vue-i18n" {
       }
       IdentityOrganization: {
         id: string
-        confirmUpdateToAllocate: string
         status: string
         apps: string
         none: string
@@ -268,7 +268,6 @@ declare module "vue-i18n" {
         clientId: string
         clientSecret: string
         configuration: string
-        confirmUpdateToAllocate: string
         manage: string
         publicClients: string
         serviceClients: string

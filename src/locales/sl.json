@@ -46,9 +46,10 @@
       "added": "dodana",
       "creator": "ustvarjalec"
     },
-    "loading": {
+    "data": {
       "dataLoading": "Nalaganje...",
-      "loadingDataFailed": "nalaganje podatkov neuspešno"
+      "loadingDataFailed": "nalaganje podatkov neuspešno",
+      "confirmUpdateToAllocate": "potrdite posodobitev za dodelitev"
     },
     "fields": {
       "description": "Opis",
@@ -178,7 +179,6 @@
     },
     "IdentityOrganization": {
       "id": "ID:",
-      "confirmUpdateToAllocate": "potrdite posodobitev za dodelitev",
       "status": "Status:",
       "apps": "Aplikacije:",
       "none": "brez"
@@ -271,7 +271,6 @@
       "clientId": "ID odjemalca:",
       "clientSecret": "Skrivnost odjemalca:",
       "configuration": "Konfiguracija",
-      "confirmUpdateToAllocate": "potrdite posodobitev za dodelitev",
       "manage": "Upravljaj",
       "publicClients": "Javni odjemalci",
       "serviceClients": "Servisni odjemalci",

@@ -653,7 +653,7 @@ async function onIdentitiesSubmit() {
         <div class="flex flex-row items-center">
           <h1 class="text-2xl font-bold">{{ t("views.OrganizationGet.organization") }}</h1>
         </div>
-        <div v-if="dataLoading">{{ t("common.loading.dataLoading") }}</div>
+        <div v-if="dataLoading">{{ t("common.data.dataLoading") }}</div>
         <div v-else-if="dataLoadingError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
         <template v-else>
           <form class="flex flex-col" novalidate @submit.prevent="onBasicSubmit">
@@ -715,7 +715,7 @@ async function onIdentitiesSubmit() {
                               <code>{{ client.id }}</code>
                             </div>
                             <div v-else>
-                              <span class="italic">{{ t("views.OrganizationGet.confirmUpdateToAllocate") }}</span>
+                              <span class="italic">{{ t("common.data.confirmUpdateToAllocate") }}</span>
                             </div>
                           </div>
                         </div>
@@ -733,7 +733,7 @@ async function onIdentitiesSubmit() {
                               <code>{{ client.id }}</code>
                             </div>
                             <div v-else>
-                              <span class="italic">{{ t("views.OrganizationGet.confirmUpdateToAllocate") }}</span>
+                              <span class="italic">{{ t("common.data.confirmUpdateToAllocate") }}</span>
                             </div>
                             <template v-if="client.id && generatedSecrets.has(client.client.id)">
                               <div>{{ t("views.OrganizationGet.clientSecret") }}</div>
@@ -757,7 +757,7 @@ async function onIdentitiesSubmit() {
                               <code>{{ client.id }}</code>
                             </div>
                             <div v-else>
-                              <span class="italic">{{ t("views.OrganizationGet.confirmUpdateToAllocate") }}</span>
+                              <span class="italic">{{ t("common.data.confirmUpdateToAllocate") }}</span>
                             </div>
                             <template v-if="client.id && generatedSecrets.has(client.client.id)">
                               <div>{{ t("views.OrganizationGet.clientSecret") }}</div>

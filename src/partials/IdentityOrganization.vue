@@ -23,7 +23,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
         <code>{{ identityOrganization.id }}</code>
       </div>
       <div v-else>
-        <span class="italic">{{ t("partials.IdentityOrganization.confirmUpdateToAllocate") }}</span>
+        <span class="italic">{{ t("common.data.confirmUpdateToAllocate") }}</span>
       </div>
       <div>{{ t("partials.IdentityOrganization.status") }}</div>
       <div>

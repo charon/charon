@@ -120,7 +120,7 @@ defineSlots<{
 <template>
   <slot v-if="doc" :doc="doc" :metadata="metadata" :url="url!"></slot>
   <slot v-else-if="error" name="error" :error="error" :url="url">
-    <i class="text-error-600" :data-url="url">{{ t("common.loading.loadingDataFailed") }}</i>
+    <i class="text-error-600" :data-url="url">{{ t("common.data.loadingDataFailed") }}</i>
   </slot>
   <slot v-else name="loading" :url="url"></slot>
 </template>

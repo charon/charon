@@ -46,9 +46,10 @@
       "added": "added",
       "creator": "creator"
     },
-    "loading": {
+    "data": {
       "dataLoading": "Loading...",
-      "loadingDataFailed": "loading data failed"
+      "loadingDataFailed": "loading data failed",
+      "confirmUpdateToAllocate": "confirm update to allocate"
     },
     "fields": {
       "description": "Description",
@@ -178,7 +179,6 @@
     },
     "IdentityOrganization": {
       "id": "ID:",
-      "confirmUpdateToAllocate": "confirm update to allocate",
       "status": "Status:",
       "apps": "Apps:",
       "none": "none"
@@ -270,7 +270,6 @@
       "clientId": "Client ID:",
       "clientSecret": "Client secret:",
       "configuration": "Configuration",
-      "confirmUpdateToAllocate": "confirm update to allocate",
       "manage": "Manage",
       "publicClients": "Public clients",
       "serviceClients": "Service clients",

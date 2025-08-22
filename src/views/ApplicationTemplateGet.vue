@@ -654,7 +654,7 @@ function onAddAdmin() {
         <div class="flex flex-row items-center">
           <h1 class="text-2xl font-bold">{{ t("common.entities.applicationTemplates") }}</h1>
         </div>
-        <div v-if="dataLoading">{{ t("common.loading.dataLoading") }}</div>
+        <div v-if="dataLoading">{{ t("common.data.dataLoading") }}</div>
         <div v-else-if="dataLoadingError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
         <template v-else>
           <form class="flex flex-col" novalidate @submit.prevent="onBasicSubmit">
