@@ -111,7 +111,7 @@
       "noOtherIdentitiesCreateOne": "There are no other identities. Create one.",
       "selectInstructions": "Select the identity you want to continue with. Its information will be provided to the app and the organization. You can also create a new identity or decline to proceed.",
       "previouslyUsedIdentities": "Previously used identities",
-      "createNewIdentity": "Create new identity",
+      "createNewIdentity": "@:partials.AuthIdentity.newIdentityButton",
       "identitiesUsedWithOrg": "Identities used with the organization, but not the app",
       "disabledIdentities": "Disabled identities",
       "noIdentityUsed": "You have not yet used any identity with this organization.",
@@ -170,7 +170,7 @@
   "views": {
     "ApplicationTemplateCreate": {
       "createApplicationTemplate": "Create application template",
-      "applicationTemplateName": "Application template name",
+      "applicationTemplateName": "@:views.ApplicationTemplateGet.applicationTemplateName",
       "chooseApplicationTemplateName": "Choose a name. You will be able to configure the application template after it is created."
     },
     "ApplicationTemplateGet": {
@@ -225,7 +225,7 @@
     },
     "OrganizationCreate": {
       "createOrganization": "Create organization",
-      "organizationName": "Organization name",
+      "organizationName": "@:views.OrganizationGet.organizationName",
       "chooseOrganizationName": "Choose a name. You will be able to configure the organization after it is created."
     },
     "OrganizationGet": {
