@@ -188,7 +188,6 @@ onBeforeUnmount(() => {
       <i18n-t
         keypath="partials.AuthThirdPartyProvider.redirectMessage"
         scope="global"
-        :provider="flow.getThirdPartyProvider()!.name"
         :time="t('common.time.seconds', seconds)"
         :paused-text="paused ? t('common.time.paused') : ''"
       >
