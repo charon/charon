@@ -164,7 +164,7 @@
       "id": "ID:",
       "status": "Status:",
       "apps": "Aplikacije:",
-      "none": "brez"
+      "noApps": "brez"
     }
   },
   "views": {

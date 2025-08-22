@@ -164,7 +164,7 @@
       "id": "ID:",
       "status": "Status:",
       "apps": "Apps:",
-      "none": "none"
+      "noApps": "none"
     }
   },
   "views": {

@@ -175,7 +175,7 @@ declare module "vue-i18n" {
         id: string
         status: string
         apps: string
-        none: string
+        noApps: string
       }
     }
     views: {

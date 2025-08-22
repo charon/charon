@@ -39,7 +39,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
           </WithOrganizationApplicationDocument>
         </li>
       </ol>
-      <div v-else class="italic">{{ t("partials.IdentityOrganization.none") }}</div>
+      <div v-else class="italic">{{ t("partials.IdentityOrganization.noApps") }}</div>
     </div>
     <slot />
   </div>
