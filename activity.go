@@ -128,7 +128,6 @@ func (a *Activity) Validate(_ context.Context, existing *Activity) errors.E {
 
 	if time.Time(a.Timestamp).IsZero() {
 		a.Timestamp = Time(time.Now().UTC())
-
 	}
 
 	if a.Type == "" {
@@ -191,7 +190,7 @@ func detectSliceChanges[T comparable](old, new []T) (added, removed, changed boo
 		newSet[item] = true
 	}
 
-	// Check for additions
+	// Check for additions.
 	for item := range newSet {
 		if !oldSet[item] {
 			added = true
@@ -199,7 +198,7 @@ func detectSliceChanges[T comparable](old, new []T) (added, removed, changed boo
 		}
 	}
 
-	// Check for removals
+	// Check for removals.
 	for item := range oldSet {
 		if !newSet[item] {
 			removed = true

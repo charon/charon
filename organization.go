@@ -650,12 +650,12 @@ func (o *Organization) Changes(existing *Organization) []ActivityChangeType {
 
 	changes := []ActivityChangeType{}
 
-	// Check public data changes
+	// Check public data changes.
 	if existing.Name != o.Name || existing.Description != o.Description {
 		changes = append(changes, ActivityChangePublicData)
 	}
 
-	// Check permissions changes (admins)
+	// Check permissions changes (admins).
 	adminsAdded, adminsRemoved, _ := detectSliceChanges(existing.Admins, o.Admins)
 
 	if adminsAdded {
@@ -665,12 +665,12 @@ func (o *Organization) Changes(existing *Organization) []ActivityChangeType {
 		changes = append(changes, ActivityChangePermissionsRemoved)
 	}
 
-	// Check application changes (membership changes)
+	// Check application changes (membership changes).
 	appsAdded := false
 	appsRemoved := false
 	appsChanged := false
 
-	// Create maps for comparison
+	// Create maps for comparison.
 	existingAppMap := make(map[identifier.Identifier]*OrganizationApplication)
 	for i := range existing.Applications {
 		if existing.Applications[i].ID != nil {
@@ -685,10 +685,10 @@ func (o *Organization) Changes(existing *Organization) []ActivityChangeType {
 		}
 	}
 
-	// Check for additions and changes
+	// Check for additions and changes.
 	for id, newApp := range newAppMap {
 		if existingApp, exists := existingAppMap[id]; exists {
-			// Check for status changes
+			// Check for status changes.
 			if existingApp.Active != newApp.Active {
 				if newApp.Active {
 					changes = append(changes, ActivityChangeMembershipActivated)
@@ -696,7 +696,7 @@ func (o *Organization) Changes(existing *Organization) []ActivityChangeType {
 					changes = append(changes, ActivityChangeMembershipDisabled)
 				}
 			}
-			// Check for other changes
+			// Check for other changes.
 			if !reflect.DeepEqual(existingApp.Values, newApp.Values) ||
 				!reflect.DeepEqual(existingApp.ClientsPublic, newApp.ClientsPublic) ||
 				!reflect.DeepEqual(existingApp.ClientsBackend, newApp.ClientsBackend) ||
@@ -708,7 +708,7 @@ func (o *Organization) Changes(existing *Organization) []ActivityChangeType {
 		}
 	}
 
-	// Check for removals
+	// Check for removals.
 	for id := range existingAppMap {
 		if _, exists := newAppMap[id]; !exists {
 			appsRemoved = true

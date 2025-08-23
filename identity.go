@@ -401,12 +401,12 @@ func (i *Identity) Changes(existing *Identity) []ActivityChangeType {
 
 	changes := []ActivityChangeType{}
 
-	// Check public data changes
+	// Check public data changes.
 	if !reflect.DeepEqual(existing.IdentityPublic, i.IdentityPublic) {
 		changes = append(changes, ActivityChangePublicData)
 	}
 
-	// Check permissions changes (users and admins)
+	// Check permissions changes (users and admins).
 	usersAdded, usersRemoved, _ := detectSliceChanges(existing.Users, i.Users)
 	adminsAdded, adminsRemoved, _ := detectSliceChanges(existing.Admins, i.Admins)
 
@@ -417,8 +417,7 @@ func (i *Identity) Changes(existing *Identity) []ActivityChangeType {
 		changes = append(changes, ActivityChangePermissionsRemoved)
 	}
 
-	// Check organization membership changes
-	// For organizations, we need to check both membership and status changes
+	// For organizations, we need to check both membership and status changes.
 	orgMap := make(map[identifier.Identifier]*IdentityOrganization)
 	for j := range existing.Organizations {
 		orgMap[existing.Organizations[j].Organization.ID] = &existing.Organizations[j]
@@ -430,11 +429,11 @@ func (i *Identity) Changes(existing *Identity) []ActivityChangeType {
 	membershipActivated := false
 	membershipDisabled := false
 
-	// Check new organizations for additions and changes
+	// Check new organizations for additions and changes.
 	for j := range i.Organizations {
 		newOrg := &i.Organizations[j]
 		if existingOrg, exists := orgMap[newOrg.Organization.ID]; exists {
-			// Organization exists, check for changes
+			// Organization exists, check for changes.
 			if existingOrg.Active != newOrg.Active {
 				if newOrg.Active {
 					membershipActivated = true
@@ -446,12 +445,12 @@ func (i *Identity) Changes(existing *Identity) []ActivityChangeType {
 				membershipChanged = true
 			}
 		} else {
-			// New organization added
+			// New organization added.
 			membershipAdded = true
 		}
 	}
 
-	// Check for removed organizations
+	// Check for removed organizations.
 	newOrgMap := make(map[identifier.Identifier]bool)
 	for j := range i.Organizations {
 		newOrgMap[i.Organizations[j].Organization.ID] = true

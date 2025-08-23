@@ -771,12 +771,12 @@ func (a *ApplicationTemplate) Changes(existing *ApplicationTemplate) []ActivityC
 
 	changes := []ActivityChangeType{}
 
-	// Check public data changes
+	// Check public data changes.
 	if existing.Name != a.Name || existing.Description != a.Description {
 		changes = append(changes, ActivityChangePublicData)
 	}
 
-	// Check permissions changes (admins)
+	// Check permissions changes (admins).
 	adminsAdded, adminsRemoved, _ := detectSliceChanges(existing.Admins, a.Admins)
 
 	if adminsAdded {
@@ -867,7 +867,10 @@ func (s *Service) updateApplicationTemplate(ctx context.Context, applicationTemp
 
 	s.applicationTemplates[*applicationTemplate.ID] = data
 
-	errE = s.logActivity(ctx, ActivityApplicationTemplateUpdate, nil, nil, []ApplicationTemplateRef{{ID: *applicationTemplate.ID}}, nil, applicationTemplate.Changes(&existingApplicationTemplate), nil)
+	errE = s.logActivity(
+		ctx, ActivityApplicationTemplateUpdate, nil, nil, []ApplicationTemplateRef{{ID: *applicationTemplate.ID}},
+		nil, applicationTemplate.Changes(&existingApplicationTemplate), nil,
+	)
 	if errE != nil {
 		return errE
 	}
