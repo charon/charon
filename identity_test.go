@@ -140,7 +140,7 @@ func TestUpdateIdentity(t *testing.T) {
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	updatedIdentity, _, errE := service.TestingGetIdentity(ctx, identityID)
-	require.NoError(t, errE)
+	require.NoError(t, errE, "% -+#.1v", errE)
 
 	identityRef := charon.IdentityRef{ID: identityID}
 
@@ -274,7 +274,7 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	// Validate to re-add back the user identity.
 	updatedUserIdentity.Admins = nil
 	errE = service.TestingUpdateIdentity(userCtx, updatedUserIdentity)
-	require.NoError(t, errE)
+	require.NoError(t, errE, "% -+#.1v", errE)
 
 	access = service.TestingGetIdentitiesAccess(userAccountID)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
