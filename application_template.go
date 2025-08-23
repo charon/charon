@@ -797,10 +797,7 @@ func (s *Service) createApplicationTemplate(ctx context.Context, applicationTemp
 	s.applicationTemplates[*applicationTemplate.ID] = data
 
 	// Log application template creation activity.
-	s.logActivity(ctx, ActivityApplicationTemplateCreate, &ActivityDocumentRef{ //nolint:exhaustruct
-		ID:   *applicationTemplate.ID,
-		Type: "application_template",
-	}, nil)
+	s.logActivity(ctx, ActivityApplicationTemplateCreate, applicationTemplate.ID, nil)
 
 	return nil
 }
@@ -843,10 +840,7 @@ func (s *Service) updateApplicationTemplate(ctx context.Context, applicationTemp
 	s.applicationTemplates[*applicationTemplate.ID] = data
 
 	// Log application template update activity.
-	s.logActivity(ctx, ActivityApplicationTemplateUpdate, &ActivityDocumentRef{ //nolint:exhaustruct
-		ID:   *applicationTemplate.ID,
-		Type: "application_template",
-	}, nil)
+	s.logActivity(ctx, ActivityApplicationTemplateUpdate, applicationTemplate.ID, nil)
 
 	return nil
 }

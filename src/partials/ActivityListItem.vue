@@ -63,19 +63,26 @@ const getFormattedTimestamp = (timestamp: string) => {
   return date.toLocaleString()
 }
 
-const getDocumentTypeLabel = (documentType: string | undefined) => {
-  if (!documentType) return ""
-
-  switch (documentType) {
-    case "identity":
-      return t("common.entities.identity")
-    case "organization":
-      return t("common.entities.organization")
-    case "application_template":
-      return t("common.entities.applicationTemplate")
-    default:
-      return documentType
+const getDocumentInfo = (doc: Activity) => {
+  if (doc.identity) {
+    return {
+      type: t("common.entities.identity"),
+      id: doc.identity.id,
+    }
   }
+  if (doc.organization) {
+    return {
+      type: t("common.entities.organization"),
+      id: doc.organization.id,
+    }
+  }
+  if (doc.applicationTemplate) {
+    return {
+      type: t("common.entities.applicationTemplate"),
+      id: doc.applicationTemplate.id,
+    }
+  }
+  return null
 }
 </script>
 
@@ -91,7 +98,7 @@ const getDocumentTypeLabel = (documentType: string | undefined) => {
             <div class="font-medium text-gray-900">
               {{ getActivityDescription(doc.type) }}
             </div>
-            <div v-if="doc.document" class="text-sm text-gray-600">{{ getDocumentTypeLabel(doc.document.type) }}: {{ doc.document.id }}</div>
+            <div v-if="getDocumentInfo(doc)" class="text-sm text-gray-600">{{ getDocumentInfo(doc)!.type }}: {{ getDocumentInfo(doc)!.id }}</div>
             <div class="text-xs text-gray-500">
               {{ getFormattedTimestamp(doc.timestamp) }}
             </div>

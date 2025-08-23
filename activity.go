@@ -28,12 +28,6 @@ const (
 	ActivityApplicationTemplateUpdate ActivityType = "applicationTemplateUpdate"
 )
 
-// ActivityDocumentRef represents a reference to a document that was affected by the activity.
-type ActivityDocumentRef struct {
-	ID   identifier.Identifier `json:"id"`
-	Type string                `json:"type"`
-}
-
 // Activity represents a user activity record.
 type Activity struct {
 	ID        *identifier.Identifier `json:"id"`
@@ -41,10 +35,12 @@ type Activity struct {
 	Type      ActivityType           `json:"type"`
 
 	// The identity that performed this activity.
-	Identity IdentityRef `json:"identity"`
+	Actor IdentityRef `json:"actor"`
 
-	// Optional reference to the document that was affected.
-	Document *ActivityDocumentRef `json:"document,omitempty"`
+	// Optional references to documents that were affected by the activity.
+	Identity            *IdentityRef            `json:"identity,omitempty"`
+	Organization        *OrganizationRef        `json:"organization,omitempty"`
+	ApplicationTemplate *ApplicationTemplateRef `json:"applicationTemplate,omitempty"`
 
 	// Optional additional metadata about the activity.
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
@@ -126,18 +122,33 @@ func (s *Service) createActivity(ctx context.Context, activity *Activity) errors
 }
 
 // logActivity creates a new activity record for the current user.
-func (s *Service) logActivity(ctx context.Context, activityType ActivityType, document *ActivityDocumentRef, metadata map[string]interface{}) {
+// logActivity creates a new activity record for the current user.
+// The documentID parameter is optional and will be used to create the appropriate document reference based on activityType.
+func (s *Service) logActivity(ctx context.Context, activityType ActivityType, documentID *identifier.Identifier, metadata map[string]interface{}) {
 	// Get current identity from context, return silently if not present.
-	identityID, hasIdentity := ctx.Value(identityIDContextKey).(identifier.Identifier)
-	if !hasIdentity {
+	actorID, hasActor := ctx.Value(identityIDContextKey).(identifier.Identifier)
+	if !hasActor {
 		return
 	}
 
 	activity := &Activity{ //nolint:exhaustruct
 		Type:     activityType,
-		Identity: IdentityRef{ID: identityID},
-		Document: document,
+		Actor:    IdentityRef{ID: actorID},
 		Metadata: metadata,
+	}
+
+	// Set the appropriate document reference based on activity type and documentID.
+	if documentID != nil {
+		switch activityType {
+		case ActivityIdentityCreate, ActivityIdentityUpdate:
+			activity.Identity = &IdentityRef{ID: *documentID}
+		case ActivityOrganizationCreate, ActivityOrganizationUpdate:
+			activity.Organization = &OrganizationRef{ID: *documentID}
+		case ActivityApplicationTemplateCreate, ActivityApplicationTemplateUpdate:
+			activity.ApplicationTemplate = &ApplicationTemplateRef{ID: *documentID}
+		case ActivitySignIn, ActivitySignOut:
+			// These activity types don't have associated documents, ignore documentID.
+		}
 	}
 
 	// We don't propagate errors from activity logging as it shouldn't break the main operation.

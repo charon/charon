@@ -385,17 +385,14 @@ export type ActivityType =
   | "applicationTemplateCreate"
   | "applicationTemplateUpdate"
 
-export type ActivityDocumentRef = {
-  id: string
-  type: string
-}
-
 export type Activity = {
   id: string
   timestamp: string
   type: ActivityType
-  identity: IdentityRef
-  document?: ActivityDocumentRef
+  actor: IdentityRef
+  identity?: IdentityRef
+  organization?: OrganizationRef
+  applicationTemplate?: ApplicationTemplateRef
   metadata?: Record<string, unknown>
 }
 

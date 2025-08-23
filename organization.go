@@ -675,10 +675,7 @@ func (s *Service) createOrganization(ctx context.Context, organization *Organiza
 	s.organizations[*organization.ID] = data
 
 	// Log organization creation activity.
-	s.logActivity(ctx, ActivityOrganizationCreate, &ActivityDocumentRef{ //nolint:exhaustruct
-		ID:   *organization.ID,
-		Type: "organization",
-	}, nil)
+	s.logActivity(ctx, ActivityOrganizationCreate, organization.ID, nil)
 
 	return nil
 }
@@ -722,10 +719,7 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 	s.organizations[*organization.ID] = data
 
 	// Log organization update activity.
-	s.logActivity(ctx, ActivityOrganizationUpdate, &ActivityDocumentRef{ //nolint:exhaustruct
-		ID:   *organization.ID,
-		Type: "organization",
-	}, nil)
+	s.logActivity(ctx, ActivityOrganizationUpdate, organization.ID, nil)
 
 	return nil
 }
