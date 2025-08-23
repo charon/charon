@@ -44,19 +44,6 @@ func (s *Service) AuthSignoutPost(w http.ResponseWriter, req *http.Request, _ wa
 
 	ctx := req.Context()
 
-	// Log sign-out activity if user is authenticated.
-	co := s.charonOrganization()
-	identityID, _, sessionID, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
-	if errE == nil {
-		ctx = s.withIdentityID(ctx, identityID)
-		ctx = s.withSessionID(ctx, sessionID)
-		errE = s.logActivity(ctx, ActivitySignOut, nil, nil, nil, nil, nil, nil)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-	}
-
 	// We clear all session cookies for all flows.
 	for _, cookie := range req.Cookies() {
 		if strings.HasPrefix(cookie.Name, SessionCookiePrefix) {
@@ -87,10 +74,26 @@ func (s *Service) AuthSignoutPost(w http.ResponseWriter, req *http.Request, _ wa
 
 	token := getBearerToken(req)
 	if token != "" {
+		// TODO: This should all (revocation and activity logging) work also when access token provided is for some other app, not only for Charon Dashboard.
+
+		co := s.charonOrganization()
+
+		// Log sign-out activity.
+		identityID, _, sessionID, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
+		if errE == nil {
+			c := s.withIdentityID(ctx, identityID)
+			c = s.withSessionID(c, sessionID)
+			errE = s.logActivity(c, ActivitySignOut, nil, nil, nil, nil, nil, nil)
+			if errE != nil {
+				s.InternalServerErrorWithError(w, req, errE)
+				return
+			}
+		}
+
 		// OIDC GetClient requires ctx with serviceContextKey set.
 		ctx = context.WithValue(ctx, serviceContextKey, s)
 		oidc := s.oidc()
-		co := s.charonOrganization()
+
 		revoke, errE := s.ReverseAPI("OIDCRevoke", nil, nil)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
