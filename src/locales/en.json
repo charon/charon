@@ -270,10 +270,9 @@
       "usersForOrganization": "Users for organization",
       "noUsers": "There are no users."
     },
-    "Activity": {
+    "ActivityList": {
       "title": "Activity",
-      "noActivities": "No activity recorded yet.",
-      "noActivitiesSignIn": "Sign-in to view your activity."
+      "noActivities": "There is not activity."
     }
   }
 }

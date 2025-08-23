@@ -270,10 +270,9 @@
       "usersForOrganization": "Uporabniki za organizacijo",
       "noUsers": "Ni uporabnikov."
     },
-    "Activity": {
+    "ActivityList": {
       "title": "Aktivnost",
-      "noActivities": "Še ni zabeležene aktivnosti.",
-      "noActivitiesSignIn": "Prijavite se za ogled vaše aktivnosti."
+      "noActivities": "Ni aktivnosti."
     }
   }
 }

@@ -281,10 +281,9 @@ declare module "vue-i18n" {
         usersForOrganization: string
         noUsers: string
       }
-      Activity: {
+      ActivityList: {
         title: string
         noActivities: string
-        noActivitiesSignIn: string
       }
     }
   }
