@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { Activity, ActivityRef } from "@/types"
+import type { Activity, ActivityRef, Identity, Organization, ApplicationTemplate } from "@/types"
+import type { DeepReadonly } from "vue"
 
 import { useI18n } from "vue-i18n"
 import WithDocument from "@/components/WithDocument.vue"
@@ -11,6 +12,9 @@ defineProps<{
 }>()
 
 const WithActivityDocument = WithDocument<Activity>
+const WithIdentityDocument = WithDocument<Identity>
+const WithOrganizationDocument = WithDocument<Organization>
+const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
 
 const getActivityIcon = (type: string) => {
   switch (type) {
@@ -63,26 +67,8 @@ const getFormattedTimestamp = (timestamp: string) => {
   return date.toLocaleString()
 }
 
-const getDocumentInfo = (doc: Activity) => {
-  if (doc.identity) {
-    return {
-      type: t("common.entities.identity"),
-      id: doc.identity.id,
-    }
-  }
-  if (doc.organization) {
-    return {
-      type: t("common.entities.organization"),
-      id: doc.organization.id,
-    }
-  }
-  if (doc.applicationTemplate) {
-    return {
-      type: t("common.entities.applicationTemplate"),
-      id: doc.applicationTemplate.id,
-    }
-  }
-  return null
+const getIdentityDisplayName = (identity: Identity | DeepReadonly<Identity>) => {
+  return identity.username || identity.email || identity.givenName || identity.fullName || identity.id
 }
 
 const getChangeDescription = (changeType: string) => {
@@ -123,16 +109,50 @@ const getChangeDescription = (changeType: string) => {
             <div class="font-medium text-gray-900">
               {{ getActivityDescription(doc.type) }}
             </div>
-            <div v-if="getDocumentInfo(doc)" class="text-sm text-gray-600">{{ getDocumentInfo(doc)!.type }}: {{ getDocumentInfo(doc)!.id }}</div>
+            <div v-if="doc.identity" class="text-sm text-gray-600">
+              {{ t("common.entities.identity") }}:
+              <WithIdentityDocument :params="{ id: doc.identity.id }" name="IdentityGet">
+                <template #default="{ doc: identityDoc, url: identityUrl }">
+                  <router-link :to="{ name: 'IdentityGet', params: { id: doc.identity.id } }" :data-url="identityUrl" class="link">
+                    {{ getIdentityDisplayName(identityDoc) }}
+                  </router-link>
+                </template>
+                <template #error="{ url: identityErrorUrl }">
+                  <span :data-url="identityErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
+                </template>
+              </WithIdentityDocument>
+            </div>
+            <div v-if="doc.organization" class="text-sm text-gray-600">
+              {{ t("common.entities.organization") }}:
+              <WithOrganizationDocument :params="{ id: doc.organization.id }" name="OrganizationGet">
+                <template #default="{ doc: orgDoc, url: orgUrl }">
+                  <router-link :to="{ name: 'OrganizationGet', params: { id: doc.organization.id } }" :data-url="orgUrl" class="link">
+                    {{ orgDoc.name }}
+                  </router-link>
+                </template>
+                <template #error="{ url: orgErrorUrl }">
+                  <span :data-url="orgErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
+                </template>
+              </WithOrganizationDocument>
+            </div>
+            <div v-if="doc.applicationTemplate" class="text-sm text-gray-600">
+              {{ t("common.entities.applicationTemplate") }}:
+              <WithApplicationTemplateDocument :params="{ id: doc.applicationTemplate.id }" name="ApplicationTemplateGet">
+                <template #default="{ doc: appDoc, url: appUrl }">
+                  <router-link :to="{ name: 'ApplicationTemplateGet', params: { id: doc.applicationTemplate.id } }" :data-url="appUrl" class="link">
+                    {{ appDoc.name }}
+                  </router-link>
+                </template>
+                <template #error="{ url: appErrorUrl }">
+                  <span :data-url="appErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
+                </template>
+              </WithApplicationTemplateDocument>
+            </div>
             <div class="text-xs text-gray-500">
               {{ getFormattedTimestamp(doc.timestamp) }}
             </div>
             <div v-if="doc.changes" class="flex flex-wrap gap-1 mt-1">
-              <span
-                v-for="change in doc.changes"
-                :key="change"
-                class="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full"
-              >
+              <span v-for="change in doc.changes" :key="change" class="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
                 {{ getChangeDescription(change) }}
               </span>
             </div>
