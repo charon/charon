@@ -32,8 +32,6 @@ const (
 type ActivityDocumentRef struct {
 	ID   identifier.Identifier `json:"id"`
 	Type string                `json:"type"`
-	// VersionID will be used in the future when documents have history.
-	VersionID *identifier.Identifier `json:"versionId,omitempty"`
 }
 
 // Activity represents a user activity record.

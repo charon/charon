@@ -388,7 +388,6 @@ export type ActivityType =
 export type ActivityDocumentRef = {
   id: string
   type: string
-  versionId?: string
 }
 
 export type Activity = {
