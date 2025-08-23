@@ -120,12 +120,8 @@ func (s *Service) createActivity(ctx context.Context, activity *Activity) errors
 //
 // The optional ID parameters will be used to create the appropriate references based on activityType.
 func (s *Service) logActivity(
-	ctx context.Context,
-	activityType ActivityType,
-	documentID *identifier.Identifier,
-	organizationID *identifier.Identifier,
-	appID *identifier.Identifier,
-	identityDocID *identifier.Identifier,
+	ctx context.Context, activityType ActivityType, identityID *identifier.Identifier, organizationID *identifier.Identifier,
+	applicationTemplateID *identifier.Identifier, appID *identifier.Identifier,
 ) {
 	// Get current identity from context, return silently if not present.
 	actorID, hasActor := ctx.Value(identityIDContextKey).(identifier.Identifier)
@@ -142,16 +138,16 @@ func (s *Service) logActivity(
 	// Set the appropriate document references based on activity type and provided IDs.
 	switch activityType {
 	case ActivityIdentityCreate, ActivityIdentityUpdate:
-		if identityDocID != nil {
-			activity.Identity = &IdentityRef{ID: *identityDocID}
+		if identityID != nil {
+			activity.Identity = &IdentityRef{ID: *identityID}
 		}
 	case ActivityOrganizationCreate, ActivityOrganizationUpdate:
 		if organizationID != nil {
 			activity.Organization = &OrganizationRef{ID: *organizationID}
 		}
 	case ActivityApplicationTemplateCreate, ActivityApplicationTemplateUpdate:
-		if documentID != nil {
-			activity.ApplicationTemplate = &ApplicationTemplateRef{ID: *documentID}
+		if applicationTemplateID != nil {
+			activity.ApplicationTemplate = &ApplicationTemplateRef{ID: *applicationTemplateID}
 		}
 	case ActivitySignIn:
 		// For sign-in, we can set organization reference if provided.
