@@ -8,6 +8,7 @@ import (
 
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
+	"gitlab.com/tozd/go/zerolog"
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 )
@@ -55,10 +56,27 @@ const (
 	ActivityChangeMembershipDisabled ActivityChangeType = "membershipDisabled"
 )
 
+type Time time.Time
+
+func (t Time) MarshalJSON() ([]byte, error) {
+	// We want only millisecond precision to minimize any side channels.
+	return x.MarshalWithoutEscapeHTML(time.Time(t).Format(zerolog.TimeFieldFormat))
+}
+
+func (t *Time) UnmarshalJSON(data []byte) error {
+	var tt time.Time
+	errE := x.UnmarshalWithoutUnknownFields(data, &tt)
+	if errE != nil {
+		return errE
+	}
+	*t = Time(tt)
+	return nil
+}
+
 // Activity represents a user activity record.
 type Activity struct {
 	ID        *identifier.Identifier `json:"id"`
-	Timestamp time.Time              `json:"timestamp"`
+	Timestamp Time                   `json:"timestamp"`
 	Type      ActivityType           `json:"type"`
 
 	// The identity that performed this activity.
@@ -103,8 +121,9 @@ func (a *Activity) Validate(_ context.Context, existing *Activity) errors.E {
 		return errE
 	}
 
-	if a.Timestamp.IsZero() {
-		a.Timestamp = time.Now().UTC()
+	if time.Time(a.Timestamp).IsZero() {
+		a.Timestamp = Time(time.Now().UTC())
+
 	}
 
 	if a.Type == "" {
@@ -283,7 +302,7 @@ func (s *Service) ActivityListGet(w http.ResponseWriter, req *http.Request, _ wa
 
 	// Sort activities by timestamp (newest first).
 	slices.SortFunc(activities, func(a, b *Activity) int {
-		return b.Timestamp.Compare(a.Timestamp)
+		return time.Time(b.Timestamp).Compare(time.Time(a.Timestamp))
 	})
 
 	// Convert to refs.
