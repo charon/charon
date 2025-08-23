@@ -3,6 +3,8 @@ import type { Activity, ActivityRef, Identity, Organization, ApplicationTemplate
 import type { DeepReadonly } from "vue"
 
 import { useI18n } from "vue-i18n"
+import { LockClosedIcon, LockOpenIcon, IdentificationIcon, UserGroupIcon, CalculatorIcon } from "@heroicons/vue/24/outline"
+import { IdentificationIcon as IdentificationSolidIcon, UserGroupIcon as UserGroupSolidIcon, CalculatorIcon as CalculatorSolidIcon } from "@heroicons/vue/24/solid"
 import WithDocument from "@/components/WithDocument.vue"
 
 const { t } = useI18n({ useScope: "global" })
@@ -16,26 +18,26 @@ const WithIdentityDocument = WithDocument<Identity>
 const WithOrganizationDocument = WithDocument<Organization>
 const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
 
-const getActivityIcon = (type: string) => {
-  switch (type) {
+const getActivityIcon = (activityType: string) => {
+  switch (activityType) {
     case "signIn":
-      return "🔓"
+      return LockOpenIcon
     case "signOut":
-      return "🔒"
+      return LockClosedIcon
     case "identityCreate":
-      return "👤"
+      return IdentificationIcon
     case "identityUpdate":
-      return "✏️"
+      return IdentificationSolidIcon
     case "organizationCreate":
-      return "🏢"
+      return UserGroupIcon
     case "organizationUpdate":
-      return "🏢"
+      return UserGroupSolidIcon
     case "applicationTemplateCreate":
-      return "📱"
+      return CalculatorIcon
     case "applicationTemplateUpdate":
-      return "📱"
+      return CalculatorSolidIcon
     default:
-      return "⚡"
+      throw new Error(`unknown activity type: ${activityType}`)
   }
 }
 
@@ -100,16 +102,16 @@ const getChangeDescription = (changeType: string) => {
 <template>
   <WithActivityDocument :params="{ id: item.id }" name="ActivityGet">
     <template #default="{ doc, url }">
-      <div class="flex items-start gap-3" :data-url="url">
-        <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center text-lg">
-          {{ getActivityIcon(doc.type) }}
+      <div class="flex items-start gap-4" :data-url="url">
+        <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center">
+          <component :is="getActivityIcon(doc.type)" />
         </div>
         <div class="flex-grow">
           <div class="flex flex-col gap-1">
-            <div class="font-medium text-gray-900">
+            <h3 class="font-medium">
               {{ getActivityDescription(doc.type) }}
-            </div>
-            <div v-if="doc.identity" class="text-sm text-gray-600">
+            </h3>
+            <div v-if="doc.identity" class="text-sm">
               {{ t("common.entities.identity") }}:
               <WithIdentityDocument :params="{ id: doc.identity.id }" name="IdentityGet">
                 <template #default="{ doc: identityDoc, url: identityUrl }">
@@ -122,7 +124,7 @@ const getChangeDescription = (changeType: string) => {
                 </template>
               </WithIdentityDocument>
             </div>
-            <div v-if="doc.organization" class="text-sm text-gray-600">
+            <div v-if="doc.organization" class="text-sm">
               {{ t("common.entities.organization") }}:
               <WithOrganizationDocument :params="{ id: doc.organization.id }" name="OrganizationGet">
                 <template #default="{ doc: orgDoc, url: orgUrl }">
@@ -135,7 +137,7 @@ const getChangeDescription = (changeType: string) => {
                 </template>
               </WithOrganizationDocument>
             </div>
-            <div v-if="doc.applicationTemplate" class="text-sm text-gray-600">
+            <div v-if="doc.applicationTemplate" class="text-sm">
               {{ t("common.entities.applicationTemplate") }}:
               <WithApplicationTemplateDocument :params="{ id: doc.applicationTemplate.id }" name="ApplicationTemplateGet">
                 <template #default="{ doc: appDoc, url: appUrl }">
@@ -148,7 +150,7 @@ const getChangeDescription = (changeType: string) => {
                 </template>
               </WithApplicationTemplateDocument>
             </div>
-            <div class="text-xs text-gray-500">
+            <div class="text-xs text-neutral-500">
               {{ getFormattedTimestamp(doc.timestamp) }}
             </div>
             <div v-if="doc.changes" class="flex flex-wrap gap-1 mt-1">
@@ -156,8 +158,8 @@ const getChangeDescription = (changeType: string) => {
                 {{ getChangeDescription(change) }}
               </span>
             </div>
-            <div v-if="doc.appId" class="text-xs text-gray-400">App: {{ doc.appId }}</div>
-            <div class="text-xs text-gray-400">Session: {{ doc.sessionId }}</div>
+            <div v-if="doc.appId" class="text-xs text-neutral-500">App: {{ doc.appId }}</div>
+            <div class="text-xs text-neutral-500">Session: {{ doc.sessionId }}</div>
           </div>
         </div>
       </div>
