@@ -70,6 +70,7 @@
       "identities": "Identities",
       "organization": "Organization",
       "organizations": "Organizations",
+      "applicationTemplate": "Application template",
       "applicationTemplates": "Application templates"
     },
     "messages": {
@@ -171,6 +172,18 @@
       "status": "Status:",
       "apps": "Apps:",
       "noApps": "none"
+    },
+    "ActivityItem": {
+      "signin": "Signed in",
+      "signout": "Signed out",
+      "identityCreate": "Created identity",
+      "identityUpdate": "Updated identity",
+      "organizationCreate": "Created organization",
+      "organizationUpdate": "Updated organization",
+      "applicationTemplateCreate": "Created application template",
+      "applicationTemplateUpdate": "Updated application template",
+      "unknownActivity": "Unknown activity",
+      "showMetadata": "Show metadata"
     }
   },
   "views": {
@@ -256,6 +269,11 @@
     "OrganizationUsers": {
       "usersForOrganization": "Users for organization",
       "noUsers": "There are no users."
+    },
+    "Activity": {
+      "title": "Activity",
+      "noActivities": "No activity recorded yet.",
+      "noActivitiesSignIn": "Sign-in to view your activity."
     }
   }
 }

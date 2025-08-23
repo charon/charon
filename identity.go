@@ -473,6 +473,12 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 
 	s.identities[*identity.ID] = data
 
+	// Log identity creation activity.
+	s.logActivity(ctx, ActivityTypeIdentityCreate, &ActivityDocumentRef{ //nolint:exhaustruct
+		ID:   *identity.ID,
+		Type: "identity",
+	}, nil)
+
 	i := IdentityRef{ID: *identity.ID}
 
 	if _, ok := getIdentityID(ctx); !ok {
@@ -600,6 +606,12 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 		return errE
 	}
 	s.identities[*identity.ID] = data
+
+	// Log identity update activity.
+	s.logActivity(ctx, ActivityTypeIdentityUpdate, &ActivityDocumentRef{ //nolint:exhaustruct
+		ID:   *identity.ID,
+		Type: "identity",
+	}, nil)
 
 	identitiesBefore := mapset.NewThreadUnsafeSet(existingIdentity.Users...)
 	identitiesBefore.Append(existingIdentity.Admins...)

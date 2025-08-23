@@ -254,6 +254,8 @@ type Service struct {
 	organizationsMu        sync.RWMutex
 	sessions               map[identifier.Identifier][]byte
 	sessionsMu             sync.RWMutex
+	activities             map[identifier.Identifier][]byte
+	activitiesMu           sync.RWMutex
 	// Map from account ID to map from identity refs (to which account ID has access) to
 	// paths which are the support for the access.
 	identitiesAccess map[identifier.Identifier]map[IdentityRef][][]IdentityRef
@@ -483,6 +485,8 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		organizationsMu:        sync.RWMutex{},
 		sessions:               map[identifier.Identifier][]byte{},
 		sessionsMu:             sync.RWMutex{},
+		activities:             map[identifier.Identifier][]byte{},
+		activitiesMu:           sync.RWMutex{},
 		identitiesAccess:       map[identifier.Identifier]map[IdentityRef][][]IdentityRef{},
 		identityCreators:       map[IdentityRef]identifier.Identifier{},
 		identitiesAccessMu:     sync.RWMutex{},

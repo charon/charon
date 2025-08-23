@@ -375,6 +375,37 @@ export type IdentityCreate = IdentityAttributes & {
 
 export type Identities = IdentityRef[]
 
+export type ActivityType =
+  | "signin"
+  | "signout"
+  | "identity_create"
+  | "identity_update"
+  | "organization_create"
+  | "organization_update"
+  | "application_template_create"
+  | "application_template_update"
+
+export type ActivityDocumentRef = {
+  id: string
+  type: string
+  versionId?: string
+}
+
+export type Activity = {
+  id: string
+  timestamp: string
+  type: ActivityType
+  identity: IdentityRef
+  document?: ActivityDocumentRef
+  metadata?: Record<string, unknown>
+}
+
+export type ActivityRef = {
+  id: string
+}
+
+export type Activities = ActivityRef[]
+
 // It is recursive.
 export type Mutable<T> = {
   -readonly [k in keyof T]: Mutable<T[k]>

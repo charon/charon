@@ -1,0 +1,231 @@
+package charon
+
+import (
+	"context"
+	"net/http"
+	"slices"
+	"time"
+
+	"gitlab.com/tozd/go/errors"
+	"gitlab.com/tozd/go/x"
+	"gitlab.com/tozd/identifier"
+	"gitlab.com/tozd/waf"
+)
+
+var ErrActivityNotFound = errors.Base("activity not found")
+
+// ActivityType represents the type of activity performed.
+type ActivityType string
+
+const (
+	ActivityTypeSignIn                    ActivityType = "signin"
+	ActivityTypeSignOut                   ActivityType = "signout"
+	ActivityTypeIdentityCreate            ActivityType = "identity_create"
+	ActivityTypeIdentityUpdate            ActivityType = "identity_update"
+	ActivityTypeOrganizationCreate        ActivityType = "organization_create"
+	ActivityTypeOrganizationUpdate        ActivityType = "organization_update"
+	ActivityTypeApplicationTemplateCreate ActivityType = "application_template_create"
+	ActivityTypeApplicationTemplateUpdate ActivityType = "application_template_update"
+)
+
+// ActivityDocumentRef represents a reference to a document that was affected by the activity.
+type ActivityDocumentRef struct {
+	ID   identifier.Identifier `json:"id"`
+	Type string                `json:"type"`
+	// VersionID will be used in the future when documents have history.
+	VersionID *identifier.Identifier `json:"versionId,omitempty"`
+}
+
+// Activity represents a user activity record.
+type Activity struct {
+	ID        *identifier.Identifier `json:"id"`
+	Timestamp time.Time              `json:"timestamp"`
+	Type      ActivityType           `json:"type"`
+
+	// The identity that performed this activity.
+	Identity IdentityRef `json:"identity"`
+
+	// Optional reference to the document that was affected.
+	Document *ActivityDocumentRef `json:"document,omitempty"`
+
+	// Optional additional metadata about the activity.
+	Metadata map[string]interface{} `json:"metadata,omitempty"`
+}
+
+func (a *Activity) Validate(_ context.Context, existing *Activity) errors.E {
+	if existing == nil {
+		if a.ID != nil {
+			errE := errors.New("ID provided for new document")
+			errors.Details(errE)["id"] = *a.ID
+			return errE
+		}
+		id := identifier.New()
+		a.ID = &id
+	} else if a.ID == nil {
+		return errors.New("ID missing for existing document")
+	} else if existing.ID == nil {
+		return errors.New("ID missing for existing document")
+	} else if *a.ID != *existing.ID {
+		errE := errors.New("payload ID does not match existing ID")
+		errors.Details(errE)["payload"] = *a.ID
+		errors.Details(errE)["existing"] = *existing.ID
+		return errE
+	}
+
+	if a.Timestamp.IsZero() {
+		a.Timestamp = time.Now().UTC()
+	}
+
+	if a.Type == "" {
+		return errors.New("activity type is required")
+	}
+
+	// Ensure metadata is not nil.
+	if a.Metadata == nil {
+		a.Metadata = make(map[string]interface{})
+	}
+
+	return nil
+}
+
+type ActivityRef struct {
+	ID identifier.Identifier `json:"id"`
+}
+
+func (s *Service) getActivity(_ context.Context, id identifier.Identifier) (*Activity, errors.E) {
+	s.activitiesMu.RLock()
+	defer s.activitiesMu.RUnlock()
+
+	data, ok := s.activities[id]
+	if !ok {
+		return nil, errors.WithDetails(ErrActivityNotFound, "id", id)
+	}
+	var activity Activity
+	errE := x.UnmarshalWithoutUnknownFields(data, &activity)
+	if errE != nil {
+		errors.Details(errE)["id"] = id
+		return nil, errE
+	}
+	return &activity, nil
+}
+
+func (s *Service) createActivity(ctx context.Context, activity *Activity) errors.E {
+	errE := activity.Validate(ctx, nil)
+	if errE != nil {
+		return errE
+	}
+
+	data, errE := x.MarshalWithoutEscapeHTML(activity)
+	if errE != nil {
+		return errE
+	}
+
+	s.activitiesMu.Lock()
+	defer s.activitiesMu.Unlock()
+
+	s.activities[*activity.ID] = data
+	return nil
+}
+
+// logActivity creates a new activity record for the current user.
+func (s *Service) logActivity(ctx context.Context, activityType ActivityType, document *ActivityDocumentRef, metadata map[string]interface{}) {
+	// Get current identity from context, return silently if not present.
+	identityID, hasIdentity := ctx.Value(identityIDContextKey).(identifier.Identifier)
+	if !hasIdentity {
+		return
+	}
+
+	activity := &Activity{ //nolint:exhaustruct
+		Type:     activityType,
+		Identity: IdentityRef{ID: identityID},
+		Document: document,
+		Metadata: metadata,
+	}
+
+	// We don't propagate errors from activity logging as it shouldn't break the main operation.
+	_ = s.createActivity(ctx, activity)
+}
+
+// Activity view handlers.
+func (s *Service) ActivityList(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	if s.ProxyStaticTo != "" {
+		s.Proxy(w, req)
+	} else {
+		s.ServeStaticFile(w, req, "/index.html")
+	}
+}
+
+// API handlers.
+func (s *Service) ActivityListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	ctx := s.RequireAuthenticated(w, req)
+	if ctx == nil {
+		return
+	}
+
+	currentIdentityID := mustGetIdentityID(ctx)
+	result := []ActivityRef{}
+
+	s.activitiesMu.RLock()
+	defer s.activitiesMu.RUnlock()
+
+	// Collect activities for the current user only.
+	activities := make([]*Activity, 0)
+	for id, data := range s.activities {
+		var activity Activity
+		errE := x.UnmarshalWithoutUnknownFields(data, &activity)
+		if errE != nil {
+			errors.Details(errE)["id"] = id
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+
+		// Only include activities for the current user.
+		if activity.Identity.ID == currentIdentityID {
+			activities = append(activities, &activity)
+		}
+	}
+
+	// Sort activities by timestamp (newest first).
+	slices.SortFunc(activities, func(a, b *Activity) int {
+		return b.Timestamp.Compare(a.Timestamp)
+	})
+
+	// Convert to refs.
+	for _, activity := range activities {
+		result = append(result, ActivityRef{ID: *activity.ID})
+	}
+
+	s.WriteJSON(w, req, result, nil)
+}
+
+func (s *Service) ActivityGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	ctx := s.RequireAuthenticated(w, req)
+	if ctx == nil {
+		return
+	}
+
+	activityID, errE := identifier.MaybeString(params["id"])
+	if errE != nil {
+		s.NotFoundWithError(w, req, errE)
+		return
+	}
+
+	activity, errE := s.getActivity(ctx, activityID)
+	if errors.Is(errE, ErrActivityNotFound) {
+		s.NotFound(w, req)
+		return
+	} else if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	currentIdentityID := mustGetIdentityID(ctx)
+
+	// Only allow users to see their own activities.
+	if activity.Identity.ID != currentIdentityID {
+		s.NotFound(w, req)
+		return
+	}
+
+	s.WriteJSON(w, req, activity, nil)
+}

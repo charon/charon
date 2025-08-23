@@ -70,6 +70,7 @@
       "identities": "Identitete",
       "organization": "Organizacija",
       "organizations": "Organizacije",
+      "applicationTemplate": "Predloga aplikacije",
       "applicationTemplates": "Predloge aplikacij"
     },
     "messages": {
@@ -171,6 +172,18 @@
       "status": "Status:",
       "apps": "Aplikacije:",
       "noApps": "brez"
+    },
+    "ActivityItem": {
+      "signin": "Prijava",
+      "signout": "Odjava",
+      "identityCreate": "Ustvarjena identiteta",
+      "identityUpdate": "Posodobljena identiteta",
+      "organizationCreate": "Ustvarjena organizacija",
+      "organizationUpdate": "Posodobljena organizacija",
+      "applicationTemplateCreate": "Ustvarjena predloga aplikacije",
+      "applicationTemplateUpdate": "Posodobljena predloga aplikacije",
+      "unknownActivity": "Neznana aktivnost",
+      "showMetadata": "Prikaži metapodatke"
     }
   },
   "views": {
@@ -256,6 +269,11 @@
     "OrganizationUsers": {
       "usersForOrganization": "Uporabniki za organizacijo",
       "noUsers": "Ni uporabnikov."
+    },
+    "Activity": {
+      "title": "Aktivnost",
+      "noActivities": "Še ni zabeležene aktivnosti.",
+      "noActivitiesSignIn": "Prijavite se za ogled vaše aktivnosti."
     }
   }
 }

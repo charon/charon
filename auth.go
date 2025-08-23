@@ -44,6 +44,14 @@ func (s *Service) AuthSignoutPost(w http.ResponseWriter, req *http.Request, _ wa
 
 	ctx := req.Context()
 
+	// Log sign-out activity if user is authenticated.
+	co := s.charonOrganization()
+	identityID, _, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
+	if errE == nil {
+		ctx = s.withIdentityID(ctx, identityID)
+		s.logActivity(ctx, ActivityTypeSignOut, nil, nil)
+	}
+
 	// We clear all session cookies for all flows.
 	for _, cookie := range req.Cookies() {
 		if strings.HasPrefix(cookie.Name, SessionCookiePrefix) {

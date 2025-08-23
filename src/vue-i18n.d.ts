@@ -81,6 +81,7 @@ declare module "vue-i18n" {
         identities: string
         organization: string
         organizations: string
+        applicationTemplate: string
         applicationTemplates: string
       }
       messages: {
@@ -183,6 +184,18 @@ declare module "vue-i18n" {
         apps: string
         noApps: string
       }
+      ActivityItem: {
+        signin: string
+        signout: string
+        identityCreate: string
+        identityUpdate: string
+        organizationCreate: string
+        organizationUpdate: string
+        applicationTemplateCreate: string
+        applicationTemplateUpdate: string
+        unknownActivity: string
+        showMetadata: string
+      }
     }
     views: {
       ApplicationTemplateCreate: {
@@ -267,6 +280,11 @@ declare module "vue-i18n" {
       OrganizationUsers: {
         usersForOrganization: string
         noUsers: string
+      }
+      Activity: {
+        title: string
+        noActivities: string
+        noActivitiesSignIn: string
       }
     }
   }

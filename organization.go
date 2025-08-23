@@ -673,6 +673,13 @@ func (s *Service) createOrganization(ctx context.Context, organization *Organiza
 	defer s.organizationsMu.Unlock()
 
 	s.organizations[*organization.ID] = data
+
+	// Log organization creation activity.
+	s.logActivity(ctx, ActivityTypeOrganizationCreate, &ActivityDocumentRef{ //nolint:exhaustruct
+		ID:   *organization.ID,
+		Type: "organization",
+	}, nil)
+
 	return nil
 }
 
@@ -713,6 +720,13 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 	}
 
 	s.organizations[*organization.ID] = data
+
+	// Log organization update activity.
+	s.logActivity(ctx, ActivityTypeOrganizationUpdate, &ActivityDocumentRef{ //nolint:exhaustruct
+		ID:   *organization.ID,
+		Type: "organization",
+	}, nil)
+
 	return nil
 }
 
