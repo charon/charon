@@ -111,7 +111,7 @@ const getChangeDescription = (changeType: string) => {
             <h3 class="font-medium">
               {{ getActivityDescription(doc.type) }}
             </h3>
-            <div v-if="doc.identity" class="text-sm">
+            <div v-if="doc.identity" class="text-sm text-slate-700">
               {{ t("common.entities.identity") }}:
               <WithIdentityDocument :params="{ id: doc.identity.id }" name="IdentityGet">
                 <template #default="{ doc: identityDoc, url: identityUrl }">
@@ -124,7 +124,7 @@ const getChangeDescription = (changeType: string) => {
                 </template>
               </WithIdentityDocument>
             </div>
-            <div v-if="doc.organization" class="text-sm">
+            <div v-if="doc.organization" class="text-sm text-slate-700">
               {{ t("common.entities.organization") }}:
               <WithOrganizationDocument :params="{ id: doc.organization.id }" name="OrganizationGet">
                 <template #default="{ doc: orgDoc, url: orgUrl }">
@@ -137,7 +137,7 @@ const getChangeDescription = (changeType: string) => {
                 </template>
               </WithOrganizationDocument>
             </div>
-            <div v-if="doc.applicationTemplate" class="text-sm">
+            <div v-if="doc.applicationTemplate" class="text-sm text-slate-700">
               {{ t("common.entities.applicationTemplate") }}:
               <WithApplicationTemplateDocument :params="{ id: doc.applicationTemplate.id }" name="ApplicationTemplateGet">
                 <template #default="{ doc: appDoc, url: appUrl }">
