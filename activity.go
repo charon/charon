@@ -56,10 +56,13 @@ func (a *Activity) Validate(_ context.Context, existing *Activity) errors.E {
 		id := identifier.New()
 		a.ID = &id
 	} else if a.ID == nil {
+		// This should not really happen because we fetch existing based on a.ID.
 		return errors.New("ID missing for existing document")
 	} else if existing.ID == nil {
+		// This should not really happen because we always store documents with ID.
 		return errors.New("ID missing for existing document")
 	} else if *a.ID != *existing.ID {
+		// This should not really happen because we fetch existing based on a.ID.
 		errE := errors.New("payload ID does not match existing ID")
 		errors.Details(errE)["payload"] = *a.ID
 		errors.Details(errE)["existing"] = *existing.ID
