@@ -41,7 +41,7 @@ onBeforeMount(async () => {
     if (abortController.signal.aborted) {
       return
     }
-    console.error("Activity.onBeforeMount", error)
+    console.error("ActivityList.onBeforeMount", error)
     dataLoadingError.value = `${error}`
   } finally {
     dataLoading.value = false
