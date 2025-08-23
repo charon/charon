@@ -85,9 +85,9 @@ type Activity struct {
 	Actor IdentityRef `json:"actor"`
 
 	// Optional references to documents that were affected by the activity.
-	Identity            *IdentityRef            `json:"identity,omitempty"`
-	Organization        *OrganizationRef        `json:"organization,omitempty"`
-	ApplicationTemplate *ApplicationTemplateRef `json:"applicationTemplate,omitempty"`
+	Identities           []IdentityRef            `json:"identities,omitempty"`
+	Organizations        []OrganizationRef        `json:"organizations,omitempty"`
+	ApplicationTemplates []ApplicationTemplateRef `json:"applicationTemplates,omitempty"`
 
 	// Optional application ID for sign-in activities.
 	AppID *identifier.Identifier `json:"appId,omitempty"`
@@ -215,8 +215,8 @@ func detectSliceChanges[T comparable](old, new []T) (added, removed, changed boo
 
 // logActivity creates a new activity record for the current user.
 func (s *Service) logActivity(
-	ctx context.Context, activityType ActivityType, identityID *identifier.Identifier, organizationID *identifier.Identifier,
-	applicationTemplateID *identifier.Identifier, appID *identifier.Identifier, changes []ActivityChangeType, providers []Provider,
+	ctx context.Context, activityType ActivityType, identities []IdentityRef, organizations []OrganizationRef,
+	applicationTemplates []ApplicationTemplateRef, appID *identifier.Identifier, changes []ActivityChangeType, providers []Provider,
 ) errors.E {
 	actorID := mustGetIdentityID(ctx)
 	sessionID := mustGetSessionID(ctx)
@@ -229,24 +229,31 @@ func (s *Service) logActivity(
 		requestID = waf.MustRequestID(ctx)
 	}
 
-	activity := &Activity{ //nolint:exhaustruct
-		Type:      activityType,
-		Actor:     IdentityRef{ID: actorID},
-		AppID:     appID,
-		Providers: providers,
-		Changes:   changes,
-		SessionID: sessionID,
-		RequestID: requestID,
+	activity := &Activity{
+		// Validate will populate these.
+		ID:        nil,
+		Timestamp: Time{},
+
+		Type:                 activityType,
+		Actor:                IdentityRef{ID: actorID},
+		AppID:                appID,
+		Providers:            providers,
+		Changes:              changes,
+		SessionID:            sessionID,
+		RequestID:            requestID,
+		Identities:           nil,
+		Organizations:        nil,
+		ApplicationTemplates: nil,
 	}
 
-	if identityID != nil {
-		activity.Identity = &IdentityRef{ID: *identityID}
+	if len(identities) > 0 {
+		activity.Identities = identities
 	}
-	if organizationID != nil {
-		activity.Organization = &OrganizationRef{ID: *organizationID}
+	if len(organizations) > 0 {
+		activity.Organizations = organizations
 	}
-	if applicationTemplateID != nil {
-		activity.ApplicationTemplate = &ApplicationTemplateRef{ID: *applicationTemplateID}
+	if len(applicationTemplates) > 0 {
+		activity.ApplicationTemplates = applicationTemplates
 	}
 
 	return s.createActivity(ctx, activity)

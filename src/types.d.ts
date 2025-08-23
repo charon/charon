@@ -401,9 +401,9 @@ export type Activity = {
   timestamp: string
   type: ActivityType
   actor: IdentityRef
-  identity?: IdentityRef
-  organization?: OrganizationRef
-  applicationTemplate?: ApplicationTemplateRef
+  identities?: IdentityRef[]
+  organizations?: OrganizationRef[]
+  applicationTemplates?: ApplicationTemplateRef[]
   appId?: string
   providers?: string[]
   changes?: ActivityChangeType[]

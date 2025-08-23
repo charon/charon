@@ -66,11 +66,11 @@
     "entities": {
       "admins": "Admins",
       "users": "Users",
-      "identity": "Identity",
+      "identity": "Identity | Identities",
       "identities": "Identities",
-      "organization": "Organization",
+      "organization": "Organization | Organizations",
       "organizations": "Organizations",
-      "applicationTemplate": "Application template",
+      "applicationTemplate": "Application template | Application templates",
       "applicationTemplates": "Application templates",
       "activity": "Activity",
       "app": "App"

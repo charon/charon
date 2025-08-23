@@ -574,7 +574,7 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 		ctx = s.withIdentityID(ctx, *identity.ID)
 	}
 
-	errE = s.logActivity(ctx, ActivityIdentityCreate, identity.ID, nil, nil, nil, nil, nil)
+	errE = s.logActivity(ctx, ActivityIdentityCreate, []IdentityRef{{ID: *identity.ID}}, nil, nil, nil, nil, nil)
 	if errE != nil {
 		return errE
 	}
@@ -712,7 +712,7 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 		ctx = s.withIdentityID(ctx, *identity.ID)
 	}
 
-	errE = s.logActivity(ctx, ActivityIdentityUpdate, identity.ID, nil, nil, nil, identity.Changes(&existingIdentity), nil)
+	errE = s.logActivity(ctx, ActivityIdentityUpdate, []IdentityRef{{ID: *identity.ID}}, nil, nil, nil, identity.Changes(&existingIdentity), nil)
 	if errE != nil {
 		return errE
 	}

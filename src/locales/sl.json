@@ -66,11 +66,11 @@
     "entities": {
       "admins": "Administratorji",
       "users": "Uporabniki",
-      "identity": "Identiteta",
+      "identity": "Identiteta | Identiteti | Identitete | Identitet",
       "identities": "Identitete",
-      "organization": "Organizacija",
+      "organization": "Organizacija | Organizacije | Organizacije | Organizacij",
       "organizations": "Organizacije",
-      "applicationTemplate": "Predloga aplikacije",
+      "applicationTemplate": "Predloga aplikacije | Predlogi aplikacij | Predloge aplikacij | Predlog aplikacij",
       "applicationTemplates": "Predloge aplikacij",
       "activity": "Aktivnost",
       "app": "Aplikacija"

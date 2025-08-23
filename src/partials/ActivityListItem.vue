@@ -124,62 +124,71 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                 getProviderName(t, provider)
               }}</span>
             </div>
-            <div v-if="doc.identity" class="text-sm text-slate-700">
+            <div v-if="doc.identities" class="text-sm text-slate-700">
               <i18n-t keypath="partials.ActivityListItem.entityLinks" scope="global">
-                <template #entity>{{ t("common.entities.identity") }}</template>
+                <template #entity>{{ t("common.entities.identity", doc.identities.length) }}</template>
                 <template #links>
-                  <WithIdentityDocument :params="{ id: doc.identity.id }" name="IdentityGet">
-                    <template #default="{ doc: identityDoc, url: identityUrl }">
-                      <router-link :to="{ name: 'IdentityGet', params: { id: doc.identity.id } }" :data-url="identityUrl" class="link">
-                        {{ getIdentityDisplayName(identityDoc) }}
-                      </router-link>
-                    </template>
-                    <template #error="{ url: identityErrorUrl }">
-                      <span :data-url="identityErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
-                    </template>
-                  </WithIdentityDocument>
+                  <template v-for="(identity, i) in doc.identities" :key="identity.id">
+                    <template v-if="i > 0">, </template>
+                    <WithIdentityDocument :params="{ id: identity.id }" name="IdentityGet">
+                      <template #default="{ doc: identityDoc, url: identityUrl }">
+                        <router-link :to="{ name: 'IdentityGet', params: { id: identity.id } }" :data-url="identityUrl" class="link">
+                          {{ getIdentityDisplayName(identityDoc) }}
+                        </router-link>
+                      </template>
+                      <template #error="{ url: identityErrorUrl }">
+                        <span :data-url="identityErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
+                      </template>
+                    </WithIdentityDocument>
+                  </template>
                 </template>
               </i18n-t>
             </div>
-            <div v-if="doc.organization" class="text-sm text-slate-700">
+            <div v-if="doc.organizations" class="text-sm text-slate-700">
               <i18n-t keypath="partials.ActivityListItem.entityLinks" scope="global">
-                <template #entity>{{ t("common.entities.organization") }}</template>
+                <template #entity>{{ t("common.entities.organization", doc.organizations.length) }}</template>
                 <template #links>
-                  <WithOrganizationDocument :params="{ id: doc.organization.id }" name="OrganizationGet">
-                    <template #default="{ doc: orgDoc, url: orgUrl }">
-                      <router-link :to="{ name: 'OrganizationGet', params: { id: doc.organization.id } }" :data-url="orgUrl" class="link">
-                        {{ orgDoc.name }}
-                      </router-link>
-                    </template>
-                    <template #error="{ url: orgErrorUrl }">
-                      <span :data-url="orgErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
-                    </template>
-                  </WithOrganizationDocument>
+                  <template v-for="(organization, i) in doc.organizations" :key="organization.id">
+                    <template v-if="i > 0">, </template>
+                    <WithOrganizationDocument :params="{ id: organization.id }" name="OrganizationGet">
+                      <template #default="{ doc: orgDoc, url: orgUrl }">
+                        <router-link :to="{ name: 'OrganizationGet', params: { id: organization.id } }" :data-url="orgUrl" class="link">
+                          {{ orgDoc.name }}
+                        </router-link>
+                      </template>
+                      <template #error="{ url: orgErrorUrl }">
+                        <span :data-url="orgErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
+                      </template>
+                    </WithOrganizationDocument>
+                  </template>
                 </template>
               </i18n-t>
             </div>
-            <div v-if="doc.applicationTemplate" class="text-sm text-slate-700">
+            <div v-if="doc.applicationTemplates" class="text-sm text-slate-700">
               <i18n-t keypath="partials.ActivityListItem.entityLinks" scope="global">
-                <template #entity>{{ t("common.entities.applicationTemplate") }}</template>
+                <template #entity>{{ t("common.entities.applicationTemplate", doc.applicationTemplates.length) }}</template>
                 <template #links>
-                  <WithApplicationTemplateDocument :params="{ id: doc.applicationTemplate.id }" name="ApplicationTemplateGet">
-                    <template #default="{ doc: appDoc, url: appUrl }">
-                      <router-link :to="{ name: 'ApplicationTemplateGet', params: { id: doc.applicationTemplate.id } }" :data-url="appUrl" class="link">
-                        {{ appDoc.name }}
-                      </router-link>
-                    </template>
-                    <template #error="{ url: appErrorUrl }">
-                      <span :data-url="appErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
-                    </template>
-                  </WithApplicationTemplateDocument>
+                  <template v-for="(applicationTemplate, i) in doc.applicationTemplates" :key="applicationTemplate.id">
+                    <template v-if="i > 0">, </template>
+                    <WithApplicationTemplateDocument :params="{ id: applicationTemplate.id }" name="ApplicationTemplateGet">
+                      <template #default="{ doc: appDoc, url: appUrl }">
+                        <router-link :to="{ name: 'ApplicationTemplateGet', params: { id: applicationTemplate.id } }" :data-url="appUrl" class="link">
+                          {{ appDoc.name }}
+                        </router-link>
+                      </template>
+                      <template #error="{ url: appErrorUrl }">
+                        <span :data-url="appErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
+                      </template>
+                    </WithApplicationTemplateDocument>
+                  </template>
                 </template>
               </i18n-t>
             </div>
-            <div v-if="doc.organization && doc.appId" class="text-sm text-slate-700">
+            <div v-if="doc.organizations && doc.organizations.length === 1 && doc.appId" class="text-sm text-slate-700">
               <i18n-t keypath="partials.ActivityListItem.entityLinks" scope="global">
                 <template #entity>{{ t("common.entities.app") }}</template>
                 <template #links>
-                  <WithOrganizationApplicationDocument :params="{ id: doc.organization.id, appId: doc.appId }" name="OrganizationApp">
+                  <WithOrganizationApplicationDocument :params="{ id: doc.organizations[0].id, appId: doc.appId }" name="OrganizationApp">
                     <template #default="{ doc: appDoc, url: appUrl }">
                       <a :href="getHomepage(appDoc)" :data-url="appUrl" class="link">{{ appDoc.applicationTemplate.name }}</a>
                     </template>
