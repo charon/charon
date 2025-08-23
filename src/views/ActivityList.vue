@@ -67,7 +67,7 @@ onBeforeMount(async () => {
         <div v-if="!activities.length" class="w-full rounded border bg-white p-4 shadow italic">
           {{ t("views.ActivityList.noActivities") }}
         </div>
-        <div v-for="activity of activities" :key="activity.id" class="w-full rounded border bg-white p-4 shadow">
+        <div v-for="activity in activities" :key="activity.id" class="w-full rounded border bg-white p-4 shadow">
           <ActivityListItem :item="activity" />
         </div>
       </template>

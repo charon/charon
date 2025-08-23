@@ -75,7 +75,7 @@ const WithIdentityDocument = WithDocument<Identity>
         <div v-if="!identities.length" class="w-full rounded border bg-white p-4 shadow italic">
           {{ isSignedIn() ? t("views.IdentityList.noIdentitiesCreate") : t("views.IdentityList.noIdentitiesSignIn") }}
         </div>
-        <div v-for="identity of identities" :key="identity.id" class="w-full rounded border bg-white p-4 shadow">
+        <div v-for="identity in identities" :key="identity.id" class="w-full rounded border bg-white p-4 shadow">
           <WithIdentityDocument :params="{ id: identity.id }" name="IdentityGet">
             <template #default="{ doc, metadata, url }">
               <IdentityFull :identity="doc" :url="url" :is-current="metadata.is_current" :can-update="metadata.can_update" />

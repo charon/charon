@@ -70,7 +70,7 @@ onBeforeMount(async () => {
         <div v-if="!applicationTemplates.length" class="w-full rounded border bg-white p-4 shadow italic">
           {{ isSignedIn() ? t("views.ApplicationTemplateList.noApplicationTemplatesCreate") : t("views.ApplicationTemplateList.noApplicationTemplatesSignIn") }}
         </div>
-        <div v-for="applicationTemplate of applicationTemplates" :key="applicationTemplate.id" class="w-full rounded border bg-white p-4 shadow">
+        <div v-for="applicationTemplate in applicationTemplates" :key="applicationTemplate.id" class="w-full rounded border bg-white p-4 shadow">
           <ApplicationTemplateListItem :item="applicationTemplate" />
         </div>
       </template>
