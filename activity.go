@@ -35,6 +35,8 @@ const (
 // ActivityChangeType represents the type of change performed during an activity.
 type ActivityChangeType string
 
+// TODO: Log also activity of changing credentials for an account.
+
 const (
 	// PublicData represents changes to public data.
 	ActivityChangePublicData ActivityChangeType = "publicData"
