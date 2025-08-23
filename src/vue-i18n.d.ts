@@ -200,7 +200,6 @@ declare module "vue-i18n" {
         organizationUpdate: string
         applicationTemplateCreate: string
         applicationTemplateUpdate: string
-        unknownActivity: string
         changes: {
           publicData: string
           permissionsAdded: string

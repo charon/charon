@@ -189,7 +189,6 @@
       "organizationUpdate": "Updated organization",
       "applicationTemplateCreate": "Created application template",
       "applicationTemplateUpdate": "Updated application template",
-      "unknownActivity": "Unknown activity",
       "changes": {
         "publicData": "public data",
         "permissionsAdded": "permissions added",
