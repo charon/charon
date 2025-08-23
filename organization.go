@@ -5,6 +5,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"reflect"
 	"slices"
 
 	"github.com/alexedwards/argon2id"
@@ -641,6 +642,93 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 	return nil
 }
 
+// Changes compares the current Organization with an existing one and returns the types of changes that occurred.
+func (o *Organization) Changes(existing *Organization) []ActivityChangeType {
+	if existing == nil {
+		return nil
+	}
+
+	changes := []ActivityChangeType{}
+
+	// Check public data changes
+	if existing.Name != o.Name || existing.Description != o.Description {
+		changes = append(changes, ActivityChangePublicData)
+	}
+
+	// Check permissions changes (admins)
+	adminsAdded, adminsRemoved, _ := detectSliceChanges(existing.Admins, o.Admins)
+
+	if adminsAdded {
+		changes = append(changes, ActivityChangePermissionsAdded)
+	}
+	if adminsRemoved {
+		changes = append(changes, ActivityChangePermissionsRemoved)
+	}
+
+	// Check application changes (membership changes)
+	appsAdded := false
+	appsRemoved := false
+	appsChanged := false
+
+	// Create maps for comparison
+	existingAppMap := make(map[identifier.Identifier]*OrganizationApplication)
+	for i := range existing.Applications {
+		if existing.Applications[i].ID != nil {
+			existingAppMap[*existing.Applications[i].ID] = &existing.Applications[i]
+		}
+	}
+
+	newAppMap := make(map[identifier.Identifier]*OrganizationApplication)
+	for i := range o.Applications {
+		if o.Applications[i].ID != nil {
+			newAppMap[*o.Applications[i].ID] = &o.Applications[i]
+		}
+	}
+
+	// Check for additions and changes
+	for id, newApp := range newAppMap {
+		if existingApp, exists := existingAppMap[id]; exists {
+			// Check for status changes
+			if existingApp.Active != newApp.Active {
+				if newApp.Active {
+					changes = append(changes, ActivityChangeMembershipActivated)
+				} else {
+					changes = append(changes, ActivityChangeMembershipDisabled)
+				}
+			}
+			// Check for other changes
+			if !reflect.DeepEqual(existingApp.Values, newApp.Values) ||
+				!reflect.DeepEqual(existingApp.ClientsPublic, newApp.ClientsPublic) ||
+				!reflect.DeepEqual(existingApp.ClientsBackend, newApp.ClientsBackend) ||
+				!reflect.DeepEqual(existingApp.ClientsService, newApp.ClientsService) {
+				appsChanged = true
+			}
+		} else {
+			appsAdded = true
+		}
+	}
+
+	// Check for removals
+	for id := range existingAppMap {
+		if _, exists := newAppMap[id]; !exists {
+			appsRemoved = true
+			break
+		}
+	}
+
+	if appsAdded {
+		changes = append(changes, ActivityChangeMembershipAdded)
+	}
+	if appsRemoved {
+		changes = append(changes, ActivityChangeMembershipRemoved)
+	}
+	if appsChanged {
+		changes = append(changes, ActivityChangeMembershipChanged)
+	}
+
+	return changes
+}
+
 func (s *Service) getOrganization(_ context.Context, id identifier.Identifier) (*Organization, errors.E) {
 	s.organizationsMu.RLock()
 	defer s.organizationsMu.RUnlock()
@@ -674,7 +762,7 @@ func (s *Service) createOrganization(ctx context.Context, organization *Organiza
 
 	s.organizations[*organization.ID] = data
 
-	errE = s.logActivity(ctx, ActivityOrganizationCreate, nil, organization.ID, nil, nil)
+	errE = s.logActivity(ctx, ActivityOrganizationCreate, nil, organization.ID, nil, nil, nil)
 	if errE != nil {
 		return errE
 	}
@@ -720,7 +808,7 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 
 	s.organizations[*organization.ID] = data
 
-	errE = s.logActivity(ctx, ActivityOrganizationUpdate, nil, organization.ID, nil, nil)
+	errE = s.logActivity(ctx, ActivityOrganizationUpdate, nil, organization.ID, nil, nil, organization.Changes(&existingOrganization))
 	if errE != nil {
 		return errE
 	}

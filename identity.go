@@ -393,6 +393,95 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity, service *Se
 	return nil
 }
 
+// Changes compares the current Identity with an existing one and returns the types of changes that occurred.
+func (i *Identity) Changes(existing *Identity) []ActivityChangeType {
+	if existing == nil {
+		return nil
+	}
+
+	changes := []ActivityChangeType{}
+
+	// Check public data changes
+	if !reflect.DeepEqual(existing.IdentityPublic, i.IdentityPublic) {
+		changes = append(changes, ActivityChangePublicData)
+	}
+
+	// Check permissions changes (users and admins)
+	usersAdded, usersRemoved, _ := detectSliceChanges(existing.Users, i.Users)
+	adminsAdded, adminsRemoved, _ := detectSliceChanges(existing.Admins, i.Admins)
+
+	if usersAdded || adminsAdded {
+		changes = append(changes, ActivityChangePermissionsAdded)
+	}
+	if usersRemoved || adminsRemoved {
+		changes = append(changes, ActivityChangePermissionsRemoved)
+	}
+
+	// Check organization membership changes
+	// For organizations, we need to check both membership and status changes
+	orgMap := make(map[identifier.Identifier]*IdentityOrganization)
+	for j := range existing.Organizations {
+		orgMap[existing.Organizations[j].Organization.ID] = &existing.Organizations[j]
+	}
+
+	membershipAdded := false
+	membershipRemoved := false
+	membershipChanged := false
+	membershipActivated := false
+	membershipDisabled := false
+
+	// Check new organizations for additions and changes
+	for j := range i.Organizations {
+		newOrg := &i.Organizations[j]
+		if existingOrg, exists := orgMap[newOrg.Organization.ID]; exists {
+			// Organization exists, check for changes
+			if existingOrg.Active != newOrg.Active {
+				if newOrg.Active {
+					membershipActivated = true
+				} else {
+					membershipDisabled = true
+				}
+			}
+			if !reflect.DeepEqual(existingOrg.Applications, newOrg.Applications) {
+				membershipChanged = true
+			}
+		} else {
+			// New organization added
+			membershipAdded = true
+		}
+	}
+
+	// Check for removed organizations
+	newOrgMap := make(map[identifier.Identifier]bool)
+	for j := range i.Organizations {
+		newOrgMap[i.Organizations[j].Organization.ID] = true
+	}
+	for j := range existing.Organizations {
+		if !newOrgMap[existing.Organizations[j].Organization.ID] {
+			membershipRemoved = true
+			break
+		}
+	}
+
+	if membershipAdded {
+		changes = append(changes, ActivityChangeMembershipAdded)
+	}
+	if membershipRemoved {
+		changes = append(changes, ActivityChangeMembershipRemoved)
+	}
+	if membershipChanged {
+		changes = append(changes, ActivityChangeMembershipChanged)
+	}
+	if membershipActivated {
+		changes = append(changes, ActivityChangeMembershipActivated)
+	}
+	if membershipDisabled {
+		changes = append(changes, ActivityChangeMembershipDisabled)
+	}
+
+	return changes
+}
+
 // getIdentitiesForAccount returns all identities the account has access to.
 //
 // s.identitiesAccessMu should be locked for reading while calling this function.
@@ -485,7 +574,7 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 		ctx = s.withIdentityID(ctx, *identity.ID)
 	}
 
-	errE = s.logActivity(ctx, ActivityIdentityCreate, identity.ID, nil, nil, nil)
+	errE = s.logActivity(ctx, ActivityIdentityCreate, identity.ID, nil, nil, nil, nil)
 	if errE != nil {
 		return errE
 	}
@@ -623,7 +712,7 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 		ctx = s.withIdentityID(ctx, *identity.ID)
 	}
 
-	errE = s.logActivity(ctx, ActivityIdentityUpdate, identity.ID, nil, nil, nil)
+	errE = s.logActivity(ctx, ActivityIdentityUpdate, identity.ID, nil, nil, nil, identity.Changes(&existingIdentity))
 	if errE != nil {
 		return errE
 	}

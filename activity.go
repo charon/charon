@@ -31,6 +31,30 @@ const (
 	ActivityApplicationTemplateUpdate ActivityType = "applicationTemplateUpdate"
 )
 
+// ActivityChangeType represents the type of change performed during an activity.
+type ActivityChangeType string
+
+const (
+	// PublicData represents changes to public data.
+	ActivityChangePublicData ActivityChangeType = "publicData"
+	// PermissionsAdded represents adding new permissions/access rights.
+	ActivityChangePermissionsAdded ActivityChangeType = "permissionsAdded"
+	// PermissionsRemoved represents removing permissions/access rights.
+	ActivityChangePermissionsRemoved ActivityChangeType = "permissionsRemoved"
+	// PermissionsChanged represents modifying existing permissions/access rights.
+	ActivityChangePermissionsChanged ActivityChangeType = "permissionsChanged"
+	// MembershipAdded represents joining an organization or adding an application.
+	ActivityChangeMembershipAdded ActivityChangeType = "membershipAdded"
+	// MembershipRemoved represents leaving an organization or removing an application.
+	ActivityChangeMembershipRemoved ActivityChangeType = "membershipRemoved"
+	// MembershipChanged represents modifying existing membership.
+	ActivityChangeMembershipChanged ActivityChangeType = "membershipChanged"
+	// StatusActivated represents activation/enabling a membership.
+	ActivityChangeMembershipActivated ActivityChangeType = "membershipActivated"
+	// StatusDisabled represents deactivation/disabling a membership.
+	ActivityChangeMembershipDisabled ActivityChangeType = "membershipDisabled"
+)
+
 // Activity represents a user activity record.
 type Activity struct {
 	ID        *identifier.Identifier `json:"id"`
@@ -47,6 +71,9 @@ type Activity struct {
 
 	// Optional application ID for sign-in activities.
 	AppID *identifier.Identifier `json:"appId,omitempty"`
+
+	// Details about what was changed during this activity.
+	Changes []ActivityChangeType `json:"changes,omitempty"`
 
 	// Session and request IDs from the WAF framework.
 	SessionID identifier.Identifier `json:"sessionId"`
@@ -126,12 +153,48 @@ func (s *Service) createActivity(ctx context.Context, activity *Activity) errors
 	return nil
 }
 
+// Helper functions for detecting granular changes.
+
+// detectSliceChanges compares two slices and returns what types of changes occurred.
+func detectSliceChanges[T comparable](old, new []T) (added, removed, changed bool) {
+	oldSet := make(map[T]bool)
+	newSet := make(map[T]bool)
+
+	for _, item := range old {
+		oldSet[item] = true
+	}
+	for _, item := range new {
+		newSet[item] = true
+	}
+
+	// Check for additions
+	for item := range newSet {
+		if !oldSet[item] {
+			added = true
+			break
+		}
+	}
+
+	// Check for removals
+	for item := range oldSet {
+		if !newSet[item] {
+			removed = true
+			break
+		}
+	}
+
+	// For now, we don't detect "changed" for simple slices as items are either added or removed.
+	// "changed" would be more relevant for complex structures where an item's properties change.
+
+	return added, removed, changed
+}
+
 // logActivity creates a new activity record for the current user.
 //
 // The optional ID parameters will be used to create the appropriate references based on activityType.
 func (s *Service) logActivity(
 	ctx context.Context, activityType ActivityType, identityID *identifier.Identifier, organizationID *identifier.Identifier,
-	applicationTemplateID *identifier.Identifier, appID *identifier.Identifier,
+	applicationTemplateID *identifier.Identifier, appID *identifier.Identifier, changes []ActivityChangeType,
 ) errors.E {
 	actorID := mustGetIdentityID(ctx)
 	sessionID := mustGetSessionID(ctx)
@@ -148,6 +211,7 @@ func (s *Service) logActivity(
 		Type:      activityType,
 		Actor:     IdentityRef{ID: actorID},
 		AppID:     appID,
+		Changes:   changes,
 		SessionID: sessionID,
 		RequestID: requestID,
 	}

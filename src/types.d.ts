@@ -385,6 +385,17 @@ export type ActivityType =
   | "applicationTemplateCreate"
   | "applicationTemplateUpdate"
 
+export type ActivityChangeType =
+  | "publicData"
+  | "permissionsAdded"
+  | "permissionsRemoved"
+  | "permissionsChanged"
+  | "membershipAdded"
+  | "membershipRemoved"
+  | "membershipChanged"
+  | "membershipActivated"
+  | "membershipDisabled"
+
 export type Activity = {
   id: string
   timestamp: string
@@ -394,6 +405,7 @@ export type Activity = {
   organization?: OrganizationRef
   applicationTemplate?: ApplicationTemplateRef
   appId?: string
+  changes?: ActivityChangeType[]
   sessionId: string
   requestId: string
 }

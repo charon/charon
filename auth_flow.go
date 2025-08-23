@@ -315,7 +315,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	if flow.Identity != nil {
 		ctx = s.withIdentityID(ctx, *flow.Identity.ID)
 		ctx = s.withSessionID(ctx, sessionID)
-		errE = s.logActivity(ctx, ActivitySignIn, nil, &flow.OrganizationID, nil, &flow.AppID)
+		errE = s.logActivity(ctx, ActivitySignIn, nil, &flow.OrganizationID, nil, &flow.AppID, nil)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return

@@ -84,6 +84,31 @@ const getDocumentInfo = (doc: Activity) => {
   }
   return null
 }
+
+const getChangeDescription = (changeType: string) => {
+  switch (changeType) {
+    case "publicData":
+      return t("partials.ActivityListItem.changes.publicData")
+    case "permissionsAdded":
+      return t("partials.ActivityListItem.changes.permissionsAdded")
+    case "permissionsRemoved":
+      return t("partials.ActivityListItem.changes.permissionsRemoved")
+    case "permissionsChanged":
+      return t("partials.ActivityListItem.changes.permissionsChanged")
+    case "membershipAdded":
+      return t("partials.ActivityListItem.changes.membershipAdded")
+    case "membershipRemoved":
+      return t("partials.ActivityListItem.changes.membershipRemoved")
+    case "membershipChanged":
+      return t("partials.ActivityListItem.changes.membershipChanged")
+    case "membershipActivated":
+      return t("partials.ActivityListItem.changes.membershipActivated")
+    case "membershipDisabled":
+      return t("partials.ActivityListItem.changes.membershipDisabled")
+    default:
+      throw new Error(`unknown change type: ${changeType}`)
+  }
+}
 </script>
 
 <template>
@@ -101,6 +126,15 @@ const getDocumentInfo = (doc: Activity) => {
             <div v-if="getDocumentInfo(doc)" class="text-sm text-gray-600">{{ getDocumentInfo(doc)!.type }}: {{ getDocumentInfo(doc)!.id }}</div>
             <div class="text-xs text-gray-500">
               {{ getFormattedTimestamp(doc.timestamp) }}
+            </div>
+            <div v-if="doc.changes" class="flex flex-wrap gap-1 mt-1">
+              <span
+                v-for="change in doc.changes"
+                :key="change"
+                class="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full"
+              >
+                {{ getChangeDescription(change) }}
+              </span>
             </div>
             <div v-if="doc.appId" class="text-xs text-gray-400">App: {{ doc.appId }}</div>
             <div class="text-xs text-gray-400">Session: {{ doc.sessionId }}</div>

@@ -763,6 +763,32 @@ func (a *ApplicationTemplate) Validate(ctx context.Context, existing *Applicatio
 	return nil
 }
 
+// Changes compares the current ApplicationTemplate with an existing one and returns the types of changes that occurred.
+func (a *ApplicationTemplate) Changes(existing *ApplicationTemplate) []ActivityChangeType {
+	if existing == nil {
+		return nil
+	}
+
+	changes := []ActivityChangeType{}
+
+	// Check public data changes
+	if existing.Name != a.Name || existing.Description != a.Description {
+		changes = append(changes, ActivityChangePublicData)
+	}
+
+	// Check permissions changes (admins)
+	adminsAdded, adminsRemoved, _ := detectSliceChanges(existing.Admins, a.Admins)
+
+	if adminsAdded {
+		changes = append(changes, ActivityChangePermissionsAdded)
+	}
+	if adminsRemoved {
+		changes = append(changes, ActivityChangePermissionsRemoved)
+	}
+
+	return changes
+}
+
 func (s *Service) getApplicationTemplate(_ context.Context, id identifier.Identifier) (*ApplicationTemplate, errors.E) {
 	s.applicationTemplatesMu.RLock()
 	defer s.applicationTemplatesMu.RUnlock()
@@ -796,7 +822,7 @@ func (s *Service) createApplicationTemplate(ctx context.Context, applicationTemp
 
 	s.applicationTemplates[*applicationTemplate.ID] = data
 
-	errE = s.logActivity(ctx, ActivityApplicationTemplateCreate, nil, nil, applicationTemplate.ID, nil)
+	errE = s.logActivity(ctx, ActivityApplicationTemplateCreate, nil, nil, applicationTemplate.ID, nil, nil)
 	if errE != nil {
 		return errE
 	}
@@ -841,7 +867,7 @@ func (s *Service) updateApplicationTemplate(ctx context.Context, applicationTemp
 
 	s.applicationTemplates[*applicationTemplate.ID] = data
 
-	errE = s.logActivity(ctx, ActivityApplicationTemplateUpdate, nil, nil, applicationTemplate.ID, nil)
+	errE = s.logActivity(ctx, ActivityApplicationTemplateUpdate, nil, nil, applicationTemplate.ID, nil, applicationTemplate.Changes(&existingApplicationTemplate))
 	if errE != nil {
 		return errE
 	}
