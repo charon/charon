@@ -39,8 +39,8 @@ const getActivityIcon = (type: string) => {
   }
 }
 
-const getActivityDescription = (type: string) => {
-  switch (type) {
+const getActivityDescription = (activityType: string) => {
+  switch (activityType) {
     case "signIn":
       return t("partials.ActivityListItem.signin")
     case "signOut":
@@ -58,7 +58,7 @@ const getActivityDescription = (type: string) => {
     case "applicationTemplateUpdate":
       return t("partials.ActivityListItem.applicationTemplateUpdate")
     default:
-      return t("partials.ActivityListItem.unknownActivity")
+      throw new Error(`unknown activity type: ${activityType}`)
   }
 }
 
