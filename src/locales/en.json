@@ -72,7 +72,8 @@
       "organizations": "Organizations",
       "applicationTemplate": "Application template",
       "applicationTemplates": "Application templates",
-      "activity": "Activity"
+      "activity": "Activity",
+      "app": "App"
     },
     "messages": {
       "congratulations": "Congratulations.",

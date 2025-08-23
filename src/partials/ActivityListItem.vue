@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Activity, ActivityRef, Identity, Organization, ApplicationTemplate } from "@/types"
+import type { Activity, ActivityRef, Identity, Organization, ApplicationTemplate, OrganizationApplicationPublic } from "@/types"
 import type { DeepReadonly, FunctionalComponent } from "vue"
 
 import { useI18n } from "vue-i18n"
@@ -7,6 +7,7 @@ import { LockClosedIcon, LockOpenIcon, IdentificationIcon, UserGroupIcon, Calcul
 import { IdentificationIcon as IdentificationSolidIcon, UserGroupIcon as UserGroupSolidIcon, CalculatorIcon as CalculatorSolidIcon } from "@heroicons/vue/24/solid"
 import WithDocument from "@/components/WithDocument.vue"
 import { getProviderName } from "@/flow"
+import { getHomepage } from "@/utils"
 
 const { t } = useI18n({ useScope: "global" })
 
@@ -98,6 +99,7 @@ const WithActivityDocument = WithDocument<Activity>
 const WithIdentityDocument = WithDocument<Identity>
 const WithOrganizationDocument = WithDocument<Organization>
 const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
+const WithOrganizationApplicationDocument = WithDocument<OrganizationApplicationPublic>
 </script>
 
 <template>
@@ -161,10 +163,20 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
                 </template>
               </WithApplicationTemplateDocument>
             </div>
+            <div v-if="doc.organization && doc.appId" class="text-sm text-slate-700">
+              {{ t("common.entities.app") }}:
+              <WithOrganizationApplicationDocument :params="{ id: doc.organization.id, appId: doc.appId }" name="OrganizationApp">
+                <template #default="{ doc: appDoc, url: appUrl }">
+                  <a :href="getHomepage(appDoc)" :data-url="appUrl" class="link">{{ appDoc.applicationTemplate.name }}</a>
+                </template>
+                <template #error="{ url: appErrorUrl }">
+                  <span :data-url="appErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
+                </template>
+              </WithOrganizationApplicationDocument>
+            </div>
             <div class="text-xs text-neutral-500">
               {{ getFormattedTimestamp(doc.timestamp) }}
             </div>
-            <div v-if="doc.appId" class="text-xs text-neutral-500">App: {{ doc.appId }}</div>
             <div class="text-xs text-neutral-500">Session: {{ doc.sessionId }}</div>
           </div>
         </div>

@@ -84,6 +84,7 @@ declare module "vue-i18n" {
         applicationTemplate: string
         applicationTemplates: string
         activity: string
+        app: string
       }
       messages: {
         congratulations: string

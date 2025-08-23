@@ -72,7 +72,8 @@
       "organizations": "Organizacije",
       "applicationTemplate": "Predloga aplikacije",
       "applicationTemplates": "Predloge aplikacij",
-      "activity": "Aktivnost"
+      "activity": "Aktivnost",
+      "app": "Aplikacija"
     },
     "messages": {
       "congratulations": "Čestitamo.",

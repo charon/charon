@@ -306,9 +306,9 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                 </WithOrganizationApplicationDocument>
               </template>
               <template #orgLink>
-                <WithOrganizationDocument :params="{ id: organizationId }" name="OrganizationGet">
+                <WithOrganizationDocument :params="{ id: flow.getOrganizationId() }" name="OrganizationGet">
                   <template #default="{ doc, url }">
-                    <router-link :to="{ name: 'OrganizationGet', params: { id: organizationId } }" :data-url="url" class="link"
+                    <router-link :to="{ name: 'OrganizationGet', params: { id: flow.getOrganizationId() } }" :data-url="url" class="link"
                       ><strong>{{ doc.name }}</strong></router-link
                     >
                   </template>
