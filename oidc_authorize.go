@@ -227,6 +227,15 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 		return true
 	}
 
+	c := s.withIdentityID(ctx, *flow.Identity.ID)
+	c = s.withSessionID(c, session.ID)
+	// TODO: Should this activity be logged with flow.AuthTime for its timestamp?
+	errE = s.logActivity(c, ActivitySignIn, nil, &flow.OrganizationID, nil, &flow.AppID, nil, flow.Providers)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return true
+	}
+
 	oidc.WriteAuthorizeResponse(ctx, w, authorizeRequest, response)
 	return true
 }

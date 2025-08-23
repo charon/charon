@@ -90,6 +90,9 @@ type Activity struct {
 	// Optional application ID for sign-in activities.
 	AppID *identifier.Identifier `json:"appId,omitempty"`
 
+	// For sign-in activities, this is the list of providers that were used to authenticate the user.
+	Providers []Provider `json:"providers,omitempty"`
+
 	// Details about what was changed during this activity.
 	Changes []ActivityChangeType `json:"changes,omitempty"`
 
@@ -209,11 +212,9 @@ func detectSliceChanges[T comparable](old, new []T) (added, removed, changed boo
 }
 
 // logActivity creates a new activity record for the current user.
-//
-// The optional ID parameters will be used to create the appropriate references based on activityType.
 func (s *Service) logActivity(
 	ctx context.Context, activityType ActivityType, identityID *identifier.Identifier, organizationID *identifier.Identifier,
-	applicationTemplateID *identifier.Identifier, appID *identifier.Identifier, changes []ActivityChangeType,
+	applicationTemplateID *identifier.Identifier, appID *identifier.Identifier, changes []ActivityChangeType, providers []Provider,
 ) errors.E {
 	actorID := mustGetIdentityID(ctx)
 	sessionID := mustGetSessionID(ctx)
@@ -230,32 +231,20 @@ func (s *Service) logActivity(
 		Type:      activityType,
 		Actor:     IdentityRef{ID: actorID},
 		AppID:     appID,
+		Providers: providers,
 		Changes:   changes,
 		SessionID: sessionID,
 		RequestID: requestID,
 	}
 
-	// Set the appropriate document references based on activity type and provided IDs.
-	switch activityType {
-	case ActivityIdentityCreate, ActivityIdentityUpdate:
-		if identityID != nil {
-			activity.Identity = &IdentityRef{ID: *identityID}
-		}
-	case ActivityOrganizationCreate, ActivityOrganizationUpdate:
-		if organizationID != nil {
-			activity.Organization = &OrganizationRef{ID: *organizationID}
-		}
-	case ActivityApplicationTemplateCreate, ActivityApplicationTemplateUpdate:
-		if applicationTemplateID != nil {
-			activity.ApplicationTemplate = &ApplicationTemplateRef{ID: *applicationTemplateID}
-		}
-	case ActivitySignIn:
-		// For sign-in, we can set organization reference if provided.
-		if organizationID != nil {
-			activity.Organization = &OrganizationRef{ID: *organizationID}
-		}
-	case ActivitySignOut:
-		// Sign-out doesn't need additional references.
+	if identityID != nil {
+		activity.Identity = &IdentityRef{ID: *identityID}
+	}
+	if organizationID != nil {
+		activity.Organization = &OrganizationRef{ID: *organizationID}
+	}
+	if applicationTemplateID != nil {
+		activity.ApplicationTemplate = &ApplicationTemplateRef{ID: *applicationTemplateID}
 	}
 
 	return s.createActivity(ctx, activity)

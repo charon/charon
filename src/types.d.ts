@@ -405,6 +405,7 @@ export type Activity = {
   organization?: OrganizationRef
   applicationTemplate?: ApplicationTemplateRef
   appId?: string
+  providers?: string[]
   changes?: ActivityChangeType[]
   sessionId: string
   requestId: string
