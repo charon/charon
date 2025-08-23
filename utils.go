@@ -329,10 +329,11 @@ func (s *Service) requireAuthenticatedForIdentity(w http.ResponseWriter, req *ht
 	ctx := req.Context()
 	co := s.charonOrganization()
 
-	identityID, accountID, _, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
+	identityID, accountID, sessionID, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
 	if errE == nil {
 		ctx = s.withIdentityID(ctx, identityID)
 		ctx = s.withAccountID(ctx, accountID)
+		ctx = s.withSessionID(ctx, sessionID)
 		return ctx
 	} else if !errors.Is(errE, ErrIdentityNotPresent) {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -355,7 +356,9 @@ func (s *Service) requireAuthenticatedForIdentity(w http.ResponseWriter, req *ht
 	}
 
 	// Because we called validateSession with api set to true, session should never be nil here.
-	return s.withAccountID(ctx, session.AccountID)
+	ctx = s.withAccountID(ctx, session.AccountID)
+	ctx = s.withSessionID(ctx, session.ID)
+	return ctx
 }
 
 func (s *Service) GetFlowHandler(w http.ResponseWriter, req *http.Request, value string) *Flow {

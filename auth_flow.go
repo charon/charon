@@ -256,7 +256,9 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 		if identity != nil {
 			// We do not set identityIDContextKey because we are creating a new identity for the current
 			// account while using a session cookie. The identity itself will be used instead.
-			errE = s.createIdentity(s.withAccountID(ctx, account.ID), identity)
+			c := s.withAccountID(ctx, account.ID)
+			c = s.withSessionID(c, *flow.SessionID)
+			errE = s.createIdentity(c, identity)
 			if errE != nil && !errors.Is(errE, errEmptyIdentity) {
 				s.InternalServerErrorWithError(w, req, errE)
 				return
@@ -588,6 +590,7 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 
 	c := s.withAccountID(ctx, accountID)
 	c = s.withIdentityID(c, chooseIdentity.Identity.ID)
+	c = s.withSessionID(c, *flow.SessionID)
 
 	identity, errE := s.selectAndActivateIdentity(c, chooseIdentity.Identity.ID, flow.OrganizationID, flow.AppID)
 	if errE != nil {
