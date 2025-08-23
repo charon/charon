@@ -113,10 +113,14 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
               {{ getActivityDescription(doc.type) }}
             </h3>
             <div v-if="doc.changes" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm">
-              <span v-for="change in doc.changes" :key="change" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{ getChangeDescription(change) }}</span>
+              <span v-for="change in doc.changes" :key="change" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{
+                getChangeDescription(change)
+              }}</span>
             </div>
             <div v-if="doc.providers" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm">
-              <span v-for="provider in doc.providers" :key="provider" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{ getProviderName(t, provider) }}</span>
+              <span v-for="provider in doc.providers" :key="provider" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{
+                getProviderName(t, provider)
+              }}</span>
             </div>
             <div v-if="doc.identity" class="text-sm text-slate-700">
               {{ t("common.entities.identity") }}:
