@@ -12,7 +12,10 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
-var ErrActivityNotFound = errors.Base("activity not found")
+var (
+	ErrActivityNotFound         = errors.Base("activity not found")
+	ErrActivityValidationFailed = errors.Base("activity validation failed")
+)
 
 // ActivityType represents the type of activity performed.
 type ActivityType string
@@ -104,7 +107,7 @@ func (s *Service) getActivity(_ context.Context, id identifier.Identifier) (*Act
 func (s *Service) createActivity(ctx context.Context, activity *Activity) errors.E {
 	errE := activity.Validate(ctx, nil)
 	if errE != nil {
-		return errE
+		return errors.WrapWith(errE, ErrActivityValidationFailed)
 	}
 
 	data, errE := x.MarshalWithoutEscapeHTML(activity)
