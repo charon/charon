@@ -1,16 +1,14 @@
 <script setup lang="ts">
-import type { Activity, Activities } from "@/types"
+import type { Activities } from "@/types"
 
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
-import WithDocument from "@/components/WithDocument.vue"
-import ActivityItem from "@/partials/ActivityItem.vue"
+import ActivityListItem from "@/partials/ActivityListItem.vue"
 import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
 import { getURL } from "@/api"
 import { injectProgress } from "@/progress"
-import { isSignedIn } from "@/auth"
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
@@ -50,8 +48,6 @@ onBeforeMount(async () => {
     progress.value -= 1
   }
 })
-
-const WithActivityDocument = WithDocument<Activity>
 </script>
 
 <template>
@@ -72,11 +68,7 @@ const WithActivityDocument = WithDocument<Activity>
           {{ t("views.ActivityList.noActivities") }}
         </div>
         <div v-for="activity of activities" :key="activity.id" class="w-full rounded border bg-white p-4 shadow">
-          <WithActivityDocument :params="{ id: activity.id }" name="ActivityGet">
-            <template #default="{ doc }">
-              <ActivityItem :activity="doc" />
-            </template>
-          </WithActivityDocument>
+          <ActivityListItem :item="activity" />
         </div>
       </template>
     </div>

@@ -184,7 +184,7 @@ declare module "vue-i18n" {
         apps: string
         noApps: string
       }
-      ActivityItem: {
+      ActivityListItem: {
         signin: string
         signout: string
         identityCreate: string

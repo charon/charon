@@ -173,7 +173,7 @@
       "apps": "Apps:",
       "noApps": "none"
     },
-    "ActivityItem": {
+    "ActivityListItem": {
       "signin": "Signed in",
       "signout": "Signed out",
       "identityCreate": "Created identity",

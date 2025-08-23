@@ -173,7 +173,7 @@
       "apps": "Aplikacije:",
       "noApps": "brez"
     },
-    "ActivityItem": {
+    "ActivityListItem": {
       "signin": "Prijava",
       "signout": "Odjava",
       "identityCreate": "Ustvarjena identiteta",
