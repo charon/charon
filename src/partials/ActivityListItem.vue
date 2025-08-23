@@ -111,6 +111,11 @@ const getChangeDescription = (changeType: string) => {
             <h3 class="font-medium">
               {{ getActivityDescription(doc.type) }}
             </h3>
+            <div v-if="doc.changes" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm">
+              <span v-for="change in doc.changes" :key="change" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">
+                {{ getChangeDescription(change) }}
+              </span>
+            </div>
             <div v-if="doc.identity" class="text-sm text-slate-700">
               {{ t("common.entities.identity") }}:
               <WithIdentityDocument :params="{ id: doc.identity.id }" name="IdentityGet">
@@ -152,11 +157,6 @@ const getChangeDescription = (changeType: string) => {
             </div>
             <div class="text-xs text-neutral-500">
               {{ getFormattedTimestamp(doc.timestamp) }}
-            </div>
-            <div v-if="doc.changes" class="flex flex-wrap gap-1 mt-1">
-              <span v-for="change in doc.changes" :key="change" class="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                {{ getChangeDescription(change) }}
-              </span>
             </div>
             <div v-if="doc.appId" class="text-xs text-neutral-500">App: {{ doc.appId }}</div>
             <div class="text-xs text-neutral-500">Session: {{ doc.sessionId }}</div>
