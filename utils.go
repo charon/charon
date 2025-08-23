@@ -282,6 +282,20 @@ func mustGetIdentityID(ctx context.Context) identifier.Identifier {
 	return i
 }
 
+func getSessionID(ctx context.Context) (identifier.Identifier, bool) {
+	s, ok := ctx.Value(sessionIDContextKey).(identifier.Identifier)
+	return s, ok
+}
+
+func mustGetSessionID(ctx context.Context) identifier.Identifier {
+	s, ok := getSessionID(ctx)
+	if !ok {
+		// Internal error: this should never happen.
+		panic(errors.New("session not found in context"))
+	}
+	return s
+}
+
 // RequireAuthenticated requires valid Authorization header with the OIDC access token
 // and returns context with access token's identity stored in the context.
 //

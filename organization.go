@@ -674,7 +674,10 @@ func (s *Service) createOrganization(ctx context.Context, organization *Organiza
 
 	s.organizations[*organization.ID] = data
 
-	s.logActivity(ctx, ActivityOrganizationCreate, nil, organization.ID, nil, nil)
+	errE = s.logActivity(ctx, ActivityOrganizationCreate, nil, organization.ID, nil, nil)
+	if errE != nil {
+		return errE
+	}
 
 	return nil
 }
@@ -717,7 +720,10 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 
 	s.organizations[*organization.ID] = data
 
-	s.logActivity(ctx, ActivityOrganizationUpdate, nil, organization.ID, nil, nil)
+	errE = s.logActivity(ctx, ActivityOrganizationUpdate, nil, organization.ID, nil, nil)
+	if errE != nil {
+		return errE
+	}
 
 	return nil
 }

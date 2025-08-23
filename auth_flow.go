@@ -311,7 +311,12 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	// Log sign-in activity if we have a selected identity.
 	if flow.Identity != nil {
 		ctx = s.withIdentityID(ctx, *flow.Identity.ID)
-		s.logActivity(ctx, ActivitySignIn, nil, &flow.OrganizationID, nil, &flow.AppID)
+		ctx = s.withSessionID(ctx, sessionID)
+		errE = s.logActivity(ctx, ActivitySignIn, nil, &flow.OrganizationID, nil, &flow.AppID)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
 	}
 
 	// Everything should already be set to nil at this point, but just to make sure.

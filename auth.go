@@ -46,10 +46,15 @@ func (s *Service) AuthSignoutPost(w http.ResponseWriter, req *http.Request, _ wa
 
 	// Log sign-out activity if user is authenticated.
 	co := s.charonOrganization()
-	identityID, _, _, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
+	identityID, _, sessionID, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
 	if errE == nil {
 		ctx = s.withIdentityID(ctx, identityID)
-		s.logActivity(ctx, ActivitySignOut, nil, nil, nil, nil)
+		ctx = s.withSessionID(ctx, sessionID)
+		errE = s.logActivity(ctx, ActivitySignOut, nil, nil, nil, nil)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
 	}
 
 	// We clear all session cookies for all flows.

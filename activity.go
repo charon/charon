@@ -132,21 +132,10 @@ func (s *Service) createActivity(ctx context.Context, activity *Activity) errors
 func (s *Service) logActivity(
 	ctx context.Context, activityType ActivityType, identityID *identifier.Identifier, organizationID *identifier.Identifier,
 	applicationTemplateID *identifier.Identifier, appID *identifier.Identifier,
-) {
-	// Get current identity from context, return silently if not present.
-	actorID, hasActor := ctx.Value(identityIDContextKey).(identifier.Identifier)
-	if !hasActor {
-		return
-	}
-
-	// Get request ID from WAF context.
+) errors.E {
+	actorID := mustGetIdentityID(ctx)
 	requestID := waf.MustRequestID(ctx)
-
-	// Get session ID from context. Return silently if not present.
-	sessionID, hasSessionID := ctx.Value(sessionIDContextKey).(identifier.Identifier)
-	if !hasSessionID {
-		return
-	}
+	sessionID := mustGetSessionID(ctx)
 
 	activity := &Activity{ //nolint:exhaustruct
 		Type:      activityType,
@@ -179,8 +168,7 @@ func (s *Service) logActivity(
 		// Sign-out doesn't need additional references.
 	}
 
-	// We don't propagate errors from activity logging as it shouldn't break the main operation.
-	_ = s.createActivity(ctx, activity)
+	return s.createActivity(ctx, activity)
 }
 
 // Activity view handlers.

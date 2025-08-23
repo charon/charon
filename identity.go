@@ -473,7 +473,10 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 
 	s.identities[*identity.ID] = data
 
-	s.logActivity(ctx, ActivityIdentityCreate, identity.ID, nil, nil, nil)
+	errE = s.logActivity(ctx, ActivityIdentityCreate, identity.ID, nil, nil, nil)
+	if errE != nil {
+		return errE
+	}
 
 	i := IdentityRef{ID: *identity.ID}
 
@@ -603,7 +606,10 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 	}
 	s.identities[*identity.ID] = data
 
-	s.logActivity(ctx, ActivityIdentityUpdate, identity.ID, nil, nil, nil)
+	errE = s.logActivity(ctx, ActivityIdentityUpdate, identity.ID, nil, nil, nil)
+	if errE != nil {
+		return errE
+	}
 
 	identitiesBefore := mapset.NewThreadUnsafeSet(existingIdentity.Users...)
 	identitiesBefore.Append(existingIdentity.Admins...)
