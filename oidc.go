@@ -115,8 +115,8 @@ func (h *hmacSHAStrategy) ValidateAuthorizeCode(ctx context.Context, r fosite.Re
 type AccessTokenType string
 
 const (
-	AccessTokenTypeJWT  AccessTokenType = "jwt"
-	AccessTokenTypeHMAC AccessTokenType = "hmac"
+	AccessTokenJWT  AccessTokenType = "jwt"
+	AccessTokenHMAC AccessTokenType = "hmac"
 )
 
 var _ oauth2.CoreStrategy = (*configurableCoreStrategy)(nil)
@@ -173,9 +173,9 @@ func (c *configurableCoreStrategy) AccessTokenSignature(ctx context.Context, tok
 func (c *configurableCoreStrategy) GenerateAccessToken(ctx context.Context, requester fosite.Requester) (string, string, error) {
 	tt := requester.GetClient().(*OIDCClient).GetAccessTokenType() //nolint:errcheck,forcetypeassert
 	switch tt {
-	case AccessTokenTypeJWT:
+	case AccessTokenJWT:
 		return c.jwtStrategy.GenerateAccessToken(ctx, requester) //nolint:wrapcheck
-	case AccessTokenTypeHMAC:
+	case AccessTokenHMAC:
 		c.initializeJWTClaims(ctx, requester)
 		return c.hmacStrategy.GenerateAccessToken(ctx, requester) //nolint:wrapcheck
 	default:
@@ -187,9 +187,9 @@ func (c *configurableCoreStrategy) GenerateAccessToken(ctx context.Context, requ
 func (c *configurableCoreStrategy) ValidateAccessToken(ctx context.Context, requester fosite.Requester, token string) error {
 	tt := requester.GetClient().(*OIDCClient).GetAccessTokenType() //nolint:errcheck,forcetypeassert
 	switch tt {
-	case AccessTokenTypeJWT:
+	case AccessTokenJWT:
 		return c.jwtStrategy.ValidateAccessToken(ctx, requester, token) //nolint:wrapcheck
-	case AccessTokenTypeHMAC:
+	case AccessTokenHMAC:
 		return c.hmacStrategy.ValidateAccessToken(ctx, requester, token) //nolint:wrapcheck
 	default:
 		panic(errors.Errorf("unknown access token type: %s", tt))

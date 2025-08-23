@@ -62,7 +62,7 @@ func (a *Account) GetCredential(provider Provider, credentialID string) *Credent
 
 func (a *Account) GetEmailAddresses() ([]string, errors.E) {
 	emails := []string{}
-	for _, credential := range a.Credentials[EmailProvider] {
+	for _, credential := range a.Credentials[ProviderEmail] {
 		var c emailCredential
 		errE := x.Unmarshal(credential.Data, &c)
 		if errE != nil {

@@ -42,9 +42,9 @@ var Argon2idParams = argon2id.Params{ //nolint:gochecknoglobals
 }
 
 const (
-	PasswordProvider Provider = "password"
-	EmailProvider    Provider = "email"
-	UsernameProvider Provider = "username"
+	ProviderPassword Provider = "password"
+	ProviderEmail    Provider = "email"
+	ProviderUsername Provider = "username"
 )
 
 type AuthFlowResponsePasswordDeriveOptions struct {
@@ -147,7 +147,7 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 
 	flow.ClearAuthStep(preservedEmailOrUsername)
 	// Currently we support only one factor.
-	flow.Providers = []Provider{PasswordProvider}
+	flow.Providers = []Provider{ProviderPassword}
 	flow.Password = &FlowPassword{
 		PrivateKey: privateKey.Bytes(),
 		Nonce:      nonce,
@@ -283,14 +283,14 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 
 	var account *Account
 	if strings.Contains(mappedEmailOrUsername, "@") {
-		account, errE = s.getAccountByCredential(ctx, EmailProvider, mappedEmailOrUsername)
+		account, errE = s.getAccountByCredential(ctx, ProviderEmail, mappedEmailOrUsername)
 	} else {
-		account, errE = s.getAccountByCredential(ctx, UsernameProvider, mappedEmailOrUsername)
+		account, errE = s.getAccountByCredential(ctx, ProviderUsername, mappedEmailOrUsername)
 	}
 
 	if errE == nil {
 		// Account already exist.
-		for _, credential := range account.Credentials[PasswordProvider] {
+		for _, credential := range account.Credentials[ProviderPassword] {
 			var pc passwordCredential
 			errE := x.Unmarshal(credential.Data, &pc) //nolint:govet
 			if errE != nil {
@@ -328,7 +328,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 				}
 				s.completeAuthStep(w, req, true, flow, account, []Credential{{
 					ID:       credential.ID,
-					Provider: PasswordProvider,
+					Provider: ProviderPassword,
 					Data:     jsonData,
 				}})
 				return
@@ -359,7 +359,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 		}
 		credentials = append(credentials, Credential{
 			ID:       mappedEmailOrUsername,
-			Provider: EmailProvider,
+			Provider: ProviderEmail,
 			Data:     jsonData,
 		})
 	} else {
@@ -372,7 +372,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 		}
 		credentials = append(credentials, Credential{
 			ID:       mappedEmailOrUsername,
-			Provider: UsernameProvider,
+			Provider: ProviderUsername,
 			Data:     jsonData,
 		})
 	}
@@ -395,7 +395,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 
 	credentials = append(credentials, Credential{
 		ID:       identifier.New().String(),
-		Provider: PasswordProvider,
+		Provider: ProviderPassword,
 		Data:     jsonData,
 	})
 

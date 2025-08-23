@@ -171,7 +171,7 @@ func validateAccessToken(
 	t.Helper()
 	response := validateIntrospect(t, ts, service, now, clientID, appID, organizationID, sessionID, accessToken, "access_token", identityID, &lifespan)
 
-	if accessTokenType == charon.AccessTokenTypeJWT {
+	if accessTokenType == charon.AccessTokenJWT {
 		all := validateJWT(t, ts, service, now, clientID, appID, organizationID, accessToken, identityID)
 
 		timestamps := map[string]int64{}

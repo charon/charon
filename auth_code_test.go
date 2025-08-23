@@ -49,7 +49,7 @@ func TestAuthFlowPasswordAndCode(t *testing.T) {
 	resp := startPasswordSignin(t, ts, service, email, []byte("test1234"), nil, flowID, "Charon", "Dashboard") //nolint:bodyclose
 
 	// Complete with user code.
-	accessToken := completeUserCode(t, ts, service, smtpServer, resp, email, charon.CompletedSignup, []charon.Provider{charon.PasswordProvider, charon.CodeProvider}, nil, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier)
+	accessToken := completeUserCode(t, ts, service, smtpServer, resp, email, charon.CompletedSignup, []charon.Provider{charon.ProviderPassword, charon.CodeProvider}, nil, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier)
 
 	signoutUser(t, ts, service, accessToken)
 
@@ -69,7 +69,7 @@ func TestAuthFlowPasswordAndCode(t *testing.T) {
 	resp = startPasswordSignin(t, ts, service, email, []byte("test4321"), nil, flowID, "Charon", "Dashboard") //nolint:bodyclose
 
 	// Complete with user code.
-	completeUserCode(t, ts, service, smtpServer, resp, email, charon.CompletedSignin, []charon.Provider{charon.PasswordProvider, charon.CodeProvider}, nil, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier)
+	completeUserCode(t, ts, service, smtpServer, resp, email, charon.CompletedSignin, []charon.Provider{charon.ProviderPassword, charon.CodeProvider}, nil, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier)
 }
 
 func signinUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, smtpServer *smtpmock.Server, emailOrUsername string, signinOrSignout charon.Completed) string {

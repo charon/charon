@@ -185,8 +185,8 @@ func (c *ApplicationTemplateClientPublic) Validate(ctx context.Context, existing
 	})
 
 	switch c.AccessTokenType {
-	case AccessTokenTypeJWT:
-	case AccessTokenTypeHMAC:
+	case AccessTokenJWT:
+	case AccessTokenHMAC:
 	default:
 		errE := errors.New("unsupported access token type")
 		errors.Details(errE)["type"] = c.AccessTokenType
@@ -271,8 +271,8 @@ func (c *ApplicationTemplateClientBackend) Validate(ctx context.Context, existin
 	})
 
 	switch c.AccessTokenType {
-	case AccessTokenTypeJWT:
-	case AccessTokenTypeHMAC:
+	case AccessTokenJWT:
+	case AccessTokenHMAC:
 	default:
 		errE := errors.New("unsupported access token type")
 		errors.Details(errE)["type"] = c.AccessTokenType
@@ -365,8 +365,8 @@ func (c *ApplicationTemplateClientService) Validate(_ context.Context, existing 
 	})
 
 	switch c.AccessTokenType {
-	case AccessTokenTypeJWT:
-	case AccessTokenTypeHMAC:
+	case AccessTokenJWT:
+	case AccessTokenHMAC:
 	default:
 		errE := errors.New("unsupported access token type")
 		errors.Details(errE)["type"] = c.AccessTokenType
@@ -398,11 +398,11 @@ func (c *ApplicationTemplateClientService) Validate(_ context.Context, existing 
 type VariableType string
 
 const (
-	VariableTypeURIPrefix VariableType = "uriPrefix"
+	VariableURIPrefix VariableType = "uriPrefix"
 )
 
 var validationValues = map[VariableType]string{ //nolint:gochecknoglobals
-	VariableTypeURIPrefix: "https://sub.example.com:8080/foo",
+	VariableURIPrefix: "https://sub.example.com:8080/foo",
 }
 
 type Variable struct {
@@ -417,7 +417,7 @@ func (v *Variable) Validate(_ context.Context) errors.E {
 	}
 
 	switch v.Type {
-	case VariableTypeURIPrefix:
+	case VariableURIPrefix:
 	default:
 		return errors.New("invalid type")
 	}
@@ -579,7 +579,7 @@ func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *Appl
 		// Default variable.
 		a.Variables = []Variable{{
 			Name:        "uriBase",
-			Type:        VariableTypeURIPrefix,
+			Type:        VariableURIPrefix,
 			Description: "uriBase is a URI prefix used to construct URIs (e.g., OIDC redirect URIs) based on the domain on which the application is deployed.",
 		}}
 	}

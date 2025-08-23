@@ -144,9 +144,9 @@ func (s *Service) makeIdentityFromCredentials(credentials []Credential) (*Identi
 			return nil, errors.New("code provider among credentials")
 		case PasskeyProvider:
 			// Nothing available.
-		case PasswordProvider:
+		case ProviderPassword:
 			// Nothing available.
-		case EmailProvider:
+		case ProviderEmail:
 			var c emailCredential
 			errE := x.UnmarshalWithoutUnknownFields(credential.Data, &c)
 			if errE != nil {
@@ -156,7 +156,7 @@ func (s *Service) makeIdentityFromCredentials(credentials []Credential) (*Identi
 				identity = new(Identity)
 			}
 			identity.Email = c.Email
-		case UsernameProvider:
+		case ProviderUsername:
 			var c usernameCredential
 			errE := x.UnmarshalWithoutUnknownFields(credential.Data, &c)
 			if errE != nil {

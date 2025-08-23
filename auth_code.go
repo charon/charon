@@ -70,13 +70,13 @@ func getCredentialByProvider(credentials []Credential, provider Provider) (*Cred
 }
 
 func emailCredentialsEqual(credentialsA, credentialsB []Credential) bool {
-	emailCredentialA, errE := getCredentialByProvider(credentialsA, EmailProvider)
+	emailCredentialA, errE := getCredentialByProvider(credentialsA, ProviderEmail)
 	if errE != nil {
 		// More than one e-mail credential, there should be at most one.
 		return false
 	}
 
-	emailCredentialB, errE := getCredentialByProvider(credentialsB, EmailProvider)
+	emailCredentialB, errE := getCredentialByProvider(credentialsB, ProviderEmail)
 	if errE != nil {
 		// More than one e-mail credential, there should be at most one.
 		return false
@@ -88,13 +88,13 @@ func emailCredentialsEqual(credentialsA, credentialsB []Credential) bool {
 }
 
 func updateCredentialsByProvider(existingCredentials, newCredentials []Credential) ([]Credential, errors.E) {
-	existingEmailCredential, errE := getCredentialByProvider(existingCredentials, EmailProvider)
+	existingEmailCredential, errE := getCredentialByProvider(existingCredentials, ProviderEmail)
 	if errE != nil {
 		// More than one e-mail credential, there should be at most one.
 		return nil, errE
 	}
 
-	newEmailCredential, errE := getCredentialByProvider(newCredentials, EmailProvider)
+	newEmailCredential, errE := getCredentialByProvider(newCredentials, ProviderEmail)
 	if errE != nil {
 		// More than one e-mail credential, there should be at most one.
 		return nil, errE
@@ -110,13 +110,13 @@ func updateCredentialsByProvider(existingCredentials, newCredentials []Credentia
 		return nil, errors.New("more than two credentials")
 	}
 
-	existingPasswordCredential, errE := getCredentialByProvider(existingCredentials, PasswordProvider)
+	existingPasswordCredential, errE := getCredentialByProvider(existingCredentials, ProviderPassword)
 	if errE != nil {
 		// More than one password credential, there should be at most one.
 		return nil, errE
 	}
 
-	newPasswordCredential, errE := getCredentialByProvider(newCredentials, PasswordProvider)
+	newPasswordCredential, errE := getCredentialByProvider(newCredentials, ProviderPassword)
 	if errE != nil {
 		// More than one password credential, there should be at most one.
 		return nil, errE
@@ -148,7 +148,7 @@ func (s *Service) sendCodeForExistingAccount(
 	if strings.Contains(mappedEmailOrUsername, "@") {
 		// We know that such credential must exist on this account because
 		// we found this account using mappedEmailOrUsername.
-		credential := account.GetCredential(EmailProvider, mappedEmailOrUsername)
+		credential := account.GetCredential(ProviderEmail, mappedEmailOrUsername)
 		var ec emailCredential
 		errE := x.Unmarshal(credential.Data, &ec)
 		if errE != nil {
@@ -309,9 +309,9 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 
 	var account *Account
 	if strings.Contains(mappedEmailOrUsername, "@") {
-		account, errE = s.getAccountByCredential(ctx, EmailProvider, mappedEmailOrUsername)
+		account, errE = s.getAccountByCredential(ctx, ProviderEmail, mappedEmailOrUsername)
 	} else {
-		account, errE = s.getAccountByCredential(ctx, UsernameProvider, mappedEmailOrUsername)
+		account, errE = s.getAccountByCredential(ctx, ProviderUsername, mappedEmailOrUsername)
 	}
 
 	if errE == nil {
@@ -340,7 +340,7 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 	}
 	credentials := []Credential{{
 		ID:       mappedEmailOrUsername,
-		Provider: EmailProvider,
+		Provider: ProviderEmail,
 		Data:     jsonData,
 	}}
 

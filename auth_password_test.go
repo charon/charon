@@ -38,7 +38,7 @@ func startPasswordSignin(t *testing.T, ts *httptest.Server, service *charon.Serv
 	var authFlowResponse charon.AuthFlowResponse
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
 	require.NoError(t, errE, "% -+#.1v", errE)
-	assert.Equal(t, []charon.Provider{charon.PasswordProvider}, authFlowResponse.Providers)
+	assert.Equal(t, []charon.Provider{charon.ProviderPassword}, authFlowResponse.Providers)
 	require.NotNil(t, authFlowResponse.Password)
 
 	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
@@ -47,7 +47,7 @@ func startPasswordSignin(t *testing.T, ts *httptest.Server, service *charon.Serv
 	// Flow is available, current provider is password.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx
 	if assert.NoError(t, err) {
-		assertFlowResponse(t, ts, service, resp, organizationID, []charon.Completed{}, []charon.Provider{charon.PasswordProvider}, emailOrUsername, assertAppName(t, organization, app))
+		assertFlowResponse(t, ts, service, resp, organizationID, []charon.Completed{}, []charon.Provider{charon.ProviderPassword}, emailOrUsername, assertAppName(t, organization, app))
 	}
 
 	privateKey, err := ecdh.P256().GenerateKey(rand.Reader)
@@ -109,8 +109,8 @@ func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emai
 	// Flow is available and signinOrSignout is completed.
 	resp, err := ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{signinOrSignout}, []charon.Provider{charon.PasswordProvider}, "", assertCharonDashboard)
+	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{signinOrSignout}, []charon.Provider{charon.ProviderPassword}, "", assertCharonDashboard)
 
-	identityID := chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{charon.PasswordProvider}, 1, emailOrUsername)
-	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{charon.PasswordProvider}), identityID
+	identityID := chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{charon.ProviderPassword}, 1, emailOrUsername)
+	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{charon.ProviderPassword}), identityID
 }

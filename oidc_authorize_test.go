@@ -39,19 +39,19 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 
 	for _, tt := range []testCase{
 		{
-			charon.AccessTokenTypeHMAC,
+			charon.AccessTokenHMAC,
 			time.Hour,
 			time.Hour,
 			&days30,
 		},
 		{
-			charon.AccessTokenTypeJWT,
+			charon.AccessTokenJWT,
 			time.Hour,
 			time.Hour,
 			&days30,
 		},
 		{
-			charon.AccessTokenTypeJWT,
+			charon.AccessTokenJWT,
 			days30,
 			days30,
 			nil,
@@ -124,18 +124,18 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 			// Flow is available and CompletedSignin is completed.
 			resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 			require.NoError(t, err)
-			assertFlowResponse(t, ts, service, resp, organization.ID, []charon.Completed{charon.CompletedSignin}, []charon.Provider{charon.PasswordProvider}, "", assertAppName(t, "Test organization", "Test application"))
+			assertFlowResponse(t, ts, service, resp, organization.ID, []charon.Completed{charon.CompletedSignin}, []charon.Provider{charon.ProviderPassword}, "", assertAppName(t, "Test organization", "Test application"))
 
-			identityID := chooseIdentity(t, ts, service, *organization.ID, flowID, "Test organization", "Test application", charon.CompletedSignin, []charon.Provider{charon.PasswordProvider}, 2, "username")
+			identityID := chooseIdentity(t, ts, service, *organization.ID, flowID, "Test organization", "Test application", charon.CompletedSignin, []charon.Provider{charon.ProviderPassword}, 2, "username")
 
-			location = doRedirect(t, ts, service, *organization.ID, flowID, "Test organization", "Test application", charon.CompletedSignin, []charon.Provider{charon.PasswordProvider})
+			location = doRedirect(t, ts, service, *organization.ID, flowID, "Test organization", "Test application", charon.CompletedSignin, []charon.Provider{charon.ProviderPassword})
 
 			assert.True(t, strings.HasPrefix(location, "https://example.com/redirect?"), location)
 
 			// Flow is available and is finished.
 			resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 			if assert.NoError(t, err) {
-				assertFlowResponse(t, ts, service, resp, organization.ID, []charon.Completed{charon.CompletedSignin, charon.CompletedIdentity, charon.CompletedFinishReady, charon.CompletedFinished}, []charon.Provider{charon.PasswordProvider}, "", assertAppName(t, "Test organization", "Test application"))
+				assertFlowResponse(t, ts, service, resp, organization.ID, []charon.Completed{charon.CompletedSignin, charon.CompletedIdentity, charon.CompletedFinishReady, charon.CompletedFinished}, []charon.Provider{charon.ProviderPassword}, "", assertAppName(t, "Test organization", "Test application"))
 			}
 
 			parsedLocation, err := url.Parse(location)
