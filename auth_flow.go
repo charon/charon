@@ -227,6 +227,8 @@ func (s *Service) makeIdentityFromCredentials(credentials []Credential) (*Identi
 func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *Flow, account *Account, credentials []Credential) {
 	ctx := req.Context()
 
+	sessionID := identifier.New()
+
 	if account == nil {
 		// Sign-up. Create new account.
 		errE := flow.AddCompleted(CompletedSignup)
@@ -257,7 +259,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 			// We do not set identityIDContextKey because we are creating a new identity for the current
 			// account while using a session cookie. The identity itself will be used instead.
 			c := s.withAccountID(ctx, account.ID)
-			c = s.withSessionID(c, *flow.SessionID)
+			c = s.withSessionID(c, sessionID)
 			errE = s.createIdentity(c, identity)
 			if errE != nil && !errors.Is(errE, errEmptyIdentity) {
 				s.InternalServerErrorWithError(w, req, errE)
@@ -294,7 +296,6 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 		panic(errors.WithStack(err))
 	}
 
-	sessionID := identifier.New()
 	now := time.Now().UTC()
 	errE := s.setSession(ctx, &Session{
 		ID:        sessionID,
