@@ -179,14 +179,14 @@ func (s *Service) createActivity(ctx context.Context, activity *Activity) errors
 // Helper functions for detecting granular changes.
 
 // detectSliceChanges compares two slices and returns what types of changes occurred.
-func detectSliceChanges[T comparable](old, new []T) (added, removed, changed bool) {
+func detectSliceChanges[T comparable](oldSlice, newSlice []T) (added, removed, changed bool) {
 	oldSet := make(map[T]bool)
 	newSet := make(map[T]bool)
 
-	for _, item := range old {
+	for _, item := range oldSlice {
 		oldSet[item] = true
 	}
-	for _, item := range new {
+	for _, item := range newSlice {
 		newSet[item] = true
 	}
 
@@ -231,7 +231,7 @@ func (s *Service) logActivity(
 	activity := &Activity{
 		// Validate will populate these.
 		ID:        nil,
-		Timestamp: Time{},
+		Timestamp: Time{}, //nolint:exhaustruct
 
 		Type:                 activityType,
 		Actor:                IdentityRef{ID: actorID},
