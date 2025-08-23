@@ -27,6 +27,8 @@ func TestCreateIdentity(t *testing.T) {
 
 	accountID := identifier.New()
 	ctx := service.TestingWithAccountID(context.Background(), accountID)
+	ctx = service.TestingWithSessionID(ctx)
+	ctx = service.TestingWithRequestID(ctx)
 
 	errE := service.TestingCreateIdentity(ctx, &newIdentity)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -109,6 +111,8 @@ func TestUpdateIdentity(t *testing.T) {
 
 	accountID := identifier.New()
 	ctx := service.TestingWithAccountID(context.Background(), accountID)
+	ctx = service.TestingWithSessionID(ctx)
+	ctx = service.TestingWithRequestID(ctx)
 
 	identityID := createTestIdentity(t, service, ctx)
 	createdIdentity, _, errE := service.TestingGetIdentity(ctx, identityID)
@@ -176,6 +180,8 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 
 	userAccountID := identifier.New()
 	userCtx := service.TestingWithAccountID(context.Background(), userAccountID)
+	userCtx = service.TestingWithSessionID(userCtx)
+	userCtx = service.TestingWithRequestID(userCtx)
 
 	userIdentityID := createTestIdentity(t, service, userCtx)
 	userIdentity, _, errE := service.TestingGetIdentity(userCtx, userIdentityID)
@@ -184,6 +190,8 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 
 	adminAccountID := identifier.New()
 	adminCtx := service.TestingWithAccountID(context.Background(), adminAccountID)
+	adminCtx = service.TestingWithSessionID(adminCtx)
+	adminCtx = service.TestingWithRequestID(adminCtx)
 
 	adminIdentityID := createTestIdentity(t, service, adminCtx)
 	adminIdentityRef := charon.IdentityRef{ID: adminIdentityID}
@@ -259,15 +267,33 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.ElementsMatch(t, []charon.IdentityRef{adminIdentityRef, userIdentityRef}, result)
 
-	// Attempt an update with admin identity.
+	// Update of admin identity itself should be allowed without identity ID in the context.
 	newUsername := identifier.New().String()
-	updatedUserIdentity.Username = newUsername
-	errE = service.TestingUpdateIdentity(adminCtx, updatedUserIdentity)
-	require.NoError(t, errE)
+	updatedAdminIdentity, _, errE := service.TestingGetIdentity(adminCtx, adminIdentityID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	updatedAdminIdentity.Username = newUsername
+	errE = service.TestingUpdateIdentity(adminCtx, updatedAdminIdentity)
+	require.NoError(t, errE, "% -+#.1v", errE)
 
 	// Re-fetch and verify the update.
-	updatedUserIdentity, _, err := service.TestingGetIdentity(userCtx, userIdentityID)
-	require.NoError(t, err)
+	updatedAdminIdentity, _, errE = service.TestingGetIdentity(adminCtx, adminIdentityID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Equal(t, newUsername, updatedAdminIdentity.Username)
+
+	// Attempt an update of user identity with admin identity should not be allowed without identity ID in the context.
+	newUsername = identifier.New().String()
+	updatedUserIdentity.Username = newUsername
+	errE = service.TestingUpdateIdentity(adminCtx, updatedUserIdentity)
+	assert.ErrorIs(t, errE, charon.ErrIdentityUpdateNotAllowed)
+
+	// Retry with identity ID in the context.
+	adminCtx = service.TestingWithIdentityID(adminCtx, adminIdentityID)
+	errE = service.TestingUpdateIdentity(adminCtx, updatedUserIdentity)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	// Re-fetch and verify the update.
+	updatedUserIdentity, _, errE = service.TestingGetIdentity(userCtx, userIdentityID)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.Equal(t, newUsername, updatedUserIdentity.Username)
 
 	// Remove admin access. By removing all admins, we expect
@@ -368,7 +394,6 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	assert.ElementsMatch(t, []charon.IdentityRef{adminIdentityRef, userIdentityRef}, result)
 
 	// Remove access for user identity itself, effectively transferring the identity to admin.
-	adminCtx = service.TestingWithIdentityID(adminCtx, adminIdentityID)
 	updatedUserIdentity.Admins = []charon.IdentityRef{adminIdentityRef}
 	errE = service.TestingUpdateIdentity(adminCtx, updatedUserIdentity)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -552,17 +577,23 @@ func setupIdentityHierarchy(t *testing.T, service *charon.Service) []testIdentit
 
 	accountID := identifier.New()
 	ctxRoot := service.TestingWithAccountID(context.Background(), accountID)
+	ctxRoot = service.TestingWithSessionID(ctxRoot)
+	ctxRoot = service.TestingWithRequestID(ctxRoot)
 	rootIdentityID := createTestIdentity(t, service, ctxRoot)
 	rootIdentityRef := charon.IdentityRef{ID: rootIdentityID}
 	ctxRoot = service.TestingWithIdentityID(ctxRoot, rootIdentityID)
 
 	accountID1 := identifier.New()
 	ctx1 := service.TestingWithAccountID(context.Background(), accountID1)
+	ctx1 = service.TestingWithSessionID(ctx1)
+	ctx1 = service.TestingWithRequestID(ctx1)
 	child1IdentityID := createTestIdentity(t, service, ctx1)
 	ctx1 = service.TestingWithIdentityID(ctx1, child1IdentityID)
 
 	accountID2 := identifier.New()
 	ctx2 := service.TestingWithAccountID(context.Background(), accountID2)
+	ctx2 = service.TestingWithSessionID(ctx2)
+	ctx2 = service.TestingWithRequestID(ctx2)
 	child2IdentityID := createTestIdentity(t, service, ctx2)
 	ctx2 = service.TestingWithIdentityID(ctx2, child2IdentityID)
 

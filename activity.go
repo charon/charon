@@ -134,8 +134,15 @@ func (s *Service) logActivity(
 	applicationTemplateID *identifier.Identifier, appID *identifier.Identifier,
 ) errors.E {
 	actorID := mustGetIdentityID(ctx)
-	requestID := waf.MustRequestID(ctx)
 	sessionID := mustGetSessionID(ctx)
+
+	var requestID identifier.Identifier
+	if i, ok := ctx.Value("test-request-id").(identifier.Identifier); ok {
+		// During tests we set our own request ID.
+		requestID = i
+	} else {
+		requestID = waf.MustRequestID(ctx)
+	}
 
 	activity := &Activity{ //nolint:exhaustruct
 		Type:      activityType,

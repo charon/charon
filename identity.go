@@ -20,6 +20,7 @@ var (
 	ErrIdentityAlreadyExists = errors.Base("identity already exists")
 	// TODO: Should we remove ErrIdentityUnauthorized and just use ErrIdentityNotFound?
 	ErrIdentityUnauthorized     = errors.Base("identity access unauthorized")
+	ErrIdentityUpdateNotAllowed = errors.Base("identity update not allowed")
 	ErrIdentityValidationFailed = errors.Base("identity validation failed")
 
 	errEmptyIdentity = errors.Base("empty identity")
@@ -471,13 +472,6 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 	s.identitiesAccessMu.Lock()
 	defer s.identitiesAccessMu.Unlock()
 
-	s.identities[*identity.ID] = data
-
-	errE = s.logActivity(ctx, ActivityIdentityCreate, identity.ID, nil, nil, nil)
-	if errE != nil {
-		return errE
-	}
-
 	i := IdentityRef{ID: *identity.ID}
 
 	if _, ok := getIdentityID(ctx); !ok {
@@ -486,7 +480,17 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 		// between the identity and the account, bootstrapping correct propagation of which accounts have
 		// access based on identities.
 		s.identityCreators[i] = accountID
+
+		// We also here current identity ID in the context, which is used by logActivity.
+		ctx = s.withIdentityID(ctx, *identity.ID)
 	}
+
+	errE = s.logActivity(ctx, ActivityIdentityCreate, identity.ID, nil, nil, nil)
+	if errE != nil {
+		return errE
+	}
+
+	s.identities[*identity.ID] = data
 
 	identities := mapset.NewThreadUnsafeSet(identity.Users...)
 	identities.Append(identity.Admins...)
@@ -604,12 +608,27 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 		errors.Details(errE)["id"] = *identity.ID
 		return errE
 	}
-	s.identities[*identity.ID] = data
+
+	if _, ok := getIdentityID(ctx); !ok {
+		// When identity is updated using only an account ID without identity ID in the context, we allow updating only if
+		// only the identity itself has admin access to the identity. This is really meant for cases where user creates
+		// an identity during an authentication flow and then notices a mistake and wants to update it.
+		// It does not matter if we check existingIdentity.Admins or identity.Admins because when identity ID is
+		// not in the context, Validate method prevents changes to admins.
+		if len(existingIdentity.Admins) != 1 || existingIdentity.Admins[0].ID != *identity.ID {
+			return errors.WithDetails(ErrIdentityUpdateNotAllowed, "id", *identity.ID)
+		}
+
+		// We set here current identity ID in the context, which is used by logActivity.
+		ctx = s.withIdentityID(ctx, *identity.ID)
+	}
 
 	errE = s.logActivity(ctx, ActivityIdentityUpdate, identity.ID, nil, nil, nil)
 	if errE != nil {
 		return errE
 	}
+
+	s.identities[*identity.ID] = data
 
 	identitiesBefore := mapset.NewThreadUnsafeSet(existingIdentity.Users...)
 	identitiesBefore.Append(existingIdentity.Admins...)
