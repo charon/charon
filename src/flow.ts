@@ -18,6 +18,22 @@ export function getThirdPartyProvider(providers: string[]): SiteProvider | null 
   return null
 }
 
+export function getProviderName(t: (key: string) => string, provider: string): string {
+  switch (provider) {
+    case "code":
+      return t("common.providers.code")
+    case "passkey":
+      return t("common.providers.passkey")
+    case "password":
+      return t("common.providers.password")
+  }
+  const siteProvider = getThirdPartyProvider([provider])
+  if (siteProvider) {
+    return siteProvider.name
+  }
+  throw new Error(`unknown provider: ${provider}`)
+}
+
 export function removeSteps(flow: Flow, targetSteps: string[]) {
   const steps = flow.getSteps()
   for (const [i, step] of steps.entries()) {

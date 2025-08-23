@@ -96,6 +96,11 @@ declare module "vue-i18n" {
       accessibility: {
         picture: string
       }
+      providers: {
+        code: string
+        password: string
+        passkey: string
+      }
     }
     partials: {
       AuthAutoRedirect: {

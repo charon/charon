@@ -84,6 +84,11 @@
     },
     "accessibility": {
       "picture": "picture"
+    },
+    "providers": {
+      "code": "code",
+      "password": "password",
+      "passkey": "passkey"
     }
   },
   "partials": {
@@ -134,7 +139,7 @@
     "AuthPasskeySignin": {
       "signingIn": "Signing you in using {strongPasskey}. Please follow instructions by your browser and/or device.",
       "signupInfo": "If you have not yet signed up with passkey, this will fail. In that case Charon will offer you to sign up instead.",
-      "passkey": "@:partials.AuthPasskeySignup.passkey"
+      "passkey": "@:common.providers.passkey"
     },
     "AuthPasskeySignup": {
       "instructions": "Signing in using {strongPasskey} failed. Do you want to sign up instead?",
@@ -143,7 +148,7 @@
       "retrySigninButton": "Retry sign-in",
       "passkeySignupButton": "Passkey sign-up",
       "retrySignupButton": "Retry sign-up",
-      "passkey": "passkey"
+      "passkey": "@:common.providers.passkey"
     },
     "AuthPassword": {
       "emailAddressLabel": "Your e-mail address",

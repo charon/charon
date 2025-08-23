@@ -84,6 +84,11 @@
     },
     "accessibility": {
       "picture": "slika"
+    },
+    "providers": {
+      "code": "koda",
+      "password": "geslo",
+      "passkey": "passkey"
     }
   },
   "partials": {
@@ -134,7 +139,7 @@
     "AuthPasskeySignin": {
       "signingIn": "Prijavljamo vas z uporabo {strongPasskey}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave.",
       "signupInfo": "Če se še niste registrirali s passkey, bo to neuspešno. V tem primeru vam bo Charon ponudil registracijo.",
-      "passkey": "@:partials.AuthPasskeySignup.passkey"
+      "passkey": "@:common.providers.passkey"
     },
     "AuthPasskeySignup": {
       "instructions": "Prijava z uporabo {strongPasskey} ni uspela. Se želite registrirati namesto tega?",
@@ -143,7 +148,7 @@
       "retrySigninButton": "Poskusi prijavo znova",
       "passkeySignupButton": "Registracija s passkey",
       "retrySignupButton": "Poskusi registracijo znova",
-      "passkey": "passkey"
+      "passkey": "@:common.providers.passkey"
     },
     "AuthPassword": {
       "emailAddressLabel": "Vaš e-naslov",
