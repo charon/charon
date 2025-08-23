@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Activity, ActivityRef, Identity, Organization, ApplicationTemplate } from "@/types"
-import type { DeepReadonly } from "vue"
+import type { DeepReadonly, FunctionalComponent } from "vue"
 
 import { useI18n } from "vue-i18n"
 import { LockClosedIcon, LockOpenIcon, IdentificationIcon, UserGroupIcon, CalculatorIcon } from "@heroicons/vue/24/outline"
@@ -13,12 +13,7 @@ defineProps<{
   item: ActivityRef
 }>()
 
-const WithActivityDocument = WithDocument<Activity>
-const WithIdentityDocument = WithDocument<Identity>
-const WithOrganizationDocument = WithDocument<Organization>
-const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
-
-const getActivityIcon = (activityType: string) => {
+function getActivityIcon(activityType: string): FunctionalComponent {
   switch (activityType) {
     case "signIn":
       return LockOpenIcon
@@ -41,7 +36,7 @@ const getActivityIcon = (activityType: string) => {
   }
 }
 
-const getActivityDescription = (activityType: string) => {
+function getActivityDescription(activityType: string): string {
   switch (activityType) {
     case "signIn":
       return t("partials.ActivityListItem.signin")
@@ -64,16 +59,16 @@ const getActivityDescription = (activityType: string) => {
   }
 }
 
-const getFormattedTimestamp = (timestamp: string) => {
+function getFormattedTimestamp(timestamp: string): string {
   const date = new Date(timestamp)
   return date.toLocaleString()
 }
 
-const getIdentityDisplayName = (identity: Identity | DeepReadonly<Identity>) => {
+function getIdentityDisplayName(identity: Identity | DeepReadonly<Identity>): string {
   return identity.username || identity.email || identity.givenName || identity.fullName || identity.id
 }
 
-const getChangeDescription = (changeType: string) => {
+function getChangeDescription(changeType: string): string {
   switch (changeType) {
     case "publicData":
       return t("partials.ActivityListItem.changes.publicData")
@@ -97,6 +92,11 @@ const getChangeDescription = (changeType: string) => {
       throw new Error(`unknown change type: ${changeType}`)
   }
 }
+
+const WithActivityDocument = WithDocument<Activity>
+const WithIdentityDocument = WithDocument<Identity>
+const WithOrganizationDocument = WithDocument<Organization>
+const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
 </script>
 
 <template>
