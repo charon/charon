@@ -14,21 +14,21 @@ const WithActivityDocument = WithDocument<Activity>
 
 const getActivityIcon = (type: string) => {
   switch (type) {
-    case "signin":
+    case "signIn":
       return "🔓"
-    case "signout":
+    case "signOut":
       return "🔒"
-    case "identity_create":
+    case "identityCreate":
       return "👤"
-    case "identity_update":
+    case "identityUpdate":
       return "✏️"
-    case "organization_create":
+    case "organizationCreate":
       return "🏢"
-    case "organization_update":
+    case "organizationUpdate":
       return "🏢"
-    case "application_template_create":
+    case "applicationTemplateCreate":
       return "📱"
-    case "application_template_update":
+    case "applicationTemplateUpdate":
       return "📱"
     default:
       return "⚡"
@@ -37,21 +37,21 @@ const getActivityIcon = (type: string) => {
 
 const getActivityDescription = (type: string) => {
   switch (type) {
-    case "signin":
+    case "signIn":
       return t("partials.ActivityListItem.signin")
-    case "signout":
+    case "signOut":
       return t("partials.ActivityListItem.signout")
-    case "identity_create":
+    case "identityCreate":
       return t("partials.ActivityListItem.identityCreate")
-    case "identity_update":
+    case "identityUpdate":
       return t("partials.ActivityListItem.identityUpdate")
-    case "organization_create":
+    case "organizationCreate":
       return t("partials.ActivityListItem.organizationCreate")
-    case "organization_update":
+    case "organizationUpdate":
       return t("partials.ActivityListItem.organizationUpdate")
-    case "application_template_create":
+    case "applicationTemplateCreate":
       return t("partials.ActivityListItem.applicationTemplateCreate")
-    case "application_template_update":
+    case "applicationTemplateUpdate":
       return t("partials.ActivityListItem.applicationTemplateUpdate")
     default:
       return t("partials.ActivityListItem.unknownActivity")

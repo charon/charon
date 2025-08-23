@@ -376,14 +376,14 @@ export type IdentityCreate = IdentityAttributes & {
 export type Identities = IdentityRef[]
 
 export type ActivityType =
-  | "signin"
-  | "signout"
-  | "identity_create"
-  | "identity_update"
-  | "organization_create"
-  | "organization_update"
-  | "application_template_create"
-  | "application_template_update"
+  | "signIn"
+  | "signOut"
+  | "identityCreate"
+  | "identityUpdate"
+  | "organizationCreate"
+  | "organizationUpdate"
+  | "applicationTemplateCreate"
+  | "applicationTemplateUpdate"
 
 export type ActivityDocumentRef = {
   id: string
