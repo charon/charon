@@ -887,7 +887,7 @@ func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Req
 	co := s.charonOrganization()
 
 	hasIdentity := false
-	identityID, _, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
+	identityID, _, _, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
 	if errE == nil {
 		ctx = s.withIdentityID(ctx, identityID)
 		hasIdentity = true

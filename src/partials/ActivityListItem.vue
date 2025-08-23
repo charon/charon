@@ -103,6 +103,7 @@ const getDocumentInfo = (doc: Activity) => {
               {{ getFormattedTimestamp(doc.timestamp) }}
             </div>
             <div v-if="doc.appId" class="text-xs text-gray-400">App: {{ doc.appId }}</div>
+            <div class="text-xs text-gray-400">Session: {{ doc.sessionId }}</div>
           </div>
         </div>
       </div>

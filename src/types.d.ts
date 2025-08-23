@@ -394,6 +394,8 @@ export type Activity = {
   organization?: OrganizationRef
   applicationTemplate?: ApplicationTemplateRef
   appId?: string
+  sessionId: string
+  requestId: string
 }
 
 export type ActivityRef = {

@@ -54,6 +54,9 @@ var accountIDContextKey = &contextKey{"account"} //nolint:gochecknoglobals
 // serviceContextKey provides current service instance.
 var serviceContextKey = &contextKey{"service"} //nolint:gochecknoglobals
 
+// sessionIDContextKey provides current session ID.
+var sessionIDContextKey = &contextKey{"sessionID"} //nolint:gochecknoglobals
+
 //nolint:gochecknoglobals
 var (
 	// This is similar to precis.UsernameCasePreserved, but also disallows empty usernames.
@@ -94,13 +97,19 @@ func (s *Service) withIdentityID(ctx context.Context, identityID identifier.Iden
 	return context.WithValue(ctx, identityIDContextKey, identityID)
 }
 
+func (s *Service) withSessionID(ctx context.Context, sessionID identifier.Identifier) context.Context {
+	return context.WithValue(ctx, sessionIDContextKey, sessionID)
+}
+
 // TODO: In getIdentityFromRequest we should probably differentiate between header not present and header having invalid access token.
 //       If header is not present, caller probably expects public data. If header is present then caller probably expects
 //       that the token is valid and if not it might be a surprise to return just public data (like that the header wa not present).
 
 // getIdentityFromRequest uses an Authorization header to obtain the OIDC access token
-// and determines the identity and account IDs from it.
-func (s *Service) getIdentityFromRequest(w http.ResponseWriter, req *http.Request, audience string) (identifier.Identifier, identifier.Identifier, errors.E) {
+// and determines the identity, account, and session IDs from it.
+func (s *Service) getIdentityFromRequest(
+	w http.ResponseWriter, req *http.Request, audience string,
+) (identifier.Identifier, identifier.Identifier, identifier.Identifier, errors.E) {
 	// OIDC GetClient requires ctx with serviceContextKey set.
 	ctx := context.WithValue(req.Context(), serviceContextKey, s)
 	oidc := s.oidc()
@@ -114,7 +123,7 @@ func (s *Service) getIdentityFromRequest(w http.ResponseWriter, req *http.Reques
 
 	token := getBearerToken(req)
 	if token == "" {
-		return identifier.Identifier{}, identifier.Identifier{}, errors.WithStack(ErrIdentityNotPresent)
+		return identifier.Identifier{}, identifier.Identifier{}, identifier.Identifier{}, errors.WithStack(ErrIdentityNotPresent)
 	}
 
 	// Create an empty session object which serves as a prototype of the reconstructed session object.
@@ -125,21 +134,21 @@ func (s *Service) getIdentityFromRequest(w http.ResponseWriter, req *http.Reques
 	if err != nil {
 		// Any error from this function is seen also in Fosite as an inactive token.
 		errE := withFositeError(err)
-		return identifier.Identifier{}, identifier.Identifier{}, errors.WrapWith(errE, ErrIdentityNotPresent)
+		return identifier.Identifier{}, identifier.Identifier{}, identifier.Identifier{}, errors.WrapWith(errE, ErrIdentityNotPresent)
 	}
 
 	if tu != fosite.AccessToken {
-		return identifier.Identifier{}, identifier.Identifier{}, errors.WithStack(ErrIdentityNotPresent)
+		return identifier.Identifier{}, identifier.Identifier{}, identifier.Identifier{}, errors.WithStack(ErrIdentityNotPresent)
 	}
 
 	// We have to make sure the access token provided is really meant for the audience.
 	// See: https://github.com/ory/fosite/issues/845
 	if slices.Contains(ar.GetGrantedAudience(), audience) {
 		session = ar.GetSession().(*OIDCSession) //nolint:errcheck,forcetypeassert
-		return session.Subject, session.AccountID, nil
+		return session.Subject, session.AccountID, session.SessionID, nil
 	}
 
-	return identifier.Identifier{}, identifier.Identifier{}, errors.WithStack(ErrIdentityNotPresent)
+	return identifier.Identifier{}, identifier.Identifier{}, identifier.Identifier{}, errors.WithStack(ErrIdentityNotPresent)
 }
 
 func (s *Service) getSessionFromCookieValue(ctx context.Context, cookieValue string) (*Session, errors.E) {
@@ -281,9 +290,11 @@ func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request)
 	ctx := req.Context()
 	co := s.charonOrganization()
 
-	identityID, _, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
+	identityID, _, sessionID, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
 	if errE == nil {
-		return s.withIdentityID(ctx, identityID)
+		ctx = s.withIdentityID(ctx, identityID)
+		ctx = s.withSessionID(ctx, sessionID)
+		return ctx
 	} else if !errors.Is(errE, ErrIdentityNotPresent) {
 		s.InternalServerErrorWithError(w, req, errE)
 		return nil
@@ -304,7 +315,7 @@ func (s *Service) requireAuthenticatedForIdentity(w http.ResponseWriter, req *ht
 	ctx := req.Context()
 	co := s.charonOrganization()
 
-	identityID, accountID, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
+	identityID, accountID, _, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
 	if errE == nil {
 		ctx = s.withIdentityID(ctx, identityID)
 		ctx = s.withAccountID(ctx, accountID)

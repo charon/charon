@@ -774,7 +774,7 @@ func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, p
 	co := s.charonOrganization()
 
 	hasIdentity := false
-	identityID, _, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
+	identityID, _, _, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
 	if errE == nil {
 		ctx = s.withIdentityID(ctx, identityID)
 		hasIdentity = true
@@ -867,14 +867,14 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 	hasOrganizationAccessToken := true
 
 	// We do not use RequireAuthenticated here, because we want to use a (possibly) non-Charon organization ID.
-	currentIdentityID, accountID, errE := s.getIdentityFromRequest(w, req, organizationID.String())
+	currentIdentityID, accountID, _, errE := s.getIdentityFromRequest(w, req, organizationID.String())
 	if errors.Is(errE, ErrIdentityNotPresent) {
 		// User is not authenticated for this organization.
 		// Maybe they are authenticated using Charon organization and are admin of the organization.
 
 		hasOrganizationAccessToken = false
 
-		currentIdentityID, accountID, errE = s.getIdentityFromRequest(w, req, co.AppID.String())
+		currentIdentityID, accountID, _, errE = s.getIdentityFromRequest(w, req, co.AppID.String())
 		if errors.Is(errE, ErrIdentityNotPresent) {
 			s.WithError(ctx, errE)
 			waf.Error(w, req, http.StatusUnauthorized)

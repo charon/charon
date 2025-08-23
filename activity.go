@@ -47,6 +47,10 @@ type Activity struct {
 
 	// Optional application ID for sign-in activities.
 	AppID *identifier.Identifier `json:"appId,omitempty"`
+
+	// Session and request IDs from the WAF framework.
+	SessionID identifier.Identifier `json:"sessionId"`
+	RequestID identifier.Identifier `json:"requestId"`
 }
 
 func (a *Activity) Validate(_ context.Context, existing *Activity) errors.E {
@@ -135,10 +139,21 @@ func (s *Service) logActivity(
 		return
 	}
 
+	// Get request ID from WAF context.
+	requestID := waf.MustRequestID(ctx)
+
+	// Get session ID from context. Return silently if not present.
+	sessionID, hasSessionID := ctx.Value(sessionIDContextKey).(identifier.Identifier)
+	if !hasSessionID {
+		return
+	}
+
 	activity := &Activity{ //nolint:exhaustruct
-		Type:  activityType,
-		Actor: IdentityRef{ID: actorID},
-		AppID: appID,
+		Type:      activityType,
+		Actor:     IdentityRef{ID: actorID},
+		AppID:     appID,
+		SessionID: sessionID,
+		RequestID: requestID,
 	}
 
 	// Set the appropriate document references based on activity type and provided IDs.
