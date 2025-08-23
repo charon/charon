@@ -42,8 +42,8 @@ type Activity struct {
 	Organization        *OrganizationRef        `json:"organization,omitempty"`
 	ApplicationTemplate *ApplicationTemplateRef `json:"applicationTemplate,omitempty"`
 
-	// Optional additional metadata about the activity.
-	Metadata map[string]interface{} `json:"metadata,omitempty"`
+	// Optional application ID for sign-in activities.
+	AppID *identifier.Identifier `json:"appId,omitempty"`
 }
 
 func (a *Activity) Validate(_ context.Context, existing *Activity) errors.E {
@@ -72,11 +72,6 @@ func (a *Activity) Validate(_ context.Context, existing *Activity) errors.E {
 
 	if a.Type == "" {
 		return errors.New("activity type is required")
-	}
-
-	// Ensure metadata is not nil.
-	if a.Metadata == nil {
-		a.Metadata = make(map[string]interface{})
 	}
 
 	return nil
@@ -123,8 +118,15 @@ func (s *Service) createActivity(ctx context.Context, activity *Activity) errors
 
 // logActivity creates a new activity record for the current user.
 //
-// The documentID parameter is optional and will be used to create the appropriate document reference based on activityType.
-func (s *Service) logActivity(ctx context.Context, activityType ActivityType, documentID *identifier.Identifier, metadata map[string]interface{}) {
+// The optional ID parameters will be used to create the appropriate references based on activityType.
+func (s *Service) logActivity(
+	ctx context.Context,
+	activityType ActivityType,
+	documentID *identifier.Identifier,
+	organizationID *identifier.Identifier,
+	appID *identifier.Identifier,
+	identityDocID *identifier.Identifier,
+) {
 	// Get current identity from context, return silently if not present.
 	actorID, hasActor := ctx.Value(identityIDContextKey).(identifier.Identifier)
 	if !hasActor {
@@ -132,23 +134,32 @@ func (s *Service) logActivity(ctx context.Context, activityType ActivityType, do
 	}
 
 	activity := &Activity{ //nolint:exhaustruct
-		Type:     activityType,
-		Actor:    IdentityRef{ID: actorID},
-		Metadata: metadata,
+		Type:  activityType,
+		Actor: IdentityRef{ID: actorID},
+		AppID: appID,
 	}
 
-	// Set the appropriate document reference based on activity type and documentID.
-	if documentID != nil {
-		switch activityType {
-		case ActivityIdentityCreate, ActivityIdentityUpdate:
-			activity.Identity = &IdentityRef{ID: *documentID}
-		case ActivityOrganizationCreate, ActivityOrganizationUpdate:
-			activity.Organization = &OrganizationRef{ID: *documentID}
-		case ActivityApplicationTemplateCreate, ActivityApplicationTemplateUpdate:
-			activity.ApplicationTemplate = &ApplicationTemplateRef{ID: *documentID}
-		case ActivitySignIn, ActivitySignOut:
-			// These activity types don't have associated documents, ignore documentID.
+	// Set the appropriate document references based on activity type and provided IDs.
+	switch activityType {
+	case ActivityIdentityCreate, ActivityIdentityUpdate:
+		if identityDocID != nil {
+			activity.Identity = &IdentityRef{ID: *identityDocID}
 		}
+	case ActivityOrganizationCreate, ActivityOrganizationUpdate:
+		if organizationID != nil {
+			activity.Organization = &OrganizationRef{ID: *organizationID}
+		}
+	case ActivityApplicationTemplateCreate, ActivityApplicationTemplateUpdate:
+		if documentID != nil {
+			activity.ApplicationTemplate = &ApplicationTemplateRef{ID: *documentID}
+		}
+	case ActivitySignIn:
+		// For sign-in, we can set organization reference if provided.
+		if organizationID != nil {
+			activity.Organization = &OrganizationRef{ID: *organizationID}
+		}
+	case ActivitySignOut:
+		// Sign-out doesn't need additional references.
 	}
 
 	// We don't propagate errors from activity logging as it shouldn't break the main operation.
@@ -189,7 +200,7 @@ func (s *Service) ActivityListGet(w http.ResponseWriter, req *http.Request, _ wa
 		}
 
 		// Only include activities for the current user.
-		if activity.Identity.ID == currentIdentityID {
+		if activity.Actor.ID == currentIdentityID {
 			activities = append(activities, &activity)
 		}
 	}
@@ -231,7 +242,7 @@ func (s *Service) ActivityGetGet(w http.ResponseWriter, req *http.Request, param
 	currentIdentityID := mustGetIdentityID(ctx)
 
 	// Only allow users to see their own activities.
-	if activity.Identity.ID != currentIdentityID {
+	if activity.Actor.ID != currentIdentityID {
 		s.NotFound(w, req)
 		return
 	}

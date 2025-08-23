@@ -102,12 +102,7 @@ const getDocumentInfo = (doc: Activity) => {
             <div class="text-xs text-gray-500">
               {{ getFormattedTimestamp(doc.timestamp) }}
             </div>
-            <div v-if="doc.metadata && Object.keys(doc.metadata).length > 0" class="text-xs text-gray-400">
-              <details>
-                <summary class="cursor-pointer">{{ t("partials.ActivityListItem.showMetadata") }}</summary>
-                <pre class="mt-1 text-xs">{{ JSON.stringify(doc.metadata, null, 2) }}</pre>
-              </details>
-            </div>
+            <div v-if="doc.appId" class="text-xs text-gray-400">App: {{ doc.appId }}</div>
           </div>
         </div>
       </div>

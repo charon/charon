@@ -393,7 +393,7 @@ export type Activity = {
   identity?: IdentityRef
   organization?: OrganizationRef
   applicationTemplate?: ApplicationTemplateRef
-  metadata?: Record<string, unknown>
+  appId?: string
 }
 
 export type ActivityRef = {

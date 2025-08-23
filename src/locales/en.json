@@ -182,8 +182,7 @@
       "organizationUpdate": "Updated organization",
       "applicationTemplateCreate": "Created application template",
       "applicationTemplateUpdate": "Updated application template",
-      "unknownActivity": "Unknown activity",
-      "showMetadata": "Show metadata"
+      "unknownActivity": "Unknown activity"
     }
   },
   "views": {

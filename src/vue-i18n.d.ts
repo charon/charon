@@ -194,7 +194,6 @@ declare module "vue-i18n" {
         applicationTemplateCreate: string
         applicationTemplateUpdate: string
         unknownActivity: string
-        showMetadata: string
       }
     }
     views: {
