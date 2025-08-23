@@ -199,7 +199,8 @@
         "membershipChanged": "membership changed",
         "membershipActivated": "membership activated",
         "membershipDisabled": "membership disabled"
-      }
+      },
+      "entityLinks": "{entity}: {links}"
     }
   },
   "views": {

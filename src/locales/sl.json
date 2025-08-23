@@ -199,7 +199,8 @@
         "membershipChanged": "spremenjeno članstvo",
         "membershipActivated": "aktivirano članstvo",
         "membershipDisabled": "onemogočeno članstvo"
-      }
+      },
+      "entityLinks": "{entity}: {links}"
     }
   },
   "views": {

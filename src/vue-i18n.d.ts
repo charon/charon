@@ -211,6 +211,7 @@ declare module "vue-i18n" {
           membershipActivated: string
           membershipDisabled: string
         }
+        entityLinks: string
       }
     }
     views: {
