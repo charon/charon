@@ -122,7 +122,7 @@ func (s *Service) createActivity(ctx context.Context, activity *Activity) errors
 }
 
 // logActivity creates a new activity record for the current user.
-// logActivity creates a new activity record for the current user.
+//
 // The documentID parameter is optional and will be used to create the appropriate document reference based on activityType.
 func (s *Service) logActivity(ctx context.Context, activityType ActivityType, documentID *identifier.Identifier, metadata map[string]interface{}) {
 	// Get current identity from context, return silently if not present.
