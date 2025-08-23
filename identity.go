@@ -474,7 +474,7 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 	s.identities[*identity.ID] = data
 
 	// Log identity creation activity.
-	s.logActivity(ctx, ActivityTypeIdentityCreate, &ActivityDocumentRef{ //nolint:exhaustruct
+	s.logActivity(ctx, ActivityIdentityCreate, &ActivityDocumentRef{ //nolint:exhaustruct
 		ID:   *identity.ID,
 		Type: "identity",
 	}, nil)
@@ -608,7 +608,7 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 	s.identities[*identity.ID] = data
 
 	// Log identity update activity.
-	s.logActivity(ctx, ActivityTypeIdentityUpdate, &ActivityDocumentRef{ //nolint:exhaustruct
+	s.logActivity(ctx, ActivityIdentityUpdate, &ActivityDocumentRef{ //nolint:exhaustruct
 		ID:   *identity.ID,
 		Type: "identity",
 	}, nil)

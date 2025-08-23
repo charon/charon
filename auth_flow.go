@@ -311,7 +311,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	// Log sign-in activity if we have a selected identity.
 	if flow.Identity != nil {
 		ctx = s.withIdentityID(ctx, *flow.Identity.ID)
-		s.logActivity(ctx, ActivityTypeSignIn, nil, map[string]interface{}{
+		s.logActivity(ctx, ActivitySignIn, nil, map[string]interface{}{
 			"organizationId": flow.OrganizationID.String(),
 			"appId":          flow.AppID.String(),
 		})

@@ -18,14 +18,14 @@ var ErrActivityNotFound = errors.Base("activity not found")
 type ActivityType string
 
 const (
-	ActivityTypeSignIn                    ActivityType = "signin"
-	ActivityTypeSignOut                   ActivityType = "signout"
-	ActivityTypeIdentityCreate            ActivityType = "identity_create"
-	ActivityTypeIdentityUpdate            ActivityType = "identity_update"
-	ActivityTypeOrganizationCreate        ActivityType = "organization_create"
-	ActivityTypeOrganizationUpdate        ActivityType = "organization_update"
-	ActivityTypeApplicationTemplateCreate ActivityType = "application_template_create"
-	ActivityTypeApplicationTemplateUpdate ActivityType = "application_template_update"
+	ActivitySignIn                    ActivityType = "signin"
+	ActivitySignOut                   ActivityType = "signout"
+	ActivityIdentityCreate            ActivityType = "identity_create"
+	ActivityIdentityUpdate            ActivityType = "identity_update"
+	ActivityOrganizationCreate        ActivityType = "organization_create"
+	ActivityOrganizationUpdate        ActivityType = "organization_update"
+	ActivityApplicationTemplateCreate ActivityType = "application_template_create"
+	ActivityApplicationTemplateUpdate ActivityType = "application_template_update"
 )
 
 // ActivityDocumentRef represents a reference to a document that was affected by the activity.
