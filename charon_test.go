@@ -50,7 +50,7 @@ func (s *Service) TestingWithSessionID(ctx context.Context) context.Context {
 }
 
 func (s *Service) TestingWithRequestID(ctx context.Context) context.Context {
-	return context.WithValue(ctx, "test-request-id", identifier.New()) //nolint:revive
+	return context.WithValue(ctx, "test-request-id", identifier.New()) //nolint:revive,staticcheck
 }
 
 func (s *Service) TestingGetIdentitiesAccess(accountID identifier.Identifier) map[IdentityRef][][]IdentityRef {
