@@ -195,6 +195,17 @@ declare module "vue-i18n" {
         applicationTemplateCreate: string
         applicationTemplateUpdate: string
         unknownActivity: string
+        changes: {
+          publicData: string
+          permissionsAdded: string
+          permissionsRemoved: string
+          permissionsChanged: string
+          membershipAdded: string
+          membershipRemoved: string
+          membershipChanged: string
+          membershipActivated: string
+          membershipDisabled: string
+        }
       }
     }
     views: {

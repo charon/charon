@@ -183,7 +183,18 @@
       "organizationUpdate": "Posodobljena organizacija",
       "applicationTemplateCreate": "Ustvarjena predloga aplikacije",
       "applicationTemplateUpdate": "Posodobljena predloga aplikacije",
-      "unknownActivity": "Neznana aktivnost"
+      "unknownActivity": "Neznana aktivnost",
+      "changes": {
+        "publicData": "javni podatki",
+        "permissionsAdded": "dodana dovoljenja",
+        "permissionsRemoved": "odstranjena dovoljenja",
+        "permissionsChanged": "spremenjena dovoljenja",
+        "membershipAdded": "dodano članstvo",
+        "membershipRemoved": "odstranjeno članstvo",
+        "membershipChanged": "spremenjeno članstvo",
+        "membershipActivated": "aktivirano članstvo",
+        "membershipDisabled": "onemogočeno članstvo"
+      }
     }
   },
   "views": {

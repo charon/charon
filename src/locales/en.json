@@ -183,7 +183,18 @@
       "organizationUpdate": "Updated organization",
       "applicationTemplateCreate": "Created application template",
       "applicationTemplateUpdate": "Updated application template",
-      "unknownActivity": "Unknown activity"
+      "unknownActivity": "Unknown activity",
+      "changes": {
+        "publicData": "public data",
+        "permissionsAdded": "permissions added",
+        "permissionsRemoved": "permissions removed",
+        "permissionsChanged": "permissions changed",
+        "membershipAdded": "membership added",
+        "membershipRemoved": "membership removed",
+        "membershipChanged": "membership changed",
+        "membershipActivated": "membership activated",
+        "membershipDisabled": "membership disabled"
+      }
     }
   },
   "views": {
