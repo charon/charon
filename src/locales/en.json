@@ -71,7 +71,8 @@
       "organization": "Organization",
       "organizations": "Organizations",
       "applicationTemplate": "Application template",
-      "applicationTemplates": "Application templates"
+      "applicationTemplates": "Application templates",
+      "activity": "Activity"
     },
     "messages": {
       "congratulations": "Congratulations.",
@@ -270,7 +271,6 @@
       "noUsers": "There are no users."
     },
     "ActivityList": {
-      "title": "Activity",
       "noActivities": "There is not activity."
     }
   }

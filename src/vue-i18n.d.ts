@@ -83,6 +83,7 @@ declare module "vue-i18n" {
         organizations: string
         applicationTemplate: string
         applicationTemplates: string
+        activity: string
       }
       messages: {
         congratulations: string
@@ -281,7 +282,6 @@ declare module "vue-i18n" {
         noUsers: string
       }
       ActivityList: {
-        title: string
         noActivities: string
       }
     }
