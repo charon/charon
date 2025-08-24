@@ -317,7 +317,7 @@ export type OrganizationIdentity = {
   active: boolean
   identity: Identity | DeepReadonly<Identity>
   url?: string
-  applications: ApplicationTemplateRef[]
+  applications: OrganizationApplicationApplicationRef[]
   isCurrent: boolean
   canUpdate: boolean
 }
@@ -333,7 +333,7 @@ export type IdentityOrganization = {
   id?: string
   active: boolean
   organization: OrganizationRef
-  applications: ApplicationTemplateRef[]
+  applications: OrganizationApplicationApplicationRef[]
 }
 
 export type OrganizationPublic = OrganizationCreate & {

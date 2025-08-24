@@ -350,6 +350,10 @@ type OrganizationApplicationApplicationRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
+func organizationApplicationApplicationRefCmp(a OrganizationApplicationApplicationRef, b OrganizationApplicationApplicationRef) int {
+	return bytes.Compare(a.ID[:], b.ID[:])
+}
+
 type OrganizationApplicationRef struct {
 	Organization OrganizationRef                       `json:"organization"`
 	Application  OrganizationApplicationApplicationRef `json:"application"`
@@ -359,7 +363,7 @@ func organizationApplicationRefCmp(a OrganizationApplicationRef, b OrganizationA
 	if c := organizationRefCmp(a.Organization, b.Organization); c != 0 {
 		return c
 	}
-	return bytes.Compare(a.Application.ID[:], b.Application.ID[:])
+	return organizationApplicationApplicationRefCmp(a.Application, b.Application)
 }
 
 func (a *OrganizationApplication) GetClientPublic(id *identifier.Identifier) *OrganizationApplicationClientPublic {

@@ -32,8 +32,8 @@ type IdentityOrganization struct {
 
 	Active bool `json:"active"`
 
-	Organization OrganizationRef          `json:"organization"`
-	Applications []ApplicationTemplateRef `json:"applications"`
+	Organization OrganizationRef                         `json:"organization"`
+	Applications []OrganizationApplicationApplicationRef `json:"applications"`
 }
 
 func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityOrganization, service *Service, identity *Identity) errors.E {
@@ -98,13 +98,13 @@ func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityO
 	// We remove duplicates.
 	i.Applications = removeDuplicates(i.Applications)
 
-	existingApplications := mapset.NewThreadUnsafeSet[ApplicationTemplateRef]()
+	existingApplications := mapset.NewThreadUnsafeSet[OrganizationApplicationApplicationRef]()
 	if existing != nil {
 		existingApplications.Append(existing.Applications...)
 	}
 
 	// We validate only added applications so that we do not error out on disabled or removed applications.
-	unknown := mapset.NewThreadUnsafeSet[ApplicationTemplateRef]()
+	unknown := mapset.NewThreadUnsafeSet[OrganizationApplicationApplicationRef]()
 	for newApplication := range mapset.Elements(mapset.NewThreadUnsafeSet(i.Applications...).Difference(existingApplications)) {
 		if application := organization.GetApplication(&newApplication.ID); application == nil || !application.Active {
 			unknown.Add(newApplication)
@@ -113,7 +113,7 @@ func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityO
 	if !unknown.IsEmpty() {
 		errE := errors.New("unknown applications")
 		applications := unknown.ToSlice()
-		slices.SortFunc(applications, applicationTemplateRefCmp)
+		slices.SortFunc(applications, organizationApplicationApplicationRefCmp)
 		errors.Details(errE)["applications"] = applications
 	}
 
@@ -913,7 +913,7 @@ func (s *Service) selectAndActivateIdentity(ctx context.Context, identityID, org
 		return nil, errE
 	}
 
-	applicationRef := ApplicationTemplateRef{ID: applicationID}
+	applicationRef := OrganizationApplicationApplicationRef{ID: applicationID}
 
 	idOrg := identity.GetOrganization(&organizationID)
 	if idOrg != nil {
@@ -939,7 +939,7 @@ func (s *Service) selectAndActivateIdentity(ctx context.Context, identityID, org
 		Organization: OrganizationRef{
 			ID: organizationID,
 		},
-		Applications: []ApplicationTemplateRef{applicationRef},
+		Applications: []OrganizationApplicationApplicationRef{applicationRef},
 	})
 
 	return identity, s.updateIdentity(ctx, identity)
