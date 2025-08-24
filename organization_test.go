@@ -359,6 +359,53 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 			},
 		},
 		{
+			name: "application membership changed",
+			existing: &charon.Organization{
+				OrganizationPublic: charon.OrganizationPublic{
+					ID:   &orgID,
+					Name: "Test Org",
+				},
+				Applications: []charon.OrganizationApplication{
+					{
+						OrganizationApplicationPublic: charon.OrganizationApplicationPublic{
+							ID:     &app1ID,
+							Active: true,
+							ApplicationTemplate: charon.ApplicationTemplatePublic{
+								Name:        "Old Template",
+								Description: "Old description",
+							},
+						},
+					},
+				},
+			},
+			updated: &charon.Organization{
+				OrganizationPublic: charon.OrganizationPublic{
+					ID:   &orgID,
+					Name: "Test Org",
+				},
+				Applications: []charon.OrganizationApplication{
+					{
+						OrganizationApplicationPublic: charon.OrganizationApplicationPublic{
+							ID:     &app1ID,
+							Active: true,
+							ApplicationTemplate: charon.ApplicationTemplatePublic{
+								Name:        "New Template",
+								Description: "New description",
+							},
+						},
+					},
+				},
+			},
+			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangeMembershipChanged},
+			expectedIdentities: []charon.IdentityRef{},
+			expectedApps: []charon.OrganizationApplicationRef{
+				{
+					Organization: charon.OrganizationRef{ID: orgID},
+					Application:  charon.OrganizationApplicationApplicationRef{ID: app1ID},
+				},
+			},
+		},
+		{
 			name: "complex scenario with multiple changes",
 			existing: &charon.Organization{
 				OrganizationPublic: charon.OrganizationPublic{
