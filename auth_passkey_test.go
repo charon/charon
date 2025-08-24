@@ -29,7 +29,7 @@ func TestAuthFlowPasskey(t *testing.T) {
 
 	ts, service, _, _ := startTestServer(t)
 
-	flowID, _, _, _, _, _ := createAuthFlow(t, ts, service) //nolint:dogsled
+	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
 
 	authFlowPasskeyCreateStart, errE := service.ReverseAPI("AuthFlowPasskeyCreateStart", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -149,12 +149,16 @@ func TestAuthFlowPasskey(t *testing.T) {
 
 	// Flow is available and CompletedSignup is completed.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
-	if assert.NoError(t, err) {
-		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{charon.CompletedSignup}, []charon.Provider{charon.ProviderPasskey}, "", assertCharonDashboard)
-	}
+	require.NoError(t, err)
+	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{charon.CompletedSignup}, []charon.Provider{charon.ProviderPasskey}, "", assertCharonDashboard)
+
+	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", charon.CompletedSignup, []charon.Provider{charon.ProviderPasskey}, 1, "username")
+	accessToken := doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, charon.CompletedSignup, []charon.Provider{charon.ProviderPasskey})
+
+	_ = accessToken
 
 	// Start another flow.
-	flowID, _, _, _, _, _ = createAuthFlow(t, ts, service) //nolint:dogsled
+	flowID, nonce, state, pkceVerifier, config, verifier = createAuthFlow(t, ts, service)
 
 	authFlowPasskeyGetStart, errE := service.ReverseAPI("AuthFlowPasskeyGetStart", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -237,7 +241,11 @@ func TestAuthFlowPasskey(t *testing.T) {
 
 	// Flow is available and CompletedSignin is completed.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
-	if assert.NoError(t, err) {
-		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{charon.CompletedSignin}, []charon.Provider{charon.ProviderPasskey}, "", assertCharonDashboard)
-	}
+	require.NoError(t, err)
+	oid = assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{charon.CompletedSignin}, []charon.Provider{charon.ProviderPasskey}, "", assertCharonDashboard)
+
+	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", charon.CompletedSignin, []charon.Provider{charon.ProviderPasskey}, 1, "username")
+	accessToken = doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, charon.CompletedSignin, []charon.Provider{charon.ProviderPasskey})
+
+	_ = accessToken
 }

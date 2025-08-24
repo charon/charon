@@ -173,8 +173,8 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 	}
 
 	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
-		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPassword}, 0, 1, 0, 1},  // signIn (after signOut).
-		{charon.ActivitySignOut, nil, nil, 0, 0, 0, 0}, // signOut.
+		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPassword}, 0, 1, 0, 1}, // signIn (after signOut).
+		{charon.ActivitySignOut, nil, nil, 0, 0, 0, 0},                                       // signOut.
 		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPassword}, 0, 1, 0, 1},
 		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
 		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
