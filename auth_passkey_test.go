@@ -24,7 +24,7 @@ import (
 	"gitlab.com/charon/charon"
 )
 
-func TestAuthFlowPasskey(t *testing.T) {
+func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 	t.Parallel()
 
 	ts, service, _, _ := startTestServer(t)
