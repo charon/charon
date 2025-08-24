@@ -30,9 +30,23 @@ func TestAuthFlowCodeOnly(t *testing.T) {
 
 	accessToken := signinUserCode(t, ts, service, smtpServer, email, charon.CompletedSignup)
 
+	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
+		{charon.ActivitySignIn, nil, 0, 1, 0, 1},
+		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, 1, 1, 0, 1},
+		{charon.ActivityIdentityCreate, nil, 1, 0, 0, 0},
+	})
+
 	signoutUser(t, ts, service, accessToken)
 
-	signinUserCode(t, ts, service, smtpServer, email, charon.CompletedSignin)
+	accessToken = signinUserCode(t, ts, service, smtpServer, email, charon.CompletedSignin)
+
+	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
+		{charon.ActivitySignIn, nil, 0, 1, 0, 1},  // Second signIn.
+		{charon.ActivitySignOut, nil, 0, 0, 0, 0}, // signOut.
+		{charon.ActivitySignIn, nil, 0, 1, 0, 1},
+		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, 1, 1, 0, 1},
+		{charon.ActivityIdentityCreate, nil, 1, 0, 0, 0},
+	})
 }
 
 func TestAuthFlowPasswordAndCode(t *testing.T) {
@@ -50,6 +64,13 @@ func TestAuthFlowPasswordAndCode(t *testing.T) {
 
 	// Complete with user code.
 	accessToken := completeUserCode(t, ts, service, smtpServer, resp, email, charon.CompletedSignup, []charon.Provider{charon.ProviderPassword, charon.CodeProvider}, nil, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier)
+
+	// Verify complete activity sequence for signup.
+	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
+		{charon.ActivitySignIn, nil, 0, 1, 0, 1},
+		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, 1, 1, 0, 1},
+		{charon.ActivityIdentityCreate, nil, 1, 0, 0, 0},
+	})
 
 	signoutUser(t, ts, service, accessToken)
 
@@ -69,7 +90,19 @@ func TestAuthFlowPasswordAndCode(t *testing.T) {
 	resp = startPasswordSignin(t, ts, service, email, []byte("test4321"), nil, flowID, "Charon", "Dashboard") //nolint:bodyclose
 
 	// Complete with user code.
-	completeUserCode(t, ts, service, smtpServer, resp, email, charon.CompletedSignin, []charon.Provider{charon.ProviderPassword, charon.CodeProvider}, nil, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier)
+	accessToken = completeUserCode(t, ts, service, smtpServer, resp, email, charon.CompletedSignin, []charon.Provider{charon.ProviderPassword, charon.CodeProvider}, nil, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier)
+
+	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
+		{charon.ActivitySignIn, nil, 0, 1, 0, 1},  // Final signIn (password with wrong password -> code).
+		{charon.ActivitySignOut, nil, 0, 0, 0, 0}, // signOut after password-only auth.
+		{charon.ActivitySignIn, nil, 0, 1, 0, 1},  // signIn password-only.
+		{charon.ActivitySignOut, nil, 0, 0, 0, 0}, // signOut after code-only auth.
+		{charon.ActivitySignIn, nil, 0, 1, 0, 1},  // signIn code-only.
+		{charon.ActivitySignOut, nil, 0, 0, 0, 0}, // signOut after initial password+code.
+		{charon.ActivitySignIn, nil, 0, 1, 0, 1},
+		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, 1, 1, 0, 1},
+		{charon.ActivityIdentityCreate, nil, 1, 0, 0, 0},
+	})
 }
 
 func signinUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, smtpServer *smtpmock.Server, emailOrUsername string, signinOrSignout charon.Completed) string {
