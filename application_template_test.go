@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/tozd/go/x"
+	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 
 	"gitlab.com/charon/charon"
@@ -80,4 +81,164 @@ func createApplicationTemplate(t *testing.T, ts *httptest.Server, service *charo
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	return &newApplicationTemplate
+}
+
+func TestApplicationTemplateChanges(t *testing.T) {
+	t.Parallel()
+
+	appID := identifier.New()
+	identity1ID := identifier.New()
+	identity2ID := identifier.New()
+	identity3ID := identifier.New()
+
+	tests := []struct {
+		name                string
+		existing            *charon.ApplicationTemplate
+		updated             *charon.ApplicationTemplate
+		expectedChanges     []charon.ActivityChangeType
+		expectedIdentities  []charon.IdentityRef
+	}{
+		{
+			name: "no changes",
+			existing: &charon.ApplicationTemplate{
+				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
+					ID:          &appID,
+					Name:        "Test App",
+					Description: "Test description",
+				},
+				Admins: []charon.IdentityRef{{ID: identity1ID}},
+			},
+			updated: &charon.ApplicationTemplate{
+				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
+					ID:          &appID,
+					Name:        "Test App",
+					Description: "Test description",
+				},
+				Admins: []charon.IdentityRef{{ID: identity1ID}},
+			},
+			expectedChanges:    []charon.ActivityChangeType{},
+			expectedIdentities: []charon.IdentityRef{},
+		},
+		{
+			name: "name changed",
+			existing: &charon.ApplicationTemplate{
+				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
+					ID:          &appID,
+					Name:        "Old Name",
+					Description: "Test description",
+				},
+			},
+			updated: &charon.ApplicationTemplate{
+				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
+					ID:          &appID,
+					Name:        "New Name",
+					Description: "Test description",
+				},
+			},
+			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangeOtherData},
+			expectedIdentities: []charon.IdentityRef{},
+		},
+		{
+			name: "description changed",
+			existing: &charon.ApplicationTemplate{
+				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
+					ID:          &appID,
+					Name:        "Test App",
+					Description: "Old description",
+				},
+			},
+			updated: &charon.ApplicationTemplate{
+				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
+					ID:          &appID,
+					Name:        "Test App",
+					Description: "New description",
+				},
+			},
+			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangeOtherData},
+			expectedIdentities: []charon.IdentityRef{},
+		},
+		{
+			name: "admin added",
+			existing: &charon.ApplicationTemplate{
+				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
+					ID:   &appID,
+					Name: "Test App",
+				},
+				Admins: []charon.IdentityRef{{ID: identity1ID}},
+			},
+			updated: &charon.ApplicationTemplate{
+				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
+					ID:   &appID,
+					Name: "Test App",
+				},
+				Admins: []charon.IdentityRef{{ID: identity1ID}, {ID: identity2ID}},
+			},
+			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangePermissionsAdded},
+			expectedIdentities: []charon.IdentityRef{{ID: identity2ID}},
+		},
+		{
+			name: "admin removed",
+			existing: &charon.ApplicationTemplate{
+				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
+					ID:   &appID,
+					Name: "Test App",
+				},
+				Admins: []charon.IdentityRef{{ID: identity1ID}, {ID: identity2ID}},
+			},
+			updated: &charon.ApplicationTemplate{
+				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
+					ID:   &appID,
+					Name: "Test App",
+				},
+				Admins: []charon.IdentityRef{{ID: identity1ID}},
+			},
+			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangePermissionsRemoved},
+			expectedIdentities: []charon.IdentityRef{{ID: identity2ID}},
+		},
+		{
+			name: "complex scenario with multiple changes",
+			existing: &charon.ApplicationTemplate{
+				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
+					ID:          &appID,
+					Name:        "Old Name",
+					Description: "Old description",
+				},
+				Admins: []charon.IdentityRef{{ID: identity1ID}, {ID: identity2ID}},
+			},
+			updated: &charon.ApplicationTemplate{
+				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
+					ID:          &appID,
+					Name:        "New Name",
+					Description: "New description",
+				},
+				Admins: []charon.IdentityRef{{ID: identity1ID}, {ID: identity3ID}},
+			},
+			expectedChanges: []charon.ActivityChangeType{
+				charon.ActivityChangeOtherData,
+				charon.ActivityChangePermissionsAdded,
+				charon.ActivityChangePermissionsRemoved,
+			},
+			expectedIdentities: []charon.IdentityRef{{ID: identity2ID}, {ID: identity3ID}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			changes, identities := tt.updated.Changes(tt.existing)
+
+			// Check expected changes
+			for _, expectedChange := range tt.expectedChanges {
+				assert.Contains(t, changes, expectedChange, "Expected change %v not found", expectedChange)
+			}
+			assert.Len(t, changes, len(tt.expectedChanges), "Unexpected number of changes")
+
+			// Check expected identities
+			for _, expectedIdentity := range tt.expectedIdentities {
+				assert.Contains(t, identities, expectedIdentity, "Expected identity %v not found", expectedIdentity)
+			}
+			assert.Len(t, identities, len(tt.expectedIdentities), "Unexpected number of identities")
+		})
+	}
 }
