@@ -2,6 +2,7 @@ package charon_test
 
 import (
 	"context"
+	"slices"
 	"testing"
 
 	mapset "github.com/deckarep/golang-set/v2"
@@ -1210,29 +1211,16 @@ func TestIdentityChanges(t *testing.T) {
 
 			changes, identities, orgs, apps := tt.updated.Changes(tt.existing)
 
-			// Check expected changes
-			for _, expectedChange := range tt.expectedChanges {
-				assert.Contains(t, changes, expectedChange, "Expected change %v not found", expectedChange)
-			}
-			assert.Len(t, changes, len(tt.expectedChanges), "Unexpected number of changes")
+			// Sort expected slices to match deterministic ordering from Changes method
+			slices.SortFunc(tt.expectedIdentities, charon.TestingIdentityRefCmp)
+			slices.SortFunc(tt.expectedOrgs, charon.TestingOrganizationRefCmp)
+			slices.SortFunc(tt.expectedApps, charon.TestingOrganizationApplicationRefCmp)
 
-			// Check expected identities
-			for _, expectedIdentity := range tt.expectedIdentities {
-				assert.Contains(t, identities, expectedIdentity, "Expected identity %v not found", expectedIdentity)
-			}
-			assert.Len(t, identities, len(tt.expectedIdentities), "Unexpected number of identities")
-
-			// Check expected organizations
-			for _, expectedOrg := range tt.expectedOrgs {
-				assert.Contains(t, orgs, expectedOrg, "Expected organization %v not found", expectedOrg)
-			}
-			assert.Len(t, orgs, len(tt.expectedOrgs), "Unexpected number of organizations")
-
-			// Check expected applications
-			for _, expectedApp := range tt.expectedApps {
-				assert.Contains(t, apps, expectedApp, "Expected application %v not found", expectedApp)
-			}
-			assert.Len(t, apps, len(tt.expectedApps), "Unexpected number of applications")
+			// Check all expected outputs with deterministic ordering
+			assert.Equal(t, tt.expectedChanges, changes, "Changes mismatch")
+			assert.Equal(t, tt.expectedIdentities, identities, "Identities mismatch")
+			assert.Equal(t, tt.expectedOrgs, orgs, "Organizations mismatch")
+			assert.Equal(t, tt.expectedApps, apps, "Applications mismatch")
 		})
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"testing"
 	"time"
 
@@ -228,17 +229,12 @@ func TestApplicationTemplateChanges(t *testing.T) {
 
 			changes, identities := tt.updated.Changes(tt.existing)
 
-			// Check expected changes
-			for _, expectedChange := range tt.expectedChanges {
-				assert.Contains(t, changes, expectedChange, "Expected change %v not found", expectedChange)
-			}
-			assert.Len(t, changes, len(tt.expectedChanges), "Unexpected number of changes")
+			// Sort expected slices to match deterministic ordering from Changes method
+			slices.SortFunc(tt.expectedIdentities, charon.TestingIdentityRefCmp)
 
-			// Check expected identities
-			for _, expectedIdentity := range tt.expectedIdentities {
-				assert.Contains(t, identities, expectedIdentity, "Expected identity %v not found", expectedIdentity)
-			}
-			assert.Len(t, identities, len(tt.expectedIdentities), "Unexpected number of identities")
+			// Check all expected outputs with deterministic ordering
+			assert.Equal(t, tt.expectedChanges, changes, "Changes mismatch")
+			assert.Equal(t, tt.expectedIdentities, identities, "Identities mismatch")
 		})
 	}
 }

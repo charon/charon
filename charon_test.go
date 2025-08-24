@@ -83,3 +83,15 @@ func TestingGetRandomCode() (string, errors.E) {
 func TestingNormalizePassword(password []byte) ([]byte, errors.E) {
 	return normalizePassword(password)
 }
+
+func TestingIdentityRefCmp(a IdentityRef, b IdentityRef) int {
+	return identityRefCmp(a, b)
+}
+
+func TestingOrganizationRefCmp(a OrganizationRef, b OrganizationRef) int {
+	return organizationRefCmp(a, b)
+}
+
+func TestingOrganizationApplicationRefCmp(a OrganizationApplicationRef, b OrganizationApplicationRef) int {
+	return organizationApplicationRefCmp(a, b)
+}
