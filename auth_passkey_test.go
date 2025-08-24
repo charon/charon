@@ -45,7 +45,7 @@ func TestAuthFlowPasskey(t *testing.T) {
 	var authFlowResponse charon.AuthFlowResponse
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
 	require.NoError(t, errE, "% -+#.1v", errE)
-	assert.Equal(t, []charon.Provider{charon.PasskeyProvider}, authFlowResponse.Providers)
+	assert.Equal(t, []charon.Provider{charon.ProviderPasskey}, authFlowResponse.Providers)
 	require.NotNil(t, authFlowResponse.Passkey)
 	require.NotNil(t, authFlowResponse.Passkey.CreateOptions)
 
@@ -56,7 +56,7 @@ func TestAuthFlowPasskey(t *testing.T) {
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
 		// Passkey create options are provided only in the response to the passkey create start call.
-		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{charon.PasskeyProvider}, "", assertCharonDashboard)
+		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{charon.ProviderPasskey}, "", assertCharonDashboard)
 	}
 
 	authFlowPasskeyCreateComplete, errE := service.ReverseAPI("AuthFlowPasskeyCreateComplete", waf.Params{"id": flowID.String()}, nil)
@@ -150,7 +150,7 @@ func TestAuthFlowPasskey(t *testing.T) {
 	// Flow is available and CompletedSignup is completed.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{charon.CompletedSignup}, []charon.Provider{charon.PasskeyProvider}, "", assertCharonDashboard)
+		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{charon.CompletedSignup}, []charon.Provider{charon.ProviderPasskey}, "", assertCharonDashboard)
 	}
 
 	// Start another flow.
@@ -170,7 +170,7 @@ func TestAuthFlowPasskey(t *testing.T) {
 	authFlowResponse = charon.AuthFlowResponse{}
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
 	require.NoError(t, errE, "% -+#.1v", errE)
-	assert.Equal(t, []charon.Provider{charon.PasskeyProvider}, authFlowResponse.Providers)
+	assert.Equal(t, []charon.Provider{charon.ProviderPasskey}, authFlowResponse.Providers)
 	require.NotNil(t, authFlowResponse.Passkey)
 	require.NotNil(t, authFlowResponse.Passkey.GetOptions)
 
@@ -181,7 +181,7 @@ func TestAuthFlowPasskey(t *testing.T) {
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
 		// Passkey get options are provided only in the response to the passkey get start call.
-		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{charon.PasskeyProvider}, "", assertCharonDashboard)
+		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{charon.ProviderPasskey}, "", assertCharonDashboard)
 	}
 
 	authFlowPasskeyGetComplete, errE := service.ReverseAPI("AuthFlowPasskeyGetComplete", waf.Params{"id": flowID.String()}, nil)
@@ -238,6 +238,6 @@ func TestAuthFlowPasskey(t *testing.T) {
 	// Flow is available and CompletedSignin is completed.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{charon.CompletedSignin}, []charon.Provider{charon.PasskeyProvider}, "", assertCharonDashboard)
+		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{charon.CompletedSignin}, []charon.Provider{charon.ProviderPasskey}, "", assertCharonDashboard)
 	}
 }

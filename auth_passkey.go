@@ -16,7 +16,7 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
-const PasskeyProvider Provider = "passkey"
+const ProviderPasskey Provider = "passkey"
 
 type AuthFlowResponsePasskey struct {
 	CreateOptions *protocol.CredentialCreation  `json:"createOptions,omitempty"`
@@ -128,7 +128,7 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 
 	flow.ClearAuthStep("")
 	// Currently we support only one factor.
-	flow.Providers = []Provider{PasskeyProvider}
+	flow.Providers = []Provider{ProviderPasskey}
 	flow.Passkey = session
 	errE = s.setFlow(ctx, flow)
 	if errE != nil {
@@ -212,12 +212,12 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 
 	credential, err := s.passkeyProvider().ValidateDiscoverableLogin(func(rawID, _ []byte) (webauthn.User, error) {
 		id := base64.RawURLEncoding.EncodeToString(rawID)
-		account, errE := s.getAccountByCredential(ctx, PasskeyProvider, id) //nolint:govet
+		account, errE := s.getAccountByCredential(ctx, ProviderPasskey, id) //nolint:govet
 		if errE != nil {
 			return nil, errE
 		}
 		var c webauthn.Credential
-		errE = x.Unmarshal(account.GetCredential(PasskeyProvider, id).Data, &c)
+		errE = x.Unmarshal(account.GetCredential(ProviderPasskey, id).Data, &c)
 		if errE != nil {
 			return nil, errE
 		}
@@ -242,13 +242,13 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		return
 	}
 
-	account, errE := s.getAccountByCredential(ctx, PasskeyProvider, credentialID)
+	account, errE := s.getAccountByCredential(ctx, ProviderPasskey, credentialID)
 	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: credentialID, Provider: PasskeyProvider, Data: jsonData}})
+	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: credentialID, Provider: ProviderPasskey, Data: jsonData}})
 }
 
 func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
@@ -293,7 +293,7 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 
 	flow.ClearAuthStep("")
 	// Currently we support only one factor.
-	flow.Providers = []Provider{PasskeyProvider}
+	flow.Providers = []Provider{ProviderPasskey}
 	flow.Passkey = session
 	errE = s.setFlow(ctx, flow)
 	if errE != nil {
@@ -369,11 +369,11 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	account, errE := s.getAccountByCredential(ctx, PasskeyProvider, credentialID)
+	account, errE := s.getAccountByCredential(ctx, ProviderPasskey, credentialID)
 	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: credentialID, Provider: PasskeyProvider, Data: jsonData}})
+	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: credentialID, Provider: ProviderPasskey, Data: jsonData}})
 }

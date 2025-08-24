@@ -140,9 +140,9 @@ func (s *Service) makeIdentityFromCredentials(credentials []Credential) (*Identi
 	var identity *Identity
 	for _, credential := range credentials {
 		switch credential.Provider {
-		case CodeProvider:
+		case ProviderCode:
 			return nil, errors.New("code provider among credentials")
-		case PasskeyProvider:
+		case ProviderPasskey:
 			// Nothing available.
 		case ProviderPassword:
 			// Nothing available.
