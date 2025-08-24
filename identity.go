@@ -445,7 +445,7 @@ func (i *Identity) Changes(existing *Identity) ([]ActivityChangeType, []Identity
 	}
 
 	for orgRef := range mapset.Elements(removedOrganizationSet) {
-		for _, app := range newOrganizationMap[orgRef].Applications {
+		for _, app := range existingOrganizationMap[orgRef].Applications {
 			removedAppSet.Add(OrganizationApplicationRef{
 				Organization: orgRef,
 				Application:  app,
