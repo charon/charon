@@ -73,7 +73,7 @@
       "applicationTemplate": "Application template | Application templates",
       "applicationTemplates": "Application templates",
       "activity": "Activity",
-      "app": "App"
+      "app": "App | Apps"
     },
     "messages": {
       "congratulations": "Congratulations.",
@@ -190,7 +190,7 @@
       "applicationTemplateCreate": "Created application template",
       "applicationTemplateUpdate": "Updated application template",
       "changes": {
-        "publicData": "public data",
+        "otherData": "other data",
         "permissionsAdded": "permissions added",
         "permissionsRemoved": "permissions removed",
         "permissionsChanged": "permissions changed",

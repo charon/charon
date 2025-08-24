@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"reflect"
 	"regexp"
 	"slices"
 	"time"
@@ -765,30 +766,28 @@ func (a *ApplicationTemplate) Validate(ctx context.Context, existing *Applicatio
 	return nil
 }
 
-// Changes compares the current ApplicationTemplate with an existing one and returns the types of changes that occurred.
-func (a *ApplicationTemplate) Changes(existing *ApplicationTemplate) []ActivityChangeType {
-	if existing == nil {
-		return nil
-	}
-
+// Changes compares the current ApplicationTemplate with an existing one and returns the types of changes
+// that occurred and admin identities that were added or removed.
+func (a *ApplicationTemplate) Changes(existing *ApplicationTemplate) ([]ActivityChangeType, []IdentityRef) {
 	changes := []ActivityChangeType{}
 
-	// Check public data changes.
-	if existing.Name != a.Name || existing.Description != a.Description {
-		changes = append(changes, ActivityChangePublicData)
+	if !reflect.DeepEqual(a.ApplicationTemplatePublic, existing.ApplicationTemplatePublic) {
+		changes = append(changes, ActivityChangeOtherData)
 	}
 
-	// Check permissions changes (admins).
-	adminsAdded, adminsRemoved, _ := detectSliceChanges(existing.Admins, a.Admins)
+	adminsAdded, adminsRemoved := detectSliceChanges(existing.Admins, a.Admins)
 
-	if adminsAdded {
+	if !adminsAdded.IsEmpty() {
 		changes = append(changes, ActivityChangePermissionsAdded)
 	}
-	if adminsRemoved {
+	if !adminsRemoved.IsEmpty() {
 		changes = append(changes, ActivityChangePermissionsRemoved)
 	}
 
-	return changes
+	identitiesChanged := adminsAdded.Union(adminsRemoved).ToSlice()
+	slices.SortFunc(identitiesChanged, identityRefCmp)
+
+	return changes, identitiesChanged
 }
 
 func (s *Service) getApplicationTemplate(_ context.Context, id identifier.Identifier) (*ApplicationTemplate, errors.E) {
@@ -869,9 +868,11 @@ func (s *Service) updateApplicationTemplate(ctx context.Context, applicationTemp
 
 	s.applicationTemplates[*applicationTemplate.ID] = data
 
+	changes, identities := applicationTemplate.Changes(&existingApplicationTemplate)
+
 	errE = s.logActivity(
-		ctx, ActivityApplicationTemplateUpdate, nil, nil, []ApplicationTemplateRef{{ID: *applicationTemplate.ID}},
-		nil, applicationTemplate.Changes(&existingApplicationTemplate), nil,
+		ctx, ActivityApplicationTemplateUpdate, identities, nil, []ApplicationTemplateRef{{ID: *applicationTemplate.ID}},
+		nil, changes, nil,
 	)
 	if errE != nil {
 		return errE

@@ -72,8 +72,8 @@ function getIdentityDisplayName(identity: Identity | DeepReadonly<Identity>): st
 
 function getChangeDescription(changeType: string): string {
   switch (changeType) {
-    case "publicData":
-      return t("partials.ActivityListItem.changes.publicData")
+    case "otherData":
+      return t("partials.ActivityListItem.changes.otherData")
     case "permissionsAdded":
       return t("partials.ActivityListItem.changes.permissionsAdded")
     case "permissionsRemoved":
@@ -184,18 +184,21 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                 </template>
               </i18n-t>
             </div>
-            <div v-if="doc.organizations && doc.organizations.length === 1 && doc.appId" class="text-sm text-slate-700">
+            <div v-if="doc.organizations && doc.organizations.length === 1 && doc.organizationApplications" class="text-sm text-slate-700">
               <i18n-t keypath="partials.ActivityListItem.entityLinks" scope="global">
-                <template #entity>{{ t("common.entities.app") }}</template>
+                <template #entity>{{ t("common.entities.app", doc.organizationApplications.length) }}</template>
                 <template #links>
-                  <WithOrganizationApplicationDocument :params="{ id: doc.organizations[0].id, appId: doc.appId }" name="OrganizationApp">
-                    <template #default="{ doc: appDoc, url: appUrl }">
-                      <a :href="getHomepage(appDoc)" :data-url="appUrl" class="link">{{ appDoc.applicationTemplate.name }}</a>
-                    </template>
-                    <template #error="{ url: appErrorUrl }">
-                      <span :data-url="appErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
-                    </template>
-                  </WithOrganizationApplicationDocument>
+                  <template v-for="(app, i) in doc.organizationApplications" :key="app.id">
+                    <template v-if="i > 0">, </template>
+                    <WithOrganizationApplicationDocument :params="{ id: doc.organizations[0].id, appId: app.id }" name="OrganizationApp">
+                      <template #default="{ doc: appDoc, url: appUrl }">
+                        <a :href="getHomepage(appDoc)" :data-url="appUrl" class="link">{{ appDoc.applicationTemplate.name }}</a>
+                      </template>
+                      <template #error="{ url: appErrorUrl }">
+                        <span :data-url="appErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
+                      </template>
+                    </WithOrganizationApplicationDocument>
+                  </template>
                 </template>
               </i18n-t>
             </div>

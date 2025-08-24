@@ -201,7 +201,7 @@ declare module "vue-i18n" {
         applicationTemplateCreate: string
         applicationTemplateUpdate: string
         changes: {
-          publicData: string
+          otherData: string
           permissionsAdded: string
           permissionsRemoved: string
           permissionsChanged: string

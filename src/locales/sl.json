@@ -73,7 +73,7 @@
       "applicationTemplate": "Predloga aplikacije | Predlogi aplikacij | Predloge aplikacij | Predlog aplikacij",
       "applicationTemplates": "Predloge aplikacij",
       "activity": "Aktivnost",
-      "app": "Aplikacija"
+      "app": "Aplikacija | Aplikaciji | Aplikacije | Aplikacij"
     },
     "messages": {
       "congratulations": "Čestitamo.",
@@ -190,7 +190,7 @@
       "applicationTemplateCreate": "Ustvarjena predloga aplikacije",
       "applicationTemplateUpdate": "Posodobljena predloga aplikacije",
       "changes": {
-        "publicData": "javni podatki",
+        "otherData": "ostali podatki",
         "permissionsAdded": "dodana dovoljenja",
         "permissionsRemoved": "odstranjena dovoljenja",
         "permissionsChanged": "spremenjena dovoljenja",

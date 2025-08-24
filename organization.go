@@ -346,6 +346,14 @@ type OrganizationApplication struct {
 	ClientsService []OrganizationApplicationClientService `json:"clientsService"`
 }
 
+type OrganizationApplicationRef struct {
+	ID identifier.Identifier `json:"id"`
+}
+
+func organizationApplicationRefCmp(a OrganizationApplicationRef, b OrganizationApplicationRef) int {
+	return bytes.Compare(a.ID[:], b.ID[:])
+}
+
 func (a *OrganizationApplication) GetClientPublic(id *identifier.Identifier) *OrganizationApplicationClientPublic {
 	if a == nil {
 		return nil
@@ -644,91 +652,88 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 	return nil
 }
 
-// Changes compares the current Organization with an existing one and returns the types of changes that occurred.
-func (o *Organization) Changes(existing *Organization) []ActivityChangeType {
-	if existing == nil {
-		return nil
-	}
-
+// Changes compares the current Organization with an existing one and returns the types of changes
+// that occurred, admin identities that were added or removed and organization applications
+// that were added, removed or changed.
+func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []IdentityRef, []OrganizationApplicationRef) {
 	changes := []ActivityChangeType{}
 
-	// Check public data changes.
-	if existing.Name != o.Name || existing.Description != o.Description {
-		changes = append(changes, ActivityChangePublicData)
+	if !reflect.DeepEqual(o.OrganizationPublic, existing.OrganizationPublic) {
+		changes = append(changes, ActivityChangeOtherData)
 	}
 
-	// Check permissions changes (admins).
-	adminsAdded, adminsRemoved, _ := detectSliceChanges(existing.Admins, o.Admins)
+	adminsAdded, adminsRemoved := detectSliceChanges(existing.Admins, o.Admins)
 
-	if adminsAdded {
+	if !adminsAdded.IsEmpty() {
 		changes = append(changes, ActivityChangePermissionsAdded)
 	}
-	if adminsRemoved {
+	if !adminsRemoved.IsEmpty() {
 		changes = append(changes, ActivityChangePermissionsRemoved)
 	}
 
-	// Check application changes (membership changes).
-	appsAdded := false
-	appsRemoved := false
-	appsChanged := false
+	identitiesChanged := adminsAdded.Union(adminsRemoved).ToSlice()
+	slices.SortFunc(identitiesChanged, identityRefCmp)
 
-	// Create maps for comparison.
-	existingAppMap := make(map[identifier.Identifier]*OrganizationApplication)
-	for i := range existing.Applications {
-		if existing.Applications[i].ID != nil {
-			existingAppMap[*existing.Applications[i].ID] = &existing.Applications[i]
-		}
+	// We make copies of app structs on purpose, so that we can change Active field as needed.
+	existingAppMap := make(map[OrganizationApplicationRef]OrganizationApplication)
+	for _, app := range existing.Applications {
+		existingAppMap[OrganizationApplicationRef{ID: *app.ID}] = app
+	}
+	newAppMap := make(map[OrganizationApplicationRef]OrganizationApplication)
+	for _, app := range o.Applications {
+		newAppMap[OrganizationApplicationRef{ID: *app.ID}] = app
 	}
 
-	newAppMap := make(map[identifier.Identifier]*OrganizationApplication)
-	for i := range o.Applications {
-		if o.Applications[i].ID != nil {
-			newAppMap[*o.Applications[i].ID] = &o.Applications[i]
-		}
-	}
+	existingAppSet := mapset.NewThreadUnsafeSetFromMapKeys(existingAppMap)
+	newAppSet := mapset.NewThreadUnsafeSetFromMapKeys(newAppMap)
 
-	// Check for additions and changes.
-	for id, newApp := range newAppMap {
-		if existingApp, exists := existingAppMap[id]; exists {
-			// Check for status changes.
-			if existingApp.Active != newApp.Active {
-				if newApp.Active {
-					changes = append(changes, ActivityChangeMembershipActivated)
-				} else {
-					changes = append(changes, ActivityChangeMembershipDisabled)
-				}
-			}
-			// Check for other changes.
-			if !reflect.DeepEqual(existingApp.Values, newApp.Values) ||
-				!reflect.DeepEqual(existingApp.ClientsPublic, newApp.ClientsPublic) ||
-				!reflect.DeepEqual(existingApp.ClientsBackend, newApp.ClientsBackend) ||
-				!reflect.DeepEqual(existingApp.ClientsService, newApp.ClientsService) {
-				appsChanged = true
-			}
-		} else {
-			appsAdded = true
-		}
-	}
+	addedAppSet := newAppSet.Difference(existingAppSet)
+	removedAppSet := existingAppSet.Difference(newAppSet)
 
-	// Check for removals.
-	for id := range existingAppMap {
-		if _, exists := newAppMap[id]; !exists {
-			appsRemoved = true
-			break
-		}
-	}
-
-	if appsAdded {
+	if !addedAppSet.IsEmpty() {
 		changes = append(changes, ActivityChangeMembershipAdded)
 	}
-	if appsRemoved {
+	if !removedAppSet.IsEmpty() {
 		changes = append(changes, ActivityChangeMembershipRemoved)
 	}
-	if appsChanged {
-		changes = append(changes, ActivityChangeMembershipChanged)
+
+	changedAppSet := mapset.NewThreadUnsafeSet[OrganizationApplicationRef]()
+	activatedAppSet := mapset.NewThreadUnsafeSet[OrganizationApplicationRef]()
+	disabledAppSet := mapset.NewThreadUnsafeSet[OrganizationApplicationRef]()
+
+	// Compare applications which are in both sets.
+	for appRef := range mapset.Elements(newAppSet.Intersect(existingAppSet)) {
+		existingApp := existingAppMap[appRef]
+		newApp := newAppMap[appRef]
+
+		if newApp.Active && !existingApp.Active {
+			activatedAppSet.Add(appRef)
+		}
+		if !newApp.Active && existingApp.Active {
+			disabledAppSet.Add(appRef)
+		}
+
+		// We make Active field the same and in this way compare the rest.
+		existingApp.Active = newApp.Active
+		if !reflect.DeepEqual(existingApp, newApp) {
+			changedAppSet.Add(appRef)
+		}
 	}
 
-	return changes
+	if !changedAppSet.IsEmpty() {
+		changes = append(changes, ActivityChangeMembershipChanged)
+	}
+	if !activatedAppSet.IsEmpty() {
+		changes = append(changes, ActivityChangeMembershipActivated)
+	}
+	if !disabledAppSet.IsEmpty() {
+		changes = append(changes, ActivityChangeMembershipDisabled)
+	}
+
+	appsChanged := addedAppSet.Union(removedAppSet).Union(changedAppSet).Union(activatedAppSet).Union(disabledAppSet).ToSlice()
+	slices.SortFunc(appsChanged, organizationApplicationRefCmp)
+
+	return changes, identitiesChanged, appsChanged
 }
 
 func (s *Service) getOrganization(_ context.Context, id identifier.Identifier) (*Organization, errors.E) {
@@ -810,7 +815,9 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 
 	s.organizations[*organization.ID] = data
 
-	errE = s.logActivity(ctx, ActivityOrganizationUpdate, nil, []OrganizationRef{{ID: *organization.ID}}, nil, nil, organization.Changes(&existingOrganization), nil)
+	changes, identities, organizationApplications := organization.Changes(&existingOrganization)
+
+	errE = s.logActivity(ctx, ActivityOrganizationUpdate, identities, []OrganizationRef{{ID: *organization.ID}}, nil, organizationApplications, changes, nil)
 	if errE != nil {
 		return errE
 	}

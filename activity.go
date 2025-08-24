@@ -38,23 +38,23 @@ type ActivityChangeType string
 // TODO: Log also activity of changing credentials for an account.
 
 const (
-	// PublicData represents changes to public data.
-	ActivityChangePublicData ActivityChangeType = "publicData"
-	// PermissionsAdded represents adding new permissions/access rights.
+	// ActivityChangeOtherData represents changes to other data.
+	ActivityChangeOtherData ActivityChangeType = "otherData"
+	// ActivityChangePermissionsAdded represents adding new permissions/access rights.
 	ActivityChangePermissionsAdded ActivityChangeType = "permissionsAdded"
-	// PermissionsRemoved represents removing permissions/access rights.
+	// ActivityChangePermissionsRemoved represents removing permissions/access rights.
 	ActivityChangePermissionsRemoved ActivityChangeType = "permissionsRemoved"
-	// PermissionsChanged represents modifying existing permissions/access rights.
+	// ActivityChangePermissionsChanged represents modifying existing permissions/access rights.
 	ActivityChangePermissionsChanged ActivityChangeType = "permissionsChanged"
-	// MembershipAdded represents joining an organization or adding an application.
+	// ActivityChangeMembershipAdded represents joining an organization or adding an application.
 	ActivityChangeMembershipAdded ActivityChangeType = "membershipAdded"
-	// MembershipRemoved represents leaving an organization or removing an application.
+	// ActivityChangeMembershipRemoved represents leaving an organization or removing an application.
 	ActivityChangeMembershipRemoved ActivityChangeType = "membershipRemoved"
-	// MembershipChanged represents modifying existing membership.
+	// ActivityChangeMembershipChanged represents modifying existing membership.
 	ActivityChangeMembershipChanged ActivityChangeType = "membershipChanged"
-	// StatusActivated represents activation/enabling a membership.
+	// ActivityChangeMembershipActivated represents activation/enabling a membership.
 	ActivityChangeMembershipActivated ActivityChangeType = "membershipActivated"
-	// StatusDisabled represents deactivation/disabling a membership.
+	// ActivityChangeMembershipDisabled represents deactivation/disabling a membership.
 	ActivityChangeMembershipDisabled ActivityChangeType = "membershipDisabled"
 )
 
@@ -85,12 +85,10 @@ type Activity struct {
 	Actor IdentityRef `json:"actor"`
 
 	// Optional references to documents that were affected by the activity.
-	Identities           []IdentityRef            `json:"identities,omitempty"`
-	Organizations        []OrganizationRef        `json:"organizations,omitempty"`
-	ApplicationTemplates []ApplicationTemplateRef `json:"applicationTemplates,omitempty"`
-
-	// Optional application ID for sign-in activities.
-	AppID *identifier.Identifier `json:"appId,omitempty"`
+	Identities               []IdentityRef                `json:"identities,omitempty"`
+	Organizations            []OrganizationRef            `json:"organizations,omitempty"`
+	ApplicationTemplates     []ApplicationTemplateRef     `json:"applicationTemplates,omitempty"`
+	OrganizationApplications []OrganizationApplicationRef `json:"organizationApplications,omitempty"`
 
 	// For sign-in activities, this is the list of providers that were used to authenticate the user.
 	Providers []Provider `json:"providers,omitempty"`
@@ -176,46 +174,11 @@ func (s *Service) createActivity(ctx context.Context, activity *Activity) errors
 	return nil
 }
 
-// Helper functions for detecting granular changes.
-
-// detectSliceChanges compares two slices and returns what types of changes occurred.
-func detectSliceChanges[T comparable](oldSlice, newSlice []T) (added, removed, changed bool) {
-	oldSet := make(map[T]bool)
-	newSet := make(map[T]bool)
-
-	for _, item := range oldSlice {
-		oldSet[item] = true
-	}
-	for _, item := range newSlice {
-		newSet[item] = true
-	}
-
-	// Check for additions.
-	for item := range newSet {
-		if !oldSet[item] {
-			added = true
-			break
-		}
-	}
-
-	// Check for removals.
-	for item := range oldSet {
-		if !newSet[item] {
-			removed = true
-			break
-		}
-	}
-
-	// For now, we don't detect "changed" for simple slices as items are either added or removed.
-	// "changed" would be more relevant for complex structures where an item's properties change.
-
-	return added, removed, changed
-}
-
 // logActivity creates a new activity record for the current user.
 func (s *Service) logActivity(
 	ctx context.Context, activityType ActivityType, identities []IdentityRef, organizations []OrganizationRef,
-	applicationTemplates []ApplicationTemplateRef, appID *identifier.Identifier, changes []ActivityChangeType, providers []Provider,
+	applicationTemplates []ApplicationTemplateRef, organizationApplications []OrganizationApplicationRef,
+	changes []ActivityChangeType, providers []Provider,
 ) errors.E {
 	actorID := mustGetIdentityID(ctx)
 	sessionID := mustGetSessionID(ctx)
@@ -233,16 +196,16 @@ func (s *Service) logActivity(
 		ID:        nil,
 		Timestamp: Time{}, //nolint:exhaustruct
 
-		Type:                 activityType,
-		Actor:                IdentityRef{ID: actorID},
-		AppID:                appID,
-		Providers:            providers,
-		Changes:              changes,
-		SessionID:            sessionID,
-		RequestID:            requestID,
-		Identities:           nil,
-		Organizations:        nil,
-		ApplicationTemplates: nil,
+		Type:                     activityType,
+		Actor:                    IdentityRef{ID: actorID},
+		Providers:                providers,
+		Changes:                  changes,
+		SessionID:                sessionID,
+		RequestID:                requestID,
+		Identities:               nil,
+		Organizations:            nil,
+		ApplicationTemplates:     nil,
+		OrganizationApplications: nil,
 	}
 
 	if len(identities) > 0 {
@@ -253,6 +216,9 @@ func (s *Service) logActivity(
 	}
 	if len(applicationTemplates) > 0 {
 		activity.ApplicationTemplates = applicationTemplates
+	}
+	if len(organizationApplications) > 0 {
+		activity.OrganizationApplications = organizationApplications
 	}
 
 	return s.createActivity(ctx, activity)

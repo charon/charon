@@ -272,6 +272,10 @@ export type IdentityRef = {
   id: string
 }
 
+export type OrganizationApplicationRef = {
+  id: string
+}
+
 export type OrganizationApplicationClientPublic = {
   id?: string
   client: ClientRef
@@ -386,7 +390,7 @@ export type ActivityType =
   | "applicationTemplateUpdate"
 
 export type ActivityChangeType =
-  | "publicData"
+  | "otherData"
   | "permissionsAdded"
   | "permissionsRemoved"
   | "permissionsChanged"
@@ -404,7 +408,7 @@ export type Activity = {
   identities?: IdentityRef[]
   organizations?: OrganizationRef[]
   applicationTemplates?: ApplicationTemplateRef[]
-  appId?: string
+  organizationApplications?: OrganizationApplicationRef[]
   providers?: string[]
   changes?: ActivityChangeType[]
   sessionId: string

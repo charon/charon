@@ -393,92 +393,89 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity, service *Se
 	return nil
 }
 
-// Changes compares the current Identity with an existing one and returns the types of changes that occurred.
-func (i *Identity) Changes(existing *Identity) []ActivityChangeType {
-	if existing == nil {
-		return nil
-	}
-
+// Changes compares the current Identity with an existing one and returns the types of changes
+// that occurred, user and admin identities that were added or removed and organizations
+// that were added, removed or changed.
+func (i *Identity) Changes(existing *Identity) ([]ActivityChangeType, []IdentityRef, []OrganizationRef) {
 	changes := []ActivityChangeType{}
 
-	// Check public data changes.
-	if !reflect.DeepEqual(existing.IdentityPublic, i.IdentityPublic) {
-		changes = append(changes, ActivityChangePublicData)
+	if !reflect.DeepEqual(i.IdentityPublic, existing.IdentityPublic) || i.Description != existing.Description {
+		changes = append(changes, ActivityChangeOtherData)
 	}
 
-	// Check permissions changes (users and admins).
-	usersAdded, usersRemoved, _ := detectSliceChanges(existing.Users, i.Users)
-	adminsAdded, adminsRemoved, _ := detectSliceChanges(existing.Admins, i.Admins)
+	usersAdded, usersRemoved := detectSliceChanges(existing.Users, i.Users)
+	adminsAdded, adminsRemoved := detectSliceChanges(existing.Admins, i.Admins)
 
-	if usersAdded || adminsAdded {
+	if !usersAdded.IsEmpty() || !adminsAdded.IsEmpty() {
 		changes = append(changes, ActivityChangePermissionsAdded)
 	}
-	if usersRemoved || adminsRemoved {
+	if !usersRemoved.IsEmpty() || !adminsRemoved.IsEmpty() {
 		changes = append(changes, ActivityChangePermissionsRemoved)
 	}
 
-	// For organizations, we need to check both membership and status changes.
-	orgMap := make(map[identifier.Identifier]*IdentityOrganization)
-	for j := range existing.Organizations {
-		orgMap[existing.Organizations[j].Organization.ID] = &existing.Organizations[j]
+	identitiesChanged := usersAdded.Union(usersRemoved).Union(adminsAdded).Union(adminsRemoved).ToSlice()
+	slices.SortFunc(identitiesChanged, identityRefCmp)
+
+	// We make copies of organization structs on purpose, so that we can change Active field as needed.
+	existingOrganizationMap := make(map[OrganizationRef]IdentityOrganization)
+	for _, idOrg := range existing.Organizations {
+		existingOrganizationMap[idOrg.Organization] = idOrg
+	}
+	newOrganizationMap := make(map[OrganizationRef]IdentityOrganization)
+	for _, idOrg := range i.Organizations {
+		newOrganizationMap[idOrg.Organization] = idOrg
 	}
 
-	membershipAdded := false
-	membershipRemoved := false
-	membershipChanged := false
-	membershipActivated := false
-	membershipDisabled := false
+	existingOrganizationSet := mapset.NewThreadUnsafeSetFromMapKeys(existingOrganizationMap)
+	newOrganizationSet := mapset.NewThreadUnsafeSetFromMapKeys(newOrganizationMap)
 
-	// Check new organizations for additions and changes.
-	for j := range i.Organizations {
-		newOrg := &i.Organizations[j]
-		if existingOrg, exists := orgMap[newOrg.Organization.ID]; exists {
-			// Organization exists, check for changes.
-			if existingOrg.Active != newOrg.Active {
-				if newOrg.Active {
-					membershipActivated = true
-				} else {
-					membershipDisabled = true
-				}
-			}
-			if !reflect.DeepEqual(existingOrg.Applications, newOrg.Applications) {
-				membershipChanged = true
-			}
-		} else {
-			// New organization added.
-			membershipAdded = true
-		}
-	}
+	addedOrganizationSet := newOrganizationSet.Difference(existingOrganizationSet)
+	removedOrganizationSet := existingOrganizationSet.Difference(newOrganizationSet)
 
-	// Check for removed organizations.
-	newOrgMap := make(map[identifier.Identifier]bool)
-	for j := range i.Organizations {
-		newOrgMap[i.Organizations[j].Organization.ID] = true
-	}
-	for j := range existing.Organizations {
-		if !newOrgMap[existing.Organizations[j].Organization.ID] {
-			membershipRemoved = true
-			break
-		}
-	}
-
-	if membershipAdded {
+	if !addedOrganizationSet.IsEmpty() {
 		changes = append(changes, ActivityChangeMembershipAdded)
 	}
-	if membershipRemoved {
+	if !removedOrganizationSet.IsEmpty() {
 		changes = append(changes, ActivityChangeMembershipRemoved)
 	}
-	if membershipChanged {
+
+	changedOrganizationSet := mapset.NewThreadUnsafeSet[OrganizationRef]()
+	activatedOrganizationSet := mapset.NewThreadUnsafeSet[OrganizationRef]()
+	disabledOrganizationSet := mapset.NewThreadUnsafeSet[OrganizationRef]()
+
+	// Compare organizations which are in both sets.
+	for orgRef := range mapset.Elements(newOrganizationSet.Intersect(existingOrganizationSet)) {
+		existingOrg := existingOrganizationMap[orgRef]
+		newOrg := newOrganizationMap[orgRef]
+
+		if newOrg.Active && !existingOrg.Active {
+			activatedOrganizationSet.Add(orgRef)
+		}
+		if !newOrg.Active && existingOrg.Active {
+			disabledOrganizationSet.Add(orgRef)
+		}
+
+		// We make Active field the same and in this way compare the rest.
+		existingOrg.Active = newOrg.Active
+		if !reflect.DeepEqual(existingOrg, newOrg) {
+			changedOrganizationSet.Add(orgRef)
+		}
+	}
+
+	if !changedOrganizationSet.IsEmpty() {
 		changes = append(changes, ActivityChangeMembershipChanged)
 	}
-	if membershipActivated {
+	if !activatedOrganizationSet.IsEmpty() {
 		changes = append(changes, ActivityChangeMembershipActivated)
 	}
-	if membershipDisabled {
+	if !disabledOrganizationSet.IsEmpty() {
 		changes = append(changes, ActivityChangeMembershipDisabled)
 	}
 
-	return changes
+	organizationsChanged := addedOrganizationSet.Union(removedOrganizationSet).Union(changedOrganizationSet).Union(activatedOrganizationSet).Union(disabledOrganizationSet).ToSlice()
+	slices.SortFunc(organizationsChanged, organizationRefCmp)
+
+	return changes, identitiesChanged, organizationsChanged
 }
 
 // getIdentitiesForAccount returns all identities the account has access to.
@@ -711,7 +708,15 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 		ctx = s.withIdentityID(ctx, *identity.ID)
 	}
 
-	errE = s.logActivity(ctx, ActivityIdentityUpdate, []IdentityRef{{ID: *identity.ID}}, nil, nil, nil, identity.Changes(&existingIdentity), nil)
+	changes, identities, organizations := identity.Changes(&existingIdentity)
+
+	// We make sure identity reference i is always the first element in identities.
+	identities = slices.DeleteFunc(identities, func(ii IdentityRef) bool {
+		return ii == i
+	})
+	identities = append([]IdentityRef{i}, identities...)
+
+	errE = s.logActivity(ctx, ActivityIdentityUpdate, identities, organizations, nil, nil, changes, nil)
 	if errE != nil {
 		return errE
 	}
