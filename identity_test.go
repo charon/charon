@@ -1143,6 +1143,44 @@ func TestIdentityChanges(t *testing.T) { //nolint:maintidx
 			},
 		},
 		{
+			name: "application membership removed from existing organization",
+			existing: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+				},
+				Organizations: []charon.IdentityOrganization{
+					{
+						Organization: charon.OrganizationRef{ID: org1ID},
+						Active:       true,
+						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}, {ID: app2ID}},
+					},
+				},
+			},
+			updated: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+				},
+				Organizations: []charon.IdentityOrganization{
+					{
+						Organization: charon.OrganizationRef{ID: org1ID},
+						Active:       true,
+						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
+					},
+				},
+			},
+			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangeMembershipRemoved},
+			expectedIdentities: []charon.IdentityRef{},
+			expectedOrgs:       []charon.OrganizationRef{},
+			expectedApps: []charon.OrganizationApplicationRef{
+				{
+					Organization: charon.OrganizationRef{ID: org1ID},
+					Application:  charon.OrganizationApplicationApplicationRef{ID: app2ID},
+				},
+			},
+		},
+		{
 			name: "complex scenario with multiple changes",
 			existing: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
