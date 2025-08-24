@@ -760,7 +760,7 @@ func removeDuplicates[T comparable](input []T) []T {
 }
 
 // detectSliceChanges compares two slices and returns elements that were added and removed.
-func detectSliceChanges[T comparable](oldSlice, newSlice []T) (added, removed mapset.Set[T]) {
+func detectSliceChanges[T comparable](oldSlice, newSlice []T) (mapset.Set[T], mapset.Set[T]) {
 	oldSet := mapset.NewThreadUnsafeSet[T](oldSlice...)
 	newSet := mapset.NewThreadUnsafeSet[T](newSlice...)
 

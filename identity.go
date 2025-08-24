@@ -472,7 +472,15 @@ func (i *Identity) Changes(existing *Identity) ([]ActivityChangeType, []Identity
 		changes = append(changes, ActivityChangeMembershipDisabled)
 	}
 
-	organizationsChanged := addedOrganizationSet.Union(removedOrganizationSet).Union(changedOrganizationSet).Union(activatedOrganizationSet).Union(disabledOrganizationSet).ToSlice()
+	organizationsChanged := addedOrganizationSet.Union(
+		removedOrganizationSet,
+	).Union(
+		changedOrganizationSet,
+	).Union(
+		activatedOrganizationSet,
+	).Union(
+		disabledOrganizationSet,
+	).ToSlice()
 	slices.SortFunc(organizationsChanged, organizationRefCmp)
 
 	return changes, identitiesChanged, organizationsChanged

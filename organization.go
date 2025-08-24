@@ -689,7 +689,8 @@ func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []
 			Organization: OrganizationRef{ID: *o.ID},
 			Application: OrganizationApplicationApplicationRef{
 				ID: *app.ID,
-			}}] = app
+			},
+		}] = app
 	}
 	newAppMap := make(map[OrganizationApplicationRef]OrganizationApplication)
 	for _, app := range o.Applications {
@@ -697,7 +698,8 @@ func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []
 			Organization: OrganizationRef{ID: *o.ID},
 			Application: OrganizationApplicationApplicationRef{
 				ID: *app.ID,
-			}}] = app
+			},
+		}] = app
 	}
 
 	existingAppSet := mapset.NewThreadUnsafeSetFromMapKeys(existingAppMap)
