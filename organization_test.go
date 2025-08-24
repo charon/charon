@@ -100,7 +100,7 @@ func createOrganization(t *testing.T, ts *httptest.Server, service *charon.Servi
 	return &newOrganization
 }
 
-func TestOrganizationChanges(t *testing.T) {
+func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 	t.Parallel()
 
 	orgID := identifier.New()

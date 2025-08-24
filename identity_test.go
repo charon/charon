@@ -797,7 +797,7 @@ func TestCyclicIdentityAccess(t *testing.T) {
 	}, access)
 }
 
-func TestIdentityChanges(t *testing.T) {
+func TestIdentityChanges(t *testing.T) { //nolint:maintidx
 	t.Parallel()
 
 	identityID := identifier.New()
