@@ -712,13 +712,6 @@ func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []
 	addedAppSet := newAppSet.Difference(existingAppSet)
 	removedAppSet := existingAppSet.Difference(newAppSet)
 
-	if !addedAppSet.IsEmpty() {
-		changes = append(changes, ActivityChangeMembershipAdded)
-	}
-	if !removedAppSet.IsEmpty() {
-		changes = append(changes, ActivityChangeMembershipRemoved)
-	}
-
 	changedAppSet := mapset.NewThreadUnsafeSet[OrganizationApplicationRef]()
 	activatedAppSet := mapset.NewThreadUnsafeSet[OrganizationApplicationRef]()
 	disabledAppSet := mapset.NewThreadUnsafeSet[OrganizationApplicationRef]()
@@ -742,6 +735,12 @@ func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []
 		}
 	}
 
+	if !addedAppSet.IsEmpty() {
+		changes = append(changes, ActivityChangeMembershipAdded)
+	}
+	if !removedAppSet.IsEmpty() {
+		changes = append(changes, ActivityChangeMembershipRemoved)
+	}
 	if !changedAppSet.IsEmpty() {
 		changes = append(changes, ActivityChangeMembershipChanged)
 	}

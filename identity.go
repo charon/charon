@@ -394,9 +394,9 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity, service *Se
 }
 
 // Changes compares the current Identity with an existing one and returns the types of changes
-// that occurred, user and admin identities that were added or removed and organizations
-// that were added, removed or changed.
-func (i *Identity) Changes(existing *Identity) ([]ActivityChangeType, []IdentityRef, []OrganizationRef) {
+// that occurred, user and admin identities that were added or removed, organizations
+// that were added, removed or changed and applications that were added or removed.
+func (i *Identity) Changes(existing *Identity) ([]ActivityChangeType, []IdentityRef, []OrganizationRef, []OrganizationApplicationRef) {
 	changes := []ActivityChangeType{}
 
 	if !reflect.DeepEqual(i.IdentityPublic, existing.IdentityPublic) || i.Description != existing.Description {
@@ -432,11 +432,25 @@ func (i *Identity) Changes(existing *Identity) ([]ActivityChangeType, []Identity
 	addedOrganizationSet := newOrganizationSet.Difference(existingOrganizationSet)
 	removedOrganizationSet := existingOrganizationSet.Difference(newOrganizationSet)
 
-	if !addedOrganizationSet.IsEmpty() {
-		changes = append(changes, ActivityChangeMembershipAdded)
+	addedAppSet := mapset.NewThreadUnsafeSet[OrganizationApplicationRef]()
+	removedAppSet := mapset.NewThreadUnsafeSet[OrganizationApplicationRef]()
+
+	for orgRef := range mapset.Elements(addedOrganizationSet) {
+		for _, app := range newOrganizationMap[orgRef].Applications {
+			addedAppSet.Add(OrganizationApplicationRef{
+				Organization: orgRef,
+				Application:  app,
+			})
+		}
 	}
-	if !removedOrganizationSet.IsEmpty() {
-		changes = append(changes, ActivityChangeMembershipRemoved)
+
+	for orgRef := range mapset.Elements(removedOrganizationSet) {
+		for _, app := range newOrganizationMap[orgRef].Applications {
+			removedAppSet.Add(OrganizationApplicationRef{
+				Organization: orgRef,
+				Application:  app,
+			})
+		}
 	}
 
 	changedOrganizationSet := mapset.NewThreadUnsafeSet[OrganizationRef]()
@@ -455,13 +469,34 @@ func (i *Identity) Changes(existing *Identity) ([]ActivityChangeType, []Identity
 			disabledOrganizationSet.Add(orgRef)
 		}
 
-		// We make Active field the same and in this way compare the rest.
+		appsAdded, appsRemoved := detectSliceChanges(existingOrg.Applications, newOrg.Applications)
+		for app := range mapset.Elements(appsAdded) {
+			addedAppSet.Add(OrganizationApplicationRef{
+				Organization: orgRef,
+				Application:  app,
+			})
+		}
+		for app := range mapset.Elements(appsRemoved) {
+			removedAppSet.Add(OrganizationApplicationRef{
+				Organization: orgRef,
+				Application:  app,
+			})
+		}
+
+		// We make Active and Applications fields the same and in this way compare the rest.
 		existingOrg.Active = newOrg.Active
+		existingOrg.Applications = newOrg.Applications
 		if !reflect.DeepEqual(existingOrg, newOrg) {
 			changedOrganizationSet.Add(orgRef)
 		}
 	}
 
+	if !addedOrganizationSet.IsEmpty() || !addedAppSet.IsEmpty() {
+		changes = append(changes, ActivityChangeMembershipAdded)
+	}
+	if !removedOrganizationSet.IsEmpty() || !removedAppSet.IsEmpty() {
+		changes = append(changes, ActivityChangeMembershipRemoved)
+	}
 	if !changedOrganizationSet.IsEmpty() {
 		changes = append(changes, ActivityChangeMembershipChanged)
 	}
@@ -483,7 +518,10 @@ func (i *Identity) Changes(existing *Identity) ([]ActivityChangeType, []Identity
 	).ToSlice()
 	slices.SortFunc(organizationsChanged, organizationRefCmp)
 
-	return changes, identitiesChanged, organizationsChanged
+	applicationsChanged := addedAppSet.Union(removedAppSet).ToSlice()
+	slices.SortFunc(applicationsChanged, organizationApplicationRefCmp)
+
+	return changes, identitiesChanged, organizationsChanged, applicationsChanged
 }
 
 // getIdentitiesForAccount returns all identities the account has access to.
@@ -716,7 +754,7 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 		ctx = s.withIdentityID(ctx, *identity.ID)
 	}
 
-	changes, identities, organizations := identity.Changes(&existingIdentity)
+	changes, identities, organizations, applications := identity.Changes(&existingIdentity)
 
 	if len(changes) == 0 {
 		// No changes, do not continue.
@@ -729,7 +767,7 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 	})
 	identities = append([]IdentityRef{i}, identities...)
 
-	errE = s.logActivity(ctx, ActivityIdentityUpdate, identities, organizations, nil, nil, changes, nil)
+	errE = s.logActivity(ctx, ActivityIdentityUpdate, identities, organizations, nil, applications, changes, nil)
 	if errE != nil {
 		return errE
 	}
