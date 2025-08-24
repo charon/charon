@@ -87,9 +87,9 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 	accessToken, identityID := signinUser(t, ts, service, username, charon.CompletedSignup, flowID, nonce, state, pkceVerifier, config, verifier)
 
 	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
-		{charon.ActivitySignIn, nil, 0, 1, 0, 1},
-		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, 1, 1, 0, 1},
-		{charon.ActivityIdentityCreate, nil, 1, 0, 0, 0},
+		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPassword}, 0, 1, 0, 1},
+		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
+		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
 	})
 
 	g := gravatar.NewGravatarFromEmail(username)
@@ -173,10 +173,10 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 	}
 
 	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
-		{charon.ActivitySignIn, nil, 0, 1, 0, 1},  // signIn (after signOut).
-		{charon.ActivitySignOut, nil, 0, 0, 0, 0}, // signOut.
-		{charon.ActivitySignIn, nil, 0, 1, 0, 1},
-		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, 1, 1, 0, 1},
-		{charon.ActivityIdentityCreate, nil, 1, 0, 0, 0},
+		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPassword}, 0, 1, 0, 1},  // signIn (after signOut).
+		{charon.ActivitySignOut, nil, nil, 0, 0, 0, 0}, // signOut.
+		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPassword}, 0, 1, 0, 1},
+		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
+		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
 	})
 }

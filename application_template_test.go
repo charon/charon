@@ -81,7 +81,7 @@ func createApplicationTemplate(t *testing.T, ts *httptest.Server, service *charo
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &newApplicationTemplate)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	verifyLatestActivity(t, ts, service, accessToken, charon.ActivityApplicationTemplateCreate, nil, 0, 0, 1, 0)
+	verifyLatestActivity(t, ts, service, accessToken, charon.ActivityApplicationTemplateCreate, nil, nil, 0, 0, 1, 0)
 
 	return &newApplicationTemplate
 }

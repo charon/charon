@@ -41,6 +41,7 @@ func signoutUser(t *testing.T, ts *httptest.Server, service *charon.Service, acc
 type ActivityExpectation struct {
 	Type                      charon.ActivityType
 	Changes                   []charon.ActivityChangeType
+	Providers                 []charon.Provider
 	IdentitiesCount           int
 	OrganizationsCount        int
 	ApplicationTemplatesCount int
@@ -89,6 +90,7 @@ func verifyAllActivities(t *testing.T, ts *httptest.Server, service *charon.Serv
 
 		assert.Equal(t, expected.Type, activity.Type, "Activity %d type mismatch", i)
 		assert.Equal(t, expected.Changes, activity.Changes, "Activity %d changes mismatch", i)
+		assert.Equal(t, expected.Providers, activity.Providers, "Activity %d providers mismatch", i)
 		assert.Len(t, activity.Identities, expected.IdentitiesCount, "Activity %d identities count mismatch", i)
 		assert.Len(t, activity.Organizations, expected.OrganizationsCount, "Activity %d organizations count mismatch", i)
 		assert.Len(t, activity.ApplicationTemplates, expected.ApplicationTemplatesCount, "Activity %d application templates count mismatch", i)
@@ -100,7 +102,7 @@ func verifyAllActivities(t *testing.T, ts *httptest.Server, service *charon.Serv
 // This function only checks the latest activity, not the total count of activities.
 func verifyLatestActivity(
 	t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string,
-	expectedType charon.ActivityType, expectedChanges []charon.ActivityChangeType,
+	expectedType charon.ActivityType, expectedChanges []charon.ActivityChangeType, expectedProviders []charon.Provider,
 	expectedIdentitiesCount, expectedOrgsCount, expectedAppTemplatesCount, expectedOrgAppsCount int,
 ) {
 	t.Helper()
@@ -143,6 +145,7 @@ func verifyLatestActivity(
 
 	assert.Equal(t, expectedType, activity.Type, "Latest activity type mismatch")
 	assert.Equal(t, expectedChanges, activity.Changes, "Latest activity changes mismatch")
+	assert.Equal(t, expectedProviders, activity.Providers, "Latest activity providers mismatch")
 	assert.Len(t, activity.Identities, expectedIdentitiesCount, "Latest activity identities count mismatch")
 	assert.Len(t, activity.Organizations, expectedOrgsCount, "Latest activity organizations count mismatch")
 	assert.Len(t, activity.ApplicationTemplates, expectedAppTemplatesCount, "Latest activity application templates count mismatch")

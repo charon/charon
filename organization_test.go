@@ -97,7 +97,7 @@ func createOrganization(t *testing.T, ts *httptest.Server, service *charon.Servi
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &newOrganization)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	verifyLatestActivity(t, ts, service, accessToken, charon.ActivityOrganizationCreate, nil, 0, 1, 0, 0)
+	verifyLatestActivity(t, ts, service, accessToken, charon.ActivityOrganizationCreate, nil, nil, 0, 1, 0, 0)
 
 	return &newOrganization
 }
