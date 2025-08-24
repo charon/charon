@@ -155,7 +155,11 @@ func TestAuthFlowPasskey(t *testing.T) {
 	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", charon.CompletedSignup, []charon.Provider{charon.ProviderPasskey}, 1, "username")
 	accessToken := doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, charon.CompletedSignup, []charon.Provider{charon.ProviderPasskey})
 
-	_ = accessToken
+	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
+		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPasskey}, 0, 1, 0, 1},
+		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
+		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
+	})
 
 	// Start another flow.
 	flowID, nonce, state, pkceVerifier, config, verifier = createAuthFlow(t, ts, service)
@@ -247,5 +251,10 @@ func TestAuthFlowPasskey(t *testing.T) {
 	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", charon.CompletedSignin, []charon.Provider{charon.ProviderPasskey}, 1, "username")
 	accessToken = doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, charon.CompletedSignin, []charon.Provider{charon.ProviderPasskey})
 
-	_ = accessToken
+	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
+		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPasskey}, 0, 1, 0, 1}, // Sign-in.
+		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPasskey}, 0, 1, 0, 1},
+		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
+		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
+	})
 }
