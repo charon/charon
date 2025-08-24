@@ -113,9 +113,7 @@ func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityO
 	if !unknown.IsEmpty() {
 		errE := errors.New("unknown applications")
 		applications := unknown.ToSlice()
-		slices.SortFunc(applications, func(a ApplicationTemplateRef, b ApplicationTemplateRef) int {
-			return bytes.Compare(a.ID[:], b.ID[:])
-		})
+		slices.SortFunc(applications, applicationTemplateRefCmp)
 		errors.Details(errE)["applications"] = applications
 	}
 
@@ -287,6 +285,10 @@ type IdentityRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
+func identityRefCmp(a IdentityRef, b IdentityRef) int {
+	return bytes.Compare(a.ID[:], b.ID[:])
+}
+
 // Validate uses ctx with identityIDContextKey if set.
 // When not set, changes to admins are not allowed.
 func (i *Identity) Validate(ctx context.Context, existing *Identity, service *Service) errors.E {
@@ -347,9 +349,7 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity, service *Se
 	if !unknown.IsEmpty() {
 		errE := errors.New("unknown identities")
 		identities := unknown.ToSlice()
-		slices.SortFunc(identities, func(a IdentityRef, b IdentityRef) int {
-			return bytes.Compare(a.ID[:], b.ID[:])
-		})
+		slices.SortFunc(identities, identityRefCmp)
 		errors.Details(errE)["identities"] = identities
 	}
 
@@ -1066,9 +1066,7 @@ func (s *Service) identityList(ctx context.Context) ([]IdentityRef, errors.E) {
 		result = append(result, i)
 	}
 
-	slices.SortFunc(result, func(a IdentityRef, b IdentityRef) int {
-		return bytes.Compare(a.ID[:], b.ID[:])
-	})
+	slices.SortFunc(result, identityRefCmp)
 
 	return result, nil
 }

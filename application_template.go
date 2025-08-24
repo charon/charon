@@ -527,6 +527,10 @@ type ApplicationTemplateRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
+func applicationTemplateRefCmp(a ApplicationTemplateRef, b ApplicationTemplateRef) int {
+	return bytes.Compare(a.ID[:], b.ID[:])
+}
+
 func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *ApplicationTemplatePublic) errors.E {
 	if existing == nil {
 		if a.ID != nil {
@@ -753,9 +757,7 @@ func (a *ApplicationTemplate) Validate(ctx context.Context, existing *Applicatio
 	if !unknown.IsEmpty() {
 		errE := errors.New("unknown identities")
 		identities := unknown.ToSlice()
-		slices.SortFunc(identities, func(a IdentityRef, b IdentityRef) int {
-			return bytes.Compare(a.ID[:], b.ID[:])
-		})
+		slices.SortFunc(identities, identityRefCmp)
 		errors.Details(errE)["identities"] = identities
 		return errE
 	}
@@ -961,9 +963,7 @@ func (s *Service) ApplicationTemplateListGet(w http.ResponseWriter, req *http.Re
 		result = append(result, ApplicationTemplateRef{ID: id})
 	}
 
-	slices.SortFunc(result, func(a ApplicationTemplateRef, b ApplicationTemplateRef) int {
-		return bytes.Compare(a.ID[:], b.ID[:])
-	})
+	slices.SortFunc(result, applicationTemplateRefCmp)
 
 	s.WriteJSON(w, req, result, nil)
 }

@@ -556,6 +556,10 @@ type OrganizationRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
+func organizationRefCmp(a OrganizationRef, b OrganizationRef) int {
+	return bytes.Compare(a.ID[:], b.ID[:])
+}
+
 // HasAdminAccess returns true if at least one of the identities is among admins.
 func (o *Organization) HasAdminAccess(identities ...IdentityRef) bool {
 	for _, identity := range identities {
@@ -602,9 +606,7 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 	if !unknown.IsEmpty() {
 		errE := errors.New("unknown identities")
 		identities := unknown.ToSlice()
-		slices.SortFunc(identities, func(a IdentityRef, b IdentityRef) int {
-			return bytes.Compare(a.ID[:], b.ID[:])
-		})
+		slices.SortFunc(identities, identityRefCmp)
 		errors.Details(errE)["identities"] = identities
 	}
 
@@ -1107,9 +1109,7 @@ func (s *Service) OrganizationListGet(w http.ResponseWriter, req *http.Request, 
 		result = append(result, OrganizationRef{ID: id})
 	}
 
-	slices.SortFunc(result, func(a OrganizationRef, b OrganizationRef) int {
-		return bytes.Compare(a.ID[:], b.ID[:])
-	})
+	slices.SortFunc(result, organizationRefCmp)
 
 	s.WriteJSON(w, req, result, nil)
 }
@@ -1231,9 +1231,7 @@ func (s *Service) OrganizationUsersGet(w http.ResponseWriter, req *http.Request,
 		}
 	}
 
-	slices.SortFunc(result, func(a IdentityRef, b IdentityRef) int {
-		return bytes.Compare(a.ID[:], b.ID[:])
-	})
+	slices.SortFunc(result, identityRefCmp)
 
 	s.WriteJSON(w, req, result, nil)
 }
