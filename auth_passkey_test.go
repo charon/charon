@@ -252,7 +252,7 @@ func TestAuthFlowPasskey(t *testing.T) {
 	accessToken = doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, charon.CompletedSignin, []charon.Provider{charon.ProviderPasskey})
 
 	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
-		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPasskey}, 0, 1, 0, 1}, // Sign-in.
+		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPasskey}, 0, 1, 0, 1}, // Signin.
 		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPasskey}, 0, 1, 0, 1},
 		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
 		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
