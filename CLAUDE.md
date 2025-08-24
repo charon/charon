@@ -72,6 +72,7 @@ To update internationalization TypeScript definitions:
 
 ### Backend Code Style
 
+- **Comments**: All comments must end with dots for consistency.
 - **CI Commands**: For backend-only changes, run these commands to match CI validation:
   - `make lint` - Go linter (golangci-lint) with auto-fix
   - `make fmt` - Go code formatting with gofumpt and goimports
@@ -100,6 +101,7 @@ To update internationalization TypeScript definitions:
 
 ### Frontend Code Style
 
+- **Comments**: All comments must end with dots for consistency.
 - **Import Convention**: Always use `@/` alias for internal imports, never relative paths (`./`, `../`)
 - **Import Organization**: Type imports must be at the top with `import type`, followed by empty line, then regular imports
 - **Internationalization**: All user-facing text must use vue-i18n with global scope
