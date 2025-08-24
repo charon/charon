@@ -710,6 +710,11 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 
 	changes, identities, organizations := identity.Changes(&existingIdentity)
 
+	if len(changes) == 0 {
+		// No changes, do not continue.
+		return nil
+	}
+
 	// We make sure identity reference i is always the first element in identities.
 	identities = slices.DeleteFunc(identities, func(ii IdentityRef) bool {
 		return ii == i

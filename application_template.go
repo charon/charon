@@ -866,9 +866,14 @@ func (s *Service) updateApplicationTemplate(ctx context.Context, applicationTemp
 		return errE
 	}
 
-	s.applicationTemplates[*applicationTemplate.ID] = data
-
 	changes, identities := applicationTemplate.Changes(&existingApplicationTemplate)
+
+	if len(changes) == 0 {
+		// No changes, do not continue.
+		return nil
+	}
+
+	s.applicationTemplates[*applicationTemplate.ID] = data
 
 	errE = s.logActivity(
 		ctx, ActivityApplicationTemplateUpdate, identities, nil, []ApplicationTemplateRef{{ID: *applicationTemplate.ID}},

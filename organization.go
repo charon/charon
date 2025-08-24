@@ -829,9 +829,14 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 		return errE
 	}
 
-	s.organizations[*organization.ID] = data
-
 	changes, identities, organizationApplications := organization.Changes(&existingOrganization)
+
+	if len(changes) == 0 {
+		// No changes, do not continue.
+		return nil
+	}
+
+	s.organizations[*organization.ID] = data
 
 	errE = s.logActivity(ctx, ActivityOrganizationUpdate, identities, []OrganizationRef{{ID: *organization.ID}}, nil, organizationApplications, changes, nil)
 	if errE != nil {
