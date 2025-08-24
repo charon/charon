@@ -346,12 +346,20 @@ type OrganizationApplication struct {
 	ClientsService []OrganizationApplicationClientService `json:"clientsService"`
 }
 
-type OrganizationApplicationRef struct {
+type OrganizationApplicationApplicationRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
+type OrganizationApplicationRef struct {
+	Organization OrganizationRef                       `json:"organization"`
+	Application  OrganizationApplicationApplicationRef `json:"application"`
+}
+
 func organizationApplicationRefCmp(a OrganizationApplicationRef, b OrganizationApplicationRef) int {
-	return bytes.Compare(a.ID[:], b.ID[:])
+	if c := organizationRefCmp(a.Organization, b.Organization); c != 0 {
+		return c
+	}
+	return bytes.Compare(a.Application.ID[:], b.Application.ID[:])
 }
 
 func (a *OrganizationApplication) GetClientPublic(id *identifier.Identifier) *OrganizationApplicationClientPublic {
@@ -677,11 +685,19 @@ func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []
 	// We make copies of app structs on purpose, so that we can change Active field as needed.
 	existingAppMap := make(map[OrganizationApplicationRef]OrganizationApplication)
 	for _, app := range existing.Applications {
-		existingAppMap[OrganizationApplicationRef{ID: *app.ID}] = app
+		existingAppMap[OrganizationApplicationRef{
+			Organization: OrganizationRef{ID: *o.ID},
+			Application: OrganizationApplicationApplicationRef{
+				ID: *app.ID,
+			}}] = app
 	}
 	newAppMap := make(map[OrganizationApplicationRef]OrganizationApplication)
 	for _, app := range o.Applications {
-		newAppMap[OrganizationApplicationRef{ID: *app.ID}] = app
+		newAppMap[OrganizationApplicationRef{
+			Organization: OrganizationRef{ID: *o.ID},
+			Application: OrganizationApplicationApplicationRef{
+				ID: *app.ID,
+			}}] = app
 	}
 
 	existingAppSet := mapset.NewThreadUnsafeSetFromMapKeys(existingAppMap)

@@ -272,8 +272,13 @@ export type IdentityRef = {
   id: string
 }
 
-export type OrganizationApplicationRef = {
+export type OrganizationApplicationApplicationRef = {
   id: string
+}
+
+export type OrganizationApplicationRef = {
+  organization: OrganizationRef
+  application: OrganizationApplicationApplicationRef
 }
 
 export type OrganizationApplicationClientPublic = {

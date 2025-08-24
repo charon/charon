@@ -184,13 +184,13 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                 </template>
               </i18n-t>
             </div>
-            <div v-if="doc.organizations && doc.organizations.length === 1 && doc.organizationApplications" class="text-sm text-slate-700">
+            <div v-if="doc.organizationApplications" class="text-sm text-slate-700">
               <i18n-t keypath="partials.ActivityListItem.entityLinks" scope="global">
                 <template #entity>{{ t("common.entities.app", doc.organizationApplications.length) }}</template>
                 <template #links>
-                  <template v-for="(app, i) in doc.organizationApplications" :key="app.id">
+                  <template v-for="(app, i) in doc.organizationApplications" :key="app.application.id">
                     <template v-if="i > 0">, </template>
-                    <WithOrganizationApplicationDocument :params="{ id: doc.organizations[0].id, appId: app.id }" name="OrganizationApp">
+                    <WithOrganizationApplicationDocument :params="{ id: app.organization.id, appId: app.application.id }" name="OrganizationApp">
                       <template #default="{ doc: appDoc, url: appUrl }">
                         <a :href="getHomepage(appDoc)" :data-url="appUrl" class="link">{{ appDoc.applicationTemplate.name }}</a>
                       </template>
