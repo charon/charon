@@ -93,11 +93,11 @@ func TestApplicationTemplateChanges(t *testing.T) {
 	identity3ID := identifier.New()
 
 	tests := []struct {
-		name                string
-		existing            *charon.ApplicationTemplate
-		updated             *charon.ApplicationTemplate
-		expectedChanges     []charon.ActivityChangeType
-		expectedIdentities  []charon.IdentityRef
+		name               string
+		existing           *charon.ApplicationTemplate
+		updated            *charon.ApplicationTemplate
+		expectedChanges    []charon.ActivityChangeType
+		expectedIdentities []charon.IdentityRef
 	}{
 		{
 			name: "no changes",
@@ -229,10 +229,10 @@ func TestApplicationTemplateChanges(t *testing.T) {
 
 			changes, identities := tt.updated.Changes(tt.existing)
 
-			// Sort expected slices to match deterministic ordering from Changes method
+			// Sort expected slices to match deterministic ordering from Changes method.
 			slices.SortFunc(tt.expectedIdentities, charon.TestingIdentityRefCmp)
 
-			// Check all expected outputs with deterministic ordering
+			// Check all expected outputs with deterministic ordering.
 			assert.Equal(t, tt.expectedChanges, changes, "Changes mismatch")
 			assert.Equal(t, tt.expectedIdentities, identities, "Identities mismatch")
 		})

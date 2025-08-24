@@ -810,13 +810,13 @@ func TestIdentityChanges(t *testing.T) {
 	app2ID := identifier.New()
 
 	tests := []struct {
-		name                string
-		existing            *charon.Identity
-		updated             *charon.Identity
-		expectedChanges     []charon.ActivityChangeType
-		expectedIdentities  []charon.IdentityRef
-		expectedOrgs        []charon.OrganizationRef
-		expectedApps        []charon.OrganizationApplicationRef
+		name               string
+		existing           *charon.Identity
+		updated            *charon.Identity
+		expectedChanges    []charon.ActivityChangeType
+		expectedIdentities []charon.IdentityRef
+		expectedOrgs       []charon.OrganizationRef
+		expectedApps       []charon.OrganizationApplicationRef
 	}{
 		{
 			name: "no changes",
@@ -1211,12 +1211,12 @@ func TestIdentityChanges(t *testing.T) {
 
 			changes, identities, orgs, apps := tt.updated.Changes(tt.existing)
 
-			// Sort expected slices to match deterministic ordering from Changes method
+			// Sort expected slices to match deterministic ordering from Changes method.
 			slices.SortFunc(tt.expectedIdentities, charon.TestingIdentityRefCmp)
 			slices.SortFunc(tt.expectedOrgs, charon.TestingOrganizationRefCmp)
 			slices.SortFunc(tt.expectedApps, charon.TestingOrganizationApplicationRefCmp)
 
-			// Check all expected outputs with deterministic ordering
+			// Check all expected outputs with deterministic ordering.
 			assert.Equal(t, tt.expectedChanges, changes, "Changes mismatch")
 			assert.Equal(t, tt.expectedIdentities, identities, "Identities mismatch")
 			assert.Equal(t, tt.expectedOrgs, orgs, "Organizations mismatch")
