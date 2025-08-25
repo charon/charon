@@ -196,3 +196,17 @@ export function getOrganization(identity: Identity, id: string | undefined): Ide
 
   return null
 }
+
+export function getFormattedTimestamp(timestamp: string): string {
+  // TODO: Change so that it is formatted based on the current selected locale in Charon and not browser's locale.
+  const date = new Date(timestamp)
+  return date.toLocaleString()
+}
+
+// getIdentityDisplayName returns a string display name of an identity.
+//
+// This should be similar in what is show as main piece of information in
+// IdentityPublic and IdentityFull components.
+export function getIdentityDisplayName(identity: Identity | DeepReadonly<Identity>): string {
+  return identity.username || identity.email || identity.givenName || identity.fullName || identity.id
+}

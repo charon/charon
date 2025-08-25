@@ -45,6 +45,14 @@ func (s *Service) TestingWithAccountID(ctx context.Context, accountID identifier
 	return s.withAccountID(ctx, accountID)
 }
 
+func (s *Service) TestingWithSessionID(ctx context.Context) context.Context {
+	return s.withSessionID(ctx, identifier.New())
+}
+
+func (s *Service) TestingWithRequestID(ctx context.Context) context.Context {
+	return context.WithValue(ctx, "test-request-id", identifier.New()) //nolint:revive,staticcheck
+}
+
 func (s *Service) TestingGetIdentitiesAccess(accountID identifier.Identifier) map[IdentityRef][][]IdentityRef {
 	s.identitiesAccessMu.RLock()
 	defer s.identitiesAccessMu.RUnlock()
@@ -74,4 +82,16 @@ func TestingGetRandomCode() (string, errors.E) {
 
 func TestingNormalizePassword(password []byte) ([]byte, errors.E) {
 	return normalizePassword(password)
+}
+
+func TestingIdentityRefCmp(a IdentityRef, b IdentityRef) int {
+	return identityRefCmp(a, b)
+}
+
+func TestingOrganizationRefCmp(a OrganizationRef, b OrganizationRef) int {
+	return organizationRefCmp(a, b)
+}
+
+func TestingOrganizationApplicationRefCmp(a OrganizationApplicationRef, b OrganizationApplicationRef) int {
+	return organizationApplicationRefCmp(a, b)
 }

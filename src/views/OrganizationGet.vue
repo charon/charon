@@ -816,7 +816,7 @@ async function onIdentitiesSubmit() {
             <div v-else-if="adminsUpdated" class="text-success-600">{{ t("common.data.adminsUpdated") }}</div>
             <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
               <ol class="flex flex-col gap-y-4">
-                <li v-for="(admin, i) of admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
+                <li v-for="(admin, i) in admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
                     <WithIdentityPublicDocument v-if="organization?.admins?.find((a) => a.id === admin.id)" :item="admin" :organization-id="siteContext.organizationId">

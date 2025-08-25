@@ -15,7 +15,7 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
-const CodeProvider Provider = "code"
+const ProviderCode Provider = "code"
 
 const (
 	CodeProviderSubject  = `Your code for Charon`
@@ -208,9 +208,9 @@ func (s *Service) sendCode(
 	// the same flow, code(s) from the first bar@example.com attempt will not work anymore. That is probably fine and rare.
 	flow.ClearAuthStep(preservedEmailOrUsername)
 	if passwordFlow {
-		flow.Providers = append(flow.Providers, CodeProvider)
+		flow.Providers = append(flow.Providers, ProviderCode)
 	} else {
-		flow.Providers = []Provider{CodeProvider}
+		flow.Providers = []Provider{ProviderCode}
 	}
 	// Or flow.Code was never set or it was cleared by flow.Clear because flow.EmailOrUsername changed.
 	// Or account ID has changed (this is an edge case and sanity check because flow.Clear should already

@@ -2,6 +2,7 @@ package charon_test
 
 import (
 	"context"
+	"slices"
 	"testing"
 
 	mapset "github.com/deckarep/golang-set/v2"
@@ -27,6 +28,8 @@ func TestCreateIdentity(t *testing.T) {
 
 	accountID := identifier.New()
 	ctx := service.TestingWithAccountID(context.Background(), accountID)
+	ctx = service.TestingWithSessionID(ctx)
+	ctx = service.TestingWithRequestID(ctx)
 
 	errE := service.TestingCreateIdentity(ctx, &newIdentity)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -109,6 +112,8 @@ func TestUpdateIdentity(t *testing.T) {
 
 	accountID := identifier.New()
 	ctx := service.TestingWithAccountID(context.Background(), accountID)
+	ctx = service.TestingWithSessionID(ctx)
+	ctx = service.TestingWithRequestID(ctx)
 
 	identityID := createTestIdentity(t, service, ctx)
 	createdIdentity, _, errE := service.TestingGetIdentity(ctx, identityID)
@@ -140,7 +145,7 @@ func TestUpdateIdentity(t *testing.T) {
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	updatedIdentity, _, errE := service.TestingGetIdentity(ctx, identityID)
-	require.NoError(t, errE)
+	require.NoError(t, errE, "% -+#.1v", errE)
 
 	identityRef := charon.IdentityRef{ID: identityID}
 
@@ -176,6 +181,8 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 
 	userAccountID := identifier.New()
 	userCtx := service.TestingWithAccountID(context.Background(), userAccountID)
+	userCtx = service.TestingWithSessionID(userCtx)
+	userCtx = service.TestingWithRequestID(userCtx)
 
 	userIdentityID := createTestIdentity(t, service, userCtx)
 	userIdentity, _, errE := service.TestingGetIdentity(userCtx, userIdentityID)
@@ -184,6 +191,8 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 
 	adminAccountID := identifier.New()
 	adminCtx := service.TestingWithAccountID(context.Background(), adminAccountID)
+	adminCtx = service.TestingWithSessionID(adminCtx)
+	adminCtx = service.TestingWithRequestID(adminCtx)
 
 	adminIdentityID := createTestIdentity(t, service, adminCtx)
 	adminIdentityRef := charon.IdentityRef{ID: adminIdentityID}
@@ -259,22 +268,40 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.ElementsMatch(t, []charon.IdentityRef{adminIdentityRef, userIdentityRef}, result)
 
-	// Attempt an update with admin identity.
+	// Update of admin identity itself should be allowed without identity ID in the context.
 	newUsername := identifier.New().String()
-	updatedUserIdentity.Username = newUsername
-	errE = service.TestingUpdateIdentity(adminCtx, updatedUserIdentity)
-	require.NoError(t, errE)
+	updatedAdminIdentity, _, errE := service.TestingGetIdentity(adminCtx, adminIdentityID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	updatedAdminIdentity.Username = newUsername
+	errE = service.TestingUpdateIdentity(adminCtx, updatedAdminIdentity)
+	require.NoError(t, errE, "% -+#.1v", errE)
 
 	// Re-fetch and verify the update.
-	updatedUserIdentity, _, err := service.TestingGetIdentity(userCtx, userIdentityID)
-	require.NoError(t, err)
+	updatedAdminIdentity, _, errE = service.TestingGetIdentity(adminCtx, adminIdentityID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Equal(t, newUsername, updatedAdminIdentity.Username)
+
+	// Attempt an update of user identity with admin identity should not be allowed without identity ID in the context.
+	newUsername = identifier.New().String()
+	updatedUserIdentity.Username = newUsername
+	errE = service.TestingUpdateIdentity(adminCtx, updatedUserIdentity)
+	assert.ErrorIs(t, errE, charon.ErrIdentityUpdateNotAllowed)
+
+	// Retry with identity ID in the context.
+	adminCtx = service.TestingWithIdentityID(adminCtx, adminIdentityID)
+	errE = service.TestingUpdateIdentity(adminCtx, updatedUserIdentity)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	// Re-fetch and verify the update.
+	updatedUserIdentity, _, errE = service.TestingGetIdentity(userCtx, userIdentityID)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.Equal(t, newUsername, updatedUserIdentity.Username)
 
 	// Remove admin access. By removing all admins, we expect
 	// Validate to re-add back the user identity.
 	updatedUserIdentity.Admins = nil
 	errE = service.TestingUpdateIdentity(userCtx, updatedUserIdentity)
-	require.NoError(t, errE)
+	require.NoError(t, errE, "% -+#.1v", errE)
 
 	access = service.TestingGetIdentitiesAccess(userAccountID)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
@@ -368,7 +395,6 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	assert.ElementsMatch(t, []charon.IdentityRef{adminIdentityRef, userIdentityRef}, result)
 
 	// Remove access for user identity itself, effectively transferring the identity to admin.
-	adminCtx = service.TestingWithIdentityID(adminCtx, adminIdentityID)
 	updatedUserIdentity.Admins = []charon.IdentityRef{adminIdentityRef}
 	errE = service.TestingUpdateIdentity(adminCtx, updatedUserIdentity)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -552,17 +578,23 @@ func setupIdentityHierarchy(t *testing.T, service *charon.Service) []testIdentit
 
 	accountID := identifier.New()
 	ctxRoot := service.TestingWithAccountID(context.Background(), accountID)
+	ctxRoot = service.TestingWithSessionID(ctxRoot)
+	ctxRoot = service.TestingWithRequestID(ctxRoot)
 	rootIdentityID := createTestIdentity(t, service, ctxRoot)
 	rootIdentityRef := charon.IdentityRef{ID: rootIdentityID}
 	ctxRoot = service.TestingWithIdentityID(ctxRoot, rootIdentityID)
 
 	accountID1 := identifier.New()
 	ctx1 := service.TestingWithAccountID(context.Background(), accountID1)
+	ctx1 = service.TestingWithSessionID(ctx1)
+	ctx1 = service.TestingWithRequestID(ctx1)
 	child1IdentityID := createTestIdentity(t, service, ctx1)
 	ctx1 = service.TestingWithIdentityID(ctx1, child1IdentityID)
 
 	accountID2 := identifier.New()
 	ctx2 := service.TestingWithAccountID(context.Background(), accountID2)
+	ctx2 = service.TestingWithSessionID(ctx2)
+	ctx2 = service.TestingWithRequestID(ctx2)
 	child2IdentityID := createTestIdentity(t, service, ctx2)
 	ctx2 = service.TestingWithIdentityID(ctx2, child2IdentityID)
 
@@ -763,4 +795,470 @@ func TestCyclicIdentityAccess(t *testing.T) {
 		ids[1].id: {{ids[2].id, ids[0].id}},
 		ids[2].id: {{}},
 	}, access)
+}
+
+func TestIdentityChanges(t *testing.T) { //nolint:maintidx
+	t.Parallel()
+
+	identityID := identifier.New()
+	identity1ID := identifier.New()
+	identity2ID := identifier.New()
+	identity3ID := identifier.New()
+	org1ID := identifier.New()
+	org2ID := identifier.New()
+	app1ID := identifier.New()
+	app2ID := identifier.New()
+
+	tests := []struct {
+		name               string
+		existing           *charon.Identity
+		updated            *charon.Identity
+		expectedChanges    []charon.ActivityChangeType
+		expectedIdentities []charon.IdentityRef
+		expectedOrgs       []charon.OrganizationRef
+		expectedApps       []charon.OrganizationApplicationRef
+	}{
+		{
+			name: "no changes",
+			existing: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+					Email:    "test@example.com",
+				},
+				Description: "Test description",
+				Users:       []charon.IdentityRef{{ID: identity1ID}},
+				Admins:      []charon.IdentityRef{{ID: identity2ID}},
+				Organizations: []charon.IdentityOrganization{
+					{
+						Organization: charon.OrganizationRef{ID: org1ID},
+						Active:       true,
+						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
+					},
+				},
+			},
+			updated: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+					Email:    "test@example.com",
+				},
+				Description: "Test description",
+				Users:       []charon.IdentityRef{{ID: identity1ID}},
+				Admins:      []charon.IdentityRef{{ID: identity2ID}},
+				Organizations: []charon.IdentityOrganization{
+					{
+						Organization: charon.OrganizationRef{ID: org1ID},
+						Active:       true,
+						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
+					},
+				},
+			},
+			expectedChanges:    []charon.ActivityChangeType{},
+			expectedIdentities: []charon.IdentityRef{},
+			expectedOrgs:       []charon.OrganizationRef{},
+			expectedApps:       []charon.OrganizationApplicationRef{},
+		},
+		{
+			name: "username changed",
+			existing: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+					Email:    "test@example.com",
+				},
+				Description: "Old description",
+			},
+			updated: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "newuser",
+					Email:    "test@example.com",
+				},
+				Description: "Old description",
+			},
+			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangeOtherData},
+			expectedIdentities: []charon.IdentityRef{},
+			expectedOrgs:       []charon.OrganizationRef{},
+			expectedApps:       []charon.OrganizationApplicationRef{},
+		},
+		{
+			name: "description changed",
+			existing: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+					Email:    "test@example.com",
+				},
+				Description: "Old description",
+			},
+			updated: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+					Email:    "test@example.com",
+				},
+				Description: "New description",
+			},
+			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangeOtherData},
+			expectedIdentities: []charon.IdentityRef{},
+			expectedOrgs:       []charon.OrganizationRef{},
+			expectedApps:       []charon.OrganizationApplicationRef{},
+		},
+		{
+			name: "admin added",
+			existing: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+				},
+				Users:  []charon.IdentityRef{{ID: identity1ID}},
+				Admins: []charon.IdentityRef{},
+			},
+			updated: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+				},
+				Users:  []charon.IdentityRef{{ID: identity1ID}},
+				Admins: []charon.IdentityRef{{ID: identity2ID}},
+			},
+			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangePermissionsAdded},
+			expectedIdentities: []charon.IdentityRef{{ID: identity2ID}},
+			expectedOrgs:       []charon.OrganizationRef{},
+			expectedApps:       []charon.OrganizationApplicationRef{},
+		},
+		{
+			name: "user added",
+			existing: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+				},
+				Users:  []charon.IdentityRef{{ID: identity1ID}},
+				Admins: []charon.IdentityRef{},
+			},
+			updated: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+				},
+				Users:  []charon.IdentityRef{{ID: identity1ID}, {ID: identity3ID}},
+				Admins: []charon.IdentityRef{},
+			},
+			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangePermissionsAdded},
+			expectedIdentities: []charon.IdentityRef{{ID: identity3ID}},
+			expectedOrgs:       []charon.OrganizationRef{},
+			expectedApps:       []charon.OrganizationApplicationRef{},
+		},
+		{
+			name: "admin removed",
+			existing: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+				},
+				Users:  []charon.IdentityRef{{ID: identity1ID}},
+				Admins: []charon.IdentityRef{{ID: identity2ID}},
+			},
+			updated: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+				},
+				Users:  []charon.IdentityRef{{ID: identity1ID}},
+				Admins: []charon.IdentityRef{},
+			},
+			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangePermissionsRemoved},
+			expectedIdentities: []charon.IdentityRef{{ID: identity2ID}},
+			expectedOrgs:       []charon.OrganizationRef{},
+			expectedApps:       []charon.OrganizationApplicationRef{},
+		},
+		{
+			name: "organization membership added",
+			existing: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+				},
+				Organizations: []charon.IdentityOrganization{},
+			},
+			updated: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+				},
+				Organizations: []charon.IdentityOrganization{
+					{
+						Organization: charon.OrganizationRef{ID: org1ID},
+						Active:       true,
+						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
+					},
+				},
+			},
+			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded},
+			expectedIdentities: []charon.IdentityRef{},
+			expectedOrgs:       []charon.OrganizationRef{{ID: org1ID}},
+			expectedApps: []charon.OrganizationApplicationRef{
+				{
+					Organization: charon.OrganizationRef{ID: org1ID},
+					Application:  charon.OrganizationApplicationApplicationRef{ID: app1ID},
+				},
+			},
+		},
+		{
+			name: "organization membership removed",
+			existing: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+				},
+				Organizations: []charon.IdentityOrganization{
+					{
+						Organization: charon.OrganizationRef{ID: org1ID},
+						Active:       true,
+						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
+					},
+				},
+			},
+			updated: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+				},
+				Organizations: []charon.IdentityOrganization{},
+			},
+			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangeMembershipRemoved},
+			expectedIdentities: []charon.IdentityRef{},
+			expectedOrgs:       []charon.OrganizationRef{{ID: org1ID}},
+			expectedApps: []charon.OrganizationApplicationRef{
+				{
+					Organization: charon.OrganizationRef{ID: org1ID},
+					Application:  charon.OrganizationApplicationApplicationRef{ID: app1ID},
+				},
+			},
+		},
+		{
+			name: "organization membership activated",
+			existing: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+				},
+				Organizations: []charon.IdentityOrganization{
+					{
+						Organization: charon.OrganizationRef{ID: org1ID},
+						Active:       false,
+						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
+					},
+				},
+			},
+			updated: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+				},
+				Organizations: []charon.IdentityOrganization{
+					{
+						Organization: charon.OrganizationRef{ID: org1ID},
+						Active:       true,
+						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
+					},
+				},
+			},
+			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangeMembershipActivated},
+			expectedIdentities: []charon.IdentityRef{},
+			expectedOrgs:       []charon.OrganizationRef{{ID: org1ID}},
+			expectedApps:       []charon.OrganizationApplicationRef{},
+		},
+		{
+			name: "organization membership disabled",
+			existing: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+				},
+				Organizations: []charon.IdentityOrganization{
+					{
+						Organization: charon.OrganizationRef{ID: org1ID},
+						Active:       true,
+						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
+					},
+				},
+			},
+			updated: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+				},
+				Organizations: []charon.IdentityOrganization{
+					{
+						Organization: charon.OrganizationRef{ID: org1ID},
+						Active:       false,
+						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
+					},
+				},
+			},
+			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangeMembershipDisabled},
+			expectedIdentities: []charon.IdentityRef{},
+			expectedOrgs:       []charon.OrganizationRef{{ID: org1ID}},
+			expectedApps:       []charon.OrganizationApplicationRef{},
+		},
+		{
+			name: "application membership added",
+			existing: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+				},
+				Organizations: []charon.IdentityOrganization{
+					{
+						Organization: charon.OrganizationRef{ID: org1ID},
+						Active:       true,
+						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
+					},
+				},
+			},
+			updated: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+				},
+				Organizations: []charon.IdentityOrganization{
+					{
+						Organization: charon.OrganizationRef{ID: org1ID},
+						Active:       true,
+						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}, {ID: app2ID}},
+					},
+				},
+			},
+			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded},
+			expectedIdentities: []charon.IdentityRef{},
+			expectedOrgs:       []charon.OrganizationRef{},
+			expectedApps: []charon.OrganizationApplicationRef{
+				{
+					Organization: charon.OrganizationRef{ID: org1ID},
+					Application:  charon.OrganizationApplicationApplicationRef{ID: app2ID},
+				},
+			},
+		},
+		{
+			name: "application membership removed from existing organization",
+			existing: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+				},
+				Organizations: []charon.IdentityOrganization{
+					{
+						Organization: charon.OrganizationRef{ID: org1ID},
+						Active:       true,
+						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}, {ID: app2ID}},
+					},
+				},
+			},
+			updated: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+				},
+				Organizations: []charon.IdentityOrganization{
+					{
+						Organization: charon.OrganizationRef{ID: org1ID},
+						Active:       true,
+						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
+					},
+				},
+			},
+			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangeMembershipRemoved},
+			expectedIdentities: []charon.IdentityRef{},
+			expectedOrgs:       []charon.OrganizationRef{},
+			expectedApps: []charon.OrganizationApplicationRef{
+				{
+					Organization: charon.OrganizationRef{ID: org1ID},
+					Application:  charon.OrganizationApplicationApplicationRef{ID: app2ID},
+				},
+			},
+		},
+		{
+			name: "complex scenario with multiple changes",
+			existing: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "testuser",
+					Email:    "old@example.com",
+				},
+				Description: "Old description",
+				Users:       []charon.IdentityRef{{ID: identity1ID}},
+				Admins:      []charon.IdentityRef{{ID: identity2ID}},
+				Organizations: []charon.IdentityOrganization{
+					{
+						Organization: charon.OrganizationRef{ID: org1ID},
+						Active:       false,
+						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
+					},
+				},
+			},
+			updated: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{
+					ID:       &identityID,
+					Username: "newuser",
+					Email:    "new@example.com",
+				},
+				Description: "New description",
+				Users:       []charon.IdentityRef{{ID: identity3ID}},
+				Admins:      []charon.IdentityRef{{ID: identity2ID}},
+				Organizations: []charon.IdentityOrganization{
+					{
+						Organization: charon.OrganizationRef{ID: org1ID},
+						Active:       true,
+						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}, {ID: app2ID}},
+					},
+					{
+						Organization: charon.OrganizationRef{ID: org2ID},
+						Active:       true,
+						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
+					},
+				},
+			},
+			expectedChanges: []charon.ActivityChangeType{
+				charon.ActivityChangeOtherData,
+				charon.ActivityChangePermissionsAdded,
+				charon.ActivityChangePermissionsRemoved,
+				charon.ActivityChangeMembershipAdded,
+				charon.ActivityChangeMembershipActivated,
+			},
+			expectedIdentities: []charon.IdentityRef{{ID: identity1ID}, {ID: identity3ID}},
+			expectedOrgs:       []charon.OrganizationRef{{ID: org1ID}, {ID: org2ID}},
+			expectedApps: []charon.OrganizationApplicationRef{
+				{
+					Organization: charon.OrganizationRef{ID: org1ID},
+					Application:  charon.OrganizationApplicationApplicationRef{ID: app2ID},
+				},
+				{
+					Organization: charon.OrganizationRef{ID: org2ID},
+					Application:  charon.OrganizationApplicationApplicationRef{ID: app1ID},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			changes, identities, orgs, apps := tt.updated.Changes(tt.existing)
+
+			// Sort expected slices to match deterministic ordering from Changes method.
+			slices.SortFunc(tt.expectedIdentities, charon.TestingIdentityRefCmp)
+			slices.SortFunc(tt.expectedOrgs, charon.TestingOrganizationRefCmp)
+			slices.SortFunc(tt.expectedApps, charon.TestingOrganizationApplicationRefCmp)
+
+			// Check all expected outputs with deterministic ordering.
+			assert.Equal(t, tt.expectedChanges, changes, "Changes mismatch")
+			assert.Equal(t, tt.expectedIdentities, identities, "Identities mismatch")
+			assert.Equal(t, tt.expectedOrgs, orgs, "Organizations mismatch")
+			assert.Equal(t, tt.expectedApps, apps, "Applications mismatch")
+		})
+	}
 }

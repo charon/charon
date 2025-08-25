@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"reflect"
 	"regexp"
 	"slices"
 	"time"
@@ -527,6 +528,10 @@ type ApplicationTemplateRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
+func applicationTemplateRefCmp(a ApplicationTemplateRef, b ApplicationTemplateRef) int {
+	return bytes.Compare(a.ID[:], b.ID[:])
+}
+
 func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *ApplicationTemplatePublic) errors.E {
 	if existing == nil {
 		if a.ID != nil {
@@ -753,14 +758,36 @@ func (a *ApplicationTemplate) Validate(ctx context.Context, existing *Applicatio
 	if !unknown.IsEmpty() {
 		errE := errors.New("unknown identities")
 		identities := unknown.ToSlice()
-		slices.SortFunc(identities, func(a IdentityRef, b IdentityRef) int {
-			return bytes.Compare(a.ID[:], b.ID[:])
-		})
+		slices.SortFunc(identities, identityRefCmp)
 		errors.Details(errE)["identities"] = identities
 		return errE
 	}
 
 	return nil
+}
+
+// Changes compares the current ApplicationTemplate with an existing one and returns the types of changes
+// that occurred and admin identities that were added or removed.
+func (a *ApplicationTemplate) Changes(existing *ApplicationTemplate) ([]ActivityChangeType, []IdentityRef) {
+	changes := []ActivityChangeType{}
+
+	if !reflect.DeepEqual(a.ApplicationTemplatePublic, existing.ApplicationTemplatePublic) {
+		changes = append(changes, ActivityChangeOtherData)
+	}
+
+	adminsAdded, adminsRemoved := detectSliceChanges(existing.Admins, a.Admins)
+
+	if !adminsAdded.IsEmpty() {
+		changes = append(changes, ActivityChangePermissionsAdded)
+	}
+	if !adminsRemoved.IsEmpty() {
+		changes = append(changes, ActivityChangePermissionsRemoved)
+	}
+
+	identitiesChanged := adminsAdded.Union(adminsRemoved).ToSlice()
+	slices.SortFunc(identitiesChanged, identityRefCmp)
+
+	return changes, identitiesChanged
 }
 
 func (s *Service) getApplicationTemplate(_ context.Context, id identifier.Identifier) (*ApplicationTemplate, errors.E) {
@@ -795,6 +822,12 @@ func (s *Service) createApplicationTemplate(ctx context.Context, applicationTemp
 	defer s.applicationTemplatesMu.Unlock()
 
 	s.applicationTemplates[*applicationTemplate.ID] = data
+
+	errE = s.logActivity(ctx, ActivityApplicationTemplateCreate, nil, nil, []ApplicationTemplateRef{{ID: *applicationTemplate.ID}}, nil, nil, nil)
+	if errE != nil {
+		return errE
+	}
+
 	return nil
 }
 
@@ -833,7 +866,23 @@ func (s *Service) updateApplicationTemplate(ctx context.Context, applicationTemp
 		return errE
 	}
 
+	changes, identities := applicationTemplate.Changes(&existingApplicationTemplate)
+
+	if len(changes) == 0 {
+		// No changes, do not continue.
+		return nil
+	}
+
 	s.applicationTemplates[*applicationTemplate.ID] = data
+
+	errE = s.logActivity(
+		ctx, ActivityApplicationTemplateUpdate, identities, nil, []ApplicationTemplateRef{{ID: *applicationTemplate.ID}},
+		nil, changes, nil,
+	)
+	if errE != nil {
+		return errE
+	}
+
 	return nil
 }
 
@@ -876,14 +925,15 @@ func (s *Service) returnApplicationTemplateRef(_ context.Context, w http.Respons
 	s.WriteJSON(w, req, ApplicationTemplateRef{ID: *applicationTemplate.ID}, nil)
 }
 
-func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
+func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 	co := s.charonOrganization()
 
 	hasIdentity := false
-	identityID, _, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
+	identityID, _, sessionID, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
 	if errE == nil {
 		ctx = s.withIdentityID(ctx, identityID)
+		ctx = s.withSessionID(ctx, sessionID)
 		hasIdentity = true
 	} else if !errors.Is(errE, ErrIdentityNotPresent) {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -919,9 +969,7 @@ func (s *Service) ApplicationTemplateListGet(w http.ResponseWriter, req *http.Re
 		result = append(result, ApplicationTemplateRef{ID: id})
 	}
 
-	slices.SortFunc(result, func(a ApplicationTemplateRef, b ApplicationTemplateRef) int {
-		return bytes.Compare(a.ID[:], b.ID[:])
-	})
+	slices.SortFunc(result, applicationTemplateRefCmp)
 
 	s.WriteJSON(w, req, result, nil)
 }

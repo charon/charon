@@ -86,6 +86,12 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
 	accessToken, identityID := signinUser(t, ts, service, username, charon.CompletedSignup, flowID, nonce, state, pkceVerifier, config, verifier)
 
+	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
+		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPassword}, 0, 1, 0, 1},
+		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
+		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
+	})
+
 	g := gravatar.NewGravatarFromEmail(username)
 	g.Default = "identicon"
 	gravatarURL := g.GetURL()
@@ -165,4 +171,12 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 		assert.Equal(t, 2, resp.ProtoMajor)
 		// TODO: This should return JSON with some error payload.
 	}
+
+	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
+		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPassword}, 0, 1, 0, 1}, // Signin (after signout).
+		{charon.ActivitySignOut, nil, nil, 0, 0, 0, 0},                                       // Signout.
+		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPassword}, 0, 1, 0, 1},
+		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
+		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
+	})
 }

@@ -24,12 +24,12 @@ import (
 	"gitlab.com/charon/charon"
 )
 
-func TestAuthFlowPasskey(t *testing.T) {
+func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 	t.Parallel()
 
 	ts, service, _, _ := startTestServer(t)
 
-	flowID, _, _, _, _, _ := createAuthFlow(t, ts, service) //nolint:dogsled
+	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
 
 	authFlowPasskeyCreateStart, errE := service.ReverseAPI("AuthFlowPasskeyCreateStart", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -45,7 +45,7 @@ func TestAuthFlowPasskey(t *testing.T) {
 	var authFlowResponse charon.AuthFlowResponse
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
 	require.NoError(t, errE, "% -+#.1v", errE)
-	assert.Equal(t, []charon.Provider{charon.PasskeyProvider}, authFlowResponse.Providers)
+	assert.Equal(t, []charon.Provider{charon.ProviderPasskey}, authFlowResponse.Providers)
 	require.NotNil(t, authFlowResponse.Passkey)
 	require.NotNil(t, authFlowResponse.Passkey.CreateOptions)
 
@@ -56,7 +56,7 @@ func TestAuthFlowPasskey(t *testing.T) {
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
 		// Passkey create options are provided only in the response to the passkey create start call.
-		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{charon.PasskeyProvider}, "", assertCharonDashboard)
+		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{charon.ProviderPasskey}, "", assertCharonDashboard)
 	}
 
 	authFlowPasskeyCreateComplete, errE := service.ReverseAPI("AuthFlowPasskeyCreateComplete", waf.Params{"id": flowID.String()}, nil)
@@ -149,12 +149,20 @@ func TestAuthFlowPasskey(t *testing.T) {
 
 	// Flow is available and CompletedSignup is completed.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
-	if assert.NoError(t, err) {
-		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{charon.CompletedSignup}, []charon.Provider{charon.PasskeyProvider}, "", assertCharonDashboard)
-	}
+	require.NoError(t, err)
+	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{charon.CompletedSignup}, []charon.Provider{charon.ProviderPasskey}, "", assertCharonDashboard)
+
+	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", charon.CompletedSignup, []charon.Provider{charon.ProviderPasskey}, 1, "username")
+	accessToken := doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, charon.CompletedSignup, []charon.Provider{charon.ProviderPasskey})
+
+	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
+		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPasskey}, 0, 1, 0, 1},
+		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
+		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
+	})
 
 	// Start another flow.
-	flowID, _, _, _, _, _ = createAuthFlow(t, ts, service) //nolint:dogsled
+	flowID, nonce, state, pkceVerifier, config, verifier = createAuthFlow(t, ts, service)
 
 	authFlowPasskeyGetStart, errE := service.ReverseAPI("AuthFlowPasskeyGetStart", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -170,7 +178,7 @@ func TestAuthFlowPasskey(t *testing.T) {
 	authFlowResponse = charon.AuthFlowResponse{}
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
 	require.NoError(t, errE, "% -+#.1v", errE)
-	assert.Equal(t, []charon.Provider{charon.PasskeyProvider}, authFlowResponse.Providers)
+	assert.Equal(t, []charon.Provider{charon.ProviderPasskey}, authFlowResponse.Providers)
 	require.NotNil(t, authFlowResponse.Passkey)
 	require.NotNil(t, authFlowResponse.Passkey.GetOptions)
 
@@ -181,7 +189,7 @@ func TestAuthFlowPasskey(t *testing.T) {
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
 		// Passkey get options are provided only in the response to the passkey get start call.
-		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{charon.PasskeyProvider}, "", assertCharonDashboard)
+		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{charon.ProviderPasskey}, "", assertCharonDashboard)
 	}
 
 	authFlowPasskeyGetComplete, errE := service.ReverseAPI("AuthFlowPasskeyGetComplete", waf.Params{"id": flowID.String()}, nil)
@@ -237,7 +245,16 @@ func TestAuthFlowPasskey(t *testing.T) {
 
 	// Flow is available and CompletedSignin is completed.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
-	if assert.NoError(t, err) {
-		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{charon.CompletedSignin}, []charon.Provider{charon.PasskeyProvider}, "", assertCharonDashboard)
-	}
+	require.NoError(t, err)
+	oid = assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{charon.CompletedSignin}, []charon.Provider{charon.ProviderPasskey}, "", assertCharonDashboard)
+
+	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", charon.CompletedSignin, []charon.Provider{charon.ProviderPasskey}, 1, "username")
+	accessToken = doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, charon.CompletedSignin, []charon.Provider{charon.ProviderPasskey})
+
+	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
+		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPasskey}, 0, 1, 0, 1}, // Signin.
+		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPasskey}, 0, 1, 0, 1},
+		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
+		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
+	})
 }

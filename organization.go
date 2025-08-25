@@ -5,6 +5,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"reflect"
 	"slices"
 
 	"github.com/alexedwards/argon2id"
@@ -345,6 +346,26 @@ type OrganizationApplication struct {
 	ClientsService []OrganizationApplicationClientService `json:"clientsService"`
 }
 
+type OrganizationApplicationApplicationRef struct {
+	ID identifier.Identifier `json:"id"`
+}
+
+func organizationApplicationApplicationRefCmp(a OrganizationApplicationApplicationRef, b OrganizationApplicationApplicationRef) int {
+	return bytes.Compare(a.ID[:], b.ID[:])
+}
+
+type OrganizationApplicationRef struct {
+	Organization OrganizationRef                       `json:"organization"`
+	Application  OrganizationApplicationApplicationRef `json:"application"`
+}
+
+func organizationApplicationRefCmp(a OrganizationApplicationRef, b OrganizationApplicationRef) int {
+	if c := organizationRefCmp(a.Organization, b.Organization); c != 0 {
+		return c
+	}
+	return organizationApplicationApplicationRefCmp(a.Application, b.Application)
+}
+
 func (a *OrganizationApplication) GetClientPublic(id *identifier.Identifier) *OrganizationApplicationClientPublic {
 	if a == nil {
 		return nil
@@ -555,6 +576,10 @@ type OrganizationRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
+func organizationRefCmp(a OrganizationRef, b OrganizationRef) int {
+	return bytes.Compare(a.ID[:], b.ID[:])
+}
+
 // HasAdminAccess returns true if at least one of the identities is among admins.
 func (o *Organization) HasAdminAccess(identities ...IdentityRef) bool {
 	for _, identity := range identities {
@@ -601,9 +626,7 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 	if !unknown.IsEmpty() {
 		errE := errors.New("unknown identities")
 		identities := unknown.ToSlice()
-		slices.SortFunc(identities, func(a IdentityRef, b IdentityRef) int {
-			return bytes.Compare(a.ID[:], b.ID[:])
-		})
+		slices.SortFunc(identities, identityRefCmp)
 		errors.Details(errE)["identities"] = identities
 	}
 
@@ -641,6 +664,99 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 	return nil
 }
 
+// Changes compares the current Organization with an existing one and returns the types of changes
+// that occurred, admin identities that were added or removed and organization applications
+// that were added, removed or changed.
+func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []IdentityRef, []OrganizationApplicationRef) {
+	changes := []ActivityChangeType{}
+
+	if !reflect.DeepEqual(o.OrganizationPublic, existing.OrganizationPublic) {
+		changes = append(changes, ActivityChangeOtherData)
+	}
+
+	adminsAdded, adminsRemoved := detectSliceChanges(existing.Admins, o.Admins)
+
+	if !adminsAdded.IsEmpty() {
+		changes = append(changes, ActivityChangePermissionsAdded)
+	}
+	if !adminsRemoved.IsEmpty() {
+		changes = append(changes, ActivityChangePermissionsRemoved)
+	}
+
+	identitiesChanged := adminsAdded.Union(adminsRemoved).ToSlice()
+	slices.SortFunc(identitiesChanged, identityRefCmp)
+
+	// We make copies of app structs on purpose, so that we can change Active field as needed.
+	existingAppMap := make(map[OrganizationApplicationRef]OrganizationApplication)
+	for _, app := range existing.Applications {
+		existingAppMap[OrganizationApplicationRef{
+			Organization: OrganizationRef{ID: *o.ID},
+			Application: OrganizationApplicationApplicationRef{
+				ID: *app.ID,
+			},
+		}] = app
+	}
+	newAppMap := make(map[OrganizationApplicationRef]OrganizationApplication)
+	for _, app := range o.Applications {
+		newAppMap[OrganizationApplicationRef{
+			Organization: OrganizationRef{ID: *o.ID},
+			Application: OrganizationApplicationApplicationRef{
+				ID: *app.ID,
+			},
+		}] = app
+	}
+
+	existingAppSet := mapset.NewThreadUnsafeSetFromMapKeys(existingAppMap)
+	newAppSet := mapset.NewThreadUnsafeSetFromMapKeys(newAppMap)
+
+	addedAppSet := newAppSet.Difference(existingAppSet)
+	removedAppSet := existingAppSet.Difference(newAppSet)
+
+	changedAppSet := mapset.NewThreadUnsafeSet[OrganizationApplicationRef]()
+	activatedAppSet := mapset.NewThreadUnsafeSet[OrganizationApplicationRef]()
+	disabledAppSet := mapset.NewThreadUnsafeSet[OrganizationApplicationRef]()
+
+	// Compare applications which are in both sets.
+	for appRef := range mapset.Elements(newAppSet.Intersect(existingAppSet)) {
+		existingApp := existingAppMap[appRef]
+		newApp := newAppMap[appRef]
+
+		if newApp.Active && !existingApp.Active {
+			activatedAppSet.Add(appRef)
+		}
+		if !newApp.Active && existingApp.Active {
+			disabledAppSet.Add(appRef)
+		}
+
+		// We make Active field the same and in this way compare the rest.
+		existingApp.Active = newApp.Active
+		if !reflect.DeepEqual(existingApp, newApp) {
+			changedAppSet.Add(appRef)
+		}
+	}
+
+	if !addedAppSet.IsEmpty() {
+		changes = append(changes, ActivityChangeMembershipAdded)
+	}
+	if !removedAppSet.IsEmpty() {
+		changes = append(changes, ActivityChangeMembershipRemoved)
+	}
+	if !changedAppSet.IsEmpty() {
+		changes = append(changes, ActivityChangeMembershipChanged)
+	}
+	if !activatedAppSet.IsEmpty() {
+		changes = append(changes, ActivityChangeMembershipActivated)
+	}
+	if !disabledAppSet.IsEmpty() {
+		changes = append(changes, ActivityChangeMembershipDisabled)
+	}
+
+	appsChanged := addedAppSet.Union(removedAppSet).Union(changedAppSet).Union(activatedAppSet).Union(disabledAppSet).ToSlice()
+	slices.SortFunc(appsChanged, organizationApplicationRefCmp)
+
+	return changes, identitiesChanged, appsChanged
+}
+
 func (s *Service) getOrganization(_ context.Context, id identifier.Identifier) (*Organization, errors.E) {
 	s.organizationsMu.RLock()
 	defer s.organizationsMu.RUnlock()
@@ -673,6 +789,12 @@ func (s *Service) createOrganization(ctx context.Context, organization *Organiza
 	defer s.organizationsMu.Unlock()
 
 	s.organizations[*organization.ID] = data
+
+	errE = s.logActivity(ctx, ActivityOrganizationCreate, nil, []OrganizationRef{{ID: *organization.ID}}, nil, nil, nil, nil)
+	if errE != nil {
+		return errE
+	}
+
 	return nil
 }
 
@@ -712,7 +834,20 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 		return errE
 	}
 
+	changes, identities, organizationApplications := organization.Changes(&existingOrganization)
+
+	if len(changes) == 0 {
+		// No changes, do not continue.
+		return nil
+	}
+
 	s.organizations[*organization.ID] = data
+
+	errE = s.logActivity(ctx, ActivityOrganizationUpdate, identities, []OrganizationRef{{ID: *organization.ID}}, nil, organizationApplications, changes, nil)
+	if errE != nil {
+		return errE
+	}
+
 	return nil
 }
 
@@ -763,14 +898,13 @@ func (s *Service) returnOrganizationRef(_ context.Context, w http.ResponseWriter
 	s.WriteJSON(w, req, OrganizationRef{ID: *organization.ID}, nil)
 }
 
-func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
+func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 	co := s.charonOrganization()
 
 	hasIdentity := false
-	identityID, _, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
+	identityID, _, _, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
 	if errE == nil {
-		ctx = s.withIdentityID(ctx, identityID)
 		hasIdentity = true
 	} else if !errors.Is(errE, ErrIdentityNotPresent) {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -861,14 +995,14 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 	hasOrganizationAccessToken := true
 
 	// We do not use RequireAuthenticated here, because we want to use a (possibly) non-Charon organization ID.
-	currentIdentityID, accountID, errE := s.getIdentityFromRequest(w, req, organizationID.String())
+	currentIdentityID, accountID, _, errE := s.getIdentityFromRequest(w, req, organizationID.String())
 	if errors.Is(errE, ErrIdentityNotPresent) {
 		// User is not authenticated for this organization.
 		// Maybe they are authenticated using Charon organization and are admin of the organization.
 
 		hasOrganizationAccessToken = false
 
-		currentIdentityID, accountID, errE = s.getIdentityFromRequest(w, req, co.AppID.String())
+		currentIdentityID, accountID, _, errE = s.getIdentityFromRequest(w, req, co.AppID.String())
 		if errors.Is(errE, ErrIdentityNotPresent) {
 			s.WithError(ctx, errE)
 			waf.Error(w, req, http.StatusUnauthorized)
@@ -1006,9 +1140,7 @@ func (s *Service) OrganizationListGet(w http.ResponseWriter, req *http.Request, 
 		result = append(result, OrganizationRef{ID: id})
 	}
 
-	slices.SortFunc(result, func(a OrganizationRef, b OrganizationRef) int {
-		return bytes.Compare(a.ID[:], b.ID[:])
-	})
+	slices.SortFunc(result, organizationRefCmp)
 
 	s.WriteJSON(w, req, result, nil)
 }
@@ -1130,9 +1262,7 @@ func (s *Service) OrganizationUsersGet(w http.ResponseWriter, req *http.Request,
 		}
 	}
 
-	slices.SortFunc(result, func(a IdentityRef, b IdentityRef) int {
-		return bytes.Compare(a.ID[:], b.ID[:])
-	})
+	slices.SortFunc(result, identityRefCmp)
 
 	s.WriteJSON(w, req, result, nil)
 }

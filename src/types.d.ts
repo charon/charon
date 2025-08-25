@@ -272,6 +272,15 @@ export type IdentityRef = {
   id: string
 }
 
+export type OrganizationApplicationApplicationRef = {
+  id: string
+}
+
+export type OrganizationApplicationRef = {
+  organization: OrganizationRef
+  application: OrganizationApplicationApplicationRef
+}
+
 export type OrganizationApplicationClientPublic = {
   id?: string
   client: ClientRef
@@ -308,7 +317,7 @@ export type OrganizationIdentity = {
   active: boolean
   identity: Identity | DeepReadonly<Identity>
   url?: string
-  applications: ApplicationTemplateRef[]
+  applications: OrganizationApplicationApplicationRef[]
   isCurrent: boolean
   canUpdate: boolean
 }
@@ -324,7 +333,7 @@ export type IdentityOrganization = {
   id?: string
   active: boolean
   organization: OrganizationRef
-  applications: ApplicationTemplateRef[]
+  applications: OrganizationApplicationApplicationRef[]
 }
 
 export type OrganizationPublic = OrganizationCreate & {
@@ -374,6 +383,47 @@ export type IdentityCreate = IdentityAttributes & {
 }
 
 export type Identities = IdentityRef[]
+
+export type ActivityType =
+  | "signIn"
+  | "signOut"
+  | "identityCreate"
+  | "identityUpdate"
+  | "organizationCreate"
+  | "organizationUpdate"
+  | "applicationTemplateCreate"
+  | "applicationTemplateUpdate"
+
+export type ActivityChangeType =
+  | "otherData"
+  | "permissionsAdded"
+  | "permissionsRemoved"
+  | "membershipAdded"
+  | "membershipRemoved"
+  | "membershipChanged"
+  | "membershipActivated"
+  | "membershipDisabled"
+
+export type Activity = {
+  id: string
+  timestamp: string
+  type: ActivityType
+  actor: IdentityRef
+  identities?: IdentityRef[]
+  organizations?: OrganizationRef[]
+  applicationTemplates?: ApplicationTemplateRef[]
+  organizationApplications?: OrganizationApplicationRef[]
+  providers?: string[]
+  changes?: ActivityChangeType[]
+  sessionId: string
+  requestId: string
+}
+
+export type ActivityRef = {
+  id: string
+}
+
+export type Activities = ActivityRef[]
 
 // It is recursive.
 export type Mutable<T> = {

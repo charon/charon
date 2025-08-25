@@ -66,11 +66,14 @@
     "entities": {
       "admins": "Administratorji",
       "users": "Uporabniki",
-      "identity": "Identiteta",
+      "identity": "Identiteta | Identiteti | Identitete | Identitet",
       "identities": "Identitete",
-      "organization": "Organizacija",
+      "organization": "Organizacija | Organizacije | Organizacije | Organizacij",
       "organizations": "Organizacije",
-      "applicationTemplates": "Predloge aplikacij"
+      "applicationTemplate": "Predloga aplikacije | Predlogi aplikacij | Predloge aplikacij | Predlog aplikacij",
+      "applicationTemplates": "Predloge aplikacij",
+      "activity": "Aktivnost",
+      "app": "Aplikacija | Aplikaciji | Aplikacije | Aplikacij"
     },
     "messages": {
       "congratulations": "Čestitamo.",
@@ -82,6 +85,11 @@
     },
     "accessibility": {
       "picture": "slika"
+    },
+    "providers": {
+      "code": "koda",
+      "password": "geslo",
+      "passkey": "passkey"
     }
   },
   "partials": {
@@ -132,7 +140,7 @@
     "AuthPasskeySignin": {
       "signingIn": "Prijavljamo vas z uporabo {strongPasskey}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave.",
       "signupInfo": "Če se še niste registrirali s passkey, bo to neuspešno. V tem primeru vam bo Charon ponudil registracijo.",
-      "passkey": "@:partials.AuthPasskeySignup.passkey"
+      "passkey": "@:common.providers.passkey"
     },
     "AuthPasskeySignup": {
       "instructions": "Prijava z uporabo {strongPasskey} ni uspela. Se želite registrirati namesto tega?",
@@ -141,7 +149,7 @@
       "retrySigninButton": "Poskusi prijavo znova",
       "passkeySignupButton": "Registracija s passkey",
       "retrySignupButton": "Poskusi registracijo znova",
-      "passkey": "passkey"
+      "passkey": "@:common.providers.passkey"
     },
     "AuthPassword": {
       "emailAddressLabel": "Vaš e-naslov",
@@ -171,6 +179,32 @@
       "status": "Status:",
       "apps": "Aplikacije:",
       "noApps": "brez"
+    },
+    "ActivityListItem": {
+      "signin": "Prijava",
+      "signout": "Odjava",
+      "identityCreate": "Ustvarjena identiteta",
+      "identityUpdate": "Posodobljena identiteta",
+      "organizationCreate": "Ustvarjena organizacija",
+      "organizationUpdate": "Posodobljena organizacija",
+      "applicationTemplateCreate": "Ustvarjena predloga aplikacije",
+      "applicationTemplateUpdate": "Posodobljena predloga aplikacije",
+      "changes": {
+        "otherData": "spremenjeni ostali podatki",
+        "permissionsAdded": "dodana dovoljenja",
+        "permissionsRemoved": "odstranjena dovoljenja",
+        "applicationsAdded": "dodane aplikacije",
+        "applicationsRemoved": "odstranjene aplikacije",
+        "applicationsChanged": "spremenjene aplikacije",
+        "applicationsActivated": "aktivirane aplikacije",
+        "applicationsDisabled": "onemogočene aplikacije",
+        "organizationsAdded": "dodane organizacije",
+        "organizationsRemoved": "odstranjene organizacije",
+        "organizationsChanged": "spremenjene organizacije",
+        "organizationsActivated": "aktivirane organizacije",
+        "organizationsDisabled": "onemogočene organizacije"
+      },
+      "entityLinks": "{entity}: {links}"
     }
   },
   "views": {
@@ -256,6 +290,9 @@
     "OrganizationUsers": {
       "usersForOrganization": "Uporabniki za organizacijo",
       "noUsers": "Ni uporabnikov."
+    },
+    "ActivityList": {
+      "noActivities": "Ni aktivnosti."
     }
   }
 }

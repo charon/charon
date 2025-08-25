@@ -369,7 +369,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
         </div>
         <div v-else-if="usedIdentities.length === 0" class="italic mb-4">{{ t("partials.AuthIdentity.previouslyUsedDisabled") }}</div>
         <ul v-else>
-          <li v-for="(identity, i) of usedIdentities" :key="identity.identity.id" class="mb-4">
+          <li v-for="(identity, i) in usedIdentities" :key="identity.identity.id" class="mb-4">
             <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate">
               <div class="flex flex-col items-start">
                 <Button :id="i === 0 ? 'first-identity' : null" primary type="button" tabindex="1" :progress="progress" @click.prevent="onSelect(identity.identity.id)">{{
@@ -382,7 +382,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
         <template v-if="addedIdentities.length">
           <h3 class="text-l font-bold mb-4">{{ t("partials.AuthIdentity.identitiesUsedWithOrg") }}</h3>
           <ul>
-            <li v-for="(identity, i) of addedIdentities" :key="identity.identity.id" class="mb-4">
+            <li v-for="(identity, i) in addedIdentities" :key="identity.identity.id" class="mb-4">
               <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate">
                 <div class="flex flex-col items-start">
                   <Button
@@ -405,7 +405,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
         </div>
         <div v-else-if="otherIdentities.length === 0" class="italic mb-4">{{ t("partials.AuthIdentity.noOtherIdentitiesCreateOne") }}</div>
         <ul v-else>
-          <li v-for="(identity, i) of otherIdentities" :key="identity.identity.id" class="mb-4">
+          <li v-for="(identity, i) in otherIdentities" :key="identity.identity.id" class="mb-4">
             <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate">
               <div class="flex flex-col items-start">
                 <Button
@@ -424,7 +424,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
         <template v-if="disabledIdentities.length">
           <h3 class="text-l font-bold mb-4">{{ t("partials.AuthIdentity.disabledIdentities") }}</h3>
           <ul>
-            <li v-for="identity of disabledIdentities" :key="identity.identity.id" class="mb-4">
+            <li v-for="identity in disabledIdentities" :key="identity.identity.id" class="mb-4">
               <IdentityPublic
                 :identity="identity.identity"
                 :url="identity.url"

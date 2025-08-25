@@ -81,7 +81,10 @@ declare module "vue-i18n" {
         identities: string
         organization: string
         organizations: string
+        applicationTemplate: string
         applicationTemplates: string
+        activity: string
+        app: string
       }
       messages: {
         congratulations: string
@@ -93,6 +96,11 @@ declare module "vue-i18n" {
       }
       accessibility: {
         picture: string
+      }
+      providers: {
+        code: string
+        password: string
+        passkey: string
       }
     }
     partials: {
@@ -183,6 +191,32 @@ declare module "vue-i18n" {
         apps: string
         noApps: string
       }
+      ActivityListItem: {
+        signin: string
+        signout: string
+        identityCreate: string
+        identityUpdate: string
+        organizationCreate: string
+        organizationUpdate: string
+        applicationTemplateCreate: string
+        applicationTemplateUpdate: string
+        changes: {
+          otherData: string
+          permissionsAdded: string
+          permissionsRemoved: string
+          applicationsAdded: string
+          applicationsRemoved: string
+          applicationsChanged: string
+          applicationsActivated: string
+          applicationsDisabled: string
+          organizationsAdded: string
+          organizationsRemoved: string
+          organizationsChanged: string
+          organizationsActivated: string
+          organizationsDisabled: string
+        }
+        entityLinks: string
+      }
     }
     views: {
       ApplicationTemplateCreate: {
@@ -267,6 +301,9 @@ declare module "vue-i18n" {
       OrganizationUsers: {
         usersForOrganization: string
         noUsers: string
+      }
+      ActivityList: {
+        noActivities: string
       }
     }
   }

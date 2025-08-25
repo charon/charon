@@ -20,6 +20,7 @@ var (
 	ErrIdentityAlreadyExists = errors.Base("identity already exists")
 	// TODO: Should we remove ErrIdentityUnauthorized and just use ErrIdentityNotFound?
 	ErrIdentityUnauthorized     = errors.Base("identity access unauthorized")
+	ErrIdentityUpdateNotAllowed = errors.Base("identity update not allowed")
 	ErrIdentityValidationFailed = errors.Base("identity validation failed")
 
 	errEmptyIdentity = errors.Base("empty identity")
@@ -31,8 +32,8 @@ type IdentityOrganization struct {
 
 	Active bool `json:"active"`
 
-	Organization OrganizationRef          `json:"organization"`
-	Applications []ApplicationTemplateRef `json:"applications"`
+	Organization OrganizationRef                         `json:"organization"`
+	Applications []OrganizationApplicationApplicationRef `json:"applications"`
 }
 
 func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityOrganization, service *Service, identity *Identity) errors.E {
@@ -97,13 +98,13 @@ func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityO
 	// We remove duplicates.
 	i.Applications = removeDuplicates(i.Applications)
 
-	existingApplications := mapset.NewThreadUnsafeSet[ApplicationTemplateRef]()
+	existingApplications := mapset.NewThreadUnsafeSet[OrganizationApplicationApplicationRef]()
 	if existing != nil {
 		existingApplications.Append(existing.Applications...)
 	}
 
 	// We validate only added applications so that we do not error out on disabled or removed applications.
-	unknown := mapset.NewThreadUnsafeSet[ApplicationTemplateRef]()
+	unknown := mapset.NewThreadUnsafeSet[OrganizationApplicationApplicationRef]()
 	for newApplication := range mapset.Elements(mapset.NewThreadUnsafeSet(i.Applications...).Difference(existingApplications)) {
 		if application := organization.GetApplication(&newApplication.ID); application == nil || !application.Active {
 			unknown.Add(newApplication)
@@ -112,9 +113,7 @@ func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityO
 	if !unknown.IsEmpty() {
 		errE := errors.New("unknown applications")
 		applications := unknown.ToSlice()
-		slices.SortFunc(applications, func(a ApplicationTemplateRef, b ApplicationTemplateRef) int {
-			return bytes.Compare(a.ID[:], b.ID[:])
-		})
+		slices.SortFunc(applications, organizationApplicationApplicationRefCmp)
 		errors.Details(errE)["applications"] = applications
 	}
 
@@ -286,6 +285,10 @@ type IdentityRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
+func identityRefCmp(a IdentityRef, b IdentityRef) int {
+	return bytes.Compare(a.ID[:], b.ID[:])
+}
+
 // Validate uses ctx with identityIDContextKey if set.
 // When not set, changes to admins are not allowed.
 func (i *Identity) Validate(ctx context.Context, existing *Identity, service *Service) errors.E {
@@ -346,9 +349,7 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity, service *Se
 	if !unknown.IsEmpty() {
 		errE := errors.New("unknown identities")
 		identities := unknown.ToSlice()
-		slices.SortFunc(identities, func(a IdentityRef, b IdentityRef) int {
-			return bytes.Compare(a.ID[:], b.ID[:])
-		})
+		slices.SortFunc(identities, identityRefCmp)
 		errors.Details(errE)["identities"] = identities
 	}
 
@@ -390,6 +391,137 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity, service *Se
 	}
 
 	return nil
+}
+
+// Changes compares the current Identity with an existing one and returns the types of changes
+// that occurred, user and admin identities that were added or removed, organizations
+// that were added, removed or changed and applications that were added or removed.
+func (i *Identity) Changes(existing *Identity) ([]ActivityChangeType, []IdentityRef, []OrganizationRef, []OrganizationApplicationRef) {
+	changes := []ActivityChangeType{}
+
+	if !reflect.DeepEqual(i.IdentityPublic, existing.IdentityPublic) || i.Description != existing.Description {
+		changes = append(changes, ActivityChangeOtherData)
+	}
+
+	usersAdded, usersRemoved := detectSliceChanges(existing.Users, i.Users)
+	adminsAdded, adminsRemoved := detectSliceChanges(existing.Admins, i.Admins)
+
+	if !usersAdded.IsEmpty() || !adminsAdded.IsEmpty() {
+		changes = append(changes, ActivityChangePermissionsAdded)
+	}
+	if !usersRemoved.IsEmpty() || !adminsRemoved.IsEmpty() {
+		changes = append(changes, ActivityChangePermissionsRemoved)
+	}
+
+	identitiesChanged := usersAdded.Union(usersRemoved).Union(adminsAdded).Union(adminsRemoved).ToSlice()
+	slices.SortFunc(identitiesChanged, identityRefCmp)
+
+	// We make copies of organization structs on purpose, so that we can change Active field as needed.
+	existingOrganizationMap := make(map[OrganizationRef]IdentityOrganization)
+	for _, idOrg := range existing.Organizations {
+		existingOrganizationMap[idOrg.Organization] = idOrg
+	}
+	newOrganizationMap := make(map[OrganizationRef]IdentityOrganization)
+	for _, idOrg := range i.Organizations {
+		newOrganizationMap[idOrg.Organization] = idOrg
+	}
+
+	existingOrganizationSet := mapset.NewThreadUnsafeSetFromMapKeys(existingOrganizationMap)
+	newOrganizationSet := mapset.NewThreadUnsafeSetFromMapKeys(newOrganizationMap)
+
+	addedOrganizationSet := newOrganizationSet.Difference(existingOrganizationSet)
+	removedOrganizationSet := existingOrganizationSet.Difference(newOrganizationSet)
+
+	addedAppSet := mapset.NewThreadUnsafeSet[OrganizationApplicationRef]()
+	removedAppSet := mapset.NewThreadUnsafeSet[OrganizationApplicationRef]()
+
+	for orgRef := range mapset.Elements(addedOrganizationSet) {
+		for _, app := range newOrganizationMap[orgRef].Applications {
+			addedAppSet.Add(OrganizationApplicationRef{
+				Organization: orgRef,
+				Application:  app,
+			})
+		}
+	}
+
+	for orgRef := range mapset.Elements(removedOrganizationSet) {
+		for _, app := range existingOrganizationMap[orgRef].Applications {
+			removedAppSet.Add(OrganizationApplicationRef{
+				Organization: orgRef,
+				Application:  app,
+			})
+		}
+	}
+
+	changedOrganizationSet := mapset.NewThreadUnsafeSet[OrganizationRef]()
+	activatedOrganizationSet := mapset.NewThreadUnsafeSet[OrganizationRef]()
+	disabledOrganizationSet := mapset.NewThreadUnsafeSet[OrganizationRef]()
+
+	// Compare organizations which are in both sets.
+	for orgRef := range mapset.Elements(newOrganizationSet.Intersect(existingOrganizationSet)) {
+		existingOrg := existingOrganizationMap[orgRef]
+		newOrg := newOrganizationMap[orgRef]
+
+		if newOrg.Active && !existingOrg.Active {
+			activatedOrganizationSet.Add(orgRef)
+		}
+		if !newOrg.Active && existingOrg.Active {
+			disabledOrganizationSet.Add(orgRef)
+		}
+
+		appsAdded, appsRemoved := detectSliceChanges(existingOrg.Applications, newOrg.Applications)
+		for app := range mapset.Elements(appsAdded) {
+			addedAppSet.Add(OrganizationApplicationRef{
+				Organization: orgRef,
+				Application:  app,
+			})
+		}
+		for app := range mapset.Elements(appsRemoved) {
+			removedAppSet.Add(OrganizationApplicationRef{
+				Organization: orgRef,
+				Application:  app,
+			})
+		}
+
+		// We make Active and Applications fields the same and in this way compare the rest.
+		existingOrg.Active = newOrg.Active
+		existingOrg.Applications = newOrg.Applications
+		if !reflect.DeepEqual(existingOrg, newOrg) {
+			changedOrganizationSet.Add(orgRef)
+		}
+	}
+
+	if !addedOrganizationSet.IsEmpty() || !addedAppSet.IsEmpty() {
+		changes = append(changes, ActivityChangeMembershipAdded)
+	}
+	if !removedOrganizationSet.IsEmpty() || !removedAppSet.IsEmpty() {
+		changes = append(changes, ActivityChangeMembershipRemoved)
+	}
+	if !changedOrganizationSet.IsEmpty() {
+		changes = append(changes, ActivityChangeMembershipChanged)
+	}
+	if !activatedOrganizationSet.IsEmpty() {
+		changes = append(changes, ActivityChangeMembershipActivated)
+	}
+	if !disabledOrganizationSet.IsEmpty() {
+		changes = append(changes, ActivityChangeMembershipDisabled)
+	}
+
+	organizationsChanged := addedOrganizationSet.Union(
+		removedOrganizationSet,
+	).Union(
+		changedOrganizationSet,
+	).Union(
+		activatedOrganizationSet,
+	).Union(
+		disabledOrganizationSet,
+	).ToSlice()
+	slices.SortFunc(organizationsChanged, organizationRefCmp)
+
+	applicationsChanged := addedAppSet.Union(removedAppSet).ToSlice()
+	slices.SortFunc(applicationsChanged, organizationApplicationRefCmp)
+
+	return changes, identitiesChanged, organizationsChanged, applicationsChanged
 }
 
 // getIdentitiesForAccount returns all identities the account has access to.
@@ -471,8 +603,6 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 	s.identitiesAccessMu.Lock()
 	defer s.identitiesAccessMu.Unlock()
 
-	s.identities[*identity.ID] = data
-
 	i := IdentityRef{ID: *identity.ID}
 
 	if _, ok := getIdentityID(ctx); !ok {
@@ -481,7 +611,17 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 		// between the identity and the account, bootstrapping correct propagation of which accounts have
 		// access based on identities.
 		s.identityCreators[i] = accountID
+
+		// We also here current identity ID in the context, which is used by logActivity.
+		ctx = s.withIdentityID(ctx, *identity.ID)
 	}
+
+	errE = s.logActivity(ctx, ActivityIdentityCreate, []IdentityRef{{ID: *identity.ID}}, nil, nil, nil, nil, nil)
+	if errE != nil {
+		return errE
+	}
+
+	s.identities[*identity.ID] = data
 
 	identities := mapset.NewThreadUnsafeSet(identity.Users...)
 	identities.Append(identity.Admins...)
@@ -599,6 +739,38 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 		errors.Details(errE)["id"] = *identity.ID
 		return errE
 	}
+
+	if _, ok := getIdentityID(ctx); !ok {
+		// When identity is updated using only an account ID without identity ID in the context, we allow updating only if
+		// only the identity itself has admin access to the identity. This is really meant for cases where user creates
+		// an identity during an authentication flow and then notices a mistake and wants to update it.
+		// It does not matter if we check existingIdentity.Admins or identity.Admins because when identity ID is
+		// not in the context, Validate method prevents changes to admins.
+		if len(existingIdentity.Admins) != 1 || existingIdentity.Admins[0].ID != *identity.ID {
+			return errors.WithDetails(ErrIdentityUpdateNotAllowed, "id", *identity.ID)
+		}
+
+		// We set here current identity ID in the context, which is used by logActivity.
+		ctx = s.withIdentityID(ctx, *identity.ID)
+	}
+
+	changes, identities, organizations, applications := identity.Changes(&existingIdentity)
+
+	if len(changes) == 0 {
+		// No changes, do not continue.
+		return nil
+	}
+
+	// We make sure identity reference i is always the first element in identities. This might leave identities
+	// with the duplicate identity i, but that is better than removing duplicates because it is deterministic
+	// and the frontend can always then take the first element to be the identity that was updated.
+	identities = append([]IdentityRef{i}, identities...)
+
+	errE = s.logActivity(ctx, ActivityIdentityUpdate, identities, organizations, nil, applications, changes, nil)
+	if errE != nil {
+		return errE
+	}
+
 	s.identities[*identity.ID] = data
 
 	identitiesBefore := mapset.NewThreadUnsafeSet(existingIdentity.Users...)
@@ -778,7 +950,7 @@ func (s *Service) selectAndActivateIdentity(ctx context.Context, identityID, org
 		return nil, errE
 	}
 
-	applicationRef := ApplicationTemplateRef{ID: applicationID}
+	applicationRef := OrganizationApplicationApplicationRef{ID: applicationID}
 
 	idOrg := identity.GetOrganization(&organizationID)
 	if idOrg != nil {
@@ -804,7 +976,7 @@ func (s *Service) selectAndActivateIdentity(ctx context.Context, identityID, org
 		Organization: OrganizationRef{
 			ID: organizationID,
 		},
-		Applications: []ApplicationTemplateRef{applicationRef},
+		Applications: []OrganizationApplicationApplicationRef{applicationRef},
 	})
 
 	return identity, s.updateIdentity(ctx, identity)
@@ -949,9 +1121,7 @@ func (s *Service) identityList(ctx context.Context) ([]IdentityRef, errors.E) {
 		result = append(result, i)
 	}
 
-	slices.SortFunc(result, func(a IdentityRef, b IdentityRef) int {
-		return bytes.Compare(a.ID[:], b.ID[:])
-	})
+	slices.SortFunc(result, identityRefCmp)
 
 	return result, nil
 }

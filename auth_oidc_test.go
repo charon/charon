@@ -231,8 +231,22 @@ func TestAuthFlowOIDC(t *testing.T) {
 	// Signup with OIDC.
 	accessToken := oidcSignin(t, ts, service, oidcTS, charon.CompletedSignup)
 
+	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
+		{charon.ActivitySignIn, nil, []charon.Provider{"testing"}, 0, 1, 0, 1},
+		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
+		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
+	})
+
 	signoutUser(t, ts, service, accessToken)
 
 	// Signin with OIDC.
-	oidcSignin(t, ts, service, oidcTS, charon.CompletedSignin)
+	accessToken = oidcSignin(t, ts, service, oidcTS, charon.CompletedSignin)
+
+	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
+		{charon.ActivitySignIn, nil, []charon.Provider{"testing"}, 0, 1, 0, 1}, // Signin.
+		{charon.ActivitySignOut, nil, nil, 0, 0, 0, 0},                         // Signout.
+		{charon.ActivitySignIn, nil, []charon.Provider{"testing"}, 0, 1, 0, 1},
+		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
+		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
+	})
 }
