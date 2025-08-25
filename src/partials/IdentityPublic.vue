@@ -21,6 +21,10 @@ defineProps<{
       <img :src="identity.pictureUrl" :alt="t('common.accessibility.picture')" class="h-20 w-20 ring-2 ring-white rounded" />
     </div>
     <div class="flex-grow flex flex-col">
+      <!--
+        This should be similar in what is show as main piece of information in getIdentityDisplayName utility function.
+        Keep it in sync with to IdentityFull component, too.
+      -->
       <h2 v-if="identity.username" class="text-xl">
         <ul v-if="canUpdate || isCurrent || labels?.length" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm float-right">
           <li v-for="label in labels || []" :key="label" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{ label }}</li>

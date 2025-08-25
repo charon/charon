@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import type { Activity, ActivityRef, Identity, Organization, ApplicationTemplate, OrganizationApplicationPublic, IdentityRef } from "@/types"
-import type { DeepReadonly, FunctionalComponent } from "vue"
+import type { FunctionalComponent } from "vue"
 
 import { useI18n } from "vue-i18n"
 import { LockClosedIcon, LockOpenIcon, IdentificationIcon, UserGroupIcon, CalculatorIcon } from "@heroicons/vue/24/outline"
 import { IdentificationIcon as IdentificationSolidIcon, UserGroupIcon as UserGroupSolidIcon, CalculatorIcon as CalculatorSolidIcon } from "@heroicons/vue/24/solid"
 import WithDocument from "@/components/WithDocument.vue"
 import { getProviderName } from "@/flow"
-import { getHomepage, getFormattedTimestamp } from "@/utils"
+import { getHomepage, getFormattedTimestamp, getIdentityDisplayName } from "@/utils"
 
 const { t } = useI18n({ useScope: "global" })
 
@@ -59,10 +59,6 @@ function getActivityDescription(activityType: string): string {
     default:
       throw new Error(`unknown activity type: ${activityType}`)
   }
-}
-
-function getIdentityDisplayName(identity: Identity | DeepReadonly<Identity>): string {
-  return identity.username || identity.email || identity.givenName || identity.fullName || identity.id
 }
 
 function getChangeDescription(changeType: string, activityType: string, organizationsCount: number, organizationApplicationsCount: number): string[] {
