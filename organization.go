@@ -898,7 +898,7 @@ func (s *Service) returnOrganizationRef(_ context.Context, w http.ResponseWriter
 	s.WriteJSON(w, req, OrganizationRef{ID: *organization.ID}, nil)
 }
 
-func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
+func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 	co := s.charonOrganization()
 

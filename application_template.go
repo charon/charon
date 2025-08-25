@@ -925,7 +925,7 @@ func (s *Service) returnApplicationTemplateRef(_ context.Context, w http.Respons
 	s.WriteJSON(w, req, ApplicationTemplateRef{ID: *applicationTemplate.ID}, nil)
 }
 
-func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
+func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 	co := s.charonOrganization()
 
