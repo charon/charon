@@ -196,3 +196,8 @@ export function getOrganization(identity: Identity, id: string | undefined): Ide
 
   return null
 }
+
+export function getFormattedTimestamp(timestamp: string): string {
+  const date = new Date(timestamp)
+  return date.toLocaleString()
+}

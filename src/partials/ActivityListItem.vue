@@ -7,7 +7,7 @@ import { LockClosedIcon, LockOpenIcon, IdentificationIcon, UserGroupIcon, Calcul
 import { IdentificationIcon as IdentificationSolidIcon, UserGroupIcon as UserGroupSolidIcon, CalculatorIcon as CalculatorSolidIcon } from "@heroicons/vue/24/solid"
 import WithDocument from "@/components/WithDocument.vue"
 import { getProviderName } from "@/flow"
-import { getHomepage } from "@/utils"
+import { getHomepage, getFormattedTimestamp } from "@/utils"
 
 const { t } = useI18n({ useScope: "global" })
 
@@ -59,11 +59,6 @@ function getActivityDescription(activityType: string): string {
     default:
       throw new Error(`unknown activity type: ${activityType}`)
   }
-}
-
-function getFormattedTimestamp(timestamp: string): string {
-  const date = new Date(timestamp)
-  return date.toLocaleString()
 }
 
 function getIdentityDisplayName(identity: Identity | DeepReadonly<Identity>): string {
