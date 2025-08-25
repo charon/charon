@@ -903,10 +903,8 @@ func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, p
 	co := s.charonOrganization()
 
 	hasIdentity := false
-	identityID, _, sessionID, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
+	identityID, _, _, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
 	if errE == nil {
-		ctx = s.withIdentityID(ctx, identityID)
-		ctx = s.withSessionID(ctx, sessionID)
 		hasIdentity = true
 	} else if !errors.Is(errE, ErrIdentityNotPresent) {
 		s.InternalServerErrorWithError(w, req, errE)

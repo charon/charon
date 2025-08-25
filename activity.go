@@ -222,7 +222,6 @@ func (s *Service) logActivity(
 	return s.createActivity(ctx, activity)
 }
 
-// Activity view handlers.
 func (s *Service) ActivityList(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
@@ -231,7 +230,6 @@ func (s *Service) ActivityList(w http.ResponseWriter, req *http.Request, _ waf.P
 	}
 }
 
-// API handlers.
 func (s *Service) ActivityListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	ctx := s.RequireAuthenticated(w, req)
 	if ctx == nil {
