@@ -311,7 +311,7 @@ variables:
     protected: true
     raw: true
     # sops:enc
-    value: ENC[AES256_GCM,data:KURN0LOQk9VjPHxSpoeuCpxjVn/JYbdw0AQ=,iv:z9VbUQksO/lfjqXxbLg77imO8olpJtn9nKO8SwY9tGc=,tag:T762FbTOS57iMyGy2N/AsA==,type:str]
+    value: ENC[AES256_GCM,data:FdUMTjtXVtR6UcZXv3OsflLEV/GlXadXAzo=,iv:4I8wUQ+MoP5AxesT5ssAPvDqhnCjCwyHmpgyyZB1uWg=,tag:cP10MTdbE3p3au00qJKttw==,type:str]
     variable_type: env_var
   - description: null
     environment_scope: '*'
@@ -320,8 +320,17 @@ variables:
     protected: true
     raw: true
     # sops:enc
-    value: ENC[AES256_GCM,data:+7dD9cELTe3J2ESqFHOGoCGfG5JridEmtDs5FJ/KgmIt42pNoZcUbeU+UgNFOEtqxBfuIAk6vnxMIjRNaRaork61KB14fzuy3C0UzxfK77bZAsjelCrg0fFpqYUZ+iRgDGhKjD1Vl7QOBHkVu9U6nfgfe0Ws+J0UQ4LCkL0C9syqYtMUTI7filWAfXhBy9Du1QPrzXr46vMZu8NT9J7xKOgojJLYdP21oBbwKLVU60q3nuV0tM+fBrNLShQ=,iv:oKopcIimXi30lXDiNA0k4+otVyizYaYL55eaoswzKSg=,tag:tKUggti+j/RU+SGx9bDM9w==,type:str]
+    value: ENC[AES256_GCM,data:qCakXn/Pa0OWZiOQTx7H4PPwSnvDzyj8kO2IkLlM+KHeYRqBoLzR5ZOeCR7yoCX2QWbaVpLaStfS2Ht2D2VE07lIdNStaKMnEfMIQhmDbBI72/EoCMOtOyJdmZBZnkrTFzFYGLvF78hcBJ9TVByPC5/1A8d4IaaD5r79F0nE/XWeJ3f0K8LuoVyRoozXnP8AohuC18W4swljb7DPaCUkGcH4SQIVntjah2btopZSDyutJO+HYFV6n4cGhpA=,iv:MyikApT6mqKTPjhEouanuisfcn+yxZVYyao6L6mPhcA=,tag:LoRTYkeo8CcHYvJOBqv3Ug==,type:str]
     variable_type: file
+  - description: null
+    environment_scope: '*'
+    key: CHROMATIC_PROJECT_TOKEN
+    masked: true
+    protected: true
+    raw: true
+    # sops:enc
+    value: ENC[AES256_GCM,data:aFkg/zU1vLo4RvVShOdn7DQLt60=,iv:M3Tm65TY/7TTetYzQj7Q9IAtMvpzhco7eqkmU84zH3k=,tag:wKeeoaQ3Ya2G3YFjkxqe3A==,type:str]
+    variable_type: env_var
 # active: The activation of pipeline schedule. If false is set, the pipeline
 # schedule is initially deactivated. Type: boolean
 # cron: The cron schedule, for example: 0 1 * * *. Type: string
@@ -343,14 +352,14 @@ sops:
     - recipient: age1llyzf24usmx40ck9dxphq5kq3kzkdls3kuzdscrtgq30nm45pceqk6nxd3
       enc: |
         -----BEGIN AGE ENCRYPTED FILE-----
-        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBqYUxuR0VJdlc0cjZ2MmlI
-        SXR3WWdmRXJjVHQrSThEUTA1V0lNRGZPVWdjCnJYRjBwV0NpUFBaRzRkT3FRWXZq
-        Vk5MenoyZjVrV2pxZVc2S3ZaRzB2SkkKLS0tIHN5QndrK1dXYmNFTGpyL2NJZUJx
-        Q0tHWkl3NTF0b0dvTmMvZFZzbTlETVkKPrNSsE4LgEfrdEH8tbK5PUBIUJY45HNP
-        Iqn9N6hkhJMJs4zYzLONwNhhjQ7+cC7jpeF3+zhiG7FZ9GRsOr3zpA==
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBYMGgyaXlBdFZpT1h1TFNl
+        OXpwL1ltMDFLc1hLakMyUHBBMy9GQzVnUVdnCmJUQlNNN2RRU1dpNk9ORG5FbkRw
+        clE0THNmRUp4S2xvQTl0YTUzeEh1b0EKLS0tIHB5UEtCbE54aU9BN2xJeHpkeTRT
+        eS96Tk1ramlaNlE1Rnk4TGw1Qnd5OWcK8mPx8QacP07jdhk2DUUfF4hvhNOGgKUN
+        6rjypdqd2QtemllB4rZmE+mvrLnsSiwdrALrA/9Aq84F3FC0OeyEpQ==
         -----END AGE ENCRYPTED FILE-----
-  lastmodified: "2024-12-08T10:25:48Z"
-  mac: ENC[AES256_GCM,data:6BtxKx5GXSp8NG+ScBYXmpxIvwBujqODs6nAUlXeQaEoQ4h58urTPb+8ONAFWfqHH+cW7Cfg30L9XJD18QlDHSy91O6alnWZ++DmYkwHc004k/kcfyp39eDuGIpvgHdr/RgwvZ/fHvE5e9/j73sFJAX5/qGfpsSw4+g4h69fP1g=,iv:B4nu7AvW/fWXZ9BR0qTluuY4hyljHeNe1//s+jYN/4A=,tag:NFuMnTXyKNO+7TLErW3WQA==,type:str]
+  lastmodified: "2025-08-25T22:22:12Z"
+  mac: ENC[AES256_GCM,data:FMsmWgBteZ1QVGZCDBxuW32hR9dwDjqYdq0PHDEjuKR5uqQ74g3+vvB+xji2S2khZsd2ch/D4yJYkFkUKULXFXT/KMmAlWibuKkSstF3hPNOkYZAvzhrIQZARdHCVY2YWI+8bISfUFaFLr4XF7f4una8l8J+1xcQtyK4mFf4XYA=,iv:KF4zDj9yHvEXySycCOPnAJqBOToOBHWUOkidQRxOC1I=,tag:UTbpXWwhiwVV/Eu4CvJzJg==,type:str]
   pgp: []
   encrypted_comment_regex: sops:enc
   mac_only_encrypted: true
