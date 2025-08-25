@@ -297,7 +297,8 @@ func (s *Service) ActivityGetGet(w http.ResponseWriter, req *http.Request, param
 
 	// Only allow users to see their own activities.
 	if activity.Actor.ID != currentIdentityID {
-		s.NotFound(w, req)
+		// TODO: Should we change to NotFound here?
+		waf.Error(w, req, http.StatusUnauthorized)
 		return
 	}
 
