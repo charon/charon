@@ -398,7 +398,6 @@ export type ActivityChangeType =
   | "otherData"
   | "permissionsAdded"
   | "permissionsRemoved"
-  | "permissionsChanged"
   | "membershipAdded"
   | "membershipRemoved"
   | "membershipChanged"

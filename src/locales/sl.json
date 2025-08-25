@@ -190,15 +190,19 @@
       "applicationTemplateCreate": "Ustvarjena predloga aplikacije",
       "applicationTemplateUpdate": "Posodobljena predloga aplikacije",
       "changes": {
-        "otherData": "ostali podatki",
+        "otherData": "spremenjeni ostali podatki",
         "permissionsAdded": "dodana dovoljenja",
         "permissionsRemoved": "odstranjena dovoljenja",
-        "permissionsChanged": "spremenjena dovoljenja",
-        "membershipAdded": "dodano članstvo",
-        "membershipRemoved": "odstranjeno članstvo",
-        "membershipChanged": "spremenjeno članstvo",
-        "membershipActivated": "aktivirano članstvo",
-        "membershipDisabled": "onemogočeno članstvo"
+        "applicationsAdded": "dodane aplikacije",
+        "applicationsRemoved": "odstranjene aplikacije",
+        "applicationsChanged": "spremenjene aplikacije",
+        "applicationsActivated": "aktivirane aplikacije",
+        "applicationsDisabled": "onemogočene aplikacije",
+        "organizationsAdded": "dodane organizacije",
+        "organizationsRemoved": "odstranjene organizacije",
+        "organizationsChanged": "spremenjene organizacije",
+        "organizationsActivated": "aktivirane organizacije",
+        "organizationsDisabled": "onemogočene organizacije"
       },
       "entityLinks": "{entity}: {links}"
     }

@@ -44,8 +44,6 @@ const (
 	ActivityChangePermissionsAdded ActivityChangeType = "permissionsAdded"
 	// ActivityChangePermissionsRemoved represents removing permissions/access rights.
 	ActivityChangePermissionsRemoved ActivityChangeType = "permissionsRemoved"
-	// ActivityChangePermissionsChanged represents modifying existing permissions/access rights.
-	ActivityChangePermissionsChanged ActivityChangeType = "permissionsChanged"
 	// ActivityChangeMembershipAdded represents joining an organization or adding an application.
 	ActivityChangeMembershipAdded ActivityChangeType = "membershipAdded"
 	// ActivityChangeMembershipRemoved represents leaving an organization or removing an application.

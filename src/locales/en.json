@@ -190,15 +190,19 @@
       "applicationTemplateCreate": "Created application template",
       "applicationTemplateUpdate": "Updated application template",
       "changes": {
-        "otherData": "other data",
-        "permissionsAdded": "permissions added",
-        "permissionsRemoved": "permissions removed",
-        "permissionsChanged": "permissions changed",
-        "membershipAdded": "membership added",
-        "membershipRemoved": "membership removed",
-        "membershipChanged": "membership changed",
-        "membershipActivated": "membership activated",
-        "membershipDisabled": "membership disabled"
+        "otherData": "changed other data",
+        "permissionsAdded": "added permissions",
+        "permissionsRemoved": "removed permissions",
+        "applicationsAdded": "added applications",
+        "applicationsRemoved": "removed applications",
+        "applicationsChanged": "changed applications",
+        "applicationsActivated": "activated applications",
+        "applicationsDisabled": "disabled applications",
+        "organizationsAdded": "added organizations",
+        "organizationsRemoved": "removed organizations",
+        "organizationsChanged": "changed organizations",
+        "organizationsActivated": "activated organizations",
+        "organizationsDisabled": "disabled organizations"
       },
       "entityLinks": "{entity}: {links}"
     }

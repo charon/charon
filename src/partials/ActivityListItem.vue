@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Activity, ActivityRef, Identity, Organization, ApplicationTemplate, OrganizationApplicationPublic } from "@/types"
+import type { Activity, ActivityRef, Identity, Organization, ApplicationTemplate, OrganizationApplicationPublic, IdentityRef } from "@/types"
 import type { DeepReadonly, FunctionalComponent } from "vue"
 
 import { useI18n } from "vue-i18n"
@@ -70,29 +70,85 @@ function getIdentityDisplayName(identity: Identity | DeepReadonly<Identity>): st
   return identity.username || identity.email || identity.givenName || identity.fullName || identity.id
 }
 
-function getChangeDescription(changeType: string): string {
+function getChangeDescription(changeType: string, activityType: string, organizationsCount: number, organizationApplicationsCount: number): string[] {
   switch (changeType) {
     case "otherData":
-      return t("partials.ActivityListItem.changes.otherData")
+      return [t("partials.ActivityListItem.changes.otherData")]
     case "permissionsAdded":
-      return t("partials.ActivityListItem.changes.permissionsAdded")
+      return [t("partials.ActivityListItem.changes.permissionsAdded")]
     case "permissionsRemoved":
-      return t("partials.ActivityListItem.changes.permissionsRemoved")
-    case "permissionsChanged":
-      return t("partials.ActivityListItem.changes.permissionsChanged")
+      return [t("partials.ActivityListItem.changes.permissionsRemoved")]
     case "membershipAdded":
-      return t("partials.ActivityListItem.changes.membershipAdded")
+      if (activityType === "organizationUpdate") {
+        return [t("partials.ActivityListItem.changes.applicationsAdded")]
+      }
+      if (activityType === "identityUpdate") {
+        const changes: string[] = []
+        if (organizationsCount > 0) {
+          changes.push(t("partials.ActivityListItem.changes.organizationsAdded"))
+        }
+        if (organizationApplicationsCount > 0) {
+          changes.push(t("partials.ActivityListItem.changes.applicationsAdded"))
+        }
+        if (changes.length > 0) {
+          return changes
+        }
+      }
+      throw new Error(`unknown change type context: ${changeType}`)
     case "membershipRemoved":
-      return t("partials.ActivityListItem.changes.membershipRemoved")
+      if (activityType === "organizationUpdate") {
+        return [t("partials.ActivityListItem.changes.applicationsRemoved")]
+      }
+      if (activityType === "identityUpdate") {
+        const changes: string[] = []
+        if (organizationsCount > 0) {
+          changes.push(t("partials.ActivityListItem.changes.organizationsRemoved"))
+        }
+        if (organizationApplicationsCount > 0) {
+          changes.push(t("partials.ActivityListItem.changes.applicationsRemoved"))
+        }
+        if (changes.length > 0) {
+          return changes
+        }
+      }
+      throw new Error(`unknown change type context: ${changeType}`)
     case "membershipChanged":
-      return t("partials.ActivityListItem.changes.membershipChanged")
+      if (activityType === "organizationUpdate") {
+        return [t("partials.ActivityListItem.changes.applicationsChanged")]
+      }
+      if (activityType === "identityUpdate") {
+        return [t("partials.ActivityListItem.changes.organizationsChanged")]
+      }
+      throw new Error(`unknown change type context: ${changeType}`)
     case "membershipActivated":
-      return t("partials.ActivityListItem.changes.membershipActivated")
+      if (activityType === "organizationUpdate") {
+        return [t("partials.ActivityListItem.changes.applicationsActivated")]
+      }
+      if (activityType === "identityUpdate") {
+        return [t("partials.ActivityListItem.changes.organizationsActivated")]
+      }
+      throw new Error(`unknown change type context: ${changeType}`)
     case "membershipDisabled":
-      return t("partials.ActivityListItem.changes.membershipDisabled")
+      if (activityType === "organizationUpdate") {
+        return [t("partials.ActivityListItem.changes.applicationsDisabled")]
+      }
+      if (activityType === "identityUpdate") {
+        return [t("partials.ActivityListItem.changes.organizationsDisabled")]
+      }
+      throw new Error(`unknown change type context: ${changeType}`)
     default:
       throw new Error(`unknown change type: ${changeType}`)
   }
+}
+
+function maybeRemoveDuplicatesOfFirst(activityType: string, identities: readonly IdentityRef[]): readonly IdentityRef[] {
+  if (activityType !== "identityUpdate") {
+    return identities
+  }
+  // For identity updates, we remove duplicates of the first identity because the first identity is always
+  // the identity that was updated. Backend always prepends it. We want identities to be shown only once to the user.
+  const firstIdentity = identities[0]
+  return [firstIdentity].concat(...identities.slice(1).filter((i) => i.id !== firstIdentity.id))
 }
 
 const WithActivityDocument = WithDocument<Activity>
@@ -115,9 +171,14 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
               {{ getActivityDescription(doc.type) }}
             </h3>
             <div v-if="doc.changes" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm">
-              <span v-for="change in doc.changes" :key="change" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{
-                getChangeDescription(change)
-              }}</span>
+              <template v-for="change in doc.changes" :key="change">
+                <span
+                  v-for="(description, i) in getChangeDescription(change, doc.type, doc.organizations?.length || 0, doc.organizationApplications?.length || 0)"
+                  :key="i"
+                  class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none"
+                  >{{ description }}</span
+                >
+              </template>
             </div>
             <div v-if="doc.providers" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm">
               <span v-for="provider in doc.providers" :key="provider" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{
@@ -126,9 +187,9 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
             </div>
             <div v-if="doc.identities" class="text-sm text-slate-700">
               <i18n-t keypath="partials.ActivityListItem.entityLinks" scope="global">
-                <template #entity>{{ t("common.entities.identity", doc.identities.length) }}</template>
+                <template #entity>{{ t("common.entities.identity", maybeRemoveDuplicatesOfFirst(doc.type, doc.identities).length) }}</template>
                 <template #links>
-                  <template v-for="(identity, i) in doc.identities" :key="identity.id">
+                  <template v-for="(identity, i) in maybeRemoveDuplicatesOfFirst(doc.type, doc.identities)" :key="identity.id">
                     <template v-if="i > 0">, </template>
                     <WithIdentityDocument :params="{ id: identity.id }" name="IdentityGet">
                       <template #default="{ doc: identityDoc, url: identityUrl }">

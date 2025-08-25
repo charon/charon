@@ -761,10 +761,9 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 		return nil
 	}
 
-	// We make sure identity reference i is always the first element in identities.
-	identities = slices.DeleteFunc(identities, func(ii IdentityRef) bool {
-		return ii == i
-	})
+	// We make sure identity reference i is always the first element in identities. This might leave identities
+	// with the duplicate identity i, but that is better than removing duplicates because it is deterministic
+	// and the frontend can always then take the first element to be the identity that was updated.
 	identities = append([]IdentityRef{i}, identities...)
 
 	errE = s.logActivity(ctx, ActivityIdentityUpdate, identities, organizations, nil, applications, changes, nil)

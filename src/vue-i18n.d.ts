@@ -204,12 +204,16 @@ declare module "vue-i18n" {
           otherData: string
           permissionsAdded: string
           permissionsRemoved: string
-          permissionsChanged: string
-          membershipAdded: string
-          membershipRemoved: string
-          membershipChanged: string
-          membershipActivated: string
-          membershipDisabled: string
+          applicationsAdded: string
+          applicationsRemoved: string
+          applicationsChanged: string
+          applicationsActivated: string
+          applicationsDisabled: string
+          organizationsAdded: string
+          organizationsRemoved: string
+          organizationsChanged: string
+          organizationsActivated: string
+          organizationsDisabled: string
         }
         entityLinks: string
       }
