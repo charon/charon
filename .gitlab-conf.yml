@@ -1,6 +1,6 @@
 project:
   # Set whether or not merge requests can be merged with skipped jobs. Type: boolean
-  allow_merge_on_skipped_pipeline: null
+  allow_merge_on_skipped_pipeline: false
   # Set whether or not a pipeline triggerer is allowed to approve deployments. Type:
   # boolean
   allow_pipeline_trigger_approve_deployment: false
@@ -89,14 +89,14 @@ project:
   # Set the merge method used. Type: string
   merge_method: rebase_merge
   # Enable or disable merge pipelines. Type: boolean
-  merge_pipelines_enabled: false
+  merge_pipelines_enabled: true
   # One of disabled, private, or enabled. Type: string
   merge_requests_access_level: enabled
   # Default description for merge requests. Description is parsed with GitLab
   # Flavored Markdown. See Templates for issues and merge requests. Type: string
-  merge_requests_template: null
+  merge_requests_template: ""
   # Enable or disable merge trains. Type: boolean
-  merge_trains_enabled: false
+  merge_trains_enabled: true
   # One of disabled, private, or enabled. Type: string
   monitor_access_level: disabled
   # Set whether merge requests can only be merged when all the discussions are
@@ -152,7 +152,7 @@ project:
   # One of never, always, default_on, or default_off. Type: string
   squash_option: default_off
   # The commit message used to apply merge request suggestions. Type: string
-  suggestion_commit_message: null
+  suggestion_commit_message: ""
   # The list of topics for the project. This replaces any existing topics that are
   # already added to the project. (Introduced in GitLab 14.0.) Type: array
   topics:
