@@ -326,7 +326,7 @@ variables:
     environment_scope: '*'
     key: CHROMATIC_PROJECT_TOKEN
     masked: true
-    protected: false
+    protected: true
     raw: true
     # sops:enc
     value: ENC[AES256_GCM,data:aFkg/zU1vLo4RvVShOdn7DQLt60=,iv:M3Tm65TY/7TTetYzQj7Q9IAtMvpzhco7eqkmU84zH3k=,tag:wKeeoaQ3Ya2G3YFjkxqe3A==,type:str]
