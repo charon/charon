@@ -155,8 +155,14 @@ lint_node:
 
   script:
     - npm ci --audit=false
-    - npm run lint
+    - npm run lint-ci
     - git diff --exit-code --color=always
+
+  artifacts:
+    when: always
+    reports:
+      codequality: codeclimate.json
+    expire_in: never
 
 lint_vue:
   stage: test
@@ -177,8 +183,14 @@ lint_style:
 
   script:
     - npm ci --audit=false
-    - npm run lint-style
+    - npm run lint-style-ci
     - git diff --exit-code --color=always
+
+  artifacts:
+    when: always
+    reports:
+      codequality: codeclimate.json
+    expire_in: never
 
 fmt_go:
   stage: test
