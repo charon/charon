@@ -10,6 +10,8 @@ workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS && $CI_PIPELINE_SOURCE == "push"
+      # To prevent duplicate pipelines, when a branch has a merge request, we only
+      # run a merge request pipeline when the branch is pushed.
       when: never
     - if: $CI_COMMIT_BRANCH
     - if: $CI_COMMIT_TAG
@@ -62,6 +64,8 @@ test_go_link_publish:
   stage: deploy
 
   rules:
+    # We create a link only for merge request pipelines.
+    # Created environment is automatically removed when the merge request is closed.
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
 
   needs:
