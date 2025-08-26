@@ -87,7 +87,7 @@ project:
   # GitLab 14.5.) Type: string
   merge_commit_template: null
   # Set the merge method used. Type: string
-  merge_method: merge
+  merge_method: rebase_merge
   # Enable or disable merge pipelines. Type: boolean
   merge_pipelines_enabled: false
   # One of disabled, private, or enabled. Type: string
