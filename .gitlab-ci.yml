@@ -28,6 +28,7 @@ test_go:
     - (cd /go; go install gotest.tools/gotestsum@v1.12.0)
     - (cd /go; go install github.com/boumenot/gocover-cobertura@v1.3.0)
     - go version
+    - echo "LINK_PUBLISH_JOB_ID=${CI_JOB_ID}" > link_publish.env
 
   script:
     - make test-ci
@@ -39,6 +40,8 @@ test_go:
       coverage_report:
         coverage_format: cobertura
         path: coverage.xml
+      dotenv:
+        - link_publish.env
     paths:
       - tests.xml
       - coverage.html
@@ -46,6 +49,23 @@ test_go:
     expire_in: never
 
   coverage: '/coverage: \d+\.\d+% of statements/'
+
+test_go_link_publish:
+  stage: deploy
+
+  only:
+    - merge_requests
+
+  needs:
+    - test_go
+
+  script:
+    - echo "Publishing link"
+
+  environment:
+    name: MR/${CI_MERGE_REQUEST_IID}/go_coverage
+    url: https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage.html
+    deployment_tier: other
 
 test_node:
   stage: test
