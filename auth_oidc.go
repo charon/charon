@@ -44,7 +44,7 @@ func initOIDCProviders(config *Config, service *Service, domain string, provider
 
 			client := cleanhttp.DefaultPooledClient()
 			ctx := oidc.ClientContext(context.Background(), client)
-			provider, err := oidc.NewProvider(ctx, p.issuer)
+			provider, err := oidc.NewProvider(ctx, p.oidcIssuer)
 			if err != nil {
 				// Internal error: this should never happen.
 				panic(errors.WithStack(err))
@@ -65,7 +65,7 @@ func initOIDCProviders(config *Config, service *Service, domain string, provider
 				panic(errors.New("jwks_uri is empty"))
 			}
 
-			supportsPKCE := p.forcePKCE
+			supportsPKCE := p.oidcForcePKCE
 			if !supportsPKCE {
 				// We have to parse it out ourselves.
 				// See: https://github.com/coreos/go-oidc/issues/401
@@ -84,24 +84,24 @@ func initOIDCProviders(config *Config, service *Service, domain string, provider
 			// in its https://www.facebook.com/.well-known/openid-configuration).
 			endpoint := provider.Endpoint()
 			if endpoint.AuthURL == "" {
-				endpoint.AuthURL = p.authURL
+				endpoint.AuthURL = p.oidcAuthURL
 			}
 			if endpoint.TokenURL == "" {
-				endpoint.TokenURL = p.tokenURL
+				endpoint.TokenURL = p.oidcTokenURL
 			}
 
 			config := &oauth2.Config{
-				ClientID:     p.clientID,
-				ClientSecret: p.secret,
+				ClientID:     p.oidcClientID,
+				ClientSecret: p.oidcSecret,
 				RedirectURL:  fmt.Sprintf("https://%s%s", host, path),
 				Endpoint:     endpoint,
-				Scopes:       p.scopes,
+				Scopes:       p.oidcScopes,
 			}
 
 			oidcProviders[p.Key] = oidcProvider{
 				Name:         p.Name,
 				Provider:     provider,
-				Verifier:     provider.Verifier(&oidc.Config{ClientID: p.clientID}), //nolint:exhaustruct
+				Verifier:     provider.Verifier(&oidc.Config{ClientID: p.oidcClientID}), //nolint:exhaustruct
 				Config:       config,
 				Client:       client,
 				SupportsPKCE: supportsPKCE,
