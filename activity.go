@@ -154,6 +154,15 @@ func (s *Service) getActivity(_ context.Context, id identifier.Identifier) (*Act
 	return &activity, nil
 }
 
+func (s *Service) getActivityFromID(ctx context.Context, value string) (*Activity, errors.E) {
+	id, errE := identifier.MaybeString(value)
+	if errE != nil {
+		return nil, errors.WrapWith(errE, ErrActivityNotFound)
+	}
+
+	return s.getActivity(ctx, id)
+}
+
 func (s *Service) createActivity(ctx context.Context, activity *Activity) errors.E {
 	errE := activity.Validate(ctx, nil)
 	if errE != nil {
@@ -278,13 +287,7 @@ func (s *Service) ActivityGetGet(w http.ResponseWriter, req *http.Request, param
 		return
 	}
 
-	activityID, errE := identifier.MaybeString(params["id"])
-	if errE != nil {
-		s.NotFoundWithError(w, req, errE)
-		return
-	}
-
-	activity, errE := s.getActivity(ctx, activityID)
+	activity, errE := s.getActivityFromID(ctx, params["id"])
 	if errors.Is(errE, ErrActivityNotFound) {
 		s.NotFoundWithError(w, req, errE)
 		return
