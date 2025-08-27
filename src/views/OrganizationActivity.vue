@@ -82,7 +82,7 @@ onBeforeMount(async () => {
           {{ t("views.OrganizationActivity.noActivities") }}
         </div>
         <div v-for="activity in activities" :key="activity.id" class="w-full rounded border bg-white p-4 shadow">
-          <ActivityListItem :item="activity" />
+          <ActivityListItem :item="activity" :organization="{ id }" />
         </div>
       </template>
     </div>

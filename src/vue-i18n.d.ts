@@ -215,6 +215,8 @@ declare module "vue-i18n" {
           organizationsChanged: string
           organizationsActivated: string
           organizationsDisabled: string
+          identitiesAdded: string
+          identitiesRemoved: string
         }
         entityLinks: string
       }

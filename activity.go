@@ -80,7 +80,7 @@ type Activity struct {
 	Type      ActivityType           `json:"type"`
 
 	// The identity that performed this activity.
-	Actor IdentityRef `json:"actor"`
+	Actor *IdentityRef `json:"actor,omitempty"`
 
 	// Optional references to documents that were affected by the activity.
 	Identities               []IdentityRef                `json:"identities,omitempty"`
@@ -97,6 +97,20 @@ type Activity struct {
 	// Session and request IDs from the WAF framework.
 	SessionID identifier.Identifier `json:"sessionId"`
 	RequestID identifier.Identifier `json:"requestId"`
+}
+
+func (a *Activity) IsForOrganization(organization *Organization) bool {
+	// Check if activity includes only one organization.
+	if len(a.Organizations) != 1 {
+		return false
+	}
+
+	// Check if activity includes this organization.
+	if a.Organizations[0].ID != *organization.ID {
+		return false
+	}
+
+	return true
 }
 
 func (a *Activity) Validate(_ context.Context, existing *Activity) errors.E {
@@ -204,7 +218,7 @@ func (s *Service) logActivity(
 		Timestamp: Time{}, //nolint:exhaustruct
 
 		Type:                     activityType,
-		Actor:                    IdentityRef{ID: actorID},
+		Actor:                    &IdentityRef{ID: actorID},
 		Providers:                providers,
 		Changes:                  changes,
 		SessionID:                sessionID,
@@ -324,7 +338,7 @@ func (s *Service) OrganizationActivityGet(w http.ResponseWriter, req *http.Reque
 
 	organization, errE := s.getOrganizationFromID(ctx, params["id"])
 	if errors.Is(errE, ErrOrganizationNotFound) {
-		s.NotFound(w, req)
+		s.NotFoundWithError(w, req, errE)
 		return
 	} else if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -352,13 +366,7 @@ func (s *Service) OrganizationActivityGet(w http.ResponseWriter, req *http.Reque
 			return
 		}
 
-		// Check if activity includes only one organization.
-		if len(activity.Organizations) != 1 {
-			continue
-		}
-
-		// Check if activity includes this organization.
-		if activity.Organizations[0].ID != *organization.ID {
+		if !activity.IsForOrganization(organization) {
 			continue
 		}
 
@@ -376,4 +384,89 @@ func (s *Service) OrganizationActivityGet(w http.ResponseWriter, req *http.Reque
 	}
 
 	s.WriteJSON(w, req, result, nil)
+}
+
+func (s *Service) OrganizationActivityGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	ctx := s.RequireAuthenticated(w, req)
+	if ctx == nil {
+		return
+	}
+
+	organization, errE := s.getOrganizationFromID(ctx, params["id"])
+	if errors.Is(errE, ErrOrganizationNotFound) {
+		s.NotFoundWithError(w, req, errE)
+		return
+	} else if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	if !organization.HasAdminAccess(IdentityRef{ID: mustGetIdentityID(ctx)}) {
+		waf.Error(w, req, http.StatusUnauthorized)
+		return
+	}
+
+	activity, errE := s.getActivityFromID(ctx, params["activityId"])
+	if errors.Is(errE, ErrActivityNotFound) {
+		s.NotFoundWithError(w, req, errE)
+		return
+	} else if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	// Verify this activity is for this organization.
+	if !activity.IsForOrganization(organization) {
+		s.NotFound(w, req)
+		return
+	}
+
+	// Map actor identity ID to organization-scoped ID.
+	actorIdentity, errE := s.getIdentityWithoutAccessCheck(ctx, activity.Actor.ID)
+	if errors.Is(errE, ErrActivityNotFound) {
+		// It should not really happen that we cannot get the identity because
+		// currently we do not support deleting identities.
+		// TODO: Once we do support deleting identities AND have identity refs with basic information, we should remove just the ID and keep basic information.
+		activity.Actor = nil
+	} else if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+	idOrg := actorIdentity.GetOrganization(organization.ID)
+	if idOrg == nil || !idOrg.Active {
+		// TODO: Once we have identity refs with basic information, we should remove just the ID and keep basic information.
+		activity.Actor = nil
+	} else {
+		activity.Actor.ID = *idOrg.ID
+	}
+
+	// Map identity IDs in the Identities slice to organization-scoped IDs.
+	scopedIdentities := []IdentityRef{}
+	for _, identityRef := range activity.Identities {
+		identity, errE := s.getIdentityWithoutAccessCheck(ctx, identityRef.ID)
+		if errors.Is(errE, ErrActivityNotFound) {
+			// It should not really happen that we cannot get the identity because
+			// currently we do not support deleting identities.
+			// TODO: Once we do support deleting identities AND have identity refs with basic information, we should remove just the ID and keep basic information.
+			continue
+		} else if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+		idOrg := identity.GetOrganization(organization.ID)
+		if idOrg == nil || !idOrg.Active {
+			// TODO: Once we have identity refs with basic information, we should remove just the ID and keep basic information.
+			continue
+		}
+
+		identityRef.ID = *idOrg.ID
+		scopedIdentities = append(scopedIdentities, identityRef)
+	}
+
+	if len(scopedIdentities) == 0 {
+		scopedIdentities = nil
+	}
+	activity.Identities = scopedIdentities
+
+	s.WriteJSON(w, req, activity, nil)
 }

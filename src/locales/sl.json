@@ -203,7 +203,9 @@
         "organizationsRemoved": "odstranjene organizacije",
         "organizationsChanged": "spremenjene organizacije",
         "organizationsActivated": "aktivirane organizacije",
-        "organizationsDisabled": "onemogočene organizacije"
+        "organizationsDisabled": "onemogočene organizacije",
+        "identitiesAdded": "dodane identitete",
+        "identitiesRemoved": "odstranjene identitete"
       },
       "entityLinks": "{entity}: {links}"
     }

@@ -1,18 +1,22 @@
 <script setup lang="ts">
-import type { Activity, ActivityRef, Identity, Organization, ApplicationTemplate, OrganizationApplicationPublic, IdentityRef } from "@/types"
-import type { FunctionalComponent } from "vue"
+import type { Activity, ActivityRef, Identity, Organization, ApplicationTemplate, OrganizationApplicationPublic, OrganizationRef, IdentityPublic } from "@/types"
+import type { DeepReadonly, FunctionalComponent } from "vue"
 
+import { readonly } from "vue"
 import { useI18n } from "vue-i18n"
+import { LocalScope } from "@allindevelopers/vue-local-scope"
+import { uniqBy } from "lodash-es"
 import { LockClosedIcon, LockOpenIcon, IdentificationIcon, UserGroupIcon, CalculatorIcon } from "@heroicons/vue/24/outline"
 import { IdentificationIcon as IdentificationSolidIcon, UserGroupIcon as UserGroupSolidIcon, CalculatorIcon as CalculatorSolidIcon } from "@heroicons/vue/24/solid"
 import WithDocument from "@/components/WithDocument.vue"
 import { getProviderName } from "@/flow"
-import { getHomepage, getFormattedTimestamp, getIdentityDisplayName } from "@/utils"
+import { getHomepage, getFormattedTimestamp, getIdentityDisplayName, clone } from "@/utils"
 
 const { t } = useI18n({ useScope: "global" })
 
-defineProps<{
+const props = defineProps<{
   item: ActivityRef
+  organization?: OrganizationRef
 }>()
 
 function getActivityIcon(activityType: string): FunctionalComponent {
@@ -61,7 +65,13 @@ function getActivityDescription(activityType: string): string {
   }
 }
 
-function getChangeDescription(changeType: string, activityType: string, organizationsCount: number, organizationApplicationsCount: number): string[] {
+function getChangeDescription(
+  changeType: string,
+  activityType: string,
+  identitiesCount: number,
+  organizationsCount: number,
+  organizationApplicationsCount: number,
+): string[] {
   switch (changeType) {
     case "otherData":
       return [t("partials.ActivityListItem.changes.otherData")]
@@ -75,8 +85,14 @@ function getChangeDescription(changeType: string, activityType: string, organiza
       }
       if (activityType === "identityUpdate") {
         const changes: string[] = []
-        if (organizationsCount > 0) {
-          changes.push(t("partials.ActivityListItem.changes.organizationsAdded"))
+        if (props.organization) {
+          if (identitiesCount > 0) {
+            changes.push(t("partials.ActivityListItem.changes.identitiesAdded"))
+          }
+        } else {
+          if (organizationsCount > 0) {
+            changes.push(t("partials.ActivityListItem.changes.organizationsAdded"))
+          }
         }
         if (organizationApplicationsCount > 0) {
           changes.push(t("partials.ActivityListItem.changes.applicationsAdded"))
@@ -92,8 +108,14 @@ function getChangeDescription(changeType: string, activityType: string, organiza
       }
       if (activityType === "identityUpdate") {
         const changes: string[] = []
-        if (organizationsCount > 0) {
-          changes.push(t("partials.ActivityListItem.changes.organizationsRemoved"))
+        if (props.organization) {
+          if (identitiesCount > 0) {
+            changes.push(t("partials.ActivityListItem.changes.identitiesRemoved"))
+          }
+        } else {
+          if (organizationsCount > 0) {
+            changes.push(t("partials.ActivityListItem.changes.organizationsRemoved"))
+          }
         }
         if (organizationApplicationsCount > 0) {
           changes.push(t("partials.ActivityListItem.changes.applicationsRemoved"))
@@ -132,135 +154,172 @@ function getChangeDescription(changeType: string, activityType: string, organiza
   }
 }
 
-function maybeRemoveDuplicatesOfFirst(activityType: string, identities: readonly IdentityRef[]): readonly IdentityRef[] {
-  if (activityType !== "identityUpdate") {
-    return identities
+function transformActivity(activity: DeepReadonly<Activity>): DeepReadonly<Activity> {
+  const a = clone(activity)
+  if (props.organization) {
+    // To be general, we just remove the organization prop from organizations so that it is not
+    // shown multiple times. But because we provide organization prop in organization's activity
+    // which shows only activity items where doc.organizations contains only the organization,
+    // this in practice makes organizations an empty array when the organization prop is provided.
+    a.organizations = (a.organizations || []).filter((o) => o.id !== props.organization!.id)
+
+    if (a.actor) {
+      // When organization prop is provided, we want to show the actor among identities.
+      a.identities = [a.actor].concat(...(a.identities || []))
+    }
   }
-  // For identity updates, we remove duplicates of the first identity because the first identity is always
-  // the identity that was updated. Backend always prepends it. We want identities to be shown only once to the user.
-  const firstIdentity = identities[0]
-  return [firstIdentity].concat(...identities.slice(1).filter((i) => i.id !== firstIdentity.id))
+
+  if (a.identities) {
+    // We remove duplicates because we want identities to be shown only once to the user.
+    // Duplicates can happen when we prepend actor to identities. For identity updates,
+    // they can happen because backend always prepends the identity that was updated.
+    a.identities = uniqBy(a.identities, (i) => i.id)
+  }
+
+  return import.meta.env.DEV ? readonly(a) : a
 }
 
 const WithActivityDocument = WithDocument<Activity>
 const WithIdentityDocument = WithDocument<Identity>
+const WithIdentityPublicDocument = WithDocument<IdentityPublic>
 const WithOrganizationDocument = WithDocument<Organization>
 const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
 const WithOrganizationApplicationDocument = WithDocument<OrganizationApplicationPublic>
 </script>
 
 <template>
-  <WithActivityDocument :params="{ id: item.id }" name="ActivityGet">
-    <template #default="{ doc, url }">
-      <div class="flex items-start gap-4" :data-url="url">
-        <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center">
-          <component :is="getActivityIcon(doc.type)" />
-        </div>
-        <div class="flex-grow">
-          <div class="flex flex-col gap-1">
-            <h3 class="font-medium">
-              {{ getActivityDescription(doc.type) }}
-            </h3>
-            <div v-if="doc.changes" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm">
-              <template v-for="change in doc.changes" :key="change">
-                <span
-                  v-for="(description, i) in getChangeDescription(change, doc.type, doc.organizations?.length || 0, doc.organizationApplications?.length || 0)"
-                  :key="i"
-                  class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none"
-                  >{{ description }}</span
-                >
-              </template>
-            </div>
-            <div v-if="doc.providers" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm">
-              <span v-for="provider in doc.providers" :key="provider" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{
-                getProviderName(t, provider)
-              }}</span>
-            </div>
-            <div v-if="doc.identities" class="text-sm text-slate-700">
-              <i18n-t keypath="partials.ActivityListItem.entityLinks" scope="global">
-                <template #entity>{{ t("common.entities.identity", maybeRemoveDuplicatesOfFirst(doc.type, doc.identities).length) }}</template>
-                <template #links>
-                  <template v-for="(identity, i) in maybeRemoveDuplicatesOfFirst(doc.type, doc.identities)" :key="identity.id">
-                    <template v-if="i > 0">, </template>
-                    <WithIdentityDocument :params="{ id: identity.id }" name="IdentityGet">
-                      <template #default="{ doc: identityDoc, url: identityUrl }">
-                        <router-link :to="{ name: 'IdentityGet', params: { id: identity.id } }" :data-url="identityUrl" class="link">
-                          {{ getIdentityDisplayName(identityDoc) }}
-                        </router-link>
-                      </template>
-                      <template #error="{ url: identityErrorUrl }">
-                        <span :data-url="identityErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
-                      </template>
-                    </WithIdentityDocument>
-                  </template>
+  <WithActivityDocument
+    :params="organization ? { id: organization.id, activityId: item.id } : { id: item.id }"
+    :name="organization ? 'OrganizationActivityGet' : 'ActivityGet'"
+  >
+    <template #default="{ doc: originalDoc, url }">
+      <LocalScope v-slot="{ doc }" :doc="transformActivity(originalDoc)">
+        <div class="flex items-start gap-4" :data-url="url">
+          <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center">
+            <component :is="getActivityIcon(doc.type)" />
+          </div>
+          <div class="flex-grow">
+            <div class="flex flex-col gap-1">
+              <h3 class="font-medium">
+                {{ getActivityDescription(doc.type) }}
+              </h3>
+              <div v-if="doc.changes?.length" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm">
+                <template v-for="change in doc.changes" :key="change">
+                  <span
+                    v-for="(description, i) in getChangeDescription(
+                      change,
+                      doc.type,
+                      doc.identities?.length || 0,
+                      doc.organizations?.length || 0,
+                      doc.organizationApplications?.length || 0,
+                    )"
+                    :key="i"
+                    class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none"
+                    >{{ description }}</span
+                  >
                 </template>
-              </i18n-t>
-            </div>
-            <div v-if="doc.organizations" class="text-sm text-slate-700">
-              <i18n-t keypath="partials.ActivityListItem.entityLinks" scope="global">
-                <template #entity>{{ t("common.entities.organization", doc.organizations.length) }}</template>
-                <template #links>
-                  <template v-for="(organization, i) in doc.organizations" :key="organization.id">
-                    <template v-if="i > 0">, </template>
-                    <WithOrganizationDocument :params="{ id: organization.id }" name="OrganizationGet">
-                      <template #default="{ doc: orgDoc, url: orgUrl }">
-                        <router-link :to="{ name: 'OrganizationGet', params: { id: organization.id } }" :data-url="orgUrl" class="link">
-                          {{ orgDoc.name }}
-                        </router-link>
-                      </template>
-                      <template #error="{ url: orgErrorUrl }">
-                        <span :data-url="orgErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
-                      </template>
-                    </WithOrganizationDocument>
+              </div>
+              <div v-if="doc.providers?.length" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm">
+                <span v-for="provider in doc.providers" :key="provider" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-sm text-sm leading-none">{{
+                  getProviderName(t, provider)
+                }}</span>
+              </div>
+              <div v-if="doc.identities?.length" class="text-sm text-slate-700">
+                <i18n-t keypath="partials.ActivityListItem.entityLinks" scope="global">
+                  <template #entity>{{ t("common.entities.identity", doc.identities.length) }}</template>
+                  <template #links>
+                    <template v-for="(identity, i) in doc.identities" :key="identity.id">
+                      <template v-if="i > 0">, </template>
+                      <WithIdentityPublicDocument v-if="organization" :params="{ id: organization.id, identityId: identity.id }" name="OrganizationIdentity">
+                        <template #default="{ doc: identityDoc, url: identityUrl }">
+                          <span :data-url="identityUrl">
+                            {{ getIdentityDisplayName(identityDoc) }}
+                          </span>
+                        </template>
+                        <template #error="{ url: identityErrorUrl }">
+                          <span :data-url="identityErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
+                        </template>
+                      </WithIdentityPublicDocument>
+                      <WithIdentityDocument v-else :params="{ id: identity.id }" name="IdentityGet">
+                        <template #default="{ doc: identityDoc, url: identityUrl }">
+                          <router-link :to="{ name: 'IdentityGet', params: { id: identity.id } }" :data-url="identityUrl" class="link">
+                            {{ getIdentityDisplayName(identityDoc) }}
+                          </router-link>
+                        </template>
+                        <template #error="{ url: identityErrorUrl }">
+                          <span :data-url="identityErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
+                        </template>
+                      </WithIdentityDocument>
+                    </template>
                   </template>
-                </template>
-              </i18n-t>
-            </div>
-            <div v-if="doc.applicationTemplates" class="text-sm text-slate-700">
-              <i18n-t keypath="partials.ActivityListItem.entityLinks" scope="global">
-                <template #entity>{{ t("common.entities.applicationTemplate", doc.applicationTemplates.length) }}</template>
-                <template #links>
-                  <template v-for="(applicationTemplate, i) in doc.applicationTemplates" :key="applicationTemplate.id">
-                    <template v-if="i > 0">, </template>
-                    <WithApplicationTemplateDocument :params="{ id: applicationTemplate.id }" name="ApplicationTemplateGet">
-                      <template #default="{ doc: appDoc, url: appUrl }">
-                        <router-link :to="{ name: 'ApplicationTemplateGet', params: { id: applicationTemplate.id } }" :data-url="appUrl" class="link">
-                          {{ appDoc.name }}
-                        </router-link>
-                      </template>
-                      <template #error="{ url: appErrorUrl }">
-                        <span :data-url="appErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
-                      </template>
-                    </WithApplicationTemplateDocument>
+                </i18n-t>
+              </div>
+              <div v-if="doc.organizations?.length" class="text-sm text-slate-700">
+                <i18n-t keypath="partials.ActivityListItem.entityLinks" scope="global">
+                  <template #entity>{{ t("common.entities.organization", doc.organizations.length) }}</template>
+                  <template #links>
+                    <template v-for="(org, i) in doc.organizations" :key="org.id">
+                      <template v-if="i > 0">, </template>
+                      <WithOrganizationDocument :params="{ id: org.id }" name="OrganizationGet">
+                        <template #default="{ doc: orgDoc, url: orgUrl }">
+                          <router-link :to="{ name: 'OrganizationGet', params: { id: org.id } }" :data-url="orgUrl" class="link">
+                            {{ orgDoc.name }}
+                          </router-link>
+                        </template>
+                        <template #error="{ url: orgErrorUrl }">
+                          <span :data-url="orgErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
+                        </template>
+                      </WithOrganizationDocument>
+                    </template>
                   </template>
-                </template>
-              </i18n-t>
-            </div>
-            <div v-if="doc.organizationApplications" class="text-sm text-slate-700">
-              <i18n-t keypath="partials.ActivityListItem.entityLinks" scope="global">
-                <template #entity>{{ t("common.entities.app", doc.organizationApplications.length) }}</template>
-                <template #links>
-                  <template v-for="(app, i) in doc.organizationApplications" :key="app.application.id">
-                    <template v-if="i > 0">, </template>
-                    <WithOrganizationApplicationDocument :params="{ id: app.organization.id, appId: app.application.id }" name="OrganizationApp">
-                      <template #default="{ doc: appDoc, url: appUrl }">
-                        <a :href="getHomepage(appDoc)" :data-url="appUrl" class="link">{{ appDoc.applicationTemplate.name }}</a>
-                      </template>
-                      <template #error="{ url: appErrorUrl }">
-                        <span :data-url="appErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
-                      </template>
-                    </WithOrganizationApplicationDocument>
+                </i18n-t>
+              </div>
+              <div v-if="doc.applicationTemplates?.length" class="text-sm text-slate-700">
+                <i18n-t keypath="partials.ActivityListItem.entityLinks" scope="global">
+                  <template #entity>{{ t("common.entities.applicationTemplate", doc.applicationTemplates.length) }}</template>
+                  <template #links>
+                    <template v-for="(applicationTemplate, i) in doc.applicationTemplates" :key="applicationTemplate.id">
+                      <template v-if="i > 0">, </template>
+                      <WithApplicationTemplateDocument :params="{ id: applicationTemplate.id }" name="ApplicationTemplateGet">
+                        <template #default="{ doc: appDoc, url: appUrl }">
+                          <router-link :to="{ name: 'ApplicationTemplateGet', params: { id: applicationTemplate.id } }" :data-url="appUrl" class="link">
+                            {{ appDoc.name }}
+                          </router-link>
+                        </template>
+                        <template #error="{ url: appErrorUrl }">
+                          <span :data-url="appErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
+                        </template>
+                      </WithApplicationTemplateDocument>
+                    </template>
                   </template>
-                </template>
-              </i18n-t>
+                </i18n-t>
+              </div>
+              <div v-if="doc.organizationApplications?.length" class="text-sm text-slate-700">
+                <i18n-t keypath="partials.ActivityListItem.entityLinks" scope="global">
+                  <template #entity>{{ t("common.entities.app", doc.organizationApplications.length) }}</template>
+                  <template #links>
+                    <template v-for="(app, i) in doc.organizationApplications" :key="app.application.id">
+                      <template v-if="i > 0">, </template>
+                      <WithOrganizationApplicationDocument :params="{ id: app.organization.id, appId: app.application.id }" name="OrganizationApp">
+                        <template #default="{ doc: appDoc, url: appUrl }">
+                          <a :href="getHomepage(appDoc)" :data-url="appUrl" class="link">{{ appDoc.applicationTemplate.name }}</a>
+                        </template>
+                        <template #error="{ url: appErrorUrl }">
+                          <span :data-url="appErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
+                        </template>
+                      </WithOrganizationApplicationDocument>
+                    </template>
+                  </template>
+                </i18n-t>
+              </div>
+              <div class="text-xs text-neutral-500">
+                {{ getFormattedTimestamp(doc.timestamp) }}
+              </div>
+              <div class="text-xs text-neutral-500">Session: {{ doc.sessionId }}</div>
             </div>
-            <div class="text-xs text-neutral-500">
-              {{ getFormattedTimestamp(doc.timestamp) }}
-            </div>
-            <div class="text-xs text-neutral-500">Session: {{ doc.sessionId }}</div>
           </div>
         </div>
-      </div>
+      </LocalScope>
     </template>
     <template #error="{ url }">
       <div class="flex flex-row gap-4" :data-url="url">

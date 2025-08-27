@@ -280,6 +280,12 @@
       "get": {}
     },
     {
+      "name": "OrganizationActivityGet",
+      "path": "/o/activity/:id/:activityId",
+      "api": {},
+      "get": null
+    },
+    {
       "name": "ActivityList",
       "path": "/activity",
       "api": {},

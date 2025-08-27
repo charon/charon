@@ -203,7 +203,9 @@
         "organizationsRemoved": "removed organizations",
         "organizationsChanged": "changed organizations",
         "organizationsActivated": "activated organizations",
-        "organizationsDisabled": "disabled organizations"
+        "organizationsDisabled": "disabled organizations",
+        "identitiesAdded": "added identities",
+        "identitiesRemoved": "removed identities"
       },
       "entityLinks": "{entity}: {links}"
     }
