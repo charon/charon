@@ -304,3 +304,73 @@ func (s *Service) ActivityGetGet(w http.ResponseWriter, req *http.Request, param
 
 	s.WriteJSON(w, req, activity, nil)
 }
+
+func (s *Service) OrganizationActivity(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	if s.ProxyStaticTo != "" {
+		s.Proxy(w, req)
+	} else {
+		s.ServeStaticFile(w, req, "/index.html")
+	}
+}
+
+func (s *Service) OrganizationActivityGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	ctx := s.RequireAuthenticated(w, req)
+	if ctx == nil {
+		return
+	}
+
+	organization, errE := s.getOrganizationFromID(ctx, params["id"])
+	if errors.Is(errE, ErrOrganizationNotFound) {
+		s.NotFound(w, req)
+		return
+	} else if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	if !organization.HasAdminAccess(IdentityRef{ID: mustGetIdentityID(ctx)}) {
+		waf.Error(w, req, http.StatusUnauthorized)
+		return
+	}
+
+	result := []ActivityRef{}
+
+	s.activitiesMu.RLock()
+	defer s.activitiesMu.RUnlock()
+
+	// Collect activities that include this organization exactly (not spanning multiple organizations).
+	activities := make([]*Activity, 0)
+	for id, data := range s.activities {
+		var activity Activity
+		errE := x.UnmarshalWithoutUnknownFields(data, &activity)
+		if errE != nil {
+			errors.Details(errE)["id"] = id
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+
+		// Check if activity includes only one organization.
+		if len(activity.Organizations) != 1 {
+			continue
+		}
+
+		// Check if activity includes this organization.
+		if activity.Organizations[0].ID != *organization.ID {
+			continue
+		}
+
+		activities = append(activities, &activity)
+	}
+
+	// Sort activities by timestamp (newest first).
+	slices.SortFunc(activities, func(a, b *Activity) int {
+		return time.Time(b.Timestamp).Compare(time.Time(a.Timestamp))
+	})
+
+	// Convert to refs.
+	for _, activity := range activities {
+		result = append(result, ActivityRef{ID: *activity.ID})
+	}
+
+	s.WriteJSON(w, req, result, nil)
+}
