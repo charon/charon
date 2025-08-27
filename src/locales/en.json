@@ -17,6 +17,7 @@
       "addUser": "Add user",
       "addAdmin": "Add admin",
       "manage": "Manage",
+      "activity": "Activity",
       "signOut": "Sign-out",
       "signIn": "Sign-in or sign-up",
       "resume": "Resume",
@@ -292,6 +293,10 @@
       "noUsers": "There are no users."
     },
     "ActivityList": {
+      "noActivities": "There is no activity."
+    },
+    "OrganizationActivity": {
+      "organizationActivity": "Activity for organization",
       "noActivities": "There is no activity."
     }
   }

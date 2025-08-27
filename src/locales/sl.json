@@ -17,6 +17,7 @@
       "addUser": "Dodaj uporabnika",
       "addAdmin": "Dodaj administratorja",
       "manage": "Upravljaj",
+      "activity": "Aktivnost",
       "signOut": "Izpis",
       "signIn": "Prijava ali registracija",
       "resume": "Nadaljuj",
@@ -292,6 +293,10 @@
       "noUsers": "Ni uporabnikov."
     },
     "ActivityList": {
+      "noActivities": "Ni aktivnosti."
+    },
+    "OrganizationActivity": {
+      "organizationActivity": "Aktivnost za organizacijo",
       "noActivities": "Ni aktivnosti."
     }
   }
