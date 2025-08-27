@@ -349,47 +349,47 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 	providers := []SiteProvider{}
 	if config.Providers.Google.ClientID != "" && config.Providers.Google.Secret != nil {
 		providers = append(providers, SiteProvider{
-			Key:      "google",
-			Name:     "Google",
-			Type:     "oidc",
-			issuer:   "https://accounts.google.com",
-			clientID: config.Providers.Google.ClientID,
+			Key:          "google",
+			Name:         "Google",
+			Type:         "oidc",
+			oidcIssuer:   "https://accounts.google.com",
+			oidcClientID: config.Providers.Google.ClientID,
 			// We trim space so that the file can contain whitespace (e.g., a newline) at the end.
-			secret:    strings.TrimSpace(string(config.Providers.Google.Secret)),
-			forcePKCE: false,
-			authURL:   "",
-			tokenURL:  "",
-			scopes:    []string{oidc.ScopeOpenID, "email", "profile"},
+			oidcSecret:    strings.TrimSpace(string(config.Providers.Google.Secret)),
+			oidcForcePKCE: false,
+			oidcAuthURL:   "",
+			oidcTokenURL:  "",
+			oidcScopes:    []string{oidc.ScopeOpenID, "email", "profile"},
 		})
 	}
 	if config.Providers.Facebook.ClientID != "" && config.Providers.Facebook.Secret != nil {
 		providers = append(providers, SiteProvider{
-			Key:      "facebook",
-			Name:     "Facebook",
-			Type:     "oidc",
-			issuer:   "https://www.facebook.com",
-			clientID: config.Providers.Facebook.ClientID,
+			Key:          "facebook",
+			Name:         "Facebook",
+			Type:         "oidc",
+			oidcIssuer:   "https://www.facebook.com",
+			oidcClientID: config.Providers.Facebook.ClientID,
 			// We trim space so that the file can contain whitespace (e.g., a newline) at the end.
-			secret:    strings.TrimSpace(string(config.Providers.Facebook.Secret)),
-			forcePKCE: true,
-			authURL:   "",
-			tokenURL:  "https://graph.facebook.com/oauth/access_token",
-			scopes:    []string{oidc.ScopeOpenID, "email", "public_profile"},
+			oidcSecret:    strings.TrimSpace(string(config.Providers.Facebook.Secret)),
+			oidcForcePKCE: true,
+			oidcAuthURL:   "",
+			oidcTokenURL:  "https://graph.facebook.com/oauth/access_token",
+			oidcScopes:    []string{oidc.ScopeOpenID, "email", "public_profile"},
 		})
 	}
 	if config.Providers.Testing.ClientID != "" && config.Providers.Testing.Secret != nil && config.Providers.Testing.Issuer != "" {
 		providers = append(providers, SiteProvider{
-			Key:      "testing",
-			Name:     "Testing",
-			Type:     "oidc",
-			issuer:   config.Providers.Testing.Issuer,
-			clientID: config.Providers.Testing.ClientID,
+			Key:          "testing",
+			Name:         "Testing",
+			Type:         "oidc",
+			oidcIssuer:   config.Providers.Testing.Issuer,
+			oidcClientID: config.Providers.Testing.ClientID,
 			// We trim space so that the file can contain whitespace (e.g., a newline) at the end.
-			secret:    strings.TrimSpace(string(config.Providers.Testing.Secret)),
-			forcePKCE: config.Providers.Testing.ForcePKCE,
-			authURL:   config.Providers.Testing.AuthURL,
-			tokenURL:  config.Providers.Testing.TokenURL,
-			scopes:    []string{oidc.ScopeOpenID},
+			oidcSecret:    strings.TrimSpace(string(config.Providers.Testing.Secret)),
+			oidcForcePKCE: config.Providers.Testing.ForcePKCE,
+			oidcAuthURL:   config.Providers.Testing.AuthURL,
+			oidcTokenURL:  config.Providers.Testing.TokenURL,
+			oidcScopes:    []string{oidc.ScopeOpenID},
 		})
 	}
 	for _, site := range sites {

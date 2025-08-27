@@ -16,13 +16,13 @@ type SiteProvider struct {
 	Type string   `json:"type"`
 
 	// Private fields.
-	issuer    string
-	clientID  string
-	secret    string
-	forcePKCE bool
-	authURL   string
-	tokenURL  string
-	scopes    []string
+	oidcIssuer    string
+	oidcClientID  string
+	oidcSecret    string
+	oidcForcePKCE bool
+	oidcAuthURL   string
+	oidcTokenURL  string
+	oidcScopes    []string
 }
 
 type Site struct {
