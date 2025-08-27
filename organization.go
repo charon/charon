@@ -913,7 +913,7 @@ func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, p
 
 	organization, errE := s.getOrganizationFromID(ctx, params["id"])
 	if errors.Is(errE, ErrOrganizationNotFound) {
-		s.NotFound(w, req)
+		s.NotFoundWithError(w, req, errE)
 		return
 	} else if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -937,7 +937,7 @@ func (s *Service) OrganizationAppGet(w http.ResponseWriter, req *http.Request, p
 
 	organization, errE := s.getOrganizationFromID(ctx, params["id"])
 	if errors.Is(errE, ErrOrganizationNotFound) {
-		s.NotFound(w, req)
+		s.NotFoundWithError(w, req, errE)
 		return
 	} else if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -1014,7 +1014,7 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 
 		organization, errE := s.getOrganizationFromID(ctx, params["id"]) //nolint:govet
 		if errors.Is(errE, ErrOrganizationNotFound) {
-			s.NotFound(w, req)
+			s.NotFoundWithError(w, req, errE)
 			return
 		} else if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
@@ -1175,7 +1175,7 @@ func (s *Service) OrganizationUpdatePost(w http.ResponseWriter, req *http.Reques
 		waf.Error(w, req, http.StatusUnauthorized)
 		return
 	} else if errors.Is(errE, ErrOrganizationNotFound) {
-		s.NotFound(w, req)
+		s.NotFoundWithError(w, req, errE)
 		return
 	} else if errors.Is(errE, ErrOrganizationValidationFailed) {
 		s.BadRequestWithError(w, req, errE)
@@ -1229,7 +1229,7 @@ func (s *Service) OrganizationUsersGet(w http.ResponseWriter, req *http.Request,
 
 	organization, errE := s.getOrganizationFromID(ctx, params["id"])
 	if errors.Is(errE, ErrOrganizationNotFound) {
-		s.NotFound(w, req)
+		s.NotFoundWithError(w, req, errE)
 		return
 	} else if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)

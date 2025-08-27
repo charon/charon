@@ -942,7 +942,7 @@ func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Req
 
 	applicationTemplate, errE := s.getApplicationTemplateFromID(ctx, params["id"])
 	if errors.Is(errE, ErrApplicationTemplateNotFound) {
-		s.NotFound(w, req)
+		s.NotFoundWithError(w, req, errE)
 		return
 	} else if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -1004,7 +1004,7 @@ func (s *Service) ApplicationTemplateUpdatePost(w http.ResponseWriter, req *http
 		waf.Error(w, req, http.StatusUnauthorized)
 		return
 	} else if errors.Is(errE, ErrApplicationTemplateNotFound) {
-		s.NotFound(w, req)
+		s.NotFoundWithError(w, req, errE)
 		return
 	} else if errors.Is(errE, ErrApplicationTemplateValidationFailed) {
 		s.BadRequestWithError(w, req, errE)

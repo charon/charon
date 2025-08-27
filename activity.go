@@ -286,7 +286,7 @@ func (s *Service) ActivityGetGet(w http.ResponseWriter, req *http.Request, param
 
 	activity, errE := s.getActivity(ctx, activityID)
 	if errors.Is(errE, ErrActivityNotFound) {
-		s.NotFound(w, req)
+		s.NotFoundWithError(w, req, errE)
 		return
 	} else if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)

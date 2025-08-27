@@ -1039,7 +1039,7 @@ func (s *Service) IdentityGetGet(w http.ResponseWriter, req *http.Request, param
 		waf.Error(w, req, http.StatusUnauthorized)
 		return
 	} else if errors.Is(errE, ErrIdentityNotFound) {
-		s.NotFound(w, req)
+		s.NotFoundWithError(w, req, errE)
 		return
 	} else if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -1173,7 +1173,7 @@ func (s *Service) IdentityUpdatePost(w http.ResponseWriter, req *http.Request, p
 		waf.Error(w, req, http.StatusUnauthorized)
 		return
 	} else if errors.Is(errE, ErrIdentityNotFound) {
-		s.NotFound(w, req)
+		s.NotFoundWithError(w, req, errE)
 		return
 	} else if errors.Is(errE, ErrIdentityValidationFailed) {
 		s.BadRequestWithError(w, req, errE)
