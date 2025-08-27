@@ -185,12 +185,9 @@ onBeforeUnmount(() => {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div>
-      <i18n-t
-        keypath="partials.AuthThirdPartyProvider.redirectMessage"
-        scope="global"
-        :time="t('common.time.seconds', seconds)"
-        :paused-text="paused ? t('common.time.paused') : ''"
-      >
+      <i18n-t keypath="partials.AuthThirdPartyProvider.redirectMessage" scope="global">
+        <template #time>{{ t("common.time.seconds", seconds) }}</template>
+        <template #pausedText>{{ paused ? t("common.time.paused") : "" }}</template>
         <template #strongProvider
           ><strong>{{ flow.getThirdPartyProvider()!.name }}</strong></template
         >
