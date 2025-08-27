@@ -1067,13 +1067,8 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 			}
 		} else {
 			idOrg = identity.GetOrganization(&organizationID)
-			if idOrg == nil {
+			if idOrg == nil || *idOrg.ID != identityID {
 				continue
-			}
-
-			if *idOrg.ID != identityID {
-				s.NotFound(w, req)
-				return
 			}
 
 			if !idOrg.Active {
