@@ -266,8 +266,8 @@ type Service struct {
 	identitiesAccessMu sync.RWMutex
 	// Map from organization ID to map of organization-scoped identity IDs which have been blocked in the organization, to corresponding notes.
 	identitiesBlocked map[identifier.Identifier]map[identifier.Identifier]BlockedIdentity
-	// Map from organization ID to map of account IDs which have been blocked in the organization, to corresponding notes.
-	accountsBlocked map[identifier.Identifier]map[identifier.Identifier]BlockedIdentity
+	// Map from organization ID to map of account IDs which have been blocked in the organization, to a map between identity ID which was blocked with the account and corresponding notes.
+	accountsBlocked map[identifier.Identifier]map[identifier.Identifier]map[identifier.Identifier]BlockedIdentity
 	// We use only one mutex for both identitiesBlocked and accountsBlocked as they are always used together.
 	identitiesBlockedMu sync.RWMutex
 }
@@ -498,7 +498,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		identityCreators:       map[IdentityRef]identifier.Identifier{},
 		identitiesAccessMu:     sync.RWMutex{},
 		identitiesBlocked:      map[identifier.Identifier]map[identifier.Identifier]BlockedIdentity{},
-		accountsBlocked:        map[identifier.Identifier]map[identifier.Identifier]BlockedIdentity{},
+		accountsBlocked:        map[identifier.Identifier]map[identifier.Identifier]map[identifier.Identifier]BlockedIdentity{},
 		identitiesBlockedMu:    sync.RWMutex{},
 	}
 

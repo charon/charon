@@ -1317,7 +1317,7 @@ func (s *Service) isIdentityOrAccountBlockedInOrganization(_ context.Context, id
 	return false, nil
 }
 
-func (s *Service) unblockIdentity(_ context.Context, identityID, organizationID identifier.Identifier) errors.E {
+func (s *Service) unblockIdentity(_ context.Context, orgIdentityID, organizationID identifier.Identifier) errors.E {
 	s.identitiesBlockedMu.Lock()
 	defer s.identitiesBlockedMu.Unlock()
 
@@ -1325,12 +1325,16 @@ func (s *Service) unblockIdentity(_ context.Context, identityID, organizationID 
 		return nil
 	}
 
-	delete(s.identitiesBlocked[organizationID], identityID)
+	delete(s.identitiesBlocked[organizationID], orgIdentityID)
+
+	if len(s.identitiesBlocked[organizationID]) == 0 {
+		delete(s.identitiesBlocked, organizationID)
+	}
 
 	return nil
 }
 
-func (s *Service) blockIdentity(_ context.Context, identityID, organizationID identifier.Identifier, organizationNote, identityNote string) errors.E {
+func (s *Service) blockIdentity(_ context.Context, orgIdentityID, organizationID identifier.Identifier, organizationNote, identityNote string) errors.E {
 	s.identitiesBlockedMu.Lock()
 	defer s.identitiesBlockedMu.Unlock()
 
@@ -1338,7 +1342,8 @@ func (s *Service) blockIdentity(_ context.Context, identityID, organizationID id
 		s.identitiesBlocked[organizationID] = map[identifier.Identifier]BlockedIdentity{}
 	}
 
-	s.identitiesBlocked[organizationID][identityID] = BlockedIdentity{
+	// It is OK to overwrite the note because we do not allow multiple notes for the same identity.
+	s.identitiesBlocked[organizationID][orgIdentityID] = BlockedIdentity{
 		OrganizationNote: organizationNote,
 		IdentityNote:     identityNote,
 	}
@@ -1346,18 +1351,26 @@ func (s *Service) blockIdentity(_ context.Context, identityID, organizationID id
 	return nil
 }
 
-func (s *Service) blockAccounts(_ context.Context, identity *Identity, organizationID identifier.Identifier, organizationNote, identityNote string) errors.E {
+func (s *Service) blockAccounts(
+	_ context.Context, identity *Identity, orgIdentityID, organizationID identifier.Identifier,
+	organizationNote, identityNote string,
+) errors.E {
 	accountIDs := s.getAccountsForIdentityWithLock(IdentityRef{ID: *identity.ID})
 
 	s.identitiesBlockedMu.Lock()
 	defer s.identitiesBlockedMu.Unlock()
 
 	if s.accountsBlocked[organizationID] == nil {
-		s.accountsBlocked[organizationID] = map[identifier.Identifier]BlockedIdentity{}
+		s.accountsBlocked[organizationID] = map[identifier.Identifier]map[identifier.Identifier]BlockedIdentity{}
 	}
 
 	for accountID := range accountIDs {
-		s.accountsBlocked[organizationID][accountID] = BlockedIdentity{
+		if s.accountsBlocked[organizationID][accountID] == nil {
+			s.accountsBlocked[organizationID][accountID] = map[identifier.Identifier]BlockedIdentity{}
+		}
+
+		// It is OK to overwrite the note because we do not allow multiple notes for the same account & identity pair.
+		s.accountsBlocked[organizationID][accountID][orgIdentityID] = BlockedIdentity{
 			OrganizationNote: organizationNote,
 			IdentityNote:     identityNote,
 		}
@@ -1437,7 +1450,7 @@ func (s *Service) OrganizationBlockUserPost(w http.ResponseWriter, req *http.Req
 			return
 		}
 	case BlockedIdentityAndAccounts:
-		errE := s.blockAccounts(ctx, identity, *organization.ID, blockRequest.OrganizationNote, blockRequest.IdentityNote)
+		errE := s.blockAccounts(ctx, identity, *idOrg.ID, *organization.ID, blockRequest.OrganizationNote, blockRequest.IdentityNote)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
@@ -1459,10 +1472,15 @@ func (s *Service) OrganizationBlockUserPost(w http.ResponseWriter, req *http.Req
 	s.WriteJSON(w, req, []byte(`{"success":true}`), nil)
 }
 
+type OrganizationBlockedStatusNotes struct {
+	Identity         IdentityRef `json:"identity"`
+	OrganizationNote string      `json:"organizationNote,omitempty"`
+	IdentityNote     string      `json:"identityNote,omitempty"`
+}
+
 type OrganizationBlockedStatusResponse struct {
-	Blocked          BlockedIdentityType `json:"blocked"`
-	OrganizationNote string              `json:"organizationNote,omitempty"`
-	IdentityNote     string              `json:"identityNote,omitempty"`
+	Blocked BlockedIdentityType              `json:"blocked"`
+	Notes   []OrganizationBlockedStatusNotes `json:"notes,omitempty"`
 }
 
 func (s *Service) OrganizationBlockedStatusGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
@@ -1525,9 +1543,12 @@ func (s *Service) OrganizationBlockedStatusGet(w http.ResponseWriter, req *http.
 				}
 
 				s.WriteJSON(w, req, OrganizationBlockedStatusResponse{
-					Blocked:          BlockedIdentityOnly,
-					OrganizationNote: blockedIdentity.OrganizationNote,
-					IdentityNote:     blockedIdentity.IdentityNote,
+					Blocked: BlockedIdentityOnly,
+					Notes: []OrganizationBlockedStatusNotes{{
+						Identity:         IdentityRef{ID: *idOrg.ID},
+						OrganizationNote: blockedIdentity.OrganizationNote,
+						IdentityNote:     blockedIdentity.IdentityNote,
+					}},
 				}, nil)
 				return
 			}
@@ -1538,17 +1559,28 @@ func (s *Service) OrganizationBlockedStatusGet(w http.ResponseWriter, req *http.
 	// then also this identity is blocked for them.
 	if hasUserAccess || hasAdminAccess {
 		if s.accountsBlocked[*organization.ID] != nil {
-			blockedIdentity, ok := s.accountsBlocked[*organization.ID][accountID]
+			blockedIdentities, ok := s.accountsBlocked[*organization.ID][accountID]
 			if ok {
-				// Only organization admin can see organization note.
-				if !isOrgAdmin {
-					blockedIdentity.OrganizationNote = ""
+				notes := []OrganizationBlockedStatusNotes{}
+				for orgIdentityID, blockedIdentity := range blockedIdentities {
+					// Only organization admin can see organization note.
+					if !isOrgAdmin {
+						blockedIdentity.OrganizationNote = ""
+					}
+					notes = append(notes, OrganizationBlockedStatusNotes{
+						Identity:         IdentityRef{ID: orgIdentityID},
+						OrganizationNote: blockedIdentity.OrganizationNote,
+						IdentityNote:     blockedIdentity.IdentityNote,
+					})
 				}
 
+				slices.SortFunc(notes, func(a, b OrganizationBlockedStatusNotes) int {
+					return identityRefCmp(a.Identity, b.Identity)
+				})
+
 				s.WriteJSON(w, req, OrganizationBlockedStatusResponse{
-					Blocked:          BlockedIdentityAndAccounts,
-					OrganizationNote: blockedIdentity.OrganizationNote,
-					IdentityNote:     blockedIdentity.IdentityNote,
+					Blocked: BlockedIdentityAndAccounts,
+					Notes:   notes,
 				}, nil)
 				return
 			}
@@ -1558,9 +1590,8 @@ func (s *Service) OrganizationBlockedStatusGet(w http.ResponseWriter, req *http.
 	// If we got to here and caller has access, then identity is not blocked.
 	if (isOrgAdmin && idOrg.Active) || hasUserAccess || hasAdminAccess {
 		s.WriteJSON(w, req, OrganizationBlockedStatusResponse{
-			Blocked:          BlockedIdentityNotBlocked,
-			OrganizationNote: "",
-			IdentityNote:     "",
+			Blocked: BlockedIdentityNotBlocked,
+			Notes:   nil,
 		}, nil)
 		return
 	}
