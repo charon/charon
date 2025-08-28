@@ -1043,6 +1043,30 @@ type OrganizationIdentity struct {
 	Organizations []IdentityOrganization `json:"organizations,omitempty"`
 }
 
+func (s *Service) getIdentityFromOrganization(ctx context.Context, organizationID, identityID identifier.Identifier) (*Identity, *IdentityOrganization, errors.E) {
+	s.identitiesMu.RLock()
+	defer s.identitiesMu.RUnlock()
+
+	// TODO: Use an index instead of iterating over all identities.
+	for id, data := range s.identities {
+		var identity Identity
+		errE := x.UnmarshalWithoutUnknownFields(data, &identity)
+		if errE != nil {
+			errors.Details(errE)["id"] = id
+			return nil, nil, errE
+		}
+
+		idOrg := identity.GetOrganization(&organizationID)
+		if idOrg == nil || *idOrg.ID != identityID {
+			continue
+		}
+
+		return &identity, idOrg, nil
+	}
+
+	return nil, nil, errors.WithDetails(ErrIdentityNotFound, "id", identityID)
+}
+
 // Anyone with valid access token for the organization can access public data about any
 // identity in the organization given the organization-scoped identity ID.
 //
@@ -1103,99 +1127,93 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	s.identitiesMu.RLock()
-	defer s.identitiesMu.RUnlock()
+	var identity *Identity
+	var idOrg *IdentityOrganization
 
-	// TODO: Use an index instead of iterating over all identities.
-	for id, data := range s.identities {
-		var identity Identity
-		errE := x.UnmarshalWithoutUnknownFields(data, &identity)
-		if errE != nil {
-			errors.Details(errE)["id"] = id
+	if co.ID == organizationID {
+		// A special case for Charon organization: organization-scoped identity ID is the same as the identity ID.
+		// We need a special case here because we want to return even identities which have not been added to the
+		// Charon organization (so that users can give permissions over identities to other users while those
+		// identities have never been used with the Charon organization itself).
+
+		// TODO: This allows everyone to access data about an identity given only its database ID.
+		//       This is problematic because somebody might create an identity to be used only with a particular organization,
+		//       never to be shared with other users (so there is no need for identity to be available through this endpoint),
+		//       without giving any consent that data can be shared with others. While we do not expose all database IDs it is
+		//       still problematic that data is protected only by secrecy of the database ID. Currently we do this to allow
+		//       permissions between identities. But once we have an invitation system and general permission system,
+		//       then we can expose through this endpoint only identities a) which have joined the Charon organization, or
+		//       b) have accepted an invite to be added to a permission. Importantly, identities which have been invited but never
+		//       accepted the invite should not have their data revealed, only information provided by the inviter should be shown.
+
+		identity, errE = s.getIdentityWithoutAccessCheck(ctx, identityID)
+		if errors.Is(errE, ErrIdentityNotFound) {
+			s.NotFoundWithError(w, req, errE)
+			return
+		} else if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
 
-		var idOrg *IdentityOrganization
-
-		if co.ID == organizationID {
-			// TODO: This allows everyone to access data about an identity given only its database ID.
-			//       This is problematic because somebody might create an identity to be used only with a particular organization,
-			//       never to be shared with other users (so there is no need for identity to be available through this endpoint),
-			//       without giving any consent that data can be shared with others. While we do not expose all database IDs it is
-			//       still problematic that data is protected only by secrecy of the database ID. Currently we do this to allow
-			//       permissions between identities. But once we have an invitation system and general permission system,
-			//       then we can expose through this endpoint only identities a) which have joined the Charon organization, or
-			//       b) have accepted an invite to be added to a permission. Importantly, identities which have been invited but never
-			//       accepted the invite should not have their data revealed, only information provided by the inviter should be shown.
-
-			// A special case for Charon organization: organization-scoped identity ID is the same as the identity ID.
-			// We need a special case here because we want to return even identities which have not been added to the
-			// Charon organization (so that users can give permissions over identities to other users while those
-			// identities have never been used with the Charon organization itself).
-			// We could simplify here and just access the identity directly using its ID, but we want the logic flow
-			// to be the same as when the organization is not the Charon organization.
-			if *identity.ID != identityID {
-				continue
-			}
-		} else {
-			idOrg = identity.GetOrganization(&organizationID)
-			if idOrg == nil || *idOrg.ID != identityID {
-				continue
-			}
-
-			if !idOrg.Active {
-				s.NotFound(w, req)
-				return
-			}
-
-			// We do not want to expose the link between the database ID and the organization-scoped ID.
-			identity.ID = idOrg.ID
-		}
-
-		// TODO: Expose only those fields the access tokens have access to through its scopes.
-		//       E.g., backend access token might access e-mail address while frontend access token might not need access to e-mail address.
-		//       How can we support that the frontend access token accesses e-mail address of the currently signed-in user but not of all other users?
-
-		// TODO: Can we expose only those identities to which the user needs access but not to all of them?
-		//       (Because they are referenced by anything the user has access to.) On the other hand, the user can access only identities for which they know
-		//       their ID and presumably they learned those IDs by having access to something which referenced those IDs. So unless we enable identity enumeration,
-		//       how it is might be enough (and even then we would probably enable enumeration only to identities to which user needs access).
-
-		ids, isCreator, errE := s.getIdentitiesForAccount(ctx, accountID, IdentityRef{ID: *identity.ID})
-		if errE != nil {
+		idOrg = identity.GetOrganization(&organizationID)
+	} else {
+		identity, idOrg, errE = s.getIdentityFromOrganization(ctx, organizationID, identityID)
+		if errors.Is(errE, ErrIdentityNotFound) {
+			s.NotFoundWithError(w, req, errE)
+			return
+		} else if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
 
-		if hasOrganizationAccessToken {
-			// Only when organization admin is requesting identity information,
-			// we return additional field Organizations.
-			idOrg = nil
+		if !idOrg.Active {
+			s.NotFound(w, req)
+			return
 		}
 
-		organizations := []IdentityOrganization{}
-		if idOrg != nil {
-			organizations = append(organizations, *idOrg)
-		}
+		// We do not want to expose the link between the database ID and the organization-scoped ID.
+		identity.ID = idOrg.ID
+	}
 
-		s.WriteJSON(w, req, OrganizationIdentity{
-			IdentityPublic: identity.IdentityPublic,
-			Organizations:  organizations,
-		}, map[string]interface{}{
-			"can_use":    identity.HasUserAccess(ids),
-			"can_update": identity.HasAdminAccess(ids, isCreator),
-			// identity.ID is organization-scoped (we make it so above) and it makes sense to
-			// compare it with currentIdentityID only if currentIdentityID belongs to the same
-			// organization and not to Charon organization from the special case.
-			// (It might be that organization is in fact Charon organization, but that should be
-			// then handled as the first case and not as the special case.)
-			"is_current": hasOrganizationAccessToken && *identity.ID == currentIdentityID,
-		})
+	// TODO: Expose only those fields the access tokens have access to through its scopes.
+	//       E.g., backend access token might access e-mail address while frontend access token might not need access to e-mail address.
+	//       How can we support that the frontend access token accesses e-mail address of the currently signed-in user but not of all other users?
+
+	// TODO: Can we expose only those identities to which the user needs access but not to all of them?
+	//       (Because they are referenced by anything the user has access to.) On the other hand, the user can access only identities for which they know
+	//       their ID and presumably they learned those IDs by having access to something which referenced those IDs. So unless we enable identity enumeration,
+	//       how it is might be enough (and even then we would probably enable enumeration only to identities to which user needs access).
+
+	ids, isCreator, errE := s.getIdentitiesForAccount(ctx, accountID, IdentityRef{ID: *identity.ID})
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	s.NotFound(w, req)
+	if hasOrganizationAccessToken {
+		// Only when organization admin is requesting identity information,
+		// we return additional field Organizations.
+		idOrg = nil
+	}
+
+	organizations := []IdentityOrganization{}
+	if idOrg != nil {
+		organizations = append(organizations, *idOrg)
+	}
+
+	s.WriteJSON(w, req, OrganizationIdentity{
+		IdentityPublic: identity.IdentityPublic,
+		Organizations:  organizations,
+	}, map[string]interface{}{
+		"can_use":    identity.HasUserAccess(ids),
+		"can_update": identity.HasAdminAccess(ids, isCreator),
+		// identity.ID is organization-scoped (we make it so above) and it makes sense to
+		// compare it with currentIdentityID only if currentIdentityID belongs to the same
+		// organization and not to Charon organization from the special case.
+		// (It might be that organization is in fact Charon organization, but that should be
+		// then handled as the first case and not as the special case.)
+		"is_current": hasOrganizationAccessToken && *identity.ID == currentIdentityID,
+	})
 }
 
 func (s *Service) OrganizationListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
