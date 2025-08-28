@@ -22,6 +22,7 @@ var (
 	ErrIdentityUnauthorized     = errors.Base("identity access unauthorized")
 	ErrIdentityUpdateNotAllowed = errors.Base("identity update not allowed")
 	ErrIdentityValidationFailed = errors.Base("identity validation failed")
+	ErrIdentityBlocked          = errors.Base("identity blocked")
 
 	errEmptyIdentity = errors.Base("empty identity")
 )
@@ -966,6 +967,29 @@ func (s *Service) selectAndActivateIdentity(ctx context.Context, identityID, org
 	identity, _, errE := s.getIdentity(ctx, identityID)
 	if errE != nil {
 		return nil, errE
+	}
+
+	organization, errE := s.getOrganization(ctx, organizationID)
+	if errE != nil {
+		return nil, errE
+	}
+
+	// Check if the identity is blocked in the organization.
+	blocked := organization.GetBlockedIdentity(identityID)
+	if blocked != nil {
+		return nil, errors.WithStack(ErrIdentityBlocked)
+	}
+
+	// Check if any identity for this account is blocked with type BlockedIdentityAndAccount.
+	accountID := mustGetAccountID(ctx)
+	identities, _, errE := s.getIdentitiesForAccount(ctx, accountID, IdentityRef{ID: identityID})
+	if errE != nil {
+		return nil, errE
+	}
+	for identityRef := range mapset.Elements(identities) {
+		if blocked := organization.GetBlockedIdentity(identityRef.ID); blocked != nil && blocked.Type == BlockedIdentityAndAccount {
+			return nil, errors.WithStack(ErrIdentityBlocked)
+		}
 	}
 
 	applicationRef := OrganizationApplicationApplicationRef{ID: applicationID}

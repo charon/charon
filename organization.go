@@ -546,6 +546,21 @@ type Organization struct {
 	Applications []OrganizationApplication `json:"applications"`
 }
 
+// GetBlockedIdentity returns the BlockedIdentity entry for the given identity ID, or nil if not blocked.
+func (o *Organization) GetBlockedIdentity(id identifier.Identifier) *BlockedIdentity {
+	if o == nil {
+		return nil
+	}
+
+	for _, blocked := range o.BlockedIdentities {
+		if blocked.Identity.ID == id {
+			return &blocked
+		}
+	}
+
+	return nil
+}
+
 func (o *Organization) GetApplication(id *identifier.Identifier) *OrganizationApplication {
 	if o == nil {
 		return nil
