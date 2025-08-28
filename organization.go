@@ -528,7 +528,7 @@ type BlockedIdentity struct {
 
 func (b *BlockedIdentity) Validate(_ context.Context) errors.E {
 	if b.Type != BlockedIdentityOnly && b.Type != BlockedIdentityAndAccount {
-		errE := errors.New("invalid blocked identity type")
+		errE := errors.New("unsupported type")
 		errors.Details(errE)["type"] = b.Type
 		return errE
 	}

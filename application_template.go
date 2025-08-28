@@ -420,7 +420,9 @@ func (v *Variable) Validate(_ context.Context) errors.E {
 	switch v.Type {
 	case VariableURIPrefix:
 	default:
-		return errors.New("invalid type")
+		errE := errors.New("unsupported type")
+		errors.Details(errE)["type"] = v.Type
+		return errE
 	}
 
 	return nil
