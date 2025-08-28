@@ -274,6 +274,18 @@
       "get": {}
     },
     {
+      "name": "OrganizationBlockUser",
+      "path": "/o/block/:id/:identityId",
+      "api": {},
+      "get": {}
+    },
+    {
+      "name": "OrganizationBlockedStatus",
+      "path": "/o/blocked/:id/:identityId",
+      "api": {},
+      "get": null
+    },
+    {
       "name": "OrganizationActivity",
       "path": "/o/activity/:id",
       "api": {},

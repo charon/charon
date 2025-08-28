@@ -264,6 +264,12 @@ type Service struct {
 	identityCreators map[IdentityRef]identifier.Identifier
 	// We use only one mutex for both identitiesAccess and identityCreators as they are always used together.
 	identitiesAccessMu sync.RWMutex
+	// Map from organization ID to map of organization-scoped identity IDs which have been blocked in the organization, to corresponding notes.
+	identitiesBlocked map[identifier.Identifier]map[identifier.Identifier]BlockedIdentity
+	// Map from organization ID to map of account IDs which have been blocked in the organization, to corresponding notes.
+	accountsBlocked map[identifier.Identifier]map[identifier.Identifier]BlockedIdentity
+	// We use only one mutex for both identitiesBlocked and accountsBlocked as they are always used together.
+	identitiesBlockedMu sync.RWMutex
 }
 
 // Init is used primarily in tests. Use Run otherwise.
@@ -433,7 +439,8 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		Config: &hmacStrategyConfigurator{Secret: secret},
 	}
 
-	service := &Service{ //nolint:forcetypeassert
+	service := &Service{
+		//nolint:forcetypeassert
 		Service: waf.Service[*Site]{
 			Logger:          config.Logger,
 			CanonicalLogger: config.Logger,
@@ -490,6 +497,9 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		identitiesAccess:       map[identifier.Identifier]map[IdentityRef][][]IdentityRef{},
 		identityCreators:       map[IdentityRef]identifier.Identifier{},
 		identitiesAccessMu:     sync.RWMutex{},
+		identitiesBlocked:      map[identifier.Identifier]map[identifier.Identifier]BlockedIdentity{},
+		accountsBlocked:        map[identifier.Identifier]map[identifier.Identifier]BlockedIdentity{},
+		identitiesBlockedMu:    sync.RWMutex{},
 	}
 
 	if config.Mail.Host != "" {

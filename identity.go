@@ -583,8 +583,6 @@ func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*I
 	if errE != nil {
 		return nil, false, errE
 	}
-	// We could also just check if ids.Contains(IdentityRef{ID: *identity.ID}),
-	// but this gives us information about the type of the access.
 	if identity.HasAdminAccess(ids, isCreator) {
 		return &identity, true, nil
 	}
@@ -696,6 +694,13 @@ func (s *Service) unsetAccountForIdentity(accountID identifier.Identifier, ident
 	if len(identities) == 0 {
 		delete(s.identitiesAccess, accountID)
 	}
+}
+
+func (s *Service) getAccountsForIdentityWithLock(identity IdentityRef) map[identifier.Identifier][][]IdentityRef {
+	s.identitiesAccessMu.RLock()
+	defer s.identitiesAccessMu.RUnlock()
+
+	return s.getAccountsForIdentity(identity)
 }
 
 // getAccountsForIdentity returns all accounts that have access to the identity.
@@ -969,7 +974,7 @@ func (s *Service) selectAndActivateIdentity(ctx context.Context, identityID, org
 		return nil, errE
 	}
 
-	isBlocked, errE := s.isIdentityBlockedInOrganization(ctx, identity, organizationID)
+	isBlocked, errE := s.isIdentityOrAccountBlockedInOrganization(ctx, identity, mustGetAccountID(ctx), organizationID)
 	if errE != nil {
 		return nil, errE
 	} else if isBlocked {
@@ -1136,8 +1141,6 @@ func (s *Service) identityList(ctx context.Context) ([]IdentityRef, errors.E) {
 			return nil, errE
 		}
 
-		// We could also just check if ids.Contains(i), but this gives
-		// us information about the type of the access.
 		hasUserAccess := identity.HasUserAccess(ids)
 		hasAdminAccess := identity.HasAdminAccess(ids, isCreator)
 		if !hasUserAccess && !hasAdminAccess {

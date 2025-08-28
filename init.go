@@ -38,8 +38,7 @@ func initCharonOrganization(config *Config, service *Service, domain string) (fu
 				Name:        "Charon",
 				Description: "",
 			},
-			Admins:            []IdentityRef{},
-			BlockedIdentities: []BlockedIdentity{},
+			Admins: []IdentityRef{},
 			Applications: []OrganizationApplication{
 				{
 					OrganizationApplicationPublic: OrganizationApplicationPublic{

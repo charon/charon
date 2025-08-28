@@ -514,30 +514,14 @@ func (a *OrganizationApplication) Validate(ctx context.Context, existing *Organi
 type BlockedIdentityType string
 
 const (
-	BlockedIdentityNotBlocked BlockedIdentityType = "notBlocked"
-	BlockedIdentityOnly       BlockedIdentityType = "onlyIdentity"
-	BlockedIdentityAndAccount BlockedIdentityType = "identityAndAccount"
+	BlockedIdentityNotBlocked  BlockedIdentityType = "notBlocked"
+	BlockedIdentityOnly        BlockedIdentityType = "onlyIdentity"
+	BlockedIdentityAndAccounts BlockedIdentityType = "identityAndAccounts"
 )
 
 type BlockedIdentity struct {
-	Identity         IdentityRef         `json:"identity"`
-	Type             BlockedIdentityType `json:"type"`
-	OrganizationNote string              `json:"organizationNote"`
-	IdentityNote     string              `json:"identityNote"`
-}
-
-func (b *BlockedIdentity) Validate(_ context.Context) errors.E {
-	switch b.Type {
-	case BlockedIdentityOnly, BlockedIdentityAndAccount:
-	case BlockedIdentityNotBlocked:
-		fallthrough
-	default:
-		errE := errors.New("unsupported type")
-		errors.Details(errE)["type"] = b.Type
-		return errE
-	}
-
-	return nil
+	OrganizationNote string
+	IdentityNote     string
 }
 
 type Organization struct {
@@ -545,24 +529,7 @@ type Organization struct {
 
 	Admins []IdentityRef `json:"admins"`
 
-	BlockedIdentities []BlockedIdentity `json:"blockedIdentities"`
-
 	Applications []OrganizationApplication `json:"applications"`
-}
-
-// GetBlockedIdentity returns the BlockedIdentity entry for the given identity ID, or nil if not blocked.
-func (o *Organization) GetBlockedIdentity(id identifier.Identifier) *BlockedIdentity {
-	if o == nil {
-		return nil
-	}
-
-	for _, blocked := range o.BlockedIdentities {
-		if blocked.Identity.ID == id {
-			return &blocked
-		}
-	}
-
-	return nil
 }
 
 func (o *Organization) GetApplication(id *identifier.Identifier) *OrganizationApplication {
@@ -674,33 +641,6 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 		identities := unknown.ToSlice()
 		slices.SortFunc(identities, identityRefCmp)
 		errors.Details(errE)["identities"] = identities
-	}
-
-	if o.BlockedIdentities == nil {
-		o.BlockedIdentities = []BlockedIdentity{}
-	}
-
-	// Validate blocked identities.
-	blockedIdentitySet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
-	for i, blockedIdentity := range o.BlockedIdentities {
-		errE := blockedIdentity.Validate(ctx)
-		if errE != nil {
-			errE = errors.WithMessage(errE, "blocked identity")
-			errors.Details(errE)["i"] = i
-			errors.Details(errE)["identity"] = blockedIdentity.Identity.ID
-			return errE
-		}
-
-		if blockedIdentitySet.Contains(blockedIdentity.Identity.ID) {
-			errE := errors.New("duplicate blocked identity")
-			errors.Details(errE)["i"] = i
-			errors.Details(errE)["identity"] = blockedIdentity.Identity.ID
-			return errE
-		}
-		blockedIdentitySet.Add(blockedIdentity.Identity.ID)
-
-		// BlockedIdentity might have been changed by Validate, so we assign it back.
-		o.BlockedIdentities[i] = blockedIdentity
 	}
 
 	if o.Applications == nil {
@@ -1019,7 +959,7 @@ func (s *Service) OrganizationAppGet(w http.ResponseWriter, req *http.Request, p
 
 	appID, errE := identifier.MaybeString(params["appId"])
 	if errE != nil {
-		s.NotFoundWithError(w, req, errE)
+		s.NotFoundWithError(w, req, errors.WrapWith(errE, ErrApplicationTemplateNotFound))
 		return
 	}
 
@@ -1079,13 +1019,13 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 
 	organizationID, errE := identifier.MaybeString(params["id"])
 	if errE != nil {
-		s.BadRequestWithError(w, req, errE)
+		s.NotFoundWithError(w, req, errors.WrapWith(errE, ErrOrganizationNotFound))
 		return
 	}
 
 	identityID, errE := identifier.MaybeString(params["identityId"])
 	if errE != nil {
-		s.BadRequestWithError(w, req, errE)
+		s.NotFoundWithError(w, req, errors.WrapWith(errE, ErrIdentityNotFound))
 		return
 	}
 
@@ -1351,4 +1291,279 @@ func (s *Service) OrganizationUsersGet(w http.ResponseWriter, req *http.Request,
 	slices.SortFunc(result, identityRefCmp)
 
 	s.WriteJSON(w, req, result, nil)
+}
+
+func (s *Service) isIdentityOrAccountBlockedInOrganization(ctx context.Context, identity *Identity, accountID, organizationID identifier.Identifier) (bool, errors.E) {
+	s.identitiesBlockedMu.RLock()
+	defer s.identitiesBlockedMu.RUnlock()
+
+	// Check if the identity is blocked in the organization.
+	idOrg := identity.GetIdentityOrganization(&organizationID)
+	if idOrg != nil && s.identitiesBlocked[organizationID] != nil {
+		_, ok := s.identitiesBlocked[organizationID][*idOrg.ID]
+		if ok {
+			return true, nil
+		}
+	}
+
+	// Check if the account is blocked in the organization.
+	if s.accountsBlocked[organizationID] != nil && s.accountsBlocked[organizationID] != nil {
+		_, ok := s.accountsBlocked[organizationID][accountID]
+		if ok {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (s *Service) unblockIdentity(_ context.Context, identityID, organizationID identifier.Identifier) errors.E {
+	s.identitiesBlockedMu.Lock()
+	defer s.identitiesBlockedMu.Unlock()
+
+	if s.identitiesBlocked[organizationID] == nil {
+		return nil
+	}
+
+	delete(s.identitiesBlocked[organizationID], identityID)
+
+	return nil
+}
+
+func (s *Service) blockIdentity(_ context.Context, identityID, organizationID identifier.Identifier, organizationNote, identityNote string) errors.E {
+	s.identitiesBlockedMu.Lock()
+	defer s.identitiesBlockedMu.Unlock()
+
+	if s.identitiesBlocked[organizationID] == nil {
+		s.identitiesBlocked[organizationID] = map[identifier.Identifier]BlockedIdentity{}
+	}
+
+	s.identitiesBlocked[organizationID][identityID] = BlockedIdentity{
+		OrganizationNote: organizationNote,
+		IdentityNote:     identityNote,
+	}
+
+	return nil
+}
+
+func (s *Service) blockAccounts(_ context.Context, identity *Identity, organizationID identifier.Identifier, organizationNote, identityNote string) errors.E {
+	accountIDs := s.getAccountsForIdentityWithLock(IdentityRef{ID: *identity.ID})
+
+	s.identitiesBlockedMu.Lock()
+	defer s.identitiesBlockedMu.Unlock()
+
+	if s.accountsBlocked[organizationID] == nil {
+		s.accountsBlocked[organizationID] = map[identifier.Identifier]BlockedIdentity{}
+	}
+
+	for accountID := range accountIDs {
+		s.accountsBlocked[organizationID][accountID] = BlockedIdentity{
+			OrganizationNote: organizationNote,
+			IdentityNote:     identityNote,
+		}
+	}
+
+	return nil
+}
+
+func (s *Service) OrganizationBlockUser(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	if s.ProxyStaticTo != "" {
+		s.Proxy(w, req)
+	} else {
+		s.ServeStaticFile(w, req, "/index.html")
+	}
+}
+
+type OrganizationBlockRequest struct {
+	Type             BlockedIdentityType `json:"type"`
+	OrganizationNote string              `json:"organizationNote"`
+	IdentityNote     string              `json:"identityNote"`
+}
+
+func (s *Service) OrganizationBlockUserPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	defer req.Body.Close()
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	ctx := s.RequireAuthenticated(w, req)
+	if ctx == nil {
+		return
+	}
+
+	organization, errE := s.getOrganizationFromID(ctx, params["id"])
+	if errors.Is(errE, ErrOrganizationNotFound) {
+		s.NotFoundWithError(w, req, errE)
+		return
+	} else if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	identityID, errE := identifier.MaybeString(params["identityId"])
+	if errE != nil {
+		s.NotFoundWithError(w, req, errors.WrapWith(errE, ErrIdentityNotFound))
+		return
+	}
+	identity, idOrg, errE := s.getIdentityFromOrganization(ctx, *organization.ID, identityID)
+	if errors.Is(errE, ErrIdentityNotFound) {
+		// It is OK that we leak here if identity is in organization or not because
+		// we do the same in OrganizationIdentityGet.
+		s.NotFoundWithError(w, req, errE)
+		return
+	} else if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	} else if !idOrg.Active {
+		s.NotFound(w, req)
+		return
+	}
+
+	if !organization.HasAdminAccess(IdentityRef{ID: mustGetIdentityID(ctx)}) {
+		waf.Error(w, req, http.StatusUnauthorized)
+		return
+	}
+
+	var blockRequest OrganizationBlockRequest
+	errE = x.DecodeJSONWithoutUnknownFields(req.Body, &blockRequest)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	switch blockRequest.Type {
+	case BlockedIdentityNotBlocked:
+		errE := s.unblockIdentity(ctx, *idOrg.ID, *organization.ID)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+	case BlockedIdentityAndAccounts:
+		errE := s.blockAccounts(ctx, identity, *organization.ID, blockRequest.OrganizationNote, blockRequest.IdentityNote)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+		fallthrough
+	case BlockedIdentityOnly:
+		errE := s.blockIdentity(ctx, *idOrg.ID, *organization.ID, blockRequest.OrganizationNote, blockRequest.IdentityNote)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+	default:
+		errE := errors.New("unsupported type")
+		errors.Details(errE)["type"] = blockRequest.Type
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	s.WriteJSON(w, req, []byte(`{"success":true}`), nil)
+}
+
+type OrganizationBlockedStatusResponse struct {
+	Blocked          BlockedIdentityType `json:"blocked"`
+	OrganizationNote string              `json:"organizationNote,omitempty"`
+	IdentityNote     string              `json:"identityNote,omitempty"`
+}
+
+func (s *Service) OrganizationBlockedStatusGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	ctx := s.RequireAuthenticated(w, req)
+	if ctx == nil {
+		return
+	}
+
+	organization, errE := s.getOrganizationFromID(ctx, params["id"])
+	if errors.Is(errE, ErrOrganizationNotFound) {
+		s.NotFoundWithError(w, req, errE)
+		return
+	} else if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	identityID, errE := identifier.MaybeString(params["identityId"])
+	if errE != nil {
+		s.NotFoundWithError(w, req, errors.WrapWith(errE, ErrIdentityNotFound))
+		return
+	}
+
+	identity, idOrg, errE := s.getIdentityFromOrganization(ctx, *organization.ID, identityID)
+	if errors.Is(errE, ErrIdentityNotFound) {
+		// It is OK that we leak here if identity is in organization or not because
+		// we do the same in OrganizationIdentityGet.
+		s.NotFoundWithError(w, req, errE)
+		return
+	} else if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	accountID := mustGetAccountID(ctx)
+	ids, isCreator, errE := s.getIdentitiesForAccount(ctx, accountID, IdentityRef{ID: *identity.ID})
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	// We use this to check if this is an organization admin (of active identity in the organization)?
+	isOrgAdmin := organization.HasAdminAccess(IdentityRef{ID: mustGetIdentityID(ctx)})
+
+	// We use these to check if this is somebody with access to the identity (active or not in the organization)?
+	hasUserAccess := identity.HasUserAccess(ids)
+	hasAdminAccess := identity.HasAdminAccess(ids, isCreator)
+
+	s.identitiesBlockedMu.RLock()
+	defer s.identitiesBlockedMu.RUnlock()
+
+	// Check if the identity is blocked in the organization.
+	if (isOrgAdmin && idOrg.Active) || hasUserAccess || hasAdminAccess {
+		if s.identitiesBlocked[*organization.ID] != nil {
+			blockedIdentity, ok := s.identitiesBlocked[*organization.ID][*idOrg.ID]
+			if ok {
+				// Only organization admin can see organization note.
+				if !isOrgAdmin {
+					blockedIdentity.OrganizationNote = ""
+				}
+
+				s.WriteJSON(w, req, OrganizationBlockedStatusResponse{
+					Blocked:          BlockedIdentityOnly,
+					OrganizationNote: blockedIdentity.OrganizationNote,
+					IdentityNote:     blockedIdentity.IdentityNote,
+				}, nil)
+				return
+			}
+		}
+	}
+
+	// Check if the account (of caller) is blocked in the organization,
+	// then also this identity is blocked for them.
+	if hasUserAccess || hasAdminAccess {
+		if s.accountsBlocked[*organization.ID] != nil {
+			blockedIdentity, ok := s.accountsBlocked[*organization.ID][accountID]
+			if ok {
+				// Only organization admin can see organization note.
+				if !isOrgAdmin {
+					blockedIdentity.OrganizationNote = ""
+				}
+
+				s.WriteJSON(w, req, OrganizationBlockedStatusResponse{
+					Blocked:          BlockedIdentityAndAccounts,
+					OrganizationNote: blockedIdentity.OrganizationNote,
+					IdentityNote:     blockedIdentity.IdentityNote,
+				}, nil)
+				return
+			}
+		}
+	}
+
+	// If we got to here and caller has access, then identity is not blocked.
+	if (isOrgAdmin && idOrg.Active) || hasUserAccess || hasAdminAccess {
+		s.WriteJSON(w, req, OrganizationBlockedStatusResponse{
+			Blocked:          BlockedIdentityNotBlocked,
+			OrganizationNote: "",
+			IdentityNote:     "",
+		}, nil)
+		return
+	}
+
+	waf.Error(w, req, http.StatusUnauthorized)
 }
