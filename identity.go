@@ -538,7 +538,7 @@ func (s *Service) getIdentitiesForAccount(
 	return ids, isCreator, nil
 }
 
-func (s *Service) getIdentityWithoutAccessCheck(ctx context.Context, id identifier.Identifier) (*Identity, errors.E) {
+func (s *Service) getIdentityWithoutAccessCheck(_ context.Context, id identifier.Identifier) (*Identity, errors.E) {
 	s.identitiesMu.RLock()
 	defer s.identitiesMu.RUnlock()
 
