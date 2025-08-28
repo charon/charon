@@ -983,7 +983,7 @@ type OrganizationIdentity struct {
 	Organizations []IdentityOrganization `json:"organizations,omitempty"`
 }
 
-func (s *Service) getIdentityFromOrganization(ctx context.Context, organizationID, identityID identifier.Identifier) (*Identity, *IdentityOrganization, errors.E) {
+func (s *Service) getIdentityFromOrganization(_ context.Context, organizationID, identityID identifier.Identifier) (*Identity, *IdentityOrganization, errors.E) {
 	s.identitiesMu.RLock()
 	defer s.identitiesMu.RUnlock()
 
@@ -1293,7 +1293,7 @@ func (s *Service) OrganizationUsersGet(w http.ResponseWriter, req *http.Request,
 	s.WriteJSON(w, req, result, nil)
 }
 
-func (s *Service) isIdentityOrAccountBlockedInOrganization(ctx context.Context, identity *Identity, accountID, organizationID identifier.Identifier) (bool, errors.E) {
+func (s *Service) isIdentityOrAccountBlockedInOrganization(_ context.Context, identity *Identity, accountID, organizationID identifier.Identifier) (bool, errors.E) {
 	s.identitiesBlockedMu.RLock()
 	defer s.identitiesBlockedMu.RUnlock()
 
@@ -1307,7 +1307,7 @@ func (s *Service) isIdentityOrAccountBlockedInOrganization(ctx context.Context, 
 	}
 
 	// Check if the account is blocked in the organization.
-	if s.accountsBlocked[organizationID] != nil && s.accountsBlocked[organizationID] != nil {
+	if s.accountsBlocked[organizationID] != nil {
 		_, ok := s.accountsBlocked[organizationID][accountID]
 		if ok {
 			return true, nil
