@@ -511,10 +511,37 @@ func (a *OrganizationApplication) Validate(ctx context.Context, existing *Organi
 	return nil
 }
 
+type BlockedIdentityType string
+
+const (
+	BlockedIdentityNotBlocked BlockedIdentityType = "notBlocked"
+	BlockedIdentityOnly       BlockedIdentityType = "onlyIdentity"
+	BlockedIdentityAndAccount BlockedIdentityType = "identityAndAccount"
+)
+
+type BlockedIdentity struct {
+	Identity         IdentityRef         `json:"identity"`
+	Type             BlockedIdentityType `json:"type"`
+	OrganizationNote string              `json:"organizationNote"`
+	IdentityNote     string              `json:"identityNote"`
+}
+
+func (b *BlockedIdentity) Validate(_ context.Context) errors.E {
+	if b.Type != BlockedIdentityOnly && b.Type != BlockedIdentityAndAccount {
+		errE := errors.New("invalid blocked identity type")
+		errors.Details(errE)["type"] = b.Type
+		return errE
+	}
+
+	return nil
+}
+
 type Organization struct {
 	OrganizationPublic
 
 	Admins []IdentityRef `json:"admins"`
+
+	BlockedIdentities []BlockedIdentity `json:"blockedIdentities"`
 
 	Applications []OrganizationApplication `json:"applications"`
 }
