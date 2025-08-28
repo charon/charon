@@ -17,6 +17,7 @@
       "addUser": "Dodaj uporabnika",
       "addAdmin": "Dodaj administratorja",
       "manage": "Upravljaj",
+      "activity": "Aktivnost",
       "signOut": "Izpis",
       "signIn": "Prijava ali registracija",
       "resume": "Nadaljuj",
@@ -202,7 +203,9 @@
         "organizationsRemoved": "odstranjene organizacije",
         "organizationsChanged": "spremenjene organizacije",
         "organizationsActivated": "aktivirane organizacije",
-        "organizationsDisabled": "onemogočene organizacije"
+        "organizationsDisabled": "onemogočene organizacije",
+        "identitiesAdded": "dodane identitete",
+        "identitiesRemoved": "odstranjene identitete"
       },
       "entityLinks": "{entity}: {links}"
     }
@@ -292,6 +295,10 @@
       "noUsers": "Ni uporabnikov."
     },
     "ActivityList": {
+      "noActivities": "Ni aktivnosti."
+    },
+    "OrganizationActivity": {
+      "organizationActivity": "Aktivnost za organizacijo",
       "noActivities": "Ni aktivnosti."
     }
   }

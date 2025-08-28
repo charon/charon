@@ -538,6 +538,24 @@ func (s *Service) getIdentitiesForAccount(
 	return ids, isCreator, nil
 }
 
+func (s *Service) getIdentityWithoutAccessCheck(_ context.Context, id identifier.Identifier) (*Identity, errors.E) {
+	s.identitiesMu.RLock()
+	defer s.identitiesMu.RUnlock()
+
+	data, ok := s.identities[id]
+	if !ok {
+		return nil, errors.WithDetails(ErrIdentityNotFound, "id", id)
+	}
+	var identity Identity
+	errE := x.UnmarshalWithoutUnknownFields(data, &identity)
+	if errE != nil {
+		errors.Details(errE)["id"] = id
+		return nil, errE
+	}
+
+	return &identity, nil
+}
+
 func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*Identity, bool, errors.E) {
 	accountID := mustGetAccountID(ctx)
 

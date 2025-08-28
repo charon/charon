@@ -274,6 +274,18 @@
       "get": {}
     },
     {
+      "name": "OrganizationActivity",
+      "path": "/o/activity/:id",
+      "api": {},
+      "get": {}
+    },
+    {
+      "name": "OrganizationActivityGet",
+      "path": "/o/activity/:id/:activityId",
+      "api": {},
+      "get": null
+    },
+    {
       "name": "ActivityList",
       "path": "/activity",
       "api": {},

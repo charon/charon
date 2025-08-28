@@ -17,6 +17,7 @@
       "addUser": "Add user",
       "addAdmin": "Add admin",
       "manage": "Manage",
+      "activity": "Activity",
       "signOut": "Sign-out",
       "signIn": "Sign-in or sign-up",
       "resume": "Resume",
@@ -202,7 +203,9 @@
         "organizationsRemoved": "removed organizations",
         "organizationsChanged": "changed organizations",
         "organizationsActivated": "activated organizations",
-        "organizationsDisabled": "disabled organizations"
+        "organizationsDisabled": "disabled organizations",
+        "identitiesAdded": "added identities",
+        "identitiesRemoved": "removed identities"
       },
       "entityLinks": "{entity}: {links}"
     }
@@ -292,6 +295,10 @@
       "noUsers": "There are no users."
     },
     "ActivityList": {
+      "noActivities": "There is no activity."
+    },
+    "OrganizationActivity": {
+      "organizationActivity": "Activity for organization",
       "noActivities": "There is no activity."
     }
   }

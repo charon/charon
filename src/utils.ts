@@ -1,5 +1,5 @@
 import type { DeepReadonly, Ref } from "vue"
-import type { Mutable, QueryValuesWithOptional, QueryValues, OrganizationApplicationPublic, Identity, IdentityOrganization } from "@/types"
+import type { Mutable, QueryValuesWithOptional, QueryValues, OrganizationApplicationPublic, Identity, IdentityPublic, IdentityOrganization } from "@/types"
 
 import { cloneDeep, isEqual } from "lodash-es"
 import { toRaw } from "vue"
@@ -207,6 +207,6 @@ export function getFormattedTimestamp(timestamp: string): string {
 //
 // This should be similar in what is show as main piece of information in
 // IdentityPublic and IdentityFull components.
-export function getIdentityDisplayName(identity: Identity | DeepReadonly<Identity>): string {
+export function getIdentityDisplayName(identity: IdentityPublic | DeepReadonly<IdentityPublic>): string {
   return identity.username || identity.email || identity.givenName || identity.fullName || identity.id
 }

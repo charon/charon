@@ -28,6 +28,7 @@ declare module "vue-i18n" {
         addUser: string
         addAdmin: string
         manage: string
+        activity: string
         signOut: string
         signIn: string
         resume: string
@@ -214,6 +215,8 @@ declare module "vue-i18n" {
           organizationsChanged: string
           organizationsActivated: string
           organizationsDisabled: string
+          identitiesAdded: string
+          identitiesRemoved: string
         }
         entityLinks: string
       }
@@ -303,6 +306,10 @@ declare module "vue-i18n" {
         noUsers: string
       }
       ActivityList: {
+        noActivities: string
+      }
+      OrganizationActivity: {
+        organizationActivity: string
         noActivities: string
       }
     }
