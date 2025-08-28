@@ -672,6 +672,33 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 		errors.Details(errE)["identities"] = identities
 	}
 
+	if o.BlockedIdentities == nil {
+		o.BlockedIdentities = []BlockedIdentity{}
+	}
+
+	// Validate blocked identities.
+	blockedIdentitySet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
+	for i, blockedIdentity := range o.BlockedIdentities {
+		errE := blockedIdentity.Validate(ctx)
+		if errE != nil {
+			errE = errors.WithMessage(errE, "blocked identity")
+			errors.Details(errE)["i"] = i
+			errors.Details(errE)["identity"] = blockedIdentity.Identity.ID
+			return errE
+		}
+
+		if blockedIdentitySet.Contains(blockedIdentity.Identity.ID) {
+			errE := errors.New("duplicate blocked identity")
+			errors.Details(errE)["i"] = i
+			errors.Details(errE)["identity"] = blockedIdentity.Identity.ID
+			return errE
+		}
+		blockedIdentitySet.Add(blockedIdentity.Identity.ID)
+
+		// BlockedIdentity might have been changed by Validate, so we assign it back.
+		o.BlockedIdentities[i] = blockedIdentity
+	}
+
 	if o.Applications == nil {
 		o.Applications = []OrganizationApplication{}
 	}
