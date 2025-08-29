@@ -320,6 +320,7 @@ export type OrganizationIdentity = {
   applications: OrganizationApplicationApplicationRef[]
   isCurrent: boolean
   canUpdate: boolean
+  blocked: BlockedIdentityType
 }
 
 export type AllIdentity = {

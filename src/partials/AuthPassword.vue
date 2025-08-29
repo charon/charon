@@ -81,10 +81,7 @@ async function getKey(): Promise<boolean> {
   keyProgress.value += 1
   try {
     const response = await startPassword(router, props.flow, abortController, keyProgress, progress)
-    if (abortController.signal.aborted) {
-      return false
-    }
-    if (response === null) {
+    if (abortController.signal.aborted || !response) {
       return false
     }
     if ("error" in response) {
