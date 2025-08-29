@@ -230,7 +230,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 	o := OrganizationRef{ID: flow.OrganizationID}
 
 	c := s.withAccountID(ctx, session.AccountID)
-	c = s.withIdentityID(ctx, *flow.Identity.ID)
+	c = s.withIdentityID(c, *flow.Identity.ID)
 	c = s.withSessionID(c, session.ID)
 	// TODO: Should this activity be logged with flow.AuthTime for its timestamp?
 	errE = s.logActivity(c, ActivitySignIn, nil, []OrganizationRef{o}, nil, []OrganizationApplicationRef{{
