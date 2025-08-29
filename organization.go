@@ -1556,7 +1556,12 @@ func (s *Service) OrganizationBlockedStatusGet(w http.ResponseWriter, req *http.
 	}
 
 	// We use this to check if this is an organization admin (of active identity in the organization)?
-	isOrgAdmin := organization.HasAdminAccess(IdentityRef{ID: mustGetIdentityID(ctx)})
+	isOrgAdmin := false
+	currentIdentityID, ok := getIdentityID(ctx)
+	if ok {
+		// When using session cookie during authentication flow, identity ID is not available.
+		isOrgAdmin = organization.HasAdminAccess(IdentityRef{ID: currentIdentityID})
+	}
 
 	// We use these to check if this is somebody with access to the identity (active or not in the organization)?
 	hasUserAccess := identity.HasUserAccess(ids)
