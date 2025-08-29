@@ -96,6 +96,7 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
               <IdentityPublic :identity="doc" :url="url" :is-current="metadata.is_current" :can-update="metadata.can_update" />
               <IdentityOrganization :identity-organization="doc.organizations[0]">
                 <template #default="{ organizationBlockedStatus }">
+                  <!-- Only when just identity is blocked we can show the button. Admin cannot unblock account-level block. -->
                   <div
                     v-if="!organizationBlockedStatus || organizationBlockedStatus.blocked === 'onlyIdentity' || organizationBlockedStatus.blocked === 'notBlocked'"
                     class="flex flex-col items-start"
