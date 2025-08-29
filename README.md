@@ -10,7 +10,7 @@ exposed to apps. Apps do not have to worry about user management nor multi-tenan
 ## Features
 
 - Supports multiple authentication mechanisms: username/e-mail & password, one-time codes,
-  passkeys, OpenID Connect. Providers officially supported: Google, Facebook.
+  passkeys, OIDC. Providers officially supported: Google, Facebook.
 - It uses a separation between accounts (a set of credentials the user has to sign-in into Charon) and identities (how
   the user presents themselves to apps).
 - It supports individual and shared identities. Shared identities are those which are used by multiple users.
@@ -41,28 +41,69 @@ You can run Charon behind a reverse proxy (which should support HTTP2), or simpl
 (it is safe to do so). Charon is compiled into one backend binary which has frontend files embedded
 and they are served by the backend as well.
 
-Currently, Charon is under development and you have to build the binary yourself. After cloning
-the repository, run:
+The [releases page](https://gitlab.com/charon/charon/-/releases)
+contains a list of stable versions. Each includes:
 
-```sh
-make
-```
+- A statically compiled binary.
+- Docker images.
 
-This will create `charon` binary.
+### Static binary
 
-It requires [Go](https://golang.org/) 1.23 or newer.
-Node 20 or newer is required as well.
+The latest stable statically compiled binary for Linux (amd64) is available at:
 
-Automatic media type detection uses file extensions and a file extension database has to be available
-on the system.
-On Alpine this can be `mailcap` package.
-On Debina/Ubuntu `media-types` package.
+[`https://gitlab.com/charon/charon/-/releases/permalink/latest/downloads/linux-amd64/charon`](https://gitlab.com/charon/charon/-/releases/permalink/latest/downloads/linux-amd64/charon)
+
+You can also download older versions on the [releases page](https://gitlab.com/charon/charon/-/releases).
+
+The latest successfully built development (`main` branch) binary is available at:
+
+[`https://gitlab.com/charon/charon/-/jobs/artifacts/main/raw/charon-linux-amd64?job=docker`](https://gitlab.com/charon/charon/-/jobs/artifacts/main/raw/charon-linux-amd64?job=docker)
+
+### Docker
+
+Docker images for stable versions are available as:
+
+`registry.gitlab.com/charon/charon/tag/<version>:latest`
+
+`<version>` is a version string with `.` replaced with `-`. E.g., `v0.1.0` becomes `v0-1-0`.
+
+The docker image contains only Charon binary, which is image's entrypoint.
+If you need a shell as well, then use the debug version of the image:
+
+`registry.gitlab.com/charon/charon/tag/<version>:latest-debug`
+
+In that case you have to override the entrypoint (i.e., `--entrypoint sh` argument to `docker run`).
+
+The latest successfully built development (`main` branch) image is available as:
+
+`registry.gitlab.com/charon/charon/branch/main:latest`
+
+generated in the current directory as described above:
 
 ## Usage
 
-To run Charon you need a HTTPS TLS certificate (as required by HTTP2). When running locally
+Create a file with a secret used for session and OIDC HMAC.
+It has to be base64 (URL encoding, no padding) encoded 32 bytes with `chs-` prefix.
+
+```sh
+echo "chs-$(head -c 32 /dev/urandom | base64 | tr '+/' '-_' | tr -d '=')" > .hmac.secret
+export SECRET_PATH=.hmac.secret
+```
+
+You should generate a RSA private key and convert it to JWK format. For conversion
+to JWK you can use [jwker](https://github.com/jphastings/jwker).
+
+```sh
+go install github.com/jphastings/jwker/cmd/jwker@latest
+openssl genpkey -algorithm RSA -out rsa-key.pem -pkeyopt rsa_keygen_bits:2048
+jwker rsa-key.pem .rsa-key.jwk
+rm rsa-key.pem
+export OIDC_KEYS_RSA_PATH=.rsa-key.jwk
+```
+
+Next, to run Charon you need a HTTPS TLS certificate (as required by HTTP2). When running locally
 you can use [mkcert](https://github.com/FiloSottile/mkcert), a tool to create a local CA
-keypair which is then used to create a TLS certificate. Use Go 1.23.10 or newer.
+keypair which is then used to create a TLS certificate.
 
 ```sh
 go install filippo.io/mkcert@latest
@@ -70,16 +111,52 @@ mkcert -install
 mkcert localhost 127.0.0.1 ::1
 ```
 
-This creates two files, `localhost+2.pem` and `localhost+2-key.pem`, which you can provide to Charon as:
+This creates two files, `localhost+2.pem` and `localhost+2-key.pem`, which you can provide to PeerDB as:
 
 ```sh
-./charon -k localhost+2.pem -K localhost+2-key.pem ...
+./charon -k localhost+2.pem -K localhost+2-key.pem
 ```
+
+When running using Docker, you have to provide them (and `.hmac.secret` and `.rsa-key.jwk` files)
+to the container through a volume, e.g.:
+
+```sh
+docker run -d --name charon -p 8080:8080 -v "$(pwd):/data" \
+ registry.gitlab.com/charon/charon/branch/main:latest \
+ -k /data/localhost+2.pem -K /data/localhost+2-key.pem \
+ --secret=/data/.hmac.secret --oidc.keys.rsa=/data/.rsa-key.jwk
+```
+
+Open [https://localhost:8080/](https://localhost:8080/) in your browser to access the web interface.
 
 Temporary accepted self-signed certificates are not recommended because
 [not all browser features work](https://stackoverflow.com/questions/74161355/are-any-web-features-not-available-in-browsers-when-using-self-signed-certificat).
 If you want to use a self-signed certificate instead of `mkcert`, add the certificate to
 your browser's certificate store.
+
+When running it directly publicly on the Internet (it is safe to do so), Charon is able to
+obtain a HTTPS TLS certificate from [Let's Encrypt](https://letsencrypt.org) automatically:
+
+```sh
+docker run -d --name charon -p 443:8080 -v "$(pwd):/data" \
+ registry.gitlab.com/charon/charon/branch/main:latest \
+ --secret=/data/.hmac.secret --oidc.keys.rsa=/data/.rsa-key.jwk \
+ --domain public.domain.example.com -E name@example.com -C /data/letsencrypt
+```
+
+Charon would then be available at `https://public.domain.example.com`.
+
+When using Let's Encrypt you accept its Terms of Service.
+
+Charon sends e-mails to users. For that it needs a SMTP server. Use `--mail.host`
+and `--mail.from` CLI flags to configure it. Without SMTP server configured,
+Charon logs e-mails to the console instead (use `docker logs charon` to see them).
+
+## Configuration
+
+Charon can be configured through CLI arguments and a config file. CLI arguments have precedence
+over the config file. Config file is a YAML file with the structure corresponding to the structure of
+CLI flags and commands. Run `./charon --help` for list of available flags.
 
 ## Development
 
@@ -92,10 +169,15 @@ the frontend as necessary.
 The backend is implemented in [Go](https://golang.org/) (requires 1.23 or newer)
 and provides a HTTP2 API. Node 20 or newer is required as well.
 
+Automatic media type detection uses file extensions and a file extension database has
+to be available on the system.
+On Alpine this can be `mailcap` package.
+On Debian/Ubuntu `media-types` package.
+
 Then clone the repository and run:
 
 ```sh
-make
+make charon
 ./charon -D -k localhost+2.pem -K localhost+2-key.pem
 ```
 
@@ -108,7 +190,8 @@ to the frontend. In this mode any placeholders in HTML files are not rendered.
 Charon also expects a secret and private keys to use. During development, you can
 use self-generated ones with the `-D` CLI flag.
 
-Because SMTP is not configured during development, e-mails (with codes) will be printed out to the console instead.
+Because SMTP is not configured during development, e-mails (with codes) will be printed
+out to the console instead.
 
 You can also run `make watch` to reload the backend on file changes. You have to install
 [CompileDaemon](https://github.com/githubnemo/CompileDaemon) first:

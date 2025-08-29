@@ -35,3 +35,4 @@ codeclimate.json
 /keys.txt
 *.env
 *.secret
+*.jwk
