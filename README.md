@@ -5,59 +5,34 @@ authenticators (Facebook, Google, etc.) in one place and managing different (and
 exposed to apps. Apps do not have to worry about user management nor multi-tenancy. And admins of organizations
 (communities, tenants, domains, realms) using those apps can manage all users in one place, with tools to address any abuse.
 
-## Current roadmap (in progress)
+**WARNING: This project is still in development. Do not use in production.**
 
-- Basic SSO: Initial implementation of a basic SSO supporting apps, users, organizations, developers, and admins.
-  - Users are able to authenticate themselves to Charon
-  - Developers are able to register apps
-  - Admins are able to create organizations and enable apps in them
-  - Users are able to authenticate to apps in organizations
-- Multiple identities per user: Add support for users to have multiple identities they can choose between to
-  expose to apps.
-  - Support for managing multiple identities per user
-  - Support for selecting an identity when authenticating to an app
-- Identity sharing: Support for sharing identities between users.
-- User management: Various management interfaces in Charon.
-  - Admins can list users which authenticated in their organization, and which apps they used
-  - Users can list organizations and apps they have authenticated to, and corresponding identities they used
-- Handling abuse: Implement abuse handling process.
-  - Provide a way for users and apps to file a complaint about an identity
-  - Organization admins can review those complaints and request primary identity reveal and all corresponding
-    identities used in the organization
-  - Whole process has a public audit page where everyone can see if admin decided to request reveal or not
-    (but identities are visible only to the admin)
+## Features
 
-Goals:
+- Supports multiple authentication mechanisms: username/e-mail & password, one-time codes,
+  passkeys, OpenID Connect. Providers officially supported: Google, Facebook.
+- It uses a separation between accounts (a set of credentials the user has to sign-in into Charon) and identities (how
+  the user presents themselves to apps).
+- It supports individual and shared identities. Shared identities are those which are used by multiple users.
+  Of course it provides tools to manage permissions over shared identities.
+- Supports multiple organizations which can share users and applications, but from the perspective of each organization
+  those users and applications are separate, do not share IDs and are managed independently.
+- Organization admins can manage users and applications in their organizations.
+- App developers can manage application templates for their apps which can then be used in organizations.
+- It provides abuse handling tools for organization admins, e.g., to block users and accounts.
+- It gives users the control over their identities and personal data.
+- It supports internationalization and localization.
 
-- Security first with great user experience.
-- Beautiful and intuitive UI/UX.
-- Account creation and management from both user's perspective and admin's perspective.
-- Standard compliant OAuth and OpenID Connect provider.
-- Account can be part of multiple organizations, with different identities for different organizations.
-- Each organization can use multiple apps.
-- User can authorize all apps in an organization, or individual apps.
-- Allowing users to link many other authentication providers to their accounts.
-- U2F support.
-- Stable reactivity-enabled API, which is used by Charon's frontend as well.
-- Support for identity impersonation, multiple identites per app, and ad-hoc anonymous identites.
-  [#1](https://gitlab.com/charon/charon/issues/1)
-- Everything is logged and auditable.
+### Planned features
 
-## Future features
-
+- More authentication mechanisms: SAML, recovery codes.
 - Proactive pushing of changes to all apps authorized for a user.
 - User invitation workflow with reminders.
-- Centralized management of organizations and roles inside organizations.
-- Federation: other authentication providers can be other Charon instances.
+- Management of roles inside organizations in one place.
 - Integration with identify verification providers without exposing details to apps
   (i.e., app just learns that user has been verified, is unique user, and has satisfied KYC
   requirements, without learning anything more about the user beyond what user exposes in their identity).
-- Support for melding of multiple accounts and identities into one. [#1](https://gitlab.com/charon/charon/issues/1)
-- Virtual accounts which can be only impersonated. [#2](https://gitlab.com/charon/charon/issues/2)
-- Proxy to log all access and allow/deny high-level access to an app and app's APIs.
-- Scoped API tokens to delegate further.
-- Scoped subaccounts. [#3](https://gitlab.com/charon/charon/issues/3)
-- Internationalization and localization.
+- Support for melding of multiple accounts into one.
 - E-mail proxying.
 
 ## Installation
