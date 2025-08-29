@@ -12,12 +12,12 @@ import WithDocument from "@/components/WithDocument.vue"
 import { getProviderName } from "@/flow"
 import { getHomepage, getFormattedTimestamp, getIdentityDisplayName, clone } from "@/utils"
 
-const { t } = useI18n({ useScope: "global" })
-
 const props = defineProps<{
   item: ActivityRef
   organization?: OrganizationRef
 }>()
+
+const { t } = useI18n({ useScope: "global" })
 
 function getActivityIcon(activityType: string): FunctionalComponent {
   switch (activityType) {

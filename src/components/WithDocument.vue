@@ -8,8 +8,6 @@ import { getURL } from "@/api"
 import { injectMainProgress } from "@/progress"
 import { encodeQuery } from "@/utils"
 
-const { t } = useI18n({ useScope: "global" })
-
 const props = withDefaults(
   defineProps<{
     name: string
@@ -23,6 +21,7 @@ const props = withDefaults(
   },
 )
 
+const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
 
 const mainProgress = injectMainProgress()

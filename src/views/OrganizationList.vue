@@ -14,7 +14,6 @@ import { isSignedIn } from "@/auth"
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-
 const progress = injectProgress()
 
 const abortController = new AbortController()

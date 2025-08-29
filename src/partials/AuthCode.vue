@@ -12,19 +12,16 @@ import { isEmail } from "@/utils"
 import { injectProgress } from "@/progress"
 import { processResponse } from "@/flow"
 
-const { t } = useI18n({ useScope: "global" })
-
 const props = defineProps<{
   flow: Flow
 }>()
 
+const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
 const route = useRoute()
-
 const progress = injectProgress()
 
 const abortController = new AbortController()
-
 const code = ref("")
 const sendCounter = ref(1)
 const codeError = ref("")

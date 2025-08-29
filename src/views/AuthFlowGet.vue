@@ -40,18 +40,15 @@ import { updateSteps, processFirstResponse } from "@/flow"
 import { getHomepage } from "@/utils"
 import { injectProgress } from "@/progress"
 
-const { t } = useI18n({ useScope: "global" })
-
 const props = defineProps<{
   id: string
 }>()
 
+const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-
 const progress = injectProgress()
 
 const abortController = new AbortController()
-
 const dataLoading = ref(true)
 const unexpectedError = ref("")
 const steps = ref<AuthFlowStep[]>([])

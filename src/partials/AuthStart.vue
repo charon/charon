@@ -13,18 +13,15 @@ import { injectProgress } from "@/progress"
 import siteContext from "@/context"
 import { getThirdPartyProvider } from "@/flow"
 
-const { t } = useI18n({ useScope: "global" })
-
 const props = defineProps<{
   flow: Flow
 }>()
 
+const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-
 const progress = injectProgress()
 
 const abortController = new AbortController()
-
 const passwordError = ref("")
 const unexpectedError = ref("")
 

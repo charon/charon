@@ -8,11 +8,11 @@ import { useI18n } from "vue-i18n"
 import WithDocument from "@/components/WithDocument.vue"
 import { getHomepage } from "@/utils"
 
-const { t } = useI18n({ useScope: "global" })
-
 defineProps<{
   identityOrganization: IdentityOrganization | DeepReadonly<IdentityOrganization>
 }>()
+
+const { t } = useI18n({ useScope: "global" })
 
 const WithOrganizationApplicationDocument = WithDocument<OrganizationApplicationPublic>
 const withOrganizationApplicationDocument = ref<ComponentExposed<typeof WithOrganizationApplicationDocument> | null>(null)

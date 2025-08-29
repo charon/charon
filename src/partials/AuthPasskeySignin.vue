@@ -10,18 +10,15 @@ import { postJSON } from "@/api"
 import { processResponse } from "@/flow"
 import { injectProgress } from "@/progress"
 
-const { t } = useI18n({ useScope: "global" })
-
 const props = defineProps<{
   flow: Flow
 }>()
 
+const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-
 const progress = injectProgress()
 
 const abortController = new AbortController()
-
 const unexpectedError = ref("")
 
 // Define transition hooks to be called by the parent component.

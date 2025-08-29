@@ -35,14 +35,12 @@ import { injectProgress } from "@/progress"
 import siteContext from "@/context"
 import { isSignedIn } from "@/auth"
 
-const { t } = useI18n({ useScope: "global" })
-
 const props = defineProps<{
   id: string
 }>()
 
+const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-
 // We could be using separate progress for the organization and identities, because those
 // are really two separate forms (and documents) visually combined into one form, but we are
 // using only one progress to further drive the illusion of only one form.

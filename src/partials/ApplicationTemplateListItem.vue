@@ -5,8 +5,6 @@ import type { ApplicationTemplate, ApplicationTemplatePublic, ApplicationTemplat
 import { useI18n } from "vue-i18n"
 import WithDocument from "@/components/WithDocument.vue"
 
-const { t } = useI18n({ useScope: "global" })
-
 defineProps<{
   item: ApplicationTemplateRef
   // This partial supports providing an ApplicationTemplatePublic which is used if provided instead of data
@@ -17,6 +15,8 @@ defineProps<{
   h3?: boolean
   labels?: string[]
 }>()
+
+const { t } = useI18n({ useScope: "global" })
 
 const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
 </script>

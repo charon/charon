@@ -10,18 +10,15 @@ import { postJSON } from "@/api"
 import { processResponse } from "@/flow"
 import { injectProgress } from "@/progress"
 
-const { t } = useI18n({ useScope: "global" })
-
 const props = defineProps<{
   flow: Flow
 }>()
 
+const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-
 const progress = injectProgress()
 
 const abortController = new AbortController()
-
 const signupAttempted = ref(false)
 const signupFailed = ref(false)
 const signupFailedAtLeastOnce = ref(false)
