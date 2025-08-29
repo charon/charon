@@ -616,8 +616,8 @@ async function onIdentitiesSubmit() {
 
 function organizationIdentityLabels(organizationIdentity: OrganizationIdentity): string[] {
   const labels: string[] = []
-  if (organizationIdentity.active) {
-    labels.push(t("common.labels.active"))
+  if (!organizationIdentity.active) {
+    labels.push(t("common.labels.disabled"))
   }
   if (organizationIdentity.blocked !== "notBlocked") {
     labels.push(t("common.labels.blocked"))
