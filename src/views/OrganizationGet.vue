@@ -198,15 +198,16 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
 
     if (update === "init" || update === "identities") {
       const updatedOrganizationIdentities: OrganizationIdentity[] = []
-      const updatedAllIdentities: AllIdentity[] = []
+      let updatedAllIdentities: AllIdentity[] = []
 
       if (isSignedIn()) {
-        const updatedIdentities = await getAllIdentities(router, props.id, null, abortController, progress)
-        if (abortController.signal.aborted || !updatedIdentities) {
+        const result = await getAllIdentities(router, props.id, null, abortController, progress)
+        if (abortController.signal.aborted || !result) {
           return
         }
+        updatedAllIdentities = result
 
-        for (const allIdentity of updatedIdentities) {
+        for (const allIdentity of updatedAllIdentities) {
           for (const identityOrganization of allIdentity.identity.organizations) {
             if (identityOrganization.organization.id === props.id) {
               updatedOrganizationIdentities.push({
