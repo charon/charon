@@ -21,6 +21,7 @@ exposed to apps. Apps do not have to worry about user management nor multi-tenan
 - App developers can manage application templates for their apps which can then be used in organizations.
 - It provides abuse handling tools for organization admins, e.g., to block users and accounts.
 - It gives users the control over their identities and personal data.
+- It does not differentiate between sign-in and sign-up – both are the same flow for the user.
 - It supports internationalization and localization.
 
 ### Planned features
