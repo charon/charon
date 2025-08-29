@@ -132,11 +132,11 @@ async function getIdentities() {
 
   progress.value += 1
   try {
-    const updatedIdentities = await getAllIdentities(router, props.flow.getOrganizationId(), props.flow.getId(), abortController, progress)
-    if (abortController.signal.aborted || !updatedIdentities) {
+    const updatedAllIdentities = await getAllIdentities(router, props.flow.getOrganizationId(), props.flow.getId(), abortController, progress)
+    if (abortController.signal.aborted || !updatedAllIdentities) {
       return
     }
-    allIdentities.value = updatedIdentities
+    allIdentities.value = updatedAllIdentities
   } catch (error) {
     if (abortController.signal.aborted) {
       return
