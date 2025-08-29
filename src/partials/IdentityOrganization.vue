@@ -3,7 +3,7 @@ import type { IdentityOrganization, OrganizationApplicationPublic, OrganizationB
 import type { ComponentExposed } from "vue-component-type-helpers"
 import type { DeepReadonly } from "vue"
 
-import { ref } from "vue"
+import { computed, ref } from "vue"
 import { useI18n } from "vue-i18n"
 import WithDocument from "@/components/WithDocument.vue"
 import { getHomepage } from "@/utils"
@@ -17,6 +17,10 @@ const { t } = useI18n({ useScope: "global" })
 const WithOrganizationApplicationDocument = WithDocument<OrganizationApplicationPublic>
 const WithOrganizationBlockedStatusDocument = WithDocument<OrganizationBlockedStatus>
 const withOrganizationBlockedStatusDocument = ref<ComponentExposed<typeof WithOrganizationBlockedStatusDocument> | null>(null)
+
+defineExpose({
+  organizationBlockedStatus: computed(() => withOrganizationBlockedStatusDocument.value?.doc || undefined),
+})
 </script>
 
 <template>
