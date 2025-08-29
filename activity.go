@@ -30,6 +30,9 @@ const (
 	ActivityOrganizationUpdate        ActivityType = "organizationUpdate"
 	ActivityApplicationTemplateCreate ActivityType = "applicationTemplateCreate"
 	ActivityApplicationTemplateUpdate ActivityType = "applicationTemplateUpdate"
+	ActivityIdentityBlocked           ActivityType = "identityBlocked"
+	ActivityIdentityUnblocked         ActivityType = "identityUnblocked"
+	ActivityAccountBlocked            ActivityType = "accountBlocked"
 )
 
 // ActivityChangeType represents the type of change performed during an activity.
@@ -87,6 +90,7 @@ type Activity struct {
 	Organizations            []OrganizationRef            `json:"organizations,omitempty"`
 	ApplicationTemplates     []ApplicationTemplateRef     `json:"applicationTemplates,omitempty"`
 	OrganizationApplications []OrganizationApplicationRef `json:"organizationApplications,omitempty"`
+	Accounts                 []AccountRef                 `json:"-"`
 
 	// For sign-in activities, this is the list of providers that were used to authenticate the user.
 	Providers []Provider `json:"providers,omitempty"`
@@ -199,7 +203,7 @@ func (s *Service) createActivity(ctx context.Context, activity *Activity) errors
 func (s *Service) logActivity(
 	ctx context.Context, activityType ActivityType, identities []IdentityRef, organizations []OrganizationRef,
 	applicationTemplates []ApplicationTemplateRef, organizationApplications []OrganizationApplicationRef,
-	changes []ActivityChangeType, providers []Provider,
+	accounts []AccountRef, changes []ActivityChangeType, providers []Provider,
 ) errors.E {
 	actorID := mustGetIdentityID(ctx)
 	sessionID := mustGetSessionID(ctx)
@@ -227,6 +231,7 @@ func (s *Service) logActivity(
 		Organizations:            nil,
 		ApplicationTemplates:     nil,
 		OrganizationApplications: nil,
+		Accounts:                 nil,
 	}
 
 	if len(identities) > 0 {
@@ -240,6 +245,9 @@ func (s *Service) logActivity(
 	}
 	if len(organizationApplications) > 0 {
 		activity.OrganizationApplications = organizationApplications
+	}
+	if len(accounts) > 0 {
+		activity.Accounts = accounts
 	}
 
 	return s.createActivity(ctx, activity)

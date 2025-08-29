@@ -235,7 +235,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 	errE = s.logActivity(c, ActivitySignIn, nil, []OrganizationRef{o}, nil, []OrganizationApplicationRef{{
 		Organization: o,
 		Application:  OrganizationApplicationApplicationRef{ID: flow.AppID},
-	}}, nil, flow.Providers)
+	}}, nil, nil, flow.Providers)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return true

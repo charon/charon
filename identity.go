@@ -633,7 +633,7 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 		ctx = s.withIdentityID(ctx, *identity.ID)
 	}
 
-	errE = s.logActivity(ctx, ActivityIdentityCreate, []IdentityRef{{ID: *identity.ID}}, nil, nil, nil, nil, nil)
+	errE = s.logActivity(ctx, ActivityIdentityCreate, []IdentityRef{{ID: *identity.ID}}, nil, nil, nil, nil, nil, nil)
 	if errE != nil {
 		return errE
 	}
@@ -790,7 +790,7 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 	// and the frontend can always then take the first element to be the identity that was updated.
 	identities = append([]IdentityRef{i}, identities...)
 
-	errE = s.logActivity(ctx, ActivityIdentityUpdate, identities, organizations, nil, applications, changes, nil)
+	errE = s.logActivity(ctx, ActivityIdentityUpdate, identities, organizations, nil, applications, nil, changes, nil)
 	if errE != nil {
 		return errE
 	}

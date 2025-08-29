@@ -803,7 +803,7 @@ func (s *Service) createOrganization(ctx context.Context, organization *Organiza
 
 	s.organizations[*organization.ID] = data
 
-	errE = s.logActivity(ctx, ActivityOrganizationCreate, nil, []OrganizationRef{{ID: *organization.ID}}, nil, nil, nil, nil)
+	errE = s.logActivity(ctx, ActivityOrganizationCreate, nil, []OrganizationRef{{ID: *organization.ID}}, nil, nil, nil, nil, nil)
 	if errE != nil {
 		return errE
 	}
@@ -856,7 +856,7 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 
 	s.organizations[*organization.ID] = data
 
-	errE = s.logActivity(ctx, ActivityOrganizationUpdate, identities, []OrganizationRef{{ID: *organization.ID}}, nil, organizationApplications, changes, nil)
+	errE = s.logActivity(ctx, ActivityOrganizationUpdate, identities, []OrganizationRef{{ID: *organization.ID}}, nil, organizationApplications, nil, changes, nil)
 	if errE != nil {
 		return errE
 	}
@@ -1317,7 +1317,7 @@ func (s *Service) isIdentityOrAccountBlockedInOrganization(_ context.Context, id
 	return false, nil
 }
 
-func (s *Service) unblockIdentity(_ context.Context, orgIdentityID, organizationID identifier.Identifier) errors.E {
+func (s *Service) unblockIdentity(ctx context.Context, identity *Identity, orgIdentityID, organizationID identifier.Identifier) errors.E {
 	s.identitiesBlockedMu.Lock()
 	defer s.identitiesBlockedMu.Unlock()
 
@@ -1325,16 +1325,26 @@ func (s *Service) unblockIdentity(_ context.Context, orgIdentityID, organization
 		return nil
 	}
 
+	_, ok := s.identitiesBlocked[organizationID][orgIdentityID]
+
 	delete(s.identitiesBlocked[organizationID], orgIdentityID)
 
 	if len(s.identitiesBlocked[organizationID]) == 0 {
 		delete(s.identitiesBlocked, organizationID)
 	}
 
+	// We log only the first time the identity is unblocked.
+	if ok {
+		return s.logActivity(ctx, ActivityIdentityUnblocked, []IdentityRef{{ID: *identity.ID}}, []OrganizationRef{{ID: organizationID}}, nil, nil, nil, nil, nil)
+	}
+
 	return nil
 }
 
-func (s *Service) blockIdentity(_ context.Context, orgIdentityID, organizationID identifier.Identifier, organizationNote, identityNote string) errors.E {
+func (s *Service) blockIdentity(
+	ctx context.Context, identity *Identity, orgIdentityID, organizationID identifier.Identifier,
+	organizationNote, identityNote string,
+) errors.E {
 	s.identitiesBlockedMu.Lock()
 	defer s.identitiesBlockedMu.Unlock()
 
@@ -1342,17 +1352,24 @@ func (s *Service) blockIdentity(_ context.Context, orgIdentityID, organizationID
 		s.identitiesBlocked[organizationID] = map[identifier.Identifier]BlockedIdentity{}
 	}
 
+	_, ok := s.identitiesBlocked[organizationID][orgIdentityID]
+
 	// It is OK to overwrite the note because we do not allow multiple notes for the same identity.
 	s.identitiesBlocked[organizationID][orgIdentityID] = BlockedIdentity{
 		OrganizationNote: organizationNote,
 		IdentityNote:     identityNote,
 	}
 
+	// We log only the first time the identity is blocked.
+	if !ok {
+		return s.logActivity(ctx, ActivityIdentityBlocked, []IdentityRef{{ID: *identity.ID}}, []OrganizationRef{{ID: organizationID}}, nil, nil, nil, nil, nil)
+	}
+
 	return nil
 }
 
 func (s *Service) blockAccounts(
-	_ context.Context, identity *Identity, orgIdentityID, organizationID identifier.Identifier,
+	ctx context.Context, identity *Identity, orgIdentityID, organizationID identifier.Identifier,
 	organizationNote, identityNote string,
 ) errors.E {
 	accountIDs := s.getAccountsForIdentityWithLock(IdentityRef{ID: *identity.ID})
@@ -1364,16 +1381,29 @@ func (s *Service) blockAccounts(
 		s.accountsBlocked[organizationID] = map[identifier.Identifier]map[identifier.Identifier]BlockedIdentity{}
 	}
 
+	blockedAccountIDs := []AccountRef{}
+
 	for accountID := range accountIDs {
 		if s.accountsBlocked[organizationID][accountID] == nil {
 			s.accountsBlocked[organizationID][accountID] = map[identifier.Identifier]BlockedIdentity{}
 		}
+
+		_, ok := s.accountsBlocked[organizationID][accountID][orgIdentityID]
 
 		// It is OK to overwrite the note because we do not allow multiple notes for the same account & identity pair.
 		s.accountsBlocked[organizationID][accountID][orgIdentityID] = BlockedIdentity{
 			OrganizationNote: organizationNote,
 			IdentityNote:     identityNote,
 		}
+
+		// We log only the first time the identity is blocked.
+		if !ok {
+			blockedAccountIDs = append(blockedAccountIDs, AccountRef{ID: accountID})
+		}
+	}
+
+	if len(blockedAccountIDs) > 0 {
+		return s.logActivity(ctx, ActivityAccountBlocked, []IdentityRef{{ID: *identity.ID}}, []OrganizationRef{{ID: organizationID}}, nil, nil, blockedAccountIDs, nil, nil)
 	}
 
 	return nil
@@ -1444,7 +1474,7 @@ func (s *Service) OrganizationBlockUserPost(w http.ResponseWriter, req *http.Req
 
 	switch blockRequest.Type {
 	case BlockedIdentityNotBlocked:
-		errE := s.unblockIdentity(ctx, *idOrg.ID, *organization.ID)
+		errE := s.unblockIdentity(ctx, identity, *idOrg.ID, *organization.ID)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
@@ -1457,7 +1487,7 @@ func (s *Service) OrganizationBlockUserPost(w http.ResponseWriter, req *http.Req
 		}
 		fallthrough
 	case BlockedIdentityOnly:
-		errE := s.blockIdentity(ctx, *idOrg.ID, *organization.ID, blockRequest.OrganizationNote, blockRequest.IdentityNote)
+		errE := s.blockIdentity(ctx, identity, *idOrg.ID, *organization.ID, blockRequest.OrganizationNote, blockRequest.IdentityNote)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return

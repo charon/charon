@@ -825,7 +825,7 @@ func (s *Service) createApplicationTemplate(ctx context.Context, applicationTemp
 
 	s.applicationTemplates[*applicationTemplate.ID] = data
 
-	errE = s.logActivity(ctx, ActivityApplicationTemplateCreate, nil, nil, []ApplicationTemplateRef{{ID: *applicationTemplate.ID}}, nil, nil, nil)
+	errE = s.logActivity(ctx, ActivityApplicationTemplateCreate, nil, nil, []ApplicationTemplateRef{{ID: *applicationTemplate.ID}}, nil, nil, nil, nil)
 	if errE != nil {
 		return errE
 	}
@@ -879,7 +879,7 @@ func (s *Service) updateApplicationTemplate(ctx context.Context, applicationTemp
 
 	errE = s.logActivity(
 		ctx, ActivityApplicationTemplateUpdate, identities, nil, []ApplicationTemplateRef{{ID: *applicationTemplate.ID}},
-		nil, changes, nil,
+		nil, nil, changes, nil,
 	)
 	if errE != nil {
 		return errE
