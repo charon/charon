@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DeepReadonly } from "vue"
-import type { AllIdentity, AuthFlowChooseIdentityRequest, AuthFlowResponse, Flow, Identities, Identity, IdentityRef } from "@/types"
+import type { AllIdentity, AuthFlowChooseIdentityRequest, AuthFlowResponse, Flow, Identities, Identity, IdentityRef, OrganizationBlockedStatus } from "@/types"
 
 import { ref, onBeforeUnmount, onMounted, getCurrentInstance, computed } from "vue"
 import { useI18n } from "vue-i18n"
@@ -33,7 +33,12 @@ const usedIdentities = computed(() => {
   const identities: AllIdentity[] = []
   for (const allIdentity of allIdentities.value) {
     const identityOrganization = getOrganization(allIdentity.identity, props.flow.getOrganizationId())
-    if (identityOrganization !== null && identityOrganization.active && identityOrganization.applications.find((a) => a.id === props.flow.getAppId())) {
+    if (
+      allIdentity.blocked === "notBlocked" &&
+      identityOrganization !== null &&
+      identityOrganization.active &&
+      identityOrganization.applications.find((a) => a.id === props.flow.getAppId())
+    ) {
       identities.push(allIdentity)
     }
   }
@@ -46,6 +51,7 @@ const addedIdentities = computed(() => {
     // If identity is not already in the organization using the app,
     // then admin access is required to be able to add the app first.
     if (
+      allIdentity.blocked === "notBlocked" &&
       identityOrganization !== null &&
       identityOrganization.active &&
       !identityOrganization.applications.find((a) => a.id === props.flow.getAppId()) &&
@@ -62,7 +68,7 @@ const otherIdentities = computed(() => {
     const identityOrganization = getOrganization(allIdentity.identity, props.flow.getOrganizationId())
     // If identity is not already in the organization, then admin access is
     // required to be able to join the organization first.
-    if (identityOrganization === null && allIdentity.canUpdate) {
+    if (allIdentity.blocked === "notBlocked" && identityOrganization === null && allIdentity.canUpdate) {
       identities.push(allIdentity)
     }
   }
@@ -74,7 +80,16 @@ const disabledIdentities = computed(() => {
     const identityOrganization = getOrganization(allIdentity.identity, props.flow.getOrganizationId())
     // If identity is not active in the organization, then admin access is
     // required to be able to enable it in the organization first.
-    if (identityOrganization !== null && !identityOrganization.active && allIdentity.canUpdate) {
+    if (allIdentity.blocked === "notBlocked" && identityOrganization !== null && !identityOrganization.active && allIdentity.canUpdate) {
+      identities.push(allIdentity)
+    }
+  }
+  return identities
+})
+const blockedIdentities = computed(() => {
+  const identities: AllIdentity[] = []
+  for (const allIdentity of allIdentities.value) {
+    if (allIdentity.blocked !== "notBlocked") {
       identities.push(allIdentity)
     }
   }
@@ -141,17 +156,41 @@ async function getIdentities() {
           flow: props.flow.getId(),
         }),
       }).href
+      const blockedStatusURL = router.apiResolve({
+        name: "OrganizationBlockedStatus",
+        params: {
+          id: props.flow.getOrganizationId(),
+          identityId: identity.id,
+        },
+        query: encodeQuery({
+          flow: props.flow.getId(),
+        }),
+      }).href
 
-      const resp = await getURL<Identity>(identityURL, null, abortController.signal, progress)
+      let [{ value: respIdentity, reason: errorIdentity }, { value: respBlockedStatus, reason: errorBlockedStatus }] = await Promise.allSettled([
+        getURL<Identity>(identityURL, null, abortController.signal, progress),
+        getURL<OrganizationBlockedStatus>(blockedStatusURL, null, abortController.signal, progress),
+      ])
       if (abortController.signal.aborted) {
         return
       }
+      if (errorIdentity) {
+        throw errorIdentity
+      }
+      if (errorBlockedStatus) {
+        if (errorBlockedStatus.status === 404) {
+          respBlockedStatus = { doc: { blocked: "notBlocked" } }
+        } else {
+          throw errorBlockedStatus
+        }
+      }
 
       updatedAllIdentities.push({
-        identity: resp.doc,
+        identity: respIdentity.doc,
         url: identityURL,
-        isCurrent: !!resp.metadata.is_current,
-        canUpdate: !!resp.metadata.can_update,
+        isCurrent: !!respIdentity.metadata.is_current,
+        canUpdate: !!respIdentity.metadata.can_update,
+        blocked: respBlockedStatus.doc.blocked,
       })
     }
 
@@ -434,6 +473,20 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
                   <Button primary type="button" tabindex="3" :progress="progress" @click.prevent="onEnable(identity.identity)">{{ t("common.buttons.enable") }}</Button>
                 </div>
               </IdentityPublic>
+            </li>
+          </ul>
+        </template>
+        <template v-if="blockedIdentities.length">
+          <h3 class="text-l font-bold mb-4">{{ t("partials.AuthIdentity.blockedIdentities") }}</h3>
+          <ul>
+            <li v-for="identity in blockedIdentities" :key="identity.identity.id" class="mb-4">
+              <IdentityPublic
+                :identity="identity.identity"
+                :url="identity.url"
+                :is-current="identity.isCurrent"
+                :can-update="identity.canUpdate"
+                :labels="[t('common.labels.blocked')]"
+              ></IdentityPublic>
             </li>
           </ul>
         </template>

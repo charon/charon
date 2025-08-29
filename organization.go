@@ -1516,7 +1516,8 @@ type OrganizationBlockedStatus struct {
 }
 
 func (s *Service) OrganizationBlockedStatusGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	ctx := s.RequireAuthenticated(w, req)
+	// We allow getting identities with the access token or session cookie.
+	ctx := s.requireAuthenticatedForIdentity(w, req)
 	if ctx == nil {
 		return
 	}

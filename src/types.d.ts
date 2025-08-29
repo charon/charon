@@ -327,6 +327,7 @@ export type AllIdentity = {
   url: string
   isCurrent: boolean
   canUpdate: boolean
+  blocked: BlockedIdentityType
 }
 
 export type IdentityOrganization = {
@@ -438,7 +439,7 @@ export type OrganizationBlockedStatusNotes = {
 
 export type OrganizationBlockedStatus = {
   blocked: BlockedIdentityType
-  notes: OrganizationBlockedStatusNotes[]
+  notes?: OrganizationBlockedStatusNotes[]
 }
 
 export type OrganizationBlockRequest = {
