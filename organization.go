@@ -1510,7 +1510,7 @@ type OrganizationBlockedStatusNotes struct {
 	IdentityNote     string      `json:"identityNote,omitempty"`
 }
 
-type OrganizationBlockedStatusResponse struct {
+type OrganizationBlockedStatus struct {
 	Blocked BlockedIdentityType              `json:"blocked"`
 	Notes   []OrganizationBlockedStatusNotes `json:"notes,omitempty"`
 }
@@ -1574,7 +1574,7 @@ func (s *Service) OrganizationBlockedStatusGet(w http.ResponseWriter, req *http.
 					blockedIdentity.OrganizationNote = ""
 				}
 
-				s.WriteJSON(w, req, OrganizationBlockedStatusResponse{
+				s.WriteJSON(w, req, OrganizationBlockedStatus{
 					Blocked: BlockedIdentityOnly,
 					Notes: []OrganizationBlockedStatusNotes{{
 						Identity:         IdentityRef{ID: *idOrg.ID},
@@ -1610,7 +1610,7 @@ func (s *Service) OrganizationBlockedStatusGet(w http.ResponseWriter, req *http.
 					return identityRefCmp(a.Identity, b.Identity)
 				})
 
-				s.WriteJSON(w, req, OrganizationBlockedStatusResponse{
+				s.WriteJSON(w, req, OrganizationBlockedStatus{
 					Blocked: BlockedIdentityAndAccounts,
 					Notes:   notes,
 				}, nil)
@@ -1621,7 +1621,7 @@ func (s *Service) OrganizationBlockedStatusGet(w http.ResponseWriter, req *http.
 
 	// If we got to here and caller has access, then identity is not blocked.
 	if (isOrgAdmin && idOrg.Active) || hasUserAccess || hasAdminAccess {
-		s.WriteJSON(w, req, OrganizationBlockedStatusResponse{
+		s.WriteJSON(w, req, OrganizationBlockedStatus{
 			Blocked: BlockedIdentityNotBlocked,
 			Notes:   nil,
 		}, nil)

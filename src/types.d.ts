@@ -436,7 +436,7 @@ export type OrganizationBlockedStatusNotes = {
   identityNote?: string
 }
 
-export type OrganizationBlockedStatusResponse = {
+export type OrganizationBlockedStatus = {
   blocked: BlockedIdentityType
   notes: OrganizationBlockedStatusNotes[]
 }
