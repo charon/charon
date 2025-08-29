@@ -117,6 +117,12 @@ func (a *Activity) IsForOrganization(organization *Organization) bool {
 	return true
 }
 
+func (a *Activity) IsForUser(identity IdentityRef, account AccountRef) bool {
+	return (a.Actor != nil && *a.Actor == identity) ||
+		slices.Contains(a.Identities, identity) ||
+		slices.Contains(a.Accounts, account)
+}
+
 func (a *Activity) Validate(_ context.Context, existing *Activity) errors.E {
 	if existing == nil {
 		if a.ID != nil {
@@ -267,13 +273,15 @@ func (s *Service) ActivityListGet(w http.ResponseWriter, req *http.Request, _ wa
 		return
 	}
 
+	currentAccountID := mustGetAccountID(ctx)
 	currentIdentityID := mustGetIdentityID(ctx)
+
 	result := []ActivityRef{}
 
 	s.activitiesMu.RLock()
 	defer s.activitiesMu.RUnlock()
 
-	// Collect activities for the current user only.
+	// Collect activities for the current user only (identity or account).
 	activities := make([]*Activity, 0)
 	for id, data := range s.activities {
 		var activity Activity
@@ -284,10 +292,11 @@ func (s *Service) ActivityListGet(w http.ResponseWriter, req *http.Request, _ wa
 			return
 		}
 
-		// Only include activities for the current user.
-		if activity.Actor.ID == currentIdentityID {
-			activities = append(activities, &activity)
+		if activity.IsForUser(IdentityRef{ID: currentIdentityID}, AccountRef{ID: currentAccountID}) {
+			continue
 		}
+
+		activities = append(activities, &activity)
 	}
 
 	// Sort activities by timestamp (newest first).
@@ -318,14 +327,22 @@ func (s *Service) ActivityGetGet(w http.ResponseWriter, req *http.Request, param
 		return
 	}
 
+	currentAccountID := mustGetAccountID(ctx)
 	currentIdentityID := mustGetIdentityID(ctx)
 
-	// Only allow users to see their own activities.
-	if activity.Actor.ID != currentIdentityID {
-		// TODO: Should we change to NotFound here?
-		waf.Error(w, req, http.StatusUnauthorized)
+	// Verify this activity is for this user (identity or account).
+	if !activity.IsForUser(IdentityRef{ID: currentIdentityID}, AccountRef{ID: currentAccountID}) {
+		s.NotFound(w, req)
 		return
 	}
+
+	if activity.Type == ActivityIdentityBlocked || activity.Type == ActivityIdentityUnblocked || activity.Type == ActivityAccountBlocked {
+		// We do not want to expose the actor in these activities.
+		activity.Actor = nil
+	}
+
+	// We never expose accounts.
+	activity.Accounts = nil
 
 	s.WriteJSON(w, req, activity, nil)
 }

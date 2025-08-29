@@ -1403,6 +1403,8 @@ func (s *Service) blockAccounts(
 	}
 
 	if len(blockedAccountIDs) > 0 {
+		// All accounts have access to the identity, so it is OK to have the identity itself logged and exposed.
+		// We do never expose accounts, so we can log for all of them all together once.
 		return s.logActivity(ctx, ActivityAccountBlocked, []IdentityRef{{ID: *identity.ID}}, []OrganizationRef{{ID: organizationID}}, nil, nil, blockedAccountIDs, nil, nil)
 	}
 
