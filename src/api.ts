@@ -12,7 +12,7 @@ import type {
   OrganizationBlockedStatus,
 } from "@/types"
 
-import { encodeQuery, fromBase64 } from "@/utils"
+import { encodeQuery, fromBase64, getOrganization } from "@/utils"
 import { decodeMetadata } from "@/metadata"
 import { processResponse } from "@/flow"
 import { accessToken } from "@/auth"
@@ -243,12 +243,12 @@ export async function getAllIdentities(
       query,
     }).href
 
-    const resp = await getURL<Identities>(url, null, abortController.signal, progress)
+    const response = await getURL<Identities>(url, null, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return null
     }
 
-    for (const identity of resp.doc) {
+    for (const identity of response.doc) {
       const identityURL = router.apiResolve({
         name: "IdentityGet",
         params: {
@@ -256,40 +256,38 @@ export async function getAllIdentities(
         },
         query,
       }).href
-      const blockedStatusURL = router.apiResolve({
-        name: "OrganizationBlockedStatus",
-        params: {
-          id: organizationId,
-          identityId: identity.id,
-        },
-        query,
-      }).href
 
-      let [identityResult, blockedStatusResult] = await Promise.allSettled([
-        getURL<Identity>(identityURL, null, abortController.signal, progress),
-        getURL<OrganizationBlockedStatus>(blockedStatusURL, null, abortController.signal, progress),
-      ])
+      const identityResponse = await getURL<Identity>(identityURL, null, abortController.signal, progress)
       if (abortController.signal.aborted) {
         return null
       }
-      if ("reason" in identityResult) {
-        throw identityResult.reason
-      }
-      if ("reason" in blockedStatusResult) {
-        if (blockedStatusResult.reason.status === 404) {
-          // We make it into a successfully resolved promise.
-          blockedStatusResult = { status: "fulfilled", value: { doc: { blocked: "notBlocked" }, metadata: {} } }
-        } else {
-          throw blockedStatusResult.reason
+
+      let blockedStatus: OrganizationBlockedStatus = { blocked: "notBlocked" }
+      const idOrg = getOrganization(identityResponse.doc, organizationId)
+      if (idOrg) {
+        const blockedStatusURL = router.apiResolve({
+          name: "OrganizationBlockedStatus",
+          params: {
+            id: organizationId,
+            identityId: idOrg.id,
+          },
+          query,
+        }).href
+
+        const blockedStatusResponse = await getURL<OrganizationBlockedStatus>(blockedStatusURL, null, abortController.signal, progress)
+        if (abortController.signal.aborted) {
+          return null
         }
+
+        blockedStatus = blockedStatusResponse.doc
       }
 
       allIdentities.push({
-        identity: identityResult.value.doc,
+        identity: identityResponse.doc,
         url: identityURL,
-        isCurrent: !!identityResult.value.metadata.is_current,
-        canUpdate: !!identityResult.value.metadata.can_update,
-        blocked: blockedStatusResult.value.doc.blocked,
+        isCurrent: !!identityResponse.metadata.is_current,
+        canUpdate: !!identityResponse.metadata.can_update,
+        blocked: blockedStatus.blocked,
       })
     }
 

@@ -152,12 +152,12 @@ async function loadData(update: "init" | "basic" | "users" | "admins" | "organiz
         name: "OrganizationList",
       }).href
 
-      const resp = await getURL<Organizations>(organizationsURL, null, abortController.signal, progress)
+      const organizationsResponse = await getURL<Organizations>(organizationsURL, null, abortController.signal, progress)
       if (abortController.signal.aborted) {
         return
       }
 
-      organizations.value = resp.doc
+      organizations.value = organizationsResponse.doc
     }
   } catch (error) {
     if (abortController.signal.aborted) {
