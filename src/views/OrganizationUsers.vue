@@ -10,6 +10,7 @@ import IdentityPublic from "@/partials/IdentityPublic.vue"
 import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
 import IdentityOrganization from "@/partials/IdentityOrganization.vue"
+import Button from "@/components/Button.vue"
 import { getURL } from "@/api"
 import { injectProgress } from "@/progress"
 
@@ -62,6 +63,14 @@ onBeforeMount(async () => {
   }
 })
 
+function onBlock(identityId: string) {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  router.push({ name: "OrganizationBlockUser", params: { id: props.id, identityId: identityId } })
+}
+
 const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
 </script>
 
@@ -87,7 +96,15 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
           <WithIdentityForAdminDocument :params="{ id, identityId: user.id }" name="OrganizationIdentity">
             <template #default="{ doc, metadata, url }">
               <IdentityPublic :identity="doc" :url="url" :is-current="metadata.is_current" :can-update="metadata.can_update" />
-              <IdentityOrganization :identity-organization="doc.organizations[0]" />
+              <IdentityOrganization :identity-organization="doc.organizations[0]">
+                <template #default="{ organizationBlockedStatus }">
+                  <div v-if="metadata.can_update && (!organizationBlockedStatus || organizationBlockedStatus.blocked === 'onlyIdentity' || organizationBlockedStatus.blocked === 'notBlocked')" class="flex flex-col items-start">
+                    <Button type="button" :progress="progress" @click.prevent="onBlock(user.id)">
+                      {{ !organizationBlockedStatus || organizationBlockedStatus.blocked === "notBlocked" ? t("common.buttons.block") : t("common.buttons.unblock") }}
+                    </Button>
+                  </div>
+                </template>
+              </IdentityOrganization>
             </template>
           </WithIdentityForAdminDocument>
         </div>

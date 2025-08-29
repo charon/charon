@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import type { IdentityOrganization, OrganizationApplicationPublic, OrganizationBlockedStatusResponse } from "@/types"
+import type { IdentityOrganization, OrganizationApplicationPublic, OrganizationBlockedStatus } from "@/types"
+import type { ComponentExposed } from "vue-component-type-helpers"
 import type { DeepReadonly } from "vue"
 
+import { ref } from "vue"
 import { useI18n } from "vue-i18n"
 import WithDocument from "@/components/WithDocument.vue"
 import { getHomepage } from "@/utils"
@@ -13,7 +15,9 @@ defineProps<{
 }>()
 
 const WithOrganizationApplicationDocument = WithDocument<OrganizationApplicationPublic>
-const WithOrganizationBlockedStatusResponseDocument = WithDocument<OrganizationBlockedStatusResponse>
+const withOrganizationApplicationDocument = ref<ComponentExposed<typeof WithOrganizationApplicationDocument> | null>(null)
+const WithOrganizationBlockedStatusDocument = WithDocument<OrganizationBlockedStatus>
+const withOrganizationBlockedStatusDocument = ref<ComponentExposed<typeof WithOrganizationBlockedStatusDocument> | null>(null)
 </script>
 
 <template>
@@ -28,8 +32,9 @@ const WithOrganizationBlockedStatusResponseDocument = WithDocument<OrganizationB
       </div>
       <div>{{ t("partials.IdentityOrganization.status") }}</div>
       <div>
-        <WithOrganizationBlockedStatusResponseDocument
+        <WithOrganizationBlockedStatusDocument
           v-if="identityOrganization.id"
+          ref="withOrganizationBlockedStatusDocument"
           :params="{ id: identityOrganization.organization.id, identityId: identityOrganization.id }"
           name="OrganizationBlockedStatus"
         >
@@ -42,12 +47,17 @@ const WithOrganizationBlockedStatusResponseDocument = WithDocument<OrganizationB
             }}</strong>
             <strong v-else>{{ identityOrganization.active ? t("common.labels.active") : t("common.labels.disabled") }}</strong>
           </template>
-        </WithOrganizationBlockedStatusResponseDocument>
+        </WithOrganizationBlockedStatusDocument>
+        <strong v-else>{{ identityOrganization.active ? t("common.labels.active") : t("common.labels.disabled") }}</strong>
       </div>
       <div>{{ t("partials.IdentityOrganization.apps") }}</div>
       <ol v-if="identityOrganization.applications.length">
         <li v-for="application in identityOrganization.applications" :key="application.id">
-          <WithOrganizationApplicationDocument :params="{ id: identityOrganization.organization.id, appId: application.id }" name="OrganizationApp">
+          <WithOrganizationApplicationDocument
+            ref="withOrganizationApplicationDocument"
+            :params="{ id: identityOrganization.organization.id, appId: application.id }"
+            name="OrganizationApp"
+          >
             <template #default="{ doc, url }">
               <a :href="getHomepage(doc)" :data-url="url" class="link">{{ doc.applicationTemplate.name }}</a>
             </template>
@@ -56,6 +66,6 @@ const WithOrganizationBlockedStatusResponseDocument = WithDocument<OrganizationB
       </ol>
       <div v-else class="italic">{{ t("partials.IdentityOrganization.noApps") }}</div>
     </div>
-    <slot />
+    <slot :organization-application="withOrganizationApplicationDocument?.doc" :organization-blocked-status="withOrganizationBlockedStatusDocument?.doc" />
   </div>
 </template>
