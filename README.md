@@ -196,8 +196,9 @@ and customized for each organization.
 Now back on the Charon Dashboard page for your organization you should see
 OpenID Connect Debugger under available applications. Click "Add" to add it
 to your organization. You have to configure `uriBase` variable. Set it to
-`https://oidcdebugger.com` exactly. Click "Activate" and then "Update".
-Note down the generated client ID.
+`https://oidcdebugger.com` exactly (no trailing `/` so that it will be
+reconstructed to exactly `https://oidcdebugger.com/debug`).
+Click "Activate" and then "Update". Note down the generated client ID.
 
 ### Signing-in into your application
 
