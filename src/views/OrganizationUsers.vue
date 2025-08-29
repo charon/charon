@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import type { IdentityForAdmin, Identities } from "@/types"
+import type { DeepReadonly }  from "vue"
+import type { ComponentExposed } from "vue-component-type-helpers"
+import type { IdentityForAdmin, Identities, OrganizationBlockedStatus } from "@/types"
 
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useI18n } from "vue-i18n"
@@ -26,6 +28,8 @@ const abortController = new AbortController()
 const dataLoading = ref(true)
 const dataLoadingError = ref("")
 const users = ref<Identities>([])
+
+const organizationBlockedStatuses = ref(new Map<string, DeepReadonly<OrganizationBlockedStatus> | undefined>())
 
 onBeforeUnmount(() => {
   abortController.abort()
@@ -69,6 +73,8 @@ function onBlock(identityId: string) {
   router.push({ name: "OrganizationBlockUser", params: { id: props.id, identityId: identityId } })
 }
 
+type IdentityOrganizationComponent = ComponentExposed<typeof IdentityOrganization> | null
+
 const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
 </script>
 
@@ -94,7 +100,7 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
           <WithIdentityForAdminDocument :params="{ id, identityId: user.id }" name="OrganizationIdentity">
             <template #default="{ doc, metadata, url }">
               <IdentityPublic :identity="doc" :url="url" :is-current="metadata.is_current" :can-update="metadata.can_update" />
-              <IdentityOrganization :identity-organization="doc.organizations[0]">
+              <IdentityOrganization :ref="(el: IdentityOrganizationComponent) => { el ? organizationBlockedStatuses.set(user.id, el.organizationBlockedStatus) : organizationBlockedStatuses.delete(user.id) }" :identity-organization="doc.organizations[0]">
                 <template #default="{ organizationBlockedStatus }">
                   <!-- Only when just identity is blocked we can show the button. Admin cannot unblock account-level block. -->
                   <div
