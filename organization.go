@@ -1298,7 +1298,7 @@ func (s *Service) isIdentityOrAccountBlockedInOrganization(_ context.Context, id
 	defer s.identitiesBlockedMu.RUnlock()
 
 	// Check if the identity is blocked in the organization.
-	idOrg := identity.GetIdentityOrganization(&organizationID)
+	idOrg := identity.GetOrganization(&organizationID)
 	if idOrg != nil && s.identitiesBlocked[organizationID] != nil {
 		_, ok := s.identitiesBlocked[organizationID][*idOrg.ID]
 		if ok {
