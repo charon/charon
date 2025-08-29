@@ -148,9 +148,88 @@ Charon would then be available at `https://public.domain.example.com`.
 
 When using Let's Encrypt you accept its Terms of Service.
 
-Charon sends e-mails to users. For that it needs a SMTP server. Use `--mail.host`
+Charon sends e-mails (with codes) to users. For that it needs a SMTP server. Use `--mail.host`
 and `--mail.from` CLI flags to configure it. Without SMTP server configured,
 Charon logs e-mails to the console instead (use `docker logs charon` to see them).
+
+### Charon Dashboard
+
+Charon contains an embedded web application to manage organizations and applications.
+When you open Charon in your browser you in fact see this web application. Sign-in into
+it to start using it.
+
+#### Creating your organization
+
+After signing-in into Charon Dashboard, you can create your organization.
+Click on "Organizations" and then "Create".
+
+For users to be able to sign-in into your applications, you have to add applications
+to your organization. But to be able to do that, you first need an application template
+for the application.
+
+### Creating an application template
+
+Let's use [OpenID Connect Debugger](https://oidcdebugger.com/) as an example.
+Choose "Application templates" in Charon Dashboard and then click "Create".
+Enter "OpenID Connect Debugger" as name and create the template.
+
+Charon supports that applications have three types of OIDC clients:
+
+- Public client: a client which is accessible on the web, but cannot have secrets
+  (e.g., a frontend-only application).
+- Backend client: a client which is accessible on the web and can have secrets
+  (e.g., a backend of the application).
+- Service client: a client which is not accessible on the web and can have secrets
+  (e.g., a worker of the application).
+
+For OpenID Connect Debugger add a public client and for OIDC redirect URI template
+enter `{uriBase}/debug`. This is the location to which OIDC flow redirects which
+OpenID Connect Debugger app expects. Click "Update" to save the template.
+
+`{uriBase}` is a default variable placeholder. If you do not need it, you can
+remove it (but first you have to remove all uses of it). Or if you need more
+variables, you can add them. Variables enable that applications are configured
+and customized for each organization.
+
+### Adding an application template to your organization
+
+Now back on the Charon Dashboard page for your organization you should see
+OpenID Connect Debugger under available applications. Click "Add" to add it
+to your organization. You have to configure `uriBase` variable. Set it to
+`https://oidcdebugger.com` exactly. Click "Activate" and then "Update".
+Note down the generated client ID.
+
+### Signing-in into your application
+
+Open [OpenID Connect Debugger](https://oidcdebugger.com/) and enter:
+
+- Authorize URI: `https://localhost:8080/auth/oidc/authorize`
+- Redirect URI: `https://oidcdebugger.com/debug`
+- Client ID: the client ID generated previously
+- Enable "Use PKCE".
+- Token URI: `https://localhost:8080/api/auth/oidc/token`
+
+On the bottom of the page click "Send request" to start the OIDC sign-in flow.
+You will be redirected to Charon. Note that Charon is now asking you to sign-in
+into OpenID Connect Debugger from your organization. Sign-in into Charon,
+select the identity, and then complete the flow. You will be redirected back
+to OpenID Connect Debugger which should tell you that the sign-in was successful
+and it will obtain access and ID tokens.
+
+In a real application, access token would be used by the application to know
+that the user is authorized to access the application, while ID token would
+provide to the application information about the user (i.e., about their identity).
+
+### Managing users
+
+To see users which joined your organization, click "Manage" on the Charon
+Dashboard page for your organization. There you can see that you joined
+the organization and used OpenID Connect Debugger application.
+
+Similarly, you can inspect activity log for your organization by clicking
+"Activity" on the Charon Dashboard page for your organization.
+You will see there that you joined the organization and signed-in into
+OpenID Connect Debugger as well.
 
 ## Configuration
 
