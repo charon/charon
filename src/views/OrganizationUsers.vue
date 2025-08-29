@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DeepReadonly } from "vue"
 import type { ComponentExposed } from "vue-component-type-helpers"
-import type { IdentityForAdmin, Identities, OrganizationBlockedStatus } from "@/types"
+import type { IdentityForAdmin, Identities } from "@/types"
 
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useI18n } from "vue-i18n"
@@ -29,7 +29,7 @@ const dataLoading = ref(true)
 const dataLoadingError = ref("")
 const users = ref<Identities>([])
 
-const organizationBlockedStatuses = ref(new Map<string, DeepReadonly<OrganizationBlockedStatus> | undefined>())
+const organizationBlockedStatusComponents = ref(new Map<string, IdentityOrganizationComponent>())
 
 onBeforeUnmount(() => {
   abortController.abort()
@@ -77,9 +77,9 @@ type IdentityOrganizationComponent = ComponentExposed<typeof IdentityOrganizatio
 
 function updateOrganizationBlockedStatuses(userId: string, component: IdentityOrganizationComponent) {
   if (component) {
-    organizationBlockedStatuses.value.set(userId, component.organizationBlockedStatus)
+    organizationBlockedStatusComponents.value.set(userId, component)
   } else {
-    organizationBlockedStatuses.value.delete(userId)
+    organizationBlockedStatusComponents.value.delete(userId)
   }
 }
 
@@ -88,7 +88,7 @@ function identityLabels(identity: IdentityForAdmin | DeepReadonly<IdentityForAdm
   if (!identity.organizations[0].active) {
     labels.push(t("common.labels.disabled"))
   }
-  const organizationBlockedStatus = organizationBlockedStatuses.value.get(identity.id)
+  const organizationBlockedStatus = organizationBlockedStatusComponents.value.get(identity.id)?.organizationBlockedStatus
   if (organizationBlockedStatus && organizationBlockedStatus.blocked !== "notBlocked") {
     labels.push(t("common.labels.blocked"))
   }
