@@ -34,6 +34,8 @@ declare module "vue-i18n" {
         resume: string
         pause: string
         redirect: string
+        block: string
+        unblock: string
       }
       errors: {
         unexpected: string
@@ -60,6 +62,7 @@ declare module "vue-i18n" {
         disabled: string
         added: string
         creator: string
+        blocked: string
       }
       data: {
         dataLoading: string
@@ -138,6 +141,7 @@ declare module "vue-i18n" {
         createNewIdentity: string
         identitiesUsedWithOrg: string
         disabledIdentities: string
+        blockedIdentities: string
         noIdentityUsed: string
         noIdentityUsedWithApp: string
         allPreviousDisabled: string
@@ -191,6 +195,7 @@ declare module "vue-i18n" {
         status: string
         apps: string
         noApps: string
+        statusAndBlocked: string
       }
       ActivityListItem: {
         signin: string
@@ -201,6 +206,9 @@ declare module "vue-i18n" {
         organizationUpdate: string
         applicationTemplateCreate: string
         applicationTemplateUpdate: string
+        identityBlocked: string
+        accountBlocked: string
+        identityUnblocked: string
         changes: {
           otherData: string
           permissionsAdded: string
@@ -304,6 +312,16 @@ declare module "vue-i18n" {
       OrganizationUsers: {
         usersForOrganization: string
         noUsers: string
+      }
+      OrganizationBlockUser: {
+        blockUser: string
+        blockConfirmation: string
+        blockType: string
+        blockOnlyIdentity: string
+        blockIdentityAndAccounts: string
+        organizationNote: string
+        identityNote: string
+        blockingSuccess: string
       }
       ActivityList: {
         noActivities: string

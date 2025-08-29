@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [#8](https://gitlab.com/charon/charon/-/issues/8)
 - Activity log for users to see actions related to their identities.
 - Activity log for organization admins to see actions related to their organizations.
+- Support for organization admins to block identities and accounts. Blocking is logged
+  in the activity log for transparency.
 
 ## [0.4.0] - 2025-06-16
 

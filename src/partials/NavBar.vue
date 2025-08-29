@@ -14,12 +14,9 @@ import { currentAbsoluteURL, redirectServerSide } from "@/utils"
 import { accessToken, signIn, isSignedIn } from "@/auth"
 
 const { t } = useI18n({ useScope: "global" })
-
-const { ref: navbar, attrs: navbarAttrs } = useNavbar()
-
 const router = useRouter()
-
 const progress = injectProgress()
+const { ref: navbar, attrs: navbarAttrs } = useNavbar()
 
 const abortController = new AbortController()
 

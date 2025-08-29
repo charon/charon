@@ -420,7 +420,9 @@ func (v *Variable) Validate(_ context.Context) errors.E {
 	switch v.Type {
 	case VariableURIPrefix:
 	default:
-		return errors.New("invalid type")
+		errE := errors.New("unsupported type")
+		errors.Details(errE)["type"] = v.Type
+		return errE
 	}
 
 	return nil
@@ -742,9 +744,9 @@ func (a *ApplicationTemplate) Validate(ctx context.Context, existing *Applicatio
 
 	// Current user must be among admins if it is changing the application template.
 	// We check this elsewhere, here we make sure the user is stored as an admin.
-	identity := IdentityRef{ID: mustGetIdentityID(ctx)}
-	if !a.HasAdminAccess(identity) {
-		a.Admins = append(a.Admins, identity)
+	currentIdentity := IdentityRef{ID: mustGetIdentityID(ctx)}
+	if !a.HasAdminAccess(currentIdentity) {
+		a.Admins = append(a.Admins, currentIdentity)
 	}
 
 	// We remove duplicates.
@@ -823,7 +825,7 @@ func (s *Service) createApplicationTemplate(ctx context.Context, applicationTemp
 
 	s.applicationTemplates[*applicationTemplate.ID] = data
 
-	errE = s.logActivity(ctx, ActivityApplicationTemplateCreate, nil, nil, []ApplicationTemplateRef{{ID: *applicationTemplate.ID}}, nil, nil, nil)
+	errE = s.logActivity(ctx, ActivityApplicationTemplateCreate, nil, nil, []ApplicationTemplateRef{{ID: *applicationTemplate.ID}}, nil, nil, nil, nil)
 	if errE != nil {
 		return errE
 	}
@@ -877,7 +879,7 @@ func (s *Service) updateApplicationTemplate(ctx context.Context, applicationTemp
 
 	errE = s.logActivity(
 		ctx, ActivityApplicationTemplateUpdate, identities, nil, []ApplicationTemplateRef{{ID: *applicationTemplate.ID}},
-		nil, changes, nil,
+		nil, nil, changes, nil,
 	)
 	if errE != nil {
 		return errE
@@ -930,8 +932,9 @@ func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Req
 	co := s.charonOrganization()
 
 	hasIdentity := false
-	identityID, _, sessionID, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
+	identityID, accountID, sessionID, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
 	if errE == nil {
+		ctx = s.withAccountID(ctx, accountID)
 		ctx = s.withIdentityID(ctx, identityID)
 		ctx = s.withSessionID(ctx, sessionID)
 		hasIdentity = true

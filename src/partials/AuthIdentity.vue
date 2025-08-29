@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DeepReadonly } from "vue"
-import type { AllIdentity, AuthFlowChooseIdentityRequest, AuthFlowResponse, Flow, Identities, Identity, IdentityRef } from "@/types"
+import type { AllIdentity, AuthFlowChooseIdentityRequest, AuthFlowResponse, Flow, Identity, IdentityRef } from "@/types"
 
 import { ref, onBeforeUnmount, onMounted, getCurrentInstance, computed } from "vue"
 import { useI18n } from "vue-i18n"
@@ -9,18 +9,16 @@ import Button from "@/components/Button.vue"
 import IdentityPublic from "@/partials/IdentityPublic.vue"
 import IdentityCreate from "@/partials/IdentityCreate.vue"
 import { injectProgress } from "@/progress"
-import { getURL, postJSON, restartAuth } from "@/api"
+import { getAllIdentities, postJSON, restartAuth } from "@/api"
 import { clone, encodeQuery, getOrganization } from "@/utils"
 import { processResponse } from "@/flow"
-
-const { t } = useI18n({ useScope: "global" })
 
 const props = defineProps<{
   flow: Flow
 }>()
 
+const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-
 const progress = injectProgress()
 
 const abortController = new AbortController()
@@ -35,7 +33,12 @@ const usedIdentities = computed(() => {
   const identities: AllIdentity[] = []
   for (const allIdentity of allIdentities.value) {
     const identityOrganization = getOrganization(allIdentity.identity, props.flow.getOrganizationId())
-    if (identityOrganization !== null && identityOrganization.active && identityOrganization.applications.find((a) => a.id === props.flow.getAppId())) {
+    if (
+      allIdentity.blocked === "notBlocked" &&
+      identityOrganization !== null &&
+      identityOrganization.active &&
+      identityOrganization.applications.find((a) => a.id === props.flow.getAppId())
+    ) {
       identities.push(allIdentity)
     }
   }
@@ -48,6 +51,7 @@ const addedIdentities = computed(() => {
     // If identity is not already in the organization using the app,
     // then admin access is required to be able to add the app first.
     if (
+      allIdentity.blocked === "notBlocked" &&
       identityOrganization !== null &&
       identityOrganization.active &&
       !identityOrganization.applications.find((a) => a.id === props.flow.getAppId()) &&
@@ -64,7 +68,7 @@ const otherIdentities = computed(() => {
     const identityOrganization = getOrganization(allIdentity.identity, props.flow.getOrganizationId())
     // If identity is not already in the organization, then admin access is
     // required to be able to join the organization first.
-    if (identityOrganization === null && allIdentity.canUpdate) {
+    if (allIdentity.blocked === "notBlocked" && identityOrganization === null && allIdentity.canUpdate) {
       identities.push(allIdentity)
     }
   }
@@ -76,7 +80,16 @@ const disabledIdentities = computed(() => {
     const identityOrganization = getOrganization(allIdentity.identity, props.flow.getOrganizationId())
     // If identity is not active in the organization, then admin access is
     // required to be able to enable it in the organization first.
-    if (identityOrganization !== null && !identityOrganization.active && allIdentity.canUpdate) {
+    if (allIdentity.blocked === "notBlocked" && identityOrganization !== null && !identityOrganization.active && allIdentity.canUpdate) {
+      identities.push(allIdentity)
+    }
+  }
+  return identities
+})
+const blockedIdentities = computed(() => {
+  const identities: AllIdentity[] = []
+  for (const allIdentity of allIdentities.value) {
+    if (allIdentity.blocked !== "notBlocked") {
       identities.push(allIdentity)
     }
   }
@@ -119,44 +132,10 @@ async function getIdentities() {
 
   progress.value += 1
   try {
-    const updatedAllIdentities: AllIdentity[] = []
-
-    const url = router.apiResolve({
-      name: "IdentityList",
-      query: encodeQuery({
-        flow: props.flow.getId(),
-      }),
-    }).href
-
-    const resp = await getURL<Identities>(url, null, abortController.signal, progress)
-    if (abortController.signal.aborted) {
+    const updatedAllIdentities = await getAllIdentities(router, props.flow.getOrganizationId(), props.flow.getId(), abortController, progress)
+    if (abortController.signal.aborted || !updatedAllIdentities) {
       return
     }
-
-    for (const identity of resp.doc) {
-      const identityURL = router.apiResolve({
-        name: "IdentityGet",
-        params: {
-          id: identity.id,
-        },
-        query: encodeQuery({
-          flow: props.flow.getId(),
-        }),
-      }).href
-
-      const resp = await getURL<Identity>(identityURL, null, abortController.signal, progress)
-      if (abortController.signal.aborted) {
-        return
-      }
-
-      updatedAllIdentities.push({
-        identity: resp.doc,
-        url: identityURL,
-        isCurrent: !!resp.metadata.is_current,
-        canUpdate: !!resp.metadata.can_update,
-      })
-    }
-
     allIdentities.value = updatedAllIdentities
   } catch (error) {
     if (abortController.signal.aborted) {
@@ -369,12 +348,18 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
         </div>
         <div v-else-if="usedIdentities.length === 0" class="italic mb-4">{{ t("partials.AuthIdentity.previouslyUsedDisabled") }}</div>
         <ul v-else>
-          <li v-for="(identity, i) in usedIdentities" :key="identity.identity.id" class="mb-4">
-            <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate">
+          <li v-for="(allIdentity, i) in usedIdentities" :key="allIdentity.identity.id" class="mb-4">
+            <IdentityPublic :identity="allIdentity.identity" :url="allIdentity.url" :is-current="allIdentity.isCurrent" :can-update="allIdentity.canUpdate">
               <div class="flex flex-col items-start">
-                <Button :id="i === 0 ? 'first-identity' : null" primary type="button" tabindex="1" :progress="progress" @click.prevent="onSelect(identity.identity.id)">{{
-                  t("common.buttons.select")
-                }}</Button>
+                <Button
+                  :id="i === 0 ? 'first-identity' : null"
+                  primary
+                  type="button"
+                  tabindex="1"
+                  :progress="progress"
+                  @click.prevent="onSelect(allIdentity.identity.id)"
+                  >{{ t("common.buttons.select") }}</Button
+                >
               </div>
             </IdentityPublic>
           </li>
@@ -382,8 +367,8 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
         <template v-if="addedIdentities.length">
           <h3 class="text-l font-bold mb-4">{{ t("partials.AuthIdentity.identitiesUsedWithOrg") }}</h3>
           <ul>
-            <li v-for="(identity, i) in addedIdentities" :key="identity.identity.id" class="mb-4">
-              <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate">
+            <li v-for="(allIdentity, i) in addedIdentities" :key="allIdentity.identity.id" class="mb-4">
+              <IdentityPublic :identity="allIdentity.identity" :url="allIdentity.url" :is-current="allIdentity.isCurrent" :can-update="allIdentity.canUpdate">
                 <div class="flex flex-col items-start">
                   <Button
                     :id="usedIdentities.length + i === 0 ? 'first-identity' : null"
@@ -391,7 +376,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
                     type="button"
                     tabindex="1"
                     :progress="progress"
-                    @click.prevent="onSelect(identity.identity.id)"
+                    @click.prevent="onSelect(allIdentity.identity.id)"
                     >{{ t("common.buttons.select") }}</Button
                   >
                 </div>
@@ -405,8 +390,8 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
         </div>
         <div v-else-if="otherIdentities.length === 0" class="italic mb-4">{{ t("partials.AuthIdentity.noOtherIdentitiesCreateOne") }}</div>
         <ul v-else>
-          <li v-for="(identity, i) in otherIdentities" :key="identity.identity.id" class="mb-4">
-            <IdentityPublic :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate">
+          <li v-for="(allIdentity, i) in otherIdentities" :key="allIdentity.identity.id" class="mb-4">
+            <IdentityPublic :identity="allIdentity.identity" :url="allIdentity.url" :is-current="allIdentity.isCurrent" :can-update="allIdentity.canUpdate">
               <div class="flex flex-col items-start">
                 <Button
                   :id="usedIdentities.length + addedIdentities.length + i === 0 ? 'first-identity' : null"
@@ -414,7 +399,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
                   type="button"
                   tabindex="2"
                   :progress="progress"
-                  @click.prevent="onSelect(identity.identity.id)"
+                  @click.prevent="onSelect(allIdentity.identity.id)"
                   >{{ t("common.buttons.select") }}</Button
                 >
               </div>
@@ -424,18 +409,34 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
         <template v-if="disabledIdentities.length">
           <h3 class="text-l font-bold mb-4">{{ t("partials.AuthIdentity.disabledIdentities") }}</h3>
           <ul>
-            <li v-for="identity in disabledIdentities" :key="identity.identity.id" class="mb-4">
+            <li v-for="allIdentity in disabledIdentities" :key="allIdentity.identity.id" class="mb-4">
               <IdentityPublic
-                :identity="identity.identity"
-                :url="identity.url"
-                :is-current="identity.isCurrent"
-                :can-update="identity.canUpdate"
+                :identity="allIdentity.identity"
+                :url="allIdentity.url"
+                :is-current="allIdentity.isCurrent"
+                :can-update="allIdentity.canUpdate"
                 :labels="[t('common.labels.disabled')]"
               >
                 <div class="flex flex-col items-start">
-                  <Button primary type="button" tabindex="3" :progress="progress" @click.prevent="onEnable(identity.identity)">{{ t("common.buttons.enable") }}</Button>
+                  <Button primary type="button" tabindex="3" :progress="progress" @click.prevent="onEnable(allIdentity.identity)">{{
+                    t("common.buttons.enable")
+                  }}</Button>
                 </div>
               </IdentityPublic>
+            </li>
+          </ul>
+        </template>
+        <template v-if="blockedIdentities.length">
+          <h3 class="text-l font-bold mb-4">{{ t("partials.AuthIdentity.blockedIdentities") }}</h3>
+          <ul>
+            <li v-for="allIdentity in blockedIdentities" :key="allIdentity.identity.id" class="mb-4">
+              <IdentityPublic
+                :identity="allIdentity.identity"
+                :url="allIdentity.url"
+                :is-current="allIdentity.isCurrent"
+                :can-update="allIdentity.canUpdate"
+                :labels="[t('common.labels.blocked')]"
+              ></IdentityPublic>
             </li>
           </ul>
         </template>

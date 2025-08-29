@@ -13,11 +13,9 @@ import { injectProgress } from "@/progress"
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-
 const progress = injectProgress()
 
 const abortController = new AbortController()
-
 const unexpectedError = ref("")
 const name = ref("")
 

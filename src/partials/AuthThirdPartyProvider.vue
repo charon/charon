@@ -14,14 +14,11 @@ const props = defineProps<{
   flow: Flow
 }>()
 
-const router = useRouter()
-
 const { t } = useI18n({ useScope: "global" })
-
+const router = useRouter()
 const progress = injectProgress()
 
 const abortController = new AbortController()
-
 const unexpectedError = ref("")
 const paused = ref(false)
 const seconds = ref(3)

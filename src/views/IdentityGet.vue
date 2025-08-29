@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { Ref } from "vue"
+import type { DeepReadonly, Ref } from "vue"
+import type { ComponentExposed } from "vue-component-type-helpers"
 import type { Identity, IdentityOrganization as IdentityOrganizationType, IdentityRef, Metadata, OrganizationRef, Organizations } from "@/types"
 
 import { computed, nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
@@ -18,14 +19,12 @@ import { injectProgress } from "@/progress"
 import { clone, equals } from "@/utils"
 import siteContext from "@/context"
 
-const { t } = useI18n({ useScope: "global" })
-
 const props = defineProps<{
   id: string
 }>()
 
+const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-
 const progress = injectProgress()
 
 const abortController = new AbortController()
@@ -55,6 +54,8 @@ const admins = ref<IdentityRef[]>([])
 const identityOrganizationsUnexpectedError = ref("")
 const identityOrganizationsUpdated = ref(false)
 const identityOrganizations = ref<IdentityOrganizationType[]>([])
+
+const organizationBlockedStatusComponents = ref(new Map<string, IdentityOrganizationComponent>())
 
 const availableOrganizations = computed(() => {
   return organizations.value.filter((organization) => !isOrganizationAdded(organization))
@@ -151,12 +152,12 @@ async function loadData(update: "init" | "basic" | "users" | "admins" | "organiz
         name: "OrganizationList",
       }).href
 
-      const resp = await getURL<Organizations>(organizationsURL, null, abortController.signal, progress)
+      const organizationsResponse = await getURL<Organizations>(organizationsURL, null, abortController.signal, progress)
       if (abortController.signal.aborted) {
         return
       }
 
-      organizations.value = resp.doc
+      organizations.value = organizationsResponse.doc
     }
   } catch (error) {
     if (abortController.signal.aborted) {
@@ -393,6 +394,28 @@ async function onAddOrganization(organization: OrganizationRef) {
   })
 }
 
+type IdentityOrganizationComponent = ComponentExposed<typeof IdentityOrganization> | null
+
+function updateOrganizationBlockedStatuses(organizationId: string, component: IdentityOrganizationComponent) {
+  if (component) {
+    organizationBlockedStatusComponents.value.set(organizationId, component)
+  } else {
+    organizationBlockedStatusComponents.value.delete(organizationId)
+  }
+}
+
+function organizationLabels(identityOrganization: IdentityOrganizationType | DeepReadonly<IdentityOrganizationType>): string[] {
+  const labels: string[] = []
+  if (!identityOrganization.active) {
+    labels.push(t("common.labels.disabled"))
+  }
+  const organizationBlockedStatus = organizationBlockedStatusComponents.value.get(identityOrganization.organization.id)?.organizationBlockedStatus
+  if (organizationBlockedStatus && organizationBlockedStatus.blocked !== "notBlocked") {
+    labels.push(t("common.labels.blocked"))
+  }
+  return labels
+}
+
 // TODO: Remember previous organization-scoped identity IDs and reuse them if an organization is removed and then added back without calling update in-between.
 </script>
 
@@ -517,9 +540,12 @@ async function onAddOrganization(organization: OrganizationRef) {
             <div v-else-if="identityOrganizationsUpdated" class="text-success-600">{{ t("views.IdentityGet.organizationsUpdated") }}</div>
             <form v-if="identityOrganizations.length || canOrganizationsSubmit()" class="flex flex-col" novalidate @submit.prevent="onOrganizationsSubmit">
               <ul>
-                <li v-for="(identityOrganization, i) in identityOrganizations" :key="identityOrganization.id || i" class="flex flex-col mb-4">
-                  <OrganizationListItem :item="identityOrganization.organization" h3 />
-                  <IdentityOrganization :identity-organization="identityOrganization">
+                <li v-for="(identityOrganization, i) in identityOrganizations" :key="identityOrganization.organization.id" class="flex flex-col mb-4">
+                  <OrganizationListItem :item="identityOrganization.organization" :labels="organizationLabels(identityOrganization)" h3 />
+                  <IdentityOrganization
+                    :ref="(el) => updateOrganizationBlockedStatuses(identityOrganization.organization.id, el as IdentityOrganizationComponent)"
+                    :identity-organization="identityOrganization"
+                  >
                     <div v-if="metadata.can_update" class="flex flew-row gap-4">
                       <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = !identityOrganization.active">
                         {{ identityOrganization.active ? t("common.buttons.disable") : t("common.buttons.activate") }}

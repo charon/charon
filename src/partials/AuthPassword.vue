@@ -12,18 +12,15 @@ import { toBase64, isEmail } from "@/utils"
 import { removeSteps, processResponse } from "@/flow"
 import { injectProgress } from "@/progress"
 
-const { t } = useI18n({ useScope: "global" })
-
 const props = defineProps<{
   flow: Flow
 }>()
 
+const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-
 const progress = injectProgress()
 
 const abortController = new AbortController()
-
 const password = ref("")
 const keyProgress = ref(0)
 const passwordError = ref("")
@@ -84,10 +81,7 @@ async function getKey(): Promise<boolean> {
   keyProgress.value += 1
   try {
     const response = await startPassword(router, props.flow, abortController, keyProgress, progress)
-    if (abortController.signal.aborted) {
-      return false
-    }
-    if (response === null) {
+    if (abortController.signal.aborted || !response) {
       return false
     }
     if ("error" in response) {

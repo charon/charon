@@ -30,6 +30,10 @@ func (c1 *Credential) Equal(c2 *Credential) bool {
 	return c1.ID == c2.ID && c1.Provider == c2.Provider && bytes.Equal(c1.Data, c2.Data)
 }
 
+type AccountRef struct {
+	ID identifier.Identifier `json:"-"`
+}
+
 type Account struct {
 	ID identifier.Identifier
 

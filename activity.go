@@ -30,6 +30,9 @@ const (
 	ActivityOrganizationUpdate        ActivityType = "organizationUpdate"
 	ActivityApplicationTemplateCreate ActivityType = "applicationTemplateCreate"
 	ActivityApplicationTemplateUpdate ActivityType = "applicationTemplateUpdate"
+	ActivityIdentityBlocked           ActivityType = "identityBlocked"
+	ActivityIdentityUnblocked         ActivityType = "identityUnblocked"
+	ActivityAccountBlocked            ActivityType = "accountBlocked"
 )
 
 // ActivityChangeType represents the type of change performed during an activity.
@@ -87,6 +90,7 @@ type Activity struct {
 	Organizations            []OrganizationRef            `json:"organizations,omitempty"`
 	ApplicationTemplates     []ApplicationTemplateRef     `json:"applicationTemplates,omitempty"`
 	OrganizationApplications []OrganizationApplicationRef `json:"organizationApplications,omitempty"`
+	Accounts                 []AccountRef                 `json:"-"`
 
 	// For sign-in activities, this is the list of providers that were used to authenticate the user.
 	Providers []Provider `json:"providers,omitempty"`
@@ -111,6 +115,12 @@ func (a *Activity) IsForOrganization(organization *Organization) bool {
 	}
 
 	return true
+}
+
+func (a *Activity) IsForUser(identity IdentityRef, account AccountRef) bool {
+	return (a.Actor != nil && *a.Actor == identity) ||
+		slices.Contains(a.Identities, identity) ||
+		slices.Contains(a.Accounts, account)
 }
 
 func (a *Activity) Validate(_ context.Context, existing *Activity) errors.E {
@@ -199,9 +209,9 @@ func (s *Service) createActivity(ctx context.Context, activity *Activity) errors
 func (s *Service) logActivity(
 	ctx context.Context, activityType ActivityType, identities []IdentityRef, organizations []OrganizationRef,
 	applicationTemplates []ApplicationTemplateRef, organizationApplications []OrganizationApplicationRef,
-	changes []ActivityChangeType, providers []Provider,
+	accounts []AccountRef, changes []ActivityChangeType, providers []Provider,
 ) errors.E {
-	actorID := mustGetIdentityID(ctx)
+	currentIdentityID := mustGetIdentityID(ctx)
 	sessionID := mustGetSessionID(ctx)
 
 	var requestID identifier.Identifier
@@ -218,7 +228,7 @@ func (s *Service) logActivity(
 		Timestamp: Time{}, //nolint:exhaustruct
 
 		Type:                     activityType,
-		Actor:                    &IdentityRef{ID: actorID},
+		Actor:                    &IdentityRef{ID: currentIdentityID},
 		Providers:                providers,
 		Changes:                  changes,
 		SessionID:                sessionID,
@@ -227,6 +237,7 @@ func (s *Service) logActivity(
 		Organizations:            nil,
 		ApplicationTemplates:     nil,
 		OrganizationApplications: nil,
+		Accounts:                 nil,
 	}
 
 	if len(identities) > 0 {
@@ -240,6 +251,9 @@ func (s *Service) logActivity(
 	}
 	if len(organizationApplications) > 0 {
 		activity.OrganizationApplications = organizationApplications
+	}
+	if len(accounts) > 0 {
+		activity.Accounts = accounts
 	}
 
 	return s.createActivity(ctx, activity)
@@ -259,13 +273,15 @@ func (s *Service) ActivityListGet(w http.ResponseWriter, req *http.Request, _ wa
 		return
 	}
 
+	currentAccountID := mustGetAccountID(ctx)
 	currentIdentityID := mustGetIdentityID(ctx)
+
 	result := []ActivityRef{}
 
 	s.activitiesMu.RLock()
 	defer s.activitiesMu.RUnlock()
 
-	// Collect activities for the current user only.
+	// Collect activities for the current user only (identity or account).
 	activities := make([]*Activity, 0)
 	for id, data := range s.activities {
 		var activity Activity
@@ -276,10 +292,11 @@ func (s *Service) ActivityListGet(w http.ResponseWriter, req *http.Request, _ wa
 			return
 		}
 
-		// Only include activities for the current user.
-		if activity.Actor.ID == currentIdentityID {
-			activities = append(activities, &activity)
+		if !activity.IsForUser(IdentityRef{ID: currentIdentityID}, AccountRef{ID: currentAccountID}) {
+			continue
 		}
+
+		activities = append(activities, &activity)
 	}
 
 	// Sort activities by timestamp (newest first).
@@ -310,14 +327,22 @@ func (s *Service) ActivityGetGet(w http.ResponseWriter, req *http.Request, param
 		return
 	}
 
+	currentAccountID := mustGetAccountID(ctx)
 	currentIdentityID := mustGetIdentityID(ctx)
 
-	// Only allow users to see their own activities.
-	if activity.Actor.ID != currentIdentityID {
-		// TODO: Should we change to NotFound here?
-		waf.Error(w, req, http.StatusUnauthorized)
+	// Verify this activity is for this user (identity or account).
+	if !activity.IsForUser(IdentityRef{ID: currentIdentityID}, AccountRef{ID: currentAccountID}) {
+		s.NotFound(w, req)
 		return
 	}
+
+	if activity.Type == ActivityIdentityBlocked || activity.Type == ActivityIdentityUnblocked || activity.Type == ActivityAccountBlocked {
+		// We do not want to expose the actor in these activities.
+		activity.Actor = nil
+	}
+
+	// We never expose accounts.
+	activity.Accounts = nil
 
 	s.WriteJSON(w, req, activity, nil)
 }

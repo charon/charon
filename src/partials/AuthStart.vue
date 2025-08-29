@@ -13,18 +13,15 @@ import { injectProgress } from "@/progress"
 import siteContext from "@/context"
 import { getThirdPartyProvider } from "@/flow"
 
-const { t } = useI18n({ useScope: "global" })
-
 const props = defineProps<{
   flow: Flow
 }>()
 
+const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-
 const progress = injectProgress()
 
 const abortController = new AbortController()
-
 const passwordError = ref("")
 const unexpectedError = ref("")
 
@@ -86,10 +83,7 @@ async function onNext() {
   progress.value += 1
   try {
     const response = await startPassword(router, props.flow, abortController, progress, progress)
-    if (abortController.signal.aborted) {
-      return
-    }
-    if (response === null) {
+    if (abortController.signal.aborted || !response) {
       return
     }
     if ("error" in response) {

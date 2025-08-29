@@ -320,6 +320,7 @@ export type OrganizationIdentity = {
   applications: OrganizationApplicationApplicationRef[]
   isCurrent: boolean
   canUpdate: boolean
+  blocked: BlockedIdentityType
 }
 
 export type AllIdentity = {
@@ -327,6 +328,7 @@ export type AllIdentity = {
   url: string
   isCurrent: boolean
   canUpdate: boolean
+  blocked: BlockedIdentityType
 }
 
 export type IdentityOrganization = {
@@ -393,6 +395,9 @@ export type ActivityType =
   | "organizationUpdate"
   | "applicationTemplateCreate"
   | "applicationTemplateUpdate"
+  | "identityBlocked"
+  | "identityUnblocked"
+  | "accountBlocked"
 
 export type ActivityChangeType =
   | "otherData"
@@ -424,6 +429,25 @@ export type ActivityRef = {
 }
 
 export type Activities = ActivityRef[]
+
+export type BlockedIdentityType = "notBlocked" | "onlyIdentity" | "identityAndAccounts"
+
+export type OrganizationBlockedStatusNotes = {
+  identity: IdentityRef
+  organizationNote?: string
+  identityNote?: string
+}
+
+export type OrganizationBlockedStatus = {
+  blocked: BlockedIdentityType
+  notes?: OrganizationBlockedStatusNotes[]
+}
+
+export type OrganizationBlockRequest = {
+  type: BlockedIdentityType
+  organizationNote: string
+  identityNote: string
+}
 
 // It is recursive.
 export type Mutable<T> = {

@@ -7,10 +7,8 @@ import type {
   ApplicationTemplate,
   OrganizationApplication,
   ApplicationTemplateRef,
-  Identities,
   IdentityRef,
   OrganizationIdentity,
-  Identity,
   AllIdentity,
 } from "@/types"
 
@@ -28,21 +26,19 @@ import ApplicationTemplateListItem from "@/partials/ApplicationTemplateListItem.
 import IdentityFull from "@/partials/IdentityFull.vue"
 import WithIdentityPublicDocument from "@/partials/WithIdentityPublicDocument.vue"
 import IdentityOrganization from "@/partials/IdentityOrganization.vue"
-import { getURL, postJSON } from "@/api"
+import { getAllIdentities, getURL, postJSON } from "@/api"
 import { setupArgon2id } from "@/argon2id"
 import { clone, equals, getIdentityOrganization, getOrganization } from "@/utils"
 import { injectProgress } from "@/progress"
 import siteContext from "@/context"
 import { isSignedIn } from "@/auth"
 
-const { t } = useI18n({ useScope: "global" })
-
 const props = defineProps<{
   id: string
 }>()
 
+const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-
 // We could be using separate progress for the organization and identities, because those
 // are really two separate forms (and documents) visually combined into one form, but we are
 // using only one progress to further drive the illusion of only one form.
@@ -202,50 +198,29 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
 
     if (update === "init" || update === "identities") {
       const updatedOrganizationIdentities: OrganizationIdentity[] = []
-      const updatedAllIdentities: AllIdentity[] = []
+      let updatedAllIdentities: AllIdentity[] = []
 
       if (isSignedIn()) {
-        const identitiesURL = router.apiResolve({
-          name: "IdentityList",
-        }).href
-
-        const resp = await getURL<Identities>(identitiesURL, null, abortController.signal, progress)
-        if (abortController.signal.aborted) {
+        const result = await getAllIdentities(router, props.id, null, abortController, progress)
+        if (abortController.signal.aborted || !result) {
           return
         }
+        updatedAllIdentities = result
 
-        for (const identity of resp.doc) {
-          const identityURL = router.apiResolve({
-            name: "IdentityGet",
-            params: {
-              id: identity.id,
-            },
-          }).href
-
-          const resp = await getURL<Identity>(identityURL, null, abortController.signal, progress)
-          if (abortController.signal.aborted) {
-            return
-          }
-
-          updatedAllIdentities.push({
-            identity: resp.doc,
-            url: identityURL,
-            isCurrent: !!resp.metadata.is_current,
-            canUpdate: !!resp.metadata.can_update,
-          })
-
-          for (const identityOrganization of resp.doc.organizations) {
+        for (const allIdentity of updatedAllIdentities) {
+          for (const identityOrganization of allIdentity.identity.organizations) {
             if (identityOrganization.organization.id === props.id) {
               updatedOrganizationIdentities.push({
                 id: identityOrganization.id,
                 active: identityOrganization.active,
                 // We clone so that object is not shared with updatedAllIdentities.
                 // Just in case we modify any of them.
-                identity: clone(resp.doc),
-                url: identityURL,
+                identity: clone(allIdentity.identity),
+                url: allIdentity.url,
                 applications: identityOrganization.applications,
-                isCurrent: !!resp.metadata.is_current,
-                canUpdate: !!resp.metadata.can_update,
+                isCurrent: allIdentity.isCurrent,
+                canUpdate: allIdentity.canUpdate,
+                blocked: allIdentity.blocked,
               })
               break
             }
@@ -519,18 +494,19 @@ function canIdentitiesSubmit(): boolean {
   return false
 }
 
-async function onAddIdentity(identity: Identity | DeepReadonly<Identity>) {
+async function onAddIdentity(allIdentity: AllIdentity | DeepReadonly<AllIdentity>) {
   if (abortController.signal.aborted) {
     return
   }
 
   organizationIdentities.value.push({
     active: false,
-    identity,
+    identity: allIdentity.identity,
     applications: [],
     url: undefined,
-    isCurrent: false,
-    canUpdate: true,
+    isCurrent: allIdentity.isCurrent,
+    canUpdate: allIdentity.canUpdate,
+    blocked: allIdentity.blocked,
   })
   // Because list of all identities is sorted by ID, organizationIdentities itself is also sorted by identity ID. We do not want
   // that after updating the list and retrieving the result from the backend, the list changes with identities changing the
@@ -636,6 +612,25 @@ async function onIdentitiesSubmit() {
   } finally {
     progress.value -= 1
   }
+}
+
+function organizationIdentityLabels(organizationIdentity: OrganizationIdentity): string[] {
+  const labels: string[] = []
+  if (!organizationIdentity.active) {
+    labels.push(t("common.labels.disabled"))
+  }
+  if (organizationIdentity.blocked !== "notBlocked") {
+    labels.push(t("common.labels.blocked"))
+  }
+  return labels
+}
+
+function allIdentityLabels(allIdentity: AllIdentity): string[] {
+  const labels: string[] = []
+  if (allIdentity.blocked !== "notBlocked") {
+    labels.push(t("common.labels.blocked"))
+  }
+  return labels
 }
 
 // TODO: Remember previous client ID and secrets and reuse them if an add application is removed and then added back without calling update in-between.
@@ -853,7 +848,7 @@ async function onIdentitiesSubmit() {
                     :url="organizationIdentity.url"
                     :is-current="organizationIdentity.isCurrent"
                     :can-update="organizationIdentity.canUpdate"
-                    :labels="organizationIdentity.active ? [] : [t('common.labels.disabled')]"
+                    :labels="organizationIdentityLabels(organizationIdentity)"
                   />
                   <IdentityOrganization
                     :identity-organization="{
@@ -887,10 +882,16 @@ async function onIdentitiesSubmit() {
           <template v-if="availableIdentities.length">
             <h2 class="text-xl font-bold">{{ t("views.OrganizationGet.availableIdentities") }}</h2>
             <ul class="flex flex-col gap-4">
-              <li v-for="identity in availableIdentities" :key="identity.identity.id">
-                <IdentityFull :identity="identity.identity" :url="identity.url" :is-current="identity.isCurrent" :can-update="identity.canUpdate">
+              <li v-for="allIdentity in availableIdentities" :key="allIdentity.identity.id">
+                <IdentityFull
+                  :identity="allIdentity.identity"
+                  :url="allIdentity.url"
+                  :is-current="allIdentity.isCurrent"
+                  :can-update="allIdentity.canUpdate"
+                  :labels="allIdentityLabels(allIdentity)"
+                >
                   <div class="flex flex-col items-start">
-                    <Button type="button" :progress="progress" primary @click.prevent="onAddIdentity(identity.identity)">{{ t("common.buttons.add") }}</Button>
+                    <Button type="button" :progress="progress" primary @click.prevent="onAddIdentity(allIdentity)">{{ t("common.buttons.add") }}</Button>
                   </div>
                 </IdentityFull>
               </li>

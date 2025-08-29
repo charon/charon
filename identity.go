@@ -22,6 +22,7 @@ var (
 	ErrIdentityUnauthorized     = errors.Base("identity access unauthorized")
 	ErrIdentityUpdateNotAllowed = errors.Base("identity update not allowed")
 	ErrIdentityValidationFailed = errors.Base("identity validation failed")
+	ErrIdentityBlocked          = errors.Base("identity blocked")
 
 	errEmptyIdentity = errors.Base("empty identity")
 )
@@ -557,7 +558,7 @@ func (s *Service) getIdentityWithoutAccessCheck(_ context.Context, id identifier
 }
 
 func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*Identity, bool, errors.E) {
-	accountID := mustGetAccountID(ctx)
+	currentAccountID := mustGetAccountID(ctx)
 
 	s.identitiesMu.RLock()
 	defer s.identitiesMu.RUnlock()
@@ -578,12 +579,10 @@ func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*I
 		return nil, false, errE
 	}
 
-	ids, isCreator, errE := s.getIdentitiesForAccount(ctx, accountID, IdentityRef{ID: *identity.ID})
+	ids, isCreator, errE := s.getIdentitiesForAccount(ctx, currentAccountID, IdentityRef{ID: *identity.ID})
 	if errE != nil {
 		return nil, false, errE
 	}
-	// We could also just check if ids.Contains(IdentityRef{ID: *identity.ID}),
-	// but this gives us information about the type of the access.
 	if identity.HasAdminAccess(ids, isCreator) {
 		return &identity, true, nil
 	}
@@ -601,7 +600,7 @@ func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*I
 // (but which has an account). Only in such case, the identityIDContextKey does not have to
 // be set and the identity itself will be used instead.
 func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors.E {
-	accountID := mustGetAccountID(ctx)
+	currentAccountID := mustGetAccountID(ctx)
 
 	errE := identity.Validate(ctx, nil, s)
 	if errE != nil {
@@ -628,13 +627,13 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 		// is added to admins in Validate. Here, we record the identity creator, establishing the link
 		// between the identity and the account, bootstrapping correct propagation of which accounts have
 		// access based on identities.
-		s.identityCreators[i] = accountID
+		s.identityCreators[i] = currentAccountID
 
-		// We also here current identity ID in the context, which is used by logActivity.
+		// We set here current identity ID in the context, which is used by logActivity.
 		ctx = s.withIdentityID(ctx, *identity.ID)
 	}
 
-	errE = s.logActivity(ctx, ActivityIdentityCreate, []IdentityRef{{ID: *identity.ID}}, nil, nil, nil, nil, nil)
+	errE = s.logActivity(ctx, ActivityIdentityCreate, []IdentityRef{{ID: *identity.ID}}, nil, nil, nil, nil, nil, nil)
 	if errE != nil {
 		return errE
 	}
@@ -697,6 +696,13 @@ func (s *Service) unsetAccountForIdentity(accountID identifier.Identifier, ident
 	}
 }
 
+func (s *Service) getAccountsForIdentityWithLock(identity IdentityRef) map[identifier.Identifier][][]IdentityRef {
+	s.identitiesAccessMu.RLock()
+	defer s.identitiesAccessMu.RUnlock()
+
+	return s.getAccountsForIdentity(identity)
+}
+
 // getAccountsForIdentity returns all accounts that have access to the identity.
 //
 // s.identitiesAccessMu should be locked while calling this function.
@@ -711,7 +717,7 @@ func (s *Service) getAccountsForIdentity(identity IdentityRef) map[identifier.Id
 }
 
 func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors.E {
-	accountID := mustGetAccountID(ctx)
+	currentAccountID := mustGetAccountID(ctx)
 
 	s.identitiesMu.Lock()
 	defer s.identitiesMu.Unlock()
@@ -739,7 +745,7 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 
 	i := IdentityRef{ID: *identity.ID}
 
-	ids, isCreator, errE := s.getIdentitiesForAccount(ctx, accountID, i)
+	ids, isCreator, errE := s.getIdentitiesForAccount(ctx, currentAccountID, i)
 	if errE != nil {
 		return errE
 	}
@@ -784,7 +790,7 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 	// and the frontend can always then take the first element to be the identity that was updated.
 	identities = append([]IdentityRef{i}, identities...)
 
-	errE = s.logActivity(ctx, ActivityIdentityUpdate, identities, organizations, nil, applications, changes, nil)
+	errE = s.logActivity(ctx, ActivityIdentityUpdate, identities, organizations, nil, applications, nil, changes, nil)
 	if errE != nil {
 		return errE
 	}
@@ -968,6 +974,13 @@ func (s *Service) selectAndActivateIdentity(ctx context.Context, identityID, org
 		return nil, errE
 	}
 
+	isBlocked, errE := s.isIdentityOrAccountBlockedInOrganization(ctx, identity, mustGetAccountID(ctx), organizationID)
+	if errE != nil {
+		return nil, errE
+	} else if isBlocked {
+		return nil, errors.WithStack(ErrIdentityBlocked)
+	}
+
 	applicationRef := OrganizationApplicationApplicationRef{ID: applicationID}
 
 	idOrg := identity.GetOrganization(&organizationID)
@@ -1101,7 +1114,7 @@ func (s *Service) hasIdentities(_ context.Context, ids mapset.Set[IdentityRef], 
 }
 
 func (s *Service) identityList(ctx context.Context) ([]IdentityRef, errors.E) {
-	accountID := mustGetAccountID(ctx)
+	currentAccountID := mustGetAccountID(ctx)
 
 	result := []IdentityRef{}
 
@@ -1123,13 +1136,11 @@ func (s *Service) identityList(ctx context.Context) ([]IdentityRef, errors.E) {
 
 		i := IdentityRef{ID: id}
 
-		ids, isCreator, errE := s.getIdentitiesForAccount(ctx, accountID, i)
+		ids, isCreator, errE := s.getIdentitiesForAccount(ctx, currentAccountID, i)
 		if errE != nil {
 			return nil, errE
 		}
 
-		// We could also just check if ids.Contains(i), but this gives
-		// us information about the type of the access.
 		hasUserAccess := identity.HasUserAccess(ids)
 		hasAdminAccess := identity.HasAdminAccess(ids, isCreator)
 		if !hasUserAccess && !hasAdminAccess {

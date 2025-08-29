@@ -22,7 +22,9 @@
       "signIn": "Prijava ali registracija",
       "resume": "Nadaljuj",
       "pause": "Ustavi",
-      "redirect": "Preusmeri"
+      "redirect": "Preusmeri",
+      "block": "Blokiraj",
+      "unblock": "Odblokiraj"
     },
     "errors": {
       "unexpected": "Nepričakovana napaka. Prosimo, poskusite znova.",
@@ -48,7 +50,8 @@
       "active": "aktivna",
       "disabled": "onemogočena",
       "added": "dodana",
-      "creator": "ustvarjalec"
+      "creator": "ustvarjalec",
+      "blocked": "blokirana"
     },
     "data": {
       "dataLoading": "Nalaganje...",
@@ -129,7 +132,8 @@
       "disabledIdentities": "Onemogočene identitete",
       "noIdentityUsed": "Še niste uporabili nobene identitete s to organizacijo.",
       "noIdentityUsedWithApp": "Še niste uporabili nobene identitete s to aplikacijo v organizaciji.",
-      "allPreviousDisabled": "Vse prej uporabljene identitete s to organizacijo so onemogočene."
+      "allPreviousDisabled": "Vse prej uporabljene identitete s to organizacijo so onemogočene.",
+      "blockedIdentities": "Blokirane identitete"
     },
     "AuthManualRedirect": {
       "failed": "{strongSorry} Prijava ali registracija ni uspela.",
@@ -179,7 +183,8 @@
       "id": "ID:",
       "status": "Status:",
       "apps": "Aplikacije:",
-      "noApps": "brez"
+      "noApps": "brez",
+      "statusAndBlocked": "{status}, {blocked}"
     },
     "ActivityListItem": {
       "signin": "Prijava",
@@ -190,6 +195,9 @@
       "organizationUpdate": "Posodobljena organizacija",
       "applicationTemplateCreate": "Ustvarjena predloga aplikacije",
       "applicationTemplateUpdate": "Posodobljena predloga aplikacije",
+      "identityBlocked": "Blokirana identiteta",
+      "accountBlocked": "Blokiran račun",
+      "identityUnblocked": "Odblokirana identiteta",
       "changes": {
         "otherData": "spremenjeni ostali podatki",
         "permissionsAdded": "dodana dovoljenja",
@@ -300,6 +308,16 @@
     "OrganizationActivity": {
       "organizationActivity": "Aktivnost za organizacijo",
       "noActivities": "Ni aktivnosti."
+    },
+    "OrganizationBlockUser": {
+      "blockUser": "Blokiraj uporabnika v organizaciji",
+      "blockConfirmation": "Ste prepričani, da želite blokirati tega uporabnika v organizaciji?",
+      "blockType": "Tip blokiranja",
+      "blockOnlyIdentity": "Blokiraj samo to identiteto pred dostopom do organizacije",
+      "blockIdentityAndAccounts": "Blokiraj to identiteto in vse druge identitete, ki jih nadzoruje isti uporabnik ali uporabniki pred dostopom do organizacije",
+      "organizationNote": "Opomba samo za administratorje organizacije",
+      "identityNote": "Opomba za blokiranega uporabnika oziroma uporabnike",
+      "blockingSuccess": "Uporabnik je bil uspešno blokiran."
     }
   }
 }

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { DeepReadonly } from "vue"
+import type { ComponentExposed } from "vue-component-type-helpers"
 import type { IdentityForAdmin, Identities } from "@/types"
 
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
@@ -10,6 +12,7 @@ import IdentityPublic from "@/partials/IdentityPublic.vue"
 import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
 import IdentityOrganization from "@/partials/IdentityOrganization.vue"
+import Button from "@/components/Button.vue"
 import { getURL } from "@/api"
 import { injectProgress } from "@/progress"
 
@@ -17,16 +20,16 @@ const props = defineProps<{
   id: string
 }>()
 
-const router = useRouter()
-
 const { t } = useI18n({ useScope: "global" })
-
+const router = useRouter()
 const progress = injectProgress()
 
 const abortController = new AbortController()
 const dataLoading = ref(true)
 const dataLoadingError = ref("")
 const users = ref<Identities>([])
+
+const organizationBlockedStatusComponents = ref(new Map<string, IdentityOrganizationComponent>())
 
 onBeforeUnmount(() => {
   abortController.abort()
@@ -62,6 +65,36 @@ onBeforeMount(async () => {
   }
 })
 
+function onBlock(identityId: string) {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  router.push({ name: "OrganizationBlockUser", params: { id: props.id, identityId: identityId } })
+}
+
+type IdentityOrganizationComponent = ComponentExposed<typeof IdentityOrganization> | null
+
+function updateOrganizationBlockedStatuses(userId: string, component: IdentityOrganizationComponent) {
+  if (component) {
+    organizationBlockedStatusComponents.value.set(userId, component)
+  } else {
+    organizationBlockedStatusComponents.value.delete(userId)
+  }
+}
+
+function identityLabels(identity: IdentityForAdmin | DeepReadonly<IdentityForAdmin>): string[] {
+  const labels: string[] = []
+  if (!identity.organizations[0].active) {
+    labels.push(t("common.labels.disabled"))
+  }
+  const organizationBlockedStatus = organizationBlockedStatusComponents.value.get(identity.id)?.organizationBlockedStatus
+  if (organizationBlockedStatus && organizationBlockedStatus.blocked !== "notBlocked") {
+    labels.push(t("common.labels.blocked"))
+  }
+  return labels
+}
+
 const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
 </script>
 
@@ -86,8 +119,23 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
         <div v-for="user in users" :key="user.id" class="w-full rounded border bg-white p-4 shadow">
           <WithIdentityForAdminDocument :params="{ id, identityId: user.id }" name="OrganizationIdentity">
             <template #default="{ doc, metadata, url }">
-              <IdentityPublic :identity="doc" :url="url" :is-current="metadata.is_current" :can-update="metadata.can_update" />
-              <IdentityOrganization :identity-organization="doc.organizations[0]" />
+              <IdentityPublic :identity="doc" :url="url" :is-current="metadata.is_current" :can-update="metadata.can_update" :labels="identityLabels(doc)" />
+              <IdentityOrganization
+                :ref="(el) => updateOrganizationBlockedStatuses(user.id, el as IdentityOrganizationComponent)"
+                :identity-organization="doc.organizations[0]"
+              >
+                <template #default="{ organizationBlockedStatus }">
+                  <!-- Only when just identity is blocked we can show the button. Admin cannot unblock account-level block. -->
+                  <div
+                    v-if="!organizationBlockedStatus || organizationBlockedStatus.blocked === 'onlyIdentity' || organizationBlockedStatus.blocked === 'notBlocked'"
+                    class="flex flex-col items-start"
+                  >
+                    <Button type="button" :progress="progress" @click.prevent="onBlock(user.id)">
+                      {{ !organizationBlockedStatus || organizationBlockedStatus.blocked === "notBlocked" ? t("common.buttons.block") : t("common.buttons.unblock") }}
+                    </Button>
+                  </div>
+                </template>
+              </IdentityOrganization>
             </template>
           </WithIdentityForAdminDocument>
         </div>

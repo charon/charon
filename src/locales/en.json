@@ -22,7 +22,9 @@
       "signIn": "Sign-in or sign-up",
       "resume": "Resume",
       "pause": "Pause",
-      "redirect": "Redirect"
+      "redirect": "Redirect",
+      "block": "Block",
+      "unblock": "Unblock"
     },
     "errors": {
       "unexpected": "Unexpected error. Please try again.",
@@ -48,7 +50,8 @@
       "active": "active",
       "disabled": "disabled",
       "added": "added",
-      "creator": "creator"
+      "creator": "creator",
+      "blocked": "blocked"
     },
     "data": {
       "dataLoading": "Loading...",
@@ -127,6 +130,7 @@
       "createNewIdentity": "@:partials.AuthIdentity.newIdentityButton",
       "identitiesUsedWithOrg": "Identities used with the organization, but not the app",
       "disabledIdentities": "Disabled identities",
+      "blockedIdentities": "Blocked identities",
       "noIdentityUsed": "You have not yet used any identity with this organization.",
       "noIdentityUsedWithApp": "You have not yet used any identity with this app in the organization.",
       "allPreviousDisabled": "All previously used identities with this organization are disabled."
@@ -179,7 +183,8 @@
       "id": "ID:",
       "status": "Status:",
       "apps": "Apps:",
-      "noApps": "none"
+      "noApps": "none",
+      "statusAndBlocked": "{status}, {blocked}"
     },
     "ActivityListItem": {
       "signin": "Signed in",
@@ -190,6 +195,9 @@
       "organizationUpdate": "Updated organization",
       "applicationTemplateCreate": "Created application template",
       "applicationTemplateUpdate": "Updated application template",
+      "identityBlocked": "Blocked identity",
+      "accountBlocked": "Blocked account",
+      "identityUnblocked": "Unblocked identity",
       "changes": {
         "otherData": "changed other data",
         "permissionsAdded": "added permissions",
@@ -293,6 +301,16 @@
     "OrganizationUsers": {
       "usersForOrganization": "Users for organization",
       "noUsers": "There are no users."
+    },
+    "OrganizationBlockUser": {
+      "blockUser": "Block user in organization",
+      "blockConfirmation": "Are you sure you want to block this user in the organization?",
+      "blockType": "Block type",
+      "blockOnlyIdentity": "Block only this identity from accessing the organization",
+      "blockIdentityAndAccounts": "Block this identity and all other identities controlled by the same user or users from accessing the organization",
+      "organizationNote": "Note for organization admins only",
+      "identityNote": "Note to blocked user or users",
+      "blockingSuccess": "User blocked successfully."
     },
     "ActivityList": {
       "noActivities": "There is no activity."

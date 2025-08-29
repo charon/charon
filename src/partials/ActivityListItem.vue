@@ -6,18 +6,18 @@ import { readonly } from "vue"
 import { useI18n } from "vue-i18n"
 import { LocalScope } from "@allindevelopers/vue-local-scope"
 import { uniqBy } from "lodash-es"
-import { LockClosedIcon, LockOpenIcon, IdentificationIcon, UserGroupIcon, CalculatorIcon } from "@heroicons/vue/24/outline"
+import { LockClosedIcon, LockOpenIcon, IdentificationIcon, UserGroupIcon, CalculatorIcon, ShieldExclamationIcon, ShieldCheckIcon } from "@heroicons/vue/24/outline"
 import { IdentificationIcon as IdentificationSolidIcon, UserGroupIcon as UserGroupSolidIcon, CalculatorIcon as CalculatorSolidIcon } from "@heroicons/vue/24/solid"
 import WithDocument from "@/components/WithDocument.vue"
 import { getProviderName } from "@/flow"
 import { getHomepage, getFormattedTimestamp, getIdentityDisplayName, clone } from "@/utils"
 
-const { t } = useI18n({ useScope: "global" })
-
 const props = defineProps<{
   item: ActivityRef
   organization?: OrganizationRef
 }>()
+
+const { t } = useI18n({ useScope: "global" })
 
 function getActivityIcon(activityType: string): FunctionalComponent {
   switch (activityType) {
@@ -37,6 +37,11 @@ function getActivityIcon(activityType: string): FunctionalComponent {
       return CalculatorIcon
     case "applicationTemplateUpdate":
       return CalculatorSolidIcon
+    case "identityBlocked":
+    case "accountBlocked":
+      return ShieldExclamationIcon
+    case "identityUnblocked":
+      return ShieldCheckIcon
     default:
       throw new Error(`unknown activity type: ${activityType}`)
   }
@@ -60,6 +65,12 @@ function getActivityDescription(activityType: string): string {
       return t("partials.ActivityListItem.applicationTemplateCreate")
     case "applicationTemplateUpdate":
       return t("partials.ActivityListItem.applicationTemplateUpdate")
+    case "identityBlocked":
+      return t("partials.ActivityListItem.identityBlocked")
+    case "accountBlocked":
+      return t("partials.ActivityListItem.accountBlocked")
+    case "identityUnblocked":
+      return t("partials.ActivityListItem.identityUnblocked")
     default:
       throw new Error(`unknown activity type: ${activityType}`)
   }

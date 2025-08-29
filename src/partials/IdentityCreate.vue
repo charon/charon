@@ -19,14 +19,11 @@ const $emit = defineEmits<{
   created: [identity: IdentityRef]
 }>()
 
-const router = useRouter()
-
 const { t } = useI18n({ useScope: "global" })
-
+const router = useRouter()
 const progress = injectProgress()
 
 const abortController = new AbortController()
-
 const unexpectedError = ref("")
 const username = ref("")
 const email = ref("")

@@ -1,8 +1,18 @@
 import type { Ref } from "vue"
 import type { Router } from "vue-router"
-import type { AuthFlowPasswordStartRequest, AuthFlowResponse, Flow, Metadata, AuthFlowResponsePassword } from "@/types"
+import type {
+  AuthFlowPasswordStartRequest,
+  AuthFlowResponse,
+  Flow,
+  Metadata,
+  AuthFlowResponsePassword,
+  AllIdentity,
+  Identities,
+  Identity,
+  OrganizationBlockedStatus,
+} from "@/types"
 
-import { fromBase64 } from "@/utils"
+import { encodeQuery, fromBase64, getOrganization } from "@/utils"
 import { decodeMetadata } from "@/metadata"
 import { processResponse } from "@/flow"
 import { accessToken } from "@/auth"
@@ -210,6 +220,78 @@ export async function redirectThirdPartyProvider(router: Router, flow: Flow, abo
       return
     }
     throw new Error("unexpected response")
+  } finally {
+    progress.value -= 1
+  }
+}
+
+export async function getAllIdentities(
+  router: Router,
+  organizationId: string,
+  flowId: string | null,
+  abortController: AbortController,
+  progress: Ref<number>,
+): Promise<AllIdentity[] | null> {
+  const query = flowId ? encodeQuery({ flow: flowId }) : undefined
+
+  progress.value += 1
+  try {
+    const allIdentities: AllIdentity[] = []
+
+    const url = router.apiResolve({
+      name: "IdentityList",
+      query,
+    }).href
+
+    const response = await getURL<Identities>(url, null, abortController.signal, progress)
+    if (abortController.signal.aborted) {
+      return null
+    }
+
+    for (const identity of response.doc) {
+      const identityURL = router.apiResolve({
+        name: "IdentityGet",
+        params: {
+          id: identity.id,
+        },
+        query,
+      }).href
+
+      const identityResponse = await getURL<Identity>(identityURL, null, abortController.signal, progress)
+      if (abortController.signal.aborted) {
+        return null
+      }
+
+      let blockedStatus: OrganizationBlockedStatus = { blocked: "notBlocked" }
+      const idOrg = getOrganization(identityResponse.doc, organizationId)
+      if (idOrg) {
+        const blockedStatusURL = router.apiResolve({
+          name: "OrganizationBlockedStatus",
+          params: {
+            id: organizationId,
+            identityId: idOrg.id,
+          },
+          query,
+        }).href
+
+        const blockedStatusResponse = await getURL<OrganizationBlockedStatus>(blockedStatusURL, null, abortController.signal, progress)
+        if (abortController.signal.aborted) {
+          return null
+        }
+
+        blockedStatus = blockedStatusResponse.doc
+      }
+
+      allIdentities.push({
+        identity: identityResponse.doc,
+        url: identityURL,
+        isCurrent: !!identityResponse.metadata.is_current,
+        canUpdate: !!identityResponse.metadata.can_update,
+        blocked: blockedStatus.blocked,
+      })
+    }
+
+    return allIdentities
   } finally {
     progress.value -= 1
   }

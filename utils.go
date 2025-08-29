@@ -304,8 +304,9 @@ func (s *Service) RequireAuthenticated(w http.ResponseWriter, req *http.Request)
 	ctx := req.Context()
 	co := s.charonOrganization()
 
-	identityID, _, sessionID, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
+	identityID, accountID, sessionID, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
 	if errE == nil {
+		ctx = s.withAccountID(ctx, accountID)
 		ctx = s.withIdentityID(ctx, identityID)
 		ctx = s.withSessionID(ctx, sessionID)
 		return ctx
@@ -331,8 +332,8 @@ func (s *Service) requireAuthenticatedForIdentity(w http.ResponseWriter, req *ht
 
 	identityID, accountID, sessionID, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
 	if errE == nil {
-		ctx = s.withIdentityID(ctx, identityID)
 		ctx = s.withAccountID(ctx, accountID)
+		ctx = s.withIdentityID(ctx, identityID)
 		ctx = s.withSessionID(ctx, sessionID)
 		return ctx
 	} else if !errors.Is(errE, ErrIdentityNotPresent) {
