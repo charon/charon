@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DeepReadonly }  from "vue"
+import type { DeepReadonly } from "vue"
 import type { ComponentExposed } from "vue-component-type-helpers"
 import type { IdentityForAdmin, Identities, OrganizationBlockedStatus } from "@/types"
 
@@ -75,6 +75,26 @@ function onBlock(identityId: string) {
 
 type IdentityOrganizationComponent = ComponentExposed<typeof IdentityOrganization> | null
 
+function updateOrganizationBlockedStatuses(userId: string, component: IdentityOrganizationComponent) {
+  if (component) {
+    organizationBlockedStatuses.value.set(userId, component.organizationBlockedStatus)
+  } else {
+    organizationBlockedStatuses.value.delete(userId)
+  }
+}
+
+function identityLabels(identity: IdentityForAdmin | DeepReadonly<IdentityForAdmin>): string[] {
+  const labels: string[] = []
+  if (!identity.organizations[0].active) {
+    labels.push(t("common.labels.disabled"))
+  }
+  const organizationBlockedStatus = organizationBlockedStatuses.value.get(identity.id)
+  if (organizationBlockedStatus && organizationBlockedStatus.blocked !== "notBlocked") {
+    labels.push(t("common.labels.blocked"))
+  }
+  return labels
+}
+
 const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
 </script>
 
@@ -99,8 +119,11 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
         <div v-for="user in users" :key="user.id" class="w-full rounded border bg-white p-4 shadow">
           <WithIdentityForAdminDocument :params="{ id, identityId: user.id }" name="OrganizationIdentity">
             <template #default="{ doc, metadata, url }">
-              <IdentityPublic :identity="doc" :url="url" :is-current="metadata.is_current" :can-update="metadata.can_update" />
-              <IdentityOrganization :ref="(el: IdentityOrganizationComponent) => { el ? organizationBlockedStatuses.set(user.id, el.organizationBlockedStatus) : organizationBlockedStatuses.delete(user.id) }" :identity-organization="doc.organizations[0]">
+              <IdentityPublic :identity="doc" :url="url" :is-current="metadata.is_current" :can-update="metadata.can_update" :labels="identityLabels(doc)" />
+              <IdentityOrganization
+                :ref="(el) => updateOrganizationBlockedStatuses(user.id, el as IdentityOrganizationComponent)"
+                :identity-organization="doc.organizations[0]"
+              >
                 <template #default="{ organizationBlockedStatus }">
                   <!-- Only when just identity is blocked we can show the button. Admin cannot unblock account-level block. -->
                   <div
