@@ -393,6 +393,9 @@ export type ActivityType =
   | "organizationUpdate"
   | "applicationTemplateCreate"
   | "applicationTemplateUpdate"
+  | "identityBlocked"
+  | "identityUnblocked"
+  | "accountBlocked"
 
 export type ActivityChangeType =
   | "otherData"
@@ -424,6 +427,25 @@ export type ActivityRef = {
 }
 
 export type Activities = ActivityRef[]
+
+export type BlockedIdentityType = "notBlocked" | "onlyIdentity" | "identityAndAccounts"
+
+export type OrganizationBlockedStatusNotes = {
+  identity: IdentityRef
+  organizationNote?: string
+  identityNote?: string
+}
+
+export type OrganizationBlockedStatusResponse = {
+  blocked: BlockedIdentityType
+  notes: OrganizationBlockedStatusNotes[]
+}
+
+export type OrganizationBlockRequest = {
+  type: BlockedIdentityType
+  organizationNote: string
+  identityNote: string
+}
 
 // It is recursive.
 export type Mutable<T> = {

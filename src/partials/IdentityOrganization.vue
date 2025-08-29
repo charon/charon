@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { IdentityOrganization, OrganizationApplicationPublic } from "@/types"
+import type { IdentityOrganization, OrganizationApplicationPublic, OrganizationBlockedStatusResponse } from "@/types"
 import type { DeepReadonly } from "vue"
 
 import { useI18n } from "vue-i18n"
@@ -13,6 +13,7 @@ defineProps<{
 }>()
 
 const WithOrganizationApplicationDocument = WithDocument<OrganizationApplicationPublic>
+const WithOrganizationBlockedStatusResponseDocument = WithDocument<OrganizationBlockedStatusResponse>
 </script>
 
 <template>
@@ -27,7 +28,21 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
       </div>
       <div>{{ t("partials.IdentityOrganization.status") }}</div>
       <div>
-        <strong>{{ identityOrganization.active ? t("common.labels.active") : t("common.labels.disabled") }}</strong>
+        <WithOrganizationBlockedStatusResponseDocument
+          v-if="identityOrganization.id"
+          :params="{ id: identityOrganization.organization.id, identityId: identityOrganization.id }"
+          name="OrganizationBlockedStatus"
+        >
+          <template #default="{ doc, url }">
+            <strong v-if="doc.blocked !== 'notBlocked'" :data-url="url">{{
+              t("partials.IdentityOrganization.statusAndBlocked", {
+                status: identityOrganization.active ? t("common.labels.active") : t("common.labels.disabled"),
+                blocked: t("common.labels.blocked"),
+              })
+            }}</strong>
+            <strong v-else>{{ identityOrganization.active ? t("common.labels.active") : t("common.labels.disabled") }}</strong>
+          </template>
+        </WithOrganizationBlockedStatusResponseDocument>
       </div>
       <div>{{ t("partials.IdentityOrganization.apps") }}</div>
       <ol v-if="identityOrganization.applications.length">

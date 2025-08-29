@@ -48,7 +48,8 @@
       "active": "active",
       "disabled": "disabled",
       "added": "added",
-      "creator": "creator"
+      "creator": "creator",
+      "blocked": "blocked"
     },
     "data": {
       "dataLoading": "Loading...",
@@ -179,7 +180,8 @@
       "id": "ID:",
       "status": "Status:",
       "apps": "Apps:",
-      "noApps": "none"
+      "noApps": "none",
+      "statusAndBlocked": "{status}, {blocked}"
     },
     "ActivityListItem": {
       "signin": "Signed in",
