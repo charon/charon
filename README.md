@@ -184,7 +184,7 @@ Charon supports that applications have three types of OIDC clients:
   (e.g., a worker of the application)
 
 For OpenID Connect Debugger add a public client and for OIDC redirect URI template
-enter `{uriBase}/debug`. This is the location to which OIDC flow redirects which
+enter `{uriBase}/debug`. This is the location to which OIDC flow redirects and which
 OpenID Connect Debugger app expects. Click "Update" to save the template.
 
 `{uriBase}` is a default variable placeholder. If you do not need it, you can
@@ -200,6 +200,10 @@ to your organization. You have to configure `uriBase` variable. Set it to
 `https://oidcdebugger.com` exactly (no trailing `/` so that it will be
 reconstructed to exactly `https://oidcdebugger.com/debug`).
 Click "Activate" and then "Update". Note down the generated client ID.
+
+Note that now that OpenID Connect Debugger application template exists
+in Charon, anyone else can add it as application to their organization,
+too.
 
 ### Signing-in into your application
 
@@ -219,8 +223,9 @@ to OpenID Connect Debugger which should tell you that the sign-in was successful
 and it will obtain access and ID tokens.
 
 In a real application, access token would be used by the application to know
-that the user is authorized to access the application, while ID token would
-provide to the application information about the user (i.e., about their identity).
+that the user is authorized to access the application (and its API endpoints),
+while ID token would provide to the application information about the user
+(i.e., about their identity).
 
 ### Managing users
 
