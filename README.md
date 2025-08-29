@@ -175,12 +175,12 @@ Enter "OpenID Connect Debugger" as name and create the template.
 
 Charon supports that applications have three types of OIDC clients:
 
-- Public client: a client which is accessible on the web, but cannot have secrets
-  (e.g., a frontend-only application).
-- Backend client: a client which is accessible on the web and can have secrets
-  (e.g., a backend of the application).
-- Service client: a client which is not accessible on the web and can have secrets
-  (e.g., a worker of the application).
+- public client: a client which is accessible on the web, but cannot have secrets
+  (e.g., a frontend-only application)
+- backend client: a client which is accessible on the web and can have secrets
+  (e.g., a backend of the application)
+- service client: a client which is not accessible on the web and can have secrets
+  (e.g., a worker of the application)
 
 For OpenID Connect Debugger add a public client and for OIDC redirect URI template
 enter `{uriBase}/debug`. This is the location to which OIDC flow redirects which
