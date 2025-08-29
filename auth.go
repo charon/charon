@@ -79,9 +79,10 @@ func (s *Service) AuthSignoutPost(w http.ResponseWriter, req *http.Request, _ wa
 		co := s.charonOrganization()
 
 		// Log sign-out activity.
-		identityID, _, sessionID, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
+		identityID, accountID, sessionID, errE := s.getIdentityFromRequest(w, req, co.AppID.String())
 		if errE == nil {
-			c := s.withIdentityID(ctx, identityID)
+			c := s.withAccountID(ctx, accountID)
+			c = s.withIdentityID(c, identityID)
 			c = s.withSessionID(c, sessionID)
 			errE = s.logActivity(c, ActivitySignOut, nil, nil, nil, nil, nil, nil, nil)
 			if errE != nil {

@@ -292,7 +292,7 @@ func (s *Service) ActivityListGet(w http.ResponseWriter, req *http.Request, _ wa
 			return
 		}
 
-		if activity.IsForUser(IdentityRef{ID: currentIdentityID}, AccountRef{ID: currentAccountID}) {
+		if !activity.IsForUser(IdentityRef{ID: currentIdentityID}, AccountRef{ID: currentAccountID}) {
 			continue
 		}
 

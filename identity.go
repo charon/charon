@@ -629,7 +629,7 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 		// access based on identities.
 		s.identityCreators[i] = currentAccountID
 
-		// We also here current identity ID in the context, which is used by logActivity.
+		// We set here current identity ID in the context, which is used by logActivity.
 		ctx = s.withIdentityID(ctx, *identity.ID)
 	}
 
