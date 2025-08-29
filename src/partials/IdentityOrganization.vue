@@ -15,7 +15,6 @@ defineProps<{
 const { t } = useI18n({ useScope: "global" })
 
 const WithOrganizationApplicationDocument = WithDocument<OrganizationApplicationPublic>
-const withOrganizationApplicationDocument = ref<ComponentExposed<typeof WithOrganizationApplicationDocument> | null>(null)
 const WithOrganizationBlockedStatusDocument = WithDocument<OrganizationBlockedStatus>
 const withOrganizationBlockedStatusDocument = ref<ComponentExposed<typeof WithOrganizationBlockedStatusDocument> | null>(null)
 </script>
@@ -66,6 +65,6 @@ const withOrganizationBlockedStatusDocument = ref<ComponentExposed<typeof WithOr
       </ol>
       <div v-else class="italic">{{ t("partials.IdentityOrganization.noApps") }}</div>
     </div>
-    <slot :organization-application="withOrganizationApplicationDocument?.doc" :organization-blocked-status="withOrganizationBlockedStatusDocument?.doc" />
+    <slot :organization-blocked-status="withOrganizationBlockedStatusDocument?.doc" />
   </div>
 </template>
