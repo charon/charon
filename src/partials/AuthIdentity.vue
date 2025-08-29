@@ -167,30 +167,31 @@ async function getIdentities() {
         }),
       }).href
 
-      let [{ value: respIdentity, reason: errorIdentity }, { value: respBlockedStatus, reason: errorBlockedStatus }] = await Promise.allSettled([
+      let [identityResult, blockedStatusResult] = await Promise.allSettled([
         getURL<Identity>(identityURL, null, abortController.signal, progress),
         getURL<OrganizationBlockedStatus>(blockedStatusURL, null, abortController.signal, progress),
       ])
       if (abortController.signal.aborted) {
         return
       }
-      if (errorIdentity) {
-        throw errorIdentity
+      if ("reason" in identityResult) {
+        throw identityResult.reason
       }
-      if (errorBlockedStatus) {
-        if (errorBlockedStatus.status === 404) {
-          respBlockedStatus = { doc: { blocked: "notBlocked" } }
+      if ("reason" in blockedStatusResult) {
+        if (blockedStatusResult.reason.status === 404) {
+          // We make it into a successfully resolved promise.
+          blockedStatusResult = { status: "fulfilled", value: { doc: { blocked: "notBlocked" }, metadata: {} } }
         } else {
-          throw errorBlockedStatus
+          throw blockedStatusResult.reason
         }
       }
 
       updatedAllIdentities.push({
-        identity: respIdentity.doc,
+        identity: identityResult.value.doc,
         url: identityURL,
-        isCurrent: !!respIdentity.metadata.is_current,
-        canUpdate: !!respIdentity.metadata.can_update,
-        blocked: respBlockedStatus.doc.blocked,
+        isCurrent: !!identityResult.value.metadata.is_current,
+        canUpdate: !!identityResult.value.metadata.can_update,
+        blocked: blockedStatusResult.value.doc.blocked,
       })
     }
 
