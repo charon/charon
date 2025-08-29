@@ -558,7 +558,7 @@ func (s *Service) getIdentityWithoutAccessCheck(_ context.Context, id identifier
 }
 
 func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*Identity, bool, errors.E) {
-	accountID := mustGetAccountID(ctx)
+	currentAccountID := mustGetAccountID(ctx)
 
 	s.identitiesMu.RLock()
 	defer s.identitiesMu.RUnlock()
@@ -579,7 +579,7 @@ func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*I
 		return nil, false, errE
 	}
 
-	ids, isCreator, errE := s.getIdentitiesForAccount(ctx, accountID, IdentityRef{ID: *identity.ID})
+	ids, isCreator, errE := s.getIdentitiesForAccount(ctx, currentAccountID, IdentityRef{ID: *identity.ID})
 	if errE != nil {
 		return nil, false, errE
 	}
@@ -600,7 +600,7 @@ func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*I
 // (but which has an account). Only in such case, the identityIDContextKey does not have to
 // be set and the identity itself will be used instead.
 func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors.E {
-	accountID := mustGetAccountID(ctx)
+	currentAccountID := mustGetAccountID(ctx)
 
 	errE := identity.Validate(ctx, nil, s)
 	if errE != nil {
@@ -627,7 +627,7 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 		// is added to admins in Validate. Here, we record the identity creator, establishing the link
 		// between the identity and the account, bootstrapping correct propagation of which accounts have
 		// access based on identities.
-		s.identityCreators[i] = accountID
+		s.identityCreators[i] = currentAccountID
 
 		// We also here current identity ID in the context, which is used by logActivity.
 		ctx = s.withIdentityID(ctx, *identity.ID)
@@ -717,7 +717,7 @@ func (s *Service) getAccountsForIdentity(identity IdentityRef) map[identifier.Id
 }
 
 func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors.E {
-	accountID := mustGetAccountID(ctx)
+	currentAccountID := mustGetAccountID(ctx)
 
 	s.identitiesMu.Lock()
 	defer s.identitiesMu.Unlock()
@@ -745,7 +745,7 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 
 	i := IdentityRef{ID: *identity.ID}
 
-	ids, isCreator, errE := s.getIdentitiesForAccount(ctx, accountID, i)
+	ids, isCreator, errE := s.getIdentitiesForAccount(ctx, currentAccountID, i)
 	if errE != nil {
 		return errE
 	}
@@ -1114,7 +1114,7 @@ func (s *Service) hasIdentities(_ context.Context, ids mapset.Set[IdentityRef], 
 }
 
 func (s *Service) identityList(ctx context.Context) ([]IdentityRef, errors.E) {
-	accountID := mustGetAccountID(ctx)
+	currentAccountID := mustGetAccountID(ctx)
 
 	result := []IdentityRef{}
 
@@ -1136,7 +1136,7 @@ func (s *Service) identityList(ctx context.Context) ([]IdentityRef, errors.E) {
 
 		i := IdentityRef{ID: id}
 
-		ids, isCreator, errE := s.getIdentitiesForAccount(ctx, accountID, i)
+		ids, isCreator, errE := s.getIdentitiesForAccount(ctx, currentAccountID, i)
 		if errE != nil {
 			return nil, errE
 		}

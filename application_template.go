@@ -744,9 +744,9 @@ func (a *ApplicationTemplate) Validate(ctx context.Context, existing *Applicatio
 
 	// Current user must be among admins if it is changing the application template.
 	// We check this elsewhere, here we make sure the user is stored as an admin.
-	identity := IdentityRef{ID: mustGetIdentityID(ctx)}
-	if !a.HasAdminAccess(identity) {
-		a.Admins = append(a.Admins, identity)
+	currentIdentity := IdentityRef{ID: mustGetIdentityID(ctx)}
+	if !a.HasAdminAccess(currentIdentity) {
+		a.Admins = append(a.Admins, currentIdentity)
 	}
 
 	// We remove duplicates.

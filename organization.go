@@ -607,9 +607,9 @@ func (o *Organization) HasAdminAccess(identities ...IdentityRef) bool {
 func (o *Organization) Validate(ctx context.Context, existing *Organization, service *Service) errors.E {
 	// Current user must be among admins if it is changing the organization.
 	// We check this elsewhere, here we make sure the user is stored as an admin.
-	identity := IdentityRef{ID: mustGetIdentityID(ctx)}
-	if !o.HasAdminAccess(identity) {
-		o.Admins = append(o.Admins, identity)
+	currentIdentity := IdentityRef{ID: mustGetIdentityID(ctx)}
+	if !o.HasAdminAccess(currentIdentity) {
+		o.Admins = append(o.Admins, currentIdentity)
 	}
 
 	return o.validate(ctx, existing, service)
@@ -831,8 +831,8 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 		return errE
 	}
 
-	identity := IdentityRef{ID: mustGetIdentityID(ctx)}
-	if !existingOrganization.HasAdminAccess(identity) {
+	currentIdentity := IdentityRef{ID: mustGetIdentityID(ctx)}
+	if !existingOrganization.HasAdminAccess(currentIdentity) {
 		return errors.WithDetails(ErrOrganizationUnauthorized, "id", organization.ID)
 	}
 
@@ -1545,8 +1545,8 @@ func (s *Service) OrganizationBlockedStatusGet(w http.ResponseWriter, req *http.
 		return
 	}
 
-	accountID := mustGetAccountID(ctx)
-	ids, isCreator, errE := s.getIdentitiesForAccount(ctx, accountID, IdentityRef{ID: *identity.ID})
+	currentAccountID := mustGetAccountID(ctx)
+	ids, isCreator, errE := s.getIdentitiesForAccount(ctx, currentAccountID, IdentityRef{ID: *identity.ID})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -1589,7 +1589,7 @@ func (s *Service) OrganizationBlockedStatusGet(w http.ResponseWriter, req *http.
 	// then also this identity is blocked for them.
 	if hasUserAccess || hasAdminAccess {
 		if s.accountsBlocked[*organization.ID] != nil {
-			blockedIdentities, ok := s.accountsBlocked[*organization.ID][accountID]
+			blockedIdentities, ok := s.accountsBlocked[*organization.ID][currentAccountID]
 			if ok {
 				notes := []OrganizationBlockedStatusNotes{}
 				for orgIdentityID, blockedIdentity := range blockedIdentities {

@@ -205,7 +205,7 @@ func (s *Service) logActivity(
 	applicationTemplates []ApplicationTemplateRef, organizationApplications []OrganizationApplicationRef,
 	accounts []AccountRef, changes []ActivityChangeType, providers []Provider,
 ) errors.E {
-	actorID := mustGetIdentityID(ctx)
+	currentIdentityID := mustGetIdentityID(ctx)
 	sessionID := mustGetSessionID(ctx)
 
 	var requestID identifier.Identifier
@@ -222,7 +222,7 @@ func (s *Service) logActivity(
 		Timestamp: Time{}, //nolint:exhaustruct
 
 		Type:                     activityType,
-		Actor:                    &IdentityRef{ID: actorID},
+		Actor:                    &IdentityRef{ID: currentIdentityID},
 		Providers:                providers,
 		Changes:                  changes,
 		SessionID:                sessionID,
