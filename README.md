@@ -198,14 +198,36 @@ you to the backend which then proxies unknown requests (non-API requests) to the
   source and centralized SSO service which does enable users to hide their e-mail address from apps by proxying them
 - [GoTrue](https://github.com/netlify/gotrue) – small service for handling user registration and authentication,
   very low level and without user interface
-- [Casdoor](https://casdoor.org/) – open source authentication service combinings users, organizations and
+- [Casdoor](https://casdoor.org/) – open source authentication service combining users, organizations and
   applications in a similar this project does, but does not enable users to control their identity exposed to apps
 - [Mozilla Persona](https://en.wikipedia.org/wiki/Mozilla_Persona) – was an identity provider integrated with Firefox
   browser, but it did not gain enough traction; this project is more than an identity provider adds many other
   features for both users and app developers
 - [Eartho](https://github.com/earthodev/eartho) – shares similar goals with Charon, both serving
-  as a trusted authentication intermediary, but they have different focuses. Charon aims to
-  support multiple identities you freely create and choose between.
+  as a trusted authentication intermediary, but they have different focuses; Charon aims to
+  support multiple identities you freely create and choose between
+- [Hanko](https://www.hanko.io/) – is an open source authentication and user management solution supporting many
+  authentication mechanisms, it includes reusable web components for authentication and as such it provides a simple
+  and self-contained way to integrate standard authentication into your solution; Charon aims to innovate
+  around authentication and innovation and its goal is to push standard practices forward and as such its focus is
+  on new ways to increase privacy and control for users while mitigating risks and abuses; at the same time it
+  is designed from the ground up to support multiple organizations and applications with users and identities
+  being potentially shared between them, while admins stay in control of their own organizations
+- [Zitadel](https://zitadel.com/) – another open source all-batteries-included solution similar to Hanko
+  while Charon is a more experimental project innovating in this space
+- [Permit.io](https://www.permit.io/) – is a fullstack, plug-and-play application-level authorization solution;
+  it is a good inspiration for Charon on how easy permission management can be done
+- [passbolt](https://www.passbolt.com/) – is a collaborative password manager; Charon also aims to support
+  sharing access but it attempts to do that by removing the need for passwords for multiple apps, replacing them
+  with just access to the Charon itself, but downside is that then apps have to integrate with Charon and to
+  ease that Charon has the concept of application templates
+- [Wivi](https://yivi.app/en/) – a mobile app which gives user control over their identity and which information
+  about their identity it shares with apps, at the same time it removes the need for passwords; it is similar
+  to Charon in the sense that it can share with an app assertions about the user (e.g., user is older than 18)
+  without revealing the exact data about the user to the app (e.g., user's birthdate)
+- [Canaille](https://canaille.yaal.coop/) – another open source identity and authorization management solution
+  with focus on being lightweight and easy to integrate; Charon is similar but also wants to support multiple
+  organizations and shared users across them
 
 ## GitHub mirror
 
