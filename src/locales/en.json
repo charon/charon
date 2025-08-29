@@ -131,8 +131,6 @@
       "identitiesUsedWithOrg": "Identities used with the organization, but not the app",
       "disabledIdentities": "Disabled identities",
       "blockedIdentities": "Blocked identities",
-      "identityBlocked": "This identity is blocked from this organization",
-      "allIdentitiesBlocked": "All your identities are blocked from this organization",
       "noIdentityUsed": "You have not yet used any identity with this organization.",
       "noIdentityUsedWithApp": "You have not yet used any identity with this app in the organization.",
       "allPreviousDisabled": "All previously used identities with this organization are disabled."
