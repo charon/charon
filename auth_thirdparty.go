@@ -4,7 +4,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/rs/zerolog"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/waf"
@@ -14,25 +13,28 @@ type AuthFlowProviderStartRequest struct {
 	Provider Provider `json:"provider"`
 }
 
+type AuthFlowResponseThirdPartyProvider struct {
+	Location string `json:"location"`
+}
+
 func (s *Service) AuthThirdPartyProvider(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	s.handleAuthThirdPartyProvider(w, req, params)
+}
+
+func (s *Service) AuthThirdPartyProviderPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	s.handleAuthThirdPartyProvider(w, req, params)
+}
+
+func (s *Service) handleAuthThirdPartyProvider(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	providerName := Provider(params["provider"])
 
-	ctx := req.Context()
-	logger := zerolog.Ctx(ctx)
-	logger.Info().Msgf("AuthThirdPartyProvider called with method: %s, provider: %s", req.Method, params["provider"])
-
-	if oidcProv, ok := s.oidcProviders()[providerName]; ok {
-		s.handleOIDCCallback(w, req, providerName, oidcProv)
+	if p, ok := s.oidcProviders()[providerName]; providerName != "" && ok {
+		s.handleOIDCCallback(w, req, providerName, p)
 		return
 	}
 
-	if samlProv, ok := s.samlProviders()[providerName]; ok {
-		if req.Method != http.MethodPost {
-			allowed := []string{"POST"}
-			s.MethodNotAllowed(w, req, allowed)
-			return
-		}
-		s.handleSAMLCallback(w, req, providerName, samlProv)
+	if p, ok := s.samlProviders()[providerName]; providerName != "" && ok {
+		s.handleSAMLCallback(w, req, providerName, p)
 		return
 	}
 
@@ -41,18 +43,11 @@ func (s *Service) AuthThirdPartyProvider(w http.ResponseWriter, req *http.Reques
 	s.NotFoundWithError(w, req, errE)
 }
 
-func (s *Service) AuthThirdPartyProviderPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	s.AuthThirdPartyProvider(w, req, params)
-}
-
 func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := req.Context()
-
-	logger := zerolog.Ctx(ctx)
-	logger.Info().Msgf("available SAML providers: %+v", s.samlProviders())
 
 	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
@@ -68,15 +63,13 @@ func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Req
 
 	providerName := providerStart.Provider
 
-	logger.Info().Msgf("requested provider: %s", providerName)
-
-	if oidcProv, ok := s.oidcProviders()[providerName]; ok {
-		s.handleOIDCProviderStart(ctx, w, req, flow, providerName, oidcProv)
+	if p, ok := s.oidcProviders()[providerName]; providerName != "" && ok {
+		s.handleOIDCProviderStart(ctx, w, req, flow, providerName, p)
 		return
 	}
 
-	if samlProv, ok := s.samlProviders()[providerName]; ok {
-		s.handleSAMLProviderStart(ctx, w, req, flow, providerName, samlProv)
+	if p, ok := s.samlProviders()[providerName]; providerName != "" && ok {
+		s.handleSAMLProviderStart(ctx, w, req, flow, providerName, p)
 		return
 	}
 

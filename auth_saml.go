@@ -13,7 +13,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/rs/zerolog"
@@ -21,288 +20,253 @@ import (
 	"github.com/russellhaering/gosaml2/types"
 	dsig "github.com/russellhaering/goxmldsig"
 	"gitlab.com/tozd/go/errors"
-	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 )
 
 const (
-	// SAMLEntityIDPrefix = "PlastOsem_" // Prefix to be used in production.
-	SAMLEntityIDPrefix = "mockSAML_" // Prefix to be used in development, delete before production.
-	SAMLRequestTimeout = 30 * time.Second
+	samlSIPASSEntityIDPrefix = "PlastOsem_"                                              //nolint:gosec
+	samlEntityIDPrefix       = "mockSAML_"                                               //nolint:gosec
+	sipassDefaultMetadataURL = "https://sicas.gov.si/static/idp-metadata.xml"            //nolint:gosec
+	mockSAMLMetadataURL      = "https://mocksaml.com/api/namespace/charon/saml/metadata" //nolint:gosec
+	mockSAMLEntityID         = "mockSAML_charon_dev"
 )
 
 type samlProvider struct {
-	Name string
-	SP   *saml2.SAMLServiceProvider
-}
-
-type AuthFlowResponseThirdPartyProvider struct {
-	Location string `json:"location"`
+	Name     string
+	Provider *saml2.SAMLServiceProvider
+	Resolver SAMLCredentialResolver
 }
 
 func initSAMLProviders(config *Config, service *Service, domain string, providers []SiteProvider) (func() map[Provider]samlProvider, errors.E) {
 	return initWithHost(config, domain, func(host string) map[Provider]samlProvider {
 		samlProviders := map[Provider]samlProvider{}
-
-		var samlProviderConfigs []SiteProvider
-
 		for _, p := range providers {
-			if p.Type == "saml" && p.metadataURL != "" {
-				samlProviderConfigs = append(samlProviderConfigs, p)
-			}
-		}
-
-		if len(samlProviderConfigs) == 0 {
-			config.Logger.Debug().Msgf("SAML provider configs are empty")
-			return samlProviders
-		}
-
-		client := &http.Client{ //nolint:exhaustruct
-			Timeout:   SAMLRequestTimeout,
-			Transport: cleanhttp.DefaultPooledTransport(),
-		}
-
-		for _, p := range samlProviderConfigs {
-			config.Logger.Debug().Msgf("enabling SAML provider %s", p.Name)
-
-			provider, errE := initSingleSAMLProvider(config, service, host, client, p)
-			if errE != nil {
-				config.Logger.Error().Err(errE).Msgf("failed to initialize SAML provider %s", p.Name)
+			if p.Type != ThirdPartyProviderSAML || p.samlMetadataURL == "" {
 				continue
 			}
 
-			samlProviders[p.Key] = *provider
+			client := cleanhttp.DefaultPooledClient()
+			provider, errE := initSingleSAMLProvider(config, service, host, client, p)
+			if errE != nil {
+				errors.Details(errE)["name"] = p.Name
+				panic(errE)
+			}
+
+			samlProviders[p.Key] = provider
 		}
 
 		return samlProviders
 	})
 }
 
-func initSingleSAMLProvider(config *Config, service *Service, host string, client *http.Client, p SiteProvider) (*samlProvider, errors.E) {
-	if err := validateSAMLProvider(p); err != nil {
-		return nil, err
-	}
+func initSingleSAMLProvider(config *Config, service *Service, host string, client *http.Client, p SiteProvider) (samlProvider, errors.E) {
+	config.Logger.Debug().Msgf("enabling SAML provider %s", p.Name)
 
 	path, errE := service.ReverseAPI("AuthThirdPartyProvider", waf.Params{"provider": string(p.Key)}, nil)
-	config.Logger.Info().Msgf("SAML callback URL for provider %s: https://%s%s", p.Name, host, path)
 	if errE != nil {
-		return nil, errE
+		return samlProvider{}, errE
 	}
 
-	metadata, errE := fetchSAMLMetadata(client, p.metadataURL)
+	metadata, errE := fetchSAMLMetadata(context.Background(), client, p.samlMetadataURL)
 	if errE != nil {
-		return nil, errors.WithMessagef(errE, "failed to fetch metadata for provider %s", p.Name)
+		return samlProvider{}, errors.WithMessage(errE, "failed to fetch metadata")
 	}
 
 	certStore, errE := extractIDPCertificates(metadata)
 	if errE != nil {
-		return nil, errors.WithMessagef(errE, "failed to extract certificates for provider %s", p.Name)
+		return samlProvider{}, errors.WithMessagef(errE, "failed to extract certificates for provider %s", p.Name)
 	}
 
-	randomKeyStore, errE := loadOrCreateSPKeyStore(config, p.Key)
+	_, errE = p.loadOrCreateSPKeyStore(config)
 	if errE != nil {
-		return nil, errors.WithMessagef(errE, "failed to load SP keys for provider %s", p.Name)
+		return samlProvider{}, errors.WithMessagef(errE, "failed to load SP keys for provider %s", p.Name)
 	}
 
-	privateKey, cert, err := randomKeyStore.GetKeyPair()
+	privateKey, cert, err := p.samlKeyStore.GetKeyPair()
 	if err != nil {
-		return nil, errors.WithMessagef(err, "failed to get SP KeyPair for provider %s", p.Name)
+		return samlProvider{}, errors.WithMessagef(err, "failed to get SP KeyPair for provider %s", p.Name)
 	}
 
-	// Second keystore for potentially signing AuthnRequests.
-	randomSigninKeyStore, errE := loadOrCreateSPKeyStore(config, p.Key)
-	if errE != nil {
-		return nil, errors.WithMessagef(errE, "failed to load SP keys for provider %s", p.Name)
-	}
-
-	privateSigninKey, certSignin, err := randomSigninKeyStore.GetKeyPair()
-	if err != nil {
-		return nil, errors.WithMessagef(errE, "failed to get SP Signin-KeyPair for provider %s", p.Name)
-	}
-
-	// This prefers Redirect binding over POST.
 	ssoURL := ""
 	if metadata.IDPSSODescriptor != nil {
 		for _, ssoService := range metadata.IDPSSODescriptor.SingleSignOnServices {
-			if ssoService.Binding == "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" {
+			if ssoService.Binding == saml2.BindingHttpRedirect {
 				ssoURL = ssoService.Location
 				break
-			}
-			if ssoService.Binding == "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" && ssoURL == "" {
-				ssoURL = ssoService.Location
 			}
 		}
 	}
 
 	if ssoURL == "" {
-		return nil, errors.Errorf("SAML no supported SSO binding in metadata for provider %s", p.Name)
+		return samlProvider{}, errors.New("HTTP-Redirect binding not supported")
 	}
 
-	entityID := SAMLEntityIDPrefix + string(p.Key)
+	entityID := p.samlEntityID
+	if entityID == "" {
+		if p.Key == "sipass" {
+			entityID = samlSIPASSEntityIDPrefix + string(p.Key)
+		} else {
+			entityID = samlEntityIDPrefix + string(p.Key)
+		}
+	}
+
 	sp := &saml2.SAMLServiceProvider{ //nolint:exhaustruct
 		IdentityProviderSSOURL:      ssoURL,
+		IdentityProviderSSOBinding:  saml2.BindingHttpRedirect,
 		IdentityProviderIssuer:      metadata.EntityID,
 		ServiceProviderIssuer:       entityID,
 		AssertionConsumerServiceURL: fmt.Sprintf("https://%s%s", host, path),
 		SignAuthnRequests:           true,
 		AudienceURI:                 entityID,
 		IDPCertificateStore:         certStore,
-
-		IdentityProviderSSOBinding:     "",
-		IdentityProviderSLOURL:         "",
-		IdentityProviderSLOBinding:     "",
-		ServiceProviderSLOURL:          "",
-		SignAuthnRequestsAlgorithm:     "",
-		SignAuthnRequestsCanonicalizer: nil,
-		ForceAuthn:                     false,
-		IsPassive:                      false,
-		RequestedAuthnContext:          nil,
-		NameIdFormat:                   "",
-		ValidateEncryptionCert:         false,
-		SkipSignatureValidation:        false,
-		AllowMissingAttributes:         false,
-		Clock:                          nil,
-		MaximumDecompressedBodySize:    0,
 	}
 
-	// Avoid setting KeyStore directly as it is marked as deprecated. Instead, use SetSPKeyStore and
-	// SetSPSigningKeyStore, so that we can have different keys for signing and encryption in production.
 	errKeyStore := sp.SetSPKeyStore(&saml2.KeyStore{
 		Signer: privateKey,
 		Cert:   cert,
 	})
 	if errKeyStore != nil {
-		return nil, errors.WithMessage(errKeyStore, "failed to set SP keystore")
-	}
-	errKeySigninStore := sp.SetSPSigningKeyStore(&saml2.KeyStore{
-		Signer: privateSigninKey,
-		Cert:   certSignin,
-	})
-	if errKeySigninStore != nil {
-		return nil, errors.WithMessage(errKeySigninStore, "failed to set SP keystore")
+		return samlProvider{}, errors.WithMessage(errKeyStore, "failed to set SP keystore")
 	}
 
-	config.Logger.Info().
-		Str("provider", p.Name).
-		Str("entityID", entityID).
-		Str("ssoURL", sp.IdentityProviderSSOURL).
-		Str("AssertionConsumerServiceURL", sp.AssertionConsumerServiceURL).
-		Msg("SAML provider initialized successfully")
+	resolver := CreateSAMLResolver(p)
 
-	return &samlProvider{
-		Name: p.Name,
-		SP:   sp,
+	return samlProvider{
+		Name:     p.Name,
+		Provider: sp,
+		Resolver: resolver,
 	}, nil
 }
 
-func validateSAMLProvider(p SiteProvider) errors.E {
-	if p.Key == "" || p.Name == "" || p.metadataURL == "" {
-		errE := errors.New("provider key, name, and metadata URL cannot be empty")
-		errors.Details(errE)["name"] = p.Name
-		errors.Details(errE)["expected"] = p.metadataURL
-		return errE
-	}
-	return nil
-}
-
-func fetchSAMLMetadata(client *http.Client, metadataURL string) (*types.EntityDescriptor, errors.E) {
-	ctx, cancel := context.WithTimeout(context.Background(), SAMLRequestTimeout)
-	defer cancel()
-
+func fetchSAMLMetadata(ctx context.Context, client *http.Client, metadataURL string) (types.EntityDescriptor, errors.E) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, metadataURL, nil)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		errE := errors.WithStack(err)
+		errors.Details(errE)["metadataURL"] = metadataURL
+		return types.EntityDescriptor{}, errE
 	}
-	req.Header.Set("User-Agent", "Charon-SAML/1.0")
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		errE := errors.WithStack(err)
+		errors.Details(errE)["metadataURL"] = metadataURL
+		return types.EntityDescriptor{}, errE
 	}
 	defer resp.Body.Close()
+	defer io.Copy(io.Discard, resp.Body) //nolint:errcheck
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.Errorf("metadata request failed with status %d", resp.StatusCode)
+		body, _ := io.ReadAll(resp.Body)
+		errE := errors.New("bad response status")
+		errors.Details(errE)["url"] = resp.Request.URL.String()
+		errors.Details(errE)["code"] = resp.StatusCode
+		errors.Details(errE)["body"] = strings.TrimSpace(string(body))
+		return types.EntityDescriptor{}, errE
 	}
 
 	rawMetadata, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		errE := errors.WithStack(err)
+		errors.Details(errE)["metadataURL"] = metadataURL
+		errors.Details(errE)["statusCode"] = resp.StatusCode
+		return types.EntityDescriptor{}, errE
 	}
 
-	metadata := &types.EntityDescriptor{} //nolint:exhaustruct
-	err = xml.Unmarshal(rawMetadata, metadata)
+	var metadata types.EntityDescriptor
+	err = xml.Unmarshal(rawMetadata, &metadata)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		errE := errors.WithDetails(err, "saml-metadata", string(rawMetadata))
+		errors.Details(errE)["metadataURL"] = metadataURL
+		return types.EntityDescriptor{}, errE
 	}
 
 	return metadata, nil
 }
 
-func extractIDPCertificates(metadata *types.EntityDescriptor) (*dsig.MemoryX509CertificateStore, errors.E) {
+func extractIDPCertificates(metadata types.EntityDescriptor) (*dsig.MemoryX509CertificateStore, errors.E) {
 	certStore := &dsig.MemoryX509CertificateStore{Roots: []*x509.Certificate{}}
 
 	if metadata.IDPSSODescriptor == nil {
-		return nil, errors.New("metadata missing IDPSSODescriptor")
+		errE := errors.WithStack(errors.New("metadata missing IDPSSODescriptor"))
+		errors.Details(errE)["entityID"] = metadata.EntityID
+		return nil, errE
 	}
 
-	certificateCount := 0
-	for _, kd := range metadata.IDPSSODescriptor.KeyDescriptors {
+	for kdIdx, kd := range metadata.IDPSSODescriptor.KeyDescriptors {
 		if len(kd.KeyInfo.X509Data.X509Certificates) == 0 {
-			continue
+			errE := errors.New("KeyDescriptor missing X509Certificate")
+			errors.Details(errE)["entityID"] = metadata.EntityID
+			errors.Details(errE)["keyDescriptorIndex"] = kdIdx
+			return nil, errE
 		}
-
-		for idx, xcert := range kd.KeyInfo.X509Data.X509Certificates {
-			if xcert.Data == "" {
-				return nil, errors.Errorf("metadata certificate(%d) must not be empty", idx)
+		for certIdx, xcert := range kd.KeyInfo.X509Data.X509Certificates {
+			if strings.TrimSpace(xcert.Data) == "" {
+				errE := errors.New("metadata certificate must not be empty")
+				errors.Details(errE)["entityID"] = metadata.EntityID
+				errors.Details(errE)["keyDescriptorIndex"] = kdIdx
+				errors.Details(errE)["certificateIndex"] = certIdx
+				return nil, errE
 			}
 
-			certData, err := base64.StdEncoding.DecodeString(xcert.Data)
+			certStr := strings.TrimSpace(xcert.Data)
+			certStr = strings.ReplaceAll(certStr, "\n", "")
+			certStr = strings.ReplaceAll(certStr, "\r", "")
+			certStr = strings.ReplaceAll(certStr, " ", "")
+
+			certData, err := base64.StdEncoding.DecodeString(certStr)
 			if err != nil {
-				return nil, errors.WithMessagef(err, "failed to decode certificate %d", idx)
+				errE := errors.New("failed to decode certificate")
+				errors.Details(errE)["entityID"] = metadata.EntityID
+				errors.Details(errE)["keyDescriptorIndex"] = kdIdx
+				errors.Details(errE)["certificateIndex"] = certIdx
+				return nil, errE
 			}
 
 			idpCert, err := x509.ParseCertificate(certData)
 			if err != nil {
-				return nil, errors.WithMessagef(err, "failed to parse certificate %d", idx)
+				errE := errors.New("failed to parse certificate")
+				errors.Details(errE)["entityID"] = metadata.EntityID
+				errors.Details(errE)["keyDescriptorIndex"] = kdIdx
+				errors.Details(errE)["certificateIndex"] = certIdx
+				return nil, errE
 			}
 
 			certStore.Roots = append(certStore.Roots, idpCert)
-			certificateCount++
 		}
 	}
 
-	if certificateCount == 0 {
-		return nil, errors.New("no valid certificates found in metadata")
+	if len(certStore.Roots) == 0 {
+		errE := errors.New("no valid certificates found in metadata")
+		errors.Details(errE)["entityID"] = metadata.EntityID
+		return nil, errE
 	}
 
 	return certStore, nil
 }
 
-func loadOrCreateSPKeyStore(config *Config, providerKey Provider) (dsig.X509KeyStore, errors.E) { //nolint:ireturn
+func (p *SiteProvider) loadOrCreateSPKeyStore(config *Config) (dsig.X509KeyStore, errors.E) { //nolint:ireturn
 	if config.Server.Development {
 		// In development, use random keys (not persistent).
 		config.Logger.Warn().Msg("using random SAML keys in development mode")
-		return dsig.RandomKeyStoreForTest(), nil
+		p.samlKeyStore = dsig.RandomKeyStoreForTest()
+		return p.samlKeyStore, nil
 	}
 
 	// In production, use persistent keys.
-	keysDir := filepath.Join("saml-keys", string(providerKey))
+	keysDir := filepath.Join("saml-keys", string(p.Key))
 	keyPath := filepath.Join(keysDir, "sp-key.pem")
 	certPath := filepath.Join(keysDir, "sp-cert.pem")
 
 	if _, err := os.Stat(keyPath); os.IsNotExist(err) {
-		config.Logger.Info().Str("provider", string(providerKey)).Msg("generating new SAML SP keys")
-
 		const dirPermissions = 0o700
 		if err := os.MkdirAll(keysDir, dirPermissions); err != nil {
 			return nil, errors.WithStack(err)
 		}
 
 		keyStore := dsig.RandomKeyStoreForTest()
+		p.samlKeyStore = keyStore
 
 		// TODO: Currently saves keys to disk (we want proper key generation).
-		config.Logger.Warn().Msg("SAML key persistence not fully implemented - keys will be regenerated on restart")
 		return keyStore, nil
 	}
 
@@ -312,12 +276,17 @@ func loadOrCreateSPKeyStore(config *Config, providerKey Provider) (dsig.X509KeyS
 	}
 
 	keyStore := dsig.TLSCertKeyStore(cert)
+	p.samlKeyStore = keyStore
 	return keyStore, nil
 }
 
 func validateSAMLAssertion(assertionInfo *saml2.AssertionInfo) errors.E {
 	if assertionInfo == nil {
-		return errors.New("assertion info is nil")
+		return errors.New("SAML assertion info is nil")
+	}
+
+	if !assertionInfo.ResponseSignatureValidated {
+		return errors.New("SAML assertion response signature not validated")
 	}
 
 	if assertionInfo.WarningInfo.InvalidTime {
@@ -336,15 +305,10 @@ func validateSAMLAssertion(assertionInfo *saml2.AssertionInfo) errors.E {
 }
 
 func (s *Service) handleSAMLProviderStart(ctx context.Context, w http.ResponseWriter, req *http.Request, flow *Flow, providerName Provider, provider samlProvider) {
-	logger := zerolog.Ctx(ctx)
-	logger.Info().Msgf("Starting SAML auth for flow ID: %s", flow.ID.String())
-
 	flow.ClearAuthStep("")
+	// Currently we support only one factor.
 	flow.Providers = []Provider{providerName}
-
-	flow.SAMLProvider = &FlowSAMLProvider{
-		ID: identifier.New(),
-	}
+	flow.SAMLProvider = &FlowSAMLProvider{}
 
 	errE := s.setFlow(ctx, flow)
 	if errE != nil {
@@ -352,13 +316,11 @@ func (s *Service) handleSAMLProviderStart(ctx context.Context, w http.ResponseWr
 		return
 	}
 
-	authURL, err := provider.SP.BuildAuthURL(flow.ID.String())
+	authURL, err := provider.Provider.BuildAuthURL(flow.ID.String())
 	if err != nil {
 		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
 		return
 	}
-
-	logger.Info().Msgf("Generated SAML auth URL with flow ID as RelayState: %s", authURL)
 
 	s.WriteJSON(w, req, AuthFlowResponse{
 		Completed:       flow.Completed,
@@ -376,6 +338,9 @@ func (s *Service) handleSAMLProviderStart(ctx context.Context, w http.ResponseWr
 }
 
 func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, providerName Provider, provider samlProvider) {
+	defer req.Body.Close()
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
 	ctx := req.Context()
 
 	err := req.ParseForm()
@@ -384,18 +349,7 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	relayState := req.FormValue("RelayState")
-
-	logger := zerolog.Ctx(ctx)
-	logger.Info().Msgf("SAML callback RelayState: '%s'", relayState)
-	logger.Info().Msgf("SAML callback SAMLResponse present: %t", req.FormValue("SAMLResponse") != "")
-
-	if relayState == "" {
-		s.BadRequestWithError(w, req, errors.New("missing RelayState parameter"))
-		return
-	}
-
-	flow := s.GetActiveFlowNoAuthStep(w, req, relayState)
+	flow := s.GetActiveFlowNoAuthStep(w, req, req.Form.Get("RelayState"))
 	if flow == nil {
 		return
 	}
@@ -413,90 +367,110 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	samlResponse := req.FormValue("SAMLResponse")
-	if samlResponse == "" {
-		if errorCode := req.FormValue("error"); errorCode != "" {
-			authErr := errors.New("SAML authentication error")
-			errors.Details(authErr)["error"] = errorCode
-			errors.Details(authErr)["description"] = req.FormValue("error_description")
-			errors.Details(authErr)["provider"] = providerName
-			s.failAuthStep(w, req, false, flow, authErr)
-			return
-		}
-
-		s.failAuthStep(w, req, false, flow, errors.New("missing SAMLResponse parameter"))
-		return
-	}
-
-	assertionInfo, err := provider.SP.RetrieveAssertionInfo(samlResponse)
-	if err != nil {
-		errE = errors.WithStack(err)
+	errorCode := req.Form.Get("error")
+	errorDescription := req.Form.Get("error_description")
+	if errorCode != "" || errorDescription != "" {
+		errE = errors.New("SAML authentication error")
+		errors.Details(errE)["code"] = errorCode
+		errors.Details(errE)["description"] = errorDescription
 		errors.Details(errE)["provider"] = providerName
 		s.failAuthStep(w, req, false, flow, errE)
 		return
 	}
 
-	if validateErr := validateSAMLAssertion(assertionInfo); validateErr != nil {
-		errors.Details(validateErr)["provider"] = providerName
-		s.failAuthStep(w, req, false, flow, validateErr)
+	// TODO: Parsing types.Response Status, easier debugging, SAML2.0 includes many statuses like 'AuthnFailed'.
+	// We could use their ValidateEncodeResponse and parse which status was returned into our error.
+	// If gosaml2 merges our PR, we can add that logging.
+	samlResponse := req.Form.Get("SAMLResponse")
+	assertionInfo, err := provider.Provider.RetrieveAssertionInfo(samlResponse)
+	if err != nil {
+		errE = errors.WithStack(err)
+		errors.Details(errE)["provider"] = providerName
+		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
-	if assertionInfo != nil {
-		logger := zerolog.Ctx(ctx)
-		logger.Debug().Str("provider", string(providerName)).Msg("SAML assertion info")
-		logger.Debug().Str(assertionInfo.NameID, "nameID").Msg("SAML assertion NameID")
-		if assertionInfo.ResponseSignatureValidated {
-			logger.Debug().Str("SAML signature validation", string(providerName)).Msg("SAML assertion response signature validated")
-		} else {
-			logger.Debug().Str("SAML signature valdiation", string(providerName)).Msg("SAML NOT VALID signature")
-		}
+	errE = validateSAMLAssertion(assertionInfo)
+	if errE != nil {
+		errors.Details(errE)["provider"] = providerName
+		s.BadRequestWithError(w, req, errE)
+		return
 	}
 
-	account, errE := s.getAccountByCredential(ctx, providerName, assertionInfo.NameID)
+	credentialID, errE := provider.Resolver.ResolveCredentialID(assertionInfo)
+	if errE != nil {
+		errors.Details(errE)["provider"] = providerName
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	account, errE := s.getAccountByCredential(ctx, providerName, credentialID)
 	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
 		errors.Details(errE)["provider"] = providerName
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	attributes := extractSAMLAttributes(assertionInfo, providerName)
-	credentialData, err := json.Marshal(attributes)
+	attributes := extractSAMLAttributes(assertionInfo, provider.Resolver)
+	jsonData, err := json.Marshal(attributes)
 	if err != nil {
-		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
+		errors.Details(errE)["provider"] = providerName
+		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
+	zerolog.Ctx(ctx).Warn().
+		Str("provider", string(providerName)).
+		Str("credentialID", credentialID).
+		Str("nameID", assertionInfo.NameID).
+		Interface("attributes", attributes).
+		Msg("SAML ATTRIBUTES RECEIVED - This is what will be stored in the database")
 
 	s.completeAuthStep(w, req, false, flow, account, []Credential{{
 		ID:       assertionInfo.NameID,
 		Provider: providerName,
-		Data:     credentialData,
+		Data:     jsonData,
 	}})
 }
 
-func extractSAMLAttributes(assertionInfo *saml2.AssertionInfo, providerName Provider) map[string]interface{} {
-	attributes := map[string]interface{}{
-		"sub":      assertionInfo.NameID,
-		"nameId":   assertionInfo.NameID,
-		"provider": string(providerName),
-	}
+func extractSAMLAttributes(assertionInfo *saml2.AssertionInfo, resolver SAMLCredentialResolver) map[string]interface{} {
+	attributes := map[string]interface{}{}
 
-	rawAttrs := make(map[string]interface{})
-	for key, attr := range assertionInfo.Values {
-		var vals []string
-		for _, v := range attr.Values {
-			if strings.TrimSpace(v.Value) != "" {
-				vals = append(vals, strings.TrimSpace(v.Value))
+	mapping := resolver.GetAttributeMapping()
+
+	for samlAttr, standardClaim := range mapping.Mappings {
+		if attr, exists := assertionInfo.Values[samlAttr]; exists {
+			var values []string
+			for _, v := range attr.Values {
+				value := strings.TrimSpace(v.Value)
+				if value != "" {
+					values = append(values, value)
+				}
+			}
+			if len(values) > 0 {
+				attributes[standardClaim] = values
 			}
 		}
-		rawAttrs[key] = map[string]interface{}{
-			"Name":         attr.Name,
-			"FriendlyName": attr.FriendlyName,
-			"NameFormat":   attr.NameFormat,
-			"Values":       vals,
+	}
+
+	for key, attr := range assertionInfo.Values {
+		if _, isMapped := mapping.Mappings[key]; isMapped {
+			continue
+		}
+		attrName := key
+		if attr.FriendlyName != "" {
+			attrName = attr.FriendlyName
+		}
+		var values []string
+		for _, v := range attr.Values {
+			value := strings.TrimSpace(v.Value)
+			if value != "" {
+				values = append(values, value)
+			}
+		}
+		if len(values) > 0 {
+			attributes[attrName] = values
 		}
 	}
-	attributes["raw_attributes"] = rawAttrs
 
 	return attributes
 }

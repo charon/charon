@@ -120,14 +120,7 @@
     {
       "name": "AuthThirdPartyProvider",
       "path": "/auth/provider/:provider",
-      "api": {
-        "cors": {
-          "allowedOrigins": ["*"],
-          "allowedMethods": ["POST"],
-          "allowedHeaders": ["Authorization", "Content-Type"],
-          "maxAge": 600
-        }
-      },
+      "api": {},
       "get": {}
     },
     {

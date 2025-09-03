@@ -201,7 +201,12 @@ func (s *Service) makeIdentityFromCredentials(credentials []Credential) (*Identi
 			if username != "" {
 				identity.Username = username
 			}
-			identity.Description = fmt.Sprintf("Identity automatically imported from %s.", s.oidcProviders()[credential.Provider].Name)
+
+			if oidc, oidcFound := s.oidcProviders()[credential.Provider]; oidcFound {
+				identity.Description = fmt.Sprintf("Identity automatically imported from %s.", oidc.Name)
+			} else if saml, samlFound := s.samlProviders()[credential.Provider]; samlFound {
+				identity.Description = fmt.Sprintf("Identity automatically imported from %s.", saml.Name)
+			}
 		}
 	}
 	if identity != nil {

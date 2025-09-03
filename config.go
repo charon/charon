@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"embed"
 	"encoding/base64"
+	"fmt"
 	"io/fs"
 	"net/http"
 	"os"
@@ -51,6 +52,13 @@ var routesConfiguration []byte
 //go:embed dist
 var files embed.FS
 
+const (
+	ThirdPartyProviderOIDC ThirdPartyProviderType = "oidc"
+	ThirdPartyProviderSAML ThirdPartyProviderType = "saml"
+)
+
+type ThirdPartyProviderType string
+
 type OIDCProvider struct {
 	ClientID string               `env:"CLIENT_ID"   help:"${provider}'s client ID."                                  yaml:"clientId"`
 	Secret   kong.FileContentFlag `env:"SECRET_PATH" help:"File with ${provider}'s client secret." placeholder:"PATH" yaml:"secret"`
@@ -77,17 +85,31 @@ type GenericOIDCProvider struct {
 	TokenURL  string
 }
 
-type SAMLProviderConfig struct {
-	Key         Provider `yaml:"key"`
-	Name        string   `yaml:"name"`
-	MetadataURL string   `yaml:"metadataUrl"`
+type SAMLProvider struct {
+	MetadataURL string `env:"METADATA_URL" help:"${provider}'s metadata URL. Environment variable: ${env}."         yaml:"metadataUrl"`
+	EntityID    string `env:"ENTITY_ID"    help:"${provider}'s entity ID (optional). Environment variable: ${env}." yaml:"entityId"`
+}
+
+func (p *SAMLProvider) Validate() error {
+	if p.MetadataURL == "" {
+		return errors.New("metadata URL is required for SAML provider")
+	}
+	return nil
+}
+
+type GenericSAMLProvider struct {
+	SAMLProvider
+	Key         Provider `required:"" yaml:"key"`
+	Name        string   `            yaml:"name"`
+	Certificate string   `            yaml:"certificate,omitempty"`
 }
 
 type Providers struct {
 	Google   OIDCProvider `embed:"" envprefix:"GOOGLE_"   prefix:"google."   set:"provider=Google"   yaml:"google"`
 	Facebook OIDCProvider `embed:"" envprefix:"FACEBOOK_" prefix:"facebook." set:"provider=Facebook" yaml:"facebook"`
 
-	SAMLProviders []SAMLProviderConfig `yaml:"samlProviders"`
+	SIPASS        SAMLProvider          `embed:"" envprefix:"SIPASS_" prefix:"sipass." set:"provider=SIPASS" yaml:"sipass"`
+	SAMLProviders []GenericSAMLProvider `                                                                    yaml:"samlProviders"`
 
 	// Exposed primarily for use in tests.
 	Testing GenericOIDCProvider `json:"-" kong:"-" yaml:"-"`
@@ -100,6 +122,17 @@ func (p *Providers) Validate() error {
 		return err
 	}
 	if err := p.Facebook.Validate(); err != nil {
+		return err
+	}
+	if p.SIPASS.MetadataURL == "" {
+		p.SIPASS.MetadataURL = sipassDefaultMetadataURL
+	}
+	for i, samlProvider := range p.SAMLProviders {
+		if err := samlProvider.Validate(); err != nil {
+			return fmt.Errorf("SAMLProvider[%d]: %w", i, err)
+		}
+	}
+	if err := p.SIPASS.Validate(); err != nil {
 		return err
 	}
 	if err := p.Testing.Validate(); err != nil {
@@ -367,80 +400,137 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		providers = append(providers, SiteProvider{
 			Key:          "google",
 			Name:         "Google",
-			Type:         "oidc",
+			Type:         ThirdPartyProviderOIDC,
 			oidcIssuer:   "https://accounts.google.com",
 			oidcClientID: config.Providers.Google.ClientID,
 			// We trim space so that the file can contain whitespace (e.g., a newline) at the end.
-			oidcSecret:    strings.TrimSpace(string(config.Providers.Google.Secret)),
-			oidcForcePKCE: false,
-			oidcAuthURL:   "",
-			oidcTokenURL:  "",
-			oidcScopes:    []string{oidc.ScopeOpenID, "email", "profile"},
-			metadataURL: "",
+			oidcSecret:      strings.TrimSpace(string(config.Providers.Google.Secret)),
+			oidcForcePKCE:   false,
+			oidcAuthURL:     "",
+			oidcTokenURL:    "",
+			oidcScopes:      []string{oidc.ScopeOpenID, "email", "profile"},
+			samlEntityID:    "",
+			samlMetadataURL: "",
+			samlCertificate: "",
+			samlKeyStore:    nil,
+			samlAttributeMapping: SAMLAttributeMapping{
+				CredentialIDAttribute: "NameID",
+				Mappings:              map[string]string{},
+			},
 		})
 	}
 	if config.Providers.Facebook.ClientID != "" && config.Providers.Facebook.Secret != nil {
 		providers = append(providers, SiteProvider{
 			Key:          "facebook",
 			Name:         "Facebook",
-			Type:         "oidc",
+			Type:         ThirdPartyProviderOIDC,
 			oidcIssuer:   "https://www.facebook.com",
 			oidcClientID: config.Providers.Facebook.ClientID,
 			// We trim space so that the file can contain whitespace (e.g., a newline) at the end.
-			oidcSecret:    strings.TrimSpace(string(config.Providers.Facebook.Secret)),
-			oidcForcePKCE: true,
-			oidcAuthURL:   "",
-			oidcTokenURL:  "https://graph.facebook.com/oauth/access_token",
-			oidcScopes:    []string{oidc.ScopeOpenID, "email", "public_profile"},
-			metadataURL: "",
+			oidcSecret:      strings.TrimSpace(string(config.Providers.Facebook.Secret)),
+			oidcForcePKCE:   true,
+			oidcAuthURL:     "",
+			oidcTokenURL:    "https://graph.facebook.com/oauth/access_token",
+			oidcScopes:      []string{oidc.ScopeOpenID, "email", "public_profile"},
+			samlEntityID:    "",
+			samlMetadataURL: "",
+			samlCertificate: "",
+			samlKeyStore:    nil,
+			samlAttributeMapping: SAMLAttributeMapping{
+				CredentialIDAttribute: "NameID",
+				Mappings:              map[string]string{},
+			},
 		})
 	}
 	if config.Providers.Testing.ClientID != "" && config.Providers.Testing.Secret != nil && config.Providers.Testing.Issuer != "" {
 		providers = append(providers, SiteProvider{
 			Key:          "testing",
 			Name:         "Testing",
-			Type:         "oidc",
+			Type:         ThirdPartyProviderOIDC,
 			oidcIssuer:   config.Providers.Testing.Issuer,
 			oidcClientID: config.Providers.Testing.ClientID,
 			// We trim space so that the file can contain whitespace (e.g., a newline) at the end.
-			oidcSecret:    strings.TrimSpace(string(config.Providers.Testing.Secret)),
-			oidcForcePKCE: config.Providers.Testing.ForcePKCE,
-			oidcAuthURL:   config.Providers.Testing.AuthURL,
-			oidcTokenURL:  config.Providers.Testing.TokenURL,
-			oidcScopes:    []string{oidc.ScopeOpenID},
-			metadataURL: "",
+			oidcSecret:      strings.TrimSpace(string(config.Providers.Testing.Secret)),
+			oidcForcePKCE:   config.Providers.Testing.ForcePKCE,
+			oidcAuthURL:     config.Providers.Testing.AuthURL,
+			oidcTokenURL:    config.Providers.Testing.TokenURL,
+			oidcScopes:      []string{oidc.ScopeOpenID},
+			samlEntityID:    "",
+			samlMetadataURL: "",
+			samlCertificate: "",
+			samlKeyStore:    nil,
+			samlAttributeMapping: SAMLAttributeMapping{
+				CredentialIDAttribute: "NameID",
+				Mappings:              map[string]string{},
+			},
+		})
+	}
+
+	entityID := config.Providers.SIPASS.EntityID
+	if entityID == "" {
+		entityID = samlSIPASSEntityIDPrefix
+
+		providers = append(providers, SiteProvider{
+			Key:                  "sipass",
+			Name:                 "SIPASS",
+			Type:                 ThirdPartyProviderSAML,
+			oidcIssuer:           "",
+			oidcClientID:         "",
+			oidcSecret:           "",
+			oidcForcePKCE:        false,
+			oidcAuthURL:          "",
+			oidcTokenURL:         "",
+			oidcScopes:           nil,
+			samlEntityID:         entityID,
+			samlMetadataURL:      sipassDefaultMetadataURL,
+			samlCertificate:      "",
+			samlKeyStore:         nil,
+			samlAttributeMapping: getSIPASSAttributeMapping(),
 		})
 	}
 
 	if config.Server.Development {
 		providers = append(providers, SiteProvider{
-			Key:         "MockSAML",
-			Name:        "MockSAML",
-			Type:        "saml",
-			metadataURL: "https://mocksaml.com/api/namespace/charon/saml/metadata",
-			issuer:      "",
-			clientID:    "",
-			secret:      "",
-			forcePKCE:   false,
-			authURL:     "",
-			tokenURL:    "",
-			scopes:      nil,
+			Key:                  "MockSAML",
+			Name:                 "MockSAML",
+			Type:                 ThirdPartyProviderSAML,
+			oidcIssuer:           "",
+			oidcClientID:         "",
+			oidcSecret:           "",
+			oidcForcePKCE:        false,
+			oidcAuthURL:          "",
+			oidcTokenURL:         "",
+			oidcScopes:           nil,
+			samlEntityID:         mockSAMLEntityID,
+			samlMetadataURL:      mockSAMLMetadataURL,
+			samlCertificate:      "",
+			samlKeyStore:         nil,
+			samlAttributeMapping: getDefaultAttributeMapping(),
 		})
 	}
 
 	for _, samlConfig := range config.Providers.SAMLProviders {
+		entityID := samlConfig.EntityID
+		if entityID == "" {
+			entityID = samlEntityIDPrefix + string(samlConfig.Key)
+		}
+
 		providers = append(providers, SiteProvider{
-			Key:         samlConfig.Key,
-			Name:        samlConfig.Name,
-			Type:        "saml",
-			metadataURL: samlConfig.MetadataURL,
-			oidcIssuer:      "",
-			oidcClientID:    "",
-			oidcSecret:      "",
-			oidcForcePKCE:   false,
-			oidcAuthURL:     "",
-			oidcTokenURL:    "",
-			oidcScopes:      nil,
+			Key:                  samlConfig.Key,
+			Name:                 samlConfig.Name,
+			Type:                 ThirdPartyProviderSAML,
+			oidcIssuer:           "",
+			oidcClientID:         "",
+			oidcSecret:           "",
+			oidcForcePKCE:        false,
+			oidcAuthURL:          "",
+			oidcTokenURL:         "",
+			oidcScopes:           nil,
+			samlEntityID:         entityID,
+			samlMetadataURL:      samlConfig.MetadataURL,
+			samlCertificate:      samlConfig.Certificate,
+			samlKeyStore:         nil,
+			samlAttributeMapping: getDefaultAttributeMapping(),
 		})
 	}
 
@@ -619,9 +709,9 @@ func (config *Config) Run() errors.E {
 
 	// In the case when server's bind port is 0, we access values once to start
 	// delayed initialization (initialization will block until the server runs).
-	go service.samlProviders()
 	go service.oidc()
 	go service.oidcProviders()
+	go service.samlProviders()
 	go service.passkeyProvider()
 	go service.codeProvider()
 	go service.charonOrganization()

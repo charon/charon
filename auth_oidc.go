@@ -28,10 +28,10 @@ func initOIDCProviders(config *Config, service *Service, domain string, provider
 	return initWithHost(config, domain, func(host string) map[Provider]oidcProvider {
 		oidcProviders := map[Provider]oidcProvider{}
 		for _, p := range providers {
-			if p.Type != "" && p.Type != "oidc" && p.issuer == "" {
+			if p.Type != ThirdPartyProviderOIDC {
 				continue
 			}
-			config.Logger.Debug().Msgf("enabling %s provider", p.Name)
+			config.Logger.Debug().Msgf("enabling %s OIDC provider", p.Name)
 
 			path, errE := service.Reverse("AuthThirdPartyProvider", waf.Params{"provider": string(p.Key)}, nil)
 			if errE != nil {

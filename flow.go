@@ -55,9 +55,7 @@ type FlowCode struct {
 	Credentials []Credential
 }
 
-type FlowSAMLProvider struct {
-	ID identifier.Identifier
-}
+type FlowSAMLProvider struct{}
 
 type Flow struct {
 	ID        identifier.Identifier
