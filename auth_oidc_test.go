@@ -161,7 +161,7 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	// Start OIDC.
-	resp, err := ts.Client().Post(ts.URL+authFlowThirdPartyProviderStart, "application/json", strings.NewReader(`{"provider":"testing"}`)) //nolint:noctx,bodyclose
+	resp, err := ts.Client().Post(ts.URL+authFlowThirdPartyProviderStart, "application/json", strings.NewReader(`{"provider":"oidcTesting"}`)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	require.NoError(t, err)
@@ -171,7 +171,7 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	var authFlowResponse charon.AuthFlowResponse
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
 	require.NoError(t, errE, "% -+#.1v", errE)
-	assert.Equal(t, []charon.Provider{"testing"}, authFlowResponse.Providers)
+	assert.Equal(t, []charon.Provider{"oidcTesting"}, authFlowResponse.Providers)
 	require.NotNil(t, authFlowResponse.ThirdPartyProvider)
 	require.True(t, strings.HasPrefix(authFlowResponse.ThirdPartyProvider.Location, oidcTS.URL), authFlowResponse.ThirdPartyProvider.Location)
 
@@ -181,7 +181,7 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	// Flow is available, current provider is testing.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{"testing"}, "", assertCharonDashboard)
+		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{"oidcTesting"}, "", assertCharonDashboard)
 	}
 
 	// Redirect to our testing provider.
@@ -197,7 +197,7 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	// Flow has not yet changed, current provider is testing.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{"testing"}, "", assertCharonDashboard)
+		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{"oidcTesting"}, "", assertCharonDashboard)
 	}
 
 	// Redirect to OIDC callback.
@@ -217,10 +217,10 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	// Flow is available and signinOrSignout is completed.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{signinOrSignout}, []charon.Provider{"testing"}, "", assertCharonDashboard)
+	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{signinOrSignout}, []charon.Provider{"oidcTesting"}, "", assertCharonDashboard)
 
-	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{"testing"}, 1, "username")
-	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{"testing"})
+	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{"oidcTesting"}, 1, "username")
+	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{"oidcTesting"})
 }
 
 func TestAuthFlowOIDC(t *testing.T) {
@@ -232,7 +232,7 @@ func TestAuthFlowOIDC(t *testing.T) {
 	accessToken := oidcSignin(t, ts, service, oidcTS, charon.CompletedSignup)
 
 	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
-		{charon.ActivitySignIn, nil, []charon.Provider{"testing"}, 0, 1, 0, 1},
+		{charon.ActivitySignIn, nil, []charon.Provider{"oidcTesting"}, 0, 1, 0, 1},
 		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
 		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
 	})
@@ -243,9 +243,9 @@ func TestAuthFlowOIDC(t *testing.T) {
 	accessToken = oidcSignin(t, ts, service, oidcTS, charon.CompletedSignin)
 
 	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
-		{charon.ActivitySignIn, nil, []charon.Provider{"testing"}, 0, 1, 0, 1}, // Signin.
-		{charon.ActivitySignOut, nil, nil, 0, 0, 0, 0},                         // Signout.
-		{charon.ActivitySignIn, nil, []charon.Provider{"testing"}, 0, 1, 0, 1},
+		{charon.ActivitySignIn, nil, []charon.Provider{"oidcTesting"}, 0, 1, 0, 1}, // Signin.
+		{charon.ActivitySignOut, nil, nil, 0, 0, 0, 0},                             // Signout.
+		{charon.ActivitySignIn, nil, []charon.Provider{"oidcTesting"}, 0, 1, 0, 1},
 		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
 		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
 	})

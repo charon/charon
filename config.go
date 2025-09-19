@@ -111,7 +111,7 @@ type Providers struct {
 	SAMLProviders []GenericSAMLProvider `                                                                    yaml:"samlProviders"`
 
 	// Exposed primarily for use in tests.
-	Testing GenericOIDCProvider `json:"-" kong:"-" yaml:"-"`
+	OIDCTesting GenericOIDCProvider `json:"-" kong:"-" yaml:"-"`
 }
 
 // We have to call Validate on kong-embedded structs ourselves.
@@ -134,7 +134,7 @@ func (p *Providers) Validate() error {
 	if err := p.SIPASS.Validate(); err != nil {
 		return err
 	}
-	if err := p.Testing.Validate(); err != nil {
+	if err := p.OIDCTesting.Validate(); err != nil {
 		return err
 	}
 	return nil
@@ -439,18 +439,18 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			},
 		})
 	}
-	if config.Providers.Testing.ClientID != "" && config.Providers.Testing.Secret != nil && config.Providers.Testing.Issuer != "" {
+	if config.Providers.OIDCTesting.ClientID != "" && config.Providers.OIDCTesting.Secret != nil && config.Providers.OIDCTesting.Issuer != "" {
 		providers = append(providers, SiteProvider{
-			Key:          "testing",
-			Name:         "Testing",
+			Key:          "oidcTesting",
+			Name:         "OIDC Testing",
 			Type:         ThirdPartyProviderOIDC,
-			oidcIssuer:   config.Providers.Testing.Issuer,
-			oidcClientID: config.Providers.Testing.ClientID,
+			oidcIssuer:   config.Providers.OIDCTesting.Issuer,
+			oidcClientID: config.Providers.OIDCTesting.ClientID,
 			// We trim space so that the file can contain whitespace (e.g., a newline) at the end.
-			oidcSecret:      strings.TrimSpace(string(config.Providers.Testing.Secret)),
-			oidcForcePKCE:   config.Providers.Testing.ForcePKCE,
-			oidcAuthURL:     config.Providers.Testing.AuthURL,
-			oidcTokenURL:    config.Providers.Testing.TokenURL,
+			oidcSecret:      strings.TrimSpace(string(config.Providers.OIDCTesting.Secret)),
+			oidcForcePKCE:   config.Providers.OIDCTesting.ForcePKCE,
+			oidcAuthURL:     config.Providers.OIDCTesting.AuthURL,
+			oidcTokenURL:    config.Providers.OIDCTesting.TokenURL,
 			oidcScopes:      []string{oidc.ScopeOpenID},
 			samlEntityID:    "",
 			samlMetadataURL: "",
