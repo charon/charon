@@ -32,7 +32,6 @@ type SiteProvider struct {
 
 	samlEntityID         string
 	samlMetadataURL      string
-	samlCertificate      string
 	samlKeyStore         dsig.X509KeyStore
 	samlAttributeMapping SAMLAttributeMapping
 }

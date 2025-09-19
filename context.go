@@ -14,12 +14,6 @@ type serviceContext struct {
 	RedirectURI    string `json:"redirectUri"`
 }
 
-type ProviderInfo struct {
-	Key  string                 `json:"key"`
-	Name string                 `json:"name"`
-	Type ThirdPartyProviderType `json:"type"`
-}
-
 func (s *Service) Context(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	ctx := req.Context()
 

@@ -99,9 +99,8 @@ func (p *SAMLProvider) Validate() error {
 
 type GenericSAMLProvider struct {
 	SAMLProvider
-	Key         Provider `required:"" yaml:"key"`
-	Name        string   `            yaml:"name"`
-	Certificate string   `            yaml:"certificate,omitempty"`
+	Key  Provider `required:"" yaml:"key"`
+	Name string   `            yaml:"name"`
 }
 
 type Providers struct {
@@ -411,7 +410,6 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:      []string{oidc.ScopeOpenID, "email", "profile"},
 			samlEntityID:    "",
 			samlMetadataURL: "",
-			samlCertificate: "",
 			samlKeyStore:    nil,
 			samlAttributeMapping: SAMLAttributeMapping{
 				CredentialIDAttribute: "NameID",
@@ -434,7 +432,6 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:      []string{oidc.ScopeOpenID, "email", "public_profile"},
 			samlEntityID:    "",
 			samlMetadataURL: "",
-			samlCertificate: "",
 			samlKeyStore:    nil,
 			samlAttributeMapping: SAMLAttributeMapping{
 				CredentialIDAttribute: "NameID",
@@ -457,7 +454,6 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:      []string{oidc.ScopeOpenID},
 			samlEntityID:    "",
 			samlMetadataURL: "",
-			samlCertificate: "",
 			samlKeyStore:    nil,
 			samlAttributeMapping: SAMLAttributeMapping{
 				CredentialIDAttribute: "NameID",
@@ -483,7 +479,6 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:           nil,
 			samlEntityID:         entityID,
 			samlMetadataURL:      sipassDefaultMetadataURL,
-			samlCertificate:      "",
 			samlKeyStore:         nil,
 			samlAttributeMapping: getSIPASSAttributeMapping(),
 		})
@@ -503,7 +498,6 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:           nil,
 			samlEntityID:         mockSAMLEntityID,
 			samlMetadataURL:      mockSAMLMetadataURL,
-			samlCertificate:      "",
 			samlKeyStore:         nil,
 			samlAttributeMapping: getDefaultAttributeMapping(),
 		})
@@ -528,7 +522,6 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:           nil,
 			samlEntityID:         entityID,
 			samlMetadataURL:      samlConfig.MetadataURL,
-			samlCertificate:      samlConfig.Certificate,
 			samlKeyStore:         nil,
 			samlAttributeMapping: getDefaultAttributeMapping(),
 		})
