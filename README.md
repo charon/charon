@@ -112,7 +112,7 @@ mkcert -install
 mkcert localhost 127.0.0.1 ::1
 ```
 
-This creates two files, `localhost+2.pem` and `localhost+2-key.pem`, which you can provide to PeerDB as:
+This creates two files, `localhost+2.pem` and `localhost+2-key.pem`, which you can provide to Charon as:
 
 ```sh
 ./charon -k localhost+2.pem -K localhost+2-key.pem
