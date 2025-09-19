@@ -157,11 +157,11 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 
 	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
 
-	authFlowProviderStart, errE := service.ReverseAPI("AuthFlowProviderStart", waf.Params{"id": flowID.String()}, nil)
+	authFlowThirdPartyProviderStart, errE := service.ReverseAPI("AuthFlowThirdPartyProviderStart", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	// Start OIDC.
-	resp, err := ts.Client().Post(ts.URL+authFlowProviderStart, "application/json", strings.NewReader(`{"provider":"testing"}`)) //nolint:noctx,bodyclose
+	resp, err := ts.Client().Post(ts.URL+authFlowThirdPartyProviderStart, "application/json", strings.NewReader(`{"provider":"testing"}`)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	require.NoError(t, err)

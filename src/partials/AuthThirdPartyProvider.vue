@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AuthFlowProviderStartRequest, AuthFlowResponse, Flow } from "@/types"
+import type { AuthFlowThirdPartyProviderStartRequest, AuthFlowResponse, Flow } from "@/types"
 
 import { ref, onBeforeUnmount, onMounted, getCurrentInstance } from "vue"
 import { useI18n } from "vue-i18n"
@@ -107,7 +107,7 @@ async function onRedirect() {
   progress.value += 1
   try {
     const url = router.apiResolve({
-      name: "AuthFlowProviderStart",
+      name: "AuthFlowThirdPartyProviderStart",
       params: {
         id: props.flow.getId(),
       },
@@ -119,7 +119,7 @@ async function onRedirect() {
       url,
       {
         provider: provider!.key,
-      } as AuthFlowProviderStartRequest,
+      } as AuthFlowThirdPartyProviderStartRequest,
       abortController.signal,
       progress,
     )

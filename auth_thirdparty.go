@@ -9,7 +9,7 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
-type AuthFlowProviderStartRequest struct {
+type AuthFlowThirdPartyProviderStartRequest struct {
 	Provider Provider `json:"provider"`
 }
 
@@ -43,7 +43,7 @@ func (s *Service) handleAuthThirdPartyProvider(w http.ResponseWriter, req *http.
 	s.NotFoundWithError(w, req, errE)
 }
 
-func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+func (s *Service) AuthFlowThirdPartyProviderStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -54,7 +54,7 @@ func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	var providerStart AuthFlowProviderStartRequest
+	var providerStart AuthFlowThirdPartyProviderStartRequest
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &providerStart)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
