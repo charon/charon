@@ -52,12 +52,12 @@ var routesConfiguration []byte
 //go:embed dist
 var files embed.FS
 
+type ThirdPartyProviderType string
+
 const (
 	ThirdPartyProviderOIDC ThirdPartyProviderType = "oidc"
 	ThirdPartyProviderSAML ThirdPartyProviderType = "saml"
 )
-
-type ThirdPartyProviderType string
 
 type OIDCProvider struct {
 	ClientID string               `env:"CLIENT_ID"   help:"${provider}'s client ID."                                  yaml:"clientId"`
