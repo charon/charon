@@ -11,7 +11,7 @@ import (
 	"gitlab.com/charon/charon"
 )
 
-func TestParseAttributeValue(t *testing.T) {
+func TestParseAttributeValue(t *testing.T) { //nolint:maintidx
 	t.Parallel()
 
 	tests := []struct {
