@@ -73,6 +73,7 @@ To update internationalization TypeScript definitions:
 ### Backend Code Style
 
 - **Comments**: All comments must end with dots for consistency.
+- **Error Handling**: When error is `errors.E`, use `errE` as variable name and assertion should be of form `require.NoError(t, errE, "% -+#.1v", errE)`.
 - **CI Commands**: For backend-only changes, run these commands to match CI validation:
   - `make lint` - Go linter (golangci-lint) with auto-fix
   - `make fmt` - Go code formatting with gofumpt and goimports
