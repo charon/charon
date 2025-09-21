@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
 	"strings"
 
 	"github.com/hashicorp/go-cleanhttp"
@@ -245,6 +246,16 @@ func validateSAMLAssertion(assertionInfo *saml2.AssertionInfo) errors.E {
 
 	if assertionInfo.WarningInfo.NotInAudience {
 		return errors.New("SAML assertion audience mismatch")
+	}
+
+	// We do not care about these warnings, so we zero them out.
+	assertionInfo.WarningInfo.OneTimeUse = false
+	assertionInfo.WarningInfo.ProxyRestriction = nil
+
+	if !reflect.DeepEqual(*assertionInfo.WarningInfo, saml2.WarningInfo{}) { //nolint:exhaustruct
+		errE := errors.New("unexpected SAML assertion warnings")
+		errors.Details(errE)["warnings"] = *assertionInfo.WarningInfo
+		return errE
 	}
 
 	if assertionInfo.NameID == "" {
