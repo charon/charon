@@ -89,7 +89,7 @@ func initSAMLProvider(config *Config, service *Service, host string, p SiteProvi
 	}
 
 	if ssoURL == "" {
-		return samlProvider{}, errors.New("HTTP-Redirect binding not supported")
+		return samlProvider{}, errors.New("IDP does not support HTTP-Redirect binding")
 	}
 
 	sp := &saml2.SAMLServiceProvider{ //nolint:exhaustruct
@@ -125,7 +125,6 @@ func fetchSAMLMetadata(ctx context.Context, client *http.Client, metadataURL str
 		errors.Details(errE)["url"] = metadataURL
 		return types.EntityDescriptor{}, errE
 	}
-
 	resp, err := client.Do(req)
 	if err != nil {
 		errE := errors.WithStack(err)
@@ -147,16 +146,16 @@ func fetchSAMLMetadata(ctx context.Context, client *http.Client, metadataURL str
 	rawMetadata, err := io.ReadAll(resp.Body)
 	if err != nil {
 		errE := errors.WithStack(err)
-		errors.Details(errE)["metadataURL"] = metadataURL
-		errors.Details(errE)["statusCode"] = resp.StatusCode
+		errors.Details(errE)["url"] = metadataURL
 		return types.EntityDescriptor{}, errE
 	}
 
 	var metadata types.EntityDescriptor
 	err = xml.Unmarshal(rawMetadata, &metadata)
 	if err != nil {
-		errE := errors.WithDetails(err, "saml-metadata", string(rawMetadata))
-		errors.Details(errE)["metadataURL"] = metadataURL
+		errE := errors.WithStack(err)
+		errors.Details(errE)["url"] = metadataURL
+		errors.Details(errE)["metadata"] = string(rawMetadata)
 		return types.EntityDescriptor{}, errE
 	}
 
