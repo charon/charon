@@ -281,14 +281,14 @@ func TestParseAttributeValue(t *testing.T) { //nolint:maintidx
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			result, err := charon.TestingParseAttributeValue(tt.input)
+			result, errE := charon.TestingParseAttributeValue(tt.input)
 
 			if tt.expectError {
-				assert.Error(t, err)
+				assert.Error(t, errE)
 				return
 			}
 
-			require.NoError(t, err)
+			require.NoError(t, errE, "% -+#.1v", errE)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -300,24 +300,24 @@ func TestParseAttributeValueEdgeCases(t *testing.T) {
 	t.Run("maximum int64 value", func(t *testing.T) {
 		t.Parallel()
 		input := types.AttributeValue{Type: "long", Value: "9223372036854775807"}
-		result, err := charon.TestingParseAttributeValue(input)
-		require.NoError(t, err)
+		result, errE := charon.TestingParseAttributeValue(input)
+		require.NoError(t, errE, "% -+#.1v", errE)
 		assert.Equal(t, int64(9223372036854775807), result)
 	})
 
 	t.Run("minimum int64 value", func(t *testing.T) {
 		t.Parallel()
 		input := types.AttributeValue{Type: "long", Value: "-9223372036854775808"}
-		result, err := charon.TestingParseAttributeValue(input)
-		require.NoError(t, err)
+		result, errE := charon.TestingParseAttributeValue(input)
+		require.NoError(t, errE, "% -+#.1v", errE)
 		assert.Equal(t, int64(-9223372036854775808), result)
 	})
 
 	t.Run("zero duration", func(t *testing.T) {
 		t.Parallel()
 		input := types.AttributeValue{Type: "duration", Value: "P0D"}
-		result, err := charon.TestingParseAttributeValue(input)
-		require.NoError(t, err)
+		result, errE := charon.TestingParseAttributeValue(input)
+		require.NoError(t, errE, "% -+#.1v", errE)
 		assert.Equal(t, time.Duration(0), result)
 	})
 
@@ -325,16 +325,16 @@ func TestParseAttributeValueEdgeCases(t *testing.T) {
 		t.Parallel()
 		// This should now work because we use the last colon to split the namespace.
 		input := types.AttributeValue{Type: "http://www.w3.org/2001/XMLSchema:int", Value: "42"}
-		result, err := charon.TestingParseAttributeValue(input)
-		require.NoError(t, err)
+		result, errE := charon.TestingParseAttributeValue(input)
+		require.NoError(t, errE, "% -+#.1v", errE)
 		assert.Equal(t, int64(42), result)
 	})
 
 	t.Run("fractional seconds in duration", func(t *testing.T) {
 		t.Parallel()
 		input := types.AttributeValue{Type: "duration", Value: "PT1.5S"}
-		result, err := charon.TestingParseAttributeValue(input)
-		require.NoError(t, err)
+		result, errE := charon.TestingParseAttributeValue(input)
+		require.NoError(t, errE, "% -+#.1v", errE)
 		assert.Equal(t, 1500*time.Millisecond, result)
 	})
 }
@@ -383,8 +383,8 @@ func TestParseAttributeValueComplexDuration(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			input := types.AttributeValue{Type: "duration", Value: tt.input}
-			result, err := charon.TestingParseAttributeValue(input)
-			require.NoError(t, err)
+			result, errE := charon.TestingParseAttributeValue(input)
+			require.NoError(t, errE, "% -+#.1v", errE)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
