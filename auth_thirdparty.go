@@ -26,20 +26,20 @@ func (s *Service) AuthThirdPartyProviderPost(w http.ResponseWriter, req *http.Re
 }
 
 func (s *Service) handleAuthThirdPartyProvider(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	providerName := Provider(params["provider"])
+	providerKey := Provider(params["provider"])
 
-	if p, ok := s.oidcProviders()[providerName]; providerName != "" && ok {
-		s.handleOIDCCallback(w, req, providerName, p)
+	if p, ok := s.oidcProviders()[providerKey]; providerKey != "" && ok {
+		s.handleOIDCCallback(w, req, providerKey, p)
 		return
 	}
 
-	if p, ok := s.samlProviders()[providerName]; providerName != "" && ok {
-		s.handleSAMLCallback(w, req, providerName, p)
+	if p, ok := s.samlProviders()[providerKey]; providerKey != "" && ok {
+		s.handleSAMLCallback(w, req, providerKey, p)
 		return
 	}
 
 	errE := errors.New("unknown provider")
-	errors.Details(errE)["provider"] = providerName
+	errors.Details(errE)["provider"] = providerKey
 	s.NotFoundWithError(w, req, errE)
 }
 
@@ -61,19 +61,19 @@ func (s *Service) AuthFlowThirdPartyProviderStartPost(w http.ResponseWriter, req
 		return
 	}
 
-	providerName := providerStart.Provider
+	providerKey := providerStart.Provider
 
-	if p, ok := s.oidcProviders()[providerName]; providerName != "" && ok {
-		s.handleOIDCProviderStart(ctx, w, req, flow, providerName, p)
+	if p, ok := s.oidcProviders()[providerKey]; providerKey != "" && ok {
+		s.handleOIDCProviderStart(ctx, w, req, flow, providerKey, p)
 		return
 	}
 
-	if p, ok := s.samlProviders()[providerName]; providerName != "" && ok {
-		s.handleSAMLProviderStart(ctx, w, req, flow, providerName, p)
+	if p, ok := s.samlProviders()[providerKey]; providerKey != "" && ok {
+		s.handleSAMLProviderStart(ctx, w, req, flow, providerKey, p)
 		return
 	}
 
 	errE = errors.New("unknown provider")
-	errors.Details(errE)["provider"] = providerName
+	errors.Details(errE)["provider"] = providerKey
 	s.BadRequestWithError(w, req, errE)
 }

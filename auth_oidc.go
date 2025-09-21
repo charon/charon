@@ -16,6 +16,7 @@ import (
 )
 
 type oidcProvider struct {
+	Key          Provider
 	Name         string
 	Provider     *oidc.Provider
 	Verifier     *oidc.IDTokenVerifier
@@ -31,7 +32,7 @@ func initOIDCProviders(config *Config, service *Service, domain string, provider
 			if p.Type != ThirdPartyProviderOIDC {
 				continue
 			}
-			config.Logger.Debug().Msgf("enabling %s OIDC provider", p.Name)
+			config.Logger.Debug().Msgf("enabling %s OIDC provider", p.Key)
 
 			path, errE := service.Reverse("AuthThirdPartyProvider", waf.Params{"provider": string(p.Key)}, nil)
 			if errE != nil {
@@ -96,6 +97,7 @@ func initOIDCProviders(config *Config, service *Service, domain string, provider
 			}
 
 			oidcProviders[p.Key] = oidcProvider{
+				Key:          p.Key,
 				Name:         p.Name,
 				Provider:     provider,
 				Verifier:     provider.Verifier(&oidc.Config{ClientID: p.oidcClientID}), //nolint:exhaustruct
@@ -146,7 +148,7 @@ func (s *Service) handleOIDCProviderStart(ctx context.Context, w http.ResponseWr
 	}, nil)
 }
 
-func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, providerName Provider, provider oidcProvider) {
+func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, providerKey Provider, provider oidcProvider) {
 	ctx := req.Context()
 
 	// State should be provided even in the case of an error.
@@ -177,7 +179,7 @@ func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, p
 		errE = errors.New("OIDC authorization error")
 		errors.Details(errE)["code"] = errorCode
 		errors.Details(errE)["description"] = errorDescription
-		errors.Details(errE)["provider"] = providerName
+		errors.Details(errE)["provider"] = providerKey
 		s.failAuthStep(w, req, false, flow, errE)
 		return
 	}
@@ -192,7 +194,7 @@ func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, p
 	oauth2Token, err := provider.Config.Exchange(ctx, req.Form.Get("code"), opts...)
 	if err != nil {
 		errE = errors.WithStack(err)
-		errors.Details(errE)["provider"] = providerName
+		errors.Details(errE)["provider"] = providerKey
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
@@ -200,7 +202,7 @@ func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, p
 	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
 	if !ok {
 		errE = errors.New("ID token missing")
-		errors.Details(errE)["provider"] = providerName
+		errors.Details(errE)["provider"] = providerKey
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
@@ -208,14 +210,14 @@ func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, p
 	idToken, err := provider.Verifier.Verify(ctx, rawIDToken)
 	if err != nil {
 		errE = errors.WithStack(err)
-		errors.Details(errE)["provider"] = providerName
+		errors.Details(errE)["provider"] = providerKey
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
 	if idToken.Nonce != flowOIDC.Nonce {
 		errE = errors.New("nonce mismatch")
-		errors.Details(errE)["provider"] = providerName
+		errors.Details(errE)["provider"] = providerKey
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
@@ -224,17 +226,17 @@ func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, p
 	err = idToken.Claims(&jsonData)
 	if err != nil {
 		errE = errors.WithStack(err)
-		errors.Details(errE)["provider"] = providerName
+		errors.Details(errE)["provider"] = providerKey
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	account, errE := s.getAccountByCredential(ctx, providerName, idToken.Subject)
+	account, errE := s.getAccountByCredential(ctx, providerKey, idToken.Subject)
 	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
-		errors.Details(errE)["provider"] = providerName
+		errors.Details(errE)["provider"] = providerKey
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	s.completeAuthStep(w, req, false, flow, account, []Credential{{ID: idToken.Subject, Provider: providerName, Data: jsonData}})
+	s.completeAuthStep(w, req, false, flow, account, []Credential{{ID: idToken.Subject, Provider: providerKey, Data: jsonData}})
 }

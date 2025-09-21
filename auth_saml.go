@@ -28,6 +28,7 @@ const (
 )
 
 type samlProvider struct {
+	Key      Provider
 	Name     string
 	Provider *saml2.SAMLServiceProvider
 	Mapping  SAMLAttributeMapping
@@ -43,7 +44,7 @@ func initSAMLProviders(config *Config, service *Service, domain string, provider
 
 			provider, errE := initSAMLProvider(config, service, host, p)
 			if errE != nil {
-				errors.Details(errE)["name"] = p.Name
+				errors.Details(errE)["provider"] = p.Key
 				panic(errE)
 			}
 
@@ -55,7 +56,7 @@ func initSAMLProviders(config *Config, service *Service, domain string, provider
 }
 
 func initSAMLProvider(config *Config, service *Service, host string, p SiteProvider) (samlProvider, errors.E) {
-	config.Logger.Debug().Msgf("enabling %s SAML provider", p.Name)
+	config.Logger.Debug().Msgf("enabling %s SAML provider", p.Key)
 
 	path, errE := service.ReverseAPI("AuthThirdPartyProvider", waf.Params{"provider": string(p.Key)}, nil)
 	if errE != nil {
@@ -112,6 +113,7 @@ func initSAMLProvider(config *Config, service *Service, host string, p SiteProvi
 	}
 
 	return samlProvider{
+		Key:      p.Key,
 		Name:     p.Name,
 		Provider: sp,
 		Mapping:  p.samlAttributeMapping,
@@ -293,7 +295,7 @@ func (s *Service) handleSAMLProviderStart(ctx context.Context, w http.ResponseWr
 	}, nil)
 }
 
-func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, providerName Provider, provider samlProvider) {
+func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, providerKey Provider, provider samlProvider) {
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -329,7 +331,7 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		errE = errors.New("SAML authentication error")
 		errors.Details(errE)["code"] = errorCode
 		errors.Details(errE)["description"] = errorDescription
-		errors.Details(errE)["provider"] = providerName
+		errors.Details(errE)["provider"] = providerKey
 		s.failAuthStep(w, req, false, flow, errE)
 		return
 	}
@@ -341,45 +343,45 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 	assertionInfo, err := provider.Provider.RetrieveAssertionInfo(req.Form.Get("SAMLResponse"))
 	if err != nil {
 		errE = errors.WithStack(err)
-		errors.Details(errE)["provider"] = providerName
+		errors.Details(errE)["provider"] = providerKey
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
 	errE = validateSAMLAssertion(assertionInfo)
 	if errE != nil {
-		errors.Details(errE)["provider"] = providerName
+		errors.Details(errE)["provider"] = providerKey
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
 	attributes, errE := getSAMLAttributes(assertionInfo, provider.Mapping)
 	if errE != nil {
-		errors.Details(errE)["provider"] = providerName
+		errors.Details(errE)["provider"] = providerKey
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
 	jsonData, err := json.Marshal(attributes)
 	if err != nil {
-		errors.Details(errE)["provider"] = providerName
+		errors.Details(errE)["provider"] = providerKey
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
 	credentialID, errE := getSAMLCredentialID(assertionInfo, attributes, provider.Mapping.CredentialIDAttributes)
 	if errE != nil {
-		errors.Details(errE)["provider"] = providerName
+		errors.Details(errE)["provider"] = providerKey
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
-	account, errE := s.getAccountByCredential(ctx, providerName, credentialID)
+	account, errE := s.getAccountByCredential(ctx, providerKey, credentialID)
 	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
-		errors.Details(errE)["provider"] = providerName
+		errors.Details(errE)["provider"] = providerKey
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	s.completeAuthStep(w, req, false, flow, account, []Credential{{ID: credentialID, Provider: providerName, Data: jsonData}})
+	s.completeAuthStep(w, req, false, flow, account, []Credential{{ID: credentialID, Provider: providerKey, Data: jsonData}})
 }
