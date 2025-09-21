@@ -22,6 +22,9 @@ require (
 	golang.org/x/oauth2 v0.23.0
 )
 
+// TODO: Remove when https://github.com/alecthomas/kong/pull/555 is merged.
+replace github.com/alecthomas/kong => github.com/mitar/kong v0.2.20-0.20250920233244-fa28ee528aa2
+
 require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
