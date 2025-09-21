@@ -408,7 +408,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			samlEntityID:         "",
 			samlMetadataURL:      "",
 			samlKeyStore:         nil,
-			samlAttributeMapping: SAMLAttributeMapping{},
+			samlAttributeMapping: SAMLAttributeMapping{}, //nolint:exhaustruct
 		})
 	}
 	if config.Providers.Facebook.ClientID != "" && config.Providers.Facebook.Secret != nil {
@@ -427,7 +427,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			samlEntityID:         "",
 			samlMetadataURL:      "",
 			samlKeyStore:         nil,
-			samlAttributeMapping: SAMLAttributeMapping{},
+			samlAttributeMapping: SAMLAttributeMapping{}, //nolint:exhaustruct
 		})
 	}
 	if config.Providers.OIDCTesting.ClientID != "" && config.Providers.OIDCTesting.Secret != nil && config.Providers.OIDCTesting.Issuer != "" {
@@ -446,7 +446,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			samlEntityID:         "",
 			samlMetadataURL:      "",
 			samlKeyStore:         nil,
-			samlAttributeMapping: SAMLAttributeMapping{},
+			samlAttributeMapping: SAMLAttributeMapping{}, //nolint:exhaustruct
 		})
 	}
 
