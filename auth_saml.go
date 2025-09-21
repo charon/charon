@@ -218,7 +218,7 @@ func extractIDPCertificates(metadata types.EntityDescriptor) (*dsig.MemoryX509Ce
 	return certStore, nil
 }
 
-func (p *SiteProvider) initSAMLKeyStore() errors.E {
+func (p *SiteProvider) initSAMLKeyStore() errors.E { //nolint:unparam
 	// TODO: Properly load keys from the disk based on configuration for this provider.
 	//       Only if the keys are not available, and we are in development mode, generate them.
 	p.samlKeyStore = dsig.RandomKeyStoreForTest()
