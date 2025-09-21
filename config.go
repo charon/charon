@@ -102,12 +102,12 @@ func (p *Providers) Validate() error {
 
 //nolint:lll
 type Mail struct {
-	Host     string               `                                                                         help:"Host to send e-mails to. If not set, e-mails are logged instead."                                  yaml:"host"`
-	Port     int                  `default:"25"                                                             help:"Port to send e-mails to."                                placeholder:"INT"    yaml:"port"`
-	Username string               `                                                                         help:"Username to use to send e-mails."                                                                  yaml:"username"`
-	Password kong.FileContentFlag `                                                     env:"PASSWORD_PATH" help:"File with password to use to send e-mails."     placeholder:"PATH"   yaml:"password"`
-	Auth     string               `default:"${defaultMailAuth}" enum:"${mailAuthTypes}"                     help:"Authentication type to use." placeholder:"STRING" yaml:"auth"`
-	From     string               `default:"${defaultMailFrom}"                                             help:"From header for e-mails."                                placeholder:"EMAIL"  yaml:"from"`
+	Host     string               `                                                                         help:"Host to send e-mails to. If not set, e-mails are logged instead."                      yaml:"host"`
+	Port     int                  `default:"25"                                                             help:"Port to send e-mails to."                                         placeholder:"INT"    yaml:"port"`
+	Username string               `                                                                         help:"Username to use to send e-mails."                                                      yaml:"username"`
+	Password kong.FileContentFlag `                                                     env:"PASSWORD_PATH" help:"File with password to use to send e-mails."                       placeholder:"PATH"   yaml:"password"`
+	Auth     string               `default:"${defaultMailAuth}" enum:"${mailAuthTypes}"                     help:"Authentication type to use."                                      placeholder:"STRING" yaml:"auth"`
+	From     string               `default:"${defaultMailFrom}"                                             help:"From header for e-mails."                                         placeholder:"EMAIL"  yaml:"from"`
 
 	// Exposed primarily for use in tests.
 	NotRequiredTLS bool `json:"-" kong:"-" yaml:"-"`
@@ -199,9 +199,9 @@ type Config struct {
 	Config  cli.ConfigFlag    `         help:"Load configuration from a JSON or YAML file." name:"config" placeholder:"PATH" short:"c" yaml:"-"`
 	Server  waf.Server[*Site] `embed:""                                                                                                yaml:",inline"`
 
-	Domains      []string             `                  help:"Domain name(s) to use. If not provided, they are determined from domain names found in TLS certificates."                                                               name:"domain" placeholder:"STRING" yaml:"domains"`
-	MainDomain   string               `                  help:"When using multiple domains, which one is the main one."                                                                                                                                                   yaml:"mainDomain"`
-	ExternalPort int                  `                  help:"Port on which Charon is accessible when it is different from the port on which the program listens."                                                                                  placeholder:"INT"    yaml:"externalPort"`
+	Domains      []string             `                  help:"Domain name(s) to use. If not provided, they are determined from domain names found in TLS certificates."                                 name:"domain" placeholder:"STRING" yaml:"domains"`
+	MainDomain   string               `                  help:"When using multiple domains, which one is the main one."                                                                                                                     yaml:"mainDomain"`
+	ExternalPort int                  `                  help:"Port on which Charon is accessible when it is different from the port on which the program listens."                                                    placeholder:"INT"    yaml:"externalPort"`
 	Secret       kong.FileContentFlag `env:"SECRET_PATH" help:"File with base64 (URL encoding, no padding) encoded 32 bytes with \"${secretPrefixCharonConfig}\" prefix used for session and OIDC HMAC."               placeholder:"PATH"   yaml:"secret"`
 
 	Providers Providers `embed:"" group:"Providers:" yaml:"providers"`

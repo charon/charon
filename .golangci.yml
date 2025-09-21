@@ -8,6 +8,9 @@ linters-settings:
     scope: all
   goimports:
     local-prefixes: gitlab.com/charon/charon
+  gomoddirectives:
+    replace-allow-list:
+      - github.com/alecthomas/kong
   gosimple:
     checks:
       - all
