@@ -145,9 +145,13 @@ func tryParseTime(layouts []string, s string) (time.Time, bool) {
 func parseAttributeValue(value types.AttributeValue) (any, errors.E) {
 	// Remove namespace prefix. We assume standard types, only that
 	// the namespace prefix is maybe custom, but we simply ignore it.
-	namespace, valueType, ok := strings.Cut(value.Type, ":")
-	if !ok {
-		valueType = namespace
+	// Use the last colon to handle complex namespaces like "http://www.w3.org/2001/XMLSchema:int".
+	lastColonIndex := strings.LastIndex(value.Type, ":")
+	var valueType string
+	if lastColonIndex == -1 {
+		valueType = value.Type
+	} else {
+		valueType = value.Type[lastColonIndex+1:]
 	}
 	switch valueType {
 	case "byte", "short", "int", "integer", "long", "negativeInteger", "nonNegativeInteger", "nonPositiveInteger", "positiveInteger",

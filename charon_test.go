@@ -3,6 +3,7 @@ package charon //nolint:testpackage
 import (
 	"context"
 
+	"github.com/russellhaering/gosaml2/types"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/identifier"
 )
@@ -94,4 +95,8 @@ func TestingOrganizationRefCmp(a OrganizationRef, b OrganizationRef) int {
 
 func TestingOrganizationApplicationRefCmp(a OrganizationApplicationRef, b OrganizationApplicationRef) int {
 	return organizationApplicationRefCmp(a, b)
+}
+
+func TestingParseAttributeValue(value types.AttributeValue) (any, errors.E) {
+	return parseAttributeValue(value)
 }
