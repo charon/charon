@@ -20,7 +20,7 @@ func (s *Service) OIDCTokenPost(w http.ResponseWriter, req *http.Request, _ waf.
 	oidc := s.oidc()
 
 	// Create an empty session object which serves as a prototype of the reconstructed session object.
-	// For client credentials grant type there is no reconstruction and then we set subject to client's
+	// For client credentials grant type there is no reconstruction, and then we set subject to client's
 	// ID in those tokens, because client credentials based tokens do not have associated
 	// user, but represent access for the client itself.
 	sessionData := new(OIDCSession)

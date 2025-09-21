@@ -1,6 +1,7 @@
 package charon
 
 import (
+	dsig "github.com/russellhaering/goxmldsig"
 	"gitlab.com/tozd/waf"
 )
 
@@ -11,9 +12,9 @@ type Build struct {
 }
 
 type SiteProvider struct {
-	Key  Provider `json:"key"`
-	Name string   `json:"name"`
-	Type string   `json:"type"`
+	Key  Provider               `json:"key"`
+	Name string                 `json:"name"`
+	Type ThirdPartyProviderType `json:"type"`
 
 	// Private fields.
 	oidcIssuer    string
@@ -23,6 +24,11 @@ type SiteProvider struct {
 	oidcAuthURL   string
 	oidcTokenURL  string
 	oidcScopes    []string
+
+	samlEntityID         string
+	samlMetadataURL      string
+	samlKeyStore         dsig.X509KeyStore
+	samlAttributeMapping SAMLAttributeMapping
 }
 
 type Site struct {

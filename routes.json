@@ -120,11 +120,11 @@
     {
       "name": "AuthThirdPartyProvider",
       "path": "/auth/provider/:provider",
-      "api": null,
+      "api": {},
       "get": {}
     },
     {
-      "name": "AuthFlowProviderStart",
+      "name": "AuthFlowThirdPartyProviderStart",
       "path": "/auth/providerStart/:id",
       "api": {},
       "get": null

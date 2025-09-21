@@ -85,7 +85,7 @@ export type AuthFlowResponse = {
     }
 )
 
-export type AuthFlowProviderStartRequest = {
+export type AuthFlowThirdPartyProviderStartRequest = {
   provider: string
 }
 

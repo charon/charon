@@ -24,9 +24,10 @@ func main() {
 		"defaultTLSCache":          charon.DefaultTLSCache,
 		"defaultMailAuth":          "none",
 		"defaultMailFrom":          "noreply@example.com",
+		"defaultSIPASSMetadataURL": charon.DefaultSIPASSMetadataURL,
 		"mailAuthTypes":            strings.Join(mailAuthTypes, ","),
 		"secretPrefixCharonConfig": charon.SecretPrefixCharonConfig,
-		"developmentModeHelp":      " Proxy unknown requests, send debug messages to clients, generate the secret and private keys if not provided. LEAKS SENSITIVE INFORMATION!",
+		"developmentModeHelp":      " Proxy unknown requests, send debug messages to clients, generate the secret and private keys if not provided, enable MockSAML provider. LEAKS SENSITIVE INFORMATION!",
 	}, func(ctx *kong.Context) errors.E {
 		return errors.WithStack(ctx.Run())
 	}, kong.Groups{

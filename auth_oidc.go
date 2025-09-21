@@ -4,22 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"slices"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/hashicorp/go-cleanhttp"
 	"gitlab.com/tozd/go/errors"
-	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 	"golang.org/x/oauth2"
 )
-
-type AuthFlowResponseThirdPartyProvider struct {
-	Location string `json:"location"`
-}
 
 type oidcProvider struct {
 	Name         string
@@ -34,7 +28,10 @@ func initOIDCProviders(config *Config, service *Service, domain string, provider
 	return initWithHost(config, domain, func(host string) map[Provider]oidcProvider {
 		oidcProviders := map[Provider]oidcProvider{}
 		for _, p := range providers {
-			config.Logger.Debug().Msgf("enabling %s provider", p.Name)
+			if p.Type != ThirdPartyProviderOIDC {
+				continue
+			}
+			config.Logger.Debug().Msgf("enabling %s OIDC provider", p.Name)
 
 			path, errE := service.Reverse("AuthThirdPartyProvider", waf.Params{"provider": string(p.Key)}, nil)
 			if errE != nil {
@@ -111,38 +108,7 @@ func initOIDCProviders(config *Config, service *Service, domain string, provider
 	})
 }
 
-type AuthFlowProviderStartRequest struct {
-	Provider Provider `json:"provider"`
-}
-
-func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	defer req.Body.Close()
-	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
-
-	ctx := req.Context()
-
-	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
-	if flow == nil {
-		return
-	}
-
-	var providerStart AuthFlowProviderStartRequest
-	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &providerStart)
-	if errE != nil {
-		s.BadRequestWithError(w, req, errE)
-		return
-	}
-
-	providerName := providerStart.Provider
-
-	provider, ok := s.oidcProviders()[providerName]
-	if providerName == "" || !ok {
-		errE = errors.New("unknown provider")
-		errors.Details(errE)["provider"] = providerName
-		s.BadRequestWithError(w, req, errE)
-		return
-	}
-
+func (s *Service) handleOIDCProviderStart(ctx context.Context, w http.ResponseWriter, req *http.Request, flow *Flow, providerName Provider, provider oidcProvider) {
 	flow.ClearAuthStep("")
 	// Currently we support only one factor.
 	flow.Providers = []Provider{providerName}
@@ -159,7 +125,7 @@ func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Req
 		opts = append(opts, oauth2.S256ChallengeOption(flow.OIDCProvider.Verifier))
 	}
 
-	errE = s.setFlow(ctx, flow)
+	errE := s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -180,18 +146,8 @@ func (s *Service) AuthFlowProviderStartPost(w http.ResponseWriter, req *http.Req
 	}, nil)
 }
 
-func (s *Service) AuthThirdPartyProvider(w http.ResponseWriter, req *http.Request, params waf.Params) {
+func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, providerName Provider, provider oidcProvider) {
 	ctx := req.Context()
-
-	providerName := Provider(params["provider"])
-
-	provider, ok := s.oidcProviders()[providerName]
-	if providerName == "" || !ok {
-		errE := errors.New("unknown provider")
-		errors.Details(errE)["provider"] = providerName
-		s.NotFoundWithError(w, req, errE)
-		return
-	}
 
 	// State should be provided even in the case of an error.
 	flow := s.GetActiveFlowNoAuthStep(w, req, req.Form.Get("state"))
@@ -200,13 +156,13 @@ func (s *Service) AuthThirdPartyProvider(w http.ResponseWriter, req *http.Reques
 	}
 
 	if flow.OIDCProvider == nil {
-		s.BadRequestWithError(w, req, errors.New("provider not started"))
+		s.BadRequestWithError(w, req, errors.New("OIDC provider not started"))
 		return
 	}
 
 	flowOIDC := *flow.OIDCProvider
 
-	// We reset flow.ThirdPartyProvider to nil always after this point, even if there is a failure,
+	// We reset flow.OIDCProvider to nil always after this point, even if there is a failure,
 	// so that nonce cannot be reused.
 	flow.OIDCProvider = nil
 	errE := s.setFlow(ctx, flow)
@@ -218,7 +174,7 @@ func (s *Service) AuthThirdPartyProvider(w http.ResponseWriter, req *http.Reques
 	errorCode := req.Form.Get("error")
 	errorDescription := req.Form.Get("error_description")
 	if errorCode != "" || errorDescription != "" {
-		errE = errors.New("authorization error")
+		errE = errors.New("OIDC authorization error")
 		errors.Details(errE)["code"] = errorCode
 		errors.Details(errE)["description"] = errorDescription
 		errors.Details(errE)["provider"] = providerName
@@ -229,7 +185,6 @@ func (s *Service) AuthThirdPartyProvider(w http.ResponseWriter, req *http.Reques
 	ctx = oidc.ClientContext(ctx, provider.Client)
 
 	opts := []oauth2.AuthCodeOption{}
-
 	if provider.SupportsPKCE {
 		opts = append(opts, oauth2.VerifierOption(flowOIDC.Verifier))
 	}
