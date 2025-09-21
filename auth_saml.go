@@ -173,12 +173,6 @@ func extractIDPCertificates(metadata types.EntityDescriptor) (*dsig.MemoryX509Ce
 	}
 
 	for kdIdx, kd := range metadata.IDPSSODescriptor.KeyDescriptors {
-		if len(kd.KeyInfo.X509Data.X509Certificates) == 0 {
-			errE := errors.New("KeyDescriptor missing X509Certificate")
-			errors.Details(errE)["entityID"] = metadata.EntityID
-			errors.Details(errE)["keyDescriptorIndex"] = kdIdx
-			return nil, errE
-		}
 		for certIdx, xcert := range kd.KeyInfo.X509Data.X509Certificates {
 			if strings.TrimSpace(xcert.Data) == "" {
 				errE := errors.New("metadata certificate must not be empty")
