@@ -33,7 +33,7 @@ const (
 type samlProvider struct {
 	Name     string
 	Provider *saml2.SAMLServiceProvider
-	Resolver SAMLCredentialResolver
+	Mapping  SAMLAttributeMapping
 }
 
 func initSAMLProviders(config *Config, service *Service, domain string, providers []SiteProvider) (func() map[Provider]samlProvider, errors.E) {
@@ -119,12 +119,10 @@ func initSingleSAMLProvider(config *Config, service *Service, host string, clien
 		return samlProvider{}, errors.WithMessage(errKeyStore, "failed to set SP keystore")
 	}
 
-	resolver := CreateSAMLResolver(p)
-
 	return samlProvider{
 		Name:     p.Name,
 		Provider: sp,
-		Resolver: resolver,
+		Mapping:  p.samlAttributeMapping,
 	}, nil
 }
 
@@ -387,7 +385,14 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	credentialID, errE := provider.Resolver.ResolveCredentialID(assertionInfo)
+	attributes, errE := getSAMLAttributes(assertionInfo, provider.Mapping)
+	if errE != nil {
+		errors.Details(errE)["provider"] = providerName
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	credentialID, errE := getSAMLCredentialID(assertionInfo, attributes, provider.Mapping.CredentialIDAttributes)
 	if errE != nil {
 		errors.Details(errE)["provider"] = providerName
 		s.BadRequestWithError(w, req, errE)
@@ -401,7 +406,6 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	attributes := extractSAMLAttributes(assertionInfo, provider.Resolver)
 	jsonData, err := json.Marshal(attributes)
 	if err != nil {
 		errors.Details(errE)["provider"] = providerName
@@ -420,47 +424,4 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		Provider: providerName,
 		Data:     jsonData,
 	}})
-}
-
-func extractSAMLAttributes(assertionInfo *saml2.AssertionInfo, resolver SAMLCredentialResolver) map[string]interface{} {
-	attributes := map[string]interface{}{}
-
-	mapping := resolver.GetAttributeMapping()
-
-	for samlAttr, standardClaim := range mapping.Mappings {
-		if attr, exists := assertionInfo.Values[samlAttr]; exists {
-			var values []string
-			for _, v := range attr.Values {
-				value := strings.TrimSpace(v.Value)
-				if value != "" {
-					values = append(values, value)
-				}
-			}
-			if len(values) > 0 {
-				attributes[standardClaim] = values
-			}
-		}
-	}
-
-	for key, attr := range assertionInfo.Values {
-		if _, isMapped := mapping.Mappings[key]; isMapped {
-			continue
-		}
-		attrName := key
-		if attr.FriendlyName != "" {
-			attrName = attr.FriendlyName
-		}
-		var values []string
-		for _, v := range attr.Values {
-			value := strings.TrimSpace(v.Value)
-			if value != "" {
-				values = append(values, value)
-			}
-		}
-		if len(values) > 0 {
-			attributes[attrName] = values
-		}
-	}
-
-	return attributes
 }
