@@ -2,7 +2,6 @@ package charon
 
 import (
 	"context"
-	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
@@ -10,8 +9,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/hashicorp/go-cleanhttp"
@@ -40,12 +37,11 @@ func initSAMLProviders(config *Config, service *Service, domain string, provider
 	return initWithHost(config, domain, func(host string) map[Provider]samlProvider {
 		samlProviders := map[Provider]samlProvider{}
 		for _, p := range providers {
-			if p.Type != ThirdPartyProviderSAML || p.samlMetadataURL == "" {
+			if p.Type != ThirdPartyProviderSAML {
 				continue
 			}
 
-			client := cleanhttp.DefaultPooledClient()
-			provider, errE := initSingleSAMLProvider(config, service, host, client, p)
+			provider, errE := initSAMLProvider(config, service, host, p)
 			if errE != nil {
 				errors.Details(errE)["name"] = p.Name
 				panic(errE)
@@ -58,14 +54,15 @@ func initSAMLProviders(config *Config, service *Service, domain string, provider
 	})
 }
 
-func initSingleSAMLProvider(config *Config, service *Service, host string, client *http.Client, p SiteProvider) (samlProvider, errors.E) {
-	config.Logger.Debug().Msgf("enabling SAML provider %s", p.Name)
+func initSAMLProvider(config *Config, service *Service, host string, p SiteProvider) (samlProvider, errors.E) {
+	config.Logger.Debug().Msgf("enabling %s SAML provider", p.Name)
 
 	path, errE := service.ReverseAPI("AuthThirdPartyProvider", waf.Params{"provider": string(p.Key)}, nil)
 	if errE != nil {
 		return samlProvider{}, errE
 	}
 
+	client := cleanhttp.DefaultPooledClient()
 	metadata, errE := fetchSAMLMetadata(context.Background(), client, p.samlMetadataURL)
 	if errE != nil {
 		return samlProvider{}, errors.WithMessage(errE, "failed to fetch metadata")
@@ -73,17 +70,12 @@ func initSingleSAMLProvider(config *Config, service *Service, host string, clien
 
 	certStore, errE := extractIDPCertificates(metadata)
 	if errE != nil {
-		return samlProvider{}, errors.WithMessagef(errE, "failed to extract certificates for provider %s", p.Name)
-	}
-
-	_, errE = p.loadOrCreateSPKeyStore(config)
-	if errE != nil {
-		return samlProvider{}, errors.WithMessagef(errE, "failed to load SP keys for provider %s", p.Name)
+		return samlProvider{}, errors.WithMessage(errE, "failed to extract IDP certificates")
 	}
 
 	privateKey, cert, err := p.samlKeyStore.GetKeyPair()
 	if err != nil {
-		return samlProvider{}, errors.WithMessagef(err, "failed to get SP KeyPair for provider %s", p.Name)
+		return samlProvider{}, errors.WithMessage(err, "failed to get SP key-pair")
 	}
 
 	ssoURL := ""
@@ -130,14 +122,14 @@ func fetchSAMLMetadata(ctx context.Context, client *http.Client, metadataURL str
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, metadataURL, nil)
 	if err != nil {
 		errE := errors.WithStack(err)
-		errors.Details(errE)["metadataURL"] = metadataURL
+		errors.Details(errE)["url"] = metadataURL
 		return types.EntityDescriptor{}, errE
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
 		errE := errors.WithStack(err)
-		errors.Details(errE)["metadataURL"] = metadataURL
+		errors.Details(errE)["url"] = metadataURL
 		return types.EntityDescriptor{}, errE
 	}
 	defer resp.Body.Close()
@@ -232,40 +224,11 @@ func extractIDPCertificates(metadata types.EntityDescriptor) (*dsig.MemoryX509Ce
 	return certStore, nil
 }
 
-func (p *SiteProvider) loadOrCreateSPKeyStore(config *Config) (dsig.X509KeyStore, errors.E) { //nolint:ireturn
-	if config.Server.Development {
-		// In development, use random keys (not persistent).
-		config.Logger.Warn().Msg("using random SAML keys in development mode")
-		p.samlKeyStore = dsig.RandomKeyStoreForTest()
-		return p.samlKeyStore, nil
-	}
-
-	// In production, use persistent keys.
-	keysDir := filepath.Join("saml-keys", string(p.Key))
-	keyPath := filepath.Join(keysDir, "sp-key.pem")
-	certPath := filepath.Join(keysDir, "sp-cert.pem")
-
-	if _, err := os.Stat(keyPath); os.IsNotExist(err) {
-		const dirPermissions = 0o700
-		if err := os.MkdirAll(keysDir, dirPermissions); err != nil {
-			return nil, errors.WithStack(err)
-		}
-
-		keyStore := dsig.RandomKeyStoreForTest()
-		p.samlKeyStore = keyStore
-
-		// TODO: Currently saves keys to disk (we want proper key generation).
-		return keyStore, nil
-	}
-
-	cert, err := tls.LoadX509KeyPair(certPath, keyPath)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	keyStore := dsig.TLSCertKeyStore(cert)
-	p.samlKeyStore = keyStore
-	return keyStore, nil
+func (p *SiteProvider) initSAMLKeyStore() errors.E {
+	// TODO: Properly load keys from the disk based on configuration for this provider.
+	//       Only if the keys are not available, and we are in development mode, generate them.
+	p.samlKeyStore = dsig.RandomKeyStoreForTest()
+	return nil
 }
 
 func validateSAMLAssertion(assertionInfo *saml2.AssertionInfo) errors.E {

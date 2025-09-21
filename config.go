@@ -467,6 +467,11 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			samlKeyStore:         nil,
 			samlAttributeMapping: getSIPASSAttributeMapping(),
 		})
+		errE = providers[len(providers)-1].initSAMLKeyStore()
+		if errE != nil {
+			errors.Details(errE)["provider"] = providers[len(providers)-1].Key
+			return nil, nil, errE
+		}
 	}
 	if config.Server.Development {
 		providers = append(providers, SiteProvider{
@@ -485,6 +490,11 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			samlKeyStore:         nil,
 			samlAttributeMapping: getDefaultAttributeMapping(),
 		})
+		errE = providers[len(providers)-1].initSAMLKeyStore()
+		if errE != nil {
+			errors.Details(errE)["provider"] = providers[len(providers)-1].Key
+			return nil, nil, errE
+		}
 	}
 	if config.Providers.SAMLTesting.MetadataURL != "" && config.Providers.SAMLTesting.EntityID != "" {
 		providers = append(providers, SiteProvider{
@@ -503,6 +513,11 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			samlKeyStore:         nil,
 			samlAttributeMapping: getDefaultAttributeMapping(),
 		})
+		errE = providers[len(providers)-1].initSAMLKeyStore()
+		if errE != nil {
+			errors.Details(errE)["provider"] = providers[len(providers)-1].Key
+			return nil, nil, errE
+		}
 	}
 
 	for _, site := range sites {
