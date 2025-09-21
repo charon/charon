@@ -7,7 +7,6 @@ import (
 	"crypto/rand"
 	"embed"
 	"encoding/base64"
-	"fmt"
 	"io/fs"
 	"net/http"
 	"os"
@@ -70,7 +69,7 @@ func (p *OIDCProvider) Validate() error {
 			return errors.New("missing client ID for provided secret")
 		}
 		if p.Secret == nil {
-			return errors.New("missing client ID's matching secret")
+			return errors.New("missing client ID for provided secret")
 		}
 	}
 	return nil
@@ -86,36 +85,39 @@ type GenericOIDCProvider struct {
 }
 
 type SAMLProvider struct {
-	MetadataURL string `env:"METADATA_URL" help:"${provider}'s metadata URL. Environment variable: ${env}."         yaml:"metadataUrl"`
-	EntityID    string `env:"ENTITY_ID"    help:"${provider}'s entity ID (optional). Environment variable: ${env}." yaml:"entityId"`
+	MetadataURL string `default:"${defaultMetadataURL}" env:"METADATA_URL" help:"${provider}'s metadata URL." placeholder:"URL" yaml:"metadataUrl"`
+	EntityID    string `                                env:"ENTITY_ID"    help:"${provider}'s entity ID."                      yaml:"entityId"`
 }
 
-func (p *SAMLProvider) Validate() error {
-	if p.MetadataURL == "" {
-		return errors.New("metadata URL is required for SAML provider")
+func (s *SAMLProvider) Validate() error {
+	// TODO: When Kong will call Validate, we can get *kong.Context argument to check that this is SIPASS provider and not use DefaultSIPASSMetadataURL.
+	//       Or a provider with MetadataURL set and not the default value (and not an empty string).
+	//       See: https://github.com/alecthomas/kong/issues/554
+	if (s.MetadataURL != "" && s.MetadataURL != DefaultSIPASSMetadataURL) || s.EntityID != "" {
+		if s.MetadataURL == "" {
+			return errors.New("missing metadata URL for provided entity ID")
+		}
+		if s.EntityID == "" {
+			return errors.New("missing entity ID for provided metadata URL")
+		}
 	}
 	return nil
 }
 
-type GenericSAMLProvider struct {
-	SAMLProvider
-	Key  Provider `required:"" yaml:"key"`
-	Name string   `            yaml:"name"`
-}
-
+//nolint:lll
 type Providers struct {
 	Google   OIDCProvider `embed:"" envprefix:"GOOGLE_"   prefix:"google."   set:"provider=Google"   yaml:"google"`
 	Facebook OIDCProvider `embed:"" envprefix:"FACEBOOK_" prefix:"facebook." set:"provider=Facebook" yaml:"facebook"`
 
-	SIPASS        SAMLProvider          `embed:"" envprefix:"SIPASS_" prefix:"sipass." set:"provider=SIPASS" yaml:"sipass"`
-	SAMLProviders []GenericSAMLProvider `                                                                    yaml:"samlProviders"`
+	SIPASS SAMLProvider `embed:"" envprefix:"SIPASS_" prefix:"sipass." set:"provider=SIPASS" set:"defaultMetadataURL=${defaultSIPASSMetadataURL}" yaml:"sipass"` //nolint:staticcheck
 
 	// Exposed primarily for use in tests.
 	OIDCTesting GenericOIDCProvider `json:"-" kong:"-" yaml:"-"`
+	SAMLTesting SAMLProvider        `json:"-" kong:"-" yaml:"-"`
 }
 
 // We have to call Validate on kong-embedded structs ourselves.
-// See: https://github.com/alecthomas/kong/issues/90
+// See: https://github.com/alecthomas/kong/issues/554
 func (p *Providers) Validate() error {
 	if err := p.Google.Validate(); err != nil {
 		return err
@@ -123,18 +125,13 @@ func (p *Providers) Validate() error {
 	if err := p.Facebook.Validate(); err != nil {
 		return err
 	}
-	if p.SIPASS.MetadataURL == "" {
-		p.SIPASS.MetadataURL = sipassDefaultMetadataURL
-	}
-	for i, samlProvider := range p.SAMLProviders {
-		if err := samlProvider.Validate(); err != nil {
-			return fmt.Errorf("SAMLProvider[%d]: %w", i, err)
-		}
-	}
 	if err := p.SIPASS.Validate(); err != nil {
 		return err
 	}
 	if err := p.OIDCTesting.Validate(); err != nil {
+		return err
+	}
+	if err := p.SAMLTesting.Validate(); err != nil {
 		return err
 	}
 	return nil
@@ -252,7 +249,7 @@ type Config struct {
 }
 
 // We have to call Validate on kong-embedded structs ourselves.
-// See: https://github.com/alecthomas/kong/issues/90
+// See: https://github.com/alecthomas/kong/issues/554
 func (config *Config) Validate() error {
 	if err := config.Server.TLS.Validate(); err != nil {
 		return err //nolint:wrapcheck
@@ -403,18 +400,15 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcIssuer:   "https://accounts.google.com",
 			oidcClientID: config.Providers.Google.ClientID,
 			// We trim space so that the file can contain whitespace (e.g., a newline) at the end.
-			oidcSecret:      strings.TrimSpace(string(config.Providers.Google.Secret)),
-			oidcForcePKCE:   false,
-			oidcAuthURL:     "",
-			oidcTokenURL:    "",
-			oidcScopes:      []string{oidc.ScopeOpenID, "email", "profile"},
-			samlEntityID:    "",
-			samlMetadataURL: "",
-			samlKeyStore:    nil,
-			samlAttributeMapping: SAMLAttributeMapping{
-				CredentialIDAttribute: "NameID",
-				Mappings:              map[string]string{},
-			},
+			oidcSecret:           strings.TrimSpace(string(config.Providers.Google.Secret)),
+			oidcForcePKCE:        false,
+			oidcAuthURL:          "",
+			oidcTokenURL:         "",
+			oidcScopes:           []string{oidc.ScopeOpenID, "email", "profile"},
+			samlEntityID:         "",
+			samlMetadataURL:      "",
+			samlKeyStore:         nil,
+			samlAttributeMapping: SAMLAttributeMapping{},
 		})
 	}
 	if config.Providers.Facebook.ClientID != "" && config.Providers.Facebook.Secret != nil {
@@ -425,18 +419,15 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcIssuer:   "https://www.facebook.com",
 			oidcClientID: config.Providers.Facebook.ClientID,
 			// We trim space so that the file can contain whitespace (e.g., a newline) at the end.
-			oidcSecret:      strings.TrimSpace(string(config.Providers.Facebook.Secret)),
-			oidcForcePKCE:   true,
-			oidcAuthURL:     "",
-			oidcTokenURL:    "https://graph.facebook.com/oauth/access_token",
-			oidcScopes:      []string{oidc.ScopeOpenID, "email", "public_profile"},
-			samlEntityID:    "",
-			samlMetadataURL: "",
-			samlKeyStore:    nil,
-			samlAttributeMapping: SAMLAttributeMapping{
-				CredentialIDAttribute: "NameID",
-				Mappings:              map[string]string{},
-			},
+			oidcSecret:           strings.TrimSpace(string(config.Providers.Facebook.Secret)),
+			oidcForcePKCE:        true,
+			oidcAuthURL:          "",
+			oidcTokenURL:         "https://graph.facebook.com/oauth/access_token",
+			oidcScopes:           []string{oidc.ScopeOpenID, "email", "public_profile"},
+			samlEntityID:         "",
+			samlMetadataURL:      "",
+			samlKeyStore:         nil,
+			samlAttributeMapping: SAMLAttributeMapping{},
 		})
 	}
 	if config.Providers.OIDCTesting.ClientID != "" && config.Providers.OIDCTesting.Secret != nil && config.Providers.OIDCTesting.Issuer != "" {
@@ -447,25 +438,19 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcIssuer:   config.Providers.OIDCTesting.Issuer,
 			oidcClientID: config.Providers.OIDCTesting.ClientID,
 			// We trim space so that the file can contain whitespace (e.g., a newline) at the end.
-			oidcSecret:      strings.TrimSpace(string(config.Providers.OIDCTesting.Secret)),
-			oidcForcePKCE:   config.Providers.OIDCTesting.ForcePKCE,
-			oidcAuthURL:     config.Providers.OIDCTesting.AuthURL,
-			oidcTokenURL:    config.Providers.OIDCTesting.TokenURL,
-			oidcScopes:      []string{oidc.ScopeOpenID},
-			samlEntityID:    "",
-			samlMetadataURL: "",
-			samlKeyStore:    nil,
-			samlAttributeMapping: SAMLAttributeMapping{
-				CredentialIDAttribute: "NameID",
-				Mappings:              map[string]string{},
-			},
+			oidcSecret:           strings.TrimSpace(string(config.Providers.OIDCTesting.Secret)),
+			oidcForcePKCE:        config.Providers.OIDCTesting.ForcePKCE,
+			oidcAuthURL:          config.Providers.OIDCTesting.AuthURL,
+			oidcTokenURL:         config.Providers.OIDCTesting.TokenURL,
+			oidcScopes:           []string{oidc.ScopeOpenID},
+			samlEntityID:         "",
+			samlMetadataURL:      "",
+			samlKeyStore:         nil,
+			samlAttributeMapping: SAMLAttributeMapping{},
 		})
 	}
 
-	entityID := config.Providers.SIPASS.EntityID
-	if entityID == "" {
-		entityID = samlSIPASSEntityIDPrefix
-
+	if config.Providers.SIPASS.EntityID != "" {
 		providers = append(providers, SiteProvider{
 			Key:                  "sipass",
 			Name:                 "SIPASS",
@@ -477,13 +462,12 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcAuthURL:          "",
 			oidcTokenURL:         "",
 			oidcScopes:           nil,
-			samlEntityID:         entityID,
-			samlMetadataURL:      sipassDefaultMetadataURL,
+			samlEntityID:         config.Providers.SIPASS.EntityID,
+			samlMetadataURL:      config.Providers.SIPASS.MetadataURL,
 			samlKeyStore:         nil,
 			samlAttributeMapping: getSIPASSAttributeMapping(),
 		})
 	}
-
 	if config.Server.Development {
 		providers = append(providers, SiteProvider{
 			Key:                  "MockSAML",
@@ -502,16 +486,10 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			samlAttributeMapping: getDefaultAttributeMapping(),
 		})
 	}
-
-	for _, samlConfig := range config.Providers.SAMLProviders {
-		entityID := samlConfig.EntityID
-		if entityID == "" {
-			entityID = samlEntityIDPrefix + string(samlConfig.Key)
-		}
-
+	if config.Providers.SAMLTesting.MetadataURL != "" && config.Providers.SAMLTesting.EntityID != "" {
 		providers = append(providers, SiteProvider{
-			Key:                  samlConfig.Key,
-			Name:                 samlConfig.Name,
+			Key:                  "samlTesting",
+			Name:                 "SAML Testing",
 			Type:                 ThirdPartyProviderSAML,
 			oidcIssuer:           "",
 			oidcClientID:         "",
@@ -520,8 +498,8 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcAuthURL:          "",
 			oidcTokenURL:         "",
 			oidcScopes:           nil,
-			samlEntityID:         entityID,
-			samlMetadataURL:      samlConfig.MetadataURL,
+			samlEntityID:         config.Providers.SAMLTesting.EntityID,
+			samlMetadataURL:      config.Providers.SAMLTesting.MetadataURL,
 			samlKeyStore:         nil,
 			samlAttributeMapping: getDefaultAttributeMapping(),
 		})

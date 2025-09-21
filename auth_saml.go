@@ -24,11 +24,10 @@ import (
 )
 
 const (
-	samlSIPASSEntityIDPrefix = "PlastOsem_"                                              //nolint:gosec
-	samlEntityIDPrefix       = "mockSAML_"                                               //nolint:gosec
-	sipassDefaultMetadataURL = "https://sicas.gov.si/static/idp-metadata.xml"            //nolint:gosec
-	mockSAMLMetadataURL      = "https://mocksaml.com/api/namespace/charon/saml/metadata" //nolint:gosec
-	mockSAMLEntityID         = "mockSAML_charon_dev"
+	DefaultSIPASSMetadataURL = "https://sicas.gov.si/static/idp-metadata.xml" //nolint:gosec
+
+	mockSAMLMetadataURL = "https://mocksaml.com/api/namespace/charon/saml/metadata"
+	mockSAMLEntityID    = "mockSAML_charon"
 )
 
 type samlProvider struct {
@@ -101,23 +100,14 @@ func initSingleSAMLProvider(config *Config, service *Service, host string, clien
 		return samlProvider{}, errors.New("HTTP-Redirect binding not supported")
 	}
 
-	entityID := p.samlEntityID
-	if entityID == "" {
-		if p.Key == "sipass" {
-			entityID = samlSIPASSEntityIDPrefix + string(p.Key)
-		} else {
-			entityID = samlEntityIDPrefix + string(p.Key)
-		}
-	}
-
 	sp := &saml2.SAMLServiceProvider{ //nolint:exhaustruct
 		IdentityProviderSSOURL:      ssoURL,
 		IdentityProviderSSOBinding:  saml2.BindingHttpRedirect,
 		IdentityProviderIssuer:      metadata.EntityID,
-		ServiceProviderIssuer:       entityID,
+		ServiceProviderIssuer:       p.samlEntityID,
 		AssertionConsumerServiceURL: fmt.Sprintf("https://%s%s", host, path),
 		SignAuthnRequests:           true,
-		AudienceURI:                 entityID,
+		AudienceURI:                 p.samlEntityID,
 		IDPCertificateStore:         certStore,
 	}
 
