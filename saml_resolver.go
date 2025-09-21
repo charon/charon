@@ -73,17 +73,17 @@ func getSAMLCredentialID(assertionInfo *saml2.AssertionInfo, attributes map[stri
 	return string(credentialID), nil
 }
 
-var xmlTimeFormats = []string{
+var xmlTimeFormats = []string{ //nolint:gochecknoglobals
 	"15:04:05.999999999Z07:00",
 	"15:04:05.999999999",
 }
 
-var xmlDateTimeFormats = []string{
+var xmlDateTimeFormats = []string{ //nolint:gochecknoglobals
 	"2006-01-02T15:04:05.999999999Z07:00",
 	"2006-01-02T15:04:05.999999999",
 }
 
-var xmlDateFormats = []string{
+var xmlDateFormats = []string{ //nolint:gochecknoglobals
 	"2006-01-02Z07:00",
 	"2006-01-02",
 }
@@ -102,7 +102,7 @@ func parseDuration(s string) (time.Duration, errors.E) {
 		if err != nil {
 			return 0, errors.WithStack(err)
 		}
-		d += 24 * time.Hour * time.Duration(days)
+		d += 24 * time.Hour * time.Duration(days) //nolint:mnd
 	}
 	if matches[3] != "" {
 		hours, err := strconv.Atoi(matches[3])
@@ -150,7 +150,8 @@ func parseAttributeValue(value types.AttributeValue) (any, errors.E) {
 		valueType = namespace
 	}
 	switch valueType {
-	case "byte", "short", "int", "integer", "long", "negativeInteger", "nonNegativeInteger", "nonPositiveInteger", "positiveInteger", "unsignedByte", "unsignedShort", "unsignedInt", "unsignedLong":
+	case "byte", "short", "int", "integer", "long", "negativeInteger", "nonNegativeInteger", "nonPositiveInteger", "positiveInteger",
+		"unsignedByte", "unsignedShort", "unsignedInt", "unsignedLong":
 		// We leave to ParseInt to fail if the value for unsignedLong is too large for int64.
 		v, err := strconv.ParseInt(value.Value, 10, 64)
 		if err != nil {
@@ -175,7 +176,7 @@ func parseAttributeValue(value types.AttributeValue) (any, errors.E) {
 		if v != "" {
 			return v, nil
 		}
-		return nil, nil
+		return nil, nil //nolint:nilnil
 	case "dateTime":
 		v, ok := tryParseTime(xmlDateTimeFormats, value.Value)
 		if !ok {
