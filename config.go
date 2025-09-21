@@ -52,8 +52,8 @@ var routesConfiguration []byte
 var files embed.FS
 
 type OIDCProvider struct {
-	ClientID string               `env:"CLIENT_ID"   help:"${provider}'s client ID. Environment variable: ${env}."                                  yaml:"clientId"`
-	Secret   kong.FileContentFlag `env:"SECRET_PATH" help:"File with ${provider}'s client secret. Environment variable: ${env}." placeholder:"PATH" yaml:"secret"`
+	ClientID string               `env:"CLIENT_ID"   help:"${provider}'s client ID."                                  yaml:"clientId"`
+	Secret   kong.FileContentFlag `env:"SECRET_PATH" help:"File with ${provider}'s client secret." placeholder:"PATH" yaml:"secret"`
 }
 
 func (p *OIDCProvider) Validate() error {
@@ -103,21 +103,21 @@ func (p *Providers) Validate() error {
 //nolint:lll
 type Mail struct {
 	Host     string               `                                                                         help:"Host to send e-mails to. If not set, e-mails are logged instead."                                  yaml:"host"`
-	Port     int                  `default:"25"                                                             help:"Port to send e-mails to. Default: ${default}."                                placeholder:"INT"    yaml:"port"`
+	Port     int                  `default:"25"                                                             help:"Port to send e-mails to."                                placeholder:"INT"    yaml:"port"`
 	Username string               `                                                                         help:"Username to use to send e-mails."                                                                  yaml:"username"`
-	Password kong.FileContentFlag `                                                     env:"PASSWORD_PATH" help:"File with password to use to send e-mails. Environment variable: ${env}."     placeholder:"PATH"   yaml:"password"`
-	Auth     string               `default:"${defaultMailAuth}" enum:"${mailAuthTypes}"                     help:"Authentication type to use. Possible: ${mailAuthTypes}. Default: ${default}." placeholder:"STRING" yaml:"auth"`
-	From     string               `default:"${defaultMailFrom}"                                             help:"From header for e-mails. Default: ${default}."                                placeholder:"EMAIL"  yaml:"from"`
+	Password kong.FileContentFlag `                                                     env:"PASSWORD_PATH" help:"File with password to use to send e-mails."     placeholder:"PATH"   yaml:"password"`
+	Auth     string               `default:"${defaultMailAuth}" enum:"${mailAuthTypes}"                     help:"Authentication type to use." placeholder:"STRING" yaml:"auth"`
+	From     string               `default:"${defaultMailFrom}"                                             help:"From header for e-mails."                                placeholder:"EMAIL"  yaml:"from"`
 
 	// Exposed primarily for use in tests.
 	NotRequiredTLS bool `json:"-" kong:"-" yaml:"-"`
 }
 
 type Keys struct {
-	RSA  kong.FileContentFlag `env:"RSA_PATH"  help:"File with RSA private key. Environment variable: ${env}."               placeholder:"PATH" yaml:"rsa"`
-	P256 kong.FileContentFlag `env:"P256_PATH" help:"File with P-256 private key. Environment variable: ${env}." name:"p256" placeholder:"PATH" yaml:"p256"`
-	P384 kong.FileContentFlag `env:"P384_PATH" help:"File with P-384 private key. Environment variable: ${env}." name:"p384" placeholder:"PATH" yaml:"p384"`
-	P521 kong.FileContentFlag `env:"P521_PATH" help:"File with P-521 private key. Environment variable: ${env}." name:"p521" placeholder:"PATH" yaml:"p521"`
+	RSA  kong.FileContentFlag `env:"RSA_PATH"  help:"File with RSA private key."               placeholder:"PATH" yaml:"rsa"`
+	P256 kong.FileContentFlag `env:"P256_PATH" help:"File with P-256 private key." name:"p256" placeholder:"PATH" yaml:"p256"`
+	P384 kong.FileContentFlag `env:"P384_PATH" help:"File with P-384 private key." name:"p384" placeholder:"PATH" yaml:"p384"`
+	P521 kong.FileContentFlag `env:"P521_PATH" help:"File with P-521 private key." name:"p521" placeholder:"PATH" yaml:"p521"`
 
 	rsa  *jose.JSONWebKey
 	p256 *jose.JSONWebKey
@@ -202,7 +202,7 @@ type Config struct {
 	Domains      []string             `                  help:"Domain name(s) to use. If not provided, they are determined from domain names found in TLS certificates."                                                               name:"domain" placeholder:"STRING" yaml:"domains"`
 	MainDomain   string               `                  help:"When using multiple domains, which one is the main one."                                                                                                                                                   yaml:"mainDomain"`
 	ExternalPort int                  `                  help:"Port on which Charon is accessible when it is different from the port on which the program listens."                                                                                  placeholder:"INT"    yaml:"externalPort"`
-	Secret       kong.FileContentFlag `env:"SECRET_PATH" help:"File with base64 (URL encoding, no padding) encoded 32 bytes with \"${secretPrefixCharonConfig}\" prefix used for session and OIDC HMAC. Environment variable: ${env}."               placeholder:"PATH"   yaml:"secret"`
+	Secret       kong.FileContentFlag `env:"SECRET_PATH" help:"File with base64 (URL encoding, no padding) encoded 32 bytes with \"${secretPrefixCharonConfig}\" prefix used for session and OIDC HMAC."               placeholder:"PATH"   yaml:"secret"`
 
 	Providers Providers `embed:"" group:"Providers:" yaml:"providers"`
 

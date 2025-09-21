@@ -13,12 +13,12 @@ require (
 	github.com/ory/fosite v0.49.1-0.20250703093431-a5f0b09bf31c
 	github.com/temoto/robotstxt v1.1.2
 	github.com/wneessen/go-mail v0.4.4
-	gitlab.com/tozd/go/cli v0.4.1
+	gitlab.com/tozd/go/cli v0.5.0
 	gitlab.com/tozd/go/errors v0.10.0
 	gitlab.com/tozd/go/x v0.0.0-20240906084819-fda0a3bbba65
-	gitlab.com/tozd/go/zerolog v0.8.0
+	gitlab.com/tozd/go/zerolog v0.9.0
 	gitlab.com/tozd/identifier v0.6.0
-	gitlab.com/tozd/waf v0.19.0
+	gitlab.com/tozd/waf v0.20.0
 	golang.org/x/oauth2 v0.23.0
 )
 
@@ -114,8 +114,8 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/pjbgf/sha1cd v0.3.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/rs/xid v1.5.0 // indirect
-	github.com/rs/zerolog v1.33.0
+	github.com/rs/xid v1.6.0 // indirect
+	github.com/rs/zerolog v1.33.1-0.20250103235336-1869fa55bea5
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/skeema/knownhosts v1.3.0 // indirect
 	github.com/stretchr/testify v1.10.0
