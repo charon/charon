@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-cleanhttp"
-	"github.com/rs/zerolog"
 	saml2 "github.com/russellhaering/gosaml2"
 	"github.com/russellhaering/gosaml2/types"
 	dsig "github.com/russellhaering/goxmldsig"
@@ -246,6 +245,8 @@ func validateSAMLAssertion(assertionInfo *saml2.AssertionInfo) errors.E {
 	assertionInfo.WarningInfo.OneTimeUse = false
 	assertionInfo.WarningInfo.ProxyRestriction = nil
 
+	// In the future they might add more flags to WarningInfo.
+	// We want all of them to be false (equal to the zero value).
 	if !reflect.DeepEqual(*assertionInfo.WarningInfo, saml2.WarningInfo{}) { //nolint:exhaustruct
 		errE := errors.New("unexpected SAML assertion warnings")
 		errors.Details(errE)["warnings"] = *assertionInfo.WarningInfo
@@ -334,10 +335,10 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 	}
 
 	// TODO: Parsing types.Response Status, easier debugging, SAML2.0 includes many statuses like 'AuthnFailed'.
-	// We could use their ValidateEncodeResponse and parse which status was returned into our error.
-	// If gosaml2 merges our PR, we can add that logging.
-	samlResponse := req.Form.Get("SAMLResponse")
-	assertionInfo, err := provider.Provider.RetrieveAssertionInfo(samlResponse)
+	//       We could use their ValidateEncodeResponse and parse which status was returned into our error.
+	//       If gosaml2 merges our PR, we can add that logging.
+	//       See: https://github.com/russellhaering/gosaml2/pull/236
+	assertionInfo, err := provider.Provider.RetrieveAssertionInfo(req.Form.Get("SAMLResponse"))
 	if err != nil {
 		errE = errors.WithStack(err)
 		errors.Details(errE)["provider"] = providerName
@@ -359,6 +360,13 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
+	jsonData, err := json.Marshal(attributes)
+	if err != nil {
+		errors.Details(errE)["provider"] = providerName
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
 	credentialID, errE := getSAMLCredentialID(assertionInfo, attributes, provider.Mapping.CredentialIDAttributes)
 	if errE != nil {
 		errors.Details(errE)["provider"] = providerName
@@ -373,22 +381,5 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	jsonData, err := json.Marshal(attributes)
-	if err != nil {
-		errors.Details(errE)["provider"] = providerName
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-	zerolog.Ctx(ctx).Warn().
-		Str("provider", string(providerName)).
-		Str("credentialID", credentialID).
-		Str("nameID", assertionInfo.NameID).
-		Interface("attributes", attributes).
-		Msg("SAML ATTRIBUTES RECEIVED - This is what will be stored in the database")
-
-	s.completeAuthStep(w, req, false, flow, account, []Credential{{
-		ID:       assertionInfo.NameID,
-		Provider: providerName,
-		Data:     jsonData,
-	}})
+	s.completeAuthStep(w, req, false, flow, account, []Credential{{ID: credentialID, Provider: providerName, Data: jsonData}})
 }
