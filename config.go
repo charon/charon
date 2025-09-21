@@ -470,7 +470,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 	}
 	if config.Server.Development {
 		providers = append(providers, SiteProvider{
-			Key:                  "MockSAML",
+			Key:                  "mockSAML",
 			Name:                 "MockSAML",
 			Type:                 ThirdPartyProviderSAML,
 			oidcIssuer:           "",
