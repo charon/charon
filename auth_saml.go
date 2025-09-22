@@ -275,7 +275,7 @@ func (s *Service) handlerSAMLStart(provider samlProvider) func(*Flow) (string, e
 	return func(flow *Flow) (string, errors.E) {
 		flow.SAMLProvider = &FlowSAMLProvider{}
 
-		authURL, err := provider.Provider.BuildAuthURL(flow.ID.String())
+		authURL, err := samlBuildAuthURL(provider.Provider, flow.ID.String())
 		if err != nil {
 			return "", errors.WithStack(err)
 		}
