@@ -110,6 +110,10 @@ func TestRouteHome(t *testing.T) {
 	testStaticFile(t, "Home", "dist/index.html", "text/html; charset=utf-8")
 }
 
+func init() { //nolint:gochecknoinits
+	zerolog.ErrorMarshalFunc = z.ErrorMarshalFunc //nolint:reassign
+}
+
 func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock.Server, *httptest.Server) {
 	t.Helper()
 

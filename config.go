@@ -685,10 +685,11 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		return nil, nil, errE
 	}
 
-	for _, provider := range providers {
-		errE = provider.initProvider(config)
+	// We iterate over providers using an index to be able to mutate them.
+	for i := range providers {
+		errE = providers[i].initProvider(config)
 		if errE != nil {
-			errors.Details(errE)["provider"] = provider.Key
+			errors.Details(errE)["provider"] = providers[i].Key
 			return nil, nil, errE
 		}
 	}
