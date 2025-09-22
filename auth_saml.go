@@ -42,9 +42,10 @@ func initSAMLProviders(config *Config, service *Service, domain string, provider
 				continue
 			}
 
-			provider, errE := initSAMLProvider(config, service, host, p)
+			provider, errE := initSAMLProvider(service, host, p)
 			if errE != nil {
 				errors.Details(errE)["provider"] = p.Key
+				// Internal error: this should never happen.
 				panic(errE)
 			}
 
@@ -55,28 +56,56 @@ func initSAMLProviders(config *Config, service *Service, domain string, provider
 	})
 }
 
-func initSAMLProvider(config *Config, service *Service, host string, p SiteProvider) (samlProvider, errors.E) {
-	config.Logger.Debug().Msgf("enabling %s SAML provider", p.Key)
-
+func initSAMLProvider(service *Service, host string, p SiteProvider) (samlProvider, errors.E) {
 	path, errE := service.ReverseAPI("AuthThirdPartyProvider", waf.Params{"provider": string(p.Key)}, nil)
 	if errE != nil {
 		return samlProvider{}, errE
 	}
 
+	privateKey, cert, err := p.samlKeyStore.GetKeyPair()
+	if err != nil {
+		return samlProvider{}, errors.WithMessage(err, "failed to get SP key-pair")
+	}
+
+	sp := &saml2.SAMLServiceProvider{ //nolint:exhaustruct
+		IdentityProviderSSOURL:      p.samlSSOURL,
+		IdentityProviderSSOBinding:  saml2.BindingHttpRedirect,
+		IdentityProviderIssuer:      p.samlIDPIssuer,
+		ServiceProviderIssuer:       p.samlEntityID,
+		AssertionConsumerServiceURL: fmt.Sprintf("https://%s%s", host, path),
+		SignAuthnRequests:           true,
+		AudienceURI:                 p.samlEntityID,
+		IDPCertificateStore:         p.samlIDPCertificateStore,
+	}
+
+	err = sp.SetSPKeyStore(&saml2.KeyStore{
+		Signer: privateKey,
+		Cert:   cert,
+	})
+	if err != nil {
+		return samlProvider{}, errors.WithMessage(err, "failed to set SP keystore")
+	}
+
+	return samlProvider{
+		Key:      p.Key,
+		Name:     p.Name,
+		Provider: sp,
+		Mapping:  p.samlAttributeMapping,
+	}, nil
+}
+
+func (p *SiteProvider) initSAMLProvider(config *Config) errors.E {
+	config.Logger.Debug().Msgf("enabling %s SAML provider", p.Key)
+
 	client := cleanhttp.DefaultPooledClient()
 	metadata, errE := fetchSAMLMetadata(context.Background(), client, p.samlMetadataURL)
 	if errE != nil {
-		return samlProvider{}, errors.WithMessage(errE, "failed to fetch metadata")
+		return errors.WithMessage(errE, "failed to fetch metadata")
 	}
 
 	certStore, errE := extractIDPCertificates(metadata)
 	if errE != nil {
-		return samlProvider{}, errors.WithMessage(errE, "failed to extract IDP certificates")
-	}
-
-	privateKey, cert, err := p.samlKeyStore.GetKeyPair()
-	if err != nil {
-		return samlProvider{}, errors.WithMessage(err, "failed to get SP key-pair")
+		return errors.WithMessage(errE, "failed to extract IDP certificates")
 	}
 
 	ssoURL := ""
@@ -90,34 +119,14 @@ func initSAMLProvider(config *Config, service *Service, host string, p SiteProvi
 	}
 
 	if ssoURL == "" {
-		return samlProvider{}, errors.New("IDP does not support HTTP-Redirect binding")
+		return errors.New("IDP does not support HTTP-Redirect binding")
 	}
 
-	sp := &saml2.SAMLServiceProvider{ //nolint:exhaustruct
-		IdentityProviderSSOURL:      ssoURL,
-		IdentityProviderSSOBinding:  saml2.BindingHttpRedirect,
-		IdentityProviderIssuer:      metadata.EntityID,
-		ServiceProviderIssuer:       p.samlEntityID,
-		AssertionConsumerServiceURL: fmt.Sprintf("https://%s%s", host, path),
-		SignAuthnRequests:           true,
-		AudienceURI:                 p.samlEntityID,
-		IDPCertificateStore:         certStore,
-	}
+	p.samlSSOURL = ssoURL
+	p.samlIDPIssuer = metadata.EntityID
+	p.samlIDPCertificateStore = certStore
 
-	errKeyStore := sp.SetSPKeyStore(&saml2.KeyStore{
-		Signer: privateKey,
-		Cert:   cert,
-	})
-	if errKeyStore != nil {
-		return samlProvider{}, errors.WithMessage(errKeyStore, "failed to set SP keystore")
-	}
-
-	return samlProvider{
-		Key:      p.Key,
-		Name:     p.Name,
-		Provider: sp,
-		Mapping:  p.samlAttributeMapping,
-	}, nil
+	return nil
 }
 
 func fetchSAMLMetadata(ctx context.Context, client *http.Client, metadataURL string) (types.EntityDescriptor, errors.E) {
@@ -219,7 +228,7 @@ func extractIDPCertificates(metadata types.EntityDescriptor) (*dsig.MemoryX509Ce
 	return certStore, nil
 }
 
-func (p *SiteProvider) initSAMLKeyStore() errors.E { //nolint:unparam
+func (p *SiteProvider) initSAMLKeyStore() errors.E {
 	// TODO: Properly load keys from the disk based on configuration for this provider.
 	//       Only if the keys are not available, and we are in development mode, generate them.
 	p.samlKeyStore = dsig.RandomKeyStoreForTest()

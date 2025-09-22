@@ -467,11 +467,6 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			samlKeyStore:         nil,
 			samlAttributeMapping: getSIPASSAttributeMapping(),
 		})
-		errE = providers[len(providers)-1].initSAMLKeyStore()
-		if errE != nil {
-			errors.Details(errE)["provider"] = providers[len(providers)-1].Key
-			return nil, nil, errE
-		}
 	}
 	if config.Server.Development {
 		providers = append(providers, SiteProvider{
@@ -490,11 +485,6 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			samlKeyStore:         nil,
 			samlAttributeMapping: getDefaultAttributeMapping(),
 		})
-		errE = providers[len(providers)-1].initSAMLKeyStore()
-		if errE != nil {
-			errors.Details(errE)["provider"] = providers[len(providers)-1].Key
-			return nil, nil, errE
-		}
 	}
 	if config.Providers.SAMLTesting.MetadataURL != "" && config.Providers.SAMLTesting.EntityID != "" {
 		providers = append(providers, SiteProvider{
@@ -513,11 +503,6 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			samlKeyStore:         nil,
 			samlAttributeMapping: getDefaultAttributeMapping(),
 		})
-		errE = providers[len(providers)-1].initSAMLKeyStore()
-		if errE != nil {
-			errors.Details(errE)["provider"] = providers[len(providers)-1].Key
-			return nil, nil, errE
-		}
 	}
 
 	for _, site := range sites {
@@ -655,6 +640,14 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 	handler, errE := service.RouteWith(service, router)
 	if errE != nil {
 		return nil, nil, errE
+	}
+
+	for _, provider := range providers {
+		errE = provider.initProvider(config)
+		if errE != nil {
+			errors.Details(errE)["provider"] = provider.Key
+			return nil, nil, errE
+		}
 	}
 
 	// We prepare initialization of OIDC and providers and in the common case

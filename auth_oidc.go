@@ -33,9 +33,10 @@ func initOIDCProviders(config *Config, service *Service, domain string, provider
 				continue
 			}
 
-			provider, errE := initOIDCProvider(config, service, host, p)
+			provider, errE := initOIDCProvider(service, host, p)
 			if errE != nil {
 				errors.Details(errE)["provider"] = p.Key
+				// Internal error: this should never happen.
 				panic(errE)
 			}
 
@@ -46,19 +47,39 @@ func initOIDCProviders(config *Config, service *Service, domain string, provider
 	})
 }
 
-func initOIDCProvider(config *Config, service *Service, host string, p SiteProvider) (oidcProvider, errors.E) {
-	config.Logger.Debug().Msgf("enabling %s OIDC provider", p.Key)
-
+func initOIDCProvider(service *Service, host string, p SiteProvider) (oidcProvider, errors.E) {
 	path, errE := service.Reverse("AuthThirdPartyProvider", waf.Params{"provider": string(p.Key)}, nil)
 	if errE != nil {
 		return oidcProvider{}, errE
 	}
 
+	c := &oauth2.Config{
+		ClientID:     p.oidcClientID,
+		ClientSecret: p.oidcSecret,
+		RedirectURL:  fmt.Sprintf("https://%s%s", host, path),
+		Endpoint:     p.oidcEndpoint,
+		Scopes:       p.oidcScopes,
+	}
+
+	return oidcProvider{
+		Key:          p.Key,
+		Name:         p.Name,
+		Provider:     p.oidcProvider,
+		Verifier:     p.oidcProvider.Verifier(&oidc.Config{ClientID: p.oidcClientID}), //nolint:exhaustruct
+		Config:       c,
+		Client:       p.oidcClient,
+		SupportsPKCE: p.oidcSupportsPKCE,
+	}, nil
+}
+
+func (p *SiteProvider) initOIDCProvider(config *Config) errors.E {
+	config.Logger.Debug().Msgf("enabling %s OIDC provider", p.Key)
+
 	client := cleanhttp.DefaultPooledClient()
 	ctx := oidc.ClientContext(context.Background(), client)
 	provider, err := oidc.NewProvider(ctx, p.oidcIssuer)
 	if err != nil {
-		return oidcProvider{}, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
 
 	// We make sure JWKS URI is provided.
@@ -68,10 +89,10 @@ func initOIDCProvider(config *Config, service *Service, host string, p SiteProvi
 	}
 	err = provider.Claims(&jwksClaims)
 	if err != nil {
-		return oidcProvider{}, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
 	if jwksClaims.JWKSURL == "" {
-		return oidcProvider{}, errors.New("jwks_uri is empty")
+		return errors.New("jwks_uri is empty")
 	}
 
 	supportsPKCE := p.oidcForcePKCE
@@ -83,7 +104,7 @@ func initOIDCProvider(config *Config, service *Service, host string, p SiteProvi
 		}
 		err := provider.Claims(&pkceClaims)
 		if err != nil {
-			return oidcProvider{}, errors.WithStack(err)
+			return errors.WithStack(err)
 		}
 		supportsPKCE = slices.Contains(pkceClaims.CodeChallengeMethodsSupported, "S256")
 	}
@@ -98,23 +119,12 @@ func initOIDCProvider(config *Config, service *Service, host string, p SiteProvi
 		endpoint.TokenURL = p.oidcTokenURL
 	}
 
-	c := &oauth2.Config{
-		ClientID:     p.oidcClientID,
-		ClientSecret: p.oidcSecret,
-		RedirectURL:  fmt.Sprintf("https://%s%s", host, path),
-		Endpoint:     endpoint,
-		Scopes:       p.oidcScopes,
-	}
+	p.oidcEndpoint = endpoint
+	p.oidcClient = client
+	p.oidcSupportsPKCE = supportsPKCE
+	p.oidcProvider = provider
 
-	return oidcProvider{
-		Key:          p.Key,
-		Name:         p.Name,
-		Provider:     provider,
-		Verifier:     provider.Verifier(&oidc.Config{ClientID: p.oidcClientID}), //nolint:exhaustruct
-		Config:       c,
-		Client:       client,
-		SupportsPKCE: supportsPKCE,
-	}, nil
+	return nil
 }
 
 func (s *Service) handleOIDCProviderStart(ctx context.Context, w http.ResponseWriter, req *http.Request, flow *Flow, providerName Provider, provider oidcProvider) {
