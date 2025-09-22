@@ -7,18 +7,27 @@ import (
 )
 
 // samlBuildAuthURL is the same as saml2.BuildAuthURL, but correctly uses HTTP-Redirect binding.
+// It also returns ID of the authn request.
 //
 // See: https://github.com/russellhaering/gosaml2/issues/89
-func samlBuildAuthURL(sp *saml2.SAMLServiceProvider, relayState string) (string, errors.E) {
+func samlBuildAuthURL(sp *saml2.SAMLServiceProvider, relayState string) (string, string, errors.E) {
 	doc, err := sp.BuildAuthRequestDocument()
 	if err != nil {
-		return "", errors.WithStack(err)
+		return "", "", errors.WithStack(err)
 	}
 	authURL, err := sp.BuildAuthURLRedirect(relayState, doc)
 	if err != nil {
-		return "", errors.WithStack(err)
+		return "", "", errors.WithStack(err)
 	}
-	return authURL, nil
+	el := doc.FindElement("/AuthnRequest")
+	if el != nil {
+		return "", "", errors.New("AuthnRequest element not found")
+	}
+	id := el.SelectAttrValue("ID", "")
+	if id == "" {
+		return "", "", errors.New("ID attribute not found")
+	}
+	return authURL, id, nil
 }
 
 // retrieveAssertionInfoWithResponse is the same as saml2.RetrieveAssertionInfo, but

@@ -273,11 +273,13 @@ func validateSAMLAssertion(assertionInfo *saml2.AssertionInfo) errors.E {
 
 func (s *Service) handlerSAMLStart(provider samlProvider) func(*Flow) (string, errors.E) {
 	return func(flow *Flow) (string, errors.E) {
-		flow.SAMLProvider = &FlowSAMLProvider{}
-
-		authURL, err := samlBuildAuthURL(provider.Provider, flow.ID.String())
+		authURL, id, err := samlBuildAuthURL(provider.Provider, flow.ID.String())
 		if err != nil {
 			return "", errors.WithStack(err)
+		}
+
+		flow.SAMLProvider = &FlowSAMLProvider{
+			RequestID: id,
 		}
 
 		return authURL, nil
@@ -325,7 +327,7 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	assertionInfo, _, err := retrieveAssertionInfoWithResponse(provider.Provider, req.Form.Get("SAMLResponse"))
+	assertionInfo, response, err := retrieveAssertionInfoWithResponse(provider.Provider, req.Form.Get("SAMLResponse"))
 	if err != nil {
 		errE = errors.WithStack(err)
 		errors.Details(errE)["provider"] = providerKey
@@ -336,6 +338,15 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 	errE = validateSAMLAssertion(assertionInfo)
 	if errE != nil {
 		errors.Details(errE)["provider"] = providerKey
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	if response.InResponseTo != flow.SAMLProvider.RequestID {
+		errE = errors.New("SAML response ID does not match request ID")
+		errors.Details(errE)["provider"] = providerKey
+		errors.Details(errE)["request"] = flow.SAMLProvider.RequestID
+		errors.Details(errE)["response"] = response.InResponseTo
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
