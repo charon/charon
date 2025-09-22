@@ -32,82 +32,89 @@ func initOIDCProviders(config *Config, service *Service, domain string, provider
 			if p.Type != ThirdPartyProviderOIDC {
 				continue
 			}
-			config.Logger.Debug().Msgf("enabling %s OIDC provider", p.Key)
 
-			path, errE := service.Reverse("AuthThirdPartyProvider", waf.Params{"provider": string(p.Key)}, nil)
+			provider, errE := initOIDCProvider(config, service, host, p)
 			if errE != nil {
-				// Internal error: this should never happen.
+				errors.Details(errE)["provider"] = p.Key
 				panic(errE)
 			}
 
-			client := cleanhttp.DefaultPooledClient()
-			ctx := oidc.ClientContext(context.Background(), client)
-			provider, err := oidc.NewProvider(ctx, p.oidcIssuer)
-			if err != nil {
-				// Internal error: this should never happen.
-				panic(errors.WithStack(err))
-			}
-
-			// We make sure JWKS URI is provided.
-			// See: https://github.com/coreos/go-oidc/pull/328
-			var jwksClaims struct {
-				JWKSURL string `json:"jwks_uri"` //nolint:tagliatelle
-			}
-			err = provider.Claims(&jwksClaims)
-			if err != nil {
-				// Internal error: this should never happen.
-				panic(errors.WithStack(err))
-			}
-			if jwksClaims.JWKSURL == "" {
-				// Internal error: this should never happen.
-				panic(errors.New("jwks_uri is empty"))
-			}
-
-			supportsPKCE := p.oidcForcePKCE
-			if !supportsPKCE {
-				// We have to parse it out ourselves.
-				// See: https://github.com/coreos/go-oidc/issues/401
-				var pkceClaims struct {
-					CodeChallengeMethodsSupported []string `json:"code_challenge_methods_supported"` //nolint:tagliatelle
-				}
-				err := provider.Claims(&pkceClaims)
-				if err != nil {
-					// Internal error: this should never happen.
-					panic(errors.WithStack(err))
-				}
-				supportsPKCE = slices.Contains(pkceClaims.CodeChallengeMethodsSupported, "S256")
-			}
-
-			// Fallback if endpoints are missing (e.g., Facebook does not have token_endpoint
-			// in its https://www.facebook.com/.well-known/openid-configuration).
-			endpoint := provider.Endpoint()
-			if endpoint.AuthURL == "" {
-				endpoint.AuthURL = p.oidcAuthURL
-			}
-			if endpoint.TokenURL == "" {
-				endpoint.TokenURL = p.oidcTokenURL
-			}
-
-			config := &oauth2.Config{
-				ClientID:     p.oidcClientID,
-				ClientSecret: p.oidcSecret,
-				RedirectURL:  fmt.Sprintf("https://%s%s", host, path),
-				Endpoint:     endpoint,
-				Scopes:       p.oidcScopes,
-			}
-
-			oidcProviders[p.Key] = oidcProvider{
-				Key:          p.Key,
-				Name:         p.Name,
-				Provider:     provider,
-				Verifier:     provider.Verifier(&oidc.Config{ClientID: p.oidcClientID}), //nolint:exhaustruct
-				Config:       config,
-				Client:       client,
-				SupportsPKCE: supportsPKCE,
-			}
+			oidcProviders[p.Key] = provider
 		}
+
 		return oidcProviders
 	})
+}
+
+func initOIDCProvider(config *Config, service *Service, host string, p SiteProvider) (oidcProvider, errors.E) {
+	config.Logger.Debug().Msgf("enabling %s OIDC provider", p.Key)
+
+	path, errE := service.Reverse("AuthThirdPartyProvider", waf.Params{"provider": string(p.Key)}, nil)
+	if errE != nil {
+		return oidcProvider{}, errE
+	}
+
+	client := cleanhttp.DefaultPooledClient()
+	ctx := oidc.ClientContext(context.Background(), client)
+	provider, err := oidc.NewProvider(ctx, p.oidcIssuer)
+	if err != nil {
+		return oidcProvider{}, errors.WithStack(err)
+	}
+
+	// We make sure JWKS URI is provided.
+	// See: https://github.com/coreos/go-oidc/pull/328
+	var jwksClaims struct {
+		JWKSURL string `json:"jwks_uri"` //nolint:tagliatelle
+	}
+	err = provider.Claims(&jwksClaims)
+	if err != nil {
+		return oidcProvider{}, errors.WithStack(err)
+	}
+	if jwksClaims.JWKSURL == "" {
+		return oidcProvider{}, errors.New("jwks_uri is empty")
+	}
+
+	supportsPKCE := p.oidcForcePKCE
+	if !supportsPKCE {
+		// We have to parse it out ourselves.
+		// See: https://github.com/coreos/go-oidc/issues/401
+		var pkceClaims struct {
+			CodeChallengeMethodsSupported []string `json:"code_challenge_methods_supported"` //nolint:tagliatelle
+		}
+		err := provider.Claims(&pkceClaims)
+		if err != nil {
+			return oidcProvider{}, errors.WithStack(err)
+		}
+		supportsPKCE = slices.Contains(pkceClaims.CodeChallengeMethodsSupported, "S256")
+	}
+
+	// Fallback if endpoints are missing (e.g., Facebook does not have token_endpoint
+	// in its https://www.facebook.com/.well-known/openid-configuration).
+	endpoint := provider.Endpoint()
+	if endpoint.AuthURL == "" {
+		endpoint.AuthURL = p.oidcAuthURL
+	}
+	if endpoint.TokenURL == "" {
+		endpoint.TokenURL = p.oidcTokenURL
+	}
+
+	c := &oauth2.Config{
+		ClientID:     p.oidcClientID,
+		ClientSecret: p.oidcSecret,
+		RedirectURL:  fmt.Sprintf("https://%s%s", host, path),
+		Endpoint:     endpoint,
+		Scopes:       p.oidcScopes,
+	}
+
+	return oidcProvider{
+		Key:          p.Key,
+		Name:         p.Name,
+		Provider:     provider,
+		Verifier:     provider.Verifier(&oidc.Config{ClientID: p.oidcClientID}), //nolint:exhaustruct
+		Config:       c,
+		Client:       client,
+		SupportsPKCE: supportsPKCE,
+	}, nil
 }
 
 func (s *Service) handleOIDCProviderStart(ctx context.Context, w http.ResponseWriter, req *http.Request, flow *Flow, providerName Provider, provider oidcProvider) {
