@@ -127,42 +127,23 @@ func (p *SiteProvider) initOIDCProvider(config *Config) errors.E {
 	return nil
 }
 
-func (s *Service) handleOIDCProviderStart(ctx context.Context, w http.ResponseWriter, req *http.Request, flow *Flow, providerName Provider, provider oidcProvider) {
-	flow.ClearAuthStep("")
-	// Currently we support only one factor.
-	flow.Providers = []Provider{providerName}
-	flow.OIDCProvider = &FlowOIDCProvider{
-		Verifier: "",
-		Nonce:    identifier.New().String(),
+func (s *Service) handlerOIDCStart(provider oidcProvider) func(*Flow) (string, errors.E) {
+	return func(flow *Flow) (string, errors.E) {
+		flow.OIDCProvider = &FlowOIDCProvider{
+			Verifier: "",
+			Nonce:    identifier.New().String(),
+		}
+
+		opts := []oauth2.AuthCodeOption{}
+		opts = append(opts, oidc.Nonce(flow.OIDCProvider.Nonce))
+
+		if provider.SupportsPKCE {
+			flow.OIDCProvider.Verifier = oauth2.GenerateVerifier()
+			opts = append(opts, oauth2.S256ChallengeOption(flow.OIDCProvider.Verifier))
+		}
+
+		return provider.Config.AuthCodeURL(flow.ID.String(), opts...), nil
 	}
-
-	opts := []oauth2.AuthCodeOption{}
-	opts = append(opts, oidc.Nonce(flow.OIDCProvider.Nonce))
-
-	if provider.SupportsPKCE {
-		flow.OIDCProvider.Verifier = oauth2.GenerateVerifier()
-		opts = append(opts, oauth2.S256ChallengeOption(flow.OIDCProvider.Verifier))
-	}
-
-	errE := s.setFlow(ctx, flow)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	s.WriteJSON(w, req, AuthFlowResponse{
-		Completed:       flow.Completed,
-		OrganizationID:  flow.OrganizationID,
-		AppID:           flow.AppID,
-		Providers:       flow.Providers,
-		EmailOrUsername: flow.EmailOrUsername,
-		ThirdPartyProvider: &AuthFlowResponseThirdPartyProvider{
-			Location: provider.Config.AuthCodeURL(flow.ID.String(), opts...),
-		},
-		Passkey:  nil,
-		Password: nil,
-		Error:    "",
-	}, nil)
 }
 
 func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, providerKey Provider, provider oidcProvider) {

@@ -1,6 +1,7 @@
 package charon
 
 import (
+	"context"
 	"io"
 	"net/http"
 
@@ -43,6 +44,41 @@ func (s *Service) handleAuthThirdPartyProvider(w http.ResponseWriter, req *http.
 	s.NotFoundWithError(w, req, errE)
 }
 
+func (s *Service) handleAuthFlowThirdPartyProviderStart(
+	ctx context.Context, w http.ResponseWriter, req *http.Request, flow *Flow,
+	providerName Provider, handler func(flow *Flow) (string, errors.E),
+) {
+	flow.ClearAuthStep("")
+	// Currently we support only one factor.
+	flow.Providers = []Provider{providerName}
+
+	location, errE := handler(flow)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	errE = s.setFlow(ctx, flow)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	s.WriteJSON(w, req, AuthFlowResponse{
+		Completed:       flow.Completed,
+		OrganizationID:  flow.OrganizationID,
+		AppID:           flow.AppID,
+		Providers:       flow.Providers,
+		EmailOrUsername: flow.EmailOrUsername,
+		ThirdPartyProvider: &AuthFlowResponseThirdPartyProvider{
+			Location: location,
+		},
+		Passkey:  nil,
+		Password: nil,
+		Error:    "",
+	}, nil)
+}
+
 func (s *Service) AuthFlowThirdPartyProviderStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
@@ -64,12 +100,12 @@ func (s *Service) AuthFlowThirdPartyProviderStartPost(w http.ResponseWriter, req
 	providerKey := providerStart.Provider
 
 	if p, ok := s.oidcProviders()[providerKey]; providerKey != "" && ok {
-		s.handleOIDCProviderStart(ctx, w, req, flow, providerKey, p)
+		s.handleAuthFlowThirdPartyProviderStart(ctx, w, req, flow, providerKey, s.handlerOIDCStart(p))
 		return
 	}
 
 	if p, ok := s.samlProviders()[providerKey]; providerKey != "" && ok {
-		s.handleSAMLProviderStart(ctx, w, req, flow, providerKey, p)
+		s.handleAuthFlowThirdPartyProviderStart(ctx, w, req, flow, providerKey, s.handlerSAMLStart(p))
 		return
 	}
 

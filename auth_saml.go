@@ -271,37 +271,17 @@ func validateSAMLAssertion(assertionInfo *saml2.AssertionInfo) errors.E {
 	return nil
 }
 
-func (s *Service) handleSAMLProviderStart(ctx context.Context, w http.ResponseWriter, req *http.Request, flow *Flow, providerName Provider, provider samlProvider) {
-	flow.ClearAuthStep("")
-	// Currently we support only one factor.
-	flow.Providers = []Provider{providerName}
-	flow.SAMLProvider = &FlowSAMLProvider{}
+func (s *Service) handlerSAMLStart(provider samlProvider) func(*Flow) (string, errors.E) {
+	return func(flow *Flow) (string, errors.E) {
+		flow.SAMLProvider = &FlowSAMLProvider{}
 
-	errE := s.setFlow(ctx, flow)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
+		authURL, err := provider.Provider.BuildAuthURL(flow.ID.String())
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
+
+		return authURL, nil
 	}
-
-	authURL, err := provider.Provider.BuildAuthURL(flow.ID.String())
-	if err != nil {
-		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
-		return
-	}
-
-	s.WriteJSON(w, req, AuthFlowResponse{
-		Completed:       flow.Completed,
-		OrganizationID:  flow.OrganizationID,
-		AppID:           flow.AppID,
-		Providers:       flow.Providers,
-		EmailOrUsername: flow.EmailOrUsername,
-		ThirdPartyProvider: &AuthFlowResponseThirdPartyProvider{
-			Location: authURL,
-		},
-		Passkey:  nil,
-		Password: nil,
-		Error:    "",
-	}, nil)
 }
 
 func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, providerKey Provider, provider samlProvider) {
