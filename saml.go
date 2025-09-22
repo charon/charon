@@ -9,12 +9,16 @@ import (
 // samlBuildAuthURL is the same as saml2.BuildAuthURL, but correctly uses HTTP-Redirect binding.
 //
 // See: https://github.com/russellhaering/gosaml2/issues/89
-func samlBuildAuthURL(sp *saml2.SAMLServiceProvider, relayState string) (string, error) {
+func samlBuildAuthURL(sp *saml2.SAMLServiceProvider, relayState string) (string, errors.E) {
 	doc, err := sp.BuildAuthRequestDocument()
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
-	return sp.BuildAuthURLRedirect(relayState, doc)
+	authURL, err := sp.BuildAuthURLRedirect(relayState, doc)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return authURL, nil
 }
 
 // retrieveAssertionInfoWithResponse is the same as saml2.RetrieveAssertionInfo, but
