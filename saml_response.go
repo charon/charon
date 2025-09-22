@@ -6,6 +6,17 @@ import (
 	"gitlab.com/tozd/go/errors"
 )
 
+// samlBuildAuthURL is the same as saml2.BuildAuthURL, but correctly uses HTTP-Redirect binding.
+//
+// See: https://github.com/russellhaering/gosaml2/issues/89
+func samlBuildAuthURL(sp *saml2.SAMLServiceProvider, relayState string) (string, error) {
+	doc, err := sp.BuildAuthRequestDocument()
+	if err != nil {
+		return "", err
+	}
+	return sp.BuildAuthURLRedirect(relayState, doc)
+}
+
 // retrieveAssertionInfoWithResponse is the same as saml2.RetrieveAssertionInfo, but
 // returns the response as well. It also merges repeated same response attributes
 // into one slice.
