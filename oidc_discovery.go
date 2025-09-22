@@ -235,7 +235,7 @@ func (s *Service) oidcDiscovery(w http.ResponseWriter, req *http.Request) {
 	oidc := s.oidc()
 	issuer := oidc.Config.GetAccessTokenIssuer(ctx)
 
-	authorizenPath, errE := s.Reverse("OIDCAuthorize", nil, nil)
+	authorizePath, errE := s.Reverse("OIDCAuthorize", nil, nil)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -278,7 +278,7 @@ func (s *Service) oidcDiscovery(w http.ResponseWriter, req *http.Request) {
 	// TODO: Can we support RegistrationEndpoint?
 	response := wellKnown{ //nolint:exhaustruct
 		Issuer:                issuer,
-		AuthorizationEndpoint: issuer + authorizenPath,
+		AuthorizationEndpoint: issuer + authorizePath,
 		TokenEndpoint:         issuer + tokenPath,
 		UserinfoEndpoint:      issuer + userinfoPath,
 		JWKSURI:               issuer + keysPath,
