@@ -19,21 +19,23 @@ type AuthFlowResponseThirdPartyProvider struct {
 }
 
 func (s *Service) AuthThirdPartyProvider(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	s.handleAuthThirdPartyProvider(w, req, params)
-}
-
-func (s *Service) AuthThirdPartyProviderPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	s.handleAuthThirdPartyProvider(w, req, params)
-}
-
-func (s *Service) handleAuthThirdPartyProvider(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	providerKey := Provider(params["provider"])
 
+	// Only OIDC providers use GET requests for callbacks (response type is code which has response mode query).
 	if p, ok := s.oidcProviders()[providerKey]; providerKey != "" && ok {
 		s.handleOIDCCallback(w, req, providerKey, p)
 		return
 	}
 
+	errE := errors.New("unknown provider")
+	errors.Details(errE)["provider"] = providerKey
+	s.NotFoundWithError(w, req, errE)
+}
+
+func (s *Service) AuthThirdPartyProviderPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	providerKey := Provider(params["provider"])
+
+	// Only SAML providers use POST requests for callbacks (HTTP-POST binding).
 	if p, ok := s.samlProviders()[providerKey]; providerKey != "" && ok {
 		s.handleSAMLCallback(w, req, providerKey, p)
 		return
