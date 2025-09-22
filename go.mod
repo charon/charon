@@ -3,7 +3,7 @@ module gitlab.com/charon/charon
 go 1.23.10
 
 require (
-	github.com/alecthomas/kong v1.8.1
+	github.com/alecthomas/kong v1.12.2-0.20250922094329-a62e6a47decf
 	github.com/alexedwards/argon2id v1.0.0
 	github.com/automattic/go-gravatar v0.0.0-20210818030622-453d3c921ea3
 	github.com/go-jose/go-jose/v3 v3.0.4
@@ -13,7 +13,7 @@ require (
 	github.com/ory/fosite v0.49.1-0.20250703093431-a5f0b09bf31c
 	github.com/temoto/robotstxt v1.1.2
 	github.com/wneessen/go-mail v0.4.4
-	gitlab.com/tozd/go/cli v0.5.0
+	gitlab.com/tozd/go/cli v0.5.1
 	gitlab.com/tozd/go/errors v0.10.0
 	gitlab.com/tozd/go/x v0.0.0-20240906084819-fda0a3bbba65
 	gitlab.com/tozd/go/zerolog v0.9.0
@@ -21,9 +21,6 @@ require (
 	gitlab.com/tozd/waf v0.20.0
 	golang.org/x/oauth2 v0.23.0
 )
-
-// TODO: Remove when https://github.com/alecthomas/kong/pull/555 is merged.
-replace github.com/alecthomas/kong => github.com/mitar/kong v0.2.20-0.20250920233244-fa28ee528aa2
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
