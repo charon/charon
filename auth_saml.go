@@ -308,6 +308,8 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
+	flowSAML := *flow.SAMLProvider
+
 	// We reset flow.SAMLProvider to nil always after this point, even if there is a failure.
 	flow.SAMLProvider = nil
 	errE := s.setFlow(ctx, flow)
@@ -342,10 +344,10 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	if response.InResponseTo != flow.SAMLProvider.RequestID {
+	if response.InResponseTo != flowSAML.RequestID {
 		errE = errors.New("SAML response ID does not match request ID")
 		errors.Details(errE)["provider"] = providerKey
-		errors.Details(errE)["request"] = flow.SAMLProvider.RequestID
+		errors.Details(errE)["request"] = flowSAML.RequestID
 		errors.Details(errE)["response"] = response.InResponseTo
 		s.BadRequestWithError(w, req, errE)
 		return
