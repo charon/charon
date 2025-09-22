@@ -3,6 +3,7 @@ package charon
 import (
 	saml2 "github.com/russellhaering/gosaml2"
 	"github.com/russellhaering/gosaml2/types"
+	"gitlab.com/tozd/go/errors"
 )
 
 // retrieveAssertionInfoWithResponse is the same as saml2.RetrieveAssertionInfo, but
@@ -10,19 +11,19 @@ import (
 //
 // See: https://github.com/russellhaering/gosaml2/issues/235
 // See: https://github.com/russellhaering/gosaml2/pull/236
-func retrieveAssertionInfoWithResponse(sp *saml2.SAMLServiceProvider, encodedResponse string) (*saml2.AssertionInfo, *types.Response, error) {
-	assertionInfo := &saml2.AssertionInfo{
+func retrieveAssertionInfoWithResponse(sp *saml2.SAMLServiceProvider, encodedResponse string) (*saml2.AssertionInfo, *types.Response, errors.E) {
+	assertionInfo := &saml2.AssertionInfo{ //nolint:exhaustruct
 		Values: make(saml2.Values),
 	}
 
 	response, err := sp.ValidateEncodedResponse(encodedResponse)
 	if err != nil {
-		return nil, nil, saml2.ErrVerification{Cause: err}
+		return nil, nil, errors.WithStack(saml2.ErrVerification{Cause: err})
 	}
 
-	// TODO: Support multiple assertions
+	// TODO: Support multiple assertions.
 	if len(response.Assertions) == 0 {
-		return nil, nil, saml2.ErrMissingAssertion
+		return nil, nil, errors.WithStack(saml2.ErrMissingAssertion)
 	}
 
 	assertion := response.Assertions[0]
@@ -31,26 +32,26 @@ func retrieveAssertionInfoWithResponse(sp *saml2.SAMLServiceProvider, encodedRes
 
 	warningInfo, err := sp.VerifyAssertionConditions(&assertion)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.WithStack(err)
 	}
 
-	//Get the NameID
+	// Get the NameID.
 	subject := assertion.Subject
 	if subject == nil {
-		return nil, nil, saml2.ErrMissingElement{Tag: saml2.SubjectTag}
+		return nil, nil, errors.WithStack(saml2.ErrMissingElement{Tag: saml2.SubjectTag}) //nolint:exhaustruct
 	}
 
 	nameID := subject.NameID
 	if nameID == nil {
-		return nil, nil, saml2.ErrMissingElement{Tag: saml2.NameIdTag}
+		return nil, nil, errors.WithStack(saml2.ErrMissingElement{Tag: saml2.NameIdTag}) //nolint:exhaustruct
 	}
 
 	assertionInfo.NameID = nameID.Value
 
-	//Get the actual assertion attributes
+	// Get the actual assertion attributes.
 	attributeStatement := assertion.AttributeStatement
 	if attributeStatement == nil && !sp.AllowMissingAttributes {
-		return nil, nil, saml2.ErrMissingElement{Tag: saml2.AttributeStatementTag}
+		return nil, nil, errors.WithStack(saml2.ErrMissingElement{Tag: saml2.AttributeStatementTag}) //nolint:exhaustruct
 	}
 
 	if attributeStatement != nil {
