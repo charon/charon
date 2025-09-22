@@ -19,8 +19,8 @@ func samlBuildAuthURL(sp *saml2.SAMLServiceProvider, relayState string) (string,
 	if err != nil {
 		return "", "", errors.WithStack(err)
 	}
-	el := doc.FindElement("/AuthnRequest")
-	if el != nil {
+	el := doc.FindElement(".//samlp:AuthnRequest")
+	if el == nil {
 		return "", "", errors.New("AuthnRequest element not found")
 	}
 	id := el.SelectAttrValue("ID", "")
