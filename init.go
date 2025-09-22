@@ -86,13 +86,13 @@ func initCharonOrganization(config *Config, service *Service, domain string) (fu
 
 		errE := organization.validate(context.Background(), &organization, service)
 		if errE != nil {
-			// This should never happen.
+			// Internal error: this should never happen.
 			panic(errE)
 		}
 
 		data, errE := x.MarshalWithoutEscapeHTML(organization)
 		if errE != nil {
-			// This should never happen.
+			// Internal error: this should never happen.
 			panic(errE)
 		}
 
