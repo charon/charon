@@ -325,11 +325,7 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	// TODO: Parsing types.Response Status, easier debugging, SAML2.0 includes many statuses like 'AuthnFailed'.
-	//       We could use their ValidateEncodeResponse and parse which status was returned into our error.
-	//       If gosaml2 merges our PR, we can add that logging.
-	//       See: https://github.com/russellhaering/gosaml2/pull/236
-	assertionInfo, err := provider.Provider.RetrieveAssertionInfo(req.Form.Get("SAMLResponse"))
+	assertionInfo, _, err := retrieveAssertionInfoWithResponse(provider.Provider, req.Form.Get("SAMLResponse"))
 	if err != nil {
 		errE = errors.WithStack(err)
 		errors.Details(errE)["provider"] = providerKey
