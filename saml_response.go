@@ -7,10 +7,12 @@ import (
 )
 
 // retrieveAssertionInfoWithResponse is the same as saml2.RetrieveAssertionInfo, but
-// returns the response as well.
+// returns the response as well. It also merges repeated same response attributes
+// into one slice.
 //
 // See: https://github.com/russellhaering/gosaml2/issues/235
 // See: https://github.com/russellhaering/gosaml2/pull/236
+// See: https://github.com/russellhaering/gosaml2/issues/241
 func retrieveAssertionInfoWithResponse(sp *saml2.SAMLServiceProvider, encodedResponse string) (*saml2.AssertionInfo, *types.Response, errors.E) {
 	assertionInfo := &saml2.AssertionInfo{ //nolint:exhaustruct
 		Values: make(saml2.Values),
@@ -56,7 +58,12 @@ func retrieveAssertionInfoWithResponse(sp *saml2.SAMLServiceProvider, encodedRes
 
 	if attributeStatement != nil {
 		for _, attribute := range attributeStatement.Attributes {
-			assertionInfo.Values[attribute.Name] = attribute
+			if v, ok := assertionInfo.Values[attribute.Name]; ok {
+				v.Values = append(v.Values, attribute.Values...)
+				assertionInfo.Values[attribute.Name] = v
+			} else {
+				assertionInfo.Values[attribute.Name] = attribute
+			}
 		}
 	}
 
