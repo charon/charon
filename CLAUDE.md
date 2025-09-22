@@ -65,7 +65,7 @@ To update internationalization TypeScript definitions:
 ### Key Backend Components
 
 - `auth_*.go` - Authentication flow implementations
-- `oidc_*.go` - OpenID Connect endpoints and logic  
+- `oidc_*.go` - OpenID Connect endpoints and logic
 - `organization.go`, `identity.go`, `account.go` - Core data models
 - `config.go` - Application configuration and CLI setup
 - `init.go` - System initialization and bootstrapping
@@ -73,7 +73,8 @@ To update internationalization TypeScript definitions:
 ### Backend Code Style
 
 - **Comments**: All comments must end with dots for consistency.
-- **Error Handling**: When error is `errors.E`, use `errE` as variable name and assertion should be of form `require.NoError(t, errE, "% -+#.1v", errE)`.
+- **Error Handling**: When error is `errors.E`, use `errE` as variable name and assertion should be of
+  form `require.NoError(t, errE, "% -+#.1v", errE)`.
 - **CI Commands**: For backend-only changes, run these commands to match CI validation:
   - `make lint` - Go linter (golangci-lint) with auto-fix
   - `make fmt` - Go code formatting with gofumpt and goimports
@@ -93,7 +94,7 @@ To update internationalization TypeScript definitions:
 ### Frontend Structure
 
 - `src/views/` - Main page components
-- `src/partials/` - Reusable page sections  
+- `src/partials/` - Reusable page sections
 - `src/components/` - UI components (Button, Input, etc.)
 - `src/locales/` - Translation files (en.json, sl.json)
 - `src/i18n.ts` - Vue-i18n configuration
@@ -150,7 +151,7 @@ To update internationalization TypeScript definitions:
 ## Development Setup Requirements
 
 - Go 1.23+ required
-- Node.js 20+ required  
+- Node.js 20+ required
 - TLS certificates needed (recommend mkcert for local development)
 - CompileDaemon for backend auto-reload during development
 
@@ -174,7 +175,7 @@ find src/ -name "*.vue" -exec grep -l "pattern" {} \;
 For comprehensive searches across large codebases, delegate to the `general-purpose` agent:
 
 ```text
-Task tool with subagent_type: "general-purpose"  
+Task tool with subagent_type: "general-purpose"
 Prompt: "Search the entire src/ directory for all Vue files containing hardcoded strings that need
 internationalization. Return a complete list of files and the specific strings that need translation, with line
 numbers."
@@ -202,7 +203,7 @@ Instead of vague tasks like "Update remaining files", create enumerated lists:
 ### 4. Batch Operations When Possible
 
 - Use `MultiEdit` for similar changes across multiple files
-- Use `grep` with `replace_all` patterns for systematic replacements  
+- Use `grep` with `replace_all` patterns for systematic replacements
 - Process files systematically in order of complexity
 
 ### 5. Always Verify Completeness
@@ -212,7 +213,7 @@ Before marking any comprehensive task as complete:
 ```bash
 # Search for remaining patterns with multiple approaches
 grep -r "pattern1" src/
-grep -r "pattern2" src/  
+grep -r "pattern2" src/
 grep -r "alternative pattern" src/
 ```
 
@@ -236,7 +237,7 @@ This approach prevents partial implementations and ensures thorough, complete ch
 - Ask: "Would you like me to continue with the remaining files?"
 - Leave the task in a partial state
 
-✅ **Correct approach:**  
+✅ **Correct approach:**
 
 - Work systematically through the entire task
 - Complete all identified work without interruption
@@ -246,7 +247,7 @@ This approach prevents partial implementations and ensures thorough, complete ch
 **Examples of when to continue vs. when to ask:**
 
 - ✅ Continue: You have a clear list of 20 files to update with similar changes
-- ✅ Continue: The pattern is established and you can apply it systematically  
+- ✅ Continue: The pattern is established and you can apply it systematically
 - ❌ Ask: The user provides conflicting requirements that need clarification
 - ❌ Ask: You encounter technical limitations that prevent completion
 
