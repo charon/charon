@@ -28,6 +28,7 @@ import (
 	"gitlab.com/tozd/go/x"
 	z "gitlab.com/tozd/go/zerolog"
 	"gitlab.com/tozd/identifier"
+	"golang.org/x/oauth2"
 
 	"gitlab.com/tozd/waf"
 )
@@ -400,15 +401,22 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcIssuer:   "https://accounts.google.com",
 			oidcClientID: config.Providers.Google.ClientID,
 			// We trim space so that the file can contain whitespace (e.g., a newline) at the end.
-			oidcSecret:           strings.TrimSpace(string(config.Providers.Google.Secret)),
-			oidcForcePKCE:        false,
-			oidcAuthURL:          "",
-			oidcTokenURL:         "",
-			oidcScopes:           []string{oidc.ScopeOpenID, "email", "profile"},
-			samlEntityID:         "",
-			samlMetadataURL:      "",
-			samlKeyStore:         nil,
-			samlAttributeMapping: SAMLAttributeMapping{}, //nolint:exhaustruct
+			oidcSecret:              strings.TrimSpace(string(config.Providers.Google.Secret)),
+			oidcForcePKCE:           false,
+			oidcAuthURL:             "",
+			oidcTokenURL:            "",
+			oidcScopes:              []string{oidc.ScopeOpenID, "email", "profile"},
+			samlEntityID:            "",
+			samlMetadataURL:         "",
+			samlKeyStore:            nil,
+			samlAttributeMapping:    SAMLAttributeMapping{}, //nolint:exhaustruct
+			oidcEndpoint:            oauth2.Endpoint{},      //nolint:exhaustruct
+			oidcClient:              nil,
+			oidcSupportsPKCE:        false,
+			oidcProvider:            nil,
+			samlSSOURL:              "",
+			samlIDPIssuer:           "",
+			samlIDPCertificateStore: nil,
 		})
 	}
 	if config.Providers.Facebook.ClientID != "" && config.Providers.Facebook.Secret != nil {
@@ -419,15 +427,22 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcIssuer:   "https://www.facebook.com",
 			oidcClientID: config.Providers.Facebook.ClientID,
 			// We trim space so that the file can contain whitespace (e.g., a newline) at the end.
-			oidcSecret:           strings.TrimSpace(string(config.Providers.Facebook.Secret)),
-			oidcForcePKCE:        true,
-			oidcAuthURL:          "",
-			oidcTokenURL:         "https://graph.facebook.com/oauth/access_token",
-			oidcScopes:           []string{oidc.ScopeOpenID, "email", "public_profile"},
-			samlEntityID:         "",
-			samlMetadataURL:      "",
-			samlKeyStore:         nil,
-			samlAttributeMapping: SAMLAttributeMapping{}, //nolint:exhaustruct
+			oidcSecret:              strings.TrimSpace(string(config.Providers.Facebook.Secret)),
+			oidcForcePKCE:           true,
+			oidcAuthURL:             "",
+			oidcTokenURL:            "https://graph.facebook.com/oauth/access_token",
+			oidcScopes:              []string{oidc.ScopeOpenID, "email", "public_profile"},
+			samlEntityID:            "",
+			samlMetadataURL:         "",
+			samlKeyStore:            nil,
+			samlAttributeMapping:    SAMLAttributeMapping{}, //nolint:exhaustruct
+			oidcEndpoint:            oauth2.Endpoint{},      //nolint:exhaustruct
+			oidcClient:              nil,
+			oidcSupportsPKCE:        false,
+			oidcProvider:            nil,
+			samlSSOURL:              "",
+			samlIDPIssuer:           "",
+			samlIDPCertificateStore: nil,
 		})
 	}
 	if config.Providers.OIDCTesting.ClientID != "" && config.Providers.OIDCTesting.Secret != nil && config.Providers.OIDCTesting.Issuer != "" {
@@ -438,70 +453,98 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcIssuer:   config.Providers.OIDCTesting.Issuer,
 			oidcClientID: config.Providers.OIDCTesting.ClientID,
 			// We trim space so that the file can contain whitespace (e.g., a newline) at the end.
-			oidcSecret:           strings.TrimSpace(string(config.Providers.OIDCTesting.Secret)),
-			oidcForcePKCE:        config.Providers.OIDCTesting.ForcePKCE,
-			oidcAuthURL:          config.Providers.OIDCTesting.AuthURL,
-			oidcTokenURL:         config.Providers.OIDCTesting.TokenURL,
-			oidcScopes:           []string{oidc.ScopeOpenID},
-			samlEntityID:         "",
-			samlMetadataURL:      "",
-			samlKeyStore:         nil,
-			samlAttributeMapping: SAMLAttributeMapping{}, //nolint:exhaustruct
+			oidcSecret:              strings.TrimSpace(string(config.Providers.OIDCTesting.Secret)),
+			oidcForcePKCE:           config.Providers.OIDCTesting.ForcePKCE,
+			oidcAuthURL:             config.Providers.OIDCTesting.AuthURL,
+			oidcTokenURL:            config.Providers.OIDCTesting.TokenURL,
+			oidcScopes:              []string{oidc.ScopeOpenID},
+			samlEntityID:            "",
+			samlMetadataURL:         "",
+			samlKeyStore:            nil,
+			samlAttributeMapping:    SAMLAttributeMapping{}, //nolint:exhaustruct
+			oidcEndpoint:            oauth2.Endpoint{},      //nolint:exhaustruct
+			oidcClient:              nil,
+			oidcSupportsPKCE:        false,
+			oidcProvider:            nil,
+			samlSSOURL:              "",
+			samlIDPIssuer:           "",
+			samlIDPCertificateStore: nil,
 		})
 	}
 
 	if config.Providers.SIPASS.EntityID != "" {
 		providers = append(providers, SiteProvider{
-			Key:                  "sipass",
-			Name:                 "SIPASS",
-			Type:                 ThirdPartyProviderSAML,
-			oidcIssuer:           "",
-			oidcClientID:         "",
-			oidcSecret:           "",
-			oidcForcePKCE:        false,
-			oidcAuthURL:          "",
-			oidcTokenURL:         "",
-			oidcScopes:           nil,
-			samlEntityID:         config.Providers.SIPASS.EntityID,
-			samlMetadataURL:      config.Providers.SIPASS.MetadataURL,
-			samlKeyStore:         nil,
-			samlAttributeMapping: getSIPASSAttributeMapping(),
+			Key:                     "sipass",
+			Name:                    "SIPASS",
+			Type:                    ThirdPartyProviderSAML,
+			oidcIssuer:              "",
+			oidcClientID:            "",
+			oidcSecret:              "",
+			oidcForcePKCE:           false,
+			oidcAuthURL:             "",
+			oidcTokenURL:            "",
+			oidcScopes:              nil,
+			samlEntityID:            config.Providers.SIPASS.EntityID,
+			samlMetadataURL:         config.Providers.SIPASS.MetadataURL,
+			samlKeyStore:            nil,
+			samlAttributeMapping:    getSIPASSAttributeMapping(),
+			oidcEndpoint:            oauth2.Endpoint{}, //nolint:exhaustruct
+			oidcClient:              nil,
+			oidcSupportsPKCE:        false,
+			oidcProvider:            nil,
+			samlSSOURL:              "",
+			samlIDPIssuer:           "",
+			samlIDPCertificateStore: nil,
 		})
 	}
 	if config.Server.Development {
 		providers = append(providers, SiteProvider{
-			Key:                  "mockSAML",
-			Name:                 "MockSAML",
-			Type:                 ThirdPartyProviderSAML,
-			oidcIssuer:           "",
-			oidcClientID:         "",
-			oidcSecret:           "",
-			oidcForcePKCE:        false,
-			oidcAuthURL:          "",
-			oidcTokenURL:         "",
-			oidcScopes:           nil,
-			samlEntityID:         mockSAMLEntityID,
-			samlMetadataURL:      mockSAMLMetadataURL,
-			samlKeyStore:         nil,
-			samlAttributeMapping: getDefaultAttributeMapping(),
+			Key:                     "mockSAML",
+			Name:                    "MockSAML",
+			Type:                    ThirdPartyProviderSAML,
+			oidcIssuer:              "",
+			oidcClientID:            "",
+			oidcSecret:              "",
+			oidcForcePKCE:           false,
+			oidcAuthURL:             "",
+			oidcTokenURL:            "",
+			oidcScopes:              nil,
+			samlEntityID:            mockSAMLEntityID,
+			samlMetadataURL:         mockSAMLMetadataURL,
+			samlKeyStore:            nil,
+			samlAttributeMapping:    getDefaultAttributeMapping(),
+			oidcEndpoint:            oauth2.Endpoint{}, //nolint:exhaustruct
+			oidcClient:              nil,
+			oidcSupportsPKCE:        false,
+			oidcProvider:            nil,
+			samlSSOURL:              "",
+			samlIDPIssuer:           "",
+			samlIDPCertificateStore: nil,
 		})
 	}
 	if config.Providers.SAMLTesting.MetadataURL != "" && config.Providers.SAMLTesting.EntityID != "" {
 		providers = append(providers, SiteProvider{
-			Key:                  "samlTesting",
-			Name:                 "SAML Testing",
-			Type:                 ThirdPartyProviderSAML,
-			oidcIssuer:           "",
-			oidcClientID:         "",
-			oidcSecret:           "",
-			oidcForcePKCE:        false,
-			oidcAuthURL:          "",
-			oidcTokenURL:         "",
-			oidcScopes:           nil,
-			samlEntityID:         config.Providers.SAMLTesting.EntityID,
-			samlMetadataURL:      config.Providers.SAMLTesting.MetadataURL,
-			samlKeyStore:         nil,
-			samlAttributeMapping: getDefaultAttributeMapping(),
+			Key:                     "samlTesting",
+			Name:                    "SAML Testing",
+			Type:                    ThirdPartyProviderSAML,
+			oidcIssuer:              "",
+			oidcClientID:            "",
+			oidcSecret:              "",
+			oidcForcePKCE:           false,
+			oidcAuthURL:             "",
+			oidcTokenURL:            "",
+			oidcScopes:              nil,
+			samlEntityID:            config.Providers.SAMLTesting.EntityID,
+			samlMetadataURL:         config.Providers.SAMLTesting.MetadataURL,
+			samlKeyStore:            nil,
+			samlAttributeMapping:    getDefaultAttributeMapping(),
+			oidcEndpoint:            oauth2.Endpoint{}, //nolint:exhaustruct
+			oidcClient:              nil,
+			oidcSupportsPKCE:        false,
+			oidcProvider:            nil,
+			samlSSOURL:              "",
+			samlIDPIssuer:           "",
+			samlIDPCertificateStore: nil,
 		})
 	}
 
