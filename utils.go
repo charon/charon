@@ -723,6 +723,10 @@ func withWebauthnError(err error) errors.E {
 	return errE
 }
 
+type unwrapper interface {
+	Unwrap() error
+}
+
 func withGosamlError(err error) errors.E {
 	if err == nil {
 		return nil
@@ -735,11 +739,10 @@ func withGosamlError(err error) errors.E {
 	var errParsing saml2.ErrParsing
 	var errInvalidValue saml2.ErrInvalidValue
 	if errors.As(err, &errVerification) { //nolint:nestif
-		details := errors.Details(errE)
-		if errVerification.Cause != nil {
-			// We extract the cause from the error ourselves.
-			// See: https://github.com/russellhaering/gosaml2/pull/242
-			details["cause"] = errVerification.Cause
+		// We check if errVerification maybe already implements Unwrap.
+		// See: https://github.com/russellhaering/gosaml2/pull/242
+		if _, ok := interface{}(errVerification).(unwrapper); errVerification.Cause != nil && !ok {
+			errE = errors.WrapWith(errVerification.Cause, errE)
 		}
 	} else if errors.As(err, &errMissingElement) {
 		details := errors.Details(errE)
@@ -750,11 +753,10 @@ func withGosamlError(err error) errors.E {
 			details["namespace"] = errMissingElement.Attribute
 		}
 	} else if errors.As(err, &errSaml) {
-		details := errors.Details(errE)
-		if errSaml.System != nil {
-			// We extract the cause from the error ourselves.
-			// See: https://github.com/russellhaering/gosaml2/pull/242
-			details["cause"] = errSaml.System
+		// We check if errSaml maybe already implements Unwrap.
+		// See: https://github.com/russellhaering/gosaml2/pull/242
+		if _, ok := interface{}(errSaml).(unwrapper); errSaml.System != nil && !ok {
+			errE = errors.WrapWith(errSaml.System, errE)
 		}
 	} else if errors.As(err, &errParsing) {
 		details := errors.Details(errE)
