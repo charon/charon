@@ -1,6 +1,8 @@
 package charon
 
 import (
+	"encoding/base64"
+	"encoding/xml"
 	"regexp"
 	"strconv"
 	"strings"
@@ -43,11 +45,18 @@ func getDefaultAttributeMapping() SAMLAttributeMapping {
 	}
 }
 
-func getSAMLCredentialID(assertionInfo *saml2.AssertionInfo, attributes map[string][]any, credentialIDAttributes []string) (string, errors.E) {
+func getSAMLCredentialID(assertionInfo *saml2.AssertionInfo, attributes map[string][]any, credentialIDAttributes []string, rawResponse string) (string, errors.E) {
 	credentialIDValues := []any{}
+	decodedXML, err := base64.StdEncoding.DecodeString(rawResponse)
+	if err != nil {
+		return "", errors.WithMessage(err, "failed to decode SAMLResponse")
+	}
 
 	if len(credentialIDAttributes) == 0 {
-		// TODO: Make sure that NameID is permanent and not transient identifier.
+		errE := validateNameIDFormat(decodedXML)
+		if errE != nil {
+			return "", errE
+		}
 		if assertionInfo.NameID != "" {
 			credentialIDValues = append(credentialIDValues, assertionInfo.NameID)
 		} else {
@@ -239,4 +248,65 @@ func getSAMLAttributes(assertionInfo *saml2.AssertionInfo, mapping SAMLAttribute
 	}
 
 	return attributes, nil
+}
+
+func validateNameIDFormat(rawXML []byte) errors.E {
+	format, value, errE := extractNameIDFormatFromXML(rawXML)
+	if errE != nil {
+		errors.Details(errE)["error"] = "extracting NameID format from SAMLResponse"
+		return errE
+	}
+
+	if format == saml2.NameIdFormatEmailAddress ||
+		format == saml2.NameIdFormatUnspecified ||
+		format == saml2.NameIdFormatPersistent {
+		return nil
+	}
+
+	if format == saml2.NameIdFormatTransient {
+		errE = errors.New("transient NameID cannot be used as credential ID")
+		errors.Details(errE)["format"] = format
+		errors.Details(errE)["nameID"] = value
+		return errE
+	}
+
+	errE = errors.New("unsupported / unknown NameID format")
+	errors.Details(errE)["format"] = format
+	errors.Details(errE)["nameID"] = value
+	return errE
+}
+
+func extractNameIDFormatFromXML(rawXML []byte) (string, string, errors.E) {
+	type NameID struct {
+		Format string `xml:"Format,attr"`
+		Value  string `xml:",chardata"`
+	}
+	type Subject struct {
+		NameID NameID `xml:"NameID"`
+	}
+	type Assertion struct {
+		Subject Subject `xml:"Subject"`
+	}
+	type Response struct {
+		Assertions []Assertion `xml:"Assertion"`
+	}
+	var resp Response
+	if err := xml.Unmarshal(rawXML, &resp); err != nil {
+		return "", "", errors.New("couldn't unmarshal SAMLResponse")
+	}
+
+	if len(resp.Assertions) == 0 {
+		return "", "", errors.New("no assertions found in SAMLResponse")
+	}
+
+	format := resp.Assertions[0].Subject.NameID.Format
+	value := resp.Assertions[0].Subject.NameID.Value
+
+	if format == "" || value == "" {
+		errE := errors.New("missing values NameID.Format or NameID.Value in SAMLResponse")
+		errors.Details(errE)["format"] = format
+		errors.Details(errE)["value"] = value
+		return "", "", errE
+	}
+	return format, value, nil
 }
