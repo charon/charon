@@ -10,6 +10,8 @@ import (
 // It also returns ID of the authn request.
 //
 // See: https://github.com/russellhaering/gosaml2/issues/89
+// See: https://github.com/russellhaering/gosaml2/pull/244
+// See: https://github.com/russellhaering/gosaml2/pull/245
 func samlBuildAuthURL(sp *saml2.SAMLServiceProvider, relayState string) (string, string, errors.E) {
 	doc, err := sp.BuildAuthRequestDocument()
 	if err != nil {
@@ -37,6 +39,7 @@ func samlBuildAuthURL(sp *saml2.SAMLServiceProvider, relayState string) (string,
 // See: https://github.com/russellhaering/gosaml2/issues/235
 // See: https://github.com/russellhaering/gosaml2/pull/236
 // See: https://github.com/russellhaering/gosaml2/issues/241
+// See: https://github.com/russellhaering/gosaml2/pull/243
 func retrieveAssertionInfoWithResponse(sp *saml2.SAMLServiceProvider, encodedResponse string) (*saml2.AssertionInfo, *types.Response, errors.E) {
 	assertionInfo := &saml2.AssertionInfo{ //nolint:exhaustruct
 		Values: make(saml2.Values),
