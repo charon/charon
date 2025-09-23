@@ -14,6 +14,12 @@ import (
 	"gitlab.com/tozd/go/x"
 )
 
+const (
+	nameIDFormatWindowsDomainQualifiedName = "urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName"
+	nameIDFormatKerberos                   = "urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos"
+	nameIDFormatEntity                     = "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"
+)
+
 type SAMLAttributeMapping struct {
 	// Empty CredentialIDAttributes means NameID.
 	CredentialIDAttributes []string
@@ -258,13 +264,17 @@ func validateNameIDFormat(rawXML []byte) errors.E {
 	}
 
 	if format == saml2.NameIdFormatEmailAddress ||
-		format == saml2.NameIdFormatUnspecified ||
-		format == saml2.NameIdFormatPersistent {
+		format == saml2.NameIdFormatPersistent ||
+		format == saml2.NameIdFormatX509SubjectName ||
+		format == nameIDFormatWindowsDomainQualifiedName ||
+		format == nameIDFormatKerberos ||
+		format == nameIDFormatEntity {
 		return nil
 	}
 
-	if format == saml2.NameIdFormatTransient {
-		errE = errors.New("transient NameID cannot be used as credential ID")
+	if format == saml2.NameIdFormatTransient ||
+		format == saml2.NameIdFormatUnspecified {
+		errE = errors.New("Transient or Unspecified NameID format cannot be used as credential ID")
 		errors.Details(errE)["format"] = format
 		errors.Details(errE)["nameID"] = value
 		return errE
@@ -303,7 +313,7 @@ func extractNameIDFormatFromXML(rawXML []byte) (string, string, errors.E) {
 	value := resp.Assertions[0].Subject.NameID.Value
 
 	if format == "" || value == "" {
-		errE := errors.New("missing values NameID.Format or NameID.Value in SAMLResponse")
+		errE := errors.New("missing values NameID Format or NameID Value in SAMLResponse")
 		errors.Details(errE)["format"] = format
 		errors.Details(errE)["value"] = value
 		return "", "", errE
