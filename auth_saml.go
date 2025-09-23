@@ -83,7 +83,7 @@ func initSAMLProvider(service *Service, host string, p SiteProvider) (samlProvid
 		Cert:   cert,
 	})
 	if err != nil {
-		return samlProvider{}, errors.WithMessage(err, "failed to set SP keystore")
+		return samlProvider{}, withGosamlError(err)
 	}
 
 	return samlProvider{

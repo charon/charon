@@ -26,6 +26,7 @@ import (
 	"github.com/go-jose/go-jose/v3"
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/ory/fosite"
+	saml2 "github.com/russellhaering/gosaml2"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
@@ -716,6 +717,66 @@ func withWebauthnError(err error) errors.E {
 		}
 		if e.DevInfo != "" {
 			details["debug"] = e.DevInfo
+		}
+	}
+
+	return errE
+}
+
+func withGosamlError(err error) errors.E {
+	if err == nil {
+		return nil
+	}
+
+	errE := errors.WithStack(err)
+	var errVerification saml2.ErrVerification
+	var errMissingElement saml2.ErrMissingElement
+	var errSaml saml2.ErrSaml
+	var errParsing saml2.ErrParsing
+	var errInvalidValue saml2.ErrInvalidValue
+	if errors.As(err, &errVerification) {
+		details := errors.Details(errE)
+		if errVerification.Cause != nil {
+			// We extract the cause from the error ourselves.
+			// See: https://github.com/russellhaering/gosaml2/pull/242
+			details["cause"] = errVerification.Cause
+		}
+	} else if errors.As(err, &errMissingElement) {
+		details := errors.Details(errE)
+		if errMissingElement.Tag != "" {
+			details["tag"] = errMissingElement.Tag
+		}
+		if errMissingElement.Attribute != "" {
+			details["namespace"] = errMissingElement.Attribute
+		}
+	} else if errors.As(err, &errSaml) {
+		details := errors.Details(errE)
+		if errSaml.System != nil {
+			// We extract the cause from the error ourselves.
+			// See: https://github.com/russellhaering/gosaml2/pull/242
+			details["cause"] = errSaml.System
+		}
+	} else if errors.As(err, &errParsing) {
+		details := errors.Details(errE)
+		if errParsing.Tag != "" {
+			details["tag"] = errParsing.Tag
+		}
+		if errParsing.Value != "" {
+			details["value"] = errParsing.Value
+		}
+		if errParsing.Type != "" {
+			details["type"] = errParsing.Type
+		}
+	} else if errors.As(err, &errInvalidValue) {
+		details := errors.Details(errE)
+		if errInvalidValue.Key != "" {
+			details["key"] = errInvalidValue.Key
+		} else if errInvalidValue.Expected != "" {
+			details["expected"] = errInvalidValue.Expected
+		} else if errInvalidValue.Actual != "" {
+			details["actual"] = errInvalidValue.Actual
+		} else if errInvalidValue.Reason != "" {
+			details["reason"] = errInvalidValue.Reason
 		}
 	}
 
