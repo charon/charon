@@ -734,7 +734,7 @@ func withGosamlError(err error) errors.E {
 	var errSaml saml2.ErrSaml
 	var errParsing saml2.ErrParsing
 	var errInvalidValue saml2.ErrInvalidValue
-	if errors.As(err, &errVerification) {
+	if errors.As(err, &errVerification) { //nolint:nestif
 		details := errors.Details(errE)
 		if errVerification.Cause != nil {
 			// We extract the cause from the error ourselves.
