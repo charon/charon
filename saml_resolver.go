@@ -14,11 +14,19 @@ import (
 	"gitlab.com/tozd/go/x"
 )
 
-const (
-	nameIDFormatWindowsDomainQualifiedName = "urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName"
-	nameIDFormatKerberos                   = "urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos"
-	nameIDFormatEntity                     = "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"
-)
+var allowedNameIDFormats = []string{ //nolint:gochecknoglobals
+	"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+	"urn:oasis:names:tc:SAML:2.0:nameid-format:persistent",
+	"urn:oasis:names:tc:SAML:2.0:nameid-format:x509SubjectName",
+	"urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName",
+	"urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos",
+	"urn:oasis:names:tc:SAML:2.0:nameid-format:entity",
+}
+
+var notAllowedNameIDFormats = []string{ //nolint:gochecknoglobals
+	"urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
+	"urn:oasis:names:tc:SAML:2.0:nameid-format:transient",
+}
 
 type SAMLAttributeMapping struct {
 	// Empty CredentialIDAttributes means NameID.
@@ -263,21 +271,19 @@ func validateNameIDFormat(rawXML []byte) errors.E {
 		return errE
 	}
 
-	if format == saml2.NameIdFormatEmailAddress ||
-		format == saml2.NameIdFormatPersistent ||
-		format == saml2.NameIdFormatX509SubjectName ||
-		format == nameIDFormatWindowsDomainQualifiedName ||
-		format == nameIDFormatKerberos ||
-		format == nameIDFormatEntity {
-		return nil
+	for _, f := range allowedNameIDFormats {
+		if format == f {
+			return nil
+		}
 	}
 
-	if format == saml2.NameIdFormatTransient ||
-		format == saml2.NameIdFormatUnspecified {
-		errE = errors.New("Transient or Unspecified NameID format cannot be used as credential ID")
-		errors.Details(errE)["format"] = format
-		errors.Details(errE)["nameID"] = value
-		return errE
+	for _, f := range notAllowedNameIDFormats {
+		if format == f {
+			errE = errors.New("Transient or Unspecified NameID format cannot be used as credential ID")
+			errors.Details(errE)["format"] = format
+			errors.Details(errE)["nameID"] = value
+			return errE
+		}
 	}
 
 	errE = errors.New("unsupported / unknown NameID format")
