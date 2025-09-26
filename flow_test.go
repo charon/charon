@@ -14,7 +14,7 @@ import (
 func TestStore(t *testing.T) {
 	t.Parallel()
 
-	_, service, _, _ := startTestServer(t) //nolint:dogsled
+	_, service, _, _, _ := startTestServer(t) //nolint:dogsled
 
 	ctx := context.Background()
 	f := &charon.Flow{

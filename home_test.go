@@ -83,7 +83,7 @@ func init() { //nolint:gochecknoinits
 func testStaticFile(t *testing.T, route, filePath, contentType string) {
 	t.Helper()
 
-	ts, service, _, _ := startTestServer(t)
+	ts, service, _, _, _ := startTestServer(t)
 
 	path, errE := service.Reverse(route, nil, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -114,7 +114,7 @@ func init() { //nolint:gochecknoinits
 	zerolog.ErrorMarshalFunc = z.ErrorMarshalFunc //nolint:reassign
 }
 
-func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock.Server, *httptest.Server) {
+func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock.Server, *httptest.Server, *httptest.Server) {
 	t.Helper()
 
 	tempDir := t.TempDir()
@@ -135,6 +135,7 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 	t.Cleanup(func() { smtpServer.Stop() }) //nolint:errcheck
 
 	oidcTS, oidcStore := startOIDCTestServer(t)
+	samlTS, samlStore := startSAMLTestServer(t)
 
 	config := charon.Config{
 		LoggingConfig: z.LoggingConfig{
@@ -166,11 +167,20 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 				},
 				Issuer: oidcTS.URL,
 			},
+			SAMLTesting: charon.SAMLProvider{
+				EntityID:    samlTestingEntityID,
+				MetadataURL: samlTS.URL + "/saml/metadata",
+			},
 		},
 	}
 
 	handler, service, errE := config.Init(testFiles)
 	require.NoError(t, errE, "% -+#.1v", errE)
+
+	for _, r := range service.Routes {
+		t.Logf("route: %s path=%s handlers=%v", r.Name, r.Path, r.API)
+		logger.Warn().Msgf("route: %s path=%s handlers=%v", r.Name, r.Path, r.API)
+	}
 
 	ts := httptest.NewUnstartedServer(nil)
 	ts.EnableHTTP2 = true
@@ -207,12 +217,24 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 	oidcTS.Client().CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
 		return http.ErrUseLastResponse
 	}
+	samlTS.Client().CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
 
-	authThirdPartyProvider, errE := service.Reverse("AuthThirdPartyProvider", waf.Params{"provider": "oidcTesting"}, nil)
+	authThirdPartyProviderOIDC, errE := service.Reverse("AuthThirdPartyProvider", waf.Params{"provider": "oidcTesting"}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	// We have the location testing server listens on now, so we can set the redirect URI.
-	oidcStore.Clients[oidcTestingClientID].(*fosite.DefaultClient).RedirectURIs = []string{ts.URL + authThirdPartyProvider} //nolint:forcetypeassert,errcheck
+	authThirdPartyProviderSAMLTesting, errE := service.Reverse("AuthThirdPartyProvider", waf.Params{"provider": "samlTesting"}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
 
-	return ts, service, smtpServer, oidcTS
+	logger.Warn().Msgf("OIDC reverse URL: %s", authThirdPartyProviderOIDC)
+	logger.Warn().Msgf("SAML reverse URL: %s", authThirdPartyProviderSAMLTesting)
+	t.Logf("Reversed OIDC URL: %s", authThirdPartyProviderOIDC)
+	t.Logf("Reversed SAML URL: %s", authThirdPartyProviderSAMLTesting)
+
+	// We have the location testing server listens on now, so we can set the redirect URI.
+	oidcStore.Clients[oidcTestingClientID].(*fosite.DefaultClient).RedirectURIs = []string{ts.URL + authThirdPartyProviderOIDC} //nolint:forcetypeassert,errcheck
+	samlStore.AssertionConsumerServiceURL = ts.URL + authThirdPartyProviderSAMLTesting
+
+	return ts, service, smtpServer, oidcTS, samlTS
 }

@@ -65,7 +65,7 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 
 	username := identifier.New().String()
 
-	ts, service, _, _ := startTestServer(t)
+	ts, service, _, _, _ := startTestServer(t)
 
 	userinfo, errE := service.ReverseAPI("OIDCUserInfo", nil, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)

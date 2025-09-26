@@ -26,7 +26,7 @@ func TestAuthFlowCodeOnly(t *testing.T) {
 	user := identifier.New().String()
 	email := user + "@example.com"
 
-	ts, service, smtpServer, _ := startTestServer(t)
+	ts, service, smtpServer, _, _ := startTestServer(t)
 
 	accessToken := signinUserCode(t, ts, service, smtpServer, email, charon.CompletedSignup)
 
@@ -55,7 +55,7 @@ func TestAuthFlowPasswordAndCode(t *testing.T) {
 	user := identifier.New().String()
 	email := user + "@example.com"
 
-	ts, service, smtpServer, _ := startTestServer(t)
+	ts, service, smtpServer, _, _ := startTestServer(t)
 
 	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
 

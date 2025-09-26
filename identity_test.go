@@ -17,7 +17,7 @@ import (
 func TestCreateIdentity(t *testing.T) {
 	t.Parallel()
 
-	_, service, _, _ := startTestServer(t) //nolint:dogsled
+	_, service, _, _, _ := startTestServer(t) //nolint:dogsled
 
 	newIdentity := charon.Identity{
 		IdentityPublic: charon.IdentityPublic{
@@ -108,7 +108,7 @@ func assertEqualAccess(t *testing.T, expected, actual map[charon.IdentityRef][][
 func TestUpdateIdentity(t *testing.T) {
 	t.Parallel()
 
-	_, service, _, _ := startTestServer(t) //nolint:dogsled
+	_, service, _, _, _ := startTestServer(t) //nolint:dogsled
 
 	accountID := identifier.New()
 	ctx := service.TestingWithAccountID(context.Background(), accountID)
@@ -177,7 +177,7 @@ func TestUpdateIdentity(t *testing.T) {
 func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	t.Parallel()
 
-	_, service, _, _ := startTestServer(t) //nolint:dogsled
+	_, service, _, _, _ := startTestServer(t) //nolint:dogsled
 
 	userAccountID := identifier.New()
 	userCtx := service.TestingWithAccountID(context.Background(), userAccountID)
@@ -637,7 +637,7 @@ func setupIdentityHierarchy(t *testing.T, service *charon.Service) []testIdentit
 func TestRecursiveIdentityAccess(t *testing.T) {
 	t.Parallel()
 
-	_, service, _, _ := startTestServer(t) //nolint:dogsled
+	_, service, _, _, _ := startTestServer(t) //nolint:dogsled
 
 	ids := setupIdentityHierarchy(t, service)
 
@@ -679,7 +679,7 @@ func TestRecursiveIdentityAccess(t *testing.T) {
 func TestCyclicIdentityAccess(t *testing.T) {
 	t.Parallel()
 
-	_, service, _, _ := startTestServer(t) //nolint:dogsled
+	_, service, _, _, _ := startTestServer(t) //nolint:dogsled
 
 	ids := setupIdentityHierarchy(t, service)
 

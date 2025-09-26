@@ -226,7 +226,7 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 func TestAuthFlowOIDC(t *testing.T) {
 	t.Parallel()
 
-	ts, service, _, oidcTS := startTestServer(t)
+	ts, service, _, oidcTS, _ := startTestServer(t)
 
 	// Signup with OIDC.
 	accessToken := oidcSignin(t, ts, service, oidcTS, charon.CompletedSignup)
