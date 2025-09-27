@@ -378,13 +378,13 @@ async function onAddApplicationTemplate(applicationTemplate: DeepReadonly<Applic
     clientsBackend: await Promise.all(
       applicationTemplate.clientsBackend.map(async (client) => ({
         client: { id: client.id! },
-        secret: await getSecret(client.id!),
+        secret: await generateSecret(client.id!),
       })),
     ),
     clientsService: await Promise.all(
       applicationTemplate.clientsService.map(async (client) => ({
         client: { id: client.id! },
-        secret: await getSecret(client.id!),
+        secret: await generateSecret(client.id!),
       })),
     ),
   })
@@ -399,7 +399,7 @@ async function onAddApplicationTemplate(applicationTemplate: DeepReadonly<Applic
   })
 }
 
-async function getSecret(id: string): Promise<string> {
+async function generateSecret(id: string): Promise<string> {
   const secret = Identifier.new().toString()
   // We setup argon2id every time so that memory used by it
   // can be reclaimed when it is not used anymore.
