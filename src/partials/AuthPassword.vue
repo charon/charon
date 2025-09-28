@@ -317,7 +317,7 @@ async function onCode() {
       </InputTextButton>
     </div>
     <div class="flex flex-col mt-4">
-      <label for="current-password" class="mb-1">{{ t("partials.AuthPassword.passwordLabel") }}</label>
+      <label for="authpassword-input-currentpassword" class="mb-1">{{ t("partials.AuthPassword.passwordLabel") }}</label>
       <!--
         We set novalidate because we do not UA to show hints.
         We show them ourselves when we want them.
@@ -328,7 +328,7 @@ async function onCode() {
           See: https://www.chromium.org/developers/design-documents/form-styles-that-chromium-understands/
         -->
         <input
-          id="email"
+          id="authpassword-input-email"
           name="email"
           autocomplete="username"
           autocorrect="off"
@@ -339,7 +339,7 @@ async function onCode() {
           class="hidden"
         />
         <InputText
-          id="current-password"
+          id="authpassword-input-currentpassword"
           v-model="password"
           name="current-password"
           type="password"
@@ -362,15 +362,17 @@ async function onCode() {
           client side so we might be counting characters differently here, leading to confusion.
           Button is on purpose not disabled on unexpectedPasswordError so that user can retry.
         -->
-        <Button primary type="submit" tabindex="2" :disabled="!password || keyProgress > 0 || !!passwordError" :progress="progress">{{
+        <Button id="authpassword-button-next" primary type="submit" tabindex="2" :disabled="!password || keyProgress > 0 || !!passwordError" :progress="progress">{{
           t("common.buttons.next")
         }}</Button>
       </form>
     </div>
     <template v-if="passwordError">
-      <div v-if="passwordError === 'wrongPassword'" class="mt-4 text-error-600">{{ t("common.errors.wrongPassword") }}</div>
-      <div v-else-if="passwordError === 'invalidPassword'" class="mt-4 text-error-600">{{ t("common.errors.invalidPassword") }}</div>
-      <div v-else-if="passwordError === 'shortPassword'" class="mt-4 text-error-600">{{ t("common.errors.shortPassword") }}</div>
+      <div v-if="passwordError === 'wrongPassword'" id="authpassword-error-wrongpassword" class="mt-4 text-error-600">{{ t("common.errors.wrongPassword") }}</div>
+      <div v-else-if="passwordError === 'invalidPassword'" id="authpassword-error-invalidpassword" class="mt-4 text-error-600">
+        {{ t("common.errors.invalidPassword") }}
+      </div>
+      <div v-else-if="passwordError === 'shortPassword'" id="authpassword-error-shortpassword" class="mt-4 text-error-600">{{ t("common.errors.shortPassword") }}</div>
       <div v-if="passwordError === 'wrongPassword'" class="mt-4">
         <i18n-t keypath="partials.AuthPassword.troublePassword" scope="global">
           <template #linkDifferentSigninMethod>

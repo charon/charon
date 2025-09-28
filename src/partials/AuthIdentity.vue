@@ -118,7 +118,8 @@ onBeforeUnmount(onBeforeLeave)
 async function onAfterEnter() {
   await getIdentities()
 
-  document.getElementById("first-identity")?.focus()
+  // Focus first identity select button if available.
+  document.querySelector<HTMLInputElement>(".authidentity-selector-identity")?.focus()
 }
 
 function onBeforeLeave() {
@@ -348,11 +349,11 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
         </div>
         <div v-else-if="usedIdentities.length === 0" class="italic mb-4">{{ t("partials.AuthIdentity.previouslyUsedDisabled") }}</div>
         <ul v-else>
-          <li v-for="(allIdentity, i) in usedIdentities" :key="allIdentity.identity.id" class="mb-4">
+          <li v-for="allIdentity in usedIdentities" :key="allIdentity.identity.id" class="mb-4">
             <IdentityPublic :identity="allIdentity.identity" :url="allIdentity.url" :is-current="allIdentity.isCurrent" :can-update="allIdentity.canUpdate">
               <div class="flex flex-col items-start">
                 <Button
-                  :id="i === 0 ? 'first-identity' : null"
+                  class="authidentity-selector-identity"
                   primary
                   type="button"
                   tabindex="1"
@@ -367,12 +368,12 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
         <template v-if="addedIdentities.length">
           <h3 class="text-l font-bold mb-4">{{ t("partials.AuthIdentity.identitiesUsedWithOrg") }}</h3>
           <ul>
-            <li v-for="(allIdentity, i) in addedIdentities" :key="allIdentity.identity.id" class="mb-4">
+            <li v-for="allIdentity in addedIdentities" :key="allIdentity.identity.id" class="mb-4">
               <IdentityPublic :identity="allIdentity.identity" :url="allIdentity.url" :is-current="allIdentity.isCurrent" :can-update="allIdentity.canUpdate">
                 <div class="flex flex-col items-start">
                   <Button
-                    :id="usedIdentities.length + i === 0 ? 'first-identity' : null"
                     primary
+                    class="authidentity-selector-identity"
                     type="button"
                     tabindex="1"
                     :progress="progress"
@@ -390,12 +391,12 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
         </div>
         <div v-else-if="otherIdentities.length === 0" class="italic mb-4">{{ t("partials.AuthIdentity.noOtherIdentitiesCreateOne") }}</div>
         <ul v-else>
-          <li v-for="(allIdentity, i) in otherIdentities" :key="allIdentity.identity.id" class="mb-4">
+          <li v-for="allIdentity in otherIdentities" :key="allIdentity.identity.id" class="mb-4">
             <IdentityPublic :identity="allIdentity.identity" :url="allIdentity.url" :is-current="allIdentity.isCurrent" :can-update="allIdentity.canUpdate">
               <div class="flex flex-col items-start">
                 <Button
-                  :id="usedIdentities.length + addedIdentities.length + i === 0 ? 'first-identity' : null"
                   primary
+                  class="authidentity-selector-identity"
                   type="button"
                   tabindex="2"
                   :progress="progress"

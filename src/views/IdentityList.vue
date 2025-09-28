@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Identity, Identities } from "@/types"
+import type { Identities, Identity } from "@/types"
 
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useI18n } from "vue-i18n"
