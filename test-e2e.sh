@@ -31,6 +31,7 @@ cleanup() {
 
     echo "Stopping charon Docker container"
     docker stop charon-container
+    docker rm -f charon-container
   fi
 
   if [ "$cleanup_charon_image" -ne 0 ]; then
