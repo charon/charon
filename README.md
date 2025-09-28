@@ -303,6 +303,15 @@ npm run serve
 Open [https://localhost:8080/](https://localhost:8080/) in your browser, which will connect
 you to the backend which then proxies unknown requests (non-API requests) to the frontend.
 
+### Testing
+
+We use [Playwright](https://playwright.dev/) for end-to-end testing. Run tests with:
+
+```sh
+npm run test-e2e-install
+npm run test-e2e
+```
+
 ## Related projects
 
 - [Keycloak](https://www.keycloak.org) – enterprise grade, very similar to goals of this project, but: this project

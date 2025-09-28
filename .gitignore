@@ -31,6 +31,8 @@ coverage.*
 codeclimate.json
 /coverage
 /charon
+/playwright-report
+/test-results
 *.pem
 /keys.txt
 *.env

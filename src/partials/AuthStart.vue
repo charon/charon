@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Flow } from "@/types"
 
-import { ref, computed, watch, onBeforeUnmount, onMounted, getCurrentInstance } from "vue"
+import { computed, getCurrentInstance, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import { useI18n } from "vue-i18n"
 import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
@@ -132,14 +132,14 @@ async function onThirdPartyProvider(provider: string) {
 <template>
   <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
     <div class="flex flex-col">
-      <label for="email" class="mb-1">{{ t("partials.AuthStart.emailOrUsernameLabel") }}</label>
+      <label for="authstart-input-email" class="mb-1">{{ t("partials.AuthStart.emailOrUsernameLabel") }}</label>
       <!--
         We set novalidate because we do not UA to show hints.
         We show them ourselves when we want them.
       -->
       <form class="flex flex-row gap-4" novalidate @submit.prevent="onNext">
         <InputText
-          id="email"
+          id="authstart-input-email"
           v-model="emailOrUsernameProxy"
           name="email"
           class="flex-grow flex-auto min-w-0"
@@ -161,7 +161,9 @@ async function onThirdPartyProvider(provider: string) {
           client side so we might be counting characters differently here, leading to confusion.
           Button is on purpose not disabled on unexpectedError so that user can retry.
         -->
-        <Button primary type="submit" :disabled="!flow.getEmailOrUsername().trim() || !!passwordError" :progress="progress">{{ t("common.buttons.next") }}</Button>
+        <Button id="authstart-button-next" primary type="submit" :disabled="!flow.getEmailOrUsername().trim() || !!passwordError" :progress="progress">{{
+          t("common.buttons.next")
+        }}</Button>
       </form>
       <div v-if="passwordError === 'invalidEmailOrUsername'" class="mt-4 text-error-600">
         {{ isEmail(flow.getEmailOrUsername()) ? t("common.errors.invalidEmailOrUsername.email") : t("common.errors.invalidEmailOrUsername.username") }}

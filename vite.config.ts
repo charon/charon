@@ -1,10 +1,10 @@
-import { defineConfig } from "vitest/config"
+import { defineConfig, configDefaults } from "vitest/config"
 import vue from "@vitejs/plugin-vue"
 import license from "rollup-plugin-license"
 import VueI18n from "@intlify/unplugin-vue-i18n/vite"
 import path from "path"
 
-// https://vitejs.dev/config/
+// https://vite.dev/config/
 // https://vitest.dev/config/
 export default defineConfig({
   plugins: [
@@ -50,6 +50,7 @@ export default defineConfig({
     target: ["esnext"],
   },
   test: {
+    exclude: [...configDefaults.exclude, "**/tests/*"],
     coverage: {
       provider: "v8",
       reporter: ["text", "cobertura", "html"],
