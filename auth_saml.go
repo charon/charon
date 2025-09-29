@@ -76,6 +76,9 @@ func initSAMLProvider(service *Service, host string, p SiteProvider) (samlProvid
 		SignAuthnRequests:           true,
 		AudienceURI:                 p.samlEntityID,
 		IDPCertificateStore:         p.samlIDPCertificateStore,
+		// It looks like this canonicalizer is supported more than others (Shibboleth supports only this one).
+		// So we use it as default. We can see if we have to make it configurable in the future.
+		SignAuthnRequestsCanonicalizer: dsig.MakeC14N10ExclusiveCanonicalizerWithPrefixList(""),
 	}
 
 	err = sp.SetSPKeyStore(&saml2.KeyStore{
