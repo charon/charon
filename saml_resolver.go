@@ -23,11 +23,6 @@ var allowedNameIDFormats = []string{ //nolint:gochecknoglobals
 	"urn:oasis:names:tc:SAML:2.0:nameid-format:entity",
 }
 
-var notAllowedNameIDFormats = []string{ //nolint:gochecknoglobals
-	"urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
-	"urn:oasis:names:tc:SAML:2.0:nameid-format:transient",
-}
-
 type SAMLAttributeMapping struct {
 	// Empty CredentialIDAttributes means NameID.
 	CredentialIDAttributes []string
@@ -61,13 +56,9 @@ func getDefaultAttributeMapping() SAMLAttributeMapping {
 
 func getSAMLCredentialID(assertionInfo *saml2.AssertionInfo, attributes map[string][]any, credentialIDAttributes []string, rawResponse string) (string, errors.E) {
 	credentialIDValues := []any{}
-	decodedXML, err := base64.StdEncoding.DecodeString(rawResponse)
-	if err != nil {
-		return "", errors.WithMessage(err, "failed to decode SAMLResponse")
-	}
 
 	if len(credentialIDAttributes) == 0 {
-		errE := validateNameIDFormat(decodedXML)
+		errE := validateNameIDFormat(rawResponse)
 		if errE != nil {
 			return "", errE
 		}
@@ -264,11 +255,15 @@ func getSAMLAttributes(assertionInfo *saml2.AssertionInfo, mapping SAMLAttribute
 	return attributes, nil
 }
 
-func validateNameIDFormat(rawXML []byte) errors.E {
-	format, value, errE := extractNameIDFormatFromXML(rawXML)
+func validateNameIDFormat(rawResponse string) errors.E {
+	decodedXML, err := base64.StdEncoding.DecodeString(rawResponse)
+	if err != nil {
+		return errors.WithDetails(err, "json", rawResponse)
+	}
+
+	format, value, errE := extractNameIDFormatFromXML(decodedXML)
 	if errE != nil {
-		errors.Details(errE)["error"] = "extracting NameID format from SAMLResponse"
-		return errE
+		return errors.WithDetails(err, "json", decodedXML)
 	}
 
 	for _, f := range allowedNameIDFormats {
@@ -277,21 +272,15 @@ func validateNameIDFormat(rawXML []byte) errors.E {
 		}
 	}
 
-	for _, f := range notAllowedNameIDFormats {
-		if format == f {
-			errE = errors.New("Transient or Unspecified NameID format cannot be used as credential ID")
-			errors.Details(errE)["format"] = format
-			errors.Details(errE)["nameID"] = value
-			return errE
-		}
-	}
+	errE = errors.New("invalid NameID format")
 
-	errE = errors.New("unsupported / unknown NameID format")
 	errors.Details(errE)["format"] = format
 	errors.Details(errE)["nameID"] = value
 	return errE
 }
 
+// We have to extract NameID format from XML ourselves because gosaml2 library does not do it.
+// See: https://github.com/russellhaering/gosaml2/pull/72
 func extractNameIDFormatFromXML(rawXML []byte) (string, string, errors.E) {
 	type NameID struct {
 		Format string `xml:"Format,attr"`
@@ -308,21 +297,26 @@ func extractNameIDFormatFromXML(rawXML []byte) (string, string, errors.E) {
 	}
 	var resp Response
 	if err := xml.Unmarshal(rawXML, &resp); err != nil {
-		return "", "", errors.New("couldn't unmarshal SAMLResponse")
+		return "", "", errors.WithDetails(err, "json", string(rawXML))
 	}
 
 	if len(resp.Assertions) == 0 {
-		return "", "", errors.New("no assertions found in SAMLResponse")
+		return "", "", errors.New("missing NameID format or NameID value in SAMLResponse")
 	}
 
 	format := resp.Assertions[0].Subject.NameID.Format
 	value := resp.Assertions[0].Subject.NameID.Value
 
 	if format == "" || value == "" {
-		errE := errors.New("missing values NameID Format or NameID Value in SAMLResponse")
-		errors.Details(errE)["format"] = format
-		errors.Details(errE)["value"] = value
+		errE := errors.New("missing NameID format or NameID value in SAMLResponse")
+		if format == "" {
+			errors.Details(errE)["format"] = format
+		}
+		if value == "" {
+			errors.Details(errE)["value"] = value
+		}
 		return "", "", errE
 	}
+
 	return format, value, nil
 }
