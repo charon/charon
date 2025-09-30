@@ -119,7 +119,7 @@ func startSAMLTestServer(t *testing.T) (*httptest.Server, *SAMLTestStore) {
 
 		requestID := extractRequestID(t, xmlData)
 		if requestID == "" {
-			http.Error(w, "Missing request ID in SAML request", http.StatusBadRequest)
+			http.Error(w, "samlTesting missing request ID in SAML request", http.StatusBadRequest)
 			return
 		}
 		store.LastRequestID = requestID
