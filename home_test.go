@@ -83,7 +83,7 @@ func init() { //nolint:gochecknoinits
 func testStaticFile(t *testing.T, route, filePath, contentType string) {
 	t.Helper()
 
-	ts, service, _, _, _ := startTestServer(t)
+	ts, service, _, _, _ := startTestServer(t) //nolint:dogsled
 
 	path, errE := service.Reverse(route, nil, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -177,11 +177,6 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 	handler, service, errE := config.Init(testFiles)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	for _, r := range service.Routes {
-		t.Logf("route: %s path=%s handlers=%v", r.Name, r.Path, r.API)
-		logger.Warn().Msgf("route: %s path=%s handlers=%v", r.Name, r.Path, r.API)
-	}
-
 	ts := httptest.NewUnstartedServer(nil)
 	ts.EnableHTTP2 = true
 	t.Cleanup(ts.Close)
@@ -229,8 +224,6 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 
 	logger.Warn().Msgf("OIDC reverse URL: %s", authThirdPartyProviderOIDC)
 	logger.Warn().Msgf("SAML reverse URL: %s", authThirdPartyProviderSAMLTesting)
-	t.Logf("Reversed OIDC URL: %s", authThirdPartyProviderOIDC)
-	t.Logf("Reversed SAML URL: %s", authThirdPartyProviderSAMLTesting)
 
 	// We have the location testing server listens on now, so we can set the redirect URI.
 	oidcStore.Clients[oidcTestingClientID].(*fosite.DefaultClient).RedirectURIs = []string{ts.URL + authThirdPartyProviderOIDC} //nolint:forcetypeassert,errcheck

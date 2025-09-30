@@ -223,7 +223,7 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{"oidcTesting"})
 }
 
-func TestAuthFlowOIDC(t *testing.T) {
+func TestAuthFlowOIDC(t *testing.T) { //nolint:dupl
 	t.Parallel()
 
 	ts, service, _, oidcTS, _ := startTestServer(t)

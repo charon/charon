@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"compress/flate"
 	"crypto/rsa"
+	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -28,7 +30,7 @@ import (
 )
 
 const (
-	samlTestingEntityID = "testing-saml"
+	samlTestingEntityID = "samlTesting"
 	samlTestingIssuer   = "https://saml.testing.local"
 )
 
@@ -41,6 +43,11 @@ type SAMLTestStore struct {
 	Certificate                 *x509.Certificate
 	KeyStore                    dsig.X509KeyStore
 	AssertionConsumerServiceURL string
+}
+
+type AuthnRequest struct {
+	XMLName                     xml.Name `xml:"AuthnRequest"`
+	AssertionConsumerServiceURL string   `xml:"AssertionConsumerServiceURL,attr"`
 }
 
 func startSAMLTestServer(t *testing.T) (*httptest.Server, *SAMLTestStore) {
@@ -68,14 +75,10 @@ func startSAMLTestServer(t *testing.T) (*httptest.Server, *SAMLTestStore) {
 
 	mux := http.NewServeMux()
 
-	// Metadata endpoint
+	// Mock metadata endpoint.
 	mux.HandleFunc("/saml/metadata", func(w http.ResponseWriter, req *http.Request) {
 		certBase64 := base64.StdEncoding.EncodeToString(cert.Raw)
-		// Get the host from the request to build the correct URL
 		scheme := "http"
-		if req.TLS != nil {
-			scheme = "https"
-		}
 		host := req.Host
 		baseURL := fmt.Sprintf("%s://%s", scheme, host)
 		metadata := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
@@ -101,20 +104,31 @@ func startSAMLTestServer(t *testing.T) (*httptest.Server, *SAMLTestStore) {
 		samlRequest := req.URL.Query().Get("SAMLRequest")
 		relayState := req.URL.Query().Get("RelayState")
 
-		require.NotEmpty(t, samlRequest)
+		if samlRequest == "" {
+			http.Error(w, "Missing SAMLRequest parameter", http.StatusBadRequest)
+			return
+		}
 
 		store.RelayState = relayState
 
 		xmlData, err := decodeSAMLRequest(t, samlRequest)
-		require.NoError(t, err)
+		if err != nil {
+			http.Error(w, "samlTesting decodeSAMLRequest", http.StatusBadRequest)
+			return
+		}
 
-		requestID := extractRequestID(xmlData)
-		require.NotEmpty(t, requestID)
+		requestID := extractRequestID(t, xmlData)
+		if requestID == "" {
+			http.Error(w, "Missing request ID in SAML request", http.StatusBadRequest)
+			return
+		}
 		store.LastRequestID = requestID
 
-		callbackURL, err := extractAssertionConsumerServiceURL(xmlData)
-		require.NoError(t, err)
-		require.NotEmpty(t, callbackURL)
+		callbackURL, errE := extractAssertionConsumerServiceURL(t, xmlData)
+		if errE != nil || callbackURL == "" {
+			http.Error(w, "samlTesting invalid assertion consumer service URL", http.StatusBadRequest)
+			return
+		}
 		store.AssertionConsumerServiceURL = callbackURL
 
 		response := generateSignedSAMLResponse(t, store, requestID, callbackURL)
@@ -143,7 +157,7 @@ func startSAMLTestServer(t *testing.T) (*httptest.Server, *SAMLTestStore) {
 	return ts, store
 }
 
-func generateSignedSAMLResponse(t *testing.T, store *SAMLTestStore, requestID, destination string) string {
+func generateSignedSAMLResponse(t *testing.T, store *SAMLTestStore, requestID string, destination string) string {
 	t.Helper()
 
 	now := time.Now().UTC()
@@ -187,24 +201,24 @@ func generateSignedSAMLResponse(t *testing.T, store *SAMLTestStore, requestID, d
         </saml:AttributeStatement>
     </saml:Assertion>
 </samlp:Response>`,
-		responseID,                              // response ID
-		now.Format(time.RFC3339),                // issue instant
-		requestID,                               // in response to
-		destination,                             // destination
-		samlTestingIssuer,                       // issuer
-		identifier.New().String(),               // assertion ID
-		now.Format(time.RFC3339),                // assertion issue instant
-		samlTestingIssuer,                       // assertion issuer
-		store.Subject,                           // name ID
-		requestID,                               // subject confirmation in response to
-		notAfter.Format(time.RFC3339),           // subject confirmation not on or after
-		destination,                             // subject confirmation recipient
-		notBefore.Format(time.RFC3339),          // conditions not before
-		notAfter.Format(time.RFC3339),           // conditions not on or after
-		samlTestingEntityID,                     // audience
-		now.Format(time.RFC3339),                // authn instant
-		identifier.New().String(),               // session index
-		generateAttributesXML(store.Attributes), // attributes XML
+		responseID,                                 // response ID.
+		now.Format(time.RFC3339),                   // issue instant.
+		requestID,                                  // in response to.
+		destination,                                // destination.
+		samlTestingIssuer,                          // issuer.
+		identifier.New().String(),                  // assertion ID.
+		now.Format(time.RFC3339),                   // assertion issue instant.
+		samlTestingIssuer,                          // assertion issuer.
+		store.Subject,                              // name ID.
+		requestID,                                  // subject confirmation in response to.
+		notAfter.Format(time.RFC3339),              // subject confirmation not on or after.
+		destination,                                // subject confirmation recipient.
+		notBefore.Format(time.RFC3339),             // conditions not before.
+		notAfter.Format(time.RFC3339),              // conditions not on or after.
+		samlTestingEntityID,                        // audience.
+		now.Format(time.RFC3339),                   // authn instant.
+		identifier.New().String(),                  // session index.
+		generateAttributesXML(t, store.Attributes), // attributes XML.
 	)
 
 	doc := etree.NewDocument()
@@ -212,7 +226,10 @@ func generateSignedSAMLResponse(t *testing.T, store *SAMLTestStore, requestID, d
 	require.NoError(t, err)
 
 	signCtx := dsig.NewDefaultSigningContext(store.KeyStore)
-	signCtx.SetSignatureMethod(dsig.RSASHA256SignatureMethod)
+	err = signCtx.SetSignatureMethod(dsig.RSASHA256SignatureMethod)
+	if err != nil {
+		return ""
+	}
 
 	signedResponse, err := signCtx.SignEnveloped(doc.Root())
 	require.NoError(t, err)
@@ -226,7 +243,8 @@ func generateSignedSAMLResponse(t *testing.T, store *SAMLTestStore, requestID, d
 	return base64.StdEncoding.EncodeToString(xmlBytes)
 }
 
-func generateAttributesXML(attributes map[string][]string) string {
+func generateAttributesXML(t *testing.T, attributes map[string][]string) string {
+	t.Helper()
 	var sb strings.Builder
 
 	for name, values := range attributes {
@@ -273,7 +291,7 @@ func samlSignin(t *testing.T, ts *httptest.Server, service *charon.Service, saml
 	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	// Flow is available, current provider is testing
+	// Flow is available, current provider is testing.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
 		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{"samlTesting"}, "", assertCharonDashboard)
@@ -285,24 +303,26 @@ func samlSignin(t *testing.T, ts *httptest.Server, service *charon.Service, saml
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
 	out, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
-	assert.Equal(t, http.StatusOK, resp.StatusCode, string(out)) // SAML uses HTTP-POST binding, returns form
-
-	// The mock IdP returns an HTML form
 	htmlStr := string(out)
+	assert.Equal(t, http.StatusOK, resp.StatusCode, htmlStr)
 
-	// Extract the form values that the IdP generated
-	samlResponse := extractFormValue(htmlStr, "SAMLResponse")
-	relayState := extractFormValue(htmlStr, "RelayState")
-	actionURL := extractFormAction(htmlStr)
+	samlResponse := extractFormValue(t, htmlStr, "SAMLResponse")
+	relayState := extractFormValue(t, htmlStr, "RelayState")
+	actionURL := extractFormAction(t, htmlStr)
 
 	require.NotEmpty(t, samlResponse)
 	require.NotEmpty(t, relayState)
 	require.NotEmpty(t, actionURL)
 
-	// Submit the SAML response back to SP
 	formData := url.Values{
 		"SAMLResponse": {samlResponse},
 		"RelayState":   {relayState},
+	}
+
+	// Flow has not yet changed, current provider is testing.
+	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
+	if assert.NoError(t, err) {
+		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{"samlTesting"}, "", assertCharonDashboard)
 	}
 
 	// Redirect to SAML callback.
@@ -313,7 +333,6 @@ func samlSignin(t *testing.T, ts *httptest.Server, service *charon.Service, saml
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusSeeOther, resp.StatusCode, string(out))
 	location := resp.Header.Get("Location")
-	assert.NotEmpty(t, location)
 
 	route, errE := service.GetRoute(location, http.MethodGet)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -328,7 +347,122 @@ func samlSignin(t *testing.T, ts *httptest.Server, service *charon.Service, saml
 	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{"samlTesting"})
 }
 
-func extractRequestID(xmlData string) string {
+func mockSAMLSignin(t *testing.T, ts *httptest.Server, service *charon.Service, signinOrSignout charon.Completed) string {
+	t.Helper()
+
+	mockSAMLClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true, //nolint:gosec
+			},
+		},
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
+
+	authFlowThirdPartyProviderStart, errE := service.ReverseAPI("AuthFlowThirdPartyProviderStart", waf.Params{"id": flowID.String()}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	// Start MockSAML.
+	resp, err := ts.Client().Post(ts.URL+authFlowThirdPartyProviderStart, "application/json", strings.NewReader(`{"provider":"mockSAML"}`)) //nolint:noctx,bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, 2, resp.ProtoMajor)
+	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+	var authFlowResponse charon.AuthFlowResponse
+	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Equal(t, []charon.Provider{"mockSAML"}, authFlowResponse.Providers)
+	require.NotNil(t, authFlowResponse.ThirdPartyProvider)
+
+	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	// Flow is available, current provider is mockSAML.
+	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
+	if assert.NoError(t, err) {
+		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{"mockSAML"}, "", assertCharonDashboard)
+	}
+
+	// Redirect to MockSAML login page.
+	resp, err = mockSAMLClient.Get(authFlowResponse.ThirdPartyProvider.Location) //nolint:noctx,bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+
+	location := resp.Header.Get("Location")
+	require.NotEmpty(t, location, "Expected Location header in 302 response")
+	locationURL, err := url.Parse(location)
+	require.NoError(t, err)
+	queryParams := locationURL.Query()
+
+	authPayload := map[string]interface{}{
+		"email": "jackson@example.com",
+	}
+	for key, values := range queryParams {
+		if len(values) > 0 {
+			authPayload[key] = values[0]
+		}
+	}
+	jsonPayload, err := json.Marshal(authPayload)
+	require.NoError(t, err)
+
+	// Call MockSAML auth endpoint.
+	resp, err = mockSAMLClient.Post("https://mocksaml.com/api/namespace/charon/saml/auth", "application/json", bytes.NewReader(jsonPayload)) //nolint:noctx,bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	out, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	htmlStr := string(out)
+	assert.Equal(t, http.StatusOK, resp.StatusCode, htmlStr)
+
+	samlResponse := extractFormValue(t, htmlStr, "SAMLResponse")
+	relayState := extractFormValue(t, htmlStr, "RelayState")
+	actionURL := extractFormAction(t, htmlStr)
+
+	require.NotEmpty(t, samlResponse)
+	require.NotEmpty(t, relayState)
+	require.NotEmpty(t, actionURL)
+
+	formData := url.Values{
+		"SAMLResponse": {samlResponse},
+		"RelayState":   {relayState},
+	}
+
+	// Flow has not yet changed, current provider is testing.
+	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
+	if assert.NoError(t, err) {
+		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{"mockSAML"}, "", assertCharonDashboard)
+	}
+
+	// Redirect to SAML callback.
+	resp, err = ts.Client().Post(actionURL, "application/x-www-form-urlencoded", strings.NewReader(formData.Encode())) //nolint:noctx,bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	out, err = io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusSeeOther, resp.StatusCode, string(out))
+	location = resp.Header.Get("Location")
+	assert.NotEmpty(t, location)
+
+	route, errE := service.GetRoute(location, http.MethodGet)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Equal(t, "AuthFlowGet", route.Name)
+
+	// Flow is available and signinOrSignout is completed.
+	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
+	require.NoError(t, err)
+	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{signinOrSignout}, []charon.Provider{"mockSAML"}, "", assertCharonDashboard)
+
+	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{"mockSAML"}, 1, "username")
+	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{"mockSAML"})
+}
+
+func extractRequestID(t *testing.T, xmlData string) string {
+	t.Helper()
 	if idx := strings.Index(xmlData, `ID="`); idx != -1 {
 		start := idx + 4
 		if end := strings.Index(xmlData[start:], `"`); end != -1 {
@@ -338,12 +472,8 @@ func extractRequestID(xmlData string) string {
 	return ""
 }
 
-type AuthnRequest struct {
-	XMLName                     xml.Name `xml:"AuthnRequest"`
-	AssertionConsumerServiceURL string   `xml:"AssertionConsumerServiceURL,attr"`
-}
-
-func extractAssertionConsumerServiceURL(xmlData string) (string, error) {
+func extractAssertionConsumerServiceURL(t *testing.T, xmlData string) (string, error) {
+	t.Helper()
 	var req AuthnRequest
 	if err := xml.Unmarshal([]byte(xmlData), &req); err != nil {
 		return "", err
@@ -369,7 +499,8 @@ func decodeSAMLRequest(t *testing.T, encoded string) (string, error) {
 	return string(decoded), nil
 }
 
-func extractFormValue(html, name string) string {
+func extractFormValue(t *testing.T, html string, name string) string {
+	t.Helper()
 	searchStr := fmt.Sprintf(`name="%s" value="`, name)
 	if idx := strings.Index(html, searchStr); idx != -1 {
 		start := idx + len(searchStr)
@@ -380,7 +511,8 @@ func extractFormValue(html, name string) string {
 	return ""
 }
 
-func extractFormAction(html string) string {
+func extractFormAction(t *testing.T, html string) string {
+	t.Helper()
 	searchStr := `action="`
 	if idx := strings.Index(html, searchStr); idx != -1 {
 		start := idx + len(searchStr)
@@ -391,7 +523,7 @@ func extractFormAction(html string) string {
 	return ""
 }
 
-func TestAuthFlowSAML(t *testing.T) {
+func TestAuthFlowSAML(t *testing.T) { //nolint:dupl
 	t.Parallel()
 
 	ts, service, _, _, samlTS := startTestServer(t)
@@ -411,8 +543,8 @@ func TestAuthFlowSAML(t *testing.T) {
 	accessToken = samlSignin(t, ts, service, samlTS, charon.CompletedSignin)
 
 	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
-		{charon.ActivitySignIn, nil, []charon.Provider{"samlTesting"}, 0, 1, 0, 1}, // Signin
-		{charon.ActivitySignOut, nil, nil, 0, 0, 0, 0},                             // Signout
+		{charon.ActivitySignIn, nil, []charon.Provider{"samlTesting"}, 0, 1, 0, 1}, // Signin.
+		{charon.ActivitySignOut, nil, nil, 0, 0, 0, 0},                             // Signout.
 		{charon.ActivitySignIn, nil, []charon.Provider{"samlTesting"}, 0, 1, 0, 1},
 		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
 		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
@@ -420,9 +552,29 @@ func TestAuthFlowSAML(t *testing.T) {
 }
 
 func TestAuthFlowMockSAML(t *testing.T) {
-	t.Skip("External mockSAML service test - TO DO")
+	t.Parallel()
 
-	// The test structure would be similar to TestAuthFlowSAML, but using
-	// the external mockSAML service instead of our local mock server.
-	// To fully implement this test, we need get metadata from mocksaml.com.
+	ts, service, _, _, _ := startTestServer(t) //nolint:dogsled
+
+	// Signup with MockSAML.
+	accessToken := mockSAMLSignin(t, ts, service, charon.CompletedSignup)
+
+	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
+		{charon.ActivitySignIn, nil, []charon.Provider{"mockSAML"}, 0, 1, 0, 1},
+		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
+		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
+	})
+
+	signoutUser(t, ts, service, accessToken)
+
+	// Signin with MockSAML.
+	accessToken = mockSAMLSignin(t, ts, service, charon.CompletedSignin)
+
+	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
+		{charon.ActivitySignIn, nil, []charon.Provider{"mockSAML"}, 0, 1, 0, 1}, // Signin.
+		{charon.ActivitySignOut, nil, nil, 0, 0, 0, 0},                          // Signout.
+		{charon.ActivitySignIn, nil, []charon.Provider{"mockSAML"}, 0, 1, 0, 1},
+		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
+		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
+	})
 }
