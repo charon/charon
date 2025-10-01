@@ -59,15 +59,15 @@ func getSAMLCredentialID(assertionInfo *saml2.AssertionInfo, attributes map[stri
 	credentialIDValues := []any{}
 
 	if len(credentialIDAttributes) == 0 {
-		errE := validateNameIDFormat(rawResponse)
+		if assertionInfo.NameID != "" {
+			return "", errors.New("empty NameID")
+		} else {
+		}
+		errE := validateNameIDFormat(assertionInfo.NameID, rawResponse)
 		if errE != nil {
 			return "", errE
 		}
-		if assertionInfo.NameID != "" {
-			credentialIDValues = append(credentialIDValues, assertionInfo.NameID)
-		} else {
-			return "", errors.New("empty NameID")
-		}
+		credentialIDValues = append(credentialIDValues, assertionInfo.NameID)
 	} else {
 		for _, name := range credentialIDAttributes {
 			values, ok := attributes[name]
@@ -256,9 +256,16 @@ func getSAMLAttributes(assertionInfo *saml2.AssertionInfo, mapping SAMLAttribute
 	return attributes, nil
 }
 
-func validateNameIDFormat(rawResponse string) errors.E {
+func validateNameIDFormat(expectedNameID, rawResponse string) errors.E {
 	format, value, errE := extractNameIDFormatFromXML(rawResponse)
 	if errE != nil {
+		return errE
+	}
+
+	if value != expectedNameID {
+		errE = errors.New("NameID does not match")
+		errors.Details(errE)["expected"] = expectedNameID
+		errors.Details(errE)["actual"] = value
 		return errE
 	}
 
@@ -277,6 +284,7 @@ func validateNameIDFormat(rawResponse string) errors.E {
 func extractNameIDFormatFromXML(rawXML string) (string, string, errors.E) {
 	decodedXML, err := base64.StdEncoding.DecodeString(rawXML)
 	if err != nil {
+		// This is unexpected, because gosaml2 library have already succeeded in this.
 		return "", "", errors.WithDetails(err, "raw", rawXML)
 	}
 
@@ -294,28 +302,17 @@ func extractNameIDFormatFromXML(rawXML string) (string, string, errors.E) {
 		Assertions []Assertion `xml:"Assertion"`
 	}
 	var resp Response
-	if err := xml.Unmarshal(decodedXML, &resp); err != nil {
+	err = xml.Unmarshal(decodedXML, &resp)
+	if err != nil {
 		return "", "", errors.WithDetails(err, "xml", string(decodedXML))
 	}
 
-	var format, value string
-	for _, assertion := range resp.Assertions {
-		format = assertion.Subject.NameID.Format
-		value = assertion.Subject.NameID.Value
-		if format != "" && value != "" {
-			// We have information we need.
-			return format, value, nil
-		}
-		// We check only the first assertion, this is the same as gosaml2 library.
-		break //nolint:staticcheck
+	if len(resp.Assertions) == 0 {
+		// This is unexpected, because gosaml2 library have already succeeded in this.
+		errE := errors.New("missing assertions")
+		errors.Details(errE)["xml"] = decodedXML
+		return "", "", errE
 	}
 
-	errE := errors.New("missing NameID format or NameID value")
-	if format != "" {
-		errors.Details(errE)["format"] = format
-	}
-	if value != "" {
-		errors.Details(errE)["value"] = value
-	}
-	return "", "", errE
+	return resp.Assertions[0].Subject.NameID.Format, resp.Assertions[0].Subject.NameID.Value, nil
 }
