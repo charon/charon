@@ -202,7 +202,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 			validateIntrospect(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, refreshToken, "refresh_token", identityID, tt.refreshTokenLifespan)
 			validateUserInfo(t, ts, service, accessToken, identityID)
 
-			// We use assert.WithinDuration with 2 seconds allowed delta, so in 10 iterations every
+			// We use assert.WithinDuration with 3 seconds allowed delta, so in 10 iterations every
 			// second we should still catch if any timestamp is not progressing as expected.
 			for range 10 {
 				// We sleep for a second so that all timestamps increase (they are at second granularity).

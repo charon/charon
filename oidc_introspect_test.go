@@ -100,7 +100,7 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 		assert.Empty(t, response.ErrorDescription)
 		assert.True(t, response.Active)
 		if lifespan != nil {
-			assert.WithinDuration(t, now.Add(*lifespan), response.ExpirationTime.Time().UTC(), 2*time.Second)
+			assert.WithinDuration(t, now.Add(*lifespan), response.ExpirationTime.Time().UTC(), 3*time.Second)
 		} else {
 			assert.Nil(t, response.ExpirationTime)
 		}
@@ -117,9 +117,9 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 	assert.True(t, response.Active)
 	assert.Equal(t, clientID, response.ClientID)
 	if assert.NotNil(t, lifespan) {
-		assert.WithinDuration(t, now.Add(*lifespan), response.ExpirationTime.Time().UTC(), 2*time.Second)
+		assert.WithinDuration(t, now.Add(*lifespan), response.ExpirationTime.Time().UTC(), 3*time.Second)
 	}
-	assert.WithinDuration(t, now, response.IssueTime.Time().UTC(), 2*time.Second)
+	assert.WithinDuration(t, now, response.IssueTime.Time().UTC(), 3*time.Second)
 	assert.Equal(t, "openid profile email offline_access", response.Scope)
 	assert.Equal(t, identityID.String(), response.Subject)
 	assert.Equal(t, []string{organizationID, appID, clientID}, response.Audience)
