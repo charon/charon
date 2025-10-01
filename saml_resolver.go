@@ -262,10 +262,8 @@ func validateNameIDFormat(rawResponse string) errors.E {
 		return errE
 	}
 
-	for _, f := range allowedNameIDFormats {
-		if format == f {
-			return nil
-		}
+	if slices.Contains(allowedNameIDFormats, format) {
+		return nil
 	}
 
 	errE = errors.New("invalid NameID format")
