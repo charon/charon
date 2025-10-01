@@ -342,10 +342,7 @@ func samlSignin(t *testing.T, ts *httptest.Server, service *charon.Service, saml
 func mockSAMLSignin(t *testing.T, ts *httptest.Server, service *charon.Service, signinOrSignout charon.Completed) string {
 	t.Helper()
 
-	mockSAMLClient := cleanhttp.DefaultClient()
-	mockSAMLClient.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
-		return http.ErrUseLastResponse
-	}
+	mockSAMLClient := createMockSAMLClient(t)
 
 	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
 
@@ -441,6 +438,16 @@ func mockSAMLSignin(t *testing.T, ts *httptest.Server, service *charon.Service, 
 
 	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{"mockSAML"}, 1, "username")
 	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{"mockSAML"})
+}
+
+func createMockSAMLClient(t *testing.T) *http.Client {
+	t.Helper()
+
+	client := cleanhttp.DefaultClient()
+	client.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+	return client
 }
 
 func extractRequestID(t *testing.T, xmlData string) string {
