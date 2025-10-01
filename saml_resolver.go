@@ -307,7 +307,7 @@ func extractNameIDFormatFromXML(rawXML string) (string, string, errors.E) {
 			return format, value, nil
 		}
 		// We check only the first assertion, this is the same as gosaml2 library.
-		break
+		break //nolint:staticcheck
 	}
 
 	errE := errors.New("missing NameID format or NameID value")
