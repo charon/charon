@@ -61,7 +61,6 @@ func getSAMLCredentialID(assertionInfo *saml2.AssertionInfo, attributes map[stri
 	if len(credentialIDAttributes) == 0 {
 		if assertionInfo.NameID != "" {
 			return "", errors.New("empty NameID")
-		} else {
 		}
 		errE := validateNameIDFormat(assertionInfo.NameID, rawResponse)
 		if errE != nil {
