@@ -258,12 +258,12 @@ func getSAMLAttributes(assertionInfo *saml2.AssertionInfo, mapping SAMLAttribute
 func validateNameIDFormat(rawResponse string) errors.E {
 	decodedXML, err := base64.StdEncoding.DecodeString(rawResponse)
 	if err != nil {
-		return errors.WithDetails(err, "json", rawResponse)
+		return errors.WithDetails(err, "raw", rawResponse)
 	}
 
 	format, value, errE := extractNameIDFormatFromXML(decodedXML)
 	if errE != nil {
-		return errors.WithDetails(err, "json", decodedXML)
+		return errors.WithDetails(errE, "xml", decodedXML)
 	}
 
 	for _, f := range allowedNameIDFormats {
