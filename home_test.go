@@ -135,7 +135,7 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 	t.Cleanup(func() { smtpServer.Stop() }) //nolint:errcheck
 
 	oidcTS, oidcStore := startOIDCTestServer(t)
-	samlTS, samlStore := startSAMLTestServer(t)
+	samlTS := startSAMLTestServer(t)
 
 	config := charon.Config{
 		LoggingConfig: z.LoggingConfig{
@@ -216,18 +216,11 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 		return http.ErrUseLastResponse
 	}
 
-	authThirdPartyProviderOIDC, errE := service.Reverse("AuthThirdPartyProvider", waf.Params{"provider": "oidcTesting"}, nil)
+	authThirdPartyProviderOIDCTesting, errE := service.Reverse("AuthThirdPartyProvider", waf.Params{"provider": "oidcTesting"}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
-
-	authThirdPartyProviderSAMLTesting, errE := service.Reverse("AuthThirdPartyProvider", waf.Params{"provider": "samlTesting"}, nil)
-	require.NoError(t, errE, "% -+#.1v", errE)
-
-	logger.Warn().Msgf("OIDC reverse URL: %s", authThirdPartyProviderOIDC)
-	logger.Warn().Msgf("SAML reverse URL: %s", authThirdPartyProviderSAMLTesting)
 
 	// We have the location testing server listens on now, so we can set the redirect URI.
-	oidcStore.Clients[oidcTestingClientID].(*fosite.DefaultClient).RedirectURIs = []string{ts.URL + authThirdPartyProviderOIDC} //nolint:forcetypeassert,errcheck
-	samlStore.AssertionConsumerServiceURL = ts.URL + authThirdPartyProviderSAMLTesting
+	oidcStore.Clients[oidcTestingClientID].(*fosite.DefaultClient).RedirectURIs = []string{ts.URL + authThirdPartyProviderOIDCTesting} //nolint:forcetypeassert,errcheck
 
 	return ts, service, smtpServer, oidcTS, samlTS
 }
