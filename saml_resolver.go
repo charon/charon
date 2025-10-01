@@ -1,7 +1,10 @@
 package charon
 
 import (
+	"encoding/base64"
+	"encoding/xml"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -11,6 +14,15 @@ import (
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
 )
+
+var allowedNameIDFormats = []string{ //nolint:gochecknoglobals
+	"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+	"urn:oasis:names:tc:SAML:2.0:nameid-format:persistent",
+	"urn:oasis:names:tc:SAML:2.0:nameid-format:x509SubjectName",
+	"urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName",
+	"urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos",
+	"urn:oasis:names:tc:SAML:2.0:nameid-format:entity",
+}
 
 type SAMLAttributeMapping struct {
 	// Empty CredentialIDAttributes means NameID.
@@ -43,11 +55,14 @@ func getDefaultAttributeMapping() SAMLAttributeMapping {
 	}
 }
 
-func getSAMLCredentialID(assertionInfo *saml2.AssertionInfo, attributes map[string][]any, credentialIDAttributes []string) (string, errors.E) {
+func getSAMLCredentialID(assertionInfo *saml2.AssertionInfo, attributes map[string][]any, credentialIDAttributes []string, rawResponse string) (string, errors.E) {
 	credentialIDValues := []any{}
 
 	if len(credentialIDAttributes) == 0 {
-		// TODO: Make sure that NameID is permanent and not transient identifier.
+		errE := validateNameIDFormat(rawResponse)
+		if errE != nil {
+			return "", errE
+		}
 		if assertionInfo.NameID != "" {
 			credentialIDValues = append(credentialIDValues, assertionInfo.NameID)
 		} else {
@@ -239,4 +254,68 @@ func getSAMLAttributes(assertionInfo *saml2.AssertionInfo, mapping SAMLAttribute
 	}
 
 	return attributes, nil
+}
+
+func validateNameIDFormat(rawResponse string) errors.E {
+	format, value, errE := extractNameIDFormatFromXML(rawResponse)
+	if errE != nil {
+		return errE
+	}
+
+	if slices.Contains(allowedNameIDFormats, format) {
+		return nil
+	}
+
+	errE = errors.New("invalid NameID format")
+	errors.Details(errE)["format"] = format
+	errors.Details(errE)["nameID"] = value
+	return errE
+}
+
+// We have to extract NameID format from XML ourselves because gosaml2 library does not do it.
+// See: https://github.com/russellhaering/gosaml2/pull/72
+func extractNameIDFormatFromXML(rawXML string) (string, string, errors.E) {
+	decodedXML, err := base64.StdEncoding.DecodeString(rawXML)
+	if err != nil {
+		return "", "", errors.WithDetails(err, "raw", rawXML)
+	}
+
+	type NameID struct {
+		Format string `xml:"Format,attr"`
+		Value  string `xml:",chardata"`
+	}
+	type Subject struct {
+		NameID NameID `xml:"NameID"`
+	}
+	type Assertion struct {
+		Subject Subject `xml:"Subject"`
+	}
+	type Response struct {
+		Assertions []Assertion `xml:"Assertion"`
+	}
+	var resp Response
+	if err := xml.Unmarshal(decodedXML, &resp); err != nil {
+		return "", "", errors.WithDetails(err, "xml", string(decodedXML))
+	}
+
+	var format, value string
+	for _, assertion := range resp.Assertions {
+		format = assertion.Subject.NameID.Format
+		value = assertion.Subject.NameID.Value
+		if format != "" && value != "" {
+			// We have information we need.
+			return format, value, nil
+		}
+		// We check only the first assertion, this is the same as gosaml2 library.
+		break //nolint:staticcheck
+	}
+
+	errE := errors.New("missing NameID format or NameID value")
+	if format != "" {
+		errors.Details(errE)["format"] = format
+	}
+	if value != "" {
+		errors.Details(errE)["value"] = value
+	}
+	return "", "", errE
 }

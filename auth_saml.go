@@ -331,8 +331,8 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		s.failAuthStep(w, req, false, flow, errE)
 		return
 	}
-
-	assertionInfo, response, err := retrieveAssertionInfoWithResponse(provider.Provider, req.Form.Get("SAMLResponse"))
+	samlResponse := req.Form.Get("SAMLResponse")
+	assertionInfo, response, err := retrieveAssertionInfoWithResponse(provider.Provider, samlResponse)
 	if err != nil {
 		errE = errors.WithStack(err)
 		errors.Details(errE)["provider"] = providerKey
@@ -370,7 +370,7 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	credentialID, errE := getSAMLCredentialID(assertionInfo, attributes, provider.Mapping.CredentialIDAttributes)
+	credentialID, errE := getSAMLCredentialID(assertionInfo, attributes, provider.Mapping.CredentialIDAttributes, samlResponse)
 	if errE != nil {
 		errors.Details(errE)["provider"] = providerKey
 		s.BadRequestWithError(w, req, errE)
