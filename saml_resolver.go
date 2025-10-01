@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/xml"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -256,14 +257,9 @@ func getSAMLAttributes(assertionInfo *saml2.AssertionInfo, mapping SAMLAttribute
 }
 
 func validateNameIDFormat(rawResponse string) errors.E {
-	decodedXML, err := base64.StdEncoding.DecodeString(rawResponse)
-	if err != nil {
-		return errors.WithDetails(err, "raw", rawResponse)
-	}
-
-	format, value, errE := extractNameIDFormatFromXML(decodedXML)
+	format, value, errE := extractNameIDFormatFromXML(rawResponse)
 	if errE != nil {
-		return errors.WithDetails(errE, "xml", decodedXML)
+		return errE
 	}
 
 	for _, f := range allowedNameIDFormats {
@@ -281,7 +277,12 @@ func validateNameIDFormat(rawResponse string) errors.E {
 
 // We have to extract NameID format from XML ourselves because gosaml2 library does not do it.
 // See: https://github.com/russellhaering/gosaml2/pull/72
-func extractNameIDFormatFromXML(rawXML []byte) (string, string, errors.E) {
+func extractNameIDFormatFromXML(rawXML string) (string, string, errors.E) {
+	decodedXML, err := base64.StdEncoding.DecodeString(rawXML)
+	if err != nil {
+		return "", "", errors.WithDetails(err, "raw", rawXML)
+	}
+
 	type NameID struct {
 		Format string `xml:"Format,attr"`
 		Value  string `xml:",chardata"`
@@ -296,8 +297,8 @@ func extractNameIDFormatFromXML(rawXML []byte) (string, string, errors.E) {
 		Assertions []Assertion `xml:"Assertion"`
 	}
 	var resp Response
-	if err := xml.Unmarshal(rawXML, &resp); err != nil {
-		return "", "", errors.WithDetails(err, "json", string(rawXML))
+	if err := xml.Unmarshal(decodedXML, &resp); err != nil {
+		return "", "", errors.WithDetails(err, "xml", string(decodedXML))
 	}
 
 	if len(resp.Assertions) == 0 {
