@@ -3,11 +3,11 @@ package charon_test
 import (
 	"bytes"
 	"compress/flate"
-	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/xml"
 	"fmt"
+	"html/template"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -36,19 +36,36 @@ const (
 )
 
 type samlTestStore struct {
-	Subject       string
-	Attributes    map[string][]string
-	LastRequestID string
-	RelayState    string
-	PrivateKey    *rsa.PrivateKey
-	Certificate   *x509.Certificate
-	KeyStore      dsig.X509KeyStore
+	Subject     string
+	Attributes  map[string][]string
+	RelayState  string
+	Certificate *x509.Certificate
+	KeyStore    dsig.X509KeyStore
 }
 
 type authnRequest struct {
 	XMLName                     xml.Name `xml:"AuthnRequest"`
 	AssertionConsumerServiceURL string   `xml:"AssertionConsumerServiceURL,attr"`
 }
+
+var samlPostFormTemplate = template.Must(template.New("samlPostForm").Parse(`
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>SAML Response</title>
+    </head>
+    <body onload="document.forms[0].submit()">
+        <form method="post" action="{{.CallbackURL}}">
+            <input type="hidden" name="SAMLResponse" value="{{.SAMLResponse}}"/>
+            <input type="hidden" name="RelayState" value="{{.RelayState}}"/>
+            <noscript>
+                <p>JavaScript is disabled. Please click the button below to continue:</p>
+                <input type="submit" value="Submit"/>
+            </noscript>
+        </form>
+    </body>
+</html>`))
 
 func startSAMLTestServer(t *testing.T) *httptest.Server {
 	t.Helper()
@@ -63,13 +80,12 @@ func startSAMLTestServer(t *testing.T) *httptest.Server {
 
 	keyStore := dsig.RandomKeyStoreForTest()
 
-	privateKey, certBytes, err := keyStore.GetKeyPair()
+	_, certBytes, err := keyStore.GetKeyPair()
 	require.NoError(t, err)
 
 	cert, err := x509.ParseCertificate(certBytes)
 	require.NoError(t, err)
 
-	store.PrivateKey = privateKey
 	store.Certificate = cert
 	store.KeyStore = keyStore
 
@@ -105,7 +121,7 @@ func startSAMLTestServer(t *testing.T) *httptest.Server {
 		relayState := req.URL.Query().Get("RelayState")
 
 		if samlRequest == "" {
-			http.Error(w, "Missing SAMLRequest parameter", http.StatusBadRequest)
+			http.Error(w, "samlTesting missing SAMLRequest parameter", http.StatusBadRequest)
 			return
 		}
 
@@ -122,7 +138,6 @@ func startSAMLTestServer(t *testing.T) *httptest.Server {
 			http.Error(w, "samlTesting missing request ID in SAML request", http.StatusBadRequest)
 			return
 		}
-		store.LastRequestID = requestID
 
 		callbackURL, errE := extractAssertionConsumerServiceURL(t, xmlData)
 		if errE != nil || callbackURL == "" {
@@ -132,22 +147,23 @@ func startSAMLTestServer(t *testing.T) *httptest.Server {
 
 		response := generateSignedSAMLResponse(t, store, requestID, callbackURL)
 
-		htmlResponse := fmt.Sprintf(`
-        <html>
-            <body onload="document.forms[0].submit()">
-                <form method="post" action="%s">
-                    <input type="hidden" name="SAMLResponse" value="%s"/>
-                    <input type="hidden" name="RelayState" value="%s"/>
-                    <noscript>
-                        <input type="submit" value="Submit"/>
-                    </noscript>
-                </form>
-            </body>
-        </html>`, callbackURL, response, relayState)
+		htmlResponse := struct {
+			CallbackURL  string
+			SAMLResponse string
+			RelayState   string
+		}{
+			CallbackURL:  callbackURL,
+			SAMLResponse: response,
+			RelayState:   relayState,
+		}
 
 		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(htmlResponse))
+		if err := samlPostFormTemplate.Execute(w, htmlResponse); err != nil {
+			t.Logf("Failed to execute template: %v", err)
+			http.Error(w, "Failed to generate response form", http.StatusInternalServerError)
+			return
+		}
 	})
 
 	ts = httptest.NewServer(mux)
@@ -276,7 +292,6 @@ func samlSignin(t *testing.T, ts *httptest.Server, service *charon.Service, saml
 	resp, err := ts.Client().Post(ts.URL+authFlowThirdPartyProviderStart, "application/json", strings.NewReader(`{"provider":"samlTesting"}`)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
