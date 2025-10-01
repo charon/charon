@@ -298,23 +298,24 @@ func extractNameIDFormatFromXML(rawXML string) (string, string, errors.E) {
 		return "", "", errors.WithDetails(err, "xml", string(decodedXML))
 	}
 
-	if len(resp.Assertions) == 0 {
-		return "", "", errors.New("missing NameID format or NameID value in SAMLResponse")
+	var format, value string
+	for _, assertion := range resp.Assertions {
+		format = assertion.Subject.NameID.Format
+		value = assertion.Subject.NameID.Value
+		if format != "" && value != "" {
+			// We have information we need.
+			return format, value, nil
+		}
+		// We check only the first assertion, this is the same as gosaml2 library.
+		break
 	}
 
-	format := resp.Assertions[0].Subject.NameID.Format
-	value := resp.Assertions[0].Subject.NameID.Value
-
-	if format == "" || value == "" {
-		errE := errors.New("missing NameID format or NameID value in SAMLResponse")
-		if format == "" {
-			errors.Details(errE)["format"] = format
-		}
-		if value == "" {
-			errors.Details(errE)["value"] = value
-		}
-		return "", "", errE
+	errE := errors.New("missing NameID format or NameID value")
+	if format != "" {
+		errors.Details(errE)["format"] = format
 	}
-
-	return format, value, nil
+	if value != "" {
+		errors.Details(errE)["value"] = value
+	}
+	return "", "", errE
 }
