@@ -267,7 +267,6 @@ func validateNameIDFormat(rawResponse string) errors.E {
 	}
 
 	errE = errors.New("invalid NameID format")
-
 	errors.Details(errE)["format"] = format
 	errors.Details(errE)["nameID"] = value
 	return errE
