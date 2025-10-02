@@ -180,7 +180,7 @@ approvals:
   # Type: boolean
   require_password_to_approve: false
   # Reset approvals on a new push. Type: boolean
-  reset_approvals_on_push: true
+  reset_approvals_on_push: false
   # Reset approvals from Code Owners if their files changed. Can be enabled only if
   # reset_approvals_on_push is disabled. Type: boolean
   selective_code_owner_removals: false
