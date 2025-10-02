@@ -32,6 +32,7 @@ codeclimate.json
 /coverage
 /charon
 /playwright-report
+/playwright-screenshots
 /test-results
 *.pem
 /keys.txt

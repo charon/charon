@@ -123,8 +123,10 @@ docker run --rm \
   --network charon-e2e-network \
   -v "$(pwd)/playwright-report:/app/playwright-report" \
   -v "$(pwd)/test-results:/app/test-results" \
+  -v "$(pwd)/playwright-screenshots:/app/playwright-screenshots" \
   -e CHARON_URL="https://charon-container:8080" \
   -e LINK_PUBLISH_JOB_ID \
+  -e UPDATE_SCREENSHOTS \
   charon-playwright-image
 
 echo "=== E2E Tests Completed Successfully ==="

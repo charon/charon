@@ -29,5 +29,6 @@ COPY tests/ ./tests/
 
 ENV CHARON_URL=
 ENV LINK_PUBLISH_JOB_ID=
+ENV UPDATE_SCREENSHOTS=
 
 CMD ["npm", "run", "test-e2e"]
