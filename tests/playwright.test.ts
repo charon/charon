@@ -1,4 +1,7 @@
-import { Browser, BrowserContext, chromium, expect, test } from "@playwright/test"
+import type { Browser, BrowserContext, Page } from "@playwright/test"
+
+import { existsSync } from "node:fs"
+import { chromium, expect, test } from "@playwright/test"
 
 const CHARON_URL = process.env.CHARON_URL || "https://localhost:8080"
 
@@ -26,12 +29,14 @@ test.describe.serial("Charon Sign-in Flows", () => {
     const page = await context.newPage()
 
     await page.goto(CHARON_URL)
-    await page.waitForLoadState("networkidle")
+    await checkpoint(page, "main-page-before-signin")
 
     // Find and click the "SIGN-IN OR SIGN-UP" button.
     const signInButton = page.locator("#navbar-button-signin")
     await expect(signInButton).toBeVisible()
     await signInButton.click()
+
+    await checkpoint(page, "main-page-after-clicking-signin")
 
     // Wait for navigation to sign-in page.
     await page.waitForLoadState("networkidle")
@@ -76,6 +81,8 @@ test.describe.serial("Charon Sign-in Flows", () => {
     await identitiesLink.waitFor({ state: "visible" })
     await expect(identitiesLink).toBeVisible()
 
+    await checkpoint(page, "successful-signin-identities-page")
+
     console.log("Successfully completed sign-in flow: entered credentials, navigated through flow, selected tester identity, and verified Identities link is visible")
   })
 
@@ -84,14 +91,14 @@ test.describe.serial("Charon Sign-in Flows", () => {
 
     await page.goto(CHARON_URL)
 
-    await page.waitForLoadState("networkidle")
+    await checkpoint(page, "main-page-before-signin")
 
     // Find and click the "SIGN-IN OR SIGN-UP" button.
     const signInButton = page.locator("#navbar-button-signin")
     await expect(signInButton).toBeVisible()
     await signInButton.click()
 
-    await page.waitForLoadState("networkidle")
+    await checkpoint(page, "main-page-after-clicking-signin")
 
     // Find the email input field and enter 'tester'.
     const emailField = page.locator("input#authstart-input-email")
@@ -120,6 +127,21 @@ test.describe.serial("Charon Sign-in Flows", () => {
     await errorMessage.waitFor({ state: "visible" })
     await expect(errorMessage).toBeVisible()
 
+    await checkpoint(page, "wrong-password-error-message")
+
     console.log("Successfully tested wrong password flow: entered wrong password and verified error message appeared")
   })
 })
+
+async function checkpoint(page: Page, name: string) {
+  await page.waitForLoadState("networkidle")
+
+  // TODO: Remove when supported by Playwright.
+  //       See: https://github.com/microsoft/playwright/issues/23502
+  const screenshotPath = test.info().snapshotPath(`${name}.png`, { kind: "screenshot" })
+  if (existsSync(screenshotPath)) {
+    await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: true })
+  } else {
+    await page.screenshot({ path: screenshotPath, fullPage: true })
+  }
+}

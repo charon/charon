@@ -71,6 +71,9 @@ test_go_link_publish:
   needs:
     - test_go
 
+  # Publish the link even if test_go fails.
+  when: always
+
   script:
     - echo "Publishing link"
 
@@ -119,6 +122,9 @@ test_node_link_publish:
   needs:
     - test_node
 
+  # Publish the link even if test_node fails.
+  when: always
+
   script:
     - echo "Publishing link"
 
@@ -139,10 +145,21 @@ test_e2e:
     - docker info
     - echo "$CI_JOB_TOKEN" | docker login --username gitlab-ci-token --password-stdin "$CI_REGISTRY"
     - echo "LINK_PUBLISH_JOB_ID=${CI_JOB_ID}" > link_publish.env
+    - |
+      mkdir playwright-screenshots
+      if [ -n "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" ]; then
+        # Download screenshots from CI_MERGE_REQUEST_TARGET_BRANCH_NAME.
+        apk --update add curl
+        curl --location --output artifacts.zip "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/jobs/artifacts/${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}/download?job=test_e2e"
+        unzip -o artifacts.zip -x playwright-report/\* -x test-results/\* 
+      else
+        # Not a merge request pipeline, update screenshots.
+        export UPDATE_SCREENSHOTS=changed
+      fi
 
   script:
     - ./test-e2e.sh
-  
+
   artifacts:
     when: always
     reports:
@@ -152,6 +169,7 @@ test_e2e:
     paths:
       - playwright-report/
       - test-results/
+      - playwright-screenshots/
     expire_in: never
 
 test_e2e_link_publish:
@@ -164,6 +182,9 @@ test_e2e_link_publish:
 
   needs:
     - test_e2e
+
+  # Publish the link even if test_e2e fails.
+  when: always
 
   script:
     - echo "Publishing link"
