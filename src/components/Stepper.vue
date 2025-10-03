@@ -36,7 +36,7 @@ function beforeActive(step: string): boolean {
       }"
     >
       <div
-        class="bg-secondary-400 rounded-l-full transition-[width] will-change-[width] duration-700 absolute inset-y-0 left-0 after:float-right after:h-3 after:w-3 after:-mt-1 after:-mr-1.5 after:bg-inherit after:rounded-full"
+        class="bg-secondary-400 rounded-l-full motion-safe:transition-[width] motion-safe:will-change-[width] motion-safe:duration-700 absolute inset-y-0 left-0 after:float-right after:h-3 after:w-3 after:-mt-1 after:-mr-1.5 after:bg-inherit after:rounded-full"
         :style="{ width: progressBarWidth() }"
       ></div>
     </div>

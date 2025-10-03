@@ -102,12 +102,12 @@
     opacity 0.3s ease-in;
 }
 
-@media (prefers-reduced-motion) {
+@media (prefers-reduced-motion: reduce) {
   .forward-enter-active,
   .forward-leave-active,
   .backward-enter-active,
   .backward-leave-active {
-    transition-duration: 0;
+    transition-duration: 0s;
   }
 }
 
