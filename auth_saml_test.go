@@ -18,6 +18,7 @@ import (
 
 	"github.com/beevik/etree"
 	"github.com/hashicorp/go-cleanhttp"
+	"github.com/russellhaering/gosaml2/types"
 	dsig "github.com/russellhaering/goxmldsig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,6 +35,10 @@ const (
 	samlTestingEntityID = "samlTesting"
 	samlTestingIssuer   = "https://saml.testing.local"
 )
+const (
+	samlAssertionNS = "urn:oasis:names:tc:SAML:2.0:assertion"
+	samlProtocolNS  = "urn:oasis:names:tc:SAML:2.0:protocol"
+)
 
 type samlTestStore struct {
 	Subject     string
@@ -43,12 +48,24 @@ type samlTestStore struct {
 	KeyStore    dsig.X509KeyStore
 }
 
+type Response struct {
+	XMLName      xml.Name          `xml:"urn:oasis:names:tc:SAML:2.0:protocol Response"`
+	ID           string            `xml:"ID,attr"`
+	InResponseTo string            `xml:"InResponseTo,attr"`
+	Destination  string            `xml:"Destination,attr"`
+	Version      string            `xml:"Version,attr"`
+	IssueInstant time.Time         `xml:"IssueInstant,attr"`
+	Issuer       *types.Issuer     `xml:"Issuer"`
+	Status       *types.Status     `xml:"Status"`
+	Assertions   []types.Assertion `xml:"Assertion"`
+}
+
 type authnRequest struct {
 	XMLName                     xml.Name `xml:"AuthnRequest"`
 	AssertionConsumerServiceURL string   `xml:"AssertionConsumerServiceURL,attr"`
 }
 
-var samlPostFormTemplate = template.Must(template.New("samlPostForm").Parse(`
+var samlPostFormHTMLTemplate = template.Must(template.New("samlPostForm").Parse(`
 <!DOCTYPE html>
 <html>
     <head>
@@ -67,14 +84,48 @@ var samlPostFormTemplate = template.Must(template.New("samlPostForm").Parse(`
     </body>
 </html>`))
 
+func generateMetadata(t *testing.T, certBase64 string, scheme string, host string) ([]byte, errors.E) {
+	t.Helper()
+	baseURL := scheme + "://" + host
+
+	doc := etree.NewDocument()
+	doc.CreateProcInst("xml", `version="1.0" encoding="UTF-8"`)
+
+	root := doc.CreateElement("EntityDescriptor")
+	root.CreateAttr("xmlns", "urn:oasis:names:tc:SAML:2.0:metadata")
+	root.CreateAttr("entityID", samlTestingIssuer)
+
+	idpSSO := root.CreateElement("IDPSSODescriptor")
+	idpSSO.CreateAttr("protocolSupportEnumeration", samlProtocolNS)
+
+	keyDescriptor := idpSSO.CreateElement("KeyDescriptor")
+	keyDescriptor.CreateAttr("use", "signing")
+
+	keyInfo := keyDescriptor.CreateElement("KeyInfo")
+	keyInfo.CreateAttr("xmlns", "http://www.w3.org/2000/09/xmldsig#")
+
+	x509Data := keyInfo.CreateElement("X509Data")
+	x509Cert := x509Data.CreateElement("X509Certificate")
+	x509Cert.SetText(certBase64)
+
+	ssoService := idpSSO.CreateElement("SingleSignOnService")
+	ssoService.CreateAttr("Binding", "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect")
+	ssoService.CreateAttr("Location", fmt.Sprintf("%s/saml/auth", baseURL))
+
+	doc.Indent(2)
+	metadata, err := doc.WriteToBytes()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return metadata, nil
+}
+
 func startSAMLTestServer(t *testing.T) *httptest.Server {
 	t.Helper()
 
-	var ts *httptest.Server
-
 	store := &samlTestStore{
 		// We use one unique subject per instance for testing.
-		Subject:    identifier.New().String(),
+		Subject:    identifier.New().String()[:8],
 		Attributes: make(map[string][]string),
 	}
 
@@ -96,24 +147,12 @@ func startSAMLTestServer(t *testing.T) *httptest.Server {
 		certBase64 := base64.StdEncoding.EncodeToString(cert.Raw)
 		scheme := "http"
 		host := req.Host
-		baseURL := fmt.Sprintf("%s://%s", scheme, host)
-		metadata := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
-<EntityDescriptor xmlns="urn:oasis:names:tc:SAML:2.0:metadata" entityID="%s">
-  <IDPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
-    <KeyDescriptor use="signing">
-      <KeyInfo xmlns="http://www.w3.org/2000/09/xmldsig#">
-        <X509Data>
-          <X509Certificate>%s</X509Certificate>
-        </X509Data>
-      </KeyInfo>
-    </KeyDescriptor>
-    <SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="%s/saml/auth"/>
-  </IDPSSODescriptor>
-</EntityDescriptor>`, samlTestingIssuer, certBase64, baseURL)
+		metadata, errE := generateMetadata(t, certBase64, scheme, host)
+		require.NoError(t, errE)
 
 		w.Header().Set("Content-Type", "application/samlmetadata+xml")
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(metadata))
+		_, _ = w.Write(metadata)
 	})
 
 	mux.HandleFunc("/saml/auth", func(w http.ResponseWriter, req *http.Request) {
@@ -129,7 +168,7 @@ func startSAMLTestServer(t *testing.T) *httptest.Server {
 
 		xmlData, err := decodeSAMLRequest(t, samlRequest)
 		if err != nil {
-			http.Error(w, "samlTesting decodeSAMLRequest", http.StatusBadRequest)
+			http.Error(w, "samlTesting error in decoding SAML request", http.StatusBadRequest)
 			return
 		}
 
@@ -159,14 +198,13 @@ func startSAMLTestServer(t *testing.T) *httptest.Server {
 
 		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(http.StatusOK)
-		if err := samlPostFormTemplate.Execute(w, htmlResponse); err != nil {
-			t.Logf("Failed to execute template: %v", err)
-			http.Error(w, "Failed to generate response form", http.StatusInternalServerError)
+		if err := samlPostFormHTMLTemplate.Execute(w, htmlResponse); err != nil {
+			http.Error(w, "samlTesting failed to generate HTML response form", http.StatusInternalServerError)
 			return
 		}
 	})
 
-	ts = httptest.NewServer(mux)
+	ts := httptest.NewServer(mux)
 	t.Cleanup(ts.Close)
 
 	return ts
@@ -178,104 +216,125 @@ func generateSignedSAMLResponse(t *testing.T, store *samlTestStore, requestID st
 	now := time.Now().UTC()
 	notBefore := now.Add(-5 * time.Minute)
 	notAfter := now.Add(5 * time.Minute)
-	responseID := "response_" + identifier.New().String()
 
-	if len(store.Attributes) == 0 {
-		store.Attributes = map[string][]string{
-			"email":     {store.Subject + "@example.com"},
-			"username":  {store.Subject},
-			"firstName": {"Test"},
-			"lastName":  {"User"},
-		}
+	attributes := buildAttributes(t, store)
+
+	assertion := types.Assertion{
+		XMLName: xml.Name{
+			Space: samlAssertionNS,
+			Local: "Assertion",
+		},
+		Version:      "2.0",
+		ID:           "_" + identifier.New().String(),
+		IssueInstant: now,
+		Issuer: &types.Issuer{
+			XMLName: xml.Name{
+				Space: samlAssertionNS,
+				Local: "Issuer",
+			},
+			Value: samlTestingIssuer,
+		},
+		Subject: &types.Subject{
+			XMLName: xml.Name{
+				Space: samlAssertionNS,
+				Local: "Subject",
+			},
+			NameID: &types.NameID{
+				XMLName: xml.Name{
+					Space: samlAssertionNS,
+					Local: "NameID"},
+				Value: store.Subject,
+			},
+			SubjectConfirmation: &types.SubjectConfirmation{
+				XMLName: xml.Name{
+					Space: samlAssertionNS,
+					Local: "SubjectConfirmation",
+				},
+				Method: "urn:oasis:names:tc:SAML:2.0:cm:bearer",
+				SubjectConfirmationData: &types.SubjectConfirmationData{
+					XMLName:      xml.Name{Space: samlAssertionNS, Local: "SubjectConfirmationData"},
+					InResponseTo: requestID,
+					NotOnOrAfter: notAfter.Format(time.RFC3339),
+					Recipient:    destination,
+				},
+			},
+		},
+		Conditions: &types.Conditions{
+			NotBefore:    notBefore.Format(time.RFC3339),
+			NotOnOrAfter: notAfter.Format(time.RFC3339),
+			XMLName:      xml.Name{Space: samlAssertionNS, Local: "Conditions"},
+			AudienceRestrictions: []types.AudienceRestriction{
+				{
+					Audiences: []types.Audience{
+						{Value: samlTestingEntityID},
+					},
+				},
+			},
+		},
+		AuthnStatement: &types.AuthnStatement{
+			XMLName:      xml.Name{Space: samlAssertionNS, Local: "AuthnStatement"},
+			SessionIndex: "_" + identifier.New().String(),
+			AuthnInstant: &now,
+			AuthnContext: &types.AuthnContext{
+				AuthnContextClassRef: &types.AuthnContextClassRef{
+					XMLName: xml.Name{Space: "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport", Local: "AuthnContextClassRef"},
+					Value:   "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"},
+			},
+		},
+		AttributeStatement: &types.AttributeStatement{
+			XMLName:    xml.Name{Space: samlAssertionNS, Local: "AttributeStatement"},
+			Attributes: attributes,
+		},
 	}
 
-	responseXML := fmt.Sprintf(`<samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" ID="%s" Version="2.0" IssueInstant="%s" InResponseTo="%s" Destination="%s">
-    <saml:Issuer>%s</saml:Issuer>
-    <samlp:Status>
-        <samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success"/>
-    </samlp:Status>
-    <saml:Assertion ID="assertion_%s" Version="2.0" IssueInstant="%s">
-        <saml:Issuer>%s</saml:Issuer>
-        <saml:Subject>
-            <saml:NameID Format="urn:oasis:names:tc:SAML:2.0:nameid-format:persistent">%s</saml:NameID>
-            <saml:SubjectConfirmation Method="urn:oasis:names:tc:SAML:2.0:cm:bearer">
-                <saml:SubjectConfirmationData InResponseTo="%s" NotOnOrAfter="%s" Recipient="%s"/>
-            </saml:SubjectConfirmation>
-        </saml:Subject>
-        <saml:Conditions NotBefore="%s" NotOnOrAfter="%s">
-            <saml:AudienceRestriction>
-                <saml:Audience>%s</saml:Audience>
-            </saml:AudienceRestriction>
-        </saml:Conditions>
-        <saml:AuthnStatement AuthnInstant="%s" SessionIndex="session_%s">
-            <saml:AuthnContext>
-                <saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport</saml:AuthnContextClassRef>
-            </saml:AuthnContext>
-        </saml:AuthnStatement>
-        <saml:AttributeStatement>%s
-        </saml:AttributeStatement>
-    </saml:Assertion>
-</samlp:Response>`,
-		responseID,                                 // response ID.
-		now.Format(time.RFC3339),                   // issue instant.
-		requestID,                                  // in response to.
-		destination,                                // destination.
-		samlTestingIssuer,                          // issuer.
-		identifier.New().String(),                  // assertion ID.
-		now.Format(time.RFC3339),                   // assertion issue instant.
-		samlTestingIssuer,                          // assertion issuer.
-		store.Subject,                              // name ID.
-		requestID,                                  // subject confirmation in response to.
-		notAfter.Format(time.RFC3339),              // subject confirmation not on or after.
-		destination,                                // subject confirmation recipient.
-		notBefore.Format(time.RFC3339),             // conditions not before.
-		notAfter.Format(time.RFC3339),              // conditions not on or after.
-		samlTestingEntityID,                        // audience.
-		now.Format(time.RFC3339),                   // authn instant.
-		identifier.New().String(),                  // session index.
-		generateAttributesXML(t, store.Attributes), // attributes XML.
-	)
-
-	doc := etree.NewDocument()
-	err := doc.ReadFromString(responseXML)
+	response := Response{
+		Destination:  destination,
+		ID:           "_" + identifier.New().String(),
+		InResponseTo: requestID,
+		IssueInstant: now,
+		Version:      "2.0",
+		Issuer: &types.Issuer{
+			XMLName: xml.Name{Space: samlAssertionNS, Local: "Issuer"},
+			Value:   samlTestingIssuer,
+		},
+		Status: &types.Status{
+			XMLName: xml.Name{Space: samlProtocolNS, Local: "Status"},
+			StatusCode: &types.StatusCode{
+				XMLName: xml.Name{Space: samlProtocolNS, Local: "StatusCode"},
+				Value:   "urn:oasis:names:tc:SAML:2.0:status:Success",
+			},
+		},
+		Assertions: []types.Assertion{assertion},
+	}
+	xmlBytes, err := xml.MarshalIndent(response, "", "    ")
 	require.NoError(t, err)
 
-	signCtx := dsig.NewDefaultSigningContext(store.KeyStore)
-	err = signCtx.SetSignatureMethod(dsig.RSASHA256SignatureMethod)
-	if err != nil {
-		return ""
+	doc := etree.NewDocument()
+	err = doc.ReadFromBytes(xmlBytes)
+	require.NoError(t, err)
+
+	root := doc.Root()
+	root.CreateAttr("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
+
+	nameIDElement := doc.FindElement("//NameID")
+	if nameIDElement != nil {
+		nameIDElement.CreateAttr("Format", "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent")
 	}
 
+	signCtx := dsig.NewDefaultSigningContext(store.KeyStore)
+	signCtx.Canonicalizer = dsig.MakeC14N10ExclusiveCanonicalizerWithPrefixList("")
+	err = signCtx.SetSignatureMethod(dsig.RSASHA256SignatureMethod)
+	require.NoError(t, err)
 	signedResponse, err := signCtx.SignEnveloped(doc.Root())
 	require.NoError(t, err)
 
 	signedDoc := etree.NewDocument()
 	signedDoc.SetRoot(signedResponse)
 
-	xmlBytes, err := signedDoc.WriteToBytes()
+	xmlBytes, err = signedDoc.WriteToBytes()
+	xmlBytes = []byte(xml.Header + string(xmlBytes))
 	require.NoError(t, err)
-
 	return base64.StdEncoding.EncodeToString(xmlBytes)
-}
-
-func generateAttributesXML(t *testing.T, attributes map[string][]string) string {
-	t.Helper()
-	var sb strings.Builder
-
-	for name, values := range attributes {
-		sb.WriteString(fmt.Sprintf(`
-            <saml:Attribute Name="%s" FriendlyName="%s">`, name, name))
-
-		for _, value := range values {
-			sb.WriteString(fmt.Sprintf(`
-                <saml:AttributeValue xsi:type="xs:string">%s</saml:AttributeValue>`, value))
-		}
-
-		sb.WriteString(`
-            </saml:Attribute>`)
-	}
-
-	return sb.String()
 }
 
 func samlSignin(t *testing.T, ts *httptest.Server, service *charon.Service, samlTS *httptest.Server, signinOrSignout charon.Completed) string {
@@ -476,20 +535,21 @@ func extractRequestID(t *testing.T, xmlData string) string {
 	return ""
 }
 
-func extractAssertionConsumerServiceURL(t *testing.T, xmlData string) (string, error) {
+func extractAssertionConsumerServiceURL(t *testing.T, xmlData string) (string, errors.E) {
 	t.Helper()
 	var req authnRequest
-	if err := xml.Unmarshal([]byte(xmlData), &req); err != nil {
-		return "", err
+	err := xml.Unmarshal([]byte(xmlData), &req)
+	if err != nil {
+		return "", errors.WithStack(err)
 	}
 	return req.AssertionConsumerServiceURL, nil
 }
 
-func decodeSAMLRequest(t *testing.T, encoded string) (string, error) {
+func decodeSAMLRequest(t *testing.T, encoded string) (string, errors.E) {
 	t.Helper()
 	raw, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil {
-		return "", fmt.Errorf("base64 decode: %w", err)
+		return "", errors.WithStack(err)
 	}
 
 	reader := flate.NewReader(bytes.NewReader(raw))
@@ -497,7 +557,7 @@ func decodeSAMLRequest(t *testing.T, encoded string) (string, error) {
 
 	decoded, err := io.ReadAll(reader)
 	if err != nil {
-		return "", fmt.Errorf("flate decompress: %w", err)
+		return "", errors.WithStack(err)
 	}
 
 	return string(decoded), nil
@@ -549,6 +609,38 @@ func extractFormValues(t *testing.T, htmlStr string) (url.Values, string, errors
 	traverse(doc)
 
 	return values, action, nil
+}
+
+func buildAttributes(t *testing.T, store *samlTestStore) []types.Attribute {
+	t.Helper()
+	if len(store.Attributes) == 0 {
+		store.Attributes = map[string][]string{
+			"id":        {store.Subject},
+			"email":     {store.Subject[:8] + "@example.com"},
+			"firstName": {"Test"},
+			"lastName":  {"User"},
+		}
+	}
+
+	var attributes []types.Attribute
+	for name, values := range store.Attributes {
+		attr := types.Attribute{
+			XMLName:      xml.Name{Space: samlAssertionNS, Local: "Attribute"},
+			FriendlyName: name,
+			Name:         name,
+			NameFormat:   "urn:oasis:names:tc:SAML:2.0:attrname-format:basic",
+			Values:       make([]types.AttributeValue, 0, len(values)),
+		}
+		for _, v := range values {
+			attr.Values = append(attr.Values, types.AttributeValue{
+				XMLName: xml.Name{Space: samlAssertionNS, Local: "AttributeValue"},
+				Type:    "xs:string",
+				Value:   v,
+			})
+		}
+		attributes = append(attributes, attr)
+	}
+	return attributes
 }
 
 func TestAuthFlowSAML(t *testing.T) { //nolint:dupl
