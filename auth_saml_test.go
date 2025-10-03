@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/xml"
-	"fmt"
 	"html/template"
 	"io"
 	"net/http"
@@ -33,8 +32,8 @@ import (
 
 const (
 	samlTestingEntityID = "samlTesting"
-	samlTestingIssuer   = "https://saml.testing.local"
 )
+
 const (
 	samlAssertionNS = "urn:oasis:names:tc:SAML:2.0:assertion"
 	samlProtocolNS  = "urn:oasis:names:tc:SAML:2.0:protocol"
@@ -65,7 +64,8 @@ type authnRequest struct {
 	AssertionConsumerServiceURL string   `xml:"AssertionConsumerServiceURL,attr"`
 }
 
-var samlPostFormHTMLTemplate = template.Must(template.New("samlPostForm").Parse(`
+func samlPostFormTemplate() *template.Template {
+	return template.Must(template.New("samlPostForm").Parse(`
 <!DOCTYPE html>
 <html>
     <head>
@@ -83,6 +83,7 @@ var samlPostFormHTMLTemplate = template.Must(template.New("samlPostForm").Parse(
         </form>
     </body>
 </html>`))
+}
 
 func generateMetadata(t *testing.T, certBase64 string, scheme string, host string) ([]byte, errors.E) {
 	t.Helper()
@@ -93,7 +94,7 @@ func generateMetadata(t *testing.T, certBase64 string, scheme string, host strin
 
 	root := doc.CreateElement("EntityDescriptor")
 	root.CreateAttr("xmlns", "urn:oasis:names:tc:SAML:2.0:metadata")
-	root.CreateAttr("entityID", samlTestingIssuer)
+	root.CreateAttr("entityID", samlTestingEntityID)
 
 	idpSSO := root.CreateElement("IDPSSODescriptor")
 	idpSSO.CreateAttr("protocolSupportEnumeration", samlProtocolNS)
@@ -110,7 +111,10 @@ func generateMetadata(t *testing.T, certBase64 string, scheme string, host strin
 
 	ssoService := idpSSO.CreateElement("SingleSignOnService")
 	ssoService.CreateAttr("Binding", "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect")
-	ssoService.CreateAttr("Location", fmt.Sprintf("%s/saml/auth", baseURL))
+	ssoService.CreateAttr("Location", baseURL+"/saml/auth")
+
+	nameIDFormat := idpSSO.CreateElement("NameIDFormat")
+	nameIDFormat.SetText("urn:oasis:names:tc:SAML:2.0:nameid-format:persistent")
 
 	doc.Indent(2)
 	metadata, err := doc.WriteToBytes()
@@ -148,7 +152,9 @@ func startSAMLTestServer(t *testing.T) *httptest.Server {
 		scheme := "http"
 		host := req.Host
 		metadata, errE := generateMetadata(t, certBase64, scheme, host)
-		require.NoError(t, errE)
+		if errE != nil {
+			http.Error(w, "samlTesting error in generating metadata", http.StatusInternalServerError)
+		}
 
 		w.Header().Set("Content-Type", "application/samlmetadata+xml")
 		w.WriteHeader(http.StatusOK)
@@ -198,6 +204,7 @@ func startSAMLTestServer(t *testing.T) *httptest.Server {
 
 		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(http.StatusOK)
+		samlPostFormHTMLTemplate := samlPostFormTemplate()
 		if err := samlPostFormHTMLTemplate.Execute(w, htmlResponse); err != nil {
 			http.Error(w, "samlTesting failed to generate HTML response form", http.StatusInternalServerError)
 			return
@@ -232,7 +239,7 @@ func generateSignedSAMLResponse(t *testing.T, store *samlTestStore, requestID st
 				Space: samlAssertionNS,
 				Local: "Issuer",
 			},
-			Value: samlTestingIssuer,
+			Value: samlTestingEntityID,
 		},
 		Subject: &types.Subject{
 			XMLName: xml.Name{
@@ -242,7 +249,8 @@ func generateSignedSAMLResponse(t *testing.T, store *samlTestStore, requestID st
 			NameID: &types.NameID{
 				XMLName: xml.Name{
 					Space: samlAssertionNS,
-					Local: "NameID"},
+					Local: "NameID",
+				},
 				Value: store.Subject,
 			},
 			SubjectConfirmation: &types.SubjectConfirmation{
@@ -278,7 +286,8 @@ func generateSignedSAMLResponse(t *testing.T, store *samlTestStore, requestID st
 			AuthnContext: &types.AuthnContext{
 				AuthnContextClassRef: &types.AuthnContextClassRef{
 					XMLName: xml.Name{Space: "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport", Local: "AuthnContextClassRef"},
-					Value:   "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"},
+					Value:   "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport",
+				},
 			},
 		},
 		AttributeStatement: &types.AttributeStatement{
@@ -295,7 +304,7 @@ func generateSignedSAMLResponse(t *testing.T, store *samlTestStore, requestID st
 		Version:      "2.0",
 		Issuer: &types.Issuer{
 			XMLName: xml.Name{Space: samlAssertionNS, Local: "Issuer"},
-			Value:   samlTestingIssuer,
+			Value:   samlTestingEntityID,
 		},
 		Status: &types.Status{
 			XMLName: xml.Name{Space: samlProtocolNS, Local: "Status"},
@@ -622,7 +631,7 @@ func buildAttributes(t *testing.T, store *samlTestStore) []types.Attribute {
 		}
 	}
 
-	var attributes []types.Attribute
+	attributes := make([]types.Attribute, 0, len(store.Attributes))
 	for name, values := range store.Attributes {
 		attr := types.Attribute{
 			XMLName:      xml.Name{Space: samlAssertionNS, Local: "Attribute"},
