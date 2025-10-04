@@ -556,6 +556,7 @@ func extractAssertionConsumerServiceURL(t *testing.T, xmlData string) (string, e
 
 func decodeSAMLRequest(t *testing.T, encoded string) (string, errors.E) {
 	t.Helper()
+
 	raw, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil {
 		return "", errors.WithStack(err)
