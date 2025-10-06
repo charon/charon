@@ -322,9 +322,6 @@ func generateSignedSAMLResponse(t *testing.T, store *samlTestStore, requestID st
 	err = doc.ReadFromBytes(xmlBytes)
 	require.NoError(t, err)
 
-	root := doc.Root()
-	root.CreateAttr("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
-
 	nameIDElement := doc.FindElement("//NameID")
 	if nameIDElement != nil {
 		nameIDElement.CreateAttr("Format", "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent")
@@ -332,10 +329,8 @@ func generateSignedSAMLResponse(t *testing.T, store *samlTestStore, requestID st
 
 	attributeValues := doc.FindElements("//AttributeValue")
 	for _, av := range attributeValues {
-		typeAttr := av.SelectAttr("type")
-		if typeAttr != nil && strings.HasPrefix(typeAttr.Value, "xs:") {
-			av.CreateAttr("xmlns:xs", "http://www.w3.org/2001/XMLSchema")
-		}
+		av.CreateAttr("xmlns:xs", "http://www.w3.org/2001/XMLSchema")
+		av.CreateAttr("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
 	}
 
 	signCtx := dsig.NewDefaultSigningContext(store.KeyStore)
@@ -344,6 +339,10 @@ func generateSignedSAMLResponse(t *testing.T, store *samlTestStore, requestID st
 	require.NoError(t, err)
 	signedResponse, err := signCtx.SignEnveloped(doc.Root())
 	require.NoError(t, err)
+
+	signatureElement := signedResponse.FindElement("ds:Signature")
+	signedResponse.InsertChildAt(2, signatureElement)
+	signedResponse.RemoveChild(signatureElement)
 
 	signedDoc := etree.NewDocument()
 	signedDoc.SetRoot(signedResponse)
