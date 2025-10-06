@@ -330,8 +330,16 @@ func generateSignedSAMLResponse(t *testing.T, store *samlTestStore, requestID st
 		nameIDElement.CreateAttr("Format", "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent")
 	}
 
+	attributeValues := doc.FindElements("//AttributeValue")
+	for _, av := range attributeValues {
+		typeAttr := av.SelectAttr("type")
+		if typeAttr != nil && strings.HasPrefix(typeAttr.Value, "xs:") {
+			av.CreateAttr("xmlns:xs", "http://www.w3.org/2001/XMLSchema")
+		}
+	}
+
 	signCtx := dsig.NewDefaultSigningContext(store.KeyStore)
-	signCtx.Canonicalizer = dsig.MakeC14N10ExclusiveCanonicalizerWithPrefixList("")
+	signCtx.Canonicalizer = dsig.MakeC14N10RecCanonicalizer()
 	err = signCtx.SetSignatureMethod(dsig.RSASHA256SignatureMethod)
 	require.NoError(t, err)
 	signedResponse, err := signCtx.SignEnveloped(doc.Root())
