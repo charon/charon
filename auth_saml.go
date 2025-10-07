@@ -2,6 +2,7 @@ package charon
 
 import (
 	"context"
+	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
@@ -34,6 +35,15 @@ type samlProvider struct {
 	Mapping  SAMLAttributeMapping
 }
 
+type samlMemoryKS struct {
+	privateKey *rsa.PrivateKey
+	cert       []byte
+}
+
+func (ks *samlMemoryKS) GetKeyPair() (*rsa.PrivateKey, []byte, error) {
+	return ks.privateKey, ks.cert, nil
+}
+
 func initSAMLProviders(config *Config, service *Service, domain string, providers []SiteProvider) (func() map[Provider]samlProvider, errors.E) {
 	return initWithHost(config, domain, func(host string) map[Provider]samlProvider {
 		samlProviders := map[Provider]samlProvider{}
@@ -62,7 +72,8 @@ func initSAMLProvider(service *Service, host string, p SiteProvider) (samlProvid
 		return samlProvider{}, errE
 	}
 
-	privateKey, cert, err := p.samlKeyStore.GetKeyPair()
+	keyStore := p.samlKeys.GetKeyStore()
+	privateKey, cert, err := keyStore.GetKeyPair()
 	if err != nil {
 		return samlProvider{}, errors.WithMessage(err, "failed to get SP key-pair")
 	}
@@ -231,11 +242,10 @@ func extractIDPCertificates(metadata types.EntityDescriptor) (*dsig.MemoryX509Ce
 	return certStore, nil
 }
 
-func (p *SiteProvider) initSAMLKeyStore() errors.E {
+func (p *SiteProvider) initSAMLKeyStore(config *Config) errors.E {
 	// TODO: Properly load keys from the disk based on configuration for this provider.
 	//       Only if the keys are not available, and we are in development mode, generate them.
-	p.samlKeyStore = dsig.RandomKeyStoreForTest()
-	return nil
+	return p.samlKeys.Init(config.Server.Development)
 }
 
 func validateSAMLAssertion(assertionInfo *saml2.AssertionInfo) errors.E {

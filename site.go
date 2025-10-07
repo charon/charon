@@ -39,7 +39,7 @@ type SiteProvider struct {
 	// SAML provider configuration fields.
 	samlEntityID         string
 	samlMetadataURL      string
-	samlKeyStore         dsig.X509KeyStore
+	samlKeys             *SAMLKeys
 	samlAttributeMapping SAMLAttributeMapping
 
 	// SAML provider initialization fields.
@@ -60,7 +60,7 @@ func (p *SiteProvider) initProvider(config *Config) errors.E {
 	case ThirdPartyProviderOIDC:
 		return p.initOIDCProvider(config)
 	case ThirdPartyProviderSAML:
-		errE := p.initSAMLKeyStore()
+		errE := p.initSAMLKeyStore(config)
 		if errE != nil {
 			return errE
 		}
