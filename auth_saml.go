@@ -72,8 +72,7 @@ func initSAMLProvider(service *Service, host string, p SiteProvider) (samlProvid
 		return samlProvider{}, errE
 	}
 
-	keyStore := p.samlKeys.GetKeyStore()
-	privateKey, cert, err := keyStore.GetKeyPair()
+	privateKey, cert, err := p.samlKeys.keyStore.GetKeyPair()
 	if err != nil {
 		return samlProvider{}, errors.WithMessage(err, "failed to get SP key-pair")
 	}

@@ -88,10 +88,11 @@ type GenericOIDCProvider struct {
 	TokenURL  string
 }
 
+//nolint:lll
 type SAMLProvider struct {
-	MetadataURL string   `default:"${defaultMetadataURL}" env:"METADATA_URL" help:"${provider}'s metadata URL." placeholder:"URL" yaml:"metadataUrl"`
-	EntityID    string   `                                env:"ENTITY_ID"    help:"${provider}'s entity ID."                      yaml:"entityId"`
-	Keys        SAMLKeys `embed:"" envprefix:"" group:"SAML Keys:" yaml:"keys"`
+	MetadataURL string   `default:"${defaultMetadataURL}"          env:"METADATA_URL"                    help:"${provider}'s metadata URL." placeholder:"URL" yaml:"metadataUrl"`
+	EntityID    string   `                                         env:"ENTITY_ID"                       help:"${provider}'s entity ID."                      yaml:"entityId"`
+	Keys        SAMLKeys `                                embed:""                    group:"SAML Keys:"                                                      yaml:"keys"`
 }
 
 func (s *SAMLProvider) Validate() error {
@@ -270,10 +271,6 @@ type SAMLKeys struct {
 
 	rsa      *jose.JSONWebKey
 	keyStore dsig.X509KeyStore
-}
-
-func (k *SAMLKeys) GetKeyStore() dsig.X509KeyStore {
-	return k.keyStore
 }
 
 //nolint:lll
@@ -455,6 +452,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:              []string{oidc.ScopeOpenID, "email", "profile"},
 			samlEntityID:            "",
 			samlMetadataURL:         "",
+			samlKeys:                nil,
 			samlAttributeMapping:    SAMLAttributeMapping{}, //nolint:exhaustruct
 			oidcEndpoint:            oauth2.Endpoint{},      //nolint:exhaustruct
 			oidcClient:              nil,
@@ -561,7 +559,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:              nil,
 			samlEntityID:            mockSAMLEntityID,
 			samlMetadataURL:         mockSAMLMetadataURL,
-			samlKeys:                &SAMLKeys{},
+			samlKeys:                &SAMLKeys{}, //nolint:exhaustruct
 			samlAttributeMapping:    getDefaultAttributeMapping(),
 			oidcEndpoint:            oauth2.Endpoint{}, //nolint:exhaustruct
 			oidcClient:              nil,
