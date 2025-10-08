@@ -359,6 +359,7 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 	attributes, errE := getSAMLAttributes(assertionInfo, provider.Mapping)
 	if errE != nil {
 		errors.Details(errE)["provider"] = providerKey
+		errors.Details(errE)["assertion"] = assertionInfo
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
@@ -366,6 +367,7 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 	jsonData, err := json.Marshal(attributes)
 	if err != nil {
 		errors.Details(errE)["provider"] = providerKey
+		errors.Details(errE)["attributes"] = attributes
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
@@ -373,6 +375,7 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 	credentialID, errE := getSAMLCredentialID(assertionInfo, attributes, provider.Mapping.CredentialIDAttributes, samlResponse)
 	if errE != nil {
 		errors.Details(errE)["provider"] = providerKey
+		errors.Details(errE)["attributes"] = attributes
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
