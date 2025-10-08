@@ -830,3 +830,18 @@ func detectSliceChanges[T comparable](oldSlice, newSlice []T) (mapset.Set[T], ma
 
 	return newSet.Difference(oldSet), oldSet.Difference(newSet)
 }
+
+func findFirstString(token map[string]interface{}, fieldNames ...string) string {
+	for _, key := range fieldNames {
+		if value, ok := token[key].(string); ok && value != "" {
+			return value
+		}
+
+		if arr, isArray := token[key].([]interface{}); isArray && len(arr) > 0 {
+			if s, ok := arr[0].(string); ok && s != "" {
+				return s
+			}
+		}
+	}
+	return ""
+}
