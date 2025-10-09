@@ -30,13 +30,11 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
+        contextOptions: {
+          reducedMotion: "reduce", // Avoids animation-related test flakiness.
+        },
         launchOptions: {
-          args: [
-            "--font-render-hinting=none",
-            "--disable-skia-runtime-opts",
-            "--disable-font-subpixel-positioning",
-            "--disable-lcd-text",
-          ],
+          args: ["--font-render-hinting=none", "--disable-skia-runtime-opts", "--disable-font-subpixel-positioning", "--disable-lcd-text"],
         },
       },
     },
