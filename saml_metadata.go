@@ -46,13 +46,6 @@ func generateSAMLMetadata(provider samlProvider) ([]byte, errors.E) {
 		doc.FindElement("//SPSSODescriptor").AddChild(createACS(provider.Mapping))
 	}
 
-	if provider.Key == "sipass" {
-		if acs := doc.FindElement("//AssertionConsumerService"); acs != nil {
-			if locationAttr := acs.SelectAttr("Location"); locationAttr != nil {
-				locationAttr.Value = locAttrValue
-			}
-		}
-	}
 	addNamespacePrefixes(root)
 
 	doc.Indent(indentationSpaces)
