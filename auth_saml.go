@@ -428,3 +428,29 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 
 	s.completeAuthStep(w, req, false, flow, account, []Credential{{ID: credentialID, Provider: providerKey, Data: jsonData}})
 }
+
+func (s *Service) SAMLMetadata(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	defer req.Body.Close()
+
+	providerKey := Provider(params["provider"])
+
+	samlProviders := s.samlProviders()
+	provider, ok := samlProviders[providerKey]
+	if !ok {
+		errE := errors.New("provider not found")
+		errors.Details(errE)["provider"] = providerKey
+		s.NotFoundWithError(w, req, errE)
+		return
+	}
+
+	metadata, errE := generateSAMLMetadata(provider)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/xml")
+	w.WriteHeader(http.StatusOK)
+
+	_, _ = w.Write(metadata)
+}
