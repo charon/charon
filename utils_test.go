@@ -2,6 +2,7 @@ package charon_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -123,5 +124,101 @@ func TestGetRandomCode(t *testing.T) {
 		out, errE := charon.TestingGetRandomCode()
 		require.NoError(t, errE, "% -+#.1v", errE)
 		assert.Len(t, out, 6)
+	}
+}
+
+func TestFindFirstString(t *testing.T) {
+	t.Parallel()
+
+	ts := time.Date(2025, 10, 9, 12, 0, 0, 0, time.UTC)
+
+	tests := []struct {
+		name     string
+		token    map[string]interface{}
+		keys     []string
+		expected string
+	}{
+		{
+			name:     "simple string",
+			token:    map[string]interface{}{"firstName": "Alice"},
+			keys:     []string{"firstName"},
+			expected: "Alice",
+		},
+		{
+			name:     "simple string with spaces",
+			token:    map[string]interface{}{"first_name": "   Alice  "},
+			keys:     []string{"first_name"},
+			expected: "Alice",
+		},
+		{
+			name:     "empty string",
+			token:    map[string]interface{}{"given_name": ""},
+			keys:     []string{"given_name"},
+			expected: "",
+		},
+		{
+			name: "multiple strings",
+			token: map[string]interface{}{
+				"givenName": []interface{}{"", "     Alice  ", "Bob"},
+			},
+			keys:     []string{"givenName"},
+			expected: "Alice",
+		},
+		{
+			name: "array with non-string elements",
+			token: map[string]interface{}{
+				"firstName": []interface{}{true, 123, ts, " Alice    "},
+			},
+			keys:     []string{"firstName"},
+			expected: "Alice",
+		},
+		{
+			name: "non-existing key",
+			token: map[string]interface{}{
+				"lastName": "Smith",
+			},
+			keys:     []string{"firstName"},
+			expected: "",
+		},
+		{
+			name: "multiple keys",
+			token: map[string]interface{}{
+				"first_name":   " Alice",
+				"username":     " name surname ",
+				"eMailAddress": " foo@bar.com ",
+			},
+			keys:     []string{"firstName", "username", "name"},
+			expected: "name surname",
+		},
+		{
+			name:     "nil map",
+			token:    nil,
+			keys:     []string{"firstName"},
+			expected: "",
+		},
+		{
+			name: "empty array",
+			token: map[string]interface{}{
+				"names": []interface{}{},
+			},
+			keys:     []string{"names"},
+			expected: "",
+		},
+		{
+			name: "all empty strings in array",
+			token: map[string]interface{}{
+				"values": []interface{}{"", "   ", "\t\n", "\r", "\n", "\r\n"},
+			},
+			keys:     []string{"values"},
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			assert.Equal(t, tt.expected, charon.TestingFindFirstString(tt.token, tt.keys...))
+		})
 	}
 }

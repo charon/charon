@@ -830,3 +830,26 @@ func detectSliceChanges[T comparable](oldSlice, newSlice []T) (mapset.Set[T], ma
 
 	return newSet.Difference(oldSet), oldSet.Difference(newSet)
 }
+
+// findFirstString returns the first non-empty string value (after whitespace trimming) for keyNames in the map.
+// It returns an empty string if no such value is found.
+func findFirstString(m map[string]interface{}, keyNames ...string) string {
+	for _, key := range keyNames {
+		value, _ := m[key].(string)
+		v := strings.TrimSpace(value)
+		if v != "" {
+			return v
+		}
+
+		// TODO: What to do here? Should we create multiple identities for each of the value?
+		arr, _ := m[key].([]interface{})
+		for _, item := range arr {
+			s, _ := item.(string)
+			s = strings.TrimSpace(s)
+			if s != "" {
+				return s
+			}
+		}
+	}
+	return ""
+}
