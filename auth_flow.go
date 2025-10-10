@@ -175,29 +175,29 @@ func (s *Service) makeIdentityFromCredentials(credentials []Credential) (*Identi
 			if identity == nil {
 				identity = new(Identity)
 			}
-			givenName := FindFirstString(token, "givenName", "given_name", "firstName", "first_name")
+			givenName := findFirstString(token, "givenName", "given_name", "firstName", "first_name")
 			if givenName != "" {
 				identity.GivenName = givenName
 			}
-			name := FindFirstString(token, "name", "fullName", "full_name")
+			name := findFirstString(token, "name", "fullName", "full_name")
 			if name != "" {
 				identity.FullName = name
 			} else {
-				familyName := FindFirstString(token, "family_name", "lastName", "surname", "familyName", "last_name")
+				familyName := findFirstString(token, "familyName", "family_name", "lastName", "last_name", "surname")
 				if givenName != "" && familyName != "" {
 					identity.FullName = fmt.Sprintf("%s %s", givenName, familyName)
 				}
 			}
-			picture := FindFirstString(token, "picture", "avatar")
+			picture := findFirstString(token, "picture", "avatar")
 			if picture != "" {
 				identity.PictureURL = picture
 			}
-			email := FindFirstString(token, "email", "eMailAddress", "emailAddress", "email_address")
+			email := findFirstString(token, "email", "eMailAddress", "emailAddress", "email_address")
 			if email != "" {
 				// TODO: We should verify the e-mail.
 				identity.Email = email
 			}
-			username := FindFirstString(token, "preferred_username", "username")
+			username := findFirstString(token, "username", "preferred_username")
 			if username != "" {
 				identity.Username = username
 			}

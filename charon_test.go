@@ -100,3 +100,7 @@ func TestingOrganizationApplicationRefCmp(a OrganizationApplicationRef, b Organi
 func TestingParseAttributeValue(value types.AttributeValue) (any, errors.E) {
 	return parseAttributeValue(value)
 }
+
+func TestingFindFirstString(m map[string]interface{}, keyNames ...string) string {
+	return findFirstString(m, keyNames...)
+}

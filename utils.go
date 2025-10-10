@@ -831,18 +831,18 @@ func detectSliceChanges[T comparable](oldSlice, newSlice []T) (mapset.Set[T], ma
 	return newSet.Difference(oldSet), oldSet.Difference(newSet)
 }
 
-// FindFirstString returns the first non-empty string value for keyNames in the token map.
-// Returns an empty string if values are empty or not strings.
-func FindFirstString(token map[string]interface{}, keyNames ...string) string {
+// FindFirstString returns the first non-empty string value (after whitespace trimming) for keyNames in the map.
+// Returns an empty string if no such value is found.
+func findFirstString(m map[string]interface{}, keyNames ...string) string {
 	for _, key := range keyNames {
-		value, _ := token[key].(string)
+		value, _ := m[key].(string)
 		v := strings.TrimSpace(value)
 		if v != "" {
 			return v
 		}
 
 		// TODO: What to do here? Should we create multiple identities for each of the value?
-		arr, _ := token[key].([]interface{})
+		arr, _ := m[key].([]interface{})
 		for _, item := range arr {
 			s, _ := item.(string)
 			s = strings.TrimSpace(s)

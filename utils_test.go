@@ -216,7 +216,8 @@ func TestFindFirstString(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := charon.FindFirstString(tt.token, tt.keys...)
+			t.Parallel()
+			got := charon.TestingFindFirstString(tt.token, tt.keys...)
 			if got != tt.expected {
 				t.Errorf("expected %q, got %q", tt.expected, got)
 			}
