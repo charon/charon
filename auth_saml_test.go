@@ -173,6 +173,135 @@ func generateMetadata(t *testing.T, certBase64 string, scheme string, host strin
 	return metadata, nil
 }
 
+func buildAttributes(t *testing.T, store *samlTestStore) []types.Attribute {
+	t.Helper()
+
+	if len(store.Attributes) == 0 {
+		store.Attributes = map[string][]string{
+			"id":        {store.Subject},
+			"email":     {store.Subject[:8] + "@example.com"},
+			"firstName": {"Test"},
+			"lastName":  {"User"},
+		}
+	}
+
+	attributes := make([]types.Attribute, 0, len(store.Attributes))
+	for name, values := range store.Attributes {
+		attr := types.Attribute{
+			XMLName:      xml.Name{Space: samlAssertionNS, Local: "Attribute"},
+			FriendlyName: name,
+			Name:         name,
+			NameFormat:   "urn:oasis:names:tc:SAML:2.0:attrname-format:basic",
+			Values:       make([]types.AttributeValue, 0, len(values)),
+		}
+		for _, v := range values {
+			attr.Values = append(attr.Values, types.AttributeValue{
+				XMLName: xml.Name{Space: samlAssertionNS, Local: "AttributeValue"},
+				Type:    "xs:string",
+				Value:   v,
+			})
+		}
+		attributes = append(attributes, attr)
+	}
+
+	return attributes
+}
+
+func extractRequestID(t *testing.T, xmlData string) string {
+	t.Helper()
+
+	if idx := strings.Index(xmlData, `ID="`); idx != -1 {
+		start := idx + 4
+		if end := strings.Index(xmlData[start:], `"`); end != -1 {
+			return xmlData[start : start+end]
+		}
+	}
+	return ""
+}
+
+func extractAssertionConsumerServiceURL(t *testing.T, xmlData string) (string, errors.E) {
+	t.Helper()
+
+	var req authnRequest
+	err := xml.Unmarshal([]byte(xmlData), &req)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return req.AssertionConsumerServiceURL, nil
+}
+
+func decodeSAMLRequest(t *testing.T, encoded string) (string, errors.E) {
+	t.Helper()
+
+	raw, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	reader := flate.NewReader(bytes.NewReader(raw))
+	defer reader.Close()
+
+	decoded, err := io.ReadAll(reader)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	return string(decoded), nil
+}
+
+func generateSignedSAMLResponse(t *testing.T, store *samlTestStore, requestID string, destination string) string {
+	t.Helper()
+
+	now := time.Now().UTC()
+	notBefore := now.Add(-5 * time.Minute)
+	notAfter := now.Add(5 * time.Minute)
+
+	attributes := buildAttributes(t, store)
+
+	samlRData := samlResponseData{
+		ResponseID:   "_" + identifier.New().String(),
+		AssertionID:  "_" + identifier.New().String(),
+		InResponseTo: requestID,
+		Destination:  destination,
+		IssueInstant: now.Format(time.RFC3339Nano),
+		NotBefore:    notBefore.Format(time.RFC3339),
+		NotOnOrAfter: notAfter.Format(time.RFC3339),
+		Issuer:       samlTestingEntityID,
+		Audience:     samlTestingEntityID,
+		Subject:      store.Subject,
+		SessionIndex: "_" + identifier.New().String(),
+		Attributes:   attributes,
+	}
+
+	samlRTemplate := samlResponseTemplate()
+	var buf bytes.Buffer
+	err := samlRTemplate.Execute(&buf, samlRData)
+	require.NoError(t, err)
+
+	doc := etree.NewDocument()
+	err = doc.ReadFromBytes(buf.Bytes())
+	require.NoError(t, err)
+
+	signCtx := dsig.NewDefaultSigningContext(store.KeyStore)
+	signCtx.Canonicalizer = dsig.MakeC14N10RecCanonicalizer()
+	err = signCtx.SetSignatureMethod(dsig.RSASHA256SignatureMethod)
+	require.NoError(t, err)
+	signedResponse, err := signCtx.SignEnveloped(doc.Root())
+	require.NoError(t, err)
+
+	signatureElement := signedResponse.FindElement("ds:Signature")
+	signedResponse.InsertChildAt(2, signatureElement)
+	signedResponse.RemoveChild(signatureElement)
+
+	signedDoc := etree.NewDocument()
+	signedDoc.SetRoot(signedResponse)
+
+	xmlBytes, err := signedDoc.WriteToBytes()
+	xmlBytes = []byte(xml.Header + string(xmlBytes))
+	require.NoError(t, err)
+	return base64.StdEncoding.EncodeToString(xmlBytes)
+}
+
 func startSAMLTestServer(t *testing.T) *httptest.Server {
 	t.Helper()
 
@@ -265,101 +394,6 @@ func startSAMLTestServer(t *testing.T) *httptest.Server {
 	return ts
 }
 
-func generateSignedSAMLResponse(t *testing.T, store *samlTestStore, requestID string, destination string) string {
-	t.Helper()
-
-	now := time.Now().UTC()
-	notBefore := now.Add(-5 * time.Minute)
-	notAfter := now.Add(5 * time.Minute)
-
-	attributes := buildAttributes(t, store)
-
-	samlRData := samlResponseData{
-		ResponseID:   "_" + identifier.New().String(),
-		AssertionID:  "_" + identifier.New().String(),
-		InResponseTo: requestID,
-		Destination:  destination,
-		IssueInstant: now.Format(time.RFC3339Nano),
-		NotBefore:    notBefore.Format(time.RFC3339),
-		NotOnOrAfter: notAfter.Format(time.RFC3339),
-		Issuer:       samlTestingEntityID,
-		Audience:     samlTestingEntityID,
-		Subject:      store.Subject,
-		SessionIndex: "_" + identifier.New().String(),
-		Attributes:   attributes,
-	}
-
-	samlRTemplate := samlResponseTemplate()
-	var buf bytes.Buffer
-	err := samlRTemplate.Execute(&buf, samlRData)
-	require.NoError(t, err)
-
-	doc := etree.NewDocument()
-	err = doc.ReadFromBytes(buf.Bytes())
-	require.NoError(t, err)
-
-	signCtx := dsig.NewDefaultSigningContext(store.KeyStore)
-	signCtx.Canonicalizer = dsig.MakeC14N10RecCanonicalizer()
-	err = signCtx.SetSignatureMethod(dsig.RSASHA256SignatureMethod)
-	require.NoError(t, err)
-	signedResponse, err := signCtx.SignEnveloped(doc.Root())
-	require.NoError(t, err)
-
-	signatureElement := signedResponse.FindElement("ds:Signature")
-	signedResponse.InsertChildAt(2, signatureElement)
-	signedResponse.RemoveChild(signatureElement)
-
-	signedDoc := etree.NewDocument()
-	signedDoc.SetRoot(signedResponse)
-
-	xmlBytes, err := signedDoc.WriteToBytes()
-	xmlBytes = []byte(xml.Header + string(xmlBytes))
-	require.NoError(t, err)
-	return base64.StdEncoding.EncodeToString(xmlBytes)
-}
-
-func extractRequestID(t *testing.T, xmlData string) string {
-	t.Helper()
-
-	if idx := strings.Index(xmlData, `ID="`); idx != -1 {
-		start := idx + 4
-		if end := strings.Index(xmlData[start:], `"`); end != -1 {
-			return xmlData[start : start+end]
-		}
-	}
-	return ""
-}
-
-func extractAssertionConsumerServiceURL(t *testing.T, xmlData string) (string, errors.E) {
-	t.Helper()
-
-	var req authnRequest
-	err := xml.Unmarshal([]byte(xmlData), &req)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-	return req.AssertionConsumerServiceURL, nil
-}
-
-func decodeSAMLRequest(t *testing.T, encoded string) (string, errors.E) {
-	t.Helper()
-
-	raw, err := base64.StdEncoding.DecodeString(encoded)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	reader := flate.NewReader(bytes.NewReader(raw))
-	defer reader.Close()
-
-	decoded, err := io.ReadAll(reader)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	return string(decoded), nil
-}
-
 func extractFormValues(t *testing.T, htmlStr string) (url.Values, string, errors.E) {
 	t.Helper()
 
@@ -406,40 +440,6 @@ func extractFormValues(t *testing.T, htmlStr string) (url.Values, string, errors
 	traverse(doc)
 
 	return values, action, nil
-}
-
-func buildAttributes(t *testing.T, store *samlTestStore) []types.Attribute {
-	t.Helper()
-
-	if len(store.Attributes) == 0 {
-		store.Attributes = map[string][]string{
-			"id":        {store.Subject},
-			"email":     {store.Subject[:8] + "@example.com"},
-			"firstName": {"Test"},
-			"lastName":  {"User"},
-		}
-	}
-
-	attributes := make([]types.Attribute, 0, len(store.Attributes))
-	for name, values := range store.Attributes {
-		attr := types.Attribute{
-			XMLName:      xml.Name{Space: samlAssertionNS, Local: "Attribute"},
-			FriendlyName: name,
-			Name:         name,
-			NameFormat:   "urn:oasis:names:tc:SAML:2.0:attrname-format:basic",
-			Values:       make([]types.AttributeValue, 0, len(values)),
-		}
-		for _, v := range values {
-			attr.Values = append(attr.Values, types.AttributeValue{
-				XMLName: xml.Name{Space: samlAssertionNS, Local: "AttributeValue"},
-				Type:    "xs:string",
-				Value:   v,
-			})
-		}
-		attributes = append(attributes, attr)
-	}
-
-	return attributes
 }
 
 func samlSignin(t *testing.T, ts *httptest.Server, service *charon.Service, samlTS *httptest.Server, signinOrSignout charon.Completed) string {
