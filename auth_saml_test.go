@@ -360,7 +360,7 @@ func samlSignin(t *testing.T, ts *httptest.Server, service *charon.Service, saml
 	assert.Equal(t, http.StatusOK, resp.StatusCode, htmlStr)
 
 	values, action, errE := extractFormValues(t, htmlStr)
-	require.NoError(t, errE)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	require.NotEmpty(t, values)
 	require.NotEmpty(t, action)
 	require.True(t, strings.HasPrefix(action, ts.URL), action)
@@ -448,7 +448,7 @@ func mockSAMLSignin(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	}
 
 	jsonPayload, errE := x.Marshal(authPayload)
-	require.NoError(t, errE)
+	require.NoError(t, errE, "% -+#.1v", errE)
 
 	// Call MockSAML auth endpoint.
 	resp, err = mockSAMLClient.Post("https://mocksaml.com/api/namespace/charon/saml/auth", "application/json", bytes.NewReader(jsonPayload)) //nolint:noctx,bodyclose
@@ -460,7 +460,7 @@ func mockSAMLSignin(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	assert.Equal(t, http.StatusOK, resp.StatusCode, htmlStr)
 
 	values, action, errE := extractFormValues(t, htmlStr)
-	require.NoError(t, errE)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	require.NotEmpty(t, values)
 	require.NotEmpty(t, action)
 	require.True(t, strings.HasPrefix(action, ts.URL), action)
@@ -498,9 +498,12 @@ func createMockSAMLClient(t *testing.T) *http.Client {
 	t.Helper()
 
 	client := cleanhttp.DefaultClient()
+
+	// We do not follow redirects automatically.
 	client.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
 		return http.ErrUseLastResponse
 	}
+
 	return client
 }
 
