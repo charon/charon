@@ -135,6 +135,7 @@ func samlResponseTemplate() *template.Template {
 
 func generateMetadata(t *testing.T, certBase64 string, scheme string, host string) ([]byte, errors.E) {
 	t.Helper()
+
 	baseURL := scheme + "://" + host
 
 	doc := etree.NewDocument()
@@ -319,6 +320,7 @@ func generateSignedSAMLResponse(t *testing.T, store *samlTestStore, requestID st
 
 func extractRequestID(t *testing.T, xmlData string) string {
 	t.Helper()
+
 	if idx := strings.Index(xmlData, `ID="`); idx != -1 {
 		start := idx + 4
 		if end := strings.Index(xmlData[start:], `"`); end != -1 {
@@ -330,6 +332,7 @@ func extractRequestID(t *testing.T, xmlData string) string {
 
 func extractAssertionConsumerServiceURL(t *testing.T, xmlData string) (string, errors.E) {
 	t.Helper()
+
 	var req authnRequest
 	err := xml.Unmarshal([]byte(xmlData), &req)
 	if err != nil {
@@ -407,6 +410,7 @@ func extractFormValues(t *testing.T, htmlStr string) (url.Values, string, errors
 
 func buildAttributes(t *testing.T, store *samlTestStore) []types.Attribute {
 	t.Helper()
+
 	if len(store.Attributes) == 0 {
 		store.Attributes = map[string][]string{
 			"id":        {store.Subject},
@@ -434,6 +438,7 @@ func buildAttributes(t *testing.T, store *samlTestStore) []types.Attribute {
 		}
 		attributes = append(attributes, attr)
 	}
+
 	return attributes
 }
 
@@ -499,6 +504,7 @@ func samlSignin(t *testing.T, ts *httptest.Server, service *charon.Service, saml
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusSeeOther, resp.StatusCode, string(out))
 	location := resp.Header.Get("Location")
+	assert.NotEmpty(t, location)
 
 	route, errE := service.GetRoute(location, http.MethodGet)
 	require.NoError(t, errE, "% -+#.1v", errE)
