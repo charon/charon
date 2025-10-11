@@ -180,6 +180,7 @@ func buildAttributes(t *testing.T, store *samlTestStore) []types.Attribute {
 		store.Attributes = map[string][]string{
 			"id":        {store.Subject},
 			"email":     {store.Subject[:8] + "@example.com"},
+			"username":  {"username"},
 			"firstName": {"Test"},
 			"lastName":  {"User"},
 		}
@@ -657,7 +658,7 @@ func mockSAMLSignin(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	require.NoError(t, err)
 	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{signinOrSignout}, []charon.Provider{"mockSAML"}, "", assertCharonDashboard)
 
-	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{"mockSAML"}, 1, "username")
+	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{"mockSAML"}, 1, "jackson")
 	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{"mockSAML"})
 }
 
