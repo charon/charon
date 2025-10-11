@@ -317,196 +317,6 @@ func generateSignedSAMLResponse(t *testing.T, store *samlTestStore, requestID st
 	return base64.StdEncoding.EncodeToString(xmlBytes)
 }
 
-func samlSignin(t *testing.T, ts *httptest.Server, service *charon.Service, samlTS *httptest.Server, signinOrSignout charon.Completed) string {
-	t.Helper()
-
-	samlClient := samlTS.Client()
-
-	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
-
-	authFlowThirdPartyProviderStart, errE := service.ReverseAPI("AuthFlowThirdPartyProviderStart", waf.Params{"id": flowID.String()}, nil)
-	require.NoError(t, errE, "% -+#.1v", errE)
-
-	// Start SAML.
-	resp, err := ts.Client().Post(ts.URL+authFlowThirdPartyProviderStart, "application/json", strings.NewReader(`{"provider":"samlTesting"}`)) //nolint:noctx,bodyclose
-	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, 2, resp.ProtoMajor)
-	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-	var authFlowResponse charon.AuthFlowResponse
-	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
-	require.NoError(t, errE, "% -+#.1v", errE)
-	assert.Equal(t, []charon.Provider{"samlTesting"}, authFlowResponse.Providers)
-	require.NotNil(t, authFlowResponse.ThirdPartyProvider)
-	require.True(t, strings.HasPrefix(authFlowResponse.ThirdPartyProvider.Location, samlTS.URL), authFlowResponse.ThirdPartyProvider.Location)
-
-	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
-	require.NoError(t, errE, "% -+#.1v", errE)
-
-	// Flow is available, current provider is testing.
-	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
-	if assert.NoError(t, err) {
-		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{"samlTesting"}, "", assertCharonDashboard)
-	}
-
-	// Redirect to our testing provider.
-	resp, err = samlClient.Get(authFlowResponse.ThirdPartyProvider.Location) //nolint:noctx,bodyclose
-	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-	out, err := io.ReadAll(resp.Body)
-	require.NoError(t, err)
-	htmlStr := string(out)
-	assert.Equal(t, http.StatusOK, resp.StatusCode, htmlStr)
-
-	values, action, errE := extractFormValues(t, htmlStr)
-	require.NoError(t, errE, "% -+#.1v", errE)
-	require.NotEmpty(t, values)
-	require.NotEmpty(t, action)
-	require.True(t, strings.HasPrefix(action, ts.URL), action)
-
-	// Flow has not yet changed, current provider is testing.
-	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
-	if assert.NoError(t, err) {
-		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{"samlTesting"}, "", assertCharonDashboard)
-	}
-
-	// Redirect to SAML callback.
-	resp, err = ts.Client().Post(action, "application/x-www-form-urlencoded", strings.NewReader(values.Encode())) //nolint:noctx,bodyclose
-	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-	out, err = io.ReadAll(resp.Body)
-	require.NoError(t, err)
-	assert.Equal(t, http.StatusSeeOther, resp.StatusCode, string(out))
-	location := resp.Header.Get("Location")
-
-	route, errE := service.GetRoute(location, http.MethodGet)
-	require.NoError(t, errE, "% -+#.1v", errE)
-	assert.Equal(t, "AuthFlowGet", route.Name)
-
-	// Flow is available and signinOrSignout is completed.
-	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
-	require.NoError(t, err)
-	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{signinOrSignout}, []charon.Provider{"samlTesting"}, "", assertCharonDashboard)
-
-	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{"samlTesting"}, 1, "username")
-	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{"samlTesting"})
-}
-
-func mockSAMLSignin(t *testing.T, ts *httptest.Server, service *charon.Service, signinOrSignout charon.Completed) string {
-	t.Helper()
-
-	mockSAMLClient := createMockSAMLClient(t)
-
-	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
-
-	authFlowThirdPartyProviderStart, errE := service.ReverseAPI("AuthFlowThirdPartyProviderStart", waf.Params{"id": flowID.String()}, nil)
-	require.NoError(t, errE, "% -+#.1v", errE)
-
-	// Start MockSAML.
-	resp, err := ts.Client().Post(ts.URL+authFlowThirdPartyProviderStart, "application/json", strings.NewReader(`{"provider":"mockSAML"}`)) //nolint:noctx,bodyclose
-	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, 2, resp.ProtoMajor)
-	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-	var authFlowResponse charon.AuthFlowResponse
-	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
-	require.NoError(t, errE, "% -+#.1v", errE)
-	assert.Equal(t, []charon.Provider{"mockSAML"}, authFlowResponse.Providers)
-	require.NotNil(t, authFlowResponse.ThirdPartyProvider)
-	require.True(t, strings.HasPrefix(authFlowResponse.ThirdPartyProvider.Location, "https://mocksaml.com/"), authFlowResponse.ThirdPartyProvider.Location)
-
-	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
-	require.NoError(t, errE, "% -+#.1v", errE)
-
-	// Flow is available, current provider is mockSAML.
-	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
-	if assert.NoError(t, err) {
-		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{"mockSAML"}, "", assertCharonDashboard)
-	}
-
-	// Redirect to MockSAML login page.
-	resp, err = mockSAMLClient.Get(authFlowResponse.ThirdPartyProvider.Location) //nolint:noctx,bodyclose
-	require.NoError(t, err)
-	assert.Equal(t, http.StatusFound, resp.StatusCode)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-
-	location := resp.Header.Get("Location")
-	require.NotEmpty(t, location, "Expected Location header in 302 response")
-	locationURL, err := url.Parse(location)
-	require.NoError(t, err)
-
-	// MockSAML requires an email for authentication, which is not included in location.
-	authPayload := map[string]interface{}{
-		"email": "jackson@example.com",
-	}
-	for key, values := range locationURL.Query() {
-		if len(values) > 0 {
-			authPayload[key] = values[0]
-		}
-	}
-
-	jsonPayload, errE := x.Marshal(authPayload)
-	require.NoError(t, errE, "% -+#.1v", errE)
-
-	// Call MockSAML auth endpoint.
-	resp, err = mockSAMLClient.Post("https://mocksaml.com/api/namespace/charon/saml/auth", "application/json", bytes.NewReader(jsonPayload)) //nolint:noctx,bodyclose
-	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-	out, err := io.ReadAll(resp.Body)
-	require.NoError(t, err)
-	htmlStr := string(out)
-	assert.Equal(t, http.StatusOK, resp.StatusCode, htmlStr)
-
-	values, action, errE := extractFormValues(t, htmlStr)
-	require.NoError(t, errE, "% -+#.1v", errE)
-	require.NotEmpty(t, values)
-	require.NotEmpty(t, action)
-	require.True(t, strings.HasPrefix(action, ts.URL), action)
-
-	// Flow has not yet changed, current provider is mockSAML.
-	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
-	if assert.NoError(t, err) {
-		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{"mockSAML"}, "", assertCharonDashboard)
-	}
-
-	// Redirect to SAML callback.
-	resp, err = ts.Client().Post(action, "application/x-www-form-urlencoded", strings.NewReader(values.Encode())) //nolint:noctx,bodyclose
-	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-	out, err = io.ReadAll(resp.Body)
-	require.NoError(t, err)
-	assert.Equal(t, http.StatusSeeOther, resp.StatusCode, string(out))
-	location = resp.Header.Get("Location")
-	assert.NotEmpty(t, location)
-
-	route, errE := service.GetRoute(location, http.MethodGet)
-	require.NoError(t, errE, "% -+#.1v", errE)
-	assert.Equal(t, "AuthFlowGet", route.Name)
-
-	// Flow is available and signinOrSignout is completed.
-	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
-	require.NoError(t, err)
-	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{signinOrSignout}, []charon.Provider{"mockSAML"}, "", assertCharonDashboard)
-
-	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{"mockSAML"}, 1, "username")
-	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{"mockSAML"})
-}
-
-func createMockSAMLClient(t *testing.T) *http.Client {
-	t.Helper()
-
-	client := cleanhttp.DefaultClient()
-
-	// We do not follow redirects automatically.
-	client.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
-		return http.ErrUseLastResponse
-	}
-
-	return client
-}
-
 func extractRequestID(t *testing.T, xmlData string) string {
 	t.Helper()
 	if idx := strings.Index(xmlData, `ID="`); idx != -1 {
@@ -627,6 +437,82 @@ func buildAttributes(t *testing.T, store *samlTestStore) []types.Attribute {
 	return attributes
 }
 
+func samlSignin(t *testing.T, ts *httptest.Server, service *charon.Service, samlTS *httptest.Server, signinOrSignout charon.Completed) string {
+	t.Helper()
+
+	samlClient := samlTS.Client()
+
+	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
+
+	authFlowThirdPartyProviderStart, errE := service.ReverseAPI("AuthFlowThirdPartyProviderStart", waf.Params{"id": flowID.String()}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	// Start SAML.
+	resp, err := ts.Client().Post(ts.URL+authFlowThirdPartyProviderStart, "application/json", strings.NewReader(`{"provider":"samlTesting"}`)) //nolint:noctx,bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, 2, resp.ProtoMajor)
+	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+	var authFlowResponse charon.AuthFlowResponse
+	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Equal(t, []charon.Provider{"samlTesting"}, authFlowResponse.Providers)
+	require.NotNil(t, authFlowResponse.ThirdPartyProvider)
+	require.True(t, strings.HasPrefix(authFlowResponse.ThirdPartyProvider.Location, samlTS.URL), authFlowResponse.ThirdPartyProvider.Location)
+
+	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	// Flow is available, current provider is testing.
+	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
+	if assert.NoError(t, err) {
+		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{"samlTesting"}, "", assertCharonDashboard)
+	}
+
+	// Redirect to our testing provider.
+	resp, err = samlClient.Get(authFlowResponse.ThirdPartyProvider.Location) //nolint:noctx,bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	out, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	htmlStr := string(out)
+	assert.Equal(t, http.StatusOK, resp.StatusCode, htmlStr)
+
+	values, action, errE := extractFormValues(t, htmlStr)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	require.NotEmpty(t, values)
+	require.NotEmpty(t, action)
+	require.True(t, strings.HasPrefix(action, ts.URL), action)
+
+	// Flow has not yet changed, current provider is testing.
+	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
+	if assert.NoError(t, err) {
+		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{"samlTesting"}, "", assertCharonDashboard)
+	}
+
+	// Redirect to SAML callback.
+	resp, err = ts.Client().Post(action, "application/x-www-form-urlencoded", strings.NewReader(values.Encode())) //nolint:noctx,bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	out, err = io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusSeeOther, resp.StatusCode, string(out))
+	location := resp.Header.Get("Location")
+
+	route, errE := service.GetRoute(location, http.MethodGet)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Equal(t, "AuthFlowGet", route.Name)
+
+	// Flow is available and signinOrSignout is completed.
+	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
+	require.NoError(t, err)
+	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{signinOrSignout}, []charon.Provider{"samlTesting"}, "", assertCharonDashboard)
+
+	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{"samlTesting"}, 1, "username")
+	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{"samlTesting"})
+}
+
 func TestAuthFlowSAML(t *testing.T) { //nolint:dupl
 	t.Parallel()
 
@@ -653,6 +539,120 @@ func TestAuthFlowSAML(t *testing.T) { //nolint:dupl
 		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
 		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
 	})
+}
+
+func createMockSAMLClient(t *testing.T) *http.Client {
+	t.Helper()
+
+	client := cleanhttp.DefaultClient()
+
+	// We do not follow redirects automatically.
+	client.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+
+	return client
+}
+
+func mockSAMLSignin(t *testing.T, ts *httptest.Server, service *charon.Service, signinOrSignout charon.Completed) string {
+	t.Helper()
+
+	mockSAMLClient := createMockSAMLClient(t)
+
+	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
+
+	authFlowThirdPartyProviderStart, errE := service.ReverseAPI("AuthFlowThirdPartyProviderStart", waf.Params{"id": flowID.String()}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	// Start MockSAML.
+	resp, err := ts.Client().Post(ts.URL+authFlowThirdPartyProviderStart, "application/json", strings.NewReader(`{"provider":"mockSAML"}`)) //nolint:noctx,bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, 2, resp.ProtoMajor)
+	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+	var authFlowResponse charon.AuthFlowResponse
+	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Equal(t, []charon.Provider{"mockSAML"}, authFlowResponse.Providers)
+	require.NotNil(t, authFlowResponse.ThirdPartyProvider)
+	require.True(t, strings.HasPrefix(authFlowResponse.ThirdPartyProvider.Location, "https://mocksaml.com/"), authFlowResponse.ThirdPartyProvider.Location)
+
+	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	// Flow is available, current provider is mockSAML.
+	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
+	if assert.NoError(t, err) {
+		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{"mockSAML"}, "", assertCharonDashboard)
+	}
+
+	// Redirect to MockSAML login page.
+	resp, err = mockSAMLClient.Get(authFlowResponse.ThirdPartyProvider.Location) //nolint:noctx,bodyclose
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusFound, resp.StatusCode)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+
+	location := resp.Header.Get("Location")
+	require.NotEmpty(t, location, "Expected Location header in 302 response")
+	locationURL, err := url.Parse(location)
+	require.NoError(t, err)
+
+	// MockSAML requires an email for authentication, which is not included in location.
+	authPayload := map[string]interface{}{
+		"email": "jackson@example.com",
+	}
+	for key, values := range locationURL.Query() {
+		if len(values) > 0 {
+			authPayload[key] = values[0]
+		}
+	}
+
+	jsonPayload, errE := x.Marshal(authPayload)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	// Call MockSAML auth endpoint.
+	resp, err = mockSAMLClient.Post("https://mocksaml.com/api/namespace/charon/saml/auth", "application/json", bytes.NewReader(jsonPayload)) //nolint:noctx,bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	out, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	htmlStr := string(out)
+	assert.Equal(t, http.StatusOK, resp.StatusCode, htmlStr)
+
+	values, action, errE := extractFormValues(t, htmlStr)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	require.NotEmpty(t, values)
+	require.NotEmpty(t, action)
+	require.True(t, strings.HasPrefix(action, ts.URL), action)
+
+	// Flow has not yet changed, current provider is mockSAML.
+	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
+	if assert.NoError(t, err) {
+		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, []charon.Provider{"mockSAML"}, "", assertCharonDashboard)
+	}
+
+	// Redirect to SAML callback.
+	resp, err = ts.Client().Post(action, "application/x-www-form-urlencoded", strings.NewReader(values.Encode())) //nolint:noctx,bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	out, err = io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusSeeOther, resp.StatusCode, string(out))
+	location = resp.Header.Get("Location")
+	assert.NotEmpty(t, location)
+
+	route, errE := service.GetRoute(location, http.MethodGet)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Equal(t, "AuthFlowGet", route.Name)
+
+	// Flow is available and signinOrSignout is completed.
+	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
+	require.NoError(t, err)
+	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{signinOrSignout}, []charon.Provider{"mockSAML"}, "", assertCharonDashboard)
+
+	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{"mockSAML"}, 1, "username")
+	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{"mockSAML"})
 }
 
 func TestAuthFlowMockSAML(t *testing.T) {
