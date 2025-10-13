@@ -337,15 +337,14 @@ func startSAMLTestServer(t *testing.T) *httptest.Server {
 			http.Error(w, "samlTesting error in parsing SAML request: "+errE.Error(), http.StatusBadRequest)
 			return
 		}
-		if requestID == "" || callbackURL == "" {
-			errE = errors.New("missing required AuthnRequest fields")
-			if requestID != "" {
-				errors.Details(errE)["requestID"] = requestID
-			}
-			if callbackURL != "" {
-				errors.Details(errE)["callbackURL"] = callbackURL
-			}
-			http.Error(w, "samlTesting missing required AuthnRequest fields: "+errE.Error(), http.StatusBadRequest)
+
+		if requestID == "" {
+			http.Error(w, "samlTesting missing requestID", http.StatusBadRequest)
+			return
+		}
+
+		if callbackURL == "" {
+			http.Error(w, "samlTesting missing callbackURL", http.StatusBadRequest)
 			return
 		}
 
