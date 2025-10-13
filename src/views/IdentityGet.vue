@@ -1,23 +1,25 @@
 <script setup lang="ts">
 import type { DeepReadonly, Ref } from "vue"
 import type { ComponentExposed } from "vue-component-type-helpers"
+
 import type { Identity, IdentityOrganization as IdentityOrganizationType, IdentityRef, Metadata, OrganizationRef, Organizations } from "@/types"
 
 import { computed, nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
+
+import { getURL, postJSON } from "@/api"
+import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import TextArea from "@/components/TextArea.vue"
-import Button from "@/components/Button.vue"
-import OrganizationListItem from "@/partials/OrganizationListItem.vue"
-import NavBar from "@/partials/NavBar.vue"
+import siteContext from "@/context"
 import Footer from "@/partials/Footer.vue"
-import WithIdentityPublicDocument from "@/partials/WithIdentityPublicDocument.vue"
 import IdentityOrganization from "@/partials/IdentityOrganization.vue"
-import { getURL, postJSON } from "@/api"
+import NavBar from "@/partials/NavBar.vue"
+import OrganizationListItem from "@/partials/OrganizationListItem.vue"
+import WithIdentityPublicDocument from "@/partials/WithIdentityPublicDocument.vue"
 import { injectProgress } from "@/progress"
 import { clone, equals } from "@/utils"
-import siteContext from "@/context"
 
 const props = defineProps<{
   id: string

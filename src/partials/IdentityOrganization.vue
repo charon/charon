@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import type { IdentityOrganization, OrganizationApplicationPublic, OrganizationBlockedStatus } from "@/types"
-import type { ComponentExposed } from "vue-component-type-helpers"
 import type { DeepReadonly } from "vue"
+import type { ComponentExposed } from "vue-component-type-helpers"
+
+import type { IdentityOrganization, OrganizationApplicationPublic, OrganizationBlockedStatus } from "@/types"
 
 import { computed, ref } from "vue"
 import { useI18n } from "vue-i18n"
+
 import WithDocument from "@/components/WithDocument.vue"
 import { getHomepage } from "@/utils"
 

@@ -1,6 +1,7 @@
 import type { Ref } from "vue"
 import type { Router } from "vue-router"
-import type { Flow, SiteProvider, AuthFlowResponse, Completed } from "@/types"
+
+import type { AuthFlowResponse, Completed, Flow, SiteProvider } from "@/types"
 
 // It is OK that we fetch siteContext here because the server sends preload header
 // so we have to fetch it always anyway. Generally this is already cached.

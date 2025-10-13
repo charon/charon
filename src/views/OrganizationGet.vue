@@ -1,37 +1,39 @@
 <script setup lang="ts">
 import type { DeepReadonly, Ref } from "vue"
+
 import type {
-  Organization,
-  Metadata,
-  ApplicationTemplates,
-  ApplicationTemplate,
-  OrganizationApplication,
-  ApplicationTemplateRef,
-  IdentityRef,
-  OrganizationIdentity,
   AllIdentity,
+  ApplicationTemplate,
+  ApplicationTemplateRef,
+  ApplicationTemplates,
+  IdentityRef,
+  Metadata,
+  Organization,
+  OrganizationApplication,
+  OrganizationIdentity,
 } from "@/types"
 
+import { Identifier } from "@tozd/identifier"
 import { computed, nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
-import { Identifier } from "@tozd/identifier"
-import InputText from "@/components/InputText.vue"
-import TextArea from "@/components/TextArea.vue"
-import Button from "@/components/Button.vue"
-import ButtonLink from "@/components/ButtonLink.vue"
-import NavBar from "@/partials/NavBar.vue"
-import Footer from "@/partials/Footer.vue"
-import ApplicationTemplateListItem from "@/partials/ApplicationTemplateListItem.vue"
-import IdentityFull from "@/partials/IdentityFull.vue"
-import WithIdentityPublicDocument from "@/partials/WithIdentityPublicDocument.vue"
-import IdentityOrganization from "@/partials/IdentityOrganization.vue"
+
 import { getAllIdentities, getURL, postJSON } from "@/api"
 import { setupArgon2id } from "@/argon2id"
-import { clone, equals, getIdentityOrganization, getOrganization } from "@/utils"
-import { injectProgress } from "@/progress"
-import siteContext from "@/context"
 import { isSignedIn } from "@/auth"
+import Button from "@/components/Button.vue"
+import ButtonLink from "@/components/ButtonLink.vue"
+import InputText from "@/components/InputText.vue"
+import TextArea from "@/components/TextArea.vue"
+import siteContext from "@/context"
+import ApplicationTemplateListItem from "@/partials/ApplicationTemplateListItem.vue"
+import Footer from "@/partials/Footer.vue"
+import IdentityFull from "@/partials/IdentityFull.vue"
+import IdentityOrganization from "@/partials/IdentityOrganization.vue"
+import NavBar from "@/partials/NavBar.vue"
+import WithIdentityPublicDocument from "@/partials/WithIdentityPublicDocument.vue"
+import { injectProgress } from "@/progress"
+import { clone, equals, getIdentityOrganization, getOrganization } from "@/utils"
 
 const props = defineProps<{
   id: string

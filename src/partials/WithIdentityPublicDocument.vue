@@ -2,6 +2,7 @@
 import type { IdentityPublic as IdentityPublicType, IdentityRef } from "@/types"
 
 import { useI18n } from "vue-i18n"
+
 import WithDocument from "@/components/WithDocument.vue"
 import IdentityPublic from "@/partials/IdentityPublic.vue"
 

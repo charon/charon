@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Ref } from "vue"
+
 import type {
   ApplicationTemplate,
   ApplicationTemplateClientBackend,
@@ -13,17 +14,18 @@ import type {
 import { nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
-import InputText from "@/components/InputText.vue"
-import TextArea from "@/components/TextArea.vue"
-import Button from "@/components/Button.vue"
-import RadioButton from "@/components/RadioButton.vue"
-import WithIdentityPublicDocument from "@/partials/WithIdentityPublicDocument.vue"
-import NavBar from "@/partials/NavBar.vue"
-import Footer from "@/partials/Footer.vue"
+
 import { getURL, postJSON } from "@/api"
-import { clone, equals } from "@/utils"
-import { injectProgress } from "@/progress"
+import Button from "@/components/Button.vue"
+import InputText from "@/components/InputText.vue"
+import RadioButton from "@/components/RadioButton.vue"
+import TextArea from "@/components/TextArea.vue"
 import siteContext from "@/context"
+import Footer from "@/partials/Footer.vue"
+import NavBar from "@/partials/NavBar.vue"
+import WithIdentityPublicDocument from "@/partials/WithIdentityPublicDocument.vue"
+import { injectProgress } from "@/progress"
+import { clone, equals } from "@/utils"
 
 const props = defineProps<{
   id: string

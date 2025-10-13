@@ -1,7 +1,7 @@
 import type { Browser, BrowserContext, Page } from "@playwright/test"
 
-import { existsSync } from "node:fs"
 import { chromium, expect, test } from "@playwright/test"
+import { existsSync } from "node:fs"
 
 const CHARON_URL = process.env.CHARON_URL || "https://localhost:8080"
 

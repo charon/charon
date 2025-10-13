@@ -2,6 +2,7 @@
 import type { Organization, OrganizationRef } from "@/types"
 
 import { useI18n } from "vue-i18n"
+
 import WithDocument from "@/components/WithDocument.vue"
 
 defineProps<{

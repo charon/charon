@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type { DeepReadonly } from "vue"
+
 import type { ApplicationTemplate, ApplicationTemplatePublic, ApplicationTemplateRef } from "@/types"
 
 import { useI18n } from "vue-i18n"
+
 import WithDocument from "@/components/WithDocument.vue"
 
 defineProps<{

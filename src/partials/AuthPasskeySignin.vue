@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import type { AuthFlowPasskeyGetCompleteRequest, AuthFlowResponse, Flow } from "@/types"
 
-import { getCurrentInstance, onMounted, onBeforeUnmount, ref } from "vue"
+import { startAuthentication, WebAuthnAbortService } from "@simplewebauthn/browser"
+import { getCurrentInstance, onBeforeUnmount, onMounted, ref } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
-import { startAuthentication, WebAuthnAbortService } from "@simplewebauthn/browser"
-import Button from "@/components/Button.vue"
+
 import { postJSON } from "@/api"
+import Button from "@/components/Button.vue"
 import { processResponse } from "@/flow"
 import { injectProgress } from "@/progress"
 

@@ -1,21 +1,22 @@
 import type { Ref } from "vue"
 import type { Router } from "vue-router"
+
 import type {
+  AllIdentity,
   AuthFlowPasswordStartRequest,
   AuthFlowResponse,
-  Flow,
-  Metadata,
   AuthFlowResponsePassword,
-  AllIdentity,
+  Flow,
   Identities,
   Identity,
+  Metadata,
   OrganizationBlockedStatus,
 } from "@/types"
 
-import { encodeQuery, fromBase64, getOrganization } from "@/utils"
-import { decodeMetadata } from "@/metadata"
-import { processResponse } from "@/flow"
 import { accessToken } from "@/auth"
+import { processResponse } from "@/flow"
+import { decodeMetadata } from "@/metadata"
+import { encodeQuery, fromBase64, getOrganization } from "@/utils"
 
 export class FetchError extends Error {
   cause?: Error

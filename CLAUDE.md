@@ -103,9 +103,11 @@ To update internationalization TypeScript definitions:
 
 ### Frontend Code Style
 
-- **Comments**: All comments must end with dots for consistency.
+- **Comments**: All comments must end with dots for consistency
 - **Import Convention**: Always use `@/` alias for internal imports, never relative paths (`./`, `../`)
-- **Import Organization**: Type imports must be at the top with `import type`, followed by empty line, then regular imports
+- **Import Organization**: Type imports for external packages must be at the top with `import type`, followed by
+  empty line, then type imports for local packages, followed by empty line, then regular imports for external packages,
+  followed by empty line, then regular imports for local packages; each group sorted in alphabetical order
 - **Internationalization**: All user-facing text must use vue-i18n with global scope
   - **useI18n**: Always use `useI18n({ useScope: 'global' })` instead of `useI18n()`
   - **i18n-t components**: Always include `scope="global"` attribute: `<i18n-t keypath="..." scope="global">`

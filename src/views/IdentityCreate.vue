@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import type { IdentityRef } from "@/types"
 
-import { useRouter } from "vue-router"
 import { useI18n } from "vue-i18n"
+import { useRouter } from "vue-router"
+
+import Footer from "@/partials/Footer.vue"
 import IdentityCreate from "@/partials/IdentityCreate.vue"
 import NavBar from "@/partials/NavBar.vue"
-import Footer from "@/partials/Footer.vue"
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()

@@ -4,13 +4,14 @@ import type { ApplicationTemplates } from "@/types"
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
+
+import { getURL } from "@/api"
+import { isSignedIn } from "@/auth"
 import ButtonLink from "@/components/ButtonLink.vue"
 import ApplicationTemplateListItem from "@/partials/ApplicationTemplateListItem.vue"
-import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
-import { getURL } from "@/api"
+import NavBar from "@/partials/NavBar.vue"
 import { injectProgress } from "@/progress"
-import { isSignedIn } from "@/auth"
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()

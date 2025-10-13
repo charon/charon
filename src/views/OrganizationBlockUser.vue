@@ -4,15 +4,16 @@ import type { BlockedIdentityType, IdentityForAdmin, OrganizationBlockRequest } 
 import { onBeforeUnmount, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
-import WithDocument from "@/components/WithDocument.vue"
-import OrganizationListItem from "@/partials/OrganizationListItem.vue"
-import IdentityPublic from "@/partials/IdentityPublic.vue"
-import NavBar from "@/partials/NavBar.vue"
-import Footer from "@/partials/Footer.vue"
+
+import { postJSON } from "@/api"
 import Button from "@/components/Button.vue"
 import RadioButton from "@/components/RadioButton.vue"
 import TextArea from "@/components/TextArea.vue"
-import { postJSON } from "@/api"
+import WithDocument from "@/components/WithDocument.vue"
+import Footer from "@/partials/Footer.vue"
+import IdentityPublic from "@/partials/IdentityPublic.vue"
+import NavBar from "@/partials/NavBar.vue"
+import OrganizationListItem from "@/partials/OrganizationListItem.vue"
 import { injectProgress } from "@/progress"
 
 const props = defineProps<{

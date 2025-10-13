@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import InputText from "@/components/InputText.vue"
 import { onMounted, ref } from "vue"
+
+import InputText from "@/components/InputText.vue"
 
 defineProps<{
   codeLength: number

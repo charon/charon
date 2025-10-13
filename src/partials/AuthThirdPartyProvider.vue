@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import type { AuthFlowThirdPartyProviderStartRequest, AuthFlowResponse, Flow } from "@/types"
+import type { AuthFlowResponse, AuthFlowThirdPartyProviderStartRequest, Flow } from "@/types"
 
-import { ref, onBeforeUnmount, onMounted, getCurrentInstance } from "vue"
+import { getCurrentInstance, onBeforeUnmount, onMounted, ref } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
-import Button from "@/components/Button.vue"
+
 import { postJSON } from "@/api"
-import { redirectServerSide } from "@/utils"
-import { injectProgress } from "@/progress"
+import Button from "@/components/Button.vue"
 import { processResponse } from "@/flow"
+import { injectProgress } from "@/progress"
+import { redirectServerSide } from "@/utils"
 
 const props = defineProps<{
   flow: Flow

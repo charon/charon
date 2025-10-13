@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import type { AuthFlowCodeCompleteRequest, AuthFlowCodeStartRequest, AuthFlowResponse, Flow, OrganizationApplicationPublic } from "@/types"
 
-import { ref, watch, onBeforeUnmount, onMounted, getCurrentInstance } from "vue"
-import { useRoute, useRouter } from "vue-router"
+import { getCurrentInstance, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
-import WithDocument from "@/components/WithDocument.vue"
+import { useRoute, useRouter } from "vue-router"
+
+import { postJSON } from "@/api"
 import Button from "@/components/Button.vue"
 import InputCode from "@/components/InputCode.vue"
-import { postJSON } from "@/api"
-import { isEmail } from "@/utils"
-import { injectProgress } from "@/progress"
+import WithDocument from "@/components/WithDocument.vue"
 import { processResponse } from "@/flow"
+import { injectProgress } from "@/progress"
+import { isEmail } from "@/utils"
 
 const props = defineProps<{
   flow: Flow

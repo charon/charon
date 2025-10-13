@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import type { Flow, OrganizationApplicationPublic } from "@/types"
 
-import { ref, onBeforeUnmount, onMounted, getCurrentInstance } from "vue"
+import { getCurrentInstance, onBeforeUnmount, onMounted, ref } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
-import WithDocument from "@/components/WithDocument.vue"
-import Button from "@/components/Button.vue"
-import { injectProgress } from "@/progress"
+
 import { redirectThirdPartyProvider } from "@/api"
+import Button from "@/components/Button.vue"
+import WithDocument from "@/components/WithDocument.vue"
+import { injectProgress } from "@/progress"
 
 const props = defineProps<{
   flow: Flow

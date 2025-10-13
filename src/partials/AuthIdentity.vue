@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import type { DeepReadonly } from "vue"
+
 import type { AllIdentity, AuthFlowChooseIdentityRequest, AuthFlowResponse, Flow, Identity, IdentityRef } from "@/types"
 
-import { ref, onBeforeUnmount, onMounted, getCurrentInstance, computed } from "vue"
+import { computed, getCurrentInstance, onBeforeUnmount, onMounted, ref } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
-import Button from "@/components/Button.vue"
-import IdentityPublic from "@/partials/IdentityPublic.vue"
-import IdentityCreate from "@/partials/IdentityCreate.vue"
-import { injectProgress } from "@/progress"
+
 import { getAllIdentities, postJSON, restartAuth } from "@/api"
-import { clone, encodeQuery, getOrganization } from "@/utils"
+import Button from "@/components/Button.vue"
 import { processResponse } from "@/flow"
+import IdentityCreate from "@/partials/IdentityCreate.vue"
+import IdentityPublic from "@/partials/IdentityPublic.vue"
+import { injectProgress } from "@/progress"
+import { clone, encodeQuery, getOrganization } from "@/utils"
 
 const props = defineProps<{
   flow: Flow

@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import type { Flow, OrganizationApplicationPublic } from "@/types"
 import type { ComponentExposed } from "vue-component-type-helpers"
 
-import { ref, onBeforeUnmount, onMounted, getCurrentInstance } from "vue"
+import type { Flow, OrganizationApplicationPublic } from "@/types"
+
+import { getCurrentInstance, onBeforeUnmount, onMounted, ref } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
-import WithDocument from "@/components/WithDocument.vue"
+
+import { redirectThirdPartyProvider } from "@/api"
 import Button from "@/components/Button.vue"
+import WithDocument from "@/components/WithDocument.vue"
 import { injectProgress } from "@/progress"
 import { getHomepage, redirectServerSide } from "@/utils"
-import { redirectThirdPartyProvider } from "@/api"
 
 const props = defineProps<{
   flow: Flow

@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import type { AuthSignoutRequest, AuthSignoutResponse } from "@/types"
 
-import { onBeforeUnmount } from "vue"
-import { useRouter } from "vue-router"
-import { useI18n } from "vue-i18n"
-import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
 import { GlobeAltIcon } from "@heroicons/vue/24/outline"
+import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
+import { onBeforeUnmount } from "vue"
+import { useI18n } from "vue-i18n"
+import { useRouter } from "vue-router"
+
+import { postJSON } from "@/api"
+import { accessToken, isSignedIn, signIn } from "@/auth"
 import Button from "@/components/Button.vue"
 import { useNavbar } from "@/navbar"
-import { postJSON } from "@/api"
 import { injectProgress } from "@/progress"
 import { currentAbsoluteURL, redirectServerSide } from "@/utils"
-import { accessToken, isSignedIn, signIn } from "@/auth"
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()

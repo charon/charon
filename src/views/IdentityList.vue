@@ -4,14 +4,15 @@ import type { Identities, Identity } from "@/types"
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
-import WithDocument from "@/components/WithDocument.vue"
+
+import { getURL } from "@/api"
+import { isSignedIn } from "@/auth"
 import ButtonLink from "@/components/ButtonLink.vue"
+import WithDocument from "@/components/WithDocument.vue"
+import Footer from "@/partials/Footer.vue"
 import IdentityFull from "@/partials/IdentityFull.vue"
 import NavBar from "@/partials/NavBar.vue"
-import Footer from "@/partials/Footer.vue"
-import { getURL } from "@/api"
 import { injectProgress } from "@/progress"
-import { isSignedIn } from "@/auth"
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()

@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import type { OrganizationCreate, OrganizationRef } from "@/types"
 
-import { onMounted, onBeforeUnmount, ref, watch } from "vue"
+import { onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
-import InputText from "@/components/InputText.vue"
-import Button from "@/components/Button.vue"
-import NavBar from "@/partials/NavBar.vue"
-import Footer from "@/partials/Footer.vue"
+
 import { postJSON } from "@/api"
+import Button from "@/components/Button.vue"
+import InputText from "@/components/InputText.vue"
+import Footer from "@/partials/Footer.vue"
+import NavBar from "@/partials/NavBar.vue"
 import { injectProgress } from "@/progress"
 
 const { t } = useI18n({ useScope: "global" })

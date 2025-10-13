@@ -1,19 +1,21 @@
 <script setup lang="ts">
 import type { DeepReadonly } from "vue"
 import type { ComponentExposed } from "vue-component-type-helpers"
-import type { IdentityForAdmin, Identities } from "@/types"
+
+import type { Identities, IdentityForAdmin } from "@/types"
 
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
+
+import { getURL } from "@/api"
+import Button from "@/components/Button.vue"
 import WithDocument from "@/components/WithDocument.vue"
-import OrganizationListItem from "@/partials/OrganizationListItem.vue"
-import IdentityPublic from "@/partials/IdentityPublic.vue"
-import NavBar from "@/partials/NavBar.vue"
 import Footer from "@/partials/Footer.vue"
 import IdentityOrganization from "@/partials/IdentityOrganization.vue"
-import Button from "@/components/Button.vue"
-import { getURL } from "@/api"
+import IdentityPublic from "@/partials/IdentityPublic.vue"
+import NavBar from "@/partials/NavBar.vue"
+import OrganizationListItem from "@/partials/OrganizationListItem.vue"
 import { injectProgress } from "@/progress"
 
 const props = defineProps<{

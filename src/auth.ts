@@ -1,7 +1,8 @@
 import type { Ref } from "vue"
 
-import { ref } from "vue"
 import * as client from "openid-client"
+import { ref } from "vue"
+
 // It is OK that we fetch siteContext here because the server sends preload header
 // so we have to fetch it always anyway. Generally this is already cached.
 import siteContext from "@/context"

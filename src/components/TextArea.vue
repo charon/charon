@@ -7,7 +7,7 @@ its DOM attributes without flickering how the component looks.
 -->
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, onUpdated, ref, computed } from "vue"
+import { computed, onBeforeUnmount, onMounted, onUpdated, ref } from "vue"
 
 const props = withDefaults(
   defineProps<{

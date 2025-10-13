@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import type { Flow } from "@/types"
 
-import { computed, getCurrentInstance, onBeforeUnmount, onMounted, ref, watch } from "vue"
-import { useRouter } from "vue-router"
-import { useI18n } from "vue-i18n"
 import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
+import { computed, getCurrentInstance, onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { useI18n } from "vue-i18n"
+import { useRouter } from "vue-router"
+
+import { startPassword } from "@/api"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
-import { startPassword } from "@/api"
-import { isEmail } from "@/utils"
-import { injectProgress } from "@/progress"
 import siteContext from "@/context"
 import { getThirdPartyProvider } from "@/flow"
+import { injectProgress } from "@/progress"
+import { isEmail } from "@/utils"
 
 const props = defineProps<{
   flow: Flow

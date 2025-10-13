@@ -1,6 +1,7 @@
-import setupWasm from "argon2id/lib/setup.js"
-import simdURL from "argon2id/dist/simd.wasm?url"
 import noSimdURL from "argon2id/dist/no-simd.wasm?url"
+import simdURL from "argon2id/dist/simd.wasm?url"
+import setupWasm from "argon2id/lib/setup.js"
+
 import { toBase64Raw } from "@/utils"
 
 const simdModule = await WebAssembly.compileStreaming(fetch(simdURL))

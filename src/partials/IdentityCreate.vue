@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import type { IdentityCreate, IdentityRef } from "@/types"
 
-import { onMounted, onBeforeUnmount, ref, watch } from "vue"
+import { onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
+
+import { postJSON } from "@/api"
+import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import TextArea from "@/components/TextArea.vue"
-import Button from "@/components/Button.vue"
-import { postJSON } from "@/api"
 import { injectProgress } from "@/progress"
 import { encodeQuery } from "@/utils"
 

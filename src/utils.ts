@@ -1,5 +1,6 @@
 import type { DeepReadonly, Ref } from "vue"
-import type { Mutable, QueryValuesWithOptional, QueryValues, OrganizationApplicationPublic, Identity, IdentityPublic, IdentityOrganization } from "@/types"
+
+import type { Identity, IdentityOrganization, IdentityPublic, Mutable, OrganizationApplicationPublic, QueryValues, QueryValuesWithOptional } from "@/types"
 
 import { cloneDeep, isEqual } from "lodash-es"
 import { toRaw } from "vue"

@@ -4,13 +4,14 @@ import type { Organizations } from "@/types"
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
-import ButtonLink from "@/components/ButtonLink.vue"
-import OrganizationListItem from "@/partials/OrganizationListItem.vue"
-import NavBar from "@/partials/NavBar.vue"
-import Footer from "@/partials/Footer.vue"
+
 import { getURL } from "@/api"
-import { injectProgress } from "@/progress"
 import { isSignedIn } from "@/auth"
+import ButtonLink from "@/components/ButtonLink.vue"
+import Footer from "@/partials/Footer.vue"
+import NavBar from "@/partials/NavBar.vue"
+import OrganizationListItem from "@/partials/OrganizationListItem.vue"
+import { injectProgress } from "@/progress"
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()

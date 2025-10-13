@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n"
-import ButtonLink from "@/components/ButtonLink.vue"
-import NavBar from "@/partials/NavBar.vue"
-import Footer from "@/partials/Footer.vue"
+
 import { isSignedIn } from "@/auth"
+import ButtonLink from "@/components/ButtonLink.vue"
+import Footer from "@/partials/Footer.vue"
+import NavBar from "@/partials/NavBar.vue"
 
 const { t } = useI18n({ useScope: "global" })
 </script>

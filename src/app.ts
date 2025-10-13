@@ -1,12 +1,13 @@
 import { createApp, ref } from "vue"
 import { createRouter, createWebHistory } from "vue-router"
-import App from "@/App.vue"
-import { replaceLocationHash } from "@/utils"
-import { progressKey } from "@/progress"
+
 import { routes } from "@/../routes.json"
-import i18n from "@/i18n"
 import "@/app.css"
+import App from "@/App.vue"
 import { processOIDCRedirect } from "@/auth"
+import i18n from "@/i18n"
+import { progressKey } from "@/progress"
+import { replaceLocationHash } from "@/utils"
 
 // Facebook Login returns adds a hash on its callback. Here we remove it before
 // we create Vue router so that Vue router gets clean route (it might matter if

@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import type { Activity, ActivityRef, Identity, Organization, ApplicationTemplate, OrganizationApplicationPublic, OrganizationRef, IdentityPublic } from "@/types"
 import type { DeepReadonly, FunctionalComponent } from "vue"
 
+import type { Activity, ActivityRef, ApplicationTemplate, Identity, IdentityPublic, Organization, OrganizationApplicationPublic, OrganizationRef } from "@/types"
+
+import { LocalScope } from "@allindevelopers/vue-local-scope"
+import { CalculatorIcon, IdentificationIcon, LockClosedIcon, LockOpenIcon, ShieldCheckIcon, ShieldExclamationIcon, UserGroupIcon } from "@heroicons/vue/24/outline"
+import { CalculatorIcon as CalculatorSolidIcon, IdentificationIcon as IdentificationSolidIcon, UserGroupIcon as UserGroupSolidIcon } from "@heroicons/vue/24/solid"
+import { uniqBy } from "lodash-es"
 import { readonly } from "vue"
 import { useI18n } from "vue-i18n"
-import { LocalScope } from "@allindevelopers/vue-local-scope"
-import { uniqBy } from "lodash-es"
-import { LockClosedIcon, LockOpenIcon, IdentificationIcon, UserGroupIcon, CalculatorIcon, ShieldExclamationIcon, ShieldCheckIcon } from "@heroicons/vue/24/outline"
-import { IdentificationIcon as IdentificationSolidIcon, UserGroupIcon as UserGroupSolidIcon, CalculatorIcon as CalculatorSolidIcon } from "@heroicons/vue/24/solid"
+
 import WithDocument from "@/components/WithDocument.vue"
 import { getProviderName } from "@/flow"
-import { getHomepage, getFormattedTimestamp, getIdentityDisplayName, clone } from "@/utils"
+import { clone, getFormattedTimestamp, getHomepage, getIdentityDisplayName } from "@/utils"
 
 const props = defineProps<{
   item: ActivityRef

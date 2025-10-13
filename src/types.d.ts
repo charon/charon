@@ -1,7 +1,7 @@
 import type {
+  AuthenticationResponseJSON,
   PublicKeyCredentialCreationOptionsJSON,
   PublicKeyCredentialRequestOptionsJSON,
-  AuthenticationResponseJSON,
   RegistrationResponseJSON,
 } from "@simplewebauthn/types"
 import type { BareItem, Key } from "structured-field-values"

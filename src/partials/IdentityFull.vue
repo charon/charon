@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { Identity } from "@/types"
 import type { DeepReadonly } from "vue"
+
+import type { Identity } from "@/types"
 
 import { useI18n } from "vue-i18n"
 

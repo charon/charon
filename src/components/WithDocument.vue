@@ -1,9 +1,10 @@
 <script setup lang="ts" generic="T">
 import type { Metadata, QueryValues } from "@/types"
 
-import { ref, watch, readonly, onMounted, onUpdated, onUnmounted, getCurrentInstance, Ref, DeepReadonly } from "vue"
+import { DeepReadonly, getCurrentInstance, onMounted, onUnmounted, onUpdated, readonly, ref, Ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
+
 import { getURL } from "@/api"
 import { injectMainProgress } from "@/progress"
 import { encodeQuery } from "@/utils"
