@@ -60,7 +60,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 		t.Run(tt.String(), func(t *testing.T) {
 			t.Parallel()
 
-			ts, service, _, _ := startTestServer(t)
+			ts, service, _, _, _ := startTestServer(t)
 
 			username := identifier.New().String()
 			challenge := identifier.New().String() + identifier.New().String() + identifier.New().String()

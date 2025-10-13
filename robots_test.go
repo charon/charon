@@ -13,7 +13,7 @@ import (
 func TestRobotsTxt(t *testing.T) {
 	t.Parallel()
 
-	ts, _, _, _ := startTestServer(t) //nolint:dogsled
+	ts, _, _, _, _ := startTestServer(t) //nolint:dogsled
 
 	expected, err := testFiles.ReadFile("dist/robots.txt")
 	require.NoError(t, err)

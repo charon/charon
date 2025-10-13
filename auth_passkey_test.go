@@ -27,7 +27,7 @@ import (
 func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 	t.Parallel()
 
-	ts, service, _, _ := startTestServer(t)
+	ts, service, _, _, _ := startTestServer(t) //nolint:dogsled
 
 	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
 

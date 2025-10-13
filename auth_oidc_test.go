@@ -164,7 +164,6 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	resp, err := ts.Client().Post(ts.URL+authFlowThirdPartyProviderStart, "application/json", strings.NewReader(`{"provider":"oidcTesting"}`)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
@@ -223,10 +222,10 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{"oidcTesting"})
 }
 
-func TestAuthFlowOIDC(t *testing.T) {
+func TestAuthFlowOIDC(t *testing.T) { //nolint:dupl
 	t.Parallel()
 
-	ts, service, _, oidcTS := startTestServer(t)
+	ts, service, _, oidcTS, _ := startTestServer(t)
 
 	// Signup with OIDC.
 	accessToken := oidcSignin(t, ts, service, oidcTS, charon.CompletedSignup)
