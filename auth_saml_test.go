@@ -3,7 +3,6 @@ package charon_test
 import (
 	"bytes"
 	"compress/flate"
-	"crypto/x509"
 	"encoding/base64"
 	"encoding/xml"
 	"html/template"
@@ -31,7 +30,8 @@ import (
 )
 
 const (
-	samlTestingEntityID = "samlTesting"
+	samlTestingEntityID   = "samlTesting"
+	samlTestingSPEntityID = "charon_saml_testing"
 )
 
 const (
@@ -40,10 +40,8 @@ const (
 )
 
 type samlTestStore struct {
-	Subject    string
-	Attributes map[string][]string
-	RelayState string
-	KeyStore   dsig.X509KeyStore
+	Subject  string
+	KeyStore dsig.X509KeyStore
 }
 
 type Response struct {
@@ -60,6 +58,7 @@ type Response struct {
 
 type authnRequest struct {
 	XMLName                     xml.Name `xml:"AuthnRequest"`
+	ID                          string   `xml:"ID,attr"`
 	AssertionConsumerServiceURL string   `xml:"AssertionConsumerServiceURL,attr"`
 }
 
@@ -133,10 +132,8 @@ func samlResponseTemplate() *template.Template {
 </samlp:Response>`))
 }
 
-func generateMetadata(t *testing.T, certBase64 string, scheme string, host string) ([]byte, errors.E) {
+func generateMetadata(t *testing.T, certBase64 string, baseURL string) ([]byte, errors.E) {
 	t.Helper()
-
-	baseURL := scheme + "://" + host
 
 	doc := etree.NewDocument()
 	doc.CreateProcInst("xml", `version="1.0" encoding="UTF-8"`)
@@ -168,7 +165,7 @@ func generateMetadata(t *testing.T, certBase64 string, scheme string, host strin
 	doc.Indent(2)
 	metadata, err := doc.WriteToBytes()
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.WithMessage(err, "samlTesting failed to generate metadata XML")
 	}
 	return metadata, nil
 }
@@ -176,18 +173,16 @@ func generateMetadata(t *testing.T, certBase64 string, scheme string, host strin
 func buildAttributes(t *testing.T, store *samlTestStore) []types.Attribute {
 	t.Helper()
 
-	if len(store.Attributes) == 0 {
-		store.Attributes = map[string][]string{
-			"id":        {store.Subject},
-			"email":     {store.Subject[:8] + "@example.com"},
-			"username":  {"username"},
-			"firstName": {"Test"},
-			"lastName":  {"User"},
-		}
+	attributeMap := map[string][]string{
+		"id":        {store.Subject},
+		"email":     {store.Subject[:8] + "@example.com"},
+		"username":  {"username"},
+		"firstName": {"Test"},
+		"lastName":  {"User"},
 	}
 
-	attributes := make([]types.Attribute, 0, len(store.Attributes))
-	for name, values := range store.Attributes {
+	attributes := make([]types.Attribute, 0, len(attributeMap))
+	for name, values := range attributeMap {
 		attr := types.Attribute{
 			XMLName:      xml.Name{Space: samlAssertionNS, Local: "Attribute"},
 			FriendlyName: name,
@@ -208,27 +203,15 @@ func buildAttributes(t *testing.T, store *samlTestStore) []types.Attribute {
 	return attributes
 }
 
-func extractRequestID(t *testing.T, xmlData string) string {
-	t.Helper()
-
-	if idx := strings.Index(xmlData, `ID="`); idx != -1 {
-		start := idx + 4
-		if end := strings.Index(xmlData[start:], `"`); end != -1 {
-			return xmlData[start : start+end]
-		}
-	}
-	return ""
-}
-
-func extractAssertionConsumerServiceURL(t *testing.T, xmlData string) (string, errors.E) {
+func parseAuthnRequest(t *testing.T, xmlData string) (string, string, errors.E) {
 	t.Helper()
 
 	var req authnRequest
 	err := xml.Unmarshal([]byte(xmlData), &req)
 	if err != nil {
-		return "", errors.WithStack(err)
+		return "", "", errors.WithStack(err)
 	}
-	return req.AssertionConsumerServiceURL, nil
+	return req.ID, req.AssertionConsumerServiceURL, nil
 }
 
 func decodeSAMLRequest(t *testing.T, encoded string) (string, errors.E) {
@@ -253,9 +236,8 @@ func decodeSAMLRequest(t *testing.T, encoded string) (string, errors.E) {
 func generateSignedSAMLResponse(t *testing.T, store *samlTestStore, requestID string, destination string) string {
 	t.Helper()
 
-	now := time.Now().UTC()
-	notBefore := now.Add(-5 * time.Minute)
-	notAfter := now.Add(5 * time.Minute)
+	notBefore := time.Now().UTC()
+	notAfter := notBefore.Add(5 * time.Minute)
 
 	attributes := buildAttributes(t, store)
 
@@ -264,11 +246,11 @@ func generateSignedSAMLResponse(t *testing.T, store *samlTestStore, requestID st
 		AssertionID:  "_" + identifier.New().String(),
 		InResponseTo: requestID,
 		Destination:  destination,
-		IssueInstant: now.Format(time.RFC3339Nano),
+		IssueInstant: notBefore.Format(time.RFC3339),
 		NotBefore:    notBefore.Format(time.RFC3339),
 		NotOnOrAfter: notAfter.Format(time.RFC3339),
 		Issuer:       samlTestingEntityID,
-		Audience:     samlTestingEntityID,
+		Audience:     samlTestingSPEntityID,
 		Subject:      store.Subject,
 		SessionIndex: "_" + identifier.New().String(),
 		Attributes:   attributes,
@@ -298,40 +280,36 @@ func generateSignedSAMLResponse(t *testing.T, store *samlTestStore, requestID st
 	signedDoc.SetRoot(signedResponse)
 
 	xmlBytes, err := signedDoc.WriteToBytes()
-	xmlBytes = []byte(xml.Header + string(xmlBytes))
 	require.NoError(t, err)
+	xmlBytes = []byte(xml.Header + string(xmlBytes))
+
 	return base64.StdEncoding.EncodeToString(xmlBytes)
 }
 
 func startSAMLTestServer(t *testing.T) *httptest.Server {
 	t.Helper()
 
+	var ts *httptest.Server
+
 	store := &samlTestStore{
 		// We use one unique subject per instance for testing.
-		Subject:    identifier.New().String()[:8],
-		Attributes: make(map[string][]string),
+		Subject:  identifier.New().String(),
+		KeyStore: dsig.RandomKeyStoreForTest(),
 	}
 
-	keyStore := dsig.RandomKeyStoreForTest()
-
-	_, certBytes, err := keyStore.GetKeyPair()
+	_, certBytes, err := store.KeyStore.GetKeyPair()
 	require.NoError(t, err)
 
-	cert, err := x509.ParseCertificate(certBytes)
-	require.NoError(t, err)
-
-	store.KeyStore = keyStore
+	certBase64 := base64.StdEncoding.EncodeToString(certBytes)
 
 	mux := http.NewServeMux()
 
 	// Mock metadata endpoint.
-	mux.HandleFunc("/saml/metadata", func(w http.ResponseWriter, req *http.Request) {
-		certBase64 := base64.StdEncoding.EncodeToString(cert.Raw)
-		scheme := "http"
-		host := req.Host
-		metadata, errE := generateMetadata(t, certBase64, scheme, host)
+	mux.HandleFunc("/saml/metadata", func(w http.ResponseWriter, _ *http.Request) {
+		metadata, errE := generateMetadata(t, certBase64, ts.URL)
 		if errE != nil {
-			http.Error(w, "samlTesting error in generating metadata", http.StatusInternalServerError)
+			http.Error(w, errE.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		w.Header().Set("Content-Type", "application/samlmetadata+xml")
@@ -348,23 +326,26 @@ func startSAMLTestServer(t *testing.T) *httptest.Server {
 			return
 		}
 
-		store.RelayState = relayState
-
-		xmlData, err := decodeSAMLRequest(t, samlRequest)
-		if err != nil {
-			http.Error(w, "samlTesting error in decoding SAML request", http.StatusBadRequest)
+		xmlData, errE := decodeSAMLRequest(t, samlRequest)
+		if errE != nil {
+			http.Error(w, "samlTesting error in decoding SAML request: "+errE.Error(), http.StatusBadRequest)
 			return
 		}
 
-		requestID := extractRequestID(t, xmlData)
-		if requestID == "" {
-			http.Error(w, "samlTesting missing request ID in SAML request", http.StatusBadRequest)
+		requestID, callbackURL, errE := parseAuthnRequest(t, xmlData)
+		if errE != nil {
+			http.Error(w, "samlTesting error in parsing SAML request: "+errE.Error(), http.StatusBadRequest)
 			return
 		}
-
-		callbackURL, errE := extractAssertionConsumerServiceURL(t, xmlData)
-		if errE != nil || callbackURL == "" {
-			http.Error(w, "samlTesting invalid assertion consumer service URL", http.StatusBadRequest)
+		if requestID == "" || callbackURL == "" {
+			errE = errors.New("missing required AuthnRequest fields")
+			if requestID != "" {
+				errors.Details(errE)["requestID"] = requestID
+			}
+			if callbackURL != "" {
+				errors.Details(errE)["callbackURL"] = callbackURL
+			}
+			http.Error(w, "samlTesting missing required AuthnRequest fields: "+errE.Error(), http.StatusBadRequest)
 			return
 		}
 
@@ -383,13 +364,13 @@ func startSAMLTestServer(t *testing.T) *httptest.Server {
 		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(http.StatusOK)
 		samlPostFormHTMLTemplate := samlPostFormTemplate()
-		if err := samlPostFormHTMLTemplate.Execute(w, htmlResponse); err != nil {
+		if err = samlPostFormHTMLTemplate.Execute(w, htmlResponse); err != nil {
 			http.Error(w, "samlTesting failed to generate HTML response form", http.StatusInternalServerError)
 			return
 		}
 	})
 
-	ts := httptest.NewServer(mux)
+	ts = httptest.NewServer(mux)
 	t.Cleanup(ts.Close)
 
 	return ts

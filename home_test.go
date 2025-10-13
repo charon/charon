@@ -168,7 +168,7 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 				Issuer: oidcTS.URL,
 			},
 			SAMLTesting: charon.SAMLProvider{
-				EntityID:    samlTestingEntityID,
+				EntityID:    samlTestingSPEntityID,
 				MetadataURL: samlTS.URL + "/saml/metadata",
 			},
 		},
