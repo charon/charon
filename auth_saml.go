@@ -90,10 +90,10 @@ func initSAMLProvider(service *Service, host string, p SiteProvider) (samlProvid
 		// It looks like this canonicalizer is supported more than others (Shibboleth supports only this one).
 		// So we use it as default. We can see if we have to make it configurable in the future.
 		SignAuthnRequestsCanonicalizer: dsig.MakeC14N10ExclusiveCanonicalizerWithPrefixList(""),
-		// TODO: Remove redundant SPKeyStore/SPSigningKeyStore once gosaml2 library's SAMLServiceProvider.Metadata
-		//   stops using deprecated GetSigningKey. It does not work correctly if SetSPKeyStore is used.
-		// see: https://github.com/russellhaering/gosaml2/issues/250
-		// see: https://github.com/russellhaering/gosaml2/pull/251
+		// TODO: Remove redundant SPKeyStore/SPSigningKeyStore once SAMLServiceProvider.Metadata stops using deprecated GetSigningKey.
+		//       It does not work correctly if only SetSPKeyStore is used.
+		//       See: https://github.com/russellhaering/gosaml2/issues/250
+		//       See: https://github.com/russellhaering/gosaml2/pull/251
 		SPKeyStore:        p.samlKeyStore,
 		SPSigningKeyStore: p.samlKeyStore,
 	}
