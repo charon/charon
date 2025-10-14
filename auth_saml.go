@@ -90,9 +90,22 @@ func initSAMLProvider(service *Service, host string, p SiteProvider) (samlProvid
 		// It looks like this canonicalizer is supported more than others (Shibboleth supports only this one).
 		// So we use it as default. We can see if we have to make it configurable in the future.
 		SignAuthnRequestsCanonicalizer: dsig.MakeC14N10ExclusiveCanonicalizerWithPrefixList(""),
+		// TODO: Remove redundant SPKeyStore/SPSigningKeyStore once gosaml2 library's SAMLServiceProvider.Metadata
+		//   stops using deprecated GetSigningKey. It does not work correctly if SetSPKeyStore is used.
+		// see: https://github.com/russellhaering/gosaml2/issues/250
+		// see: https://github.com/russellhaering/gosaml2/pull/251
+		SPKeyStore:        p.samlKeyStore,
+		SPSigningKeyStore: p.samlKeyStore,
 	}
 
 	err = sp.SetSPKeyStore(&saml2.KeyStore{
+		Signer: privateKey,
+		Cert:   cert,
+	})
+	if err != nil {
+		return samlProvider{}, withGosamlError(err)
+	}
+	err = sp.SetSPSigningKeyStore(&saml2.KeyStore{
 		Signer: privateKey,
 		Cert:   cert,
 	})
@@ -450,7 +463,7 @@ func (s *Service) SAMLMetadataGet(w http.ResponseWriter, req *http.Request, para
 
 	w.Header().Set("Content-Type", "application/samlmetadata+xml")
 	w.Header().Set("Content-Length", strconv.Itoa(len(metadata)))
-	w.Header().Set("Content-Disposition", `filename="metadata.xml"`)
+	w.Header().Set("Content-Disposition", `attachment; filename="metadata.xml"`)
 	w.WriteHeader(http.StatusOK)
 
 	// TODO: Implement in waf something similar to WriteJSON, but for other content types, and use it here.

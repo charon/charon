@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -668,4 +669,74 @@ func TestAuthFlowMockSAML(t *testing.T) {
 		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
 		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
 	})
+}
+
+func samlTestMetadata(t *testing.T, ts *httptest.Server, service *charon.Service, providerKey string) {
+	t.Helper()
+
+	metadataPath, errE := service.ReverseAPI("SAMLMetadata", waf.Params{"provider": providerKey}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	resp, err := ts.Client().Get(ts.URL + metadataPath) //nolint:noctx,bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, 2, resp.ProtoMajor)
+	assert.Equal(t, "application/samlmetadata+xml", resp.Header.Get("Content-Type"))
+	assert.Equal(t, `attachment; filename="metadata.xml"`, resp.Header.Get("Content-Disposition"))
+
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	metadata := string(body)
+
+	certRegex := regexp.MustCompile(`<ds:X509Certificate>[\s\S]*?</ds:X509Certificate>`)
+	normalizedMetadata := certRegex.ReplaceAllString(metadata, "<ds:X509Certificate>CERT</ds:X509Certificate>")
+
+	validUntilRegex := regexp.MustCompile(`validUntil="[^"]*"`)
+	normalizedMetadata = validUntilRegex.ReplaceAllString(normalizedMetadata, `validUntil="TIME"`)
+
+	expected := `<?xml version="1.0" encoding="UTF-8"?>
+<md:EntityDescriptor validUntil="TIME" entityID="charon_saml_testing" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+    <md:SPSSODescriptor AuthnRequestsSigned="true" WantAssertionsSigned="true" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+        <md:KeyDescriptor use="signing">
+            <ds:KeyInfo>
+                <ds:X509Data>
+                    <ds:X509Certificate>CERT</ds:X509Certificate>
+                </ds:X509Data>
+            </ds:KeyInfo>
+        </md:KeyDescriptor>
+        <md:KeyDescriptor use="encryption">
+            <ds:KeyInfo>
+                <ds:X509Data>
+                    <ds:X509Certificate>CERT</ds:X509Certificate>
+                </ds:X509Data>
+            </ds:KeyInfo>
+            <md:EncryptionMethod Algorithm="http://www.w3.org/2009/xmlenc11#aes128-gcm"/>
+            <md:EncryptionMethod Algorithm="http://www.w3.org/2009/xmlenc11#aes192-gcm"/>
+            <md:EncryptionMethod Algorithm="http://www.w3.org/2009/xmlenc11#aes256-gcm"/>
+            <md:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes128-cbc"/>
+            <md:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes256-cbc"/>
+        </md:KeyDescriptor>
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</md:NameIDFormat>
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:persistent</md:NameIDFormat>
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:x509SubjectName</md:NameIDFormat>
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName</md:NameIDFormat>
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos</md:NameIDFormat>
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:entity</md:NameIDFormat>
+        <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="` + ts.URL + `/api/auth/provider/` + providerKey + `" index="1"/>
+    </md:SPSSODescriptor>
+</md:EntityDescriptor>
+`
+
+	assert.Equal(t, expected, normalizedMetadata, "Metadata XML should match expected structure")
+}
+
+func TestSAMLMetadata(t *testing.T) {
+	t.Parallel()
+
+	ts, service, _, _, _ := startTestServer(t)
+
+	samlTestMetadata(t, ts, service, samlTestingEntityID)
 }

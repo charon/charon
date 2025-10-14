@@ -11,7 +11,6 @@ const (
 	samlMetadataNS    = "urn:oasis:names:tc:SAML:2.0:metadata"
 	locAttrValue      = "https://sipasstest.peer.id/api/auth/provider/sipass"
 	samlDsigNS        = "http://www.w3.org/2000/09/xmldsig#"
-	cacheDuration     = "PT604800S"
 	indentationSpaces = 4
 )
 
@@ -40,20 +39,11 @@ func generateSAMLMetadata(provider samlProvider) ([]byte, errors.E) {
 	}
 
 	root := doc.Root()
-	root.CreateAttr("cacheDuration", cacheDuration)
 	root.CreateAttr("xmlns:md", samlMetadataNS)
 	root.CreateAttr("xmlns:ds", samlDsigNS)
 
 	if len(provider.Mapping.Mapping) > 0 {
 		doc.FindElement("//SPSSODescriptor").AddChild(createACS(provider.Mapping))
-	}
-
-	if kd := doc.FindElement("//KeyDescriptor"); kd != nil {
-		kd.RemoveAttr("use")
-	}
-
-	for _, em := range doc.FindElements("//EncryptionMethod") {
-		em.Parent().RemoveChild(em)
 	}
 
 	if provider.Key == "sipass" {
@@ -77,12 +67,15 @@ func generateSAMLMetadata(provider samlProvider) ([]byte, errors.E) {
 
 func addNamespacePrefixes(root *etree.Element) {
 	metadataElements := map[string]bool{
-		"EntityDescriptor":         true,
-		"SPSSODescriptor":          true,
-		"KeyDescriptor":            true,
-		"NameIDFormat":             true,
-		"AssertionConsumerService": true,
-		"EncryptionMethod":         true,
+		"EntityDescriptor":          true,
+		"SPSSODescriptor":           true,
+		"KeyDescriptor":             true,
+		"NameIDFormat":              true,
+		"AssertionConsumerService":  true,
+		"AttributeConsumingService": true,
+		"ServiceName":               true,
+		"RequestedAttribute":        true,
+		"EncryptionMethod":          true,
 	}
 
 	signatureElements := map[string]bool{
@@ -104,15 +97,15 @@ func addNamespacePrefixes(root *etree.Element) {
 }
 
 func createACS(samlMapping SAMLAttributeMapping) *etree.Element {
-	acs := etree.NewElement("md:AttributeConsumingService")
+	acs := etree.NewElement("AttributeConsumingService")
 	acs.CreateAttr("index", "0")
 
-	sn := acs.CreateElement("md:ServiceName")
+	sn := acs.CreateElement("ServiceName")
 	sn.CreateAttr("xml:lang", "en")
 	sn.SetText("PeerID")
 
 	for oid, friendlyName := range samlMapping.Mapping {
-		reqAttr := acs.CreateElement("md:RequestedAttribute")
+		reqAttr := acs.CreateElement("RequestedAttribute")
 		reqAttr.CreateAttr("Name", oid)
 		reqAttr.CreateAttr("FriendlyName", friendlyName)
 		reqAttr.CreateAttr("isRequired", "true")
