@@ -452,5 +452,7 @@ func (s *Service) SAMLMetadata(w http.ResponseWriter, req *http.Request, params 
 	w.Header().Set("Content-Type", "application/xml")
 	w.WriteHeader(http.StatusOK)
 
+	// TODO: Implement in waf something similar to WriteJSON, but for other content types, and use it here.
+	//       To support range requests, etags, and compression.
 	_, _ = w.Write(metadata)
 }
