@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/go-cleanhttp"
@@ -429,9 +430,7 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 	s.completeAuthStep(w, req, false, flow, account, []Credential{{ID: credentialID, Provider: providerKey, Data: jsonData}})
 }
 
-func (s *Service) SAMLMetadata(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	defer req.Body.Close()
-
+func (s *Service) SAMLMetadataGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	providerKey := Provider(params["provider"])
 
 	samlProviders := s.samlProviders()
@@ -449,7 +448,9 @@ func (s *Service) SAMLMetadata(w http.ResponseWriter, req *http.Request, params 
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/xml")
+	w.Header().Set("Content-Type", "application/samlmetadata+xml")
+	w.Header().Set("Content-Length", strconv.Itoa(len(metadata)))
+	w.Header().Set("Content-Disposition", `filename="metadata.xml"`)
 	w.WriteHeader(http.StatusOK)
 
 	// TODO: Implement in waf something similar to WriteJSON, but for other content types, and use it here.

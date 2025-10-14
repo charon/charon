@@ -336,8 +336,8 @@
     {
       "name": "SAMLMetadata",
       "path": "/samlMetadata/:provider",
-      "api": null,
-      "get": {}
+      "api": {},
+      "get": null
     }
   ]
 }
