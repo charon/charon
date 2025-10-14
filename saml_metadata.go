@@ -98,7 +98,7 @@ func addNamespacePrefixes(root *etree.Element) {
 
 func createACS(samlMapping SAMLAttributeMapping) *etree.Element {
 	acs := etree.NewElement("AttributeConsumingService")
-	acs.CreateAttr("index", "0")
+	acs.CreateAttr("index", "1")
 
 	sn := acs.CreateElement("ServiceName")
 	sn.CreateAttr("xml:lang", "en")
