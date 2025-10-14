@@ -736,7 +736,7 @@ func samlTestMetadata(t *testing.T, ts *httptest.Server, service *charon.Service
 func TestSAMLMetadata(t *testing.T) {
 	t.Parallel()
 
-	ts, service, _, _, _ := startTestServer(t)
+	ts, service, _, _, _ := startTestServer(t) //nolint:dogsled
 
 	samlTestMetadata(t, ts, service, samlTestingEntityID)
 }
