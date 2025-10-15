@@ -37,8 +37,8 @@ func getSIPASSAttributeMapping() SAMLAttributeMapping {
 		CredentialIDAttributes: []string{"vatNumber", "birthDate"},
 		Mapping: map[string]string{
 			"urn:oid:1.3.6.1.4.1.44044.1.1.1.2":  "vatNumber",
-			"urn:oid:1.3.6.1.4.1.44044.1.1.1.6":  "name",
-			"urn:oid:1.3.6.1.4.1.44044.1.1.1.7":  "surname",
+			"urn:oid:1.3.6.1.4.1.44044.1.1.1.6":  "givenName",
+			"urn:oid:1.3.6.1.4.1.44044.1.1.1.7":  "familyName",
 			"urn:oid:1.3.6.1.4.1.44044.1.1.1.11": "birthDate",
 			"urn:oid:1.3.6.1.4.1.44044.1.1.1.14": "emailAddress",
 			"urn:oid:1.3.6.1.4.1.44044.1.1.3.2":  "authId",
