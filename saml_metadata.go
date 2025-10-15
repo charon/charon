@@ -9,12 +9,11 @@ import (
 
 const (
 	samlMetadataNS    = "urn:oasis:names:tc:SAML:2.0:metadata"
-	locAttrValue      = "https://sipasstest.peer.id/api/auth/provider/sipass"
 	samlDsigNS        = "http://www.w3.org/2000/09/xmldsig#"
 	indentationSpaces = 4
 )
 
-func generateSAMLMetadata(provider samlProvider) ([]byte, errors.E) {
+func generateSAMLMetadata(provider samlProvider, serviceName string) ([]byte, errors.E) {
 	entityDescriptor, err := provider.Provider.Metadata()
 	if err != nil {
 		return nil, withGosamlError(err)
@@ -43,7 +42,7 @@ func generateSAMLMetadata(provider samlProvider) ([]byte, errors.E) {
 	root.CreateAttr("xmlns:ds", samlDsigNS)
 
 	if len(provider.Mapping.Mapping) > 0 {
-		doc.FindElement("//SPSSODescriptor").AddChild(createACS(provider.Mapping))
+		doc.FindElement("//SPSSODescriptor").AddChild(createACS(provider.Mapping, serviceName))
 	}
 
 	addNamespacePrefixes(root)
@@ -89,13 +88,17 @@ func addNamespacePrefixes(root *etree.Element) {
 	}
 }
 
-func createACS(samlMapping SAMLAttributeMapping) *etree.Element {
+func createACS(samlMapping SAMLAttributeMapping, serviceName string) *etree.Element {
 	acs := etree.NewElement("AttributeConsumingService")
 	acs.CreateAttr("index", "1")
 
 	sn := acs.CreateElement("ServiceName")
 	sn.CreateAttr("xml:lang", "en")
-	sn.SetText("PeerID")
+	sn.SetText(serviceName)
+
+	sn = acs.CreateElement("ServiceName")
+	sn.CreateAttr("xml:lang", "sl")
+	sn.SetText(serviceName)
 
 	for oid, friendlyName := range samlMapping.Mapping {
 		reqAttr := acs.CreateElement("RequestedAttribute")

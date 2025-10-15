@@ -455,7 +455,7 @@ func (s *Service) SAMLMetadataGet(w http.ResponseWriter, req *http.Request, para
 		return
 	}
 
-	metadata, errE := generateSAMLMetadata(provider)
+	metadata, errE := generateSAMLMetadata(provider, s.serviceName)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return

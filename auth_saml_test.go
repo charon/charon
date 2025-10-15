@@ -38,6 +38,7 @@ const (
 const (
 	samlAssertionNS = "urn:oasis:names:tc:SAML:2.0:assertion"
 	samlProtocolNS  = "urn:oasis:names:tc:SAML:2.0:protocol"
+	xmlHeader       = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
 )
 
 type samlTestStore struct {
@@ -671,10 +672,12 @@ func TestAuthFlowMockSAML(t *testing.T) {
 	})
 }
 
-func samlTestMetadata(t *testing.T, ts *httptest.Server, service *charon.Service, providerKey string) {
-	t.Helper()
+func TestSAMLMetadata(t *testing.T) {
+	t.Parallel()
 
-	metadataPath, errE := service.ReverseAPI("SAMLMetadata", waf.Params{"provider": providerKey}, nil)
+	ts, service, _, _, _ := startTestServer(t) //nolint:dogsled
+
+	metadataPath, errE := service.ReverseAPI("SAMLMetadata", waf.Params{"provider": samlTestingEntityID}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	resp, err := ts.Client().Get(ts.URL + metadataPath) //nolint:noctx,bodyclose
@@ -697,7 +700,10 @@ func samlTestMetadata(t *testing.T, ts *httptest.Server, service *charon.Service
 	validUntilRegex := regexp.MustCompile(`validUntil="[^"]*"`)
 	normalizedMetadata = validUntilRegex.ReplaceAllString(normalizedMetadata, `validUntil="TIME"`)
 
-	expected := `<?xml version="1.0" encoding="UTF-8"?>
+	authThirdPartyProvider, errE := service.ReverseAPI("AuthThirdPartyProvider", waf.Params{"provider": samlTestingEntityID}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	expected := xmlHeader + `
 <md:EntityDescriptor validUntil="TIME" entityID="charon_saml_testing" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
     <md:SPSSODescriptor AuthnRequestsSigned="true" WantAssertionsSigned="true" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
         <md:KeyDescriptor use="signing">
@@ -725,18 +731,10 @@ func samlTestMetadata(t *testing.T, ts *httptest.Server, service *charon.Service
         <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName</md:NameIDFormat>
         <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos</md:NameIDFormat>
         <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:entity</md:NameIDFormat>
-        <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="` + ts.URL + `/api/auth/provider/` + providerKey + `" index="1"/>
+        <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="` + ts.URL + authThirdPartyProvider + `" index="1"/>
     </md:SPSSODescriptor>
 </md:EntityDescriptor>
 `
 
-	assert.Equal(t, expected, normalizedMetadata, "Metadata XML should match expected structure")
-}
-
-func TestSAMLMetadata(t *testing.T) {
-	t.Parallel()
-
-	ts, service, _, _, _ := startTestServer(t) //nolint:dogsled
-
-	samlTestMetadata(t, ts, service, samlTestingEntityID)
+	assert.Equal(t, expected, normalizedMetadata)
 }
