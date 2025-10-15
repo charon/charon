@@ -175,7 +175,7 @@ func (s *Service) makeIdentityFromCredentials(credentials []Credential) (*Identi
 			if identity == nil {
 				identity = new(Identity)
 			}
-			givenName := findFirstString(token, "givenName", "given_name", "firstName", "first_name")
+			givenName := findFirstString(token, "givenName", "given_name", "firstName", "first_name", "nickname")
 			if givenName != "" {
 				identity.GivenName = givenName
 			}
