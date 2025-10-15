@@ -175,13 +175,13 @@ func (s *Service) makeIdentityFromCredentials(credentials []Credential) (*Identi
 			if identity == nil {
 				identity = new(Identity)
 			}
-			givenName := findFirstString(token, "name", "givenName", "given_name", "firstName", "first_name")
+			givenName := findFirstString(token, "givenName", "given_name", "firstName", "first_name")
 			if givenName != "" {
 				identity.GivenName = givenName
 			}
-			fullName := findFirstString(token, "fullName", "full_name")
-			if fullName != "" {
-				identity.FullName = fullName
+			name := findFirstString(token, "name", "fullName", "full_name")
+			if name != "" {
+				identity.FullName = name
 			} else {
 				familyName := findFirstString(token, "familyName", "family_name", "lastName", "last_name", "surname")
 				if givenName != "" && familyName != "" {
