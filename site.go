@@ -39,7 +39,7 @@ type SiteProvider struct {
 	// SAML provider configuration fields.
 	samlEntityID         string
 	samlMetadataURL      string
-	samlKeys             *SAMLKeys
+	samlKeyStore         dsig.X509KeyStore
 	samlAttributeMapping SAMLAttributeMapping
 
 	// SAML provider initialization fields.

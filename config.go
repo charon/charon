@@ -5,8 +5,6 @@ import (
 	"context"
 	"crypto/elliptic"
 	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
 	"embed"
 	"encoding/base64"
 	"io/fs"
@@ -24,7 +22,6 @@ import (
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/ory/fosite"
 	"github.com/ory/fosite/token/hmac"
-	dsig "github.com/russellhaering/goxmldsig"
 	"github.com/wneessen/go-mail"
 	"gitlab.com/tozd/go/cli"
 	"gitlab.com/tozd/go/errors"
@@ -90,9 +87,9 @@ type GenericOIDCProvider struct {
 
 //nolint:lll
 type SAMLProvider struct {
-	MetadataURL string   `default:"${defaultMetadataURL}"          env:"METADATA_URL"                    help:"${provider}'s metadata URL." placeholder:"URL" yaml:"metadataUrl"`
-	EntityID    string   `                                         env:"ENTITY_ID"                       help:"${provider}'s entity ID."                      yaml:"entityId"`
-	Keys        SAMLKeys `                                embed:""                    group:"SAML Keys:"                                                      yaml:"keys"`
+	MetadataURL string               `default:"${defaultMetadataURL}" env:"METADATA_URL" help:"${provider}'s metadata URL."                          placeholder:"URL"  yaml:"metadataUrl"`
+	EntityID    string               `                                env:"ENTITY_ID"    help:"${provider}'s entity ID."                                                yaml:"entityId"`
+	Key         kong.FileContentFlag `                                env:"KEY"          help:"File with private key to be used with this provider." placeholder:"PATH" yaml:"key"`
 }
 
 func (s *SAMLProvider) Validate() error {
@@ -232,45 +229,6 @@ func (k *Keys) Init(development bool) errors.E {
 
 type OIDC struct {
 	Keys Keys `embed:"" envprefix:"KEYS_" prefix:"keys." yaml:"keys"`
-}
-
-func (k *SAMLKeys) Init(development bool) errors.E {
-	if k.RSA != nil {
-		jwk, errE := MakeRSAKey(k.RSA)
-		if errE != nil {
-			return errors.WithMessage(errE, "invalid RSA private key")
-		}
-		k.rsa = jwk
-
-		rsaKey, ok := jwk.Key.(*rsa.PrivateKey)
-		if !ok {
-			return errors.New("not an RSA private key")
-		}
-		cert, err := x509.MarshalPKIXPublicKey(rsaKey.Public())
-		if err != nil {
-			return errors.WithMessage(err, "failed to generate certificate")
-		}
-
-		k.keyStore = &samlMemoryKS{
-			privateKey: rsaKey,
-			cert:       cert,
-		}
-		return nil
-	}
-
-	if development {
-		k.keyStore = dsig.RandomKeyStoreForTest()
-		return nil
-	}
-
-	return errors.New("SAML RSA private key not provided")
-}
-
-type SAMLKeys struct {
-	RSA kong.FileContentFlag `env:"RSA_PATH" help:"File with RSA private key." placeholder:"PATH" yaml:"rsa"`
-
-	rsa      *jose.JSONWebKey
-	keyStore dsig.X509KeyStore
 }
 
 //nolint:lll
@@ -452,7 +410,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:              []string{oidc.ScopeOpenID, "email", "profile"},
 			samlEntityID:            "",
 			samlMetadataURL:         "",
-			samlKeys:                nil,
+			samlKeyStore:            nil,
 			samlAttributeMapping:    SAMLAttributeMapping{}, //nolint:exhaustruct
 			oidcEndpoint:            oauth2.Endpoint{},      //nolint:exhaustruct
 			oidcClient:              nil,
@@ -478,7 +436,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:              []string{oidc.ScopeOpenID, "email", "public_profile"},
 			samlEntityID:            "",
 			samlMetadataURL:         "",
-			samlKeys:                nil,
+			samlKeyStore:            nil,
 			samlAttributeMapping:    SAMLAttributeMapping{}, //nolint:exhaustruct
 			oidcEndpoint:            oauth2.Endpoint{},      //nolint:exhaustruct
 			oidcClient:              nil,
@@ -504,7 +462,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:              []string{oidc.ScopeOpenID},
 			samlEntityID:            "",
 			samlMetadataURL:         "",
-			samlKeys:                nil,
+			samlKeyStore:            nil,
 			samlAttributeMapping:    SAMLAttributeMapping{}, //nolint:exhaustruct
 			oidcEndpoint:            oauth2.Endpoint{},      //nolint:exhaustruct
 			oidcClient:              nil,
@@ -517,10 +475,6 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 	}
 
 	if config.Providers.SIPASS.EntityID != "" {
-		errE = config.Providers.SIPASS.Keys.Init(config.Server.Development)
-		if errE != nil {
-			return nil, nil, errE
-		}
 		providers = append(providers, SiteProvider{
 			Key:                     "sipass",
 			Name:                    "SIPASS",
@@ -534,7 +488,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:              nil,
 			samlEntityID:            config.Providers.SIPASS.EntityID,
 			samlMetadataURL:         config.Providers.SIPASS.MetadataURL,
-			samlKeys:                &config.Providers.SIPASS.Keys,
+			samlKeyStore:            nil,
 			samlAttributeMapping:    getSIPASSAttributeMapping(),
 			oidcEndpoint:            oauth2.Endpoint{}, //nolint:exhaustruct
 			oidcClient:              nil,
@@ -559,7 +513,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:              nil,
 			samlEntityID:            mockSAMLEntityID,
 			samlMetadataURL:         mockSAMLMetadataURL,
-			samlKeys:                &SAMLKeys{}, //nolint:exhaustruct
+			samlKeyStore:            nil,
 			samlAttributeMapping:    getDefaultAttributeMapping(),
 			oidcEndpoint:            oauth2.Endpoint{}, //nolint:exhaustruct
 			oidcClient:              nil,
@@ -584,7 +538,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:              nil,
 			samlEntityID:            config.Providers.SAMLTesting.EntityID,
 			samlMetadataURL:         config.Providers.SAMLTesting.MetadataURL,
-			samlKeys:                &config.Providers.SAMLTesting.Keys,
+			samlKeyStore:            nil,
 			samlAttributeMapping:    getDefaultAttributeMapping(),
 			oidcEndpoint:            oauth2.Endpoint{}, //nolint:exhaustruct
 			oidcClient:              nil,
