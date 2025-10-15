@@ -40,7 +40,7 @@ func getSIPASSAttributeMapping() SAMLAttributeMapping {
 			"urn:oid:1.3.6.1.4.1.44044.1.1.1.6":  "name",
 			"urn:oid:1.3.6.1.4.1.44044.1.1.1.7":  "surname",
 			"urn:oid:1.3.6.1.4.1.44044.1.1.1.11": "birthDate",
-			"urn:oid:1.3.6.1.4.1.44044.1.1.1.14": "eMailAddress",
+			"urn:oid:1.3.6.1.4.1.44044.1.1.1.14": "emailAddress",
 			"urn:oid:1.3.6.1.4.1.44044.1.1.3.2":  "authId",
 			"urn:oid:1.3.6.1.4.1.44044.1.1.3.3":  "authMechanism",
 			"urn:oid:1.3.6.1.4.1.44044.1.1.3.10": "language",

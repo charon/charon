@@ -185,7 +185,7 @@ func TestFindFirstString(t *testing.T) {
 			token: map[string]interface{}{
 				"first_name":   " Alice",
 				"username":     " name surname ",
-				"eMailAddress": " foo@bar.com ",
+				"emailAddress": " foo@bar.com ",
 			},
 			keys:     []string{"firstName", "username", "name"},
 			expected: "name surname",
