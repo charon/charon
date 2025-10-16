@@ -410,6 +410,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:              []string{oidc.ScopeOpenID, "email", "profile"},
 			samlEntityID:            "",
 			samlMetadataURL:         "",
+			samlKey:                 "",
 			samlKeyStore:            nil,
 			samlAttributeMapping:    SAMLAttributeMapping{}, //nolint:exhaustruct
 			oidcEndpoint:            oauth2.Endpoint{},      //nolint:exhaustruct
@@ -436,6 +437,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:              []string{oidc.ScopeOpenID, "email", "public_profile"},
 			samlEntityID:            "",
 			samlMetadataURL:         "",
+			samlKey:                 "",
 			samlKeyStore:            nil,
 			samlAttributeMapping:    SAMLAttributeMapping{}, //nolint:exhaustruct
 			oidcEndpoint:            oauth2.Endpoint{},      //nolint:exhaustruct
@@ -462,6 +464,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:              []string{oidc.ScopeOpenID},
 			samlEntityID:            "",
 			samlMetadataURL:         "",
+			samlKey:                 "",
 			samlKeyStore:            nil,
 			samlAttributeMapping:    SAMLAttributeMapping{}, //nolint:exhaustruct
 			oidcEndpoint:            oauth2.Endpoint{},      //nolint:exhaustruct
@@ -488,6 +491,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:              nil,
 			samlEntityID:            config.Providers.SIPASS.EntityID,
 			samlMetadataURL:         config.Providers.SIPASS.MetadataURL,
+			samlKey:                 strings.TrimSpace(string(config.Providers.SIPASS.Key)),
 			samlKeyStore:            nil,
 			samlAttributeMapping:    getSIPASSAttributeMapping(),
 			oidcEndpoint:            oauth2.Endpoint{}, //nolint:exhaustruct
@@ -513,6 +517,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:              nil,
 			samlEntityID:            mockSAMLEntityID,
 			samlMetadataURL:         mockSAMLMetadataURL,
+			samlKey:                 "",
 			samlKeyStore:            nil,
 			samlAttributeMapping:    getDefaultAttributeMapping(),
 			oidcEndpoint:            oauth2.Endpoint{}, //nolint:exhaustruct
@@ -538,6 +543,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:              nil,
 			samlEntityID:            config.Providers.SAMLTesting.EntityID,
 			samlMetadataURL:         config.Providers.SAMLTesting.MetadataURL,
+			samlKey:                 "",
 			samlKeyStore:            nil,
 			samlAttributeMapping:    getDefaultAttributeMapping(),
 			oidcEndpoint:            oauth2.Endpoint{}, //nolint:exhaustruct

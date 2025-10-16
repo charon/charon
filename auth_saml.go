@@ -244,9 +244,9 @@ func extractIDPCertificates(metadata types.EntityDescriptor) (*dsig.MemoryX509Ce
 func (p *SiteProvider) initSAMLKeyStore(config *Config) errors.E {
 	// TODO: Properly load keys from the disk based on configuration for this provider.
 	//       Only if the keys are not available, and we are in development mode, generate them.
-	key := config.Providers.SIPASS.Key
-	if key != nil {
-		jwk, errE := MakeRSAKey(key)
+	key := p.samlKey
+	if key != "" {
+		jwk, errE := MakeRSAKey([]byte(key))
 		if errE != nil {
 			return errors.WithMessage(errE, "invalid RSA private key")
 		}
