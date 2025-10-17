@@ -2,6 +2,7 @@ package charon
 
 import (
 	"context"
+	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
@@ -32,6 +33,15 @@ type samlProvider struct {
 	Name     string
 	Provider *saml2.SAMLServiceProvider
 	Mapping  SAMLAttributeMapping
+}
+
+type samlMemoryKeyStore struct {
+	privateKey *rsa.PrivateKey
+	cert       []byte
+}
+
+func (ks *samlMemoryKeyStore) GetKeyPair() (*rsa.PrivateKey, []byte, error) {
+	return ks.privateKey, ks.cert, nil
 }
 
 func initSAMLProviders(config *Config, service *Service, domain string, providers []SiteProvider) (func() map[Provider]samlProvider, errors.E) {
@@ -231,11 +241,44 @@ func extractIDPCertificates(metadata types.EntityDescriptor) (*dsig.MemoryX509Ce
 	return certStore, nil
 }
 
-func (p *SiteProvider) initSAMLKeyStore() errors.E {
+func (p *SiteProvider) initSAMLKeyStore(config *Config) errors.E {
 	// TODO: Properly load keys from the disk based on configuration for this provider.
 	//       Only if the keys are not available, and we are in development mode, generate them.
-	p.samlKeyStore = dsig.RandomKeyStoreForTest()
-	return nil
+	key := p.samlKey
+	if key != "" {
+		jwk, errE := MakeRSAKey([]byte(key))
+		if errE != nil {
+			return errors.WithMessage(errE, "invalid RSA private key")
+		}
+
+		rsaKey, ok := jwk.Key.(*rsa.PrivateKey)
+		if !ok {
+			return errors.New("not an RSA private key")
+		}
+		cert, err := x509.MarshalPKIXPublicKey(rsaKey.Public())
+		if err != nil {
+			return errors.WithMessage(err, "failed to generate certificate")
+		}
+
+		p.samlKeyStore = &samlMemoryKeyStore{
+			privateKey: rsaKey,
+			cert:       cert,
+		}
+		return nil
+	}
+
+	if config.Server.Development {
+		privateKey, cert, err := dsig.RandomKeyStoreForTest().GetKeyPair()
+		if err != nil {
+			return errors.WithMessage(err, "failed in development to generate test key-pair")
+		}
+		p.samlKeyStore = &samlMemoryKeyStore{
+			privateKey: privateKey,
+			cert:       cert,
+		}
+		return nil
+	}
+	return errors.New("SAML RSA private key not provided")
 }
 
 func validateSAMLAssertion(assertionInfo *saml2.AssertionInfo) errors.E {
