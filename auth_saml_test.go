@@ -5,7 +5,7 @@ import (
 	"compress/flate"
 	"encoding/base64"
 	"encoding/xml"
-	"html/template"
+	htmltemplate "html/template"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	txttemplate "text/template"
 	"time"
 
 	"github.com/beevik/etree"
@@ -38,7 +39,6 @@ const (
 const (
 	samlAssertionNS = "urn:oasis:names:tc:SAML:2.0:assertion"
 	samlProtocolNS  = "urn:oasis:names:tc:SAML:2.0:protocol"
-	xmlHeader       = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
 )
 
 type samlTestStore struct {
@@ -64,8 +64,8 @@ type authnRequest struct {
 	AssertionConsumerServiceURL string   `xml:"AssertionConsumerServiceURL,attr"`
 }
 
-func samlPostFormTemplate() *template.Template {
-	return template.Must(template.New("samlPostForm").Parse(`
+func samlPostFormTemplate() *htmltemplate.Template {
+	return htmltemplate.Must(htmltemplate.New("samlPostForm").Parse(`
 <!DOCTYPE html>
 <html>
     <head>
@@ -100,8 +100,8 @@ type samlResponseData struct {
 	Attributes   []types.Attribute
 }
 
-func samlResponseTemplate() *template.Template {
-	return template.Must(template.New("samlResponse").Parse(`<?xml version="1.0" encoding="UTF-8"?>
+func samlResponseTemplate() *txttemplate.Template {
+	return txttemplate.Must(txttemplate.New("samlResponse").Parse(`<?xml version="1.0" encoding="UTF-8"?>
 <samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" Destination="{{.Destination}}" ID="{{.ResponseID}}" InResponseTo="{{.InResponseTo}}" IssueInstant="{{.IssueInstant}}" Version="2.0">
     <saml:Issuer>{{.Issuer}}</saml:Issuer>
     <samlp:Status>
@@ -132,6 +132,41 @@ func samlResponseTemplate() *template.Template {
         </saml:AttributeStatement>
     </saml:Assertion>
 </samlp:Response>`))
+}
+
+func samlGeneratedMetadataTemplate() *txttemplate.Template {
+	return txttemplate.Must(txttemplate.New("samlGeneratedMetadata").Parse(`<?xml version="1.0" encoding="UTF-8"?>
+<md:EntityDescriptor validUntil="TIME" entityID="charon_saml_testing" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+    <md:SPSSODescriptor AuthnRequestsSigned="true" WantAssertionsSigned="true" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+        <md:KeyDescriptor use="signing">
+            <ds:KeyInfo>
+                <ds:X509Data>
+                    <ds:X509Certificate>CERT</ds:X509Certificate>
+                </ds:X509Data>
+            </ds:KeyInfo>
+        </md:KeyDescriptor>
+        <md:KeyDescriptor use="encryption">
+            <ds:KeyInfo>
+                <ds:X509Data>
+                    <ds:X509Certificate>CERT</ds:X509Certificate>
+                </ds:X509Data>
+            </ds:KeyInfo>
+            <md:EncryptionMethod Algorithm="http://www.w3.org/2009/xmlenc11#aes128-gcm"/>
+            <md:EncryptionMethod Algorithm="http://www.w3.org/2009/xmlenc11#aes192-gcm"/>
+            <md:EncryptionMethod Algorithm="http://www.w3.org/2009/xmlenc11#aes256-gcm"/>
+            <md:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes128-cbc"/>
+            <md:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes256-cbc"/>
+        </md:KeyDescriptor>
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</md:NameIDFormat>
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:persistent</md:NameIDFormat>
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:x509SubjectName</md:NameIDFormat>
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName</md:NameIDFormat>
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos</md:NameIDFormat>
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:entity</md:NameIDFormat>
+        <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="{{.TSURL}}{{.AuthThirdPartyProvider}}" index="1"/>
+    </md:SPSSODescriptor>
+</md:EntityDescriptor>
+`))
 }
 
 func generateMetadata(t *testing.T, certBase64 string, baseURL string) ([]byte, errors.E) {
@@ -703,38 +738,18 @@ func TestSAMLMetadata(t *testing.T) {
 	authThirdPartyProvider, errE := service.ReverseAPI("AuthThirdPartyProvider", waf.Params{"provider": samlTestingEntityID}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	expected := xmlHeader + `
-<md:EntityDescriptor validUntil="TIME" entityID="charon_saml_testing" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
-    <md:SPSSODescriptor AuthnRequestsSigned="true" WantAssertionsSigned="true" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
-        <md:KeyDescriptor use="signing">
-            <ds:KeyInfo>
-                <ds:X509Data>
-                    <ds:X509Certificate>CERT</ds:X509Certificate>
-                </ds:X509Data>
-            </ds:KeyInfo>
-        </md:KeyDescriptor>
-        <md:KeyDescriptor use="encryption">
-            <ds:KeyInfo>
-                <ds:X509Data>
-                    <ds:X509Certificate>CERT</ds:X509Certificate>
-                </ds:X509Data>
-            </ds:KeyInfo>
-            <md:EncryptionMethod Algorithm="http://www.w3.org/2009/xmlenc11#aes128-gcm"/>
-            <md:EncryptionMethod Algorithm="http://www.w3.org/2009/xmlenc11#aes192-gcm"/>
-            <md:EncryptionMethod Algorithm="http://www.w3.org/2009/xmlenc11#aes256-gcm"/>
-            <md:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes128-cbc"/>
-            <md:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes256-cbc"/>
-        </md:KeyDescriptor>
-        <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</md:NameIDFormat>
-        <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:persistent</md:NameIDFormat>
-        <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:x509SubjectName</md:NameIDFormat>
-        <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName</md:NameIDFormat>
-        <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos</md:NameIDFormat>
-        <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:entity</md:NameIDFormat>
-        <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="` + ts.URL + authThirdPartyProvider + `" index="1"/>
-    </md:SPSSODescriptor>
-</md:EntityDescriptor>
-`
+	xmlGeneratedMetadata := struct {
+		TSURL                  string
+		AuthThirdPartyProvider string
+	}{
+		TSURL:                  ts.URL,
+		AuthThirdPartyProvider: authThirdPartyProvider,
+	}
 
-	assert.Equal(t, expected, normalizedMetadata)
+	generatedMetadataTemplate := samlGeneratedMetadataTemplate()
+	var expectedBuf bytes.Buffer
+	err = generatedMetadataTemplate.Execute(&expectedBuf, xmlGeneratedMetadata)
+	require.NoError(t, err)
+
+	assert.Equal(t, expectedBuf.String(), normalizedMetadata)
 }

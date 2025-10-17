@@ -42,7 +42,7 @@ func generateSAMLMetadata(provider samlProvider, serviceName string) ([]byte, er
 	root.CreateAttr("xmlns:ds", samlDsigNS)
 
 	if len(provider.Mapping.Mapping) > 0 {
-		doc.FindElement("//SPSSODescriptor").AddChild(createACS(provider.Mapping, serviceName))
+		doc.FindElement("//SPSSODescriptor").AddChild(createAttributeConsumingService(provider.Mapping, serviceName))
 	}
 
 	addNamespacePrefixes(root)
@@ -100,7 +100,7 @@ func createAttributeConsumingService(samlMapping SAMLAttributeMapping, serviceNa
 
 	for name, friendlyName := range samlMapping.Mapping {
 		reqAttr := acs.CreateElement("RequestedAttribute")
-		reqAttr.CreateAttr("Name", oid)
+		reqAttr.CreateAttr("Name", name)
 		reqAttr.CreateAttr("FriendlyName", friendlyName)
 		reqAttr.CreateAttr("isRequired", "true")
 	}
