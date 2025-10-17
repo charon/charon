@@ -88,19 +88,17 @@ func addNamespacePrefixes(root *etree.Element) {
 	}
 }
 
-func createACS(samlMapping SAMLAttributeMapping, serviceName string) *etree.Element {
+func createAttributeConsumingService(samlMapping SAMLAttributeMapping, serviceName string) *etree.Element {
 	acs := etree.NewElement("AttributeConsumingService")
 	acs.CreateAttr("index", "1")
 
-	sn := acs.CreateElement("ServiceName")
-	sn.CreateAttr("xml:lang", "en")
-	sn.SetText(serviceName)
+	for _, lang := range []string{"en", "sl"} {
+		sn := acs.CreateElement("ServiceName")
+		sn.CreateAttr("xml:lang", lang)
+		sn.SetText(serviceName)
+	}
 
-	sn = acs.CreateElement("ServiceName")
-	sn.CreateAttr("xml:lang", "sl")
-	sn.SetText(serviceName)
-
-	for oid, friendlyName := range samlMapping.Mapping {
+	for name, friendlyName := range samlMapping.Mapping {
 		reqAttr := acs.CreateElement("RequestedAttribute")
 		reqAttr.CreateAttr("Name", oid)
 		reqAttr.CreateAttr("FriendlyName", friendlyName)

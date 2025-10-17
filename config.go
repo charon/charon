@@ -245,7 +245,7 @@ type Config struct {
 	Secret       kong.FileContentFlag `env:"SECRET_PATH" help:"File with base64 (URL encoding, no padding) encoded 32 bytes with \"${secretPrefixCharonConfig}\" prefix used for session and OIDC HMAC."               placeholder:"PATH"   yaml:"secret"`
 
 	Providers Providers `                 embed:"" group:"Providers:"                                                                             yaml:"providers"`
-	Name      string    `default:"PeerID"                             help:"Service name to use in SAML metadata." placeholder:"STRING" short:"N" yaml:"name"`
+	Name      string    `default:"Charon"                             help:"Name of this Charon instance as shown to users." placeholder:"STRING" short:"N" yaml:"name"`
 
 	Mail Mail `embed:"" envprefix:"MAIL_" group:"Mail:" prefix:"mail." yaml:"mail"`
 
@@ -279,7 +279,7 @@ type Service struct {
 	charonOrganization func() charonOrganization
 
 	domain      string
-	serviceName string
+	name string
 
 	mailClient *mail.Client
 	mailFrom   string
