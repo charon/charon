@@ -5,7 +5,7 @@ import (
 	"compress/flate"
 	"encoding/base64"
 	"encoding/xml"
-	htmltemplate "html/template"
+	"html/template"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -13,7 +13,6 @@ import (
 	"regexp"
 	"strings"
 	"testing"
-	txttemplate "text/template"
 	"time"
 
 	"github.com/beevik/etree"
@@ -64,8 +63,8 @@ type authnRequest struct {
 	AssertionConsumerServiceURL string   `xml:"AssertionConsumerServiceURL,attr"`
 }
 
-func samlPostFormTemplate() *htmltemplate.Template {
-	return htmltemplate.Must(htmltemplate.New("samlPostForm").Parse(`
+func samlPostFormTemplate() *template.Template {
+	return template.Must(template.New("samlPostForm").Parse(`
 <!DOCTYPE html>
 <html>
     <head>
@@ -100,8 +99,8 @@ type samlResponseData struct {
 	Attributes   []types.Attribute
 }
 
-func samlResponseTemplate() *txttemplate.Template {
-	return txttemplate.Must(txttemplate.New("samlResponse").Parse(`<?xml version="1.0" encoding="UTF-8"?>
+func samlResponseTemplate() *template.Template {
+	return template.Must(template.New("samlResponse").Parse(`
 <samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" Destination="{{.Destination}}" ID="{{.ResponseID}}" InResponseTo="{{.InResponseTo}}" IssueInstant="{{.IssueInstant}}" Version="2.0">
     <saml:Issuer>{{.Issuer}}</saml:Issuer>
     <samlp:Status>
@@ -134,8 +133,8 @@ func samlResponseTemplate() *txttemplate.Template {
 </samlp:Response>`))
 }
 
-func samlGeneratedMetadataTemplate() *txttemplate.Template {
-	return txttemplate.Must(txttemplate.New("samlGeneratedMetadata").Parse(`<?xml version="1.0" encoding="UTF-8"?>
+func samlGeneratedMetadataTemplate() *template.Template {
+	return template.Must(template.New("samlGeneratedMetadata").Parse(`
 <md:EntityDescriptor validUntil="TIME" entityID="charon_saml_testing" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
     <md:SPSSODescriptor AuthnRequestsSigned="true" WantAssertionsSigned="true" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
         <md:KeyDescriptor use="signing">
@@ -295,6 +294,7 @@ func generateSignedSAMLResponse(t *testing.T, store *samlTestStore, requestID st
 
 	samlRTemplate := samlResponseTemplate()
 	var buf bytes.Buffer
+	buf.WriteString(strings.TrimSpace(xml.Header))
 	err := samlRTemplate.Execute(&buf, samlRData)
 	require.NoError(t, err)
 
@@ -748,6 +748,7 @@ func TestSAMLMetadata(t *testing.T) {
 
 	generatedMetadataTemplate := samlGeneratedMetadataTemplate()
 	var expectedBuf bytes.Buffer
+	expectedBuf.WriteString(strings.TrimSpace(xml.Header))
 	err = generatedMetadataTemplate.Execute(&expectedBuf, xmlGeneratedMetadata)
 	require.NoError(t, err)
 
