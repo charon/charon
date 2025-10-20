@@ -255,7 +255,7 @@ func extractIDPCertificates(metadata types.EntityDescriptor) (*dsig.MemoryX509Ce
 	return certStore, nil
 }
 
-func initSAMLKeyStore(config *Config, samlKey []byte) (dsig.X509KeyStore, errors.E) {
+func initSAMLKeyStore(config *Config, samlKey []byte) (dsig.X509KeyStore, errors.E) { //nolint:ireturn
 	if len(samlKey) > 0 {
 		jwk, errE := MakeRSAKey(samlKey)
 		if errE != nil {
