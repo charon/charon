@@ -475,7 +475,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 	}
 
 	if config.Providers.SIPASS.EntityID != "" {
-		samlKeyStore, errE := initSAMLKeyStore(config, config.Providers.SIPASS.Key)
+		samlKeyStore, errE := initSAMLKeyStore(config, config.Providers.SIPASS.Key) //nolint:govet
 		if errE != nil {
 			errors.Details(errE)["provider"] = "sipass"
 			return nil, nil, errE
@@ -505,7 +505,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		})
 	}
 	if config.Server.Development {
-		samlKeyStore, errE := initSAMLKeyStore(config, nil)
+		samlKeyStore, errE := initSAMLKeyStore(config, nil) //nolint:govet
 		if errE != nil {
 			errors.Details(errE)["provider"] = "mockSAML"
 			return nil, nil, errE
@@ -535,7 +535,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		})
 	}
 	if config.Providers.SAMLTesting.MetadataURL != "" && config.Providers.SAMLTesting.EntityID != "" {
-		samlKeyStore, errE := initSAMLKeyStore(config, nil)
+		samlKeyStore, errE := initSAMLKeyStore(config, nil) //nolint:govet
 		if errE != nil {
 			errors.Details(errE)["provider"] = "samlTesting"
 			return nil, nil, errE
