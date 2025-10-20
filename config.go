@@ -410,7 +410,6 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:              []string{oidc.ScopeOpenID, "email", "profile"},
 			samlEntityID:            "",
 			samlMetadataURL:         "",
-			samlKey:                 "",
 			samlKeyStore:            nil,
 			samlAttributeMapping:    SAMLAttributeMapping{}, //nolint:exhaustruct
 			oidcEndpoint:            oauth2.Endpoint{},      //nolint:exhaustruct
@@ -437,7 +436,6 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:              []string{oidc.ScopeOpenID, "email", "public_profile"},
 			samlEntityID:            "",
 			samlMetadataURL:         "",
-			samlKey:                 "",
 			samlKeyStore:            nil,
 			samlAttributeMapping:    SAMLAttributeMapping{}, //nolint:exhaustruct
 			oidcEndpoint:            oauth2.Endpoint{},      //nolint:exhaustruct
@@ -464,7 +462,6 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:              []string{oidc.ScopeOpenID},
 			samlEntityID:            "",
 			samlMetadataURL:         "",
-			samlKey:                 "",
 			samlKeyStore:            nil,
 			samlAttributeMapping:    SAMLAttributeMapping{}, //nolint:exhaustruct
 			oidcEndpoint:            oauth2.Endpoint{},      //nolint:exhaustruct
@@ -478,6 +475,11 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 	}
 
 	if config.Providers.SIPASS.EntityID != "" {
+		samlKeyStore, errE := initSAMLKeyStore(config, config.Providers.SIPASS.Key)
+		if errE != nil {
+			errors.Details(errE)["provider"] = "sipass"
+			return nil, nil, errE
+		}
 		providers = append(providers, SiteProvider{
 			Key:                     "sipass",
 			Name:                    "SIPASS",
@@ -491,8 +493,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:              nil,
 			samlEntityID:            config.Providers.SIPASS.EntityID,
 			samlMetadataURL:         config.Providers.SIPASS.MetadataURL,
-			samlKey:                 strings.TrimSpace(string(config.Providers.SIPASS.Key)),
-			samlKeyStore:            nil,
+			samlKeyStore:            samlKeyStore,
 			samlAttributeMapping:    getSIPASSAttributeMapping(),
 			oidcEndpoint:            oauth2.Endpoint{}, //nolint:exhaustruct
 			oidcClient:              nil,
@@ -504,6 +505,11 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		})
 	}
 	if config.Server.Development {
+		samlKeyStore, errE := initSAMLKeyStore(config, nil)
+		if errE != nil {
+			errors.Details(errE)["provider"] = "mockSAML"
+			return nil, nil, errE
+		}
 		providers = append(providers, SiteProvider{
 			Key:                     "mockSAML",
 			Name:                    "MockSAML",
@@ -517,8 +523,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:              nil,
 			samlEntityID:            mockSAMLEntityID,
 			samlMetadataURL:         mockSAMLMetadataURL,
-			samlKey:                 "",
-			samlKeyStore:            nil,
+			samlKeyStore:            samlKeyStore,
 			samlAttributeMapping:    getDefaultAttributeMapping(),
 			oidcEndpoint:            oauth2.Endpoint{}, //nolint:exhaustruct
 			oidcClient:              nil,
@@ -530,6 +535,11 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		})
 	}
 	if config.Providers.SAMLTesting.MetadataURL != "" && config.Providers.SAMLTesting.EntityID != "" {
+		samlKeyStore, errE := initSAMLKeyStore(config, nil)
+		if errE != nil {
+			errors.Details(errE)["provider"] = "samlTesting"
+			return nil, nil, errE
+		}
 		providers = append(providers, SiteProvider{
 			Key:                     "samlTesting",
 			Name:                    "SAML Testing",
@@ -543,8 +553,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			oidcScopes:              nil,
 			samlEntityID:            config.Providers.SAMLTesting.EntityID,
 			samlMetadataURL:         config.Providers.SAMLTesting.MetadataURL,
-			samlKey:                 "",
-			samlKeyStore:            nil,
+			samlKeyStore:            samlKeyStore,
 			samlAttributeMapping:    getDefaultAttributeMapping(),
 			oidcEndpoint:            oauth2.Endpoint{}, //nolint:exhaustruct
 			oidcClient:              nil,

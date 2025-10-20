@@ -39,14 +39,13 @@ type SiteProvider struct {
 	// SAML provider configuration fields.
 	samlEntityID         string
 	samlMetadataURL      string
-	samlKey              string
+	samlKeyStore         dsig.X509KeyStore
 	samlAttributeMapping SAMLAttributeMapping
 
 	// SAML provider initialization fields.
 	samlSSOURL              string
 	samlIDPIssuer           string
 	samlIDPCertificateStore dsig.X509CertificateStore
-	samlKeyStore            dsig.X509KeyStore
 }
 
 type Site struct {
@@ -61,10 +60,6 @@ func (p *SiteProvider) initProvider(config *Config) errors.E {
 	case ThirdPartyProviderOIDC:
 		return p.initOIDCProvider(config)
 	case ThirdPartyProviderSAML:
-		errE := p.initSAMLKeyStore(config)
-		if errE != nil {
-			return errE
-		}
 		return p.initSAMLProvider(config)
 	default:
 		errE := errors.New("unsupported provider type")
