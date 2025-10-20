@@ -244,7 +244,8 @@ type Config struct {
 	ExternalPort int                  `                  help:"Port on which Charon is accessible when it is different from the port on which the program listens."                                                    placeholder:"INT"    yaml:"externalPort"`
 	Secret       kong.FileContentFlag `env:"SECRET_PATH" help:"File with base64 (URL encoding, no padding) encoded 32 bytes with \"${secretPrefixCharonConfig}\" prefix used for session and OIDC HMAC."               placeholder:"PATH"   yaml:"secret"`
 
-	Providers Providers `embed:"" group:"Providers:" yaml:"providers"`
+	Providers Providers `                 embed:"" group:"Providers:"                                                                                       yaml:"providers"`
+	Name      string    `default:"Charon"                             help:"Name of this Charon instance as shown to users." placeholder:"STRING" short:"N" yaml:"name"`
 
 	Mail Mail `embed:"" envprefix:"MAIL_" group:"Mail:" prefix:"mail." yaml:"mail"`
 
@@ -278,6 +279,7 @@ type Service struct {
 	charonOrganization func() charonOrganization
 
 	domain string
+	name   string
 
 	mailClient *mail.Client
 	mailFrom   string
@@ -645,6 +647,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		codeProvider:           nil,
 		charonOrganization:     nil,
 		domain:                 domain,
+		name:                   config.Name,
 		mailClient:             nil,
 		mailFrom:               config.Mail.From,
 		accounts:               map[identifier.Identifier][]byte{},

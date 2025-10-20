@@ -332,6 +332,12 @@
       "path": "/i/update/:id",
       "api": {},
       "get": null
+    },
+    {
+      "name": "SAMLMetadata",
+      "path": "/samlMetadata/:provider",
+      "api": {},
+      "get": null
     }
   ]
 }

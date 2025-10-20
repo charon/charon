@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -99,7 +100,7 @@ type samlResponseData struct {
 }
 
 func samlResponseTemplate() *template.Template {
-	return template.Must(template.New("samlResponse").Parse(`<?xml version="1.0" encoding="UTF-8"?>
+	return template.Must(template.New("samlResponse").Parse(`
 <samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" Destination="{{.Destination}}" ID="{{.ResponseID}}" InResponseTo="{{.InResponseTo}}" IssueInstant="{{.IssueInstant}}" Version="2.0">
     <saml:Issuer>{{.Issuer}}</saml:Issuer>
     <samlp:Status>
@@ -130,6 +131,41 @@ func samlResponseTemplate() *template.Template {
         </saml:AttributeStatement>
     </saml:Assertion>
 </samlp:Response>`))
+}
+
+func samlGeneratedMetadataTemplate() *template.Template {
+	return template.Must(template.New("samlGeneratedMetadata").Parse(`
+<md:EntityDescriptor validUntil="TIME" entityID="charon_saml_testing" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+    <md:SPSSODescriptor AuthnRequestsSigned="true" WantAssertionsSigned="true" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+        <md:KeyDescriptor use="signing">
+            <ds:KeyInfo>
+                <ds:X509Data>
+                    <ds:X509Certificate>CERT</ds:X509Certificate>
+                </ds:X509Data>
+            </ds:KeyInfo>
+        </md:KeyDescriptor>
+        <md:KeyDescriptor use="encryption">
+            <ds:KeyInfo>
+                <ds:X509Data>
+                    <ds:X509Certificate>CERT</ds:X509Certificate>
+                </ds:X509Data>
+            </ds:KeyInfo>
+            <md:EncryptionMethod Algorithm="http://www.w3.org/2009/xmlenc11#aes128-gcm"/>
+            <md:EncryptionMethod Algorithm="http://www.w3.org/2009/xmlenc11#aes192-gcm"/>
+            <md:EncryptionMethod Algorithm="http://www.w3.org/2009/xmlenc11#aes256-gcm"/>
+            <md:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes128-cbc"/>
+            <md:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes256-cbc"/>
+        </md:KeyDescriptor>
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</md:NameIDFormat>
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:persistent</md:NameIDFormat>
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:x509SubjectName</md:NameIDFormat>
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName</md:NameIDFormat>
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos</md:NameIDFormat>
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:entity</md:NameIDFormat>
+        <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="{{.TSURL}}{{.AuthThirdPartyProvider}}" index="1"/>
+    </md:SPSSODescriptor>
+</md:EntityDescriptor>
+`))
 }
 
 func generateMetadata(t *testing.T, certBase64 string, baseURL string) ([]byte, errors.E) {
@@ -258,6 +294,7 @@ func generateSignedSAMLResponse(t *testing.T, store *samlTestStore, requestID st
 
 	samlRTemplate := samlResponseTemplate()
 	var buf bytes.Buffer
+	buf.WriteString(strings.TrimSpace(xml.Header))
 	err := samlRTemplate.Execute(&buf, samlRData)
 	require.NoError(t, err)
 
@@ -668,4 +705,52 @@ func TestAuthFlowMockSAML(t *testing.T) {
 		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
 		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
 	})
+}
+
+func TestSAMLMetadata(t *testing.T) {
+	t.Parallel()
+
+	ts, service, _, _, _ := startTestServer(t) //nolint:dogsled
+
+	metadataPath, errE := service.ReverseAPI("SAMLMetadata", waf.Params{"provider": samlTestingEntityID}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	resp, err := ts.Client().Get(ts.URL + metadataPath) //nolint:noctx,bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, 2, resp.ProtoMajor)
+	assert.Equal(t, "application/samlmetadata+xml", resp.Header.Get("Content-Type"))
+	assert.Equal(t, `attachment; filename="metadata.xml"`, resp.Header.Get("Content-Disposition"))
+
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	metadata := string(body)
+
+	certRegex := regexp.MustCompile(`<ds:X509Certificate>[\s\S]*?</ds:X509Certificate>`)
+	normalizedMetadata := certRegex.ReplaceAllString(metadata, "<ds:X509Certificate>CERT</ds:X509Certificate>")
+
+	validUntilRegex := regexp.MustCompile(`validUntil="[^"]*"`)
+	normalizedMetadata = validUntilRegex.ReplaceAllString(normalizedMetadata, `validUntil="TIME"`)
+
+	authThirdPartyProvider, errE := service.ReverseAPI("AuthThirdPartyProvider", waf.Params{"provider": samlTestingEntityID}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	xmlGeneratedMetadata := struct {
+		TSURL                  string
+		AuthThirdPartyProvider string
+	}{
+		TSURL:                  ts.URL,
+		AuthThirdPartyProvider: authThirdPartyProvider,
+	}
+
+	generatedMetadataTemplate := samlGeneratedMetadataTemplate()
+	var expectedBuf bytes.Buffer
+	expectedBuf.WriteString(strings.TrimSpace(xml.Header))
+	err = generatedMetadataTemplate.Execute(&expectedBuf, xmlGeneratedMetadata)
+	require.NoError(t, err)
+
+	assert.Equal(t, expectedBuf.String(), normalizedMetadata)
 }
