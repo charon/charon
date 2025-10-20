@@ -40,7 +40,7 @@ type samlMemoryKeyStore struct {
 	cert       []byte
 }
 
-func (ks *samlMemoryKeyStore) GetKeyPair() (*rsa.PrivateKey, []byte, error) {
+func (ks samlMemoryKeyStore) GetKeyPair() (*rsa.PrivateKey, []byte, error) {
 	return ks.privateKey, ks.cert, nil
 }
 
@@ -241,44 +241,40 @@ func extractIDPCertificates(metadata types.EntityDescriptor) (*dsig.MemoryX509Ce
 	return certStore, nil
 }
 
-func (p *SiteProvider) initSAMLKeyStore(config *Config) errors.E {
-	// TODO: Properly load keys from the disk based on configuration for this provider.
-	//       Only if the keys are not available, and we are in development mode, generate them.
-	key := p.samlKey
-	if key != "" {
-		jwk, errE := MakeRSAKey([]byte(key))
+func initSAMLKeyStore(config *Config, samlKey []byte) (dsig.X509KeyStore, errors.E) {
+	if len(samlKey) > 0 {
+		jwk, errE := MakeRSAKey(samlKey)
 		if errE != nil {
-			return errors.WithMessage(errE, "invalid RSA private key")
+			return nil, errors.WithMessage(errE, "invalid RSA private key")
 		}
 
 		rsaKey, ok := jwk.Key.(*rsa.PrivateKey)
 		if !ok {
-			return errors.New("not an RSA private key")
+			return nil, errors.New("not an RSA private key")
 		}
 		cert, err := x509.MarshalPKIXPublicKey(rsaKey.Public())
 		if err != nil {
-			return errors.WithMessage(err, "failed to generate certificate")
+			return nil, errors.WithMessage(err, "failed to generate certificate")
 		}
 
-		p.samlKeyStore = &samlMemoryKeyStore{
+		return samlMemoryKeyStore{
 			privateKey: rsaKey,
 			cert:       cert,
-		}
-		return nil
+		}, nil
 	}
 
 	if config.Server.Development {
 		privateKey, cert, err := dsig.RandomKeyStoreForTest().GetKeyPair()
 		if err != nil {
-			return errors.WithMessage(err, "failed in development to generate test key-pair")
+			return nil, errors.WithMessage(err, "failed in development to generate test key-pair")
 		}
-		p.samlKeyStore = &samlMemoryKeyStore{
+		return samlMemoryKeyStore{
 			privateKey: privateKey,
 			cert:       cert,
-		}
-		return nil
+		}, nil
 	}
-	return errors.New("SAML RSA private key not provided")
+
+	return nil, errors.New("SAML RSA private key not provided")
 }
 
 func validateSAMLAssertion(assertionInfo *saml2.AssertionInfo) errors.E {
