@@ -2,6 +2,8 @@ package charon
 
 import (
 	"encoding/xml"
+	"maps"
+	"slices"
 
 	"github.com/beevik/etree"
 	"gitlab.com/tozd/go/errors"
@@ -98,10 +100,12 @@ func createAttributeConsumingService(samlMapping SAMLAttributeMapping, serviceNa
 		sn.SetText(serviceName)
 	}
 
-	for name, friendlyName := range samlMapping.Mapping {
+	sortedKeys := slices.Sorted(maps.Keys(samlMapping.Mapping))
+
+	for _, name := range sortedKeys {
 		reqAttr := acs.CreateElement("RequestedAttribute")
 		reqAttr.CreateAttr("Name", name)
-		reqAttr.CreateAttr("FriendlyName", friendlyName)
+		reqAttr.CreateAttr("FriendlyName", samlMapping.Mapping[name])
 		reqAttr.CreateAttr("isRequired", "true")
 	}
 
