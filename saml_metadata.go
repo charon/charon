@@ -43,6 +43,12 @@ func generateSAMLMetadata(provider samlProvider, serviceName string) ([]byte, er
 	root.CreateAttr("xmlns:md", samlMetadataNS)
 	root.CreateAttr("xmlns:ds", samlDsigNS)
 
+	// SIPASS does not use validUntil because they manually update metadata. So we remove it so that metadata
+	// does not expire and cause issues. We could maybe set it to the same expiration as the certificate,
+	// but this is simpler. We cannot just set entityDescriptor.ValidUntil to time.Time{} because goxmldsig
+	// does not have omitzero on the field, so we remove it here.
+	root.RemoveAttr("validUntil")
+
 	if len(provider.Mapping.Mapping) > 0 {
 		doc.FindElement("//SPSSODescriptor").AddChild(createAttributeConsumingService(provider.Mapping, serviceName))
 	}

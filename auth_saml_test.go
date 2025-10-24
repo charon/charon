@@ -135,7 +135,7 @@ func samlResponseTemplate() *template.Template {
 
 func samlGeneratedMetadataTemplate() *template.Template {
 	return template.Must(template.New("samlGeneratedMetadata").Parse(`
-<md:EntityDescriptor validUntil="TIME" entityID="charon_saml_testing" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<md:EntityDescriptor entityID="charon_saml_testing" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
     <md:SPSSODescriptor AuthnRequestsSigned="true" WantAssertionsSigned="true" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
         <md:KeyDescriptor use="signing">
             <ds:KeyInfo>
@@ -731,9 +731,6 @@ func TestSAMLMetadata(t *testing.T) {
 
 	certRegex := regexp.MustCompile(`<ds:X509Certificate>[\s\S]*?</ds:X509Certificate>`)
 	normalizedMetadata := certRegex.ReplaceAllString(metadata, "<ds:X509Certificate>CERT</ds:X509Certificate>")
-
-	validUntilRegex := regexp.MustCompile(`validUntil="[^"]*"`)
-	normalizedMetadata = validUntilRegex.ReplaceAllString(normalizedMetadata, `validUntil="TIME"`)
 
 	authThirdPartyProvider, errE := service.ReverseAPI("AuthThirdPartyProvider", waf.Params{"provider": samlTestingEntityID}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
