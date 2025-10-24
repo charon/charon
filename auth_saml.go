@@ -2,17 +2,22 @@ package charon
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
+	"math/big"
 	"net/http"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/go-cleanhttp"
 	saml2 "github.com/russellhaering/gosaml2"
@@ -266,7 +271,33 @@ func initSAMLKeyStore(config *Config, samlKey []byte) (dsig.X509KeyStore, errors
 		if !ok {
 			return nil, errors.New("not an RSA private key")
 		}
-		cert, err := x509.MarshalPKIXPublicKey(rsaKey.Public())
+		keyID, err := base64.RawURLEncoding.DecodeString(jwk.KeyID)
+		if err != nil {
+			return nil, errors.WithMessage(err, "invalid RSA private key ID")
+		}
+		// To have deterministic serial number we use the key ID (which is also deterministic
+		// and based on the hash of the key contents) as the serial number.
+		serialNumber := slices.Clone(keyID)
+		// The serial number must be positive and at most 20 octets *when encoded*.
+		serialNumber = serialNumber[:20]
+		// If the top bit is set, the serial will be padded with a leading zero
+		// byte during encoding, so that it's not interpreted as a negative
+		// integer. This padding would make the serial 21 octets so we clear the
+		// top bit to ensure the correct length in all cases.
+		serialNumber[0] &= 0b0111_1111
+		tml := x509.Certificate{
+			SerialNumber: new(big.Int).SetBytes(serialNumber),
+			NotBefore:    time.Now(),
+			NotAfter:     time.Now().AddDate(10, 0, 0), // Certificate will be valid for 10 years.
+			Subject: pkix.Name{
+				CommonName: config.Name,
+			},
+			BasicConstraintsValid: true,
+			SubjectKeyId:          keyID,
+			AuthorityKeyId:        keyID,
+			KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment, // Key encipherment is possible only with RSA keys.
+		}
+		cert, err := x509.CreateCertificate(rand.Reader, &tml, &tml, &rsaKey.PublicKey, rsaKey)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to generate certificate")
 		}
