@@ -158,6 +158,7 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 			// go-smtp-mock does not support STARTTLS.
 			// See: https://github.com/mocktools/go-smtp-mock/issues/76
 			NotRequiredTLS: true,
+			Auth:           "none",
 		},
 		Providers: charon.Providers{
 			OIDCTesting: charon.GenericOIDCProvider{
