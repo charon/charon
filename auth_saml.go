@@ -285,17 +285,19 @@ func initSAMLKeyStore(config *Config, samlKey []byte) (dsig.X509KeyStore, errors
 		// integer. This padding would make the serial 21 octets so we clear the
 		// top bit to ensure the correct length in all cases.
 		serialNumber[0] &= 0b0111_1111
-		tml := x509.Certificate{
+		tml := x509.Certificate{ //nolint:exhaustruct
 			SerialNumber: new(big.Int).SetBytes(serialNumber),
 			NotBefore:    time.Now(),
-			NotAfter:     time.Now().AddDate(10, 0, 0), // Certificate will be valid for 10 years.
-			Subject: pkix.Name{
+			// Certificate will be valid for 10 years.
+			NotAfter: time.Now().AddDate(10, 0, 0), //nolint:mnd
+			Subject: pkix.Name{ //nolint:exhaustruct
 				CommonName: config.Name,
 			},
 			BasicConstraintsValid: true,
 			SubjectKeyId:          keyID,
 			AuthorityKeyId:        keyID,
-			KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment, // Key encipherment is possible only with RSA keys.
+			// Key encipherment is possible only with RSA keys.
+			KeyUsage: x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
 		}
 		cert, err := x509.CreateCertificate(rand.Reader, &tml, &tml, &rsaKey.PublicKey, rsaKey)
 		if err != nil {
