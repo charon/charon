@@ -39,6 +39,8 @@ export default defineConfig({
       // through our Go development proxy.
       clientPort: 8080,
     },
+    // Used for testing SIPASS integration.
+    allowedHosts:["sipasstest.peer.id"],
   },
   resolve: {
     alias: {
