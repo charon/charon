@@ -24,19 +24,22 @@ variables:
   # We always want to run with the Go version installed in a Docker image.
   GOTOOLCHAIN: local
   DOCKER_PIPELINE_IMAGE_NAME: "$CI_REGISTRY_IMAGE/pipeline:$CI_PIPELINE_ID"
-  DOCKER_DRIVER: overlay2
-  DOCKER_BUILDKIT: "1"
+  DOCKER_DRIVER: overlayfs
+  FF_NETWORK_PER_BUILD: 1
+  DOCKER_HOST: tcp://docker:2375
+  # Disable umask 0000. See: https://gitlab.com/gitlab-org/gitlab-runner/-/issues/1736
+  FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR: 1
   PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic"
 
 test_go:
   stage: test
 
-  image: golang:1.23.10-alpine3.21
+  image: golang:1.25-alpine3.22
 
   before_script:
     - apk --update add make bash gcc musl-dev mailcap git
-    - (cd /go; go install gotest.tools/gotestsum@v1.12.0)
-    - (cd /go; go install github.com/boumenot/gocover-cobertura@v1.3.0)
+    - (cd /go; go install gotest.tools/gotestsum@v1.13.0)
+    - (cd /go; go install github.com/boumenot/gocover-cobertura@v1.4.0)
     - go version
     - echo "LINK_PUBLISH_JOB_ID=${CI_JOB_ID}" > link_publish.env
 
@@ -136,14 +139,19 @@ test_node_link_publish:
 test_e2e:
   stage: test
 
-  image: docker:23-git
+  image: golang:1.25-alpine3.22
 
   services:
-    - docker:23-dind
+    - name: docker:28-dind
+      command:
+        - "--feature"
+        - "containerd-snapshotter=true"
 
   before_script:
+    - apk --update add docker-cli docker-cli-buildx make bash gcc musl-dev
+    - (cd /go; go install github.com/boumenot/gocover-cobertura@v1.4.0)
     - docker info
-    - echo "$CI_JOB_TOKEN" | docker login --username gitlab-ci-token --password-stdin "$CI_REGISTRY"
+    - echo "$CI_REGISTRY_PASSWORD" | crane auth login --username "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
     - echo "LINK_PUBLISH_JOB_ID=${CI_JOB_ID}" > link_publish.env
     - |
       mkdir playwright-screenshots
@@ -151,7 +159,7 @@ test_e2e:
         # Download screenshots from CI_MERGE_REQUEST_TARGET_BRANCH_NAME.
         apk --update add curl
         curl --location --output artifacts.zip "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/jobs/artifacts/${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}/download?job=test_e2e"
-        unzip -o artifacts.zip -x playwright-report/\* -x test-results/\* 
+        unzip -o artifacts.zip -x playwright-report/\* -x test-results/\*
       else
         # Not a merge request pipeline, update screenshots.
         export UPDATE_SCREENSHOTS=changed
@@ -197,11 +205,11 @@ test_e2e_link_publish:
 lint_go:
   stage: test
 
-  image: golang:1.23.10-alpine3.21
+  image: golang:1.25-alpine3.22
 
   before_script:
     - apk --update add make bash gcc musl-dev git
-    - wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.64.5
+    - wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.64.8
 
   script:
     - make lint-ci
@@ -262,12 +270,12 @@ lint_style:
 fmt_go:
   stage: test
 
-  image: golang:1.23.10-alpine3.21
+  image: golang:1.25-alpine3.22
 
   before_script:
     - apk --update add make bash git gcc musl-dev grep
-    - go install mvdan.cc/gofumpt@v0.7.0
-    - go install golang.org/x/tools/cmd/goimports@v0.30.0
+    - go install mvdan.cc/gofumpt@v0.9.1
+    - go install golang.org/x/tools/cmd/goimports@v0.37.0
 
   script:
     - make fmt-ci
@@ -312,11 +320,11 @@ lint_docs:
 audit_go:
   stage: test
 
-  image: golang:1.23.10-alpine3.21
+  image: golang:1.25-alpine3.22
 
   before_script:
     - apk --update add make bash git gcc musl-dev
-    - go install github.com/sonatype-nexus-community/nancy@v1.0.46
+    - go install github.com/sonatype-nexus-community/nancy@v1.0.52
 
   script:
     - make audit
@@ -333,7 +341,7 @@ audit_node:
 commits:
   stage: test
 
-  image: golang:1.23.10-alpine3.21
+  image: golang:1.25-alpine3.22
 
   variables:
     GIT_DEPTH: "0"
@@ -357,14 +365,17 @@ reuse:
 docker:
   stage: build
 
-  image: docker:23-git
+  image: docker:28-cli
 
   services:
-    - docker:23-dind
+    - name: docker:28-dind
+      command:
+        - "--feature"
+        - "containerd-snapshotter=true"
 
   before_script:
     - docker info
-    - echo "$CI_JOB_TOKEN" | docker login --username gitlab-ci-token --password-stdin "$CI_REGISTRY"
+    - echo "$CI_REGISTRY_PASSWORD" | docker login --username "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
 
   script:
     - export BUILD_TIMESTAMP="$(date -u +%FT%TZ)"
@@ -410,27 +421,18 @@ docker:
 push_branch:
   stage: deploy
 
-  image: docker:23
-
-  services:
-    - docker:23-dind
+  image:
+    name: gcr.io/go-containerregistry/crane/debug:v0.20.3
+    entrypoint: [""]
 
   before_script:
-    - docker info
-    - echo "$CI_JOB_TOKEN" | docker login --username gitlab-ci-token --password-stdin "$CI_REGISTRY"
+    - echo "$CI_REGISTRY_PASSWORD" | crane auth login --username "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
 
-  # TODO: Improve so that pulling is not necessary. See: https://gitlab.com/gitlab-org/gitlab/-/issues/15252
   script:
-    - docker pull "$DOCKER_PIPELINE_IMAGE_NAME"
-    - docker tag "$DOCKER_PIPELINE_IMAGE_NAME" "$CI_REGISTRY_IMAGE/branch/$CI_COMMIT_REF_SLUG:latest"
-    - docker tag "$DOCKER_PIPELINE_IMAGE_NAME" "$CI_REGISTRY_IMAGE/branch/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA"
-    - docker pull "$DOCKER_PIPELINE_IMAGE_NAME-debug"
-    - docker tag "$DOCKER_PIPELINE_IMAGE_NAME-debug" "$CI_REGISTRY_IMAGE/branch/$CI_COMMIT_REF_SLUG:latest-debug"
-    - docker tag "$DOCKER_PIPELINE_IMAGE_NAME-debug" "$CI_REGISTRY_IMAGE/branch/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-debug"
-    - docker push "$CI_REGISTRY_IMAGE/branch/$CI_COMMIT_REF_SLUG:latest"
-    - docker push "$CI_REGISTRY_IMAGE/branch/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA"
-    - docker push "$CI_REGISTRY_IMAGE/branch/$CI_COMMIT_REF_SLUG:latest-debug"
-    - docker push "$CI_REGISTRY_IMAGE/branch/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-debug"
+    - crane cp "$DOCKER_PIPELINE_IMAGE_NAME" "$CI_REGISTRY_IMAGE/branch/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA"
+    - crane tag "$CI_REGISTRY_IMAGE/branch/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA" latest
+    - crane cp "$DOCKER_PIPELINE_IMAGE_NAME-debug" "$CI_REGISTRY_IMAGE/branch/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-debug"
+    - crane tag "$CI_REGISTRY_IMAGE/branch/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-debug" latest-debug
 
   rules:
     - if: $CI_COMMIT_BRANCH
@@ -441,27 +443,18 @@ push_branch:
 push_tag:
   stage: deploy
 
-  image: docker:23
-
-  services:
-    - docker:23-dind
+  image:
+    name: gcr.io/go-containerregistry/crane/debug:v0.20.3
+    entrypoint: [""]
 
   before_script:
-    - docker info
-    - echo "$CI_JOB_TOKEN" | docker login --username gitlab-ci-token --password-stdin "$CI_REGISTRY"
+    - echo "$CI_REGISTRY_PASSWORD" | crane auth login --username "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
 
-  # TODO: Improve so that pulling is not necessary. See: https://gitlab.com/gitlab-org/gitlab/-/issues/15252
   script:
-    - docker pull "$DOCKER_PIPELINE_IMAGE_NAME"
-    - docker tag "$DOCKER_PIPELINE_IMAGE_NAME" "$CI_REGISTRY_IMAGE/tag/$CI_COMMIT_REF_SLUG:latest"
-    - docker tag "$DOCKER_PIPELINE_IMAGE_NAME" "$CI_REGISTRY_IMAGE/tag/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA"
-    - docker pull "$DOCKER_PIPELINE_IMAGE_NAME-debug"
-    - docker tag "$DOCKER_PIPELINE_IMAGE_NAME-debug" "$CI_REGISTRY_IMAGE/tag/$CI_COMMIT_REF_SLUG:latest-debug"
-    - docker tag "$DOCKER_PIPELINE_IMAGE_NAME-debug" "$CI_REGISTRY_IMAGE/tag/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-debug"
-    - docker push "$CI_REGISTRY_IMAGE/tag/$CI_COMMIT_REF_SLUG:latest"
-    - docker push "$CI_REGISTRY_IMAGE/tag/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA"
-    - docker push "$CI_REGISTRY_IMAGE/tag/$CI_COMMIT_REF_SLUG:latest-debug"
-    - docker push "$CI_REGISTRY_IMAGE/tag/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-debug"
+    - crane cp "$DOCKER_PIPELINE_IMAGE_NAME" "$CI_REGISTRY_IMAGE/tag/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA"
+    - crane tag "$CI_REGISTRY_IMAGE/tag/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA" latest
+    - crane cp "$DOCKER_PIPELINE_IMAGE_NAME-debug" "$CI_REGISTRY_IMAGE/tag/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-debug"
+    - crane tag "$CI_REGISTRY_IMAGE/tag/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA-debug" latest-debug
 
   rules:
     # Only on protected tags. Protected tags start with "v".
@@ -488,7 +481,7 @@ upload_binaries:
 publish:
   stage: deploy
 
-  image: golang:1.23.10-alpine3.21
+  image: golang:1.25-alpine3.22
 
   script:
     - GOPROXY=proxy.golang.org go list -m "gitlab.com/charon/charon@$CI_COMMIT_REF_NAME"

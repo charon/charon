@@ -252,7 +252,7 @@ the frontend as necessary.
 
 ### Backend
 
-The backend is implemented in [Go](https://golang.org/) (requires 1.23 or newer)
+The backend is implemented in [Go](https://golang.org/) (requires 1.25 or newer)
 and provides a HTTP2 API. Node 20 or newer is required as well.
 
 Automatic media type detection uses file extensions and a file extension database has

@@ -152,7 +152,7 @@ To update internationalization TypeScript definitions:
 
 ## Development Setup Requirements
 
-- Go 1.23+ required
+- Go 1.25+ required
 - Node.js 20+ required
 - TLS certificates needed (recommend mkcert for local development)
 - CompileDaemon for backend auto-reload during development
