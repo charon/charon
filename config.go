@@ -122,19 +122,24 @@ type Providers struct {
 // We have to call Validate on kong-embedded structs ourselves.
 // See: https://github.com/alecthomas/kong/issues/554
 func (p *Providers) Validate() error {
-	if err := p.Google.Validate(); err != nil {
+	err := p.Google.Validate()
+	if err != nil {
 		return err
 	}
-	if err := p.Facebook.Validate(); err != nil {
+	err = p.Facebook.Validate()
+	if err != nil {
 		return err
 	}
-	if err := p.SIPASS.Validate(); err != nil {
+	err = p.SIPASS.Validate()
+	if err != nil {
 		return err
 	}
-	if err := p.OIDCTesting.Validate(); err != nil {
+	err = p.OIDCTesting.Validate()
+	if err != nil {
 		return err
 	}
-	if err := p.SAMLTesting.Validate(); err != nil {
+	err = p.SAMLTesting.Validate()
+	if err != nil {
 		return err
 	}
 	return nil
@@ -255,10 +260,12 @@ type Config struct {
 // We have to call Validate on kong-embedded structs ourselves.
 // See: https://github.com/alecthomas/kong/issues/554
 func (config *Config) Validate() error {
-	if err := config.Server.TLS.Validate(); err != nil {
+	err := config.Server.TLS.Validate()
+	if err != nil {
 		return err //nolint:wrapcheck
 	}
-	if err := config.Providers.Validate(); err != nil {
+	err = config.Providers.Validate()
+	if err != nil {
 		return err
 	}
 	return nil
@@ -413,8 +420,8 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			samlEntityID:            "",
 			samlMetadataURL:         "",
 			samlKeyStore:            nil,
-			samlAttributeMapping:    SAMLAttributeMapping{}, //nolint:exhaustruct
-			oidcEndpoint:            oauth2.Endpoint{},      //nolint:exhaustruct
+			samlAttributeMapping:    SAMLAttributeMapping{},
+			oidcEndpoint:            oauth2.Endpoint{},
 			oidcClient:              nil,
 			oidcSupportsPKCE:        false,
 			oidcProvider:            nil,
@@ -439,8 +446,8 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			samlEntityID:            "",
 			samlMetadataURL:         "",
 			samlKeyStore:            nil,
-			samlAttributeMapping:    SAMLAttributeMapping{}, //nolint:exhaustruct
-			oidcEndpoint:            oauth2.Endpoint{},      //nolint:exhaustruct
+			samlAttributeMapping:    SAMLAttributeMapping{},
+			oidcEndpoint:            oauth2.Endpoint{},
 			oidcClient:              nil,
 			oidcSupportsPKCE:        false,
 			oidcProvider:            nil,
@@ -465,8 +472,8 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			samlEntityID:            "",
 			samlMetadataURL:         "",
 			samlKeyStore:            nil,
-			samlAttributeMapping:    SAMLAttributeMapping{}, //nolint:exhaustruct
-			oidcEndpoint:            oauth2.Endpoint{},      //nolint:exhaustruct
+			samlAttributeMapping:    SAMLAttributeMapping{},
+			oidcEndpoint:            oauth2.Endpoint{},
 			oidcClient:              nil,
 			oidcSupportsPKCE:        false,
 			oidcProvider:            nil,
@@ -497,7 +504,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			samlMetadataURL:         config.Providers.SIPASS.MetadataURL,
 			samlKeyStore:            samlKeyStore,
 			samlAttributeMapping:    getSIPASSAttributeMapping(),
-			oidcEndpoint:            oauth2.Endpoint{}, //nolint:exhaustruct
+			oidcEndpoint:            oauth2.Endpoint{},
 			oidcClient:              nil,
 			oidcSupportsPKCE:        false,
 			oidcProvider:            nil,
@@ -527,7 +534,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			samlMetadataURL:         mockSAMLMetadataURL,
 			samlKeyStore:            samlKeyStore,
 			samlAttributeMapping:    getDefaultAttributeMapping(),
-			oidcEndpoint:            oauth2.Endpoint{}, //nolint:exhaustruct
+			oidcEndpoint:            oauth2.Endpoint{},
 			oidcClient:              nil,
 			oidcSupportsPKCE:        false,
 			oidcProvider:            nil,
@@ -557,7 +564,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			samlMetadataURL:         config.Providers.SAMLTesting.MetadataURL,
 			samlKeyStore:            samlKeyStore,
 			samlAttributeMapping:    getDefaultAttributeMapping(),
-			oidcEndpoint:            oauth2.Endpoint{}, //nolint:exhaustruct
+			oidcEndpoint:            oauth2.Endpoint{},
 			oidcClient:              nil,
 			oidcSupportsPKCE:        false,
 			oidcProvider:            nil,

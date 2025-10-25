@@ -424,7 +424,7 @@ func (a *OrganizationApplication) Validate(ctx context.Context, existing *Organi
 	} else {
 		e = &existing.OrganizationApplicationPublic
 	}
-	values, errE := a.OrganizationApplicationPublic.validate(ctx, e, service)
+	values, errE := a.OrganizationApplicationPublic.validate(ctx, e, service) //nolint:staticcheck
 	if errE != nil {
 		return errE
 	}

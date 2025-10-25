@@ -301,7 +301,7 @@ func initOIDC(config *Config, service *Service, domain string, hmacStrategy *hma
 func sanitizeAuthorizeRequest(request *fosite.AuthorizeRequest) *fosite.AuthorizeRequest {
 	sanitized := new(fosite.AuthorizeRequest)
 	*sanitized = *request
-	sanitized.Request = *request.Request.Sanitize( //nolint:forcetypeassert,errcheck
+	sanitized.Request = *request.Sanitize( //nolint:forcetypeassert,errcheck
 		[]string{
 			// OIDC parameters (same as fosite.handler.openid.oidcParameters).
 			"max_age", "prompt", "acr_values", "id_token_hint", "nonce",

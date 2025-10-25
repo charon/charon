@@ -400,7 +400,8 @@ func startSAMLTestServer(t *testing.T) *httptest.Server {
 		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(http.StatusOK)
 		samlPostFormHTMLTemplate := samlPostFormTemplate()
-		if err = samlPostFormHTMLTemplate.Execute(w, htmlResponse); err != nil {
+		err = samlPostFormHTMLTemplate.Execute(w, htmlResponse)
+		if err != nil {
 			http.Error(w, "samlTesting failed to generate HTML response form", http.StatusInternalServerError)
 			return
 		}

@@ -70,8 +70,8 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 			KeyType:   int64(webauthncose.RSAKey),
 			Algorithm: int64(webauthncose.AlgRS256),
 		},
-		Modulus:  rsaKey.PublicKey.N.Bytes(),
-		Exponent: binary.LittleEndian.AppendUint32(nil, uint32(rsaKey.PublicKey.E))[:3], //nolint:gosec
+		Modulus:  rsaKey.N.Bytes(),
+		Exponent: binary.LittleEndian.AppendUint32(nil, uint32(rsaKey.E))[:3], //nolint:gosec
 	}
 
 	publicKeyBytes, err := webauthncbor.Marshal(rsaPublicKeyData)

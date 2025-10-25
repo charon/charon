@@ -347,7 +347,7 @@ func validateSAMLAssertion(assertionInfo *saml2.AssertionInfo) errors.E {
 
 	// In the future they might add more flags to WarningInfo.
 	// We want all of them to be false (equal to the zero value).
-	if !reflect.DeepEqual(*assertionInfo.WarningInfo, saml2.WarningInfo{}) { //nolint:exhaustruct
+	if !reflect.DeepEqual(*assertionInfo.WarningInfo, saml2.WarningInfo{}) {
 		errE := errors.New("unexpected SAML assertion warnings")
 		errors.Details(errE)["warnings"] = *assertionInfo.WarningInfo
 		return errE

@@ -225,7 +225,7 @@ func (s *Service) logActivity(
 	activity := &Activity{
 		// Validate will populate these.
 		ID:        nil,
-		Timestamp: Time{}, //nolint:exhaustruct
+		Timestamp: Time{},
 
 		Type:                     activityType,
 		Actor:                    &IdentityRef{ID: currentIdentityID},
