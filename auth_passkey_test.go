@@ -37,7 +37,7 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 	// Start passkey create.
 	resp, err := ts.Client().Post(ts.URL+authFlowPasskeyCreateStart, "application/json", strings.NewReader(`{}`)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
@@ -170,7 +170,7 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 	// Start passkey get.
 	resp, err = ts.Client().Post(ts.URL+authFlowPasskeyGetStart, "application/json", strings.NewReader(`{}`)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)

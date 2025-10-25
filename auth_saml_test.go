@@ -259,7 +259,7 @@ func decodeSAMLRequest(t *testing.T, encoded string) (string, errors.E) {
 	}
 
 	reader := flate.NewReader(bytes.NewReader(raw))
-	defer reader.Close()
+	defer reader.Close() //nolint:errcheck
 
 	decoded, err := io.ReadAll(reader)
 	if err != nil {
@@ -474,7 +474,7 @@ func samlSignin(t *testing.T, ts *httptest.Server, service *charon.Service, saml
 	// Start SAML.
 	resp, err := ts.Client().Post(ts.URL+authFlowThirdPartyProviderStart, "application/json", strings.NewReader(`{"provider":"samlTesting"}`)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
@@ -497,7 +497,7 @@ func samlSignin(t *testing.T, ts *httptest.Server, service *charon.Service, saml
 	// Redirect to our testing provider.
 	resp, err = samlClient.Get(authFlowResponse.ThirdPartyProvider.Location) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 	out, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	htmlStr := string(out)
@@ -518,7 +518,7 @@ func samlSignin(t *testing.T, ts *httptest.Server, service *charon.Service, saml
 	// Redirect to SAML callback.
 	resp, err = ts.Client().Post(action, "application/x-www-form-urlencoded", strings.NewReader(values.Encode())) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 	out, err = io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusSeeOther, resp.StatusCode, string(out))
@@ -592,7 +592,7 @@ func mockSAMLSignin(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	// Start MockSAML.
 	resp, err := ts.Client().Post(ts.URL+authFlowThirdPartyProviderStart, "application/json", strings.NewReader(`{"provider":"mockSAML"}`)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
@@ -616,7 +616,7 @@ func mockSAMLSignin(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	resp, err = mockSAMLClient.Get(authFlowResponse.ThirdPartyProvider.Location) //nolint:noctx,bodyclose
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusFound, resp.StatusCode)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 
 	location := resp.Header.Get("Location")
 	require.NotEmpty(t, location, "Expected Location header in 302 response")
@@ -639,7 +639,7 @@ func mockSAMLSignin(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	// Call MockSAML auth endpoint.
 	resp, err = mockSAMLClient.Post("https://mocksaml.com/api/namespace/charon/saml/auth", "application/json", bytes.NewReader(jsonPayload)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 	out, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	htmlStr := string(out)
@@ -660,7 +660,7 @@ func mockSAMLSignin(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	// Redirect to SAML callback.
 	resp, err = ts.Client().Post(action, "application/x-www-form-urlencoded", strings.NewReader(values.Encode())) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 	out, err = io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusSeeOther, resp.StatusCode, string(out))
@@ -718,7 +718,7 @@ func TestSAMLMetadata(t *testing.T) {
 
 	resp, err := ts.Client().Get(ts.URL + metadataPath) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)

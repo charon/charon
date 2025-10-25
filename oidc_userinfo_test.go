@@ -42,7 +42,7 @@ func validateUserInfo(t *testing.T, ts *httptest.Server, service *charon.Service
 
 	resp, err := ts.Client().Post(ts.URL+oidcUserInfo, "application/x-www-form-urlencoded", strings.NewReader(data.Encode())) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
@@ -73,8 +73,8 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 	// Initial GET (without access token) should return error.
 	resp, err := ts.Client().Get(ts.URL + userinfo) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		out, err := io.ReadAll(resp.Body) //nolint:govet
+		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
+		out, err := io.ReadAll(resp.Body)                                                   //nolint:govet
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
@@ -102,8 +102,8 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	resp, err = ts.Client().Do(req) //nolint:bodyclose
 	if assert.NoError(t, err) {
-		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		out, err := io.ReadAll(resp.Body) //nolint:govet
+		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
+		out, err := io.ReadAll(resp.Body)                                                   //nolint:govet
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
@@ -119,8 +119,8 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	resp, err = ts.Client().Do(req) //nolint:bodyclose
 	if assert.NoError(t, err) {
-		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		out, err := io.ReadAll(resp.Body) //nolint:govet
+		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
+		out, err := io.ReadAll(resp.Body)                                                   //nolint:govet
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
@@ -135,8 +135,8 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 	// Loading flow when signed out (no session cookie anymore) should error.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		_, err := io.ReadAll(resp.Body) //nolint:govet
+		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
+		_, err := io.ReadAll(resp.Body)                                                     //nolint:govet
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
@@ -152,8 +152,8 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	resp, err = ts.Client().Do(req) //nolint:bodyclose
 	if assert.NoError(t, err) {
-		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		out, err := io.ReadAll(resp.Body) //nolint:govet
+		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
+		out, err := io.ReadAll(resp.Body)                                                   //nolint:govet
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
@@ -164,7 +164,7 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 	// Loading old flow when signed in again does not work because sessions are bound to flows.
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 		_, err := io.ReadAll(resp.Body)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)

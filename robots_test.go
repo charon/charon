@@ -20,8 +20,8 @@ func TestRobotsTxt(t *testing.T) {
 
 	resp, err := ts.Client().Get(ts.URL + "/robots.txt") //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
-		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
-		out, err := io.ReadAll(resp.Body) //nolint:govet
+		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
+		out, err := io.ReadAll(resp.Body)                                                   //nolint:govet
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)

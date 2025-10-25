@@ -73,7 +73,7 @@ func createOrganization(t *testing.T, ts *httptest.Server, service *charon.Servi
 	resp, err := ts.Client().Do(req) //nolint:bodyclose
 
 	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
@@ -89,7 +89,7 @@ func createOrganization(t *testing.T, ts *httptest.Server, service *charon.Servi
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	resp, err = ts.Client().Do(req) //nolint:bodyclose
 	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))

@@ -24,7 +24,7 @@ import (
 func assertFlowResponse(t *testing.T, ts *httptest.Server, service *charon.Service, resp *http.Response, organizationID *identifier.Identifier, completed []charon.Completed, providers []charon.Provider, emailOrUsername string, assertApp func(t *testing.T, ts *httptest.Server, service *charon.Service, organizationID, appID identifier.Identifier)) identifier.Identifier {
 	t.Helper()
 
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
@@ -56,7 +56,7 @@ func assertAppName(t *testing.T, organizationName, appName string) func(t *testi
 
 		resp, err := ts.Client().Get(ts.URL + organizationGet) //nolint:noctx,bodyclose
 		require.NoError(t, err)
-		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
@@ -72,7 +72,7 @@ func assertAppName(t *testing.T, organizationName, appName string) func(t *testi
 
 		resp, err = ts.Client().Get(ts.URL + organizationAppGet) //nolint:noctx,bodyclose
 		require.NoError(t, err)
-		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
@@ -99,7 +99,7 @@ func createAuthFlow(t *testing.T, ts *httptest.Server, service *charon.Service) 
 
 	resp, err := ts.Client().Get(ts.URL + serviceContextPath) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
@@ -132,10 +132,10 @@ func createAuthFlow(t *testing.T, ts *httptest.Server, service *charon.Service) 
 	authURI := config.AuthCodeURL(state, opts...)
 	resp, err = ts.Client().Get(authURI) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 	assert.Equal(t, http.StatusSeeOther, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
-	io.Copy(io.Discard, resp.Body) //nolint:errcheck
+	io.Copy(io.Discard, resp.Body) //nolint:errcheck,gosec
 
 	location := resp.Header.Get("Location")
 	assert.NotEmpty(t, location)
@@ -183,7 +183,7 @@ func createIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, 
 
 	resp, err := ts.Client().Post(ts.URL+identityCreate+"?flow="+flowID.String(), "application/json", bytes.NewReader(request)) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
@@ -203,7 +203,7 @@ func getIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, ide
 
 	resp, err := ts.Client().Get(ts.URL + identityGet + "?flow=" + flowID.String()) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
@@ -223,7 +223,7 @@ func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, 
 
 	resp, err := ts.Client().Get(ts.URL + identityList + "?flow=" + flowID.String()) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
@@ -238,7 +238,7 @@ func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, 
 
 		resp, err = ts.Client().Get(ts.URL + identityList + "?flow=" + flowID.String()) //nolint:noctx,bodyclose
 		require.NoError(t, err)
-		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
@@ -317,7 +317,7 @@ func doRedirect(t *testing.T, ts *httptest.Server, service *charon.Service, orga
 
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 	out, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusSeeOther, resp.StatusCode, string(out))

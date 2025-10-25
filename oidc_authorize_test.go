@@ -94,7 +94,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 
 			resp, err := ts.Client().Get(ts.URL + oidcAuthorize) //nolint:noctx,bodyclose
 			require.NoError(t, err)
-			t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+			t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 			out, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 			assert.Equal(t, http.StatusSeeOther, resp.StatusCode, string(out))
@@ -160,7 +160,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 			req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(clientID+":chc-"+applicationClientSecret)))
 			resp, err = ts.Client().Do(req) //nolint:bodyclose
 			require.NoError(t, err)
-			t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp))
+			t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 			assert.Equal(t, 2, resp.ProtoMajor)
 			assert.Equal(t, "application/json;charset=UTF-8", resp.Header.Get("Content-Type"))

@@ -10,7 +10,7 @@ import (
 
 // OIDCRevokePost handler handles requests to revoke a token.
 func (s *Service) OIDCRevokePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck,gosec
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	// OIDC GetClient requires ctx with serviceContextKey set.

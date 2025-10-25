@@ -12,14 +12,17 @@ import (
 
 var ErrAccountNotFound = errors.Base("account not found")
 
+// Provider is the credential provider name.
 type Provider string
 
+// Credential represents a credential issued by a credential provider.
 type Credential struct {
 	ID       string
 	Provider Provider
 	Data     json.RawMessage
 }
 
+// Equal returns true if the two credentials are equal.
 func (c1 *Credential) Equal(c2 *Credential) bool {
 	if c1 == nil && c2 == nil {
 		return true
@@ -30,31 +33,41 @@ func (c1 *Credential) Equal(c2 *Credential) bool {
 	return c1.ID == c2.ID && c1.Provider == c2.Provider && bytes.Equal(c1.Data, c2.Data)
 }
 
+// AccountRef is a reference to an account.
 type AccountRef struct {
 	ID identifier.Identifier `json:"-"`
 }
 
+// Account represents an account which consists of an identifier and a set of credentials.
 type Account struct {
 	ID identifier.Identifier
 
 	Credentials map[Provider][]Credential
 }
 
+// HasCredential returns true if the account has a credential for the given provider and credential ID.
 func (a *Account) HasCredential(provider Provider, credentialID string) bool {
 	return a.GetCredential(provider, credentialID) != nil
 }
 
+// UpdateCredentials updates the credentials for the account.
 func (a *Account) UpdateCredentials(credentials []Credential) {
 	for _, credential := range credentials {
+		updated := false
 		for i, c := range a.Credentials[credential.Provider] {
 			if c.ID == credential.ID {
 				a.Credentials[credential.Provider][i] = credential
+				updated = true
 				break
 			}
+		}
+		if !updated {
+			a.Credentials[credential.Provider] = append(a.Credentials[credential.Provider], credential)
 		}
 	}
 }
 
+// GetCredential returns the credential for the given provider and credential ID.
 func (a *Account) GetCredential(provider Provider, credentialID string) *Credential {
 	for _, credential := range a.Credentials[provider] {
 		if credential.ID == credentialID {
@@ -64,6 +77,7 @@ func (a *Account) GetCredential(provider Provider, credentialID string) *Credent
 	return nil
 }
 
+// GetEmailAddresses returns the email addresses of the account.
 func (a *Account) GetEmailAddresses() ([]string, errors.E) {
 	emails := []string{}
 	for _, credential := range a.Credentials[ProviderEmail] {
