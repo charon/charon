@@ -16,6 +16,7 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
+//nolint:revive
 const ProviderPasskey Provider = "passkey"
 
 type AuthFlowResponsePasskey struct {

@@ -41,6 +41,7 @@ var Argon2idParams = argon2id.Params{ //nolint:gochecknoglobals
 	KeyLength:   keySize,
 }
 
+//nolint:revive
 const (
 	ProviderPassword Provider = "password"
 	ProviderEmail    Provider = "email"

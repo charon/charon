@@ -15,11 +15,12 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
+//nolint:revive
 const ProviderCode Provider = "code"
 
 const (
-	CodeProviderSubject  = `Your code for Charon`
-	CodeProviderTemplate = `Hi!
+	codeProviderSubject  = `Your code for Charon`
+	codeProviderTemplate = `Hi!
 
 Here is the code to complete your Charon sign-in or sign-up:
 
@@ -51,7 +52,7 @@ func initCodeProvider(config *Config, domain string) (func() *codeProvider, erro
 	})
 }
 
-var codeProviderTemplate = tt.Must(tt.New("CodeProviderTemplate").Parse(CodeProviderTemplate)) //nolint:gochecknoglobals
+var codeProviderTemplateCompiled = tt.Must(tt.New("CodeProviderTemplate").Parse(codeProviderTemplate)) //nolint:gochecknoglobals
 
 var errMultipleCredentials = errors.Base("multiple credentials for the provider")
 
@@ -252,7 +253,7 @@ func (s *Service) sendCode(
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-	errE = s.sendMail(req.Context(), flow, emails, CodeProviderSubject, codeProviderTemplate, map[string]string{
+	errE = s.sendMail(req.Context(), flow, emails, codeProviderSubject, codeProviderTemplateCompiled, map[string]string{
 		"code": code,
 		"url":  url,
 	})
@@ -274,12 +275,14 @@ func (s *Service) sendCode(
 	}, nil)
 }
 
+// AuthFlowCodeStartRequest represents the request body for the AuthFlowCodeStartPost handler.
 type AuthFlowCodeStartRequest struct {
 	EmailOrUsername string `json:"emailOrUsername"`
 }
 
+// AuthFlowCodeStartPost is the API handler to start the code provider step, POST request.
 func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := req.Context()
@@ -349,12 +352,14 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 	s.sendCode(w, req, flow, false, preservedEmailOrUsername, []string{preservedEmailOrUsername}, nil, credentials)
 }
 
+// AuthFlowCodeCompleteRequest represents the request body for the AuthFlowCodeCompletePost handler.
 type AuthFlowCodeCompleteRequest struct {
 	Code string `json:"code"`
 }
 
+// AuthFlowCodeCompletePost is the API handler to complete the code provider step, POST request.
 func (s *Service) AuthFlowCodeCompletePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := req.Context()

@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	MaxAuthAttempts = 10
+	maxAuthAttempts = 10
 )
 
 type AuthFlowResponse struct {
@@ -375,7 +375,7 @@ func (s *Service) increaseAuthAttempts(w http.ResponseWriter, req *http.Request,
 		return false
 	}
 
-	if flow.AuthAttempts >= MaxAuthAttempts {
+	if flow.AuthAttempts >= maxAuthAttempts {
 		s.failAuthStep(w, req, true, flow, errors.New("reached max auth attempts"))
 		return false
 	}

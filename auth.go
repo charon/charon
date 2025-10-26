@@ -26,7 +26,7 @@ type AuthSignoutResponse struct {
 // TODO: Revoke all access tokens associated with any sessions associated with available cookies.
 
 func (s *Service) AuthSignoutPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	var authSignoutRequest AuthSignoutRequest
