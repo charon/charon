@@ -3,6 +3,7 @@ package charon //nolint:testpackage
 import (
 	"context"
 
+	"github.com/alexedwards/argon2id"
 	"github.com/russellhaering/gosaml2/types"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/identifier"
@@ -107,4 +108,8 @@ func TestingFindFirstString(m map[string]interface{}, keyNames ...string) string
 
 func TestingSessionCookiePrefix() string {
 	return sessionCookiePrefix
+}
+
+func TestingArgon2idParams() *argon2id.Params {
+	return &argon2idParams
 }

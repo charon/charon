@@ -19,7 +19,7 @@ import (
 //nolint:revive
 const ProviderPasskey Provider = "passkey"
 
-// AuthFlowResponsePasskey represents response body of the passkey provider step, sign-in (get) or sign-up (create).
+// AuthFlowResponsePasskey represents response data of the passkey provider step, sign-in (get) or sign-up (create).
 type AuthFlowResponsePasskey struct {
 	CreateOptions *protocol.CredentialCreation  `json:"createOptions,omitempty"`
 	GetOptions    *protocol.CredentialAssertion `json:"getOptions,omitempty"`

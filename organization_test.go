@@ -28,7 +28,7 @@ func createOrganization(t *testing.T, ts *httptest.Server, service *charon.Servi
 
 	applications := []charon.OrganizationApplication{}
 	if applicationTemplate != nil {
-		hash, err := argon2id.CreateHash(applicationClientSecret, &charon.Argon2idParams)
+		hash, err := argon2id.CreateHash(applicationClientSecret, charon.TestingArgon2idParams())
 		require.NoError(t, err)
 
 		require.Empty(t, applicationTemplate.Variables)

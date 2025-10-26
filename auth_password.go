@@ -33,7 +33,7 @@ const (
 	passwordMinLength        = 8
 )
 
-var Argon2idParams = argon2id.Params{ //nolint:gochecknoglobals
+var argon2idParams = argon2id.Params{ //nolint:gochecknoglobals
 	Memory:      argon2idMemory,
 	Iterations:  argon2idTime,
 	Parallelism: argon2idThreads,
@@ -48,11 +48,13 @@ const (
 	ProviderUsername Provider = "username"
 )
 
+// AuthFlowResponsePasswordDeriveOptions represents options for deriving the key for encrypting the password.
 type AuthFlowResponsePasswordDeriveOptions struct {
 	Name       string `json:"name"`
 	NamedCurve string `json:"namedCurve"`
 }
 
+// AuthFlowResponsePasswordEncryptOptions represents options for encrypting the password with the derived key.
 type AuthFlowResponsePasswordEncryptOptions struct {
 	Name      string `json:"name"`
 	Nonce     []byte `json:"iv"`
@@ -60,6 +62,7 @@ type AuthFlowResponsePasswordEncryptOptions struct {
 	Length    int    `json:"length"`
 }
 
+// AuthFlowResponsePassword represents response data of the password provider step.
 type AuthFlowResponsePassword struct {
 	PublicKey      []byte                                 `json:"publicKey"`
 	DeriveOptions  AuthFlowResponsePasswordDeriveOptions  `json:"deriveOptions"`
@@ -93,12 +96,14 @@ func (s *Service) normalizeEmailOrUsername(w http.ResponseWriter, req *http.Requ
 	return preservedEmailOrUsername
 }
 
+// AuthFlowPasswordStartRequest represents the request body for the AuthFlowPasswordStartPost handler.
 type AuthFlowPasswordStartRequest struct {
 	EmailOrUsername string `json:"emailOrUsername"`
 }
 
+// AuthFlowPasswordStartPost is the API handler to start the password provider step, POST request.
 func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := req.Context()
@@ -184,13 +189,15 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 	}, nil)
 }
 
+// AuthFlowPasswordCompleteRequest represents the request body for the AuthFlowPasswordCompletePost handler.
 type AuthFlowPasswordCompleteRequest struct {
 	PublicKey []byte `json:"publicKey"`
 	Password  []byte `json:"password"`
 }
 
+// AuthFlowPasswordCompletePost is the API handler to complete the password provider step, POST request.
 func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:maintidx
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := req.Context()
@@ -311,10 +318,10 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 				// Correct password.
 				jsonData := credential.Data
 				// If options are different, we migrate the password to new options.
-				if *options != Argon2idParams {
+				if *options != argon2idParams {
 					// TODO: Use byte as input and not string.
 					//       See: https://github.com/alexedwards/argon2id/issues/26
-					hashedPassword, err := argon2id.CreateHash(string(plainPassword), &Argon2idParams)
+					hashedPassword, err := argon2id.CreateHash(string(plainPassword), &argon2idParams)
 					if err != nil {
 						s.InternalServerErrorWithError(w, req, errors.WithStack(err))
 						return
@@ -380,7 +387,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 
 	// TODO: Use byte as input and not string.
 	//       See: https://github.com/alexedwards/argon2id/issues/26
-	hashedPassword, err := argon2id.CreateHash(string(plainPassword), &Argon2idParams)
+	hashedPassword, err := argon2id.CreateHash(string(plainPassword), &argon2idParams)
 	if err != nil {
 		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
 		return

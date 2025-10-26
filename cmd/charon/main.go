@@ -1,3 +1,4 @@
+// Command charon provides the command-line interface for Charon.
 package main
 
 import (

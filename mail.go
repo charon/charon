@@ -15,6 +15,7 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
+// MailAuthTypes defines supported authentication types for sending e-mails.
 var MailAuthTypes = map[string]mail.SMTPAuthType{} //nolint:gochecknoglobals
 
 func init() { //nolint:gochecknoinits
