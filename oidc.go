@@ -26,7 +26,7 @@ const (
 	SecretPrefixAuthorizeCode = "cac-"
 )
 
-var oidcStore = NewOIDCStore() //nolint:gochecknoglobals
+var oidcStore = newOIDCStore() //nolint:gochecknoglobals
 
 type argon2idHasher struct{}
 

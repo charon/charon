@@ -14,18 +14,18 @@ import (
 
 var ErrClientNotFound = errors.Base("client not found")
 
-type OIDCStore struct {
+type oidcMemoryStore struct {
 	storage.MemoryStore
 }
 
-func NewOIDCStore() *OIDCStore {
-	return &OIDCStore{
+func newOIDCStore() *oidcMemoryStore {
+	return &oidcMemoryStore{
 		MemoryStore: *storage.NewMemoryStore(),
 	}
 }
 
 // GetClient requires ctx with serviceContextKey set.
-func (s *OIDCStore) GetClient(ctx context.Context, strID string) (fosite.Client, error) { //nolint:ireturn
+func (s *oidcMemoryStore) GetClient(ctx context.Context, strID string) (fosite.Client, error) { //nolint:ireturn
 	id, errE := identifier.MaybeString(strID)
 	if errE != nil {
 		return nil, errE
@@ -170,7 +170,7 @@ func (s *OIDCStore) GetClient(ctx context.Context, strID string) (fosite.Client,
 	return nil, errors.WithDetails(ErrClientNotFound, "id", id)
 }
 
-func (s *OIDCStore) CreateOpenIDConnectSession(ctx context.Context, code string, req fosite.Requester) error {
+func (s *oidcMemoryStore) CreateOpenIDConnectSession(ctx context.Context, code string, req fosite.Requester) error {
 	// Use our identifiers if ID is the default is UUID ID (which contains "-" in its string representation).
 	// Here we check that we successfully set ID to our own ID generation and panic if not.
 	// TODO: Find a better way to override ID generator in accessRequest.GetID.
@@ -180,7 +180,7 @@ func (s *OIDCStore) CreateOpenIDConnectSession(ctx context.Context, code string,
 	return s.MemoryStore.CreateOpenIDConnectSession(ctx, code, req) //nolint:wrapcheck
 }
 
-func (s *OIDCStore) CreateAuthorizeCodeSession(ctx context.Context, code string, req fosite.Requester) error {
+func (s *oidcMemoryStore) CreateAuthorizeCodeSession(ctx context.Context, code string, req fosite.Requester) error {
 	// Use our identifiers if ID is the default is UUID ID (which contains "-" in its string representation).
 	// Here we check that we successfully set ID to our own ID generation and panic if not.
 	// TODO: Find a better way to override ID generator in accessRequest.GetID.
@@ -190,7 +190,7 @@ func (s *OIDCStore) CreateAuthorizeCodeSession(ctx context.Context, code string,
 	return s.MemoryStore.CreateAuthorizeCodeSession(ctx, code, req) //nolint:wrapcheck
 }
 
-func (s *OIDCStore) CreatePKCERequestSession(ctx context.Context, code string, req fosite.Requester) error {
+func (s *oidcMemoryStore) CreatePKCERequestSession(ctx context.Context, code string, req fosite.Requester) error {
 	// Use our identifiers if ID is the default is UUID ID (which contains "-" in its string representation).
 	// Here we check that we successfully set ID to our own ID generation and panic if not.
 	// TODO: Find a better way to override ID generator in accessRequest.GetID.
@@ -200,7 +200,7 @@ func (s *OIDCStore) CreatePKCERequestSession(ctx context.Context, code string, r
 	return s.MemoryStore.CreatePKCERequestSession(ctx, code, req) //nolint:wrapcheck
 }
 
-func (s *OIDCStore) CreateAccessTokenSession(ctx context.Context, signature string, req fosite.Requester) error {
+func (s *oidcMemoryStore) CreateAccessTokenSession(ctx context.Context, signature string, req fosite.Requester) error {
 	// Use our identifiers if ID is the default is UUID ID (which contains "-" in its string representation).
 	// Here we check that we successfully set ID to our own ID generation and panic if not.
 	// TODO: Find a better way to override ID generator in accessRequest.GetID.
@@ -210,7 +210,7 @@ func (s *OIDCStore) CreateAccessTokenSession(ctx context.Context, signature stri
 	return s.MemoryStore.CreateAccessTokenSession(ctx, signature, req) //nolint:wrapcheck
 }
 
-func (s *OIDCStore) CreateRefreshTokenSession(ctx context.Context, signature, accessTokenSignature string, req fosite.Requester) error {
+func (s *oidcMemoryStore) CreateRefreshTokenSession(ctx context.Context, signature, accessTokenSignature string, req fosite.Requester) error {
 	// Use our identifiers if ID is the default is UUID ID (which contains "-" in its string representation).
 	// Here we check that we successfully set ID to our own ID generation and panic if not.
 	// TODO: Find a better way to override ID generator in accessRequest.GetID.
