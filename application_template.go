@@ -9,7 +9,6 @@ import (
 	"reflect"
 	"regexp"
 	"slices"
-	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/ory/fosite"
@@ -26,8 +25,10 @@ var (
 	ErrApplicationTemplateValidationFailed = errors.Base("application template validation failed")
 )
 
+// ClientType represents the type of the client.
 type ClientType string
 
+// ClientType values.
 const (
 	ClientPublic  ClientType = "public"
 	ClientBackend ClientType = "backend"
@@ -104,28 +105,9 @@ func validateRedirectURIsTemplate(ctx context.Context, template string, values m
 	return validateURI(ctx, value)
 }
 
+// ClientRef is a reference to a client.
 type ClientRef struct {
 	ID identifier.Identifier `json:"id"`
-}
-
-type Duration time.Duration
-
-func (d Duration) MarshalJSON() ([]byte, error) {
-	return x.MarshalWithoutEscapeHTML(time.Duration(d).String())
-}
-
-func (d *Duration) UnmarshalJSON(b []byte) error {
-	var s string
-	errE := x.UnmarshalWithoutUnknownFields(b, &s)
-	if errE != nil {
-		return errE
-	}
-	tmp, err := time.ParseDuration(s)
-	if err != nil {
-		return errors.WithDetails(err, "duration", s)
-	}
-	*d = Duration(tmp)
-	return nil
 }
 
 type ApplicationTemplateClientPublic struct {
@@ -138,9 +120,9 @@ type ApplicationTemplateClientPublic struct {
 
 	RedirectURITemplates []string `json:"redirectUriTemplates"`
 
-	AccessTokenLifespan  Duration  `json:"accessTokenLifespan"`
-	IDTokenLifespan      Duration  `json:"idTokenLifespan"`
-	RefreshTokenLifespan *Duration `json:"refreshTokenLifespan,omitempty"`
+	AccessTokenLifespan  x.Duration  `json:"accessTokenLifespan"`
+	IDTokenLifespan      x.Duration  `json:"idTokenLifespan"`
+	RefreshTokenLifespan *x.Duration `json:"refreshTokenLifespan,omitempty"`
 }
 
 func (c *ApplicationTemplateClientPublic) Validate(ctx context.Context, existing *ApplicationTemplateClientPublic, values map[string]string) errors.E {
@@ -224,9 +206,9 @@ type ApplicationTemplateClientBackend struct {
 	TokenEndpointAuthMethod string   `json:"tokenEndpointAuthMethod"`
 	RedirectURITemplates    []string `json:"redirectUriTemplates"`
 
-	AccessTokenLifespan  Duration  `json:"accessTokenLifespan"`
-	IDTokenLifespan      Duration  `json:"idTokenLifespan"`
-	RefreshTokenLifespan *Duration `json:"refreshTokenLifespan,omitempty"`
+	AccessTokenLifespan  x.Duration  `json:"accessTokenLifespan"`
+	IDTokenLifespan      x.Duration  `json:"idTokenLifespan"`
+	RefreshTokenLifespan *x.Duration `json:"refreshTokenLifespan,omitempty"`
 }
 
 func (c *ApplicationTemplateClientBackend) Validate(ctx context.Context, existing *ApplicationTemplateClientBackend, values map[string]string) errors.E {
@@ -318,9 +300,9 @@ type ApplicationTemplateClientService struct {
 
 	TokenEndpointAuthMethod string `json:"tokenEndpointAuthMethod"`
 
-	AccessTokenLifespan  Duration  `json:"accessTokenLifespan"`
-	IDTokenLifespan      Duration  `json:"idTokenLifespan"`
-	RefreshTokenLifespan *Duration `json:"refreshTokenLifespan,omitempty"`
+	AccessTokenLifespan  x.Duration  `json:"accessTokenLifespan"`
+	IDTokenLifespan      x.Duration  `json:"idTokenLifespan"`
+	RefreshTokenLifespan *x.Duration `json:"refreshTokenLifespan,omitempty"`
 }
 
 func (c *ApplicationTemplateClientService) Validate(_ context.Context, existing *ApplicationTemplateClientService, _ map[string]string) errors.E {

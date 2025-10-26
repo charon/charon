@@ -12,7 +12,7 @@ import (
 
 // OIDCTokenPost handler handles requests to issue access and other tokens.
 func (s *Service) OIDCTokenPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	// OIDC GetClient requires ctx with serviceContextKey set.

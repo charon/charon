@@ -8,7 +8,6 @@ import (
 
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
-	"gitlab.com/tozd/go/zerolog"
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 )
@@ -21,6 +20,7 @@ var (
 // ActivityType represents the type of activity performed.
 type ActivityType string
 
+// ActivityType values.
 const (
 	ActivitySignIn                    ActivityType = "signIn"
 	ActivitySignOut                   ActivityType = "signOut"
@@ -59,27 +59,10 @@ const (
 	ActivityChangeMembershipDisabled ActivityChangeType = "membershipDisabled"
 )
 
-type Time time.Time
-
-func (t Time) MarshalJSON() ([]byte, error) {
-	// We want only millisecond precision to minimize any side channels.
-	return x.MarshalWithoutEscapeHTML(time.Time(t).Format(zerolog.TimeFieldFormat))
-}
-
-func (t *Time) UnmarshalJSON(data []byte) error {
-	var tt time.Time
-	errE := x.UnmarshalWithoutUnknownFields(data, &tt)
-	if errE != nil {
-		return errE
-	}
-	*t = Time(tt)
-	return nil
-}
-
 // Activity represents a user activity record.
 type Activity struct {
 	ID        *identifier.Identifier `json:"id"`
-	Timestamp Time                   `json:"timestamp"`
+	Timestamp x.Time                 `json:"timestamp"`
 	Type      ActivityType           `json:"type"`
 
 	// The identity that performed this activity.
@@ -103,6 +86,7 @@ type Activity struct {
 	RequestID identifier.Identifier `json:"requestId"`
 }
 
+// IsForOrganization returns true if activity is for the given organization.
 func (a *Activity) IsForOrganization(organization *Organization) bool {
 	// Check if activity includes only one organization.
 	if len(a.Organizations) != 1 {
@@ -117,12 +101,14 @@ func (a *Activity) IsForOrganization(organization *Organization) bool {
 	return true
 }
 
+// IsForUser returns true if activity is for the given identity or account.
 func (a *Activity) IsForUser(identity IdentityRef, account AccountRef) bool {
 	return (a.Actor != nil && *a.Actor == identity) ||
 		slices.Contains(a.Identities, identity) ||
 		slices.Contains(a.Accounts, account)
 }
 
+// Validate validates the activity struct.
 func (a *Activity) Validate(_ context.Context, existing *Activity) errors.E {
 	if existing == nil {
 		if a.ID != nil {
@@ -147,7 +133,7 @@ func (a *Activity) Validate(_ context.Context, existing *Activity) errors.E {
 	}
 
 	if time.Time(a.Timestamp).IsZero() {
-		a.Timestamp = Time(time.Now().UTC())
+		a.Timestamp = x.Time(time.Now().UTC())
 	}
 
 	if a.Type == "" {
@@ -157,6 +143,7 @@ func (a *Activity) Validate(_ context.Context, existing *Activity) errors.E {
 	return nil
 }
 
+// ActivityRef is a reference to an activity.
 type ActivityRef struct {
 	ID identifier.Identifier `json:"id"`
 }
@@ -225,7 +212,7 @@ func (s *Service) logActivity(
 	activity := &Activity{
 		// Validate will populate these.
 		ID:        nil,
-		Timestamp: Time{},
+		Timestamp: x.Time{},
 
 		Type:                     activityType,
 		Actor:                    &IdentityRef{ID: currentIdentityID},
@@ -259,6 +246,7 @@ func (s *Service) logActivity(
 	return s.createActivity(ctx, activity)
 }
 
+// ActivityList is the handler for listing activities page.
 func (s *Service) ActivityList(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
@@ -267,6 +255,7 @@ func (s *Service) ActivityList(w http.ResponseWriter, req *http.Request, _ waf.P
 	}
 }
 
+// ActivityListGet is the API handler for listing activities, GET request.
 func (s *Service) ActivityListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	ctx := s.RequireAuthenticated(w, req)
 	if ctx == nil {
@@ -312,6 +301,7 @@ func (s *Service) ActivityListGet(w http.ResponseWriter, req *http.Request, _ wa
 	s.WriteJSON(w, req, result, nil)
 }
 
+// ActivityGetGet is the API handler for getting the activity, GET request.
 func (s *Service) ActivityGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := s.RequireAuthenticated(w, req)
 	if ctx == nil {
@@ -347,6 +337,7 @@ func (s *Service) ActivityGetGet(w http.ResponseWriter, req *http.Request, param
 	s.WriteJSON(w, req, activity, nil)
 }
 
+// OrganizationActivity is the handler for listing organization's activities page..
 func (s *Service) OrganizationActivity(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
@@ -355,6 +346,7 @@ func (s *Service) OrganizationActivity(w http.ResponseWriter, req *http.Request,
 	}
 }
 
+// OrganizationActivityGet is the API handler for listing organization's activities, GET request.
 func (s *Service) OrganizationActivityGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := s.RequireAuthenticated(w, req)
 	if ctx == nil {
@@ -411,6 +403,7 @@ func (s *Service) OrganizationActivityGet(w http.ResponseWriter, req *http.Reque
 	s.WriteJSON(w, req, result, nil)
 }
 
+// OrganizationActivityGetGet is the API handler for getting the organization's activity, GET request.
 func (s *Service) OrganizationActivityGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := s.RequireAuthenticated(w, req)
 	if ctx == nil {
