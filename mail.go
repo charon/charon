@@ -64,7 +64,7 @@ func (s *Service) sendMail(ctx context.Context, flow *Flow, emails []string, sub
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		defer s.mailClient.Close()
+		defer s.mailClient.Close() //nolint:errcheck
 
 		// We loop over all e-mails ourselves to know if sending failed and to have better errors structure.
 		// See: https://github.com/wneessen/go-mail/issues/166

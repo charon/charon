@@ -114,8 +114,10 @@ func (h *hmacSHAStrategy) ValidateAuthorizeCode(ctx context.Context, r fosite.Re
 	return h.HMACSHAStrategyUnPrefixed.ValidateAuthorizeCode(ctx, r, h.trimPrefix(token, SecretPrefixAuthorizeCode)) //nolint:wrapcheck
 }
 
+// AccessTokenType represents supported access token types.
 type AccessTokenType string
 
+// AccessTokenType values.
 const (
 	AccessTokenJWT  AccessTokenType = "jwt"
 	AccessTokenHMAC AccessTokenType = "hmac"
@@ -619,6 +621,7 @@ func (c *OIDCClient) GetEffectiveLifespan(_ fosite.GrantType, tt fosite.TokenTyp
 	}
 }
 
+// GetAccessTokenType returns the AccessTokenType configured for this OIDC client.
 func (c *OIDCClient) GetAccessTokenType() AccessTokenType {
 	return c.AccessTokenType
 }

@@ -16,7 +16,7 @@ import (
 // Based on getOidcUserInfo handler from Hydra.
 // See: https://github.com/ory/hydra/blob/master/oauth2/handler.go
 func (s *Service) oidcUserInfo(w http.ResponseWriter, req *http.Request) {
-	defer req.Body.Close()              //nolint:errcheck,gosec
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	// OIDC GetClient requires ctx with serviceContextKey set.
@@ -54,10 +54,12 @@ func (s *Service) oidcUserInfo(w http.ResponseWriter, req *http.Request) {
 	s.WriteJSON(w, req, interim, nil)
 }
 
+// OIDCUserInfoGet is the API handler for getting the user info for the access token, GET request.
 func (s *Service) OIDCUserInfoGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	s.oidcUserInfo(w, req)
 }
 
+// OIDCUserInfoPost is the API handler for getting the user info for the access token, POST request.
 func (s *Service) OIDCUserInfoPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	s.oidcUserInfo(w, req)
 }
