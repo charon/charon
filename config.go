@@ -33,11 +33,13 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
+// Default configuration values.
 const (
 	DefaultProxyTo  = "http://localhost:5173"
 	DefaultTLSCache = "letsencrypt"
 )
 
+// Prefixes used by Charon for secrets.
 const (
 	SecretPrefixClientSecret = "chc-"
 	SecretPrefixCharonConfig = "chs-"
@@ -52,18 +54,22 @@ var routesConfiguration []byte
 //go:embed dist
 var files embed.FS
 
+// ThirdPartyProviderType represents the type of the third-party provider.
 type ThirdPartyProviderType string
 
+// ThirdPartyProviderType values.
 const (
 	ThirdPartyProviderOIDC ThirdPartyProviderType = "oidc"
 	ThirdPartyProviderSAML ThirdPartyProviderType = "saml"
 )
 
+// OIDCProvider represents the configuration of the OIDC provider.
 type OIDCProvider struct {
 	ClientID string               `env:"CLIENT_ID"   help:"${provider}'s client ID."                                  yaml:"clientId"`
 	Secret   kong.FileContentFlag `env:"SECRET_PATH" help:"File with ${provider}'s client secret." placeholder:"PATH" yaml:"secret"`
 }
 
+// Validate validates the OIDCProvider struct.
 func (p *OIDCProvider) Validate() error {
 	if p.ClientID != "" || p.Secret != nil {
 		if p.ClientID == "" {
@@ -76,6 +82,7 @@ func (p *OIDCProvider) Validate() error {
 	return nil
 }
 
+// GenericOIDCProvider represents the configuration of the generic OIDC provider.
 type GenericOIDCProvider struct {
 	OIDCProvider
 
@@ -85,6 +92,8 @@ type GenericOIDCProvider struct {
 	TokenURL  string
 }
 
+// SAMLProvider represents the configuration of the SAML provider.
+//
 //nolint:lll
 type SAMLProvider struct {
 	MetadataURL string               `default:"${defaultMetadataURL}" env:"METADATA_URL" help:"${provider}'s metadata URL."                          placeholder:"URL"  yaml:"metadataUrl"`
@@ -92,6 +101,7 @@ type SAMLProvider struct {
 	Key         kong.FileContentFlag `                                env:"KEY"          help:"File with private key to be used with this provider." placeholder:"PATH" yaml:"key"`
 }
 
+// Validate validates the SAMLProvider struct.
 func (s *SAMLProvider) Validate() error {
 	// TODO: When Kong will call Validate, we can get *kong.Context argument to check that this is SIPASS provider and not use DefaultSIPASSMetadataURL.
 	//       Or a provider with MetadataURL set and not the default value (and not an empty string).
@@ -107,6 +117,8 @@ func (s *SAMLProvider) Validate() error {
 	return nil
 }
 
+// Providers represents the configuration of third-party providers.
+//
 //nolint:lll
 type Providers struct {
 	Google   OIDCProvider `embed:"" envprefix:"GOOGLE_"   prefix:"google."   set:"provider=Google"   yaml:"google"`
@@ -119,6 +131,8 @@ type Providers struct {
 	SAMLTesting SAMLProvider        `json:"-" kong:"-" yaml:"-"`
 }
 
+// Validate validates the Providers struct.
+//
 // We have to call Validate on kong-embedded structs ourselves.
 // See: https://github.com/alecthomas/kong/issues/554
 func (p *Providers) Validate() error {
@@ -145,6 +159,8 @@ func (p *Providers) Validate() error {
 	return nil
 }
 
+// Mail represents the configuration of e-mail sending.
+//
 //nolint:lll
 type Mail struct {
 	Host     string               `                                                                         help:"Host to send e-mails to. If not set, e-mails are logged instead."                      yaml:"host"`
@@ -158,6 +174,7 @@ type Mail struct {
 	NotRequiredTLS bool `json:"-" kong:"-" yaml:"-"`
 }
 
+// Keys represents the configuration of OIDC keys.
 type Keys struct {
 	RSA  kong.FileContentFlag `env:"RSA_PATH"  help:"File with RSA private key."               placeholder:"PATH" yaml:"rsa"`
 	P256 kong.FileContentFlag `env:"P256_PATH" help:"File with P-256 private key." name:"p256" placeholder:"PATH" yaml:"p256"`
@@ -170,6 +187,7 @@ type Keys struct {
 	p521 *jose.JSONWebKey
 }
 
+// Init initializes the Keys struct.
 func (k *Keys) Init(development bool) errors.E {
 	if k.RSA != nil {
 		key, errE := makeRSAKey(k.RSA)
@@ -232,10 +250,13 @@ func (k *Keys) Init(development bool) errors.E {
 	return nil
 }
 
+// OIDC represents the configuration of OIDC.
 type OIDC struct {
 	Keys Keys `embed:"" envprefix:"KEYS_" prefix:"keys." yaml:"keys"`
 }
 
+// Config represents the Charon configuration.
+//
 //nolint:lll
 type Config struct {
 	z.LoggingConfig `yaml:",inline"`
@@ -257,6 +278,8 @@ type Config struct {
 	OIDC OIDC `embed:"" envprefix:"OIDC_" group:"OIDC:" prefix:"oidc." yaml:"oidc"`
 }
 
+// Validate validates the Config struct.
+//
 // We have to call Validate on kong-embedded structs ourselves.
 // See: https://github.com/alecthomas/kong/issues/554
 func (config *Config) Validate() error {
@@ -271,6 +294,7 @@ func (config *Config) Validate() error {
 	return nil
 }
 
+// Service represents the Charon service.
 type Service struct {
 	waf.Service[*Site]
 
@@ -751,6 +775,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 	return handler, service, nil
 }
 
+// Run runs the Charon service.
 func (config *Config) Run() errors.E {
 	handler, service, errE := config.Init(files)
 	if errE != nil {

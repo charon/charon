@@ -19,6 +19,7 @@ const (
 	maxAuthAttempts = 10
 )
 
+// AuthFlowResponse represents the API response for the auth flow.
 type AuthFlowResponse struct {
 	Completed []Completed `json:"completed"`
 
@@ -34,8 +35,10 @@ type AuthFlowResponse struct {
 	Error ErrorCode `json:"error,omitempty"`
 }
 
+// ErrorCode represents the type of the error.
 type ErrorCode string
 
+// ErrorCode values.
 const (
 	ErrorCodeWrongPassword          ErrorCode = "wrongPassword"
 	ErrorCodeNoEmails               ErrorCode = "noEmails"
@@ -77,7 +80,7 @@ func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *flow
 	_, _ = w.Write(encoded)
 }
 
-// AuthFlowGet is the frontend handler to get the flow.
+// AuthFlowGet is the frontend handler for getting the auth flow.
 func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	flow := s.getFlowHandler(w, req, params["id"])
 	if flow == nil {
@@ -107,6 +110,7 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 	}
 }
 
+// AuthFlowGetGet is the API handler for getting the auth flow, GET request.
 func (s *Service) AuthFlowGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	// This is similar to API case in failAuthStep, but fetches also the flow and checks the session.
 
@@ -438,8 +442,9 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 	s.TemporaryRedirectGetMethod(w, req, l)
 }
 
+// AuthFlowRestartAuthPost is the API handler for restarting the auth flow, POST request.
 func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := req.Context()
@@ -511,8 +516,9 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 	}, nil)
 }
 
+// AuthFlowDeclinePost is the API handler for declining to choose the identity, POST request.
 func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := req.Context()
@@ -556,12 +562,14 @@ func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, 
 	}, nil)
 }
 
+// AuthFlowChooseIdentityRequest represents the request body for the AuthFlowChooseIdentityPost handler.
 type AuthFlowChooseIdentityRequest struct {
 	Identity IdentityRef `json:"identity"`
 }
 
+// AuthFlowChooseIdentityPost is the API handler for choosing the identity, POST request.
 func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := req.Context()
@@ -615,8 +623,10 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 	}, nil)
 }
 
+// AuthFlowRedirectPost is the API handler for marking the flow as ready to be finished
+// (and ready for the user to be redirected back to the app), POST request.
 func (s *Service) AuthFlowRedirectPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := req.Context()

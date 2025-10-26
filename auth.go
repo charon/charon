@@ -13,10 +13,12 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
+// AuthSignoutRequest represents the request body for the AuthSignoutPost handler.
 type AuthSignoutRequest struct {
 	Location string `json:"location"`
 }
 
+// AuthSignoutResponse represents the response body for the AuthSignoutPost handler.
 type AuthSignoutResponse struct {
 	Location string `json:"location"`
 }

@@ -20,7 +20,7 @@ import (
 	"gitlab.com/tozd/identifier"
 )
 
-// Prefixes used by Charon for secrets.
+// Prefixes used by Charon for OIDC tokens.
 const (
 	SecretPrefixAccessToken   = "cat-"
 	SecretPrefixRefreshToken  = "crt-"

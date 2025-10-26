@@ -7,7 +7,6 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/base64"
-	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -24,11 +23,12 @@ import (
 	"github.com/russellhaering/gosaml2/types"
 	dsig "github.com/russellhaering/goxmldsig"
 	"gitlab.com/tozd/go/errors"
+	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/waf"
 )
 
 const (
-	DefaultSIPASSMetadataURL = "https://sicas.gov.si/static/idp-metadata.xml" //nolint:gosec
+	DefaultSIPASSMetadataURL = "https://sicas.gov.si/static/idp-metadata.xml" //nolint:gosec,revive
 
 	mockSAMLMetadataURL = "https://mocksaml.com/api/namespace/charon/saml/metadata"
 	mockSAMLEntityID    = "mockSAML_charon"
@@ -174,7 +174,7 @@ func fetchSAMLMetadata(ctx context.Context, client *http.Client, metadataURL str
 		errors.Details(errE)["url"] = metadataURL
 		return types.EntityDescriptor{}, errE
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, resp.Body) //nolint:errcheck
 
 	if resp.StatusCode != http.StatusOK {
@@ -376,7 +376,7 @@ func (s *Service) handlerSAMLStart(provider samlProvider) func(*flow) (string, e
 }
 
 func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, providerKey Provider, provider samlProvider) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := req.Context()
@@ -450,8 +450,8 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	jsonData, err := json.Marshal(attributes)
-	if err != nil {
+	jsonData, errE := x.MarshalWithoutEscapeHTML(attributes)
+	if errE != nil {
 		errors.Details(errE)["provider"] = providerKey
 		errors.Details(errE)["attributes"] = attributes
 		s.InternalServerErrorWithError(w, req, errE)
@@ -476,6 +476,7 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 	s.completeAuthStep(w, req, false, flow, account, []Credential{{ID: credentialID, Provider: providerKey, Data: jsonData}})
 }
 
+// SAMLMetadataGet is the API handler for getting the SAML metadata for a third-party SAML provider, GET request.
 func (s *Service) SAMLMetadataGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	providerKey := Provider(params["provider"])
 
