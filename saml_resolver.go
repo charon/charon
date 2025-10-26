@@ -24,14 +24,14 @@ var allowedNameIDFormats = []string{ //nolint:gochecknoglobals
 	"urn:oasis:names:tc:SAML:2.0:nameid-format:entity",
 }
 
-type SAMLAttributeMapping struct {
+type samlAttributeMapping struct {
 	// Empty CredentialIDAttributes means NameID.
 	CredentialIDAttributes []string
 	Mapping                map[string]string
 }
 
-func getSIPASSAttributeMapping() SAMLAttributeMapping {
-	return SAMLAttributeMapping{
+func getSIPASSAttributeMapping() samlAttributeMapping {
+	return samlAttributeMapping{
 		// We use VAT number and birth date to construct an unique ID for this person.
 		// VAT numbers can be recycled, but very unlikely for the person with the same birth date.
 		CredentialIDAttributes: []string{"vatNumber", "birthDate"},
@@ -53,8 +53,8 @@ func getSIPASSAttributeMapping() SAMLAttributeMapping {
 	}
 }
 
-func getDefaultAttributeMapping() SAMLAttributeMapping {
-	return SAMLAttributeMapping{
+func getDefaultAttributeMapping() samlAttributeMapping {
+	return samlAttributeMapping{
 		CredentialIDAttributes: nil,
 		Mapping:                nil,
 	}
@@ -154,7 +154,8 @@ func tryParseTime(layouts []string, s string) (time.Time, bool) {
 	for _, layout := range layouts {
 		// We assume UTC if timezone is not provided, but that is not really according to
 		// the standard (where location is unspecified).
-		if t, err := time.ParseInLocation(layout, s, time.UTC); err == nil {
+		t, err := time.ParseInLocation(layout, s, time.UTC)
+		if err == nil {
 			return t, true
 		}
 	}
@@ -229,7 +230,7 @@ func parseAttributeValue(value types.AttributeValue) (any, errors.E) {
 	}
 }
 
-func getSAMLAttributes(assertionInfo *saml2.AssertionInfo, mapping SAMLAttributeMapping) (map[string][]any, errors.E) {
+func getSAMLAttributes(assertionInfo *saml2.AssertionInfo, mapping samlAttributeMapping) (map[string][]any, errors.E) {
 	attributes := map[string][]any{}
 
 	for name, attr := range assertionInfo.Values {

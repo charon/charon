@@ -38,7 +38,7 @@ type samlProvider struct {
 	Key      Provider
 	Name     string
 	Provider *saml2.SAMLServiceProvider
-	Mapping  SAMLAttributeMapping
+	Mapping  samlAttributeMapping
 }
 
 type samlMemoryKeyStore struct {

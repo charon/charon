@@ -23,11 +23,13 @@ var (
 	ErrOrganizationValidationFailed = errors.Base("organization validation failed")
 )
 
+// Value represents a value for a variable of the application template added to the organization.
 type Value struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
 }
 
+// Validate validates the Value struct.
 func (v *Value) Validate(_ context.Context) errors.E {
 	if v.Name == "" {
 		return errors.New("name is required")
@@ -40,11 +42,14 @@ func (v *Value) Validate(_ context.Context) errors.E {
 	return nil
 }
 
+// OrganizationApplicationClientPublic represents a public client of
+// the application template added to the organization.
 type OrganizationApplicationClientPublic struct {
 	ID     *identifier.Identifier `json:"id"`
 	Client ClientRef              `json:"client"`
 }
 
+// Validate validates the OrganizationApplicationClientPublic struct.
 func (c *OrganizationApplicationClientPublic) Validate(
 	ctx context.Context, existing *OrganizationApplicationClientPublic,
 	applicationTemplate *ApplicationTemplatePublic, values map[string]string,
@@ -96,6 +101,8 @@ func (c *OrganizationApplicationClientPublic) Validate(
 	return nil
 }
 
+// OrganizationApplicationClientBackend represents a backend client of
+// the application template added to the organization.
 type OrganizationApplicationClientBackend struct {
 	ID     *identifier.Identifier `json:"id"`
 	Client ClientRef              `json:"client"`
@@ -105,6 +112,7 @@ type OrganizationApplicationClientBackend struct {
 	Secret string `json:"secret"`
 }
 
+// Validate validates the OrganizationApplicationClientBackend struct.
 func (c *OrganizationApplicationClientBackend) Validate(
 	ctx context.Context, existing *OrganizationApplicationClientBackend,
 	applicationTemplate *ApplicationTemplatePublic, values map[string]string,
@@ -170,6 +178,8 @@ func (c *OrganizationApplicationClientBackend) Validate(
 	return nil
 }
 
+// OrganizationApplicationClientService represents a service client of
+// the application template added to the organization.
 type OrganizationApplicationClientService struct {
 	ID     *identifier.Identifier `json:"id"`
 	Client ClientRef              `json:"client"`
@@ -179,6 +189,7 @@ type OrganizationApplicationClientService struct {
 	Secret string `json:"secret"`
 }
 
+// Validate validates the OrganizationApplicationClientService struct.
 func (c *OrganizationApplicationClientService) Validate(
 	_ context.Context, existing *OrganizationApplicationClientService,
 	applicationTemplate *ApplicationTemplatePublic, _ map[string]string,
@@ -229,6 +240,8 @@ func (c *OrganizationApplicationClientService) Validate(
 	return nil
 }
 
+// OrganizationApplicationPublic represents public fields of the
+// application template added to the organization.
 type OrganizationApplicationPublic struct {
 	ID *identifier.Identifier `json:"id"`
 
@@ -243,6 +256,7 @@ type OrganizationApplicationPublic struct {
 	Values []Value `json:"values"`
 }
 
+// Validate validates the OrganizationApplicationPublic struct.
 func (a *OrganizationApplicationPublic) Validate(ctx context.Context, existing *OrganizationApplicationPublic, service *Service) errors.E {
 	_, errE := a.validate(ctx, existing, service)
 	return errE
@@ -338,6 +352,7 @@ func (a *OrganizationApplicationPublic) validate(ctx context.Context, existing *
 	return values, nil
 }
 
+// OrganizationApplication represents an application template added to the organization, i.e., the application.
 type OrganizationApplication struct {
 	OrganizationApplicationPublic
 
@@ -346,6 +361,8 @@ type OrganizationApplication struct {
 	ClientsService []OrganizationApplicationClientService `json:"clientsService"`
 }
 
+// OrganizationApplicationApplicationRef represents a reference to an application
+// template added to the organization, i.e., the application.
 type OrganizationApplicationApplicationRef struct {
 	ID identifier.Identifier `json:"id"`
 }
@@ -354,6 +371,8 @@ func organizationApplicationApplicationRefCmp(a OrganizationApplicationApplicati
 	return bytes.Compare(a.ID[:], b.ID[:])
 }
 
+// OrganizationApplicationRef represents a reference to the organization and an application
+// template added to that organization, i.e., the application.
 type OrganizationApplicationRef struct {
 	Organization OrganizationRef                       `json:"organization"`
 	Application  OrganizationApplicationApplicationRef `json:"application"`
@@ -366,6 +385,8 @@ func organizationApplicationRefCmp(a OrganizationApplicationRef, b OrganizationA
 	return organizationApplicationApplicationRefCmp(a.Application, b.Application)
 }
 
+// GetClientPublic returns the public client of the application template
+// added to the organization with the given ID.
 func (a *OrganizationApplication) GetClientPublic(id *identifier.Identifier) *OrganizationApplicationClientPublic {
 	if a == nil {
 		return nil
@@ -383,6 +404,8 @@ func (a *OrganizationApplication) GetClientPublic(id *identifier.Identifier) *Or
 	return nil
 }
 
+// GetClientBackend returns the backend client of the application template
+// added to the organization with the given ID.
 func (a *OrganizationApplication) GetClientBackend(id *identifier.Identifier) *OrganizationApplicationClientBackend {
 	if a == nil {
 		return nil
@@ -400,6 +423,8 @@ func (a *OrganizationApplication) GetClientBackend(id *identifier.Identifier) *O
 	return nil
 }
 
+// GetClientService returns the service client of the application template
+// added to the organization with the given ID.
 func (a *OrganizationApplication) GetClientService(id *identifier.Identifier) *OrganizationApplicationClientService {
 	if a == nil {
 		return nil
@@ -417,6 +442,7 @@ func (a *OrganizationApplication) GetClientService(id *identifier.Identifier) *O
 	return nil
 }
 
+// Validate validates the OrganizationApplication struct.
 func (a *OrganizationApplication) Validate(ctx context.Context, existing *OrganizationApplication, service *Service) errors.E {
 	var e *OrganizationApplicationPublic
 	if existing == nil {
@@ -524,6 +550,7 @@ type BlockedIdentity struct {
 	IdentityNote     string
 }
 
+// Organization represents an organization which can have multiple applications and users can then join them.
 type Organization struct {
 	OrganizationPublic
 
@@ -532,6 +559,8 @@ type Organization struct {
 	Applications []OrganizationApplication `json:"applications"`
 }
 
+// GetApplication returns the application template added to the organization (i.e., the application)
+// with the given ID.
 func (o *Organization) GetApplication(id *identifier.Identifier) *OrganizationApplication {
 	if o == nil {
 		return nil
@@ -549,12 +578,14 @@ func (o *Organization) GetApplication(id *identifier.Identifier) *OrganizationAp
 	return nil
 }
 
+// OrganizationPublic represents public fields of the organization.
 type OrganizationPublic struct {
 	ID          *identifier.Identifier `json:"id"`
 	Name        string                 `json:"name"`
 	Description string                 `json:"description"`
 }
 
+// Validate validates the OrganizationPublic struct.
 func (o *OrganizationPublic) Validate(_ context.Context, existing *OrganizationPublic) errors.E {
 	if existing == nil {
 		if o.ID != nil {
@@ -585,6 +616,7 @@ func (o *OrganizationPublic) Validate(_ context.Context, existing *OrganizationP
 	return nil
 }
 
+// OrganizationRef represents a reference to an organization.
 type OrganizationRef struct {
 	ID identifier.Identifier `json:"id"`
 }
@@ -603,6 +635,8 @@ func (o *Organization) HasAdminAccess(identities ...IdentityRef) bool {
 	return false
 }
 
+// Validate validates the Organization struct.
+//
 // Validate requires ctx with identityIDContextKey set.
 func (o *Organization) Validate(ctx context.Context, existing *Organization, service *Service) errors.E {
 	// Current user must be among admins if it is changing the organization.
@@ -864,6 +898,7 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 	return nil
 }
 
+// OrganizationGet is the frontend handler for getting the organization.
 func (s *Service) OrganizationGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
@@ -872,6 +907,7 @@ func (s *Service) OrganizationGet(w http.ResponseWriter, req *http.Request, _ wa
 	}
 }
 
+// OrganizationCreate is the frontend handler for creating the organization.
 func (s *Service) OrganizationCreate(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	// We always serve the page and leave to the API call to check permissions.
 
@@ -882,6 +918,7 @@ func (s *Service) OrganizationCreate(w http.ResponseWriter, req *http.Request, _
 	}
 }
 
+// OrganizationList is the frontend handler for listing organizations.
 func (s *Service) OrganizationList(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
@@ -890,6 +927,7 @@ func (s *Service) OrganizationList(w http.ResponseWriter, req *http.Request, _ w
 	}
 }
 
+// OrganizationUsers is the frontend handler for listing organization's users.
 func (s *Service) OrganizationUsers(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
@@ -945,6 +983,7 @@ func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, p
 
 // TODO: We should get rid of OrganizationApp API endpoint and make OrganizationGetGet return a list of public data for all its applications.
 
+// OrganizationAppGet is the API handler for getting the organization's application, GET request.
 func (s *Service) OrganizationAppGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 
@@ -1426,7 +1465,7 @@ type OrganizationBlockRequest struct {
 }
 
 func (s *Service) OrganizationBlockUserPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := s.RequireAuthenticated(w, req)

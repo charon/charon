@@ -35,7 +35,8 @@ func generateSAMLMetadata(provider samlProvider, serviceName string) ([]byte, er
 	}
 
 	doc := etree.NewDocument()
-	if err = doc.ReadFromBytes(metadataXML); err != nil {
+	err = doc.ReadFromBytes(metadataXML)
+	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
@@ -96,7 +97,7 @@ func addNamespacePrefixes(root *etree.Element) {
 	}
 }
 
-func createAttributeConsumingService(samlMapping SAMLAttributeMapping, serviceName string) *etree.Element {
+func createAttributeConsumingService(samlMapping samlAttributeMapping, serviceName string) *etree.Element {
 	acs := etree.NewElement("AttributeConsumingService")
 	acs.CreateAttr("index", "1")
 

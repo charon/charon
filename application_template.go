@@ -450,7 +450,8 @@ func interpolateVariables(template string, values map[string]string) (string, er
 	return result, nil
 }
 
-// ApplicationTemplate is an application template which can be deployed multiple times.
+// ApplicationTemplate is an application template which can be used multiple times
+// (added to organizations).
 type ApplicationTemplate struct {
 	ApplicationTemplatePublic
 
