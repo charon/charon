@@ -37,7 +37,7 @@ func startOIDCTestServer(t *testing.T) (*httptest.Server, *storage.MemoryStore) 
 
 	store := storage.NewMemoryStore()
 
-	privateKey, errE := charon.GenerateRSAKey()
+	privateKey, errE := charon.TestingGenerateRSAKey()
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	// We use one unique subject per instance for testing.

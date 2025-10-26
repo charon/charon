@@ -150,7 +150,7 @@ func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, p
 	ctx := req.Context()
 
 	// State should be provided even in the case of an error.
-	flow := s.GetActiveFlowNoAuthStep(w, req, req.Form.Get("state"))
+	flow := s.getActiveFlowNoAuthStep(w, req, req.Form.Get("state"))
 	if flow == nil {
 		return
 	}

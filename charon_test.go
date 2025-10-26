@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/alexedwards/argon2id"
+	"github.com/go-jose/go-jose/v3"
 	"github.com/russellhaering/gosaml2/types"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/identifier"
@@ -19,7 +20,7 @@ func (s *Service) TestingSetFlow(ctx context.Context, flow *Flow) errors.E {
 	return s.setFlow(ctx, flow)
 }
 
-func (s *Service) TestingGetSessionBySecretID(ctx context.Context, secretID [32]byte) (*Session, errors.E) {
+func (s *Service) TestingGetSessionBySecretID(ctx context.Context, secretID [32]byte) (*session, errors.E) {
 	return s.getSessionBySecretID(ctx, secretID)
 }
 
@@ -112,4 +113,8 @@ func TestingSessionCookiePrefix() string {
 
 func TestingArgon2idParams() *argon2id.Params {
 	return &argon2idParams
+}
+
+func TestingGenerateRSAKey() (*jose.JSONWebKey, errors.E) {
+	return generateRSAKey()
 }

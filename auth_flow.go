@@ -79,7 +79,7 @@ func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *Flow
 
 // AuthFlowGet is the frontend handler to get the flow.
 func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	flow := s.GetFlowHandler(w, req, params["id"])
+	flow := s.getFlowHandler(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -110,7 +110,7 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 func (s *Service) AuthFlowGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	// This is similar to API case in failAuthStep, but fetches also the flow and checks the session.
 
-	flow := s.GetFlowHandler(w, req, params["id"])
+	flow := s.getFlowHandler(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -303,7 +303,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	}
 
 	now := time.Now().UTC()
-	errE := s.setSession(ctx, &Session{
+	errE := s.setSession(ctx, &session{
 		ID:        sessionID,
 		SecretID:  [32]byte(secretID),
 		CreatedAt: now,
@@ -446,7 +446,7 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 
 	// Restarting is possible after successful auth step but it is not possible anymore after redirect
 	// (after the flow has finished) which is checked in GetActiveFlowWithSession.
-	_, flow := s.GetActiveFlowWithSession(w, req, params["id"])
+	_, flow := s.getActiveFlowWithSession(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -517,7 +517,7 @@ func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, 
 
 	ctx := req.Context()
 
-	_, flow := s.GetActiveFlowWithSession(w, req, params["id"])
+	_, flow := s.getActiveFlowWithSession(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -566,7 +566,7 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 
 	ctx := req.Context()
 
-	accountID, flow := s.GetActiveFlowWithSession(w, req, params["id"])
+	accountID, flow := s.getActiveFlowWithSession(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -621,7 +621,7 @@ func (s *Service) AuthFlowRedirectPost(w http.ResponseWriter, req *http.Request,
 
 	ctx := req.Context()
 
-	flow := s.GetActiveFlow(w, req, params["id"])
+	flow := s.getActiveFlow(w, req, params["id"])
 	if flow == nil {
 		return
 	}

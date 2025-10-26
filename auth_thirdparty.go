@@ -87,7 +87,7 @@ func (s *Service) AuthFlowThirdPartyProviderStartPost(w http.ResponseWriter, req
 
 	ctx := req.Context()
 
-	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
+	flow := s.getActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
 		return
 	}

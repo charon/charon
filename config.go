@@ -172,13 +172,13 @@ type Keys struct {
 
 func (k *Keys) Init(development bool) errors.E {
 	if k.RSA != nil {
-		key, errE := MakeRSAKey(k.RSA)
+		key, errE := makeRSAKey(k.RSA)
 		if errE != nil {
 			return errors.WithMessage(errE, "invalid RSA private key")
 		}
 		k.rsa = key
 	} else if development {
-		key, errE := GenerateRSAKey()
+		key, errE := generateRSAKey()
 		if errE != nil {
 			return errE
 		}
@@ -194,7 +194,7 @@ func (k *Keys) Init(development bool) errors.E {
 		}
 		k.p256 = key
 	} else if development {
-		key, errE := GenerateEllipticKey(elliptic.P256(), "ES256")
+		key, errE := generateEllipticKey(elliptic.P256(), "ES256")
 		if errE != nil {
 			return errE
 		}
@@ -208,7 +208,7 @@ func (k *Keys) Init(development bool) errors.E {
 		}
 		k.p384 = key
 	} else if development {
-		key, errE := GenerateEllipticKey(elliptic.P384(), "ES384")
+		key, errE := generateEllipticKey(elliptic.P384(), "ES384")
 		if errE != nil {
 			return errE
 		}
@@ -222,7 +222,7 @@ func (k *Keys) Init(development bool) errors.E {
 		}
 		k.p521 = key
 	} else if development {
-		key, errE := GenerateEllipticKey(elliptic.P521(), "ES512")
+		key, errE := generateEllipticKey(elliptic.P521(), "ES512")
 		if errE != nil {
 			return errE
 		}

@@ -10,12 +10,14 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// Build represents the build information of the site.
 type Build struct {
 	Version        string `json:"version,omitempty"`
 	BuildTimestamp string `json:"buildTimestamp,omitempty"`
 	Revision       string `json:"revision,omitempty"`
 }
 
+// SiteProvider represents a third-party authentication provider available on the site.
 type SiteProvider struct {
 	Key  Provider               `json:"key"`
 	Name string                 `json:"name"`
@@ -48,6 +50,7 @@ type SiteProvider struct {
 	samlIDPCertificateStore dsig.X509CertificateStore
 }
 
+// Site represents the site configuration.
 type Site struct {
 	waf.Site
 

@@ -111,7 +111,7 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 
 	ctx := req.Context()
 
-	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
+	flow := s.getActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -187,7 +187,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 
 	ctx := req.Context()
 
-	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
+	flow := s.getActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -263,7 +263,7 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 
 	ctx := req.Context()
 
-	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
+	flow := s.getActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -335,7 +335,7 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 
 	ctx := req.Context()
 
-	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
+	flow := s.getActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
 		return
 	}

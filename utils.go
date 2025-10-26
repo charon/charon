@@ -152,17 +152,17 @@ func (s *Service) getIdentityFromRequest(
 	return identifier.Identifier{}, identifier.Identifier{}, identifier.Identifier{}, errors.WithStack(ErrIdentityNotPresent)
 }
 
-func (s *Service) getSessionFromCookieValue(ctx context.Context, cookieValue string) (*Session, errors.E) {
+func (s *Service) getSessionFromCookieValue(ctx context.Context, cookieValue string) (*session, errors.E) {
 	// We use a prefix to aid secret scanners.
 	if !strings.HasPrefix(cookieValue, SecretPrefixSession) {
-		return nil, errors.Wrapf(ErrSessionNotFound, `cookie value does not have "%s" prefix`, SecretPrefixSession)
+		return nil, errors.Wrapf(errSessionNotFound, `cookie value does not have "%s" prefix`, SecretPrefixSession)
 	}
 
 	token := strings.TrimPrefix(cookieValue, SecretPrefixSession)
 
 	err := s.hmac.Validate(ctx, token)
 	if err != nil {
-		return nil, errors.WrapWith(err, ErrSessionNotFound)
+		return nil, errors.WrapWith(err, errSessionNotFound)
 	}
 
 	secretID, err := base64.RawURLEncoding.DecodeString(s.hmac.Signature(token))
@@ -175,7 +175,7 @@ func (s *Service) getSessionFromCookieValue(ctx context.Context, cookieValue str
 }
 
 // getSessionFromRequest uses a session cookie to determine current session for flow's ID, if any.
-func (s *Service) getSessionFromRequest(w http.ResponseWriter, req *http.Request, flowID identifier.Identifier) (*Session, errors.E) {
+func (s *Service) getSessionFromRequest(w http.ResponseWriter, req *http.Request, flowID identifier.Identifier) (*session, errors.E) {
 	ctx := req.Context()
 
 	// We use this header so responses might depend on it.
@@ -187,7 +187,7 @@ func (s *Service) getSessionFromRequest(w http.ResponseWriter, req *http.Request
 
 	cookie, err := req.Cookie(sessionCookiePrefix + flowID.String())
 	if errors.Is(err, http.ErrNoCookie) {
-		return nil, errors.WithStack(ErrSessionNotFound)
+		return nil, errors.WithStack(errSessionNotFound)
 	} else if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -196,9 +196,9 @@ func (s *Service) getSessionFromRequest(w http.ResponseWriter, req *http.Request
 }
 
 // validateSession returns session only if current session matches one made by the flow.
-func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api bool, flow *Flow) (*Session, bool) {
+func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api bool, flow *Flow) (*session, bool) {
 	session, errE := s.getSessionFromRequest(w, req, flow.ID)
-	if errors.Is(errE, ErrSessionNotFound) {
+	if errors.Is(errE, errSessionNotFound) {
 		if api {
 			waf.Error(w, req, http.StatusUnauthorized)
 			return nil, true
@@ -217,7 +217,7 @@ func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api 
 	}
 
 	flowSession, errE := s.getSession(req.Context(), *flow.SessionID)
-	if errors.Is(errE, ErrSessionNotFound) {
+	if errors.Is(errE, errSessionNotFound) {
 		if api {
 			waf.Error(w, req, http.StatusUnauthorized)
 			return nil, true
@@ -363,7 +363,7 @@ func (s *Service) requireAuthenticatedForIdentity(w http.ResponseWriter, req *ht
 	return ctx
 }
 
-func (s *Service) GetFlowHandler(w http.ResponseWriter, req *http.Request, value string) *Flow {
+func (s *Service) getFlowHandler(w http.ResponseWriter, req *http.Request, value string) *Flow {
 	flow, errE := s.getFlowFromID(req.Context(), value)
 	if errors.Is(errE, ErrFlowNotFound) {
 		s.NotFoundWithError(w, req, errE)
@@ -376,8 +376,8 @@ func (s *Service) GetFlowHandler(w http.ResponseWriter, req *http.Request, value
 	return flow
 }
 
-func (s *Service) GetActiveFlow(w http.ResponseWriter, req *http.Request, value string) *Flow {
-	flow := s.GetFlowHandler(w, req, value)
+func (s *Service) getActiveFlow(w http.ResponseWriter, req *http.Request, value string) *Flow {
+	flow := s.getFlowHandler(w, req, value)
 	if flow == nil {
 		return nil
 	}
@@ -391,8 +391,8 @@ func (s *Service) GetActiveFlow(w http.ResponseWriter, req *http.Request, value 
 	return flow
 }
 
-func (s *Service) GetActiveFlowNoAuthStep(w http.ResponseWriter, req *http.Request, value string) *Flow {
-	flow := s.GetActiveFlow(w, req, value)
+func (s *Service) getActiveFlowNoAuthStep(w http.ResponseWriter, req *http.Request, value string) *Flow {
+	flow := s.getActiveFlow(w, req, value)
 	if flow == nil {
 		return nil
 	}
@@ -406,8 +406,8 @@ func (s *Service) GetActiveFlowNoAuthStep(w http.ResponseWriter, req *http.Reque
 	return flow
 }
 
-func (s *Service) GetActiveFlowWithSession(w http.ResponseWriter, req *http.Request, value string) (identifier.Identifier, *Flow) {
-	flow := s.GetActiveFlow(w, req, value)
+func (s *Service) getActiveFlowWithSession(w http.ResponseWriter, req *http.Request, value string) (identifier.Identifier, *Flow) {
+	flow := s.getActiveFlow(w, req, value)
 	if flow == nil {
 		return identifier.Identifier{}, nil
 	}
@@ -618,7 +618,7 @@ func makeJSONWebKey(privateKey crypto.Signer, algorithm string) (*jose.JSONWebKe
 	}, nil
 }
 
-func GenerateEllipticKey(c elliptic.Curve, algorithm string) (*jose.JSONWebKey, errors.E) {
+func generateEllipticKey(c elliptic.Curve, algorithm string) (*jose.JSONWebKey, errors.E) {
 	privateKey, err := ecdsa.GenerateKey(c, rand.Reader)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -651,7 +651,7 @@ func makeEllipticKey(privateKey []byte, c elliptic.Curve, algorithm string) (*jo
 	return makeJSONWebKey(key, algorithm)
 }
 
-func GenerateRSAKey() (*jose.JSONWebKey, errors.E) {
+func generateRSAKey() (*jose.JSONWebKey, errors.E) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 4096) //nolint:mnd
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -662,7 +662,7 @@ func GenerateRSAKey() (*jose.JSONWebKey, errors.E) {
 	return makeJSONWebKey(privateKey, "RS256")
 }
 
-func MakeRSAKey(privateKey []byte) (*jose.JSONWebKey, errors.E) {
+func makeRSAKey(privateKey []byte) (*jose.JSONWebKey, errors.E) {
 	var jwk jose.JSONWebKey
 	err := json.Unmarshal(privateKey, &jwk)
 	if err != nil {

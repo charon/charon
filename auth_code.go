@@ -287,7 +287,7 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 
 	ctx := req.Context()
 
-	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
+	flow := s.getActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
 		return
 	}
@@ -364,7 +364,7 @@ func (s *Service) AuthFlowCodeCompletePost(w http.ResponseWriter, req *http.Requ
 
 	ctx := req.Context()
 
-	flow := s.GetActiveFlowNoAuthStep(w, req, params["id"])
+	flow := s.getActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
 		return
 	}

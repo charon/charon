@@ -262,7 +262,7 @@ func extractIDPCertificates(metadata types.EntityDescriptor) (*dsig.MemoryX509Ce
 
 func initSAMLKeyStore(config *Config, samlKey []byte) (dsig.X509KeyStore, errors.E) { //nolint:ireturn
 	if len(samlKey) > 0 {
-		jwk, errE := MakeRSAKey(samlKey)
+		jwk, errE := makeRSAKey(samlKey)
 		if errE != nil {
 			return nil, errors.WithMessage(errE, "invalid RSA private key")
 		}
@@ -387,7 +387,7 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	flow := s.GetActiveFlowNoAuthStep(w, req, req.Form.Get("RelayState"))
+	flow := s.getActiveFlowNoAuthStep(w, req, req.Form.Get("RelayState"))
 	if flow == nil {
 		return
 	}
