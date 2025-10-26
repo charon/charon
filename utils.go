@@ -196,7 +196,7 @@ func (s *Service) getSessionFromRequest(w http.ResponseWriter, req *http.Request
 }
 
 // validateSession returns session only if current session matches one made by the flow.
-func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api bool, flow *Flow) (*session, bool) {
+func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api bool, flow *flow) (*session, bool) {
 	session, errE := s.getSessionFromRequest(w, req, flow.ID)
 	if errors.Is(errE, errSessionNotFound) {
 		if api {
@@ -246,7 +246,7 @@ func (s *Service) validateSession(w http.ResponseWriter, req *http.Request, api 
 }
 
 // getFlowFromID obtains Flow from its string ID.
-func (s *Service) getFlowFromID(ctx context.Context, value string) (*Flow, errors.E) {
+func (s *Service) getFlowFromID(ctx context.Context, value string) (*flow, errors.E) {
 	id, errE := identifier.MaybeString(value)
 	if errE != nil {
 		return nil, errors.WrapWith(errE, ErrFlowNotFound)
@@ -363,7 +363,7 @@ func (s *Service) requireAuthenticatedForIdentity(w http.ResponseWriter, req *ht
 	return ctx
 }
 
-func (s *Service) getFlowHandler(w http.ResponseWriter, req *http.Request, value string) *Flow {
+func (s *Service) getFlowHandler(w http.ResponseWriter, req *http.Request, value string) *flow {
 	flow, errE := s.getFlowFromID(req.Context(), value)
 	if errors.Is(errE, ErrFlowNotFound) {
 		s.NotFoundWithError(w, req, errE)
@@ -376,7 +376,7 @@ func (s *Service) getFlowHandler(w http.ResponseWriter, req *http.Request, value
 	return flow
 }
 
-func (s *Service) getActiveFlow(w http.ResponseWriter, req *http.Request, value string) *Flow {
+func (s *Service) getActiveFlow(w http.ResponseWriter, req *http.Request, value string) *flow {
 	flow := s.getFlowHandler(w, req, value)
 	if flow == nil {
 		return nil
@@ -391,7 +391,7 @@ func (s *Service) getActiveFlow(w http.ResponseWriter, req *http.Request, value 
 	return flow
 }
 
-func (s *Service) getActiveFlowNoAuthStep(w http.ResponseWriter, req *http.Request, value string) *Flow {
+func (s *Service) getActiveFlowNoAuthStep(w http.ResponseWriter, req *http.Request, value string) *flow {
 	flow := s.getActiveFlow(w, req, value)
 	if flow == nil {
 		return nil
@@ -406,7 +406,7 @@ func (s *Service) getActiveFlowNoAuthStep(w http.ResponseWriter, req *http.Reque
 	return flow
 }
 
-func (s *Service) getActiveFlowWithSession(w http.ResponseWriter, req *http.Request, value string) (identifier.Identifier, *Flow) {
+func (s *Service) getActiveFlowWithSession(w http.ResponseWriter, req *http.Request, value string) (identifier.Identifier, *flow) {
 	flow := s.getActiveFlow(w, req, value)
 	if flow == nil {
 		return identifier.Identifier{}, nil

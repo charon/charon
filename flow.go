@@ -17,49 +17,50 @@ var (
 	ErrInvalidCompleted = errors.Base("invalid completed value for flow state")
 )
 
+// Completed represents which steps have completed in the auth flow.
 type Completed string
 
 const (
-	// Auth step completed with sign in.
+	// CompletedSignin represents the auth step completed with sign in.
 	CompletedSignin Completed = "signin"
-	// Auth step completed with sign up.
+	// CompletedSignup represents the auth step completed with sign up.
 	CompletedSignup Completed = "signup"
-	// Auth step failed (3rd party authentication failed, too many attempts, etc.).
+	// CompletedFailed represents the failed auth step (3rd party authentication failed, too many attempts, etc.).
 	CompletedFailed Completed = "failed"
 
-	// Identity selected.
+	// CompletedIdentity represents that the identity has been selected.
 	CompletedIdentity Completed = "identity"
-	// Identity selection has been declined.
+	// CompletedDeclined represents that the identity selection has been declined.
 	CompletedDeclined Completed = "declined"
 
-	// Flow is ready to be finished.
+	// CompletedFinishReady represents that the flow is ready to be finished.
 	CompletedFinishReady Completed = "finishReady"
 
-	// Flow has finished.
+	// CompletedFinished represents that the flow has finished.
 	CompletedFinished Completed = "finished"
 )
 
-type FlowOIDCProvider struct {
+type flowOIDCProvider struct {
 	Verifier string
 	Nonce    string
 }
 
-type FlowPassword struct {
+type flowPassword struct {
 	PrivateKey []byte
 	Nonce      []byte
 }
 
-type FlowCode struct {
+type flowCode struct {
 	Codes       []string
 	AccountID   *identifier.Identifier
 	Credentials []Credential
 }
 
-type FlowSAMLProvider struct {
+type flowSAMLProvider struct {
 	RequestID string
 }
 
-type Flow struct {
+type flow struct {
 	ID        identifier.Identifier
 	CreatedAt time.Time
 	Completed []Completed
@@ -78,14 +79,14 @@ type Flow struct {
 	AuthAttempts    int
 	Providers       []Provider
 	EmailOrUsername string
-	OIDCProvider    *FlowOIDCProvider
-	SAMLProvider    *FlowSAMLProvider
+	OIDCProvider    *flowOIDCProvider
+	SAMLProvider    *flowSAMLProvider
 	Passkey         *webauthn.SessionData
-	Password        *FlowPassword
-	Code            *FlowCode
+	Password        *flowPassword
+	Code            *flowCode
 }
 
-func (f *Flow) AddCompleted(completed Completed) errors.E {
+func (f *flow) AddCompleted(completed Completed) errors.E {
 	for {
 		previous := f.lastCompletedStep()
 
@@ -145,7 +146,7 @@ func (f *Flow) AddCompleted(completed Completed) errors.E {
 	return nil
 }
 
-func (f *Flow) ClearAuthStep(emailOrUsername string) {
+func (f *flow) ClearAuthStep(emailOrUsername string) {
 	f.OIDCProvider = nil
 	f.Passkey = nil
 	f.Password = nil
@@ -158,7 +159,7 @@ func (f *Flow) ClearAuthStep(emailOrUsername string) {
 	}
 }
 
-func (f *Flow) lastCompletedStep() Completed {
+func (f *flow) lastCompletedStep() Completed {
 	if len(f.Completed) == 0 {
 		return ""
 	}
@@ -166,29 +167,29 @@ func (f *Flow) lastCompletedStep() Completed {
 	return f.Completed[len(f.Completed)-1]
 }
 
-func (f *Flow) ClearAuthStepAll() {
+func (f *flow) ClearAuthStepAll() {
 	f.ClearAuthStep("")
 	f.Code = nil
 	f.EmailOrUsername = ""
 }
 
-func (f *Flow) IsFinishReady() bool {
+func (f *flow) IsFinishReady() bool {
 	return f.lastCompletedStep() == CompletedFinishReady
 }
 
-func (f *Flow) IsFinished() bool {
+func (f *flow) IsFinished() bool {
 	return f.lastCompletedStep() == CompletedFinished
 }
 
-func (f *Flow) HasFailed() bool {
+func (f *flow) HasFailed() bool {
 	return slices.Contains(f.Completed, CompletedFailed)
 }
 
-func (f *Flow) HasDeclined() bool {
+func (f *flow) HasDeclined() bool {
 	return slices.Contains(f.Completed, CompletedDeclined)
 }
 
-func (s *Service) getFlow(_ context.Context, id identifier.Identifier) (*Flow, errors.E) {
+func (s *Service) getFlow(_ context.Context, id identifier.Identifier) (*flow, errors.E) {
 	s.flowsMu.RLock()
 	defer s.flowsMu.RUnlock()
 
@@ -196,12 +197,12 @@ func (s *Service) getFlow(_ context.Context, id identifier.Identifier) (*Flow, e
 	if !ok {
 		return nil, errors.WithDetails(ErrFlowNotFound, "id", id)
 	}
-	var flow Flow
+	var fl flow
 	// We set interface fields so that unmarshal has structs to use.
-	flow.OIDCAuthorizeRequest = new(fosite.AuthorizeRequest)
-	flow.OIDCAuthorizeRequest.Client = new(OIDCClient)
-	flow.OIDCAuthorizeRequest.Session = new(OIDCSession)
-	errE := x.UnmarshalWithoutUnknownFields(data, &flow)
+	fl.OIDCAuthorizeRequest = new(fosite.AuthorizeRequest)
+	fl.OIDCAuthorizeRequest.Client = new(OIDCClient)
+	fl.OIDCAuthorizeRequest.Session = new(OIDCSession)
+	errE := x.UnmarshalWithoutUnknownFields(data, &fl)
 	if errE != nil {
 		errors.Details(errE)["id"] = id
 		return nil, errE
@@ -210,31 +211,31 @@ func (s *Service) getFlow(_ context.Context, id identifier.Identifier) (*Flow, e
 	// in the flow, so we set it to nil explicitly to clear interface fields we set.
 	// This can happen if OIDCAuthorizeRequest is ever used with omitempty, then
 	// Unmarshal does not set it to nil if it is not present in JSON.
-	if flow.OIDCAuthorizeRequest != nil && flow.OIDCAuthorizeRequest.ResponseTypes == nil {
-		flow.OIDCAuthorizeRequest = nil
+	if fl.OIDCAuthorizeRequest != nil && fl.OIDCAuthorizeRequest.ResponseTypes == nil {
+		fl.OIDCAuthorizeRequest = nil
 	}
-	return &flow, nil
+	return &fl, nil
 }
 
-func (s *Service) setFlow(_ context.Context, flow *Flow) errors.E {
-	sanitizedFlow := flow
-	if flow.OIDCAuthorizeRequest != nil {
+func (s *Service) setFlow(_ context.Context, fl *flow) errors.E {
+	sanitizedFlow := fl
+	if fl.OIDCAuthorizeRequest != nil {
 		// We make a copy of the flow.
-		sanitizedFlow = new(Flow)
-		*sanitizedFlow = *flow
+		sanitizedFlow = new(flow)
+		*sanitizedFlow = *fl
 		// And sanitize OIDCAuthorizeRequest.
 		sanitizedFlow.OIDCAuthorizeRequest = sanitizeAuthorizeRequest(sanitizedFlow.OIDCAuthorizeRequest)
 	}
 
 	data, errE := x.MarshalWithoutEscapeHTML(sanitizedFlow)
 	if errE != nil {
-		errors.Details(errE)["id"] = flow.ID
+		errors.Details(errE)["id"] = fl.ID
 		return errE
 	}
 
 	s.flowsMu.Lock()
 	defer s.flowsMu.Unlock()
 
-	s.flows[flow.ID] = data
+	s.flows[fl.ID] = data
 	return nil
 }

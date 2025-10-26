@@ -25,7 +25,7 @@ func init() { //nolint:gochecknoinits
 	}
 }
 
-func (s *Service) sendMail(ctx context.Context, flow *Flow, emails []string, subject string, body *tt.Template, data interface{}) errors.E {
+func (s *Service) sendMail(ctx context.Context, flow *flow, emails []string, subject string, body *tt.Template, data interface{}) errors.E {
 	logger := zerolog.Ctx(ctx)
 	ms := []*mail.Msg{}
 	for _, to := range emails {

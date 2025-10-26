@@ -127,9 +127,9 @@ func (p *SiteProvider) initOIDCProvider(config *Config) errors.E {
 	return nil
 }
 
-func (s *Service) handlerOIDCStart(provider oidcProvider) func(*Flow) (string, errors.E) {
-	return func(flow *Flow) (string, errors.E) {
-		flow.OIDCProvider = &FlowOIDCProvider{
+func (s *Service) handlerOIDCStart(provider oidcProvider) func(*flow) (string, errors.E) {
+	return func(flow *flow) (string, errors.E) {
+		flow.OIDCProvider = &flowOIDCProvider{
 			Verifier: "",
 			Nonce:    identifier.New().String(),
 		}

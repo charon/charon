@@ -28,6 +28,7 @@ var (
 	errEmptyIdentity = errors.Base("empty identity")
 )
 
+// IdentityOrganization represents an identity in the organization.
 type IdentityOrganization struct {
 	// ID is also ID of this identity in the organization (it is organization-scoped).
 	ID *identifier.Identifier `json:"id"`
@@ -38,6 +39,7 @@ type IdentityOrganization struct {
 	Applications []OrganizationApplicationApplicationRef `json:"applications"`
 }
 
+// Validate validates the IdentityOrganization struct.
 func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityOrganization, service *Service, identity *Identity) errors.E {
 	if existing == nil {
 		if i.ID != nil {
@@ -122,6 +124,7 @@ func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityO
 	return nil
 }
 
+// IdentityPublic represents public fields of the identity.
 type IdentityPublic struct {
 	// ID is a database ID when stored in the database or it is an
 	// IdentityOrganization's (organization-scoped) ID when exposing over API.
@@ -134,6 +137,7 @@ type IdentityPublic struct {
 	PictureURL string `json:"pictureUrl,omitempty"`
 }
 
+// Validate validates the IdentityPublic struct.
 func (i *IdentityPublic) Validate(ctx context.Context, existing *IdentityPublic) errors.E {
 	if existing == nil {
 		if i.ID != nil {
@@ -210,6 +214,7 @@ func (i *IdentityPublic) Validate(ctx context.Context, existing *IdentityPublic)
 	return nil
 }
 
+// Identity represents an identity.
 type Identity struct {
 	IdentityPublic
 
@@ -283,6 +288,7 @@ func (i *Identity) HasAdminAccess(identities mapset.Set[IdentityRef], isCreator 
 	return false
 }
 
+// IdentityRef is a reference to an identity.
 type IdentityRef struct {
 	ID identifier.Identifier `json:"id"`
 }
@@ -291,6 +297,8 @@ func identityRefCmp(a IdentityRef, b IdentityRef) int {
 	return bytes.Compare(a.ID[:], b.ID[:])
 }
 
+// Validate validates the Identity struct.
+//
 // Validate uses ctx with identityIDContextKey if set.
 // When not set, changes to admins are not allowed.
 func (i *Identity) Validate(ctx context.Context, existing *Identity, service *Service) errors.E {
@@ -1014,6 +1022,7 @@ func (s *Service) selectAndActivateIdentity(ctx context.Context, identityID, org
 	return identity, s.updateIdentity(ctx, identity)
 }
 
+// IdentityGet is the frontend handler for getting the identity.
 func (s *Service) IdentityGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	// We always serve the page and leave to the API call to check permissions.
 
@@ -1024,6 +1033,7 @@ func (s *Service) IdentityGet(w http.ResponseWriter, req *http.Request, _ waf.Pa
 	}
 }
 
+// IdentityCreate is the frontend handler for creating the identity.
 func (s *Service) IdentityCreate(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	// We always serve the page and leave to the API call to check permissions.
 
@@ -1034,6 +1044,7 @@ func (s *Service) IdentityCreate(w http.ResponseWriter, req *http.Request, _ waf
 	}
 }
 
+// IdentityList is the frontend handler for listing identities.
 func (s *Service) IdentityList(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	// We always serve the page and leave to the API call to check permissions.
 
@@ -1057,6 +1068,7 @@ func (s *Service) returnIdentityRef(_ context.Context, w http.ResponseWriter, re
 	s.WriteJSON(w, req, IdentityRef{ID: *identity.ID}, nil)
 }
 
+// IdentityGetGet is the API handler for getting the identity, GET request.
 func (s *Service) IdentityGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	// We allow getting identities with the access token or session cookie.
 	ctx := s.requireAuthenticatedForIdentity(w, req)
@@ -1156,6 +1168,7 @@ func (s *Service) identityList(ctx context.Context) ([]IdentityRef, errors.E) {
 	return result, nil
 }
 
+// IdentityListGet is the API handler for listing identities, GET request.
 func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	// We allow getting identities with the access token or session cookie.
 	ctx := s.requireAuthenticatedForIdentity(w, req)
@@ -1172,8 +1185,9 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 	s.WriteJSON(w, req, result, nil)
 }
 
+// IdentityUpdatePost is the API handler for updating the identity, POST request.
 func (s *Service) IdentityUpdatePost(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	// We allow creating identities with the access token or session cookie.
@@ -1216,8 +1230,9 @@ func (s *Service) IdentityUpdatePost(w http.ResponseWriter, req *http.Request, p
 	s.returnIdentityRef(ctx, w, req, &identity)
 }
 
+// IdentityCreatePost is the API handler for creating the identity, POST request.
 func (s *Service) IdentityCreatePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	// We allow creating identities with the access token or session cookie.

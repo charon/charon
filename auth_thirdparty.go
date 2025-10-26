@@ -47,8 +47,8 @@ func (s *Service) AuthThirdPartyProviderPost(w http.ResponseWriter, req *http.Re
 }
 
 func (s *Service) handleAuthFlowThirdPartyProviderStart(
-	ctx context.Context, w http.ResponseWriter, req *http.Request, flow *Flow,
-	providerName Provider, handler func(flow *Flow) (string, errors.E),
+	ctx context.Context, w http.ResponseWriter, req *http.Request, flow *flow,
+	providerName Provider, handler func(flow *flow) (string, errors.E),
 ) {
 	flow.ClearAuthStep("")
 	// Currently we support only one factor.

@@ -81,7 +81,7 @@ type usernameCredential struct {
 	Username string `json:"username"`
 }
 
-func (s *Service) normalizeEmailOrUsername(w http.ResponseWriter, req *http.Request, flow *Flow, emailOrUsername string) string {
+func (s *Service) normalizeEmailOrUsername(w http.ResponseWriter, req *http.Request, flow *flow, emailOrUsername string) string {
 	preservedEmailOrUsername, errE := normalizeUsernameCasePreserved(emailOrUsername)
 	if errE != nil {
 		s.flowError(w, req, flow, ErrorCodeInvalidEmailOrUsername, errE)
@@ -154,7 +154,7 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 	flow.ClearAuthStep(preservedEmailOrUsername)
 	// Currently we support only one factor.
 	flow.Providers = []Provider{ProviderPassword}
-	flow.Password = &FlowPassword{
+	flow.Password = &flowPassword{
 		PrivateKey: privateKey.Bytes(),
 		Nonce:      nonce,
 	}

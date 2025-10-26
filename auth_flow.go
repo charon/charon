@@ -47,7 +47,7 @@ const (
 	ErrorCodeShortPassword          ErrorCode = "shortPassword"
 )
 
-func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *Flow, errorCode ErrorCode, failureErr errors.E) {
+func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *flow, errorCode ErrorCode, failureErr errors.E) {
 	ctx := req.Context()
 
 	if failureErr == nil {
@@ -230,7 +230,7 @@ func (s *Service) makeIdentityFromCredentials(credentials []Credential) (*Identi
 	return identity, nil
 }
 
-func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *Flow, account *Account, credentials []Credential) {
+func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *flow, account *Account, credentials []Credential) {
 	ctx := req.Context()
 
 	sessionID := identifier.New()
@@ -366,7 +366,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	s.TemporaryRedirectGetMethod(w, req, l)
 }
 
-func (s *Service) increaseAuthAttempts(w http.ResponseWriter, req *http.Request, flow *Flow) bool {
+func (s *Service) increaseAuthAttempts(w http.ResponseWriter, req *http.Request, flow *flow) bool {
 	ctx := req.Context()
 
 	flow.AuthAttempts++
@@ -384,7 +384,7 @@ func (s *Service) increaseAuthAttempts(w http.ResponseWriter, req *http.Request,
 	return true
 }
 
-func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *Flow, failureErr errors.E) {
+func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *flow, failureErr errors.E) {
 	ctx := req.Context()
 
 	errE := flow.AddCompleted(CompletedFailed)

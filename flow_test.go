@@ -17,7 +17,7 @@ func TestStore(t *testing.T) {
 	_, service, _, _, _ := startTestServer(t) //nolint:dogsled
 
 	ctx := context.Background()
-	f := &charon.Flow{
+	f := &charon.TestingFlow{
 		ID: identifier.New(),
 	}
 	errE := service.TestingSetFlow(ctx, f)

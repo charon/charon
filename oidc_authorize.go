@@ -86,7 +86,7 @@ func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.
 
 	client := ar.Client.(*OIDCClient) //nolint:errcheck,forcetypeassert
 
-	errE := s.setFlow(req.Context(), &Flow{
+	errE := s.setFlow(req.Context(), &flow{
 		ID:        id,
 		CreatedAt: time.Now().UTC(),
 		Completed: []Completed{},
@@ -124,7 +124,7 @@ func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.
 	s.TemporaryRedirectGetMethod(w, req, location)
 }
 
-func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request, flow *Flow) bool {
+func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request, flow *flow) bool {
 	// OIDC GetClient requires ctx with serviceContextKey set.
 	ctx := context.WithValue(req.Context(), serviceContextKey, s)
 	oidc := s.oidc()

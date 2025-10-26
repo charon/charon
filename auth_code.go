@@ -36,7 +36,7 @@ type codeProvider struct {
 	origin string
 }
 
-func (p *codeProvider) URL(s *Service, flow *Flow, code string) (string, errors.E) {
+func (p *codeProvider) URL(s *Service, flow *flow, code string) (string, errors.E) {
 	path, errE := s.Reverse("AuthFlowGet", waf.Params{"id": flow.ID.String()}, nil)
 	if errE != nil {
 		return "", errE
@@ -142,7 +142,7 @@ func updateCredentialsByProvider(existingCredentials, newCredentials []Credentia
 }
 
 func (s *Service) sendCodeForExistingAccount(
-	w http.ResponseWriter, req *http.Request, flow *Flow, passwordFlow bool,
+	w http.ResponseWriter, req *http.Request, flow *flow, passwordFlow bool,
 	account *Account, preservedEmailOrUsername, mappedEmailOrUsername string,
 ) {
 	var emails []string
@@ -183,7 +183,7 @@ func (s *Service) sendCodeForExistingAccount(
 }
 
 func (s *Service) sendCode(
-	w http.ResponseWriter, req *http.Request, flow *Flow, passwordFlow bool,
+	w http.ResponseWriter, req *http.Request, flow *flow, passwordFlow bool,
 	preservedEmailOrUsername string, emails []string, accountID *identifier.Identifier, credentials []Credential,
 ) {
 	if len(emails) == 0 {
@@ -227,7 +227,7 @@ func (s *Service) sendCode(
 		// flow.EmailOrUsername is set already in flow.Clear, even the first time,
 		// but we want to be sure so we set it again here.
 		flow.EmailOrUsername = preservedEmailOrUsername
-		flow.Code = &FlowCode{
+		flow.Code = &flowCode{
 			Codes:       []string{},
 			AccountID:   accountID,
 			Credentials: credentials,

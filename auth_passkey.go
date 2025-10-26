@@ -155,7 +155,7 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 	}, nil)
 }
 
-func (s *Service) getFlowPasskey(w http.ResponseWriter, req *http.Request, flow *Flow) *webauthn.SessionData {
+func (s *Service) getFlowPasskey(w http.ResponseWriter, req *http.Request, flow *flow) *webauthn.SessionData {
 	if flow.Passkey == nil {
 		s.BadRequestWithError(w, req, errors.New("passkey not started"))
 		return nil

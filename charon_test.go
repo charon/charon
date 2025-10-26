@@ -12,11 +12,11 @@ import (
 
 // We export these for testing purposes only.
 
-func (s *Service) TestingGetFlow(ctx context.Context, id identifier.Identifier) (*Flow, errors.E) {
+func (s *Service) TestingGetFlow(ctx context.Context, id identifier.Identifier) (*flow, errors.E) {
 	return s.getFlow(ctx, id)
 }
 
-func (s *Service) TestingSetFlow(ctx context.Context, flow *Flow) errors.E {
+func (s *Service) TestingSetFlow(ctx context.Context, flow *flow) errors.E {
 	return s.setFlow(ctx, flow)
 }
 
@@ -118,3 +118,5 @@ func TestingArgon2idParams() *argon2id.Params {
 func TestingGenerateRSAKey() (*jose.JSONWebKey, errors.E) {
 	return generateRSAKey()
 }
+
+type TestingFlow = flow

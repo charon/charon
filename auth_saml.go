@@ -360,14 +360,14 @@ func validateSAMLAssertion(assertionInfo *saml2.AssertionInfo) errors.E {
 	return nil
 }
 
-func (s *Service) handlerSAMLStart(provider samlProvider) func(*Flow) (string, errors.E) {
-	return func(flow *Flow) (string, errors.E) {
+func (s *Service) handlerSAMLStart(provider samlProvider) func(*flow) (string, errors.E) {
+	return func(flow *flow) (string, errors.E) {
 		authURL, id, err := samlBuildAuthURL(provider.Provider, flow.ID.String())
 		if err != nil {
 			return "", errors.WithStack(err)
 		}
 
-		flow.SAMLProvider = &FlowSAMLProvider{
+		flow.SAMLProvider = &flowSAMLProvider{
 			RequestID: id,
 		}
 
