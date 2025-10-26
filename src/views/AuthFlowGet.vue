@@ -61,7 +61,7 @@ const organizationId = ref("")
 const appId = ref("")
 const thirdPartyProvider = ref<SiteProvider | null>(null)
 const emailOrUsername = ref("")
-const publicKey = ref<Uint8Array>()
+const publicKey = ref<Uint8Array<ArrayBuffer>>()
 const deriveOptions = ref<DeriveOptions>()
 const encryptOptions = ref<EncryptOptions>()
 
@@ -121,10 +121,10 @@ const flow: Flow = {
     emailOrUsername.value = value
   },
 
-  getPublicKey: function (): Uint8Array | undefined {
+  getPublicKey: function (): Uint8Array<ArrayBuffer> | undefined {
     return publicKey.value
   },
-  setPublicKey(value?: Uint8Array) {
+  setPublicKey(value?: Uint8Array<ArrayBuffer>) {
     publicKey.value = value
   },
   getDeriveOptions: function (): DeriveOptions | undefined {

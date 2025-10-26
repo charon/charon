@@ -33,7 +33,7 @@ export type AuthFlowResponsePasswordJSON = {
 }
 
 export type AuthFlowResponsePassword = {
-  publicKey: Uint8Array
+  publicKey: Uint8Array<ArrayBuffer>
   deriveOptions: DeriveOptions
   encryptOptions: EncryptOptions
 }
@@ -166,8 +166,8 @@ export type Flow = {
   getEmailOrUsername(): string
   setEmailOrUsername(value: string): void
 
-  getPublicKey(): Uint8Array | undefined
-  setPublicKey(value?: Uint8Array): void
+  getPublicKey(): Uint8Array<ArrayBuffer> | undefined
+  setPublicKey(value?: Uint8Array<ArrayBuffer>): void
   getDeriveOptions(): DeriveOptions | undefined
   setDeriveOptions(value?: DeriveOptions): void
   getEncryptOptions(): EncryptOptions | undefined

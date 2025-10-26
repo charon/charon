@@ -27,7 +27,7 @@ export function getHomepage(doc: DeepReadonly<OrganizationApplicationPublic>): s
   return interpolateVariables(homepageTemplate, values)
 }
 
-export function fromBase64(input: string): Uint8Array {
+export function fromBase64(input: string): Uint8Array<ArrayBuffer> {
   const binary = atob(input)
   const buffer = new ArrayBuffer(binary.length)
   const bytes = new Uint8Array(buffer)
