@@ -6,6 +6,7 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
+// Home is the frontend handler for the home page.
 func (s *Service) Home(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	// During development Vite creates WebSocket connection. We always proxy it.
 	if s.ProxyStaticTo != "" && hasConnectionUpgrade(req) {

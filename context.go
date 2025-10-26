@@ -14,6 +14,7 @@ type serviceContext struct {
 	RedirectURI    string `json:"redirectUri"`
 }
 
+// Context is the frontend handler for the context.json file.
 func (s *Service) Context(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	ctx := req.Context()
 

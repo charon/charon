@@ -19,6 +19,7 @@ import (
 //nolint:revive
 const ProviderPasskey Provider = "passkey"
 
+// AuthFlowResponsePasskey represents response body of the passkey provider step, sign-in (get) or sign-up (create).
 type AuthFlowResponsePasskey struct {
 	CreateOptions *protocol.CredentialCreation  `json:"createOptions,omitempty"`
 	GetOptions    *protocol.CredentialAssertion `json:"getOptions,omitempty"`
@@ -50,7 +51,7 @@ func (u *charonUser) WebAuthnCredentials() []webauthn.Credential {
 	return u.Credentials
 }
 
-func WithPreferredCredentialAlgorithms(preferredAlgorithms []webauthncose.COSEAlgorithmIdentifier) webauthn.RegistrationOption {
+func withPreferredCredentialAlgorithms(preferredAlgorithms []webauthncose.COSEAlgorithmIdentifier) webauthn.RegistrationOption {
 	return func(cco *protocol.PublicKeyCredentialCreationOptions) {
 		credentialParameters := []protocol.CredentialParameter{}
 		// We first add preferred algorithms.
@@ -103,8 +104,9 @@ func initPasskeyProvider(config *Config, domain string) (func() *webauthn.WebAut
 	})
 }
 
+// AuthFlowPasskeyGetStartPost is the API handler to start the passkey provider step (sign-in), POST request.
 func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := req.Context()
@@ -173,12 +175,14 @@ func (s *Service) getFlowPasskey(w http.ResponseWriter, req *http.Request, flow 
 	return flowPasskey
 }
 
+// AuthFlowPasskeyGetCompleteRequest represents the request body for the AuthFlowPasskeyGetCompletePost handler.
 type AuthFlowPasskeyGetCompleteRequest struct {
 	GetResponse protocol.CredentialAssertionResponse `json:"getResponse"`
 }
 
+// AuthFlowPasskeyGetCompletePost is the API handler to complete the passkey provider step (sign-in), POST request.
 func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := req.Context()
@@ -252,8 +256,9 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: credentialID, Provider: ProviderPasskey, Data: jsonData}})
 }
 
+// AuthFlowPasskeyCreateStartPost is the API handler to start the passkey provider step (sign-up), POST request.
 func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := req.Context()
@@ -281,7 +286,7 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 			ResidentKey:             protocol.ResidentKeyRequirementRequired,
 			UserVerification:        protocol.VerificationDiscouraged,
 		}),
-		WithPreferredCredentialAlgorithms([]webauthncose.COSEAlgorithmIdentifier{
+		withPreferredCredentialAlgorithms([]webauthncose.COSEAlgorithmIdentifier{
 			webauthncose.AlgEdDSA,
 			webauthncose.AlgES256,
 			webauthncose.AlgRS256,
@@ -318,12 +323,14 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 	}, nil)
 }
 
+// AuthFlowPasskeyCreateCompleteRequest represents the request body for the AuthFlowPasskeyCreateCompletePost handler.
 type AuthFlowPasskeyCreateCompleteRequest struct {
 	CreateResponse protocol.CredentialCreationResponse `json:"createResponse"`
 }
 
+// AuthFlowPasskeyCreateCompletePost is the API handler to complete the passkey provider step (sign-up), POST request.
 func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := req.Context()

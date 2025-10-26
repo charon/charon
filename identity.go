@@ -15,10 +15,11 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
+// TODO: Should we remove ErrIdentityUnauthorized and just use ErrIdentityNotFound?
+
 var (
-	ErrIdentityNotFound      = errors.Base("identity not found")
-	ErrIdentityAlreadyExists = errors.Base("identity already exists")
-	// TODO: Should we remove ErrIdentityUnauthorized and just use ErrIdentityNotFound?
+	ErrIdentityNotFound         = errors.Base("identity not found")
+	ErrIdentityAlreadyExists    = errors.Base("identity already exists")
 	ErrIdentityUnauthorized     = errors.Base("identity access unauthorized")
 	ErrIdentityUpdateNotAllowed = errors.Base("identity update not allowed")
 	ErrIdentityValidationFailed = errors.Base("identity validation failed")

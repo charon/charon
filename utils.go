@@ -35,7 +35,7 @@ import (
 )
 
 const (
-	SessionCookiePrefix = "__Host-session-"
+	sessionCookiePrefix = "__Host-session-"
 )
 
 var ErrIdentityNotPresent = errors.Base("identity not present")
@@ -185,7 +185,7 @@ func (s *Service) getSessionFromRequest(w http.ResponseWriter, req *http.Request
 		w.Header().Add("Vary", "Cookie")
 	}
 
-	cookie, err := req.Cookie(SessionCookiePrefix + flowID.String())
+	cookie, err := req.Cookie(sessionCookiePrefix + flowID.String())
 	if errors.Is(err, http.ErrNoCookie) {
 		return nil, errors.WithStack(ErrSessionNotFound)
 	} else if err != nil {

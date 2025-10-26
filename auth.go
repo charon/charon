@@ -46,7 +46,7 @@ func (s *Service) AuthSignoutPost(w http.ResponseWriter, req *http.Request, _ wa
 
 	// We clear all session cookies for all flows.
 	for _, cookie := range req.Cookies() {
-		if strings.HasPrefix(cookie.Name, SessionCookiePrefix) {
+		if strings.HasPrefix(cookie.Name, sessionCookiePrefix) {
 			// We create a new cookie based on the existing one, but set MaxAge to -1 to clear it.
 			deleteCookie := &http.Cookie{ //nolint:exhaustruct
 				Name:     cookie.Name,

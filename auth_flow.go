@@ -77,6 +77,7 @@ func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *Flow
 	_, _ = w.Write(encoded)
 }
 
+// AuthFlowGet is the frontend handler to get the flow.
 func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	flow := s.GetFlowHandler(w, req, params["id"])
 	if flow == nil {
@@ -326,7 +327,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	}
 
 	cookie := http.Cookie{ //nolint:exhaustruct
-		Name:     SessionCookiePrefix + flow.ID.String(),
+		Name:     sessionCookiePrefix + flow.ID.String(),
 		Value:    SecretPrefixSession + token,
 		Path:     "/", // Host cookies have to have path set to "/".
 		Domain:   "",
@@ -485,7 +486,7 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 	// restarted auth but still stay signed in if they do not complete new authentication.
 	// It is better that they have to sign in again.
 	cookie := http.Cookie{ //nolint:exhaustruct
-		Name:     SessionCookiePrefix + flow.ID.String(),
+		Name:     sessionCookiePrefix + flow.ID.String(),
 		Value:    "",
 		Path:     "/",
 		Domain:   "",

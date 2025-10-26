@@ -93,7 +93,7 @@ func assertSignedUser(t *testing.T, signinOrSignout charon.Completed, flowID ide
 	require.Equal(t, []charon.Completed{signinOrSignout}, authFlowResponse.Completed)
 	assert.Len(t, resp.Cookies(), 1)
 	for _, cookie := range resp.Cookies() {
-		assert.Equal(t, charon.SessionCookiePrefix+flowID.String(), cookie.Name)
+		assert.Equal(t, charon.TestingSessionCookiePrefix()+flowID.String(), cookie.Name)
 	}
 }
 

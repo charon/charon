@@ -104,3 +104,7 @@ func TestingParseAttributeValue(value types.AttributeValue) (any, errors.E) {
 func TestingFindFirstString(m map[string]interface{}, keyNames ...string) string {
 	return findFirstString(m, keyNames...)
 }
+
+func TestingSessionCookiePrefix() string {
+	return sessionCookiePrefix
+}

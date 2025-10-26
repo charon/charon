@@ -19,7 +19,7 @@ import (
 
 // OIDCIntrospectPost handler handles requests to introspect a token. This also validates the token for the caller.
 func (s *Service) OIDCIntrospectPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	defer req.Body.Close()              //nolint:errcheck,gosec
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	// OIDC GetClient requires ctx with serviceContextKey set.

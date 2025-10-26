@@ -176,7 +176,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 
 			var sessionToken string
 			for _, cookie := range cookies {
-				if cookie.Name == charon.SessionCookiePrefix+flowID.String() {
+				if cookie.Name == charon.TestingSessionCookiePrefix()+flowID.String() {
 					sessionToken = cookie.Value
 					break
 				}

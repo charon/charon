@@ -8,6 +8,7 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
+// License is the frontend handler for the LICENSE file.
 func (s *Service) License(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		// This really serves the LICENSE file from the root directory and not /public/LICENSE.txt,
@@ -18,6 +19,7 @@ func (s *Service) License(w http.ResponseWriter, req *http.Request, _ waf.Params
 	}
 }
 
+// Notice is the frontend handler for the NOTICE file.
 func (s *Service) Notice(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		// rollup-plugin-license does not make the file available during development,
