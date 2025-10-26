@@ -110,6 +110,7 @@ type ClientRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
+// ApplicationTemplateClientPublic represents a public client of the application template.
 type ApplicationTemplateClientPublic struct {
 	ID          *identifier.Identifier `json:"id"`
 	Description string                 `json:"description"`
@@ -125,6 +126,7 @@ type ApplicationTemplateClientPublic struct {
 	RefreshTokenLifespan *x.Duration `json:"refreshTokenLifespan,omitempty"`
 }
 
+// Validate validates the ApplicationTemplateClientPublic struct.
 func (c *ApplicationTemplateClientPublic) Validate(ctx context.Context, existing *ApplicationTemplateClientPublic, values map[string]string) errors.E {
 	if existing == nil {
 		if c.ID != nil {
@@ -195,6 +197,7 @@ func (c *ApplicationTemplateClientPublic) Validate(ctx context.Context, existing
 	return nil
 }
 
+// ApplicationTemplateClientBackend represents a backend client of the application template.
 type ApplicationTemplateClientBackend struct {
 	ID          *identifier.Identifier `json:"id"`
 	Description string                 `json:"description"`
@@ -211,6 +214,7 @@ type ApplicationTemplateClientBackend struct {
 	RefreshTokenLifespan *x.Duration `json:"refreshTokenLifespan,omitempty"`
 }
 
+// Validate validates the ApplicationTemplateClientBackend struct.
 func (c *ApplicationTemplateClientBackend) Validate(ctx context.Context, existing *ApplicationTemplateClientBackend, values map[string]string) errors.E {
 	if existing == nil {
 		if c.ID != nil {
@@ -290,6 +294,7 @@ func (c *ApplicationTemplateClientBackend) Validate(ctx context.Context, existin
 	return nil
 }
 
+// ApplicationTemplateClientService represents a service client of the application template.
 type ApplicationTemplateClientService struct {
 	ID          *identifier.Identifier `json:"id"`
 	Description string                 `json:"description"`
@@ -305,6 +310,7 @@ type ApplicationTemplateClientService struct {
 	RefreshTokenLifespan *x.Duration `json:"refreshTokenLifespan,omitempty"`
 }
 
+// Validate validates the ApplicationTemplateClientService struct.
 func (c *ApplicationTemplateClientService) Validate(_ context.Context, existing *ApplicationTemplateClientService, _ map[string]string) errors.E {
 	if existing == nil {
 		if c.ID != nil {
@@ -378,22 +384,31 @@ func (c *ApplicationTemplateClientService) Validate(_ context.Context, existing 
 	return nil
 }
 
+// VariableType represents the type of the variable.
 type VariableType string
 
+// VariableType values.
 const (
 	VariableURIPrefix VariableType = "uriPrefix"
 )
 
+// validationValues is a map of variable types to their validation values.
 var validationValues = map[VariableType]string{ //nolint:gochecknoglobals
 	VariableURIPrefix: "https://sub.example.com:8080/foo",
 }
 
+// Variable represents a variable of the application template.
+//
+// A variable is a placeholder for a value that is injected into the application template
+// when one adds the application template into the organization as an application.
+// It enables reusability and customizability of the application template.
 type Variable struct {
 	Name        string       `json:"name"`
 	Type        VariableType `json:"type"`
 	Description string       `json:"description"`
 }
 
+// Validate validates the Variable struct.
 func (v *Variable) Validate(_ context.Context) errors.E {
 	if v.Name == "" {
 		return errors.New("name is required")
@@ -442,6 +457,7 @@ type ApplicationTemplate struct {
 	Admins []IdentityRef `json:"admins"`
 }
 
+// ApplicationTemplatePublic represents public fields of the application template.
 type ApplicationTemplatePublic struct {
 	ID *identifier.Identifier `json:"id"`
 
@@ -457,6 +473,7 @@ type ApplicationTemplatePublic struct {
 	ClientsService []ApplicationTemplateClientService `json:"clientsService"`
 }
 
+// GetClientPublic returns the public client with the given ID.
 func (a *ApplicationTemplatePublic) GetClientPublic(id *identifier.Identifier) *ApplicationTemplateClientPublic {
 	if a == nil {
 		return nil
@@ -474,6 +491,7 @@ func (a *ApplicationTemplatePublic) GetClientPublic(id *identifier.Identifier) *
 	return nil
 }
 
+// GetClientBackend returns the backend client with the given ID.
 func (a *ApplicationTemplatePublic) GetClientBackend(id *identifier.Identifier) *ApplicationTemplateClientBackend {
 	if a == nil {
 		return nil
@@ -491,6 +509,7 @@ func (a *ApplicationTemplatePublic) GetClientBackend(id *identifier.Identifier) 
 	return nil
 }
 
+// GetClientService returns the service client with the given ID.
 func (a *ApplicationTemplatePublic) GetClientService(id *identifier.Identifier) *ApplicationTemplateClientService {
 	if a == nil {
 		return nil
@@ -508,6 +527,7 @@ func (a *ApplicationTemplatePublic) GetClientService(id *identifier.Identifier) 
 	return nil
 }
 
+// ApplicationTemplateRef represents a reference to an application template.
 type ApplicationTemplateRef struct {
 	ID identifier.Identifier `json:"id"`
 }
@@ -516,6 +536,7 @@ func applicationTemplateRefCmp(a ApplicationTemplateRef, b ApplicationTemplateRe
 	return bytes.Compare(a.ID[:], b.ID[:])
 }
 
+// Validate validates the ApplicationTemplatePublic struct.
 func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *ApplicationTemplatePublic) errors.E {
 	if existing == nil {
 		if a.ID != nil {
@@ -702,6 +723,7 @@ func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *Appl
 	return nil
 }
 
+// HasAdminAccess returns true if at least one of the identities is among admins.
 func (a *ApplicationTemplate) HasAdminAccess(identities ...IdentityRef) bool {
 	for _, identity := range identities {
 		if slices.Contains(a.Admins, identity) {
@@ -711,6 +733,8 @@ func (a *ApplicationTemplate) HasAdminAccess(identities ...IdentityRef) bool {
 	return false
 }
 
+// Validate validates the ApplicationTemplate struct.
+//
 // Validate requires ctx with identityIDContextKey set.
 func (a *ApplicationTemplate) Validate(ctx context.Context, existing *ApplicationTemplate, service *Service) errors.E {
 	var e *ApplicationTemplatePublic
@@ -870,6 +894,7 @@ func (s *Service) updateApplicationTemplate(ctx context.Context, applicationTemp
 	return nil
 }
 
+// ApplicationTemplateGet is the frontend handler for getting the application template.
 func (s *Service) ApplicationTemplateGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
@@ -878,6 +903,7 @@ func (s *Service) ApplicationTemplateGet(w http.ResponseWriter, req *http.Reques
 	}
 }
 
+// ApplicationTemplateCreate is the frontend handler for creating the application template.
 func (s *Service) ApplicationTemplateCreate(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	// We always serve the page and leave to the API call to check permissions.
 
@@ -888,6 +914,7 @@ func (s *Service) ApplicationTemplateCreate(w http.ResponseWriter, req *http.Req
 	}
 }
 
+// ApplicationTemplateList is the frontend handler for listing application templates.
 func (s *Service) ApplicationTemplateList(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
@@ -909,6 +936,7 @@ func (s *Service) returnApplicationTemplateRef(_ context.Context, w http.Respons
 	s.WriteJSON(w, req, ApplicationTemplateRef{ID: *applicationTemplate.ID}, nil)
 }
 
+// ApplicationTemplateGetGet is the API handler for getting the application template, GET request.
 func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 	co := s.charonOrganization()
@@ -944,6 +972,7 @@ func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Req
 	s.WriteJSON(w, req, applicationTemplate.ApplicationTemplatePublic, nil)
 }
 
+// ApplicationTemplateListGet is the API handler for listing application templates, GET request.
 func (s *Service) ApplicationTemplateListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	result := []ApplicationTemplateRef{}
 
@@ -959,8 +988,9 @@ func (s *Service) ApplicationTemplateListGet(w http.ResponseWriter, req *http.Re
 	s.WriteJSON(w, req, result, nil)
 }
 
+// ApplicationTemplateUpdatePost is the API handler for updating the application template, POST request.
 func (s *Service) ApplicationTemplateUpdatePost(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := s.RequireAuthenticated(w, req)
@@ -1002,8 +1032,9 @@ func (s *Service) ApplicationTemplateUpdatePost(w http.ResponseWriter, req *http
 	s.returnApplicationTemplateRef(ctx, w, req, &applicationTemplate)
 }
 
+// ApplicationTemplateCreatePost is the API handler for creating the application template, POST request.
 func (s *Service) ApplicationTemplateCreatePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := s.RequireAuthenticated(w, req)

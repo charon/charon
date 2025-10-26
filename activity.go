@@ -108,7 +108,7 @@ func (a *Activity) IsForUser(identity IdentityRef, account AccountRef) bool {
 		slices.Contains(a.Accounts, account)
 }
 
-// Validate validates the activity struct.
+// Validate validates the Activity struct.
 func (a *Activity) Validate(_ context.Context, existing *Activity) errors.E {
 	if existing == nil {
 		if a.ID != nil {
@@ -246,7 +246,7 @@ func (s *Service) logActivity(
 	return s.createActivity(ctx, activity)
 }
 
-// ActivityList is the handler for listing activities page.
+// ActivityList is the frontend handler for listing activities.
 func (s *Service) ActivityList(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
@@ -337,7 +337,7 @@ func (s *Service) ActivityGetGet(w http.ResponseWriter, req *http.Request, param
 	s.WriteJSON(w, req, activity, nil)
 }
 
-// OrganizationActivity is the handler for listing organization's activities page..
+// OrganizationActivity is the frontend handler for listing organization's activities.
 func (s *Service) OrganizationActivity(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
