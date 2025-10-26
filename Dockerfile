@@ -1,7 +1,7 @@
 # This Dockerfile requires DOCKER_BUILDKIT=1 to be build.
 # We do not use syntax header so that we do not have to wait
 # for the Dockerfile frontend image to be pulled.
-FROM node:20.17-alpine3.20 as node-build
+FROM node:22.20-alpine3.22 as node-build
 
 RUN apk --update add make bash
 COPY . /src/charon
@@ -29,7 +29,7 @@ RUN \
   BUILD_TIMESTAMP=$BUILD_TIMESTAMP make build-static && \
   mv charon /go/bin/charon
 
-FROM alpine:3.21 AS debug
+FROM alpine:3.22 AS debug
 COPY --from=go-build /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=go-build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=go-build /etc/mime.types /etc/mime.types
