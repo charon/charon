@@ -16,6 +16,7 @@ import (
 	"github.com/ory/fosite/token/hmac"
 	"github.com/ory/fosite/token/jwt"
 	"gitlab.com/tozd/go/errors"
+	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
 )
 
@@ -491,9 +492,9 @@ type OIDCClient struct {
 	Scopes                  []string
 	RedirectURIs            []string
 	Secret                  []byte
-	AccessTokenLifespan     Duration
-	IDTokenLifespan         Duration
-	RefreshTokenLifespan    *Duration
+	AccessTokenLifespan     x.Duration
+	IDTokenLifespan         x.Duration
+	RefreshTokenLifespan    *x.Duration
 	AccessTokenType         AccessTokenType
 }
 

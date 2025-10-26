@@ -30,7 +30,7 @@ func initCharonOrganization(config *Config, service *Service, domain string) (fu
 		// do the same here to make sure redirect URIs match window.location.href in browsers.
 		uri := "https://" + host + "/"
 
-		refreshTokenLifespan := Duration(time.Hour * 24 * 30) //nolint:mnd
+		refreshTokenLifespan := x.Duration(time.Hour * 24 * 30) //nolint:mnd
 
 		organization := Organization{
 			OrganizationPublic: OrganizationPublic{
@@ -60,8 +60,8 @@ func initCharonOrganization(config *Config, service *Service, domain string) (fu
 									AccessTokenType:      AccessTokenHMAC,
 
 									// TODO: Configure lifespans based on what frontend expects.
-									AccessTokenLifespan:  Duration(time.Hour),
-									IDTokenLifespan:      Duration(time.Hour),
+									AccessTokenLifespan:  x.Duration(time.Hour),
+									IDTokenLifespan:      x.Duration(time.Hour),
 									RefreshTokenLifespan: &refreshTokenLifespan,
 								},
 							},
