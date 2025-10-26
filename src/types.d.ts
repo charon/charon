@@ -454,3 +454,44 @@ export type OrganizationBlockRequest = {
 export type Mutable<T> = {
   -readonly [k in keyof T]: Mutable<T[k]>
 }
+
+export type CredentialInfo = {
+  id: string
+  provider: string
+  displayName: string
+  label?: string
+  verified: false // TODO: When verifying emails.
+}
+
+export type Credentials = CredentialInfo[]
+
+export type CredentialAddResponse = {
+  success: boolean
+  id: string
+}
+
+export type CredentialAddPasswordStartResponse = {
+  publicKey: string
+  sessionKey: string
+  deriveOptions: DeriveOptions
+  encryptOptions: EncryptOptionsJSON
+}
+
+export type CredentialAddPasswordCompleteRequest = {
+  sessionKey: string
+  publicKey: number[]
+  password: number[]
+  label?: string
+}
+
+export type CredentialAddPasskeyStartResponse = {
+  sessionKey: string
+  createOptions: {
+    publicKey: PublicKeyCredentialCreationOptionsJSON
+  }
+}
+
+export type CredentialAddPasskeyCompleteRequest = {
+  sessionKey: string
+  createResponse: RegistrationResponseJSON
+}

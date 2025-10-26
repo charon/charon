@@ -20,6 +20,7 @@ const { t } = useI18n({ useScope: "global" })
         <ButtonLink id="menu-list-applicationTemplates" :to="{ name: 'ApplicationTemplateList' }" primary>{{ t("common.entities.applicationTemplates") }}</ButtonLink>
         <ButtonLink id="menu-list-organizations" :to="{ name: 'OrganizationList' }" primary>{{ t("common.entities.organizations") }}</ButtonLink>
         <ButtonLink v-if="isSignedIn()" id="menu-list-activity" :to="{ name: 'ActivityList' }" primary>{{ t("common.entities.activity") }}</ButtonLink>
+        <ButtonLink v-if="isSignedIn()" id="menu-list-credentials" :to="{ name: 'CredentialList' }" primary>{{ t("common.entities.credentials") }}</ButtonLink>
       </div>
     </div>
   </div>

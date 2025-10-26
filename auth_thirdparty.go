@@ -41,6 +41,22 @@ func (s *Service) AuthThirdPartyProviderPost(w http.ResponseWriter, req *http.Re
 
 	// Only SAML providers use POST requests for callbacks (HTTP-POST binding).
 	if p, ok := s.samlProviders()[providerKey]; providerKey != "" && ok {
+		err := req.ParseForm()
+		if err != nil {
+			s.BadRequestWithError(w, req, errors.WithStack(err))
+		}
+
+		relayState := req.Form.Get("RelayState")
+
+		flow := s.GetFlowHandler(w, req, relayState)
+		if flow == nil {
+			s.BadRequestWithError(w, req, errors.WithStack(err))
+			return
+		}
+		if flow.SessionID != nil {
+			s.handleCredentialAddSAMLCallback(w, req, providerKey, p)
+			return
+		}
 		s.handleSAMLCallback(w, req, providerKey, p)
 		return
 	}

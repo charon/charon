@@ -11,6 +11,12 @@ import type {
   Identity,
   Metadata,
   OrganizationBlockedStatus,
+  Credentials,
+  CredentialAddResponse,
+  CredentialAddPasswordStartResponse,
+  CredentialAddPasswordCompleteRequest,
+  CredentialAddPasskeyStartResponse,
+  CredentialAddPasskeyCompleteRequest,
 } from "@/types"
 
 import { accessToken } from "@/auth"
@@ -297,6 +303,156 @@ export async function getAllIdentities(
     }
 
     return allIdentities
+  } finally {
+    progress.value -= 1
+  }
+}
+
+export async function getCredentials(router: Router, abortController: AbortController, progress: Ref<number>, flowId?: string | null): Promise<Credentials | null> {
+  progress.value += 1
+  try {
+    const query = flowId ? encodeQuery({ flow: flowId }) : undefined
+    const url = router.apiResolve({
+      name: "CredentialList",
+      query,
+    }).href
+
+    const response = await getURL<Credentials>(url, null, abortController.signal, progress)
+    if (abortController.signal.aborted) {
+      return null
+    }
+
+    return response.doc
+  } finally {
+    progress.value -= 1
+  }
+}
+
+export async function removeCredential(router: Router, id: string, abortController: AbortController, progress: Ref<number>): Promise<boolean> {
+  progress.value += 1
+  try {
+    const url = router.apiResolve({
+      name: "CredentialRemove",
+      params: { id },
+    }).href
+
+    await postJSON(url, {}, abortController.signal, progress)
+    return !abortController.signal.aborted
+  } finally {
+    progress.value -= 1
+  }
+}
+
+export async function addEmailCredential(router: Router, email: string, abortController: AbortController, progress: Ref<number>): Promise<CredentialAddResponse | null> {
+  progress.value += 1
+  try {
+    const url = router.apiResolve({
+      name: "CredentialAddEmail",
+    }).href
+
+    const response = await postJSON<CredentialAddResponse>(url, { email }, abortController.signal, progress)
+    if (abortController.signal.aborted) {
+      return null
+    }
+
+    return response
+  } finally {
+    progress.value -= 1
+  }
+}
+
+export async function addUsernameCredential(
+  router: Router,
+  username: string,
+  abortController: AbortController,
+  progress: Ref<number>,
+): Promise<CredentialAddResponse | null> {
+  progress.value += 1
+  try {
+    const url = router.apiResolve({
+      name: "CredentialAddUsername",
+    }).href
+
+    const response = await postJSON<CredentialAddResponse>(url, { username }, abortController.signal, progress)
+    if (abortController.signal.aborted) {
+      return null
+    }
+
+    return response
+  } finally {
+    progress.value -= 1
+  }
+}
+
+export async function startAddPasswordCredential(
+  router: Router,
+  abortController: AbortController,
+  progress: Ref<number>,
+): Promise<CredentialAddPasswordStartResponse | null> {
+  progress.value += 1
+  try {
+    const url = router.apiResolve({ name: "CredentialAddPasswordStart" }).href
+    const response = await postJSON<CredentialAddPasswordStartResponse>(url, {}, abortController.signal, progress)
+    if (abortController.signal.aborted) {
+      return null
+    }
+    return response
+  } finally {
+    progress.value -= 1
+  }
+}
+
+export async function completeAddPasswordCredential(
+  router: Router,
+  request: CredentialAddPasswordCompleteRequest,
+  abortController: AbortController,
+  progress: Ref<number>,
+): Promise<CredentialAddResponse | null> {
+  progress.value += 1
+  try {
+    const url = router.apiResolve({ name: "CredentialAddPasswordComplete" }).href
+    const response = await postJSON<CredentialAddResponse>(url, request, abortController.signal, progress)
+    if (abortController.signal.aborted) {
+      return null
+    }
+    return response
+  } finally {
+    progress.value -= 1
+  }
+}
+
+export async function startAddPasskeyCredential(
+  router: Router,
+  abortController: AbortController,
+  progress: Ref<number>,
+): Promise<CredentialAddPasskeyStartResponse | null> {
+  progress.value += 1
+  try {
+    const url = router.apiResolve({ name: "CredentialAddPasskeyStart" }).href
+    const response = await postJSON<CredentialAddPasskeyStartResponse>(url, {}, abortController.signal, progress)
+    if (abortController.signal.aborted) {
+      return null
+    }
+    return response
+  } finally {
+    progress.value -= 1
+  }
+}
+
+export async function completeAddPasskeyCredential(
+  router: Router,
+  request: CredentialAddPasskeyCompleteRequest,
+  abortController: AbortController,
+  progress: Ref<number>,
+): Promise<CredentialAddResponse | null> {
+  progress.value += 1
+  try {
+    const url = router.apiResolve({ name: "CredentialAddPasskeyComplete" }).href
+    const response = await postJSON<CredentialAddResponse>(url, request, abortController.signal, progress)
+    if (abortController.signal.aborted) {
+      return null
+    }
+    return response
   } finally {
     progress.value -= 1
   }

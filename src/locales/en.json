@@ -72,6 +72,7 @@
     "entities": {
       "admins": "Admins",
       "users": "Users",
+      "credentials": "Credentials",
       "identity": "Identity | Identities",
       "identities": "Identities",
       "organization": "Organization | Organizations",
@@ -321,6 +322,26 @@
     "OrganizationActivity": {
       "organizationActivity": "Activity for organization",
       "noActivities": "There is no activity."
+    },
+    "CredentialList": {
+      "noCredentialsCreate": "No authentication methods configured. Create the first one.",
+      "noCredentialsSignIn": "There are no authentication methods. Sign-in or sign-up to create the first one.",
+      "password": "Password",
+      "passwordDefault": "default password",
+      "passkey": "Passkey",
+      "thirdPartyProviders": "Third-Party Providers",
+      "verify": "Verify",
+      "verified": "Verified",
+      "notVerified": "unverified"
+    },
+    "CredentialAdd": {
+      "addCredential": "Add Credential",
+      "availableOptions": "Available Credential Types",
+      "passkeyInstructions": "Your device will prompt you to create a passkey. This allows you to sign in without a password.",
+      "addPasskeyButton": "Create Passkey",
+      "passkeyNotSupported": "Your browser does not support passkeys.",
+      "credentialTypes": "Credential type",
+      "label": "Oznaka"
     }
   }
 }

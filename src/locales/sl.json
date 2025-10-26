@@ -72,6 +72,7 @@
     "entities": {
       "admins": "Administratorji",
       "users": "Uporabniki",
+      "credentials": "Metode avtentikacije",
       "identity": "Identiteta | Identiteti | Identitete | Identitet",
       "identities": "Identitete",
       "organization": "Organizacija | Organizacije | Organizacije | Organizacij",
@@ -321,6 +322,26 @@
       "organizationNote": "Opomba samo za administratorje organizacije",
       "userNote": "Opomba za blokiranega uporabnika oziroma uporabnike",
       "blockingSuccess": "Uporabnik je bil uspešno blokiran."
+    },
+    "CredentialList": {
+      "noCredentialsCreate": "Ni metod za avtentikacijo. Ustvarite prvo.",
+      "noCredentialsSignIn": "Ni metod za avtentikacijo. Prijavite se ali registrirajte, da ustvarite prvo.",
+      "password": "Geslo",
+      "passwordDefault": "privzeto geslo",
+      "passkey": "Passkey",
+      "thirdPartyProviders": "Tretji ponudniki storitev",
+      "verify": "Preveri",
+      "verified": "preverjen",
+      "notVerified": "nepreverjen"
+    },
+    "CredentialAdd": {
+      "addCredential": "Dodaj metodo avtentikacije",
+      "availableOptions": "Metode, ki so na voljo",
+      "passkeyInstructions": "Your device will prompt you to create a passkey. This allows you to sign in without a password.",
+      "addPasskeyButton": "Create Passkey",
+      "passkeyNotSupported": "Your browser does not support passkeys.",
+      "credentialTypes": "Credential type",
+      "label": "Label"
     }
   }
 }

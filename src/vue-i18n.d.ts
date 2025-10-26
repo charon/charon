@@ -83,6 +83,7 @@ declare module "vue-i18n" {
       entities: {
         admins: string
         users: string
+        credentials: string
         identity: string
         identities: string
         organization: string
@@ -332,6 +333,26 @@ declare module "vue-i18n" {
       OrganizationActivity: {
         organizationActivity: string
         noActivities: string
+      }
+      CredentialList: {
+        noCredentialsCreate: string
+        noCredentialsSignIn: string
+        password: string
+        passwordDefault: string
+        passkey: string
+        thirdPartyProviders: string
+        verify: string
+        verified: string
+        notVerified: string
+      }
+      CredentialAdd: {
+        addCredential: string
+        availableOptions: string
+        passkeyInstructions: string
+        addPasskeyButton: string
+        passkeyNotSupported: string
+        credentialTypes: string
+        label: string
       }
     }
   }
