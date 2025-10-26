@@ -320,7 +320,7 @@ declare module "vue-i18n" {
         blockOnlyIdentity: string
         blockIdentityAndAccounts: string
         organizationNote: string
-        identityNote: string
+        userNote: string
         blockingSuccess: string
       }
       ActivityList: {

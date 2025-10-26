@@ -537,17 +537,19 @@ func (a *OrganizationApplication) Validate(ctx context.Context, existing *Organi
 	return nil
 }
 
-type BlockedIdentityType string
+// BlockedUserType represents the type of user's block.
+type BlockedUserType string
 
+// BlockedUserType values.
 const (
-	BlockedIdentityNotBlocked  BlockedIdentityType = "notBlocked"
-	BlockedIdentityOnly        BlockedIdentityType = "onlyIdentity"
-	BlockedIdentityAndAccounts BlockedIdentityType = "identityAndAccounts"
+	BlockedUserNotBlocked  BlockedUserType = "notBlocked"
+	BlockedUserOnly        BlockedUserType = "onlyIdentity"
+	BlockedUserAndAccounts BlockedUserType = "identityAndAccounts"
 )
 
-type BlockedIdentity struct {
+type blockedNotes struct {
 	OrganizationNote string
-	IdentityNote     string
+	UserNote         string
 }
 
 // Organization represents an organization which can have multiple applications and users can then join them.
@@ -949,6 +951,7 @@ func (s *Service) returnOrganizationRef(_ context.Context, w http.ResponseWriter
 	s.WriteJSON(w, req, OrganizationRef{ID: *organization.ID}, nil)
 }
 
+// OrganizationGetGet is the API handler for getting the organization, GET request.
 func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 	co := s.charonOrganization()
@@ -1016,6 +1019,10 @@ func (s *Service) OrganizationAppGet(w http.ResponseWriter, req *http.Request, p
 	s.WriteJSON(w, req, orgApp.OrganizationApplicationPublic, nil)
 }
 
+// OrganizationIdentity represents the organization's identity.
+//
+// It is similar to Identity struct, but contains just information limited to one organization.
+// This is why Organizations field is a slice, even if it contains just one organization.
 type OrganizationIdentity struct {
 	IdentityPublic
 
@@ -1046,6 +1053,8 @@ func (s *Service) getIdentityFromOrganization(_ context.Context, organizationID,
 	return nil, nil, errors.WithDetails(ErrIdentityNotFound, "id", identityID)
 }
 
+// OrganizationIdentityGet is the API handler for getting the organization's identity, GET request.
+//
 // Anyone with valid access token for the organization can access public data about any
 // identity in the organization given the organization-scoped identity ID.
 //
@@ -1195,6 +1204,7 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 	})
 }
 
+// OrganizationListGet is the API handler for listing organizations, GET request.
 func (s *Service) OrganizationListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	result := []OrganizationRef{}
 
@@ -1210,8 +1220,9 @@ func (s *Service) OrganizationListGet(w http.ResponseWriter, req *http.Request, 
 	s.WriteJSON(w, req, result, nil)
 }
 
+// OrganizationUpdatePost is the API handler for updating the organization, POST request.
 func (s *Service) OrganizationUpdatePost(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := s.RequireAuthenticated(w, req)
@@ -1253,8 +1264,9 @@ func (s *Service) OrganizationUpdatePost(w http.ResponseWriter, req *http.Reques
 	s.returnOrganizationRef(ctx, w, req, &organization)
 }
 
+// OrganizationCreatePost is the API handler for creating the organization, POST request.
 func (s *Service) OrganizationCreatePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := s.RequireAuthenticated(w, req)
@@ -1286,6 +1298,7 @@ func (s *Service) OrganizationCreatePost(w http.ResponseWriter, req *http.Reques
 	s.returnOrganizationRef(ctx, w, req, &organization)
 }
 
+// OrganizationUsersGet is the API handler for listing organization's users, GET request.
 func (s *Service) OrganizationUsersGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := s.RequireAuthenticated(w, req)
 	if ctx == nil {
@@ -1382,21 +1395,21 @@ func (s *Service) unblockIdentity(ctx context.Context, identity *Identity, orgId
 
 func (s *Service) blockIdentity(
 	ctx context.Context, identity *Identity, orgIdentityID, organizationID identifier.Identifier,
-	organizationNote, identityNote string,
+	organizationNote, userNote string,
 ) errors.E {
 	s.identitiesBlockedMu.Lock()
 	defer s.identitiesBlockedMu.Unlock()
 
 	if s.identitiesBlocked[organizationID] == nil {
-		s.identitiesBlocked[organizationID] = map[identifier.Identifier]BlockedIdentity{}
+		s.identitiesBlocked[organizationID] = map[identifier.Identifier]blockedNotes{}
 	}
 
 	_, ok := s.identitiesBlocked[organizationID][orgIdentityID]
 
 	// It is OK to overwrite the note because we do not allow multiple notes for the same identity.
-	s.identitiesBlocked[organizationID][orgIdentityID] = BlockedIdentity{
+	s.identitiesBlocked[organizationID][orgIdentityID] = blockedNotes{
 		OrganizationNote: organizationNote,
-		IdentityNote:     identityNote,
+		UserNote:         userNote,
 	}
 
 	// We log only the first time the identity is blocked.
@@ -1409,7 +1422,7 @@ func (s *Service) blockIdentity(
 
 func (s *Service) blockAccounts(
 	ctx context.Context, identity *Identity, orgIdentityID, organizationID identifier.Identifier,
-	organizationNote, identityNote string,
+	organizationNote, userNote string,
 ) errors.E {
 	accountIDs := s.getAccountsForIdentityWithLock(IdentityRef{ID: *identity.ID})
 
@@ -1417,22 +1430,22 @@ func (s *Service) blockAccounts(
 	defer s.identitiesBlockedMu.Unlock()
 
 	if s.accountsBlocked[organizationID] == nil {
-		s.accountsBlocked[organizationID] = map[identifier.Identifier]map[identifier.Identifier]BlockedIdentity{}
+		s.accountsBlocked[organizationID] = map[identifier.Identifier]map[identifier.Identifier]blockedNotes{}
 	}
 
 	blockedAccountIDs := []AccountRef{}
 
 	for accountID := range accountIDs {
 		if s.accountsBlocked[organizationID][accountID] == nil {
-			s.accountsBlocked[organizationID][accountID] = map[identifier.Identifier]BlockedIdentity{}
+			s.accountsBlocked[organizationID][accountID] = map[identifier.Identifier]blockedNotes{}
 		}
 
 		_, ok := s.accountsBlocked[organizationID][accountID][orgIdentityID]
 
 		// It is OK to overwrite the note because we do not allow multiple notes for the same account & identity pair.
-		s.accountsBlocked[organizationID][accountID][orgIdentityID] = BlockedIdentity{
+		s.accountsBlocked[organizationID][accountID][orgIdentityID] = blockedNotes{
 			OrganizationNote: organizationNote,
-			IdentityNote:     identityNote,
+			UserNote:         userNote,
 		}
 
 		// We log only the first time the identity is blocked.
@@ -1450,6 +1463,7 @@ func (s *Service) blockAccounts(
 	return nil
 }
 
+// OrganizationBlockUser is the frontend handler for blocking organization's user.
 func (s *Service) OrganizationBlockUser(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
@@ -1458,12 +1472,14 @@ func (s *Service) OrganizationBlockUser(w http.ResponseWriter, req *http.Request
 	}
 }
 
+// OrganizationBlockRequest represents the request body for the OrganizationBlockUserPost handler.
 type OrganizationBlockRequest struct {
-	Type             BlockedIdentityType `json:"type"`
-	OrganizationNote string              `json:"organizationNote"`
-	IdentityNote     string              `json:"identityNote"`
+	Type             BlockedUserType `json:"type"`
+	OrganizationNote string          `json:"organizationNote"`
+	USerNote         string          `json:"userNote"`
 }
 
+// OrganizationBlockUserPost is the API handler for blocking organization's user, POST request.
 func (s *Service) OrganizationBlockUserPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
@@ -1514,21 +1530,21 @@ func (s *Service) OrganizationBlockUserPost(w http.ResponseWriter, req *http.Req
 	}
 
 	switch blockRequest.Type {
-	case BlockedIdentityNotBlocked:
+	case BlockedUserNotBlocked:
 		errE := s.unblockIdentity(ctx, identity, *idOrg.ID, *organization.ID)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
-	case BlockedIdentityAndAccounts:
-		errE := s.blockAccounts(ctx, identity, *idOrg.ID, *organization.ID, blockRequest.OrganizationNote, blockRequest.IdentityNote)
+	case BlockedUserAndAccounts:
+		errE := s.blockAccounts(ctx, identity, *idOrg.ID, *organization.ID, blockRequest.OrganizationNote, blockRequest.USerNote)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
 		fallthrough
-	case BlockedIdentityOnly:
-		errE := s.blockIdentity(ctx, identity, *idOrg.ID, *organization.ID, blockRequest.OrganizationNote, blockRequest.IdentityNote)
+	case BlockedUserOnly:
+		errE := s.blockIdentity(ctx, identity, *idOrg.ID, *organization.ID, blockRequest.OrganizationNote, blockRequest.USerNote)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
@@ -1543,17 +1559,20 @@ func (s *Service) OrganizationBlockUserPost(w http.ResponseWriter, req *http.Req
 	s.WriteJSON(w, req, []byte(`{"success":true}`), nil)
 }
 
+// OrganizationBlockedStatusNotes represents the organization user's blocked status notes.
 type OrganizationBlockedStatusNotes struct {
 	Identity         IdentityRef `json:"identity"`
 	OrganizationNote string      `json:"organizationNote,omitempty"`
-	IdentityNote     string      `json:"identityNote,omitempty"`
+	UserNote         string      `json:"userNote,omitempty"`
 }
 
+// OrganizationBlockedStatus represents the organization user's blocked status.
 type OrganizationBlockedStatus struct {
-	Blocked BlockedIdentityType              `json:"blocked"`
+	Blocked BlockedUserType                  `json:"blocked"`
 	Notes   []OrganizationBlockedStatusNotes `json:"notes,omitempty"`
 }
 
+// OrganizationBlockedStatusGet is the API handler for getting the organization user's blocked status, GET request.
 func (s *Service) OrganizationBlockedStatusGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	// We allow getting identities with the access token or session cookie.
 	ctx := s.requireAuthenticatedForIdentity(w, req)
@@ -1620,11 +1639,11 @@ func (s *Service) OrganizationBlockedStatusGet(w http.ResponseWriter, req *http.
 				}
 
 				s.WriteJSON(w, req, OrganizationBlockedStatus{
-					Blocked: BlockedIdentityOnly,
+					Blocked: BlockedUserOnly,
 					Notes: []OrganizationBlockedStatusNotes{{
 						Identity:         IdentityRef{ID: *idOrg.ID},
 						OrganizationNote: blockedIdentity.OrganizationNote,
-						IdentityNote:     blockedIdentity.IdentityNote,
+						UserNote:         blockedIdentity.UserNote,
 					}},
 				}, nil)
 				return
@@ -1647,7 +1666,7 @@ func (s *Service) OrganizationBlockedStatusGet(w http.ResponseWriter, req *http.
 					notes = append(notes, OrganizationBlockedStatusNotes{
 						Identity:         IdentityRef{ID: orgIdentityID},
 						OrganizationNote: blockedIdentity.OrganizationNote,
-						IdentityNote:     blockedIdentity.IdentityNote,
+						UserNote:         blockedIdentity.UserNote,
 					})
 				}
 
@@ -1656,7 +1675,7 @@ func (s *Service) OrganizationBlockedStatusGet(w http.ResponseWriter, req *http.
 				})
 
 				s.WriteJSON(w, req, OrganizationBlockedStatus{
-					Blocked: BlockedIdentityAndAccounts,
+					Blocked: BlockedUserAndAccounts,
 					Notes:   notes,
 				}, nil)
 				return
@@ -1667,7 +1686,7 @@ func (s *Service) OrganizationBlockedStatusGet(w http.ResponseWriter, req *http.
 	// If we got to here and caller has access, then identity is not blocked.
 	if (isOrgAdmin && idOrg.Active) || hasUserAccess || hasAdminAccess {
 		s.WriteJSON(w, req, OrganizationBlockedStatus{
-			Blocked: BlockedIdentityNotBlocked,
+			Blocked: BlockedUserNotBlocked,
 			Notes:   nil,
 		}, nil)
 		return

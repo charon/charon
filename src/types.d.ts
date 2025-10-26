@@ -435,7 +435,7 @@ export type BlockedIdentityType = "notBlocked" | "onlyIdentity" | "identityAndAc
 export type OrganizationBlockedStatusNotes = {
   identity: IdentityRef
   organizationNote?: string
-  identityNote?: string
+  userNote?: string
 }
 
 export type OrganizationBlockedStatus = {
@@ -446,7 +446,7 @@ export type OrganizationBlockedStatus = {
 export type OrganizationBlockRequest = {
   type: BlockedIdentityType
   organizationNote: string
-  identityNote: string
+  userNote: string
 }
 
 // It is recursive.

@@ -316,7 +316,7 @@
       "blockOnlyIdentity": "Blokiraj samo to identiteto pred dostopom do organizacije",
       "blockIdentityAndAccounts": "Blokiraj to identiteto in vse druge identitete, ki jih nadzoruje isti uporabnik ali uporabniki pred dostopom do organizacije",
       "organizationNote": "Opomba samo za administratorje organizacije",
-      "identityNote": "Opomba za blokiranega uporabnika oziroma uporabnike",
+      "userNote": "Opomba za blokiranega uporabnika oziroma uporabnike",
       "blockingSuccess": "Uporabnik je bil uspešno blokiran."
     }
   }

@@ -28,7 +28,7 @@ const progress = injectProgress()
 const abortController = new AbortController()
 const blockType = ref<BlockedIdentityType>("onlyIdentity")
 const organizationNote = ref("")
-const identityNote = ref("")
+const userNote = ref("")
 const unexpectedError = ref("")
 const success = ref(false)
 
@@ -38,7 +38,7 @@ function resetOnInteraction() {
   success.value = false
 }
 
-watch([blockType, organizationNote, identityNote], resetOnInteraction)
+watch([blockType, organizationNote, userNote], resetOnInteraction)
 
 onBeforeUnmount(() => {
   abortController.abort()
@@ -56,7 +56,7 @@ async function onSubmit() {
     const payload: OrganizationBlockRequest = {
       type: blockType.value,
       organizationNote: organizationNote.value,
-      identityNote: identityNote.value,
+      userNote: userNote.value,
     }
     const url = router.apiResolve({
       name: "OrganizationBlockUser",
@@ -134,10 +134,10 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
             >{{ t("views.OrganizationBlockUser.organizationNote") }} <span class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
           >
           <TextArea id="organizationNote" v-model="organizationNote" class="flex-grow flex-auto min-w-0" :progress="progress" />
-          <label for="identityNote" class="mb-1 mt-4"
-            >{{ t("views.OrganizationBlockUser.identityNote") }} <span class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
+          <label for="userNote" class="mb-1 mt-4"
+            >{{ t("views.OrganizationBlockUser.userNote") }} <span class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
           >
-          <TextArea id="identityNote" v-model="identityNote" class="flex-grow flex-auto min-w-0" :progress="progress" />
+          <TextArea id="userNote" v-model="userNote" class="flex-grow flex-auto min-w-0" :progress="progress" />
           <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
           <div class="mt-4 flex flex-row justify-end">
             <!--

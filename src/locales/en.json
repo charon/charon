@@ -309,7 +309,7 @@
       "blockOnlyIdentity": "Block only this identity from accessing the organization",
       "blockIdentityAndAccounts": "Block this identity and all other identities controlled by the same user or users from accessing the organization",
       "organizationNote": "Note for organization admins only",
-      "identityNote": "Note to blocked user or users",
+      "userNote": "Note to blocked user or users",
       "blockingSuccess": "User blocked successfully."
     },
     "ActivityList": {
