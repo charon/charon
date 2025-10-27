@@ -329,9 +329,7 @@ func validateSAMLAssertion(assertionInfo *saml2.AssertionInfo) errors.E {
 		return errors.New("SAML assertion info is nil")
 	}
 
-	responseSignatureValidated := assertionInfo.ResponseSignatureValidated
-	allAssertionSignaturesValidated := len(assertionInfo.Assertions) > 0
-
+	allAssertionSignaturesValidated := true
 	for _, assertion := range assertionInfo.Assertions {
 		if !assertion.SignatureValidated {
 			allAssertionSignaturesValidated = false
@@ -339,8 +337,11 @@ func validateSAMLAssertion(assertionInfo *saml2.AssertionInfo) errors.E {
 		}
 	}
 
-	// Either response or assertion (or both) must have a validated signature.
-	if !responseSignatureValidated && !allAssertionSignaturesValidated {
+	// If signatures exist but are not valid, then gosaml2 library returns an error. We are here because a) there
+	// is a response signature and it is valid (then assertion signatures are not checked at all), or b) there
+	// is no response signature and assertion signatures exist and are valid. So this check here is just
+	// a sanity check and should always be true. Either response or all assertions must have a validated signature.
+	if !(assertionInfo.ResponseSignatureValidated || allAssertionSignaturesValidated) { //nolint:staticcheck
 		return errors.New("SAML response and assertion signatures are not validated")
 	}
 
