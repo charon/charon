@@ -75,7 +75,7 @@ async function onSignIn() {
 <template>
   <div
     ref="navbar"
-    class="z-30 flex w-full min-h-12 flex-grow gap-x-1 border-b border-slate-400 bg-slate-300 p-1 shadow-md will-change-transform sm:gap-x-4 sm:p-4 sm:pl-0"
+    class="z-30 flex w-full min-h-12 grow gap-x-1 border-b border-slate-400 bg-slate-300 p-1 shadow-md will-change-transform sm:gap-x-4 sm:p-4 sm:pl-0"
     v-bind="navbarAttrs"
   >
     <router-link
@@ -84,7 +84,7 @@ async function onSignIn() {
     >
       <GlobeAltIcon class="m-1 sm:m-4 sm:h-10 sm:w-10 h-7 w-7 rounded-sm group-focus:ring-2 group-focus:ring-primary-500" />
     </router-link>
-    <slot><div class="flex-grow"></div></slot>
+    <slot><div class="grow"></div></slot>
     <Button v-if="isSignedIn()" id="navbar-button-signout" primary type="button" :progress="progress" @click.prevent="onSignOut">{{
       t("common.buttons.signOut")
     }}</Button>

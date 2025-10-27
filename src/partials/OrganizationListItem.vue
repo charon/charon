@@ -33,7 +33,7 @@ const WithOrganizationDocument = WithDocument<Organization>
     </template>
     <template #error="{ url }">
       <div class="flex flex-row gap-4" :data-url="url">
-        <div class="flex-grow flex">
+        <div class="grow flex">
           <span class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
         </div>
         <slot :doc="undefined" :metadata="undefined"></slot>

@@ -313,7 +313,7 @@ async function onCode() {
       <label for="email-or-username" class="mb-1">{{
         isEmail(flow.getEmailOrUsername()) ? t("partials.AuthPassword.emailAddressLabel") : t("partials.AuthPassword.usernameLabel")
       }}</label>
-      <InputTextButton id="email-or-username" class="flex-grow" tabindex="5" @click.prevent="onBack">
+      <InputTextButton id="email-or-username" class="grow" tabindex="5" @click.prevent="onBack">
         {{ flow.getEmailOrUsername() }}
       </InputTextButton>
     </div>
@@ -347,7 +347,7 @@ async function onCode() {
           minlength="8"
           tabindex="1"
           :invalid="!!passwordError"
-          class="flex-grow flex-auto min-w-0"
+          class="grow flex-auto min-w-0"
           :progress="progress"
           autocomplete="current-password"
           autocorrect="off"

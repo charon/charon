@@ -97,27 +97,27 @@ async function onSubmit() {
     <label for="username" class="mb-1"
       >{{ t("common.fields.username") }} <span class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
     >
-    <InputText id="username" v-model="username" class="flex-grow flex-auto min-w-0" :progress="progress" />
+    <InputText id="username" v-model="username" class="grow flex-auto min-w-0" :progress="progress" />
     <label for="email" class="mb-1 mt-4"
       >{{ t("common.fields.email") }} <span class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
     >
-    <InputText id="email" v-model="email" class="flex-grow flex-auto min-w-0" :progress="progress" />
+    <InputText id="email" v-model="email" class="grow flex-auto min-w-0" :progress="progress" />
     <label for="givenName" class="mb-1 mt-4"
       >{{ t("common.fields.givenName") }} <span class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
     >
-    <InputText id="givenName" v-model="givenName" class="flex-grow flex-auto min-w-0" :progress="progress" />
+    <InputText id="givenName" v-model="givenName" class="grow flex-auto min-w-0" :progress="progress" />
     <label for="fullName" class="mb-1 mt-4"
       >{{ t("common.fields.fullName") }} <span class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
     >
-    <InputText id="fullName" v-model="fullName" class="flex-grow flex-auto min-w-0" :progress="progress" />
+    <InputText id="fullName" v-model="fullName" class="grow flex-auto min-w-0" :progress="progress" />
     <label for="pictureUrl" class="mb-1 mt-4"
       >{{ t("common.fields.pictureUrl") }} <span class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
     >
-    <InputText id="pictureUrl" v-model="pictureUrl" class="flex-grow flex-auto min-w-0" :progress="progress" />
+    <InputText id="pictureUrl" v-model="pictureUrl" class="grow flex-auto min-w-0" :progress="progress" />
     <label for="description" class="mb-1 mt-4"
       >{{ t("common.fields.description") }} <span class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
     >
-    <TextArea id="description" v-model="description" class="flex-grow flex-auto min-w-0" :progress="progress" />
+    <TextArea id="description" v-model="description" class="grow flex-auto min-w-0" :progress="progress" />
     <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-end">
       <!--

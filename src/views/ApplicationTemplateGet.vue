@@ -659,17 +659,17 @@ function onAddAdmin() {
         <template v-else>
           <form class="flex flex-col" novalidate @submit.prevent="onBasicSubmit">
             <label for="name" class="mb-1">{{ t("views.ApplicationTemplateGet.applicationTemplateName") }}</label>
-            <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" required />
+            <InputText id="name" v-model="name" class="grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" required />
             <label for="description" class="mb-1 mt-4"
               >{{ t("common.fields.description") }}
               <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
             >
-            <TextArea id="description" v-model="description" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
+            <TextArea id="description" v-model="description" class="grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <label for="homepageTemplate" class="mb-1 mt-4">{{ t("views.ApplicationTemplateGet.homepageTemplate") }}</label>
             <InputText
               id="homepageTemplate"
               v-model="homepageTemplate"
-              class="flex-grow flex-auto min-w-0"
+              class="grow flex-auto min-w-0"
               :readonly="!metadata.can_update"
               :progress="progress"
               required
@@ -681,7 +681,7 @@ function onAddAdmin() {
             <TextArea
               id="idScopes"
               :model-value="idScopes.join(' ')"
-              class="flex-grow flex-auto min-w-0"
+              class="grow flex-auto min-w-0"
               :readonly="!metadata.can_update"
               :progress="progress"
               @update:model-value="(v) => (idScopes = splitSpace(v))"
@@ -708,7 +708,7 @@ function onAddAdmin() {
                     <InputText
                       :id="`variable-${i}-name`"
                       v-model="variable.name"
-                      class="flex-grow flex-auto min-w-0"
+                      class="grow flex-auto min-w-0"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                       required
@@ -720,7 +720,7 @@ function onAddAdmin() {
                     <TextArea
                       :id="`variable-${i}-description`"
                       v-model="variable.description"
-                      class="flex-grow flex-auto min-w-0"
+                      class="grow flex-auto min-w-0"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
@@ -757,7 +757,7 @@ function onAddAdmin() {
                             <InputText
                               :id="`client-public-${i}-redirectUriTemplates-${j}`"
                               v-model="client.redirectUriTemplates[j]"
-                              class="flex-grow flex-auto min-w-0"
+                              class="grow flex-auto min-w-0"
                               :readonly="!metadata.can_update"
                               :progress="progress"
                               required
@@ -785,7 +785,7 @@ function onAddAdmin() {
                     <TextArea
                       :id="`client-public-${i}-description`"
                       v-model="client.description"
-                      class="flex-grow flex-auto min-w-0"
+                      class="grow flex-auto min-w-0"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
@@ -796,7 +796,7 @@ function onAddAdmin() {
                     <TextArea
                       :id="`client-public-${i}-additionalScopes`"
                       :model-value="client.additionalScopes.join(' ')"
-                      class="flex-grow flex-auto min-w-0"
+                      class="grow flex-auto min-w-0"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                       @update:model-value="(v) => (client.additionalScopes = splitSpace(v))"
@@ -840,7 +840,7 @@ function onAddAdmin() {
                     <TextArea
                       :id="`client-public-${i}-accessTokenLifespan`"
                       v-model="client.accessTokenLifespan"
-                      class="flex-grow flex-auto min-w-0"
+                      class="grow flex-auto min-w-0"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
@@ -848,7 +848,7 @@ function onAddAdmin() {
                     <TextArea
                       :id="`client-public-${i}-idTokenLifespan`"
                       v-model="client.idTokenLifespan"
-                      class="flex-grow flex-auto min-w-0"
+                      class="grow flex-auto min-w-0"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
@@ -859,7 +859,7 @@ function onAddAdmin() {
                     <TextArea
                       :id="`client-public-${i}-refreshTokenLifespan`"
                       v-model="client.refreshTokenLifespan"
-                      class="flex-grow flex-auto min-w-0"
+                      class="grow flex-auto min-w-0"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
@@ -901,7 +901,7 @@ function onAddAdmin() {
                             <InputText
                               :id="`client-backend-${i}-redirectUriTemplates-${j}`"
                               v-model="client.redirectUriTemplates[j]"
-                              class="flex-grow flex-auto min-w-0"
+                              class="grow flex-auto min-w-0"
                               :readonly="!metadata.can_update"
                               :progress="progress"
                               required
@@ -929,7 +929,7 @@ function onAddAdmin() {
                     <TextArea
                       :id="`client-backend-${i}-description`"
                       v-model="client.description"
-                      class="flex-grow flex-auto min-w-0"
+                      class="grow flex-auto min-w-0"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
@@ -940,7 +940,7 @@ function onAddAdmin() {
                     <TextArea
                       :id="`client-backend-${i}-additionalScopes`"
                       :model-value="client.additionalScopes.join(' ')"
-                      class="flex-grow flex-auto min-w-0"
+                      class="grow flex-auto min-w-0"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                       @update:model-value="(v) => (client.additionalScopes = splitSpace(v))"
@@ -1019,7 +1019,7 @@ function onAddAdmin() {
                     <TextArea
                       :id="`client-backend-${i}-accessTokenLifespan`"
                       v-model="client.accessTokenLifespan"
-                      class="flex-grow flex-auto min-w-0"
+                      class="grow flex-auto min-w-0"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
@@ -1027,7 +1027,7 @@ function onAddAdmin() {
                     <TextArea
                       :id="`client-backend-${i}-idTokenLifespan`"
                       v-model="client.idTokenLifespan"
-                      class="flex-grow flex-auto min-w-0"
+                      class="grow flex-auto min-w-0"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
@@ -1038,7 +1038,7 @@ function onAddAdmin() {
                     <TextArea
                       :id="`client-backend-${i}-refreshTokenLifespan`"
                       v-model="client.refreshTokenLifespan"
-                      class="flex-grow flex-auto min-w-0"
+                      class="grow flex-auto min-w-0"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
@@ -1078,7 +1078,7 @@ function onAddAdmin() {
                     <TextArea
                       :id="`client-service-${i}-description`"
                       v-model="client.description"
-                      class="flex-grow flex-auto min-w-0"
+                      class="grow flex-auto min-w-0"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
@@ -1089,7 +1089,7 @@ function onAddAdmin() {
                     <TextArea
                       :id="`client-service-${i}-additionalScopes`"
                       :model-value="client.additionalScopes.join(' ')"
-                      class="flex-grow flex-auto min-w-0"
+                      class="grow flex-auto min-w-0"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                       @update:model-value="(v) => (client.additionalScopes = splitSpace(v))"
@@ -1168,7 +1168,7 @@ function onAddAdmin() {
                     <TextArea
                       :id="`client-service-${i}-accessTokenLifespan`"
                       v-model="client.accessTokenLifespan"
-                      class="flex-grow flex-auto min-w-0"
+                      class="grow flex-auto min-w-0"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
@@ -1176,7 +1176,7 @@ function onAddAdmin() {
                     <TextArea
                       :id="`client-service-${i}-idTokenLifespan`"
                       v-model="client.idTokenLifespan"
-                      class="flex-grow flex-auto min-w-0"
+                      class="grow flex-auto min-w-0"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
@@ -1187,7 +1187,7 @@ function onAddAdmin() {
                     <TextArea
                       :id="`client-service-${i}-refreshTokenLifespan`"
                       v-model="client.refreshTokenLifespan"
-                      class="flex-grow flex-auto min-w-0"
+                      class="grow flex-auto min-w-0"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
@@ -1225,7 +1225,7 @@ function onAddAdmin() {
                       </div>
                     </WithIdentityPublicDocument>
                     <div v-else class="flex flex-row gap-4">
-                      <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="flex-grow flex-auto min-w-0" :progress="progress" required />
+                      <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="grow flex-auto min-w-0" :progress="progress" required />
                       <Button type="button" @click.prevent="admins.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                     </div>
                   </div>

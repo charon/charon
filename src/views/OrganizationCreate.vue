@@ -81,7 +81,7 @@ async function onSubmit() {
         </div>
         <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
           <label for="name" class="mb-1">{{ t("views.OrganizationCreate.organizationName") }}</label>
-          <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :progress="progress" required />
+          <InputText id="name" v-model="name" class="grow flex-auto min-w-0" :progress="progress" required />
           <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
           <div v-else class="mt-4">{{ t("views.OrganizationCreate.chooseOrganizationName") }}</div>
           <div class="mt-4 flex flex-row justify-end">

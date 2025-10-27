@@ -438,29 +438,29 @@ function organizationLabels(identityOrganization: IdentityOrganizationType | Dee
             <label for="username" class="mb-1"
               >{{ t("common.fields.username") }} <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
             >
-            <InputText id="username" v-model="username" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
+            <InputText id="username" v-model="username" class="grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <label for="email" class="mb-1 mt-4"
               >{{ t("common.fields.email") }} <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
             >
-            <InputText id="email" v-model="email" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
+            <InputText id="email" v-model="email" class="grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <label for="givenName" class="mb-1 mt-4"
               >{{ t("common.fields.givenName") }} <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
             >
-            <InputText id="givenName" v-model="givenName" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
+            <InputText id="givenName" v-model="givenName" class="grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <label for="fullName" class="mb-1 mt-4"
               >{{ t("common.fields.fullName") }} <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
             >
-            <InputText id="fullName" v-model="fullName" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
+            <InputText id="fullName" v-model="fullName" class="grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <label for="pictureUrl" class="mb-1 mt-4"
               >{{ t("common.fields.pictureUrl") }}
               <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
             >
-            <InputText id="pictureUrl" v-model="pictureUrl" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
+            <InputText id="pictureUrl" v-model="pictureUrl" class="grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <label for="description" class="mb-1 mt-4"
               >{{ t("common.fields.description") }}
               <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
             >
-            <TextArea id="description" v-model="description" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
+            <TextArea id="description" v-model="description" class="grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <div v-if="basicUnexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="basicUpdated" class="mt-4 text-success-600">{{ t("views.IdentityGet.identityUpdated") }}</div>
             <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
@@ -489,7 +489,7 @@ function organizationLabels(identityOrganization: IdentityOrganizationType | Dee
                     </div>
                   </WithIdentityPublicDocument>
                   <div v-else-if="metadata.can_update" class="flex flex-row gap-4">
-                    <InputText :id="`user-${i}-id`" v-model="users[i].id" class="flex-grow flex-auto min-w-0" :progress="progress" required />
+                    <InputText :id="`user-${i}-id`" v-model="users[i].id" class="grow flex-auto min-w-0" :progress="progress" required />
                     <Button type="button" @click.prevent="users.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                   </div>
                 </div>
@@ -522,7 +522,7 @@ function organizationLabels(identityOrganization: IdentityOrganizationType | Dee
                     </div>
                   </WithIdentityPublicDocument>
                   <div v-else-if="metadata.can_update" class="flex flex-row gap-4">
-                    <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="flex-grow flex-auto min-w-0" :progress="progress" required />
+                    <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="grow flex-auto min-w-0" :progress="progress" required />
                     <Button type="button" @click.prevent="admins.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                   </div>
                 </div>

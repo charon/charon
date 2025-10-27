@@ -143,7 +143,7 @@ async function onThirdPartyProvider(provider: string) {
           id="authstart-input-email"
           v-model="emailOrUsernameProxy"
           name="email"
-          class="flex-grow flex-auto min-w-0"
+          class="grow flex-auto min-w-0"
           :progress="progress"
           :invalid="!!passwordError"
           autocomplete="username"

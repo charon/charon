@@ -23,7 +23,7 @@ const { t } = useI18n({ useScope: "global" })
         <img :src="identity.pictureUrl" :alt="t('common.accessibility.picture')" class="h-20 w-20 ring-2 ring-white rounded-sm" />
       </router-link>
     </div>
-    <div class="flex-grow flex flex-col">
+    <div class="grow flex flex-col">
       <!--
         This should be similar in what is show as main piece of information in getIdentityDisplayName utility function.
         Keep it in sync with to IdentityPublic component, too.

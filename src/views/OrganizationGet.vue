@@ -655,12 +655,12 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
         <template v-else>
           <form class="flex flex-col" novalidate @submit.prevent="onBasicSubmit">
             <label for="name" class="mb-1">{{ t("views.OrganizationGet.organizationName") }}</label>
-            <InputText id="name" v-model="name" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" required />
+            <InputText id="name" v-model="name" class="grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" required />
             <label for="description" class="mb-1 mt-4"
               >{{ t("common.fields.description") }}
               <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
             >
-            <TextArea id="description" v-model="description" class="flex-grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
+            <TextArea id="description" v-model="description" class="grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <div v-if="basicUnexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="basicUpdated" class="mt-4 text-success-600">{{ t("views.OrganizationGet.organizationUpdated") }}</div>
             <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
@@ -695,7 +695,7 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
                           <InputText
                             :id="`application-${i}-values-${j}`"
                             v-model="value.value"
-                            class="flex-grow flex-auto min-w-0 ml-4 mt-1"
+                            class="grow flex-auto min-w-0 ml-4 mt-1"
                             :progress="progress"
                             required
                           />
@@ -823,7 +823,7 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
                       </div>
                     </WithIdentityPublicDocument>
                     <div v-else class="flex flex-row gap-4">
-                      <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="flex-grow flex-auto min-w-0" :progress="progress" required />
+                      <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="grow flex-auto min-w-0" :progress="progress" required />
                       <Button type="button" @click.prevent="admins.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                     </div>
                   </div>

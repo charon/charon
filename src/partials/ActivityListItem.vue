@@ -208,10 +208,10 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
     <template #default="{ doc: originalDoc, url }">
       <LocalScope v-slot="{ doc }" :doc="transformActivity(originalDoc)">
         <div class="flex items-start gap-4" :data-url="url">
-          <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center">
+          <div class="shrink-0 w-8 h-8 flex items-center justify-center">
             <component :is="getActivityIcon(doc.type)" />
           </div>
-          <div class="flex-grow">
+          <div class="grow">
             <div class="flex flex-col gap-1">
               <h3 class="font-medium">
                 {{ getActivityDescription(doc.type) }}
@@ -336,7 +336,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
     </template>
     <template #error="{ url }">
       <div class="flex flex-row gap-4" :data-url="url">
-        <div class="flex-grow flex">
+        <div class="grow flex">
           <span class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
         </div>
       </div>

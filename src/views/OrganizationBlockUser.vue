@@ -133,11 +133,11 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
           <label for="organizationNote" class="mb-1 mt-4"
             >{{ t("views.OrganizationBlockUser.organizationNote") }} <span class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
           >
-          <TextArea id="organizationNote" v-model="organizationNote" class="flex-grow flex-auto min-w-0" :progress="progress" />
+          <TextArea id="organizationNote" v-model="organizationNote" class="grow flex-auto min-w-0" :progress="progress" />
           <label for="userNote" class="mb-1 mt-4"
             >{{ t("views.OrganizationBlockUser.userNote") }} <span class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
           >
-          <TextArea id="userNote" v-model="userNote" class="flex-grow flex-auto min-w-0" :progress="progress" />
+          <TextArea id="userNote" v-model="userNote" class="grow flex-auto min-w-0" :progress="progress" />
           <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
           <div class="mt-4 flex flex-row justify-end">
             <!--
