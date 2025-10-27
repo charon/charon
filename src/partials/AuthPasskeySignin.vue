@@ -152,7 +152,7 @@ async function onCancel() {
 </script>
 
 <template>
-  <div class="flex flex-col rounded-sm border bg-white p-4 shadow-sm w-full">
+  <div class="flex flex-col rounded-xs border bg-white p-4 shadow-sm w-full">
     <div>
       <i18n-t keypath="partials.AuthPasskeySignin.signingIn" scope="global">
         <template #strongPasskey

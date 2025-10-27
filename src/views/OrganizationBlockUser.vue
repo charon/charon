@@ -92,7 +92,7 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
   </Teleport>
   <div class="w-full flex flex-col items-center mt-12 sm:mt-[4.5rem] border-t border-transparent">
     <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
-      <div class="w-full rounded-sm border bg-white p-4 shadow-sm">
+      <div class="w-full rounded-xs border bg-white p-4 shadow-sm">
         <div class="flex flex-col gap-4">
           <h1 class="text-2xl font-bold">{{ t("views.OrganizationBlockUser.blockUser") }}</h1>
           <div>
@@ -100,17 +100,17 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
           </div>
         </div>
       </div>
-      <div class="w-full rounded-sm border bg-white p-4 shadow-sm">
+      <div class="w-full rounded-xs border bg-white p-4 shadow-sm">
         <WithIdentityForAdminDocument :params="{ id, identityId }" name="OrganizationIdentity">
           <template #default="{ doc, metadata, url }">
             <IdentityPublic :identity="doc" :url="url" :is-current="metadata.is_current" :can-update="metadata.can_update" />
           </template>
         </WithIdentityForAdminDocument>
       </div>
-      <div v-if="success" class="w-full rounded-sm border bg-white p-4 shadow-sm">
+      <div v-if="success" class="w-full rounded-xs border bg-white p-4 shadow-sm">
         <div class="text-success-600">{{ t("views.OrganizationBlockUser.blockingSuccess") }}</div>
       </div>
-      <div v-else class="w-full rounded-sm border bg-white p-4 shadow-sm">
+      <div v-else class="w-full rounded-xs border bg-white p-4 shadow-sm">
         <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
           <p>{{ t("views.OrganizationBlockUser.blockConfirmation") }}</p>
           <fieldset class="mt-4">

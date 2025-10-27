@@ -19,7 +19,7 @@ const { t } = useI18n({ useScope: "global" })
 <template>
   <div class="flex flex-row gap-4" :data-url="url">
     <div v-if="identity.pictureUrl" class="flex-none">
-      <img :src="identity.pictureUrl" :alt="t('common.accessibility.picture')" class="h-20 w-20 ring-2 ring-white rounded-sm" />
+      <img :src="identity.pictureUrl" :alt="t('common.accessibility.picture')" class="h-20 w-20 ring-2 ring-white rounded-xs" />
     </div>
     <div class="grow flex flex-col">
       <!--
