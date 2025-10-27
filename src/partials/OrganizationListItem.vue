@@ -19,11 +19,11 @@ const WithOrganizationDocument = WithDocument<Organization>
 <template>
   <WithOrganizationDocument :params="{ id: item.id }" name="OrganizationGet">
     <template #default="{ doc, metadata, url }">
-      <div class="flex flex-row justify-between items-center gap-4" :data-url="url">
+      <div class="flex flex-row items-center justify-between gap-4" :data-url="url">
         <component :is="h3 ? 'h3' : 'h2'" class="flex flex-row items-center gap-1" :class="h3 ? 'text-lg' : 'text-xl'">
           <router-link :to="{ name: 'OrganizationGet', params: { id: doc.id } }" class="link">{{ doc.name }}</router-link>
-          <span v-for="label in labels || []" :key="label" class="rounded-xs bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-xs text-sm leading-none">{{ label }}</span>
-          <span v-if="metadata.can_update" class="rounded-xs bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-xs text-sm leading-none">{{
+          <span v-for="label in labels || []" :key="label" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{ label }}</span>
+          <span v-if="metadata.can_update" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{
             t("common.labels.admin")
           }}</span>
         </component>
@@ -33,7 +33,7 @@ const WithOrganizationDocument = WithDocument<Organization>
     </template>
     <template #error="{ url }">
       <div class="flex flex-row gap-4" :data-url="url">
-        <div class="grow flex">
+        <div class="flex grow">
           <span class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
         </div>
         <slot :doc="undefined" :metadata="undefined"></slot>

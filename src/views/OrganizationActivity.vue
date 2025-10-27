@@ -64,9 +64,9 @@ onBeforeMount(async () => {
   <Teleport to="header">
     <NavBar></NavBar>
   </Teleport>
-  <div class="w-full flex flex-col items-center mt-12 sm:mt-[4.5rem] border-t border-transparent">
-    <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
-      <div class="w-full rounded-xs border border-gray-200 bg-white p-4 shadow-sm flex flex-col gap-4">
+  <div class="mt-12 flex w-full flex-col items-center border-t border-transparent sm:mt-[4.5rem]">
+    <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,_65ch)] gap-1 sm:m-4 sm:gap-4">
+      <div class="flex w-full flex-col gap-4 rounded-xs border border-gray-200 bg-white p-4 shadow-sm">
         <div class="flex flex-col gap-4">
           <h1 class="text-2xl font-bold">{{ t("views.OrganizationActivity.organizationActivity") }}</h1>
           <div>
@@ -75,9 +75,9 @@ onBeforeMount(async () => {
         </div>
       </div>
       <div v-if="dataLoading" class="w-full rounded-xs border border-gray-200 bg-white p-4 shadow-sm">{{ t("common.data.dataLoading") }}</div>
-      <div v-else-if="dataLoadingError" class="w-full rounded-xs border border-gray-200 bg-white p-4 shadow-sm text-error-600">{{ t("common.errors.unexpected") }}</div>
+      <div v-else-if="dataLoadingError" class="w-full rounded-xs border border-gray-200 bg-white p-4 text-error-600 shadow-sm">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
-        <div v-if="!activities.length" class="w-full rounded-xs border border-gray-200 bg-white p-4 shadow-sm italic">
+        <div v-if="!activities.length" class="w-full rounded-xs border border-gray-200 bg-white p-4 italic shadow-sm">
           {{ t("views.OrganizationActivity.noActivities") }}
         </div>
         <div v-for="activity in activities" :key="activity.id" class="w-full rounded-xs border border-gray-200 bg-white p-4 shadow-sm">
