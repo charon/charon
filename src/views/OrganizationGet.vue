@@ -692,13 +692,7 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
                         <li v-for="(value, j) in application.values" :key="value.name" class="flex flex-col mt-4">
                           <code>{{ value.name }}</code>
                           <div v-if="getValueDescription(application, value.name)" class="ml-4">{{ getValueDescription(application, value.name) }}</div>
-                          <InputText
-                            :id="`application-${i}-values-${j}`"
-                            v-model="value.value"
-                            class="grow flex-auto min-w-0 ml-4 mt-1"
-                            :progress="progress"
-                            required
-                          />
+                          <InputText :id="`application-${i}-values-${j}`" v-model="value.value" class="grow flex-auto min-w-0 ml-4 mt-1" :progress="progress" required />
                         </li>
                       </ol>
                     </fieldset>

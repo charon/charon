@@ -666,14 +666,7 @@ function onAddAdmin() {
             >
             <TextArea id="description" v-model="description" class="grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <label for="homepageTemplate" class="mb-1 mt-4">{{ t("views.ApplicationTemplateGet.homepageTemplate") }}</label>
-            <InputText
-              id="homepageTemplate"
-              v-model="homepageTemplate"
-              class="grow flex-auto min-w-0"
-              :readonly="!metadata.can_update"
-              :progress="progress"
-              required
-            />
+            <InputText id="homepageTemplate" v-model="homepageTemplate" class="grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" required />
             <label for="idScopes" class="mb-1 mt-4"
               >{{ t("views.ApplicationTemplateGet.spaceSeparatedScopes") }}
               <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
