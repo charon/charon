@@ -101,13 +101,13 @@
   }
 
   .link {
-    @apply rounded-xs font-medium text-primary-600 drop-shadow-xs outline-none;
+    @apply rounded-xs font-medium text-primary-600 outline-none drop-shadow-xs;
 
     text-decoration: unset;
   }
 
   .link.disabled {
-    @apply cursor-not-allowed text-primary-300;
+    @apply text-primary-300 cursor-not-allowed;
   }
 
   a > img {

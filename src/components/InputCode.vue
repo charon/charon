@@ -32,7 +32,7 @@ function updateBackgroundPosition() {
 <template>
   <InputText
     ref="el"
-    class="input-code-gradient bg-repeat-x bg-origin-padding font-mono tracking-[2ch]"
+    class="font-mono tracking-[2ch] bg-repeat-x bg-origin-padding input-code-gradient"
     :style="{
       backgroundImage: Array(codeLength).fill('var(--input-code-gradient)').join(','),
       backgroundPositionX: Array.from({ length: codeLength }, (v, i) => `calc(${2 + 3 * i}ch + 0.75rem - 1px - ${scrollLeft}px)`).join(','),

@@ -205,7 +205,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
 </script>
 
 <template>
-  <div class="flex w-full flex-col rounded-xs border border-gray-200 bg-white p-4 shadow-sm">
+  <div class="flex flex-col rounded-xs border border-gray-200 bg-white p-4 shadow-sm w-full">
     <div class="flex flex-col">
       <label v-if="codeFromHash && isEmail(flow.getEmailOrUsername())" for="code" class="mb-1">
         <i18n-t keypath="partials.AuthCode.codeFromHashEmail" scope="global">
@@ -247,7 +247,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
           id="code"
           v-model="code"
           tabindex="1"
-          class="min-w-0 flex-auto grow"
+          class="grow flex-auto min-w-0"
           :progress="progress"
           inputmode="numeric"
           pattern="[0-9]*"

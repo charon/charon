@@ -644,9 +644,9 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
   <Teleport to="header">
     <NavBar></NavBar>
   </Teleport>
-  <div class="mt-12 flex w-full flex-col items-center border-t border-transparent sm:mt-[4.5rem]">
-    <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,_65ch)] gap-1 sm:m-4 sm:gap-4">
-      <div class="flex w-full flex-col gap-4 rounded-xs border border-gray-200 bg-white p-4 shadow-sm">
+  <div class="w-full flex flex-col items-center mt-12 sm:mt-[4.5rem] border-t border-transparent">
+    <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
+      <div class="w-full rounded-xs border border-gray-200 bg-white p-4 shadow-sm flex flex-col gap-4">
         <div class="flex flex-row items-center">
           <h1 class="text-2xl font-bold">{{ t("common.entities.organization") }}</h1>
         </div>
@@ -655,12 +655,12 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
         <template v-else>
           <form class="flex flex-col" novalidate @submit.prevent="onBasicSubmit">
             <label for="name" class="mb-1">{{ t("views.OrganizationGet.organizationName") }}</label>
-            <InputText id="name" v-model="name" class="min-w-0 flex-auto grow" :readonly="!metadata.can_update" :progress="progress" required />
-            <label for="description" class="mt-4 mb-1"
+            <InputText id="name" v-model="name" class="grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" required />
+            <label for="description" class="mb-1 mt-4"
               >{{ t("common.fields.description") }}
-              <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
+              <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
             >
-            <TextArea id="description" v-model="description" class="min-w-0 flex-auto grow" :readonly="!metadata.can_update" :progress="progress" />
+            <TextArea id="description" v-model="description" class="grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
             <div v-if="basicUnexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="basicUpdated" class="mt-4 text-success-600">{{ t("views.OrganizationGet.organizationUpdated") }}</div>
             <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
@@ -683,22 +683,22 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
             <div v-else-if="applicationsUpdated" class="text-success-600">{{ t("views.OrganizationGet.addedApplicationsUpdated") }}</div>
             <form v-if="metadata.can_update && (applications.length || canApplicationsSubmit())" class="flex flex-col" novalidate @submit.prevent="onApplicationsSubmit">
               <ul>
-                <li v-for="(application, i) in applications" :key="application.id || i" class="mb-4 flex flex-col">
+                <li v-for="(application, i) in applications" :key="application.id || i" class="flex flex-col mb-4">
                   <ApplicationTemplateListItem :item="{ id: application.applicationTemplate.id }" :public-doc="application.applicationTemplate" h3 />
                   <div class="ml-4">
                     <fieldset v-if="application.values.length" class="mt-4">
                       <legend class="font-bold">{{ t("views.OrganizationGet.configuration") }}</legend>
                       <ol>
-                        <li v-for="(value, j) in application.values" :key="value.name" class="mt-4 flex flex-col">
+                        <li v-for="(value, j) in application.values" :key="value.name" class="flex flex-col mt-4">
                           <code>{{ value.name }}</code>
                           <div v-if="getValueDescription(application, value.name)" class="ml-4">{{ getValueDescription(application, value.name) }}</div>
-                          <InputText :id="`application-${i}-values-${j}`" v-model="value.value" class="mt-1 ml-4 min-w-0 flex-auto grow" :progress="progress" required />
+                          <InputText :id="`application-${i}-values-${j}`" v-model="value.value" class="grow flex-auto min-w-0 ml-4 mt-1" :progress="progress" required />
                         </li>
                       </ol>
                     </fieldset>
-                    <h4 v-if="application.clientsPublic?.length" class="mt-4 font-bold">{{ t("views.OrganizationGet.publicClients") }}</h4>
+                    <h4 v-if="application.clientsPublic?.length" class="font-bold mt-4">{{ t("views.OrganizationGet.publicClients") }}</h4>
                     <ol v-if="application.clientsPublic?.length">
-                      <li v-for="(client, j) in application.clientsPublic" :key="j" class="mt-4 grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
+                      <li v-for="(client, j) in application.clientsPublic" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
                         <div>{{ j + 1 }}.</div>
                         <div class="flex flex-col gap-4">
                           <div v-if="getPublicClientDescription(application, client.client.id)">{{ getPublicClientDescription(application, client.client.id) }}</div>
@@ -714,9 +714,9 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
                         </div>
                       </li>
                     </ol>
-                    <h4 v-if="application.clientsBackend?.length" class="mt-4 font-bold">{{ t("views.OrganizationGet.backendClients") }}</h4>
+                    <h4 v-if="application.clientsBackend?.length" class="font-bold mt-4">{{ t("views.OrganizationGet.backendClients") }}</h4>
                     <ol v-if="application.clientsBackend?.length">
-                      <li v-for="(client, j) in application.clientsBackend" :key="j" class="mt-4 grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
+                      <li v-for="(client, j) in application.clientsBackend" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
                         <div>{{ j + 1 }}.</div>
                         <div class="flex flex-col gap-4">
                           <div v-if="getBackendClientDescription(application, client.client.id)">{{ getBackendClientDescription(application, client.client.id) }}</div>
@@ -738,9 +738,9 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
                         </div>
                       </li>
                     </ol>
-                    <h4 v-if="application.clientsService?.length" class="mt-4 font-bold">{{ t("views.OrganizationGet.serviceClients") }}</h4>
+                    <h4 v-if="application.clientsService?.length" class="font-bold mt-4">{{ t("views.OrganizationGet.serviceClients") }}</h4>
                     <ol v-if="application.clientsService?.length">
-                      <li v-for="(client, j) in application.clientsService" :key="j" class="mt-4 grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
+                      <li v-for="(client, j) in application.clientsService" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
                         <div>{{ j + 1 }}.</div>
                         <div class="flex flex-col gap-4">
                           <div v-if="getServiceClientDescription(application, client.client.id)">{{ getServiceClientDescription(application, client.client.id) }}</div>
@@ -762,7 +762,7 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
                         </div>
                       </li>
                     </ol>
-                    <div class="flew-row mt-4 flex items-center justify-between gap-4">
+                    <div class="flex flew-row justify-between items-center gap-4 mt-4">
                       <div>
                         <i18n-t keypath="views.OrganizationGet.status" scope="global">
                           <template #strongStatus>
@@ -817,7 +817,7 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
                       </div>
                     </WithIdentityPublicDocument>
                     <div v-else class="flex flex-row gap-4">
-                      <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="min-w-0 flex-auto grow" :progress="progress" required />
+                      <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="grow flex-auto min-w-0" :progress="progress" required />
                       <Button type="button" @click.prevent="admins.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                     </div>
                   </div>

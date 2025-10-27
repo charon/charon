@@ -91,7 +91,7 @@ const withOrganizationApplicationDocument = ref<ComponentExposed<typeof WithOrga
 </script>
 
 <template>
-  <div class="flex w-full flex-col rounded-xs border border-gray-200 bg-white p-4 shadow-sm">
+  <div class="flex flex-col rounded-xs border border-gray-200 bg-white p-4 shadow-sm w-full">
     <WithOrganizationApplicationDocument
       ref="withOrganizationApplicationDocument"
       :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }"
@@ -99,7 +99,7 @@ const withOrganizationApplicationDocument = ref<ComponentExposed<typeof WithOrga
     >
       <template #default="{ doc }">
         <template v-if="flow.getCompleted().includes('failed')">
-          <div class="mb-4 text-error-600">
+          <div class="text-error-600 mb-4">
             <i18n-t keypath="partials.AuthManualRedirect.failed" scope="global">
               <template #strongSorry
                 ><strong>{{ t("common.messages.sorry") }}</strong></template

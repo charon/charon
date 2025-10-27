@@ -24,7 +24,7 @@ const WithIdentityPublicDocument = WithDocument<IdentityPublicType>
     </template>
     <template #error="{ url }">
       <div class="flex flex-row gap-4" :data-url="url">
-        <div class="flex grow">
+        <div class="grow flex">
           <span class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
         </div>
         <slot :identity="undefined" :is-current="undefined" :can-update="undefined"></slot>

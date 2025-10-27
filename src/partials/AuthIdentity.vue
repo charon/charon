@@ -317,7 +317,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
 </script>
 
 <template>
-  <div class="flex w-full flex-col rounded-xs border border-gray-200 bg-white p-4 shadow-sm">
+  <div class="flex flex-col rounded-xs border border-gray-200 bg-white p-4 shadow-sm w-full">
     <div class="flex flex-col">
       <div v-if="flow.getCompleted().includes('signin')" class="mb-4">
         <i18n-t keypath="partials.AuthIdentity.signinSuccess" scope="global">
@@ -339,17 +339,17 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
       <div v-if="allIdentitiesLoading" class="mb-4">{{ t("common.data.dataLoading") }}</div>
       <div v-else-if="allIdentitiesLoadingError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
-        <h3 class="text-l mb-4 font-bold">{{ t("partials.AuthIdentity.previouslyUsedIdentities") }}</h3>
-        <div v-if="usedIdentities.length + addedIdentities.length + disabledIdentities.length === 0" class="mb-4 italic">
+        <h3 class="text-l font-bold mb-4">{{ t("partials.AuthIdentity.previouslyUsedIdentities") }}</h3>
+        <div v-if="usedIdentities.length + addedIdentities.length + disabledIdentities.length === 0" class="italic mb-4">
           {{ t("partials.AuthIdentity.noIdentityUsed") }}
         </div>
-        <div v-else-if="usedIdentities.length + disabledIdentities.length === 0" class="mb-4 italic">
+        <div v-else-if="usedIdentities.length + disabledIdentities.length === 0" class="italic mb-4">
           {{ t("partials.AuthIdentity.noIdentityUsedWithApp") }}
         </div>
-        <div v-else-if="usedIdentities.length + addedIdentities.length === 0" class="mb-4 italic">
+        <div v-else-if="usedIdentities.length + addedIdentities.length === 0" class="italic mb-4">
           {{ t("partials.AuthIdentity.allPreviousDisabled") }}
         </div>
-        <div v-else-if="usedIdentities.length === 0" class="mb-4 italic">{{ t("partials.AuthIdentity.previouslyUsedDisabled") }}</div>
+        <div v-else-if="usedIdentities.length === 0" class="italic mb-4">{{ t("partials.AuthIdentity.previouslyUsedDisabled") }}</div>
         <ul v-else>
           <li v-for="allIdentity in usedIdentities" :key="allIdentity.identity.id" class="mb-4">
             <IdentityPublic :identity="allIdentity.identity" :url="allIdentity.url" :is-current="allIdentity.isCurrent" :can-update="allIdentity.canUpdate">
@@ -368,7 +368,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
           </li>
         </ul>
         <template v-if="addedIdentities.length">
-          <h3 class="text-l mb-4 font-bold">{{ t("partials.AuthIdentity.identitiesUsedWithOrg") }}</h3>
+          <h3 class="text-l font-bold mb-4">{{ t("partials.AuthIdentity.identitiesUsedWithOrg") }}</h3>
           <ul>
             <li v-for="allIdentity in addedIdentities" :key="allIdentity.identity.id" class="mb-4">
               <IdentityPublic :identity="allIdentity.identity" :url="allIdentity.url" :is-current="allIdentity.isCurrent" :can-update="allIdentity.canUpdate">
@@ -387,11 +387,11 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
             </li>
           </ul>
         </template>
-        <h3 class="text-l mb-4 font-bold">{{ t("partials.AuthIdentity.otherAvailableIdentities") }}</h3>
-        <div v-if="usedIdentities.length + addedIdentities.length + otherIdentities.length + disabledIdentities.length === 0" class="mb-4 italic">
+        <h3 class="text-l font-bold mb-4">{{ t("partials.AuthIdentity.otherAvailableIdentities") }}</h3>
+        <div v-if="usedIdentities.length + addedIdentities.length + otherIdentities.length + disabledIdentities.length === 0" class="italic mb-4">
           {{ t("partials.AuthIdentity.noIdentitiesCreateFirst") }}
         </div>
-        <div v-else-if="otherIdentities.length === 0" class="mb-4 italic">{{ t("partials.AuthIdentity.noOtherIdentitiesCreateOne") }}</div>
+        <div v-else-if="otherIdentities.length === 0" class="italic mb-4">{{ t("partials.AuthIdentity.noOtherIdentitiesCreateOne") }}</div>
         <ul v-else>
           <li v-for="allIdentity in otherIdentities" :key="allIdentity.identity.id" class="mb-4">
             <IdentityPublic :identity="allIdentity.identity" :url="allIdentity.url" :is-current="allIdentity.isCurrent" :can-update="allIdentity.canUpdate">
@@ -410,7 +410,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
           </li>
         </ul>
         <template v-if="disabledIdentities.length">
-          <h3 class="text-l mb-4 font-bold">{{ t("partials.AuthIdentity.disabledIdentities") }}</h3>
+          <h3 class="text-l font-bold mb-4">{{ t("partials.AuthIdentity.disabledIdentities") }}</h3>
           <ul>
             <li v-for="allIdentity in disabledIdentities" :key="allIdentity.identity.id" class="mb-4">
               <IdentityPublic
@@ -430,7 +430,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
           </ul>
         </template>
         <template v-if="blockedIdentities.length">
-          <h3 class="text-l mb-4 font-bold">{{ t("partials.AuthIdentity.blockedIdentities") }}</h3>
+          <h3 class="text-l font-bold mb-4">{{ t("partials.AuthIdentity.blockedIdentities") }}</h3>
           <ul>
             <li v-for="allIdentity in blockedIdentities" :key="allIdentity.identity.id" class="mb-4">
               <IdentityPublic
@@ -444,11 +444,11 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
           </ul>
         </template>
       </template>
-      <div v-if="!createShown" class="mb-4 flex flex-row justify-start gap-4">
+      <div v-if="!createShown" class="flex flex-row justify-start gap-4 mb-4">
         <Button type="button" tabindex="3" :progress="progress" @click.prevent="onCreateShow">{{ t("partials.AuthIdentity.newIdentityButton") }}</Button>
       </div>
       <template v-if="createShown">
-        <h3 class="text-l mb-4 font-bold">{{ t("partials.AuthIdentity.createNewIdentity") }}</h3>
+        <h3 class="text-l font-bold mb-4">{{ t("partials.AuthIdentity.createNewIdentity") }}</h3>
         <IdentityCreate class="mb-4" :flow-id="flow.getId()" @created="onIdentityCreated" />
       </template>
       <div v-if="unexpectedError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>

@@ -29,19 +29,19 @@ function beforeActive(step: string): boolean {
 <template>
   <div class="py-1">
     <div
-      class="relative h-1 rounded-full bg-slate-200"
+      class="bg-slate-200 rounded-full h-1 relative"
       :style="{
         marginLeft: `calc(((1 / (2 * ${props.steps.length})) * (100% + 0.5rem)) - 0.25rem)`,
         marginRight: `calc(((1 / (2 * ${props.steps.length})) * (100% + 0.5rem)) - 0.25rem)`,
       }"
     >
       <div
-        class="absolute inset-y-0 left-0 rounded-l-full bg-secondary-400 after:float-right after:-mt-1 after:-mr-1.5 after:h-3 after:w-3 after:rounded-full after:bg-inherit motion-safe:transition-[width] motion-safe:duration-700 motion-safe:will-change-[width]"
+        class="bg-secondary-400 rounded-l-full motion-safe:transition-[width] motion-safe:will-change-[width] motion-safe:duration-700 absolute inset-y-0 left-0 after:float-right after:h-3 after:w-3 after:-mt-1 after:-mr-1.5 after:bg-inherit after:rounded-full"
         :style="{ width: progressBarWidth() }"
       ></div>
     </div>
   </div>
-  <ul class="mt-2 grid w-full auto-cols-fr grid-flow-col gap-x-2">
+  <ul class="grid grid-flow-col auto-cols-fr w-full gap-x-2 mt-2">
     <slot v-for="step in steps" :key="step.key" :active="step.key === currentStep" :step="step" :before-active="beforeActive(step.key)">
       <li class="text-center">
         <strong v-if="step.key === currentStep">{{ step.name }}</strong>
