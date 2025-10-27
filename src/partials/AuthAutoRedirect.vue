@@ -159,7 +159,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
 </script>
 
 <template>
-  <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
+  <div class="flex w-full flex-col rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
     <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationApp">
       <template #default="{ doc }">
         <div v-if="flow.getCompleted().includes('identity')" class="mb-4">
@@ -190,7 +190,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
       </template>
     </WithOrganizationApplicationDocument>
     <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
-    <div class="mt-4 flex flex-row gap-4 justify-between">
+    <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="3" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
       <div class="flex flex-row gap-4">
         <Button type="button" tabindex="2" :progress="progress" @click.prevent="onPauseResume">{{

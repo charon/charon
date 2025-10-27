@@ -1,4 +1,4 @@
-FROM node:20.17-bookworm
+FROM node:24.10-bookworm
 
 # Set trust for our CA root certificate.
 # See: https://github.com/microsoft/playwright/issues/4785#issuecomment-1611570074

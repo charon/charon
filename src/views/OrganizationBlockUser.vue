@@ -90,9 +90,9 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
   <Teleport to="header">
     <NavBar></NavBar>
   </Teleport>
-  <div class="w-full flex flex-col items-center mt-12 sm:mt-[4.5rem] border-t border-transparent">
-    <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
-      <div class="w-full rounded border bg-white p-4 shadow">
+  <div class="mt-12 flex w-full flex-col items-center border-t border-transparent sm:mt-[4.5rem]">
+    <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,_65ch)] gap-1 sm:m-4 sm:gap-4">
+      <div class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <div class="flex flex-col gap-4">
           <h1 class="text-2xl font-bold">{{ t("views.OrganizationBlockUser.blockUser") }}</h1>
           <div>
@@ -100,17 +100,17 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
           </div>
         </div>
       </div>
-      <div class="w-full rounded border bg-white p-4 shadow">
+      <div class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <WithIdentityForAdminDocument :params="{ id, identityId }" name="OrganizationIdentity">
           <template #default="{ doc, metadata, url }">
             <IdentityPublic :identity="doc" :url="url" :is-current="metadata.is_current" :can-update="metadata.can_update" />
           </template>
         </WithIdentityForAdminDocument>
       </div>
-      <div v-if="success" class="w-full rounded border bg-white p-4 shadow">
+      <div v-if="success" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <div class="text-success-600">{{ t("views.OrganizationBlockUser.blockingSuccess") }}</div>
       </div>
-      <div v-else class="w-full rounded border bg-white p-4 shadow">
+      <div v-else class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
           <p>{{ t("views.OrganizationBlockUser.blockConfirmation") }}</p>
           <fieldset class="mt-4">
@@ -130,14 +130,14 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
               </div>
             </div>
           </fieldset>
-          <label for="organizationNote" class="mb-1 mt-4"
-            >{{ t("views.OrganizationBlockUser.organizationNote") }} <span class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
+          <label for="organizationNote" class="mt-4 mb-1"
+            >{{ t("views.OrganizationBlockUser.organizationNote") }} <span class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
           >
-          <TextArea id="organizationNote" v-model="organizationNote" class="flex-grow flex-auto min-w-0" :progress="progress" />
-          <label for="userNote" class="mb-1 mt-4"
-            >{{ t("views.OrganizationBlockUser.userNote") }} <span class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
+          <TextArea id="organizationNote" v-model="organizationNote" class="min-w-0 flex-auto grow" :progress="progress" />
+          <label for="userNote" class="mt-4 mb-1"
+            >{{ t("views.OrganizationBlockUser.userNote") }} <span class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
           >
-          <TextArea id="userNote" v-model="userNote" class="flex-grow flex-auto min-w-0" :progress="progress" />
+          <TextArea id="userNote" v-model="userNote" class="min-w-0 flex-auto grow" :progress="progress" />
           <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
           <div class="mt-4 flex flex-row justify-end">
             <!--
