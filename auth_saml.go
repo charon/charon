@@ -329,8 +329,19 @@ func validateSAMLAssertion(assertionInfo *saml2.AssertionInfo) errors.E {
 		return errors.New("SAML assertion info is nil")
 	}
 
-	if !assertionInfo.ResponseSignatureValidated {
-		return errors.New("SAML assertion response signature not validated")
+	responseSignatureValidated := assertionInfo.ResponseSignatureValidated
+	allAssertionSignaturesValidated := len(assertionInfo.Assertions) > 0
+
+	for _, assertion := range assertionInfo.Assertions {
+		if !assertion.SignatureValidated {
+			allAssertionSignaturesValidated = false
+			break
+		}
+	}
+
+	// Either response or assertion (or both) must have a validated signature.
+	if !responseSignatureValidated && !allAssertionSignaturesValidated {
+		return errors.New("SAML response and assertion signatures are not validated")
 	}
 
 	if assertionInfo.WarningInfo.InvalidTime {
