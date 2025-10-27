@@ -88,7 +88,7 @@ test_go_link_publish:
 test_node:
   stage: test
 
-  image: node:22.20-alpine3.22
+  image: node:24.10-alpine3.22
 
   before_script:
     - echo "LINK_PUBLISH_JOB_ID=${CI_JOB_ID}" > link_publish.env
@@ -223,7 +223,7 @@ lint_go:
 lint_node:
   stage: test
 
-  image: node:22.20-alpine3.22
+  image: node:24.10-alpine3.22
 
   before_script:
     - apk --update add git
@@ -242,7 +242,7 @@ lint_node:
 lint_vue:
   stage: test
 
-  image: node:22.20-alpine3.22
+  image: node:24.10-alpine3.22
 
   script:
     - npm ci --audit=false
@@ -251,7 +251,7 @@ lint_vue:
 lint_style:
   stage: test
 
-  image: node:22.20-alpine3.22
+  image: node:24.10-alpine3.22
 
   before_script:
     - apk --update add git
@@ -283,7 +283,7 @@ fmt_go:
 fmt_node:
   stage: test
 
-  image: node:22.20-alpine3.22
+  image: node:24.10-alpine3.22
 
   before_script:
     - apk --update add git
@@ -296,7 +296,7 @@ fmt_node:
 generate_vue_i18n:
   stage: test
 
-  image: node:22.20-alpine3.22
+  image: node:24.10-alpine3.22
 
   before_script:
     - apk --update add git
@@ -309,7 +309,7 @@ generate_vue_i18n:
 lint_docs:
   stage: test
 
-  image: node:22.20-alpine3.22
+  image: node:24.10-alpine3.22
 
   before_script:
     - apk --update add make bash git
@@ -332,7 +332,7 @@ audit_go:
 audit_node:
   stage: test
 
-  image: node:22.20-alpine3.22
+  image: node:24.10-alpine3.22
 
   # Signatures audit is done during install in Dockerfile.
   script:

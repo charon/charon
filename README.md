@@ -253,7 +253,7 @@ the frontend as necessary.
 ### Backend
 
 The backend is implemented in [Go](https://golang.org/) (requires 1.25 or newer)
-and provides a HTTP2 API. Node 22 or newer is required as well.
+and provides a HTTP2 API. Node 24 or newer is required as well.
 
 Automatic media type detection uses file extensions and a file extension database has
 to be available on the system.
@@ -291,7 +291,7 @@ go install github.com/githubnemo/CompileDaemon@latest
 The frontend is implemented in [TypeScript](https://www.typescriptlang.org/) and
 [Vue](https://vuejs.org/) and during development we use [Vite](https://vitejs.dev/).
 Vite compiles frontend files and serves them. It also watches for changes in frontend files,
-recompiles them, and hot-reloads the frontend as necessary. Node 22 or newer is required.
+recompiles them, and hot-reloads the frontend as necessary. Node 24 or newer is required.
 
 To install all dependencies and run frontend for development:
 
