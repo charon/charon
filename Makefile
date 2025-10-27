@@ -25,7 +25,9 @@ build-static: dist
 dist: node_modules src vite.config.ts tsconfig.json tsconfig.node.json LICENSE
 	npm run build
 
-node_modules:
+node_modules: package-lock.json
+
+package-lock.json: package.json
 	npm install
 
 dist/index.html:
