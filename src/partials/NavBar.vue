@@ -82,7 +82,7 @@ async function onSignIn() {
       :to="{ name: 'Home' }"
       class="p-1.5 sm:p-0 group -my-1 -ml-1 sm:ml-0 sm:-my-4 border-r border-slate-400 outline-none hover:bg-slate-400 active:bg-slate-200"
     >
-      <GlobeAltIcon class="m-1 sm:m-4 sm:h-10 sm:w-10 h-7 w-7 rounded-xs group-focus:ring-2 group-focus:ring-primary-500" />
+      <GlobeAltIcon class="m-1 sm:m-4 sm:h-10 sm:w-10 h-7 w-7 rounded-sm group-focus:ring-2 group-focus:ring-primary-500" />
     </router-link>
     <slot><div class="grow"></div></slot>
     <Button v-if="isSignedIn()" id="navbar-button-signout" primary type="button" :progress="progress" @click.prevent="onSignOut">{{

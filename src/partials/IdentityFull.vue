@@ -20,7 +20,7 @@ const { t } = useI18n({ useScope: "global" })
   <div class="flex flex-row gap-4" :data-url="url">
     <div v-if="identity.pictureUrl" class="flex-none">
       <router-link :to="{ name: 'IdentityGet', params: { id: identity.id } }" class="link">
-        <img :src="identity.pictureUrl" :alt="t('common.accessibility.picture')" class="h-20 w-20 ring-2 ring-white rounded-xs" />
+        <img :src="identity.pictureUrl" :alt="t('common.accessibility.picture')" class="h-20 w-20 ring-2 ring-white rounded-sm" />
       </router-link>
     </div>
     <div class="grow flex flex-col">

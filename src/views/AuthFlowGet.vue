@@ -288,9 +288,9 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
       but allow contents to shrink if necessary to fit into the smaller window width.
     -->
     <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
-      <div v-if="unexpectedError" class="w-full rounded-xs border border-gray-200 bg-white p-4 shadow-sm text-error-600">{{ t("common.errors.unexpected") }}</div>
+      <div v-if="unexpectedError" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm text-error-600">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
-        <div class="w-full rounded-xs border border-gray-200 bg-white p-4 shadow-sm">
+        <div class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
           <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">{{ t("common.buttons.signIn") }}</h2>
           <div class="mb-4">
             <i18n-t keypath="views.AuthFlowGet.instructionsMessage" scope="global">

@@ -91,7 +91,7 @@ const withOrganizationApplicationDocument = ref<ComponentExposed<typeof WithOrga
 </script>
 
 <template>
-  <div class="flex flex-col rounded-xs border border-gray-200 bg-white p-4 shadow-sm w-full">
+  <div class="flex flex-col rounded-sm border border-gray-200 bg-white p-4 shadow-sm w-full">
     <WithOrganizationApplicationDocument
       ref="withOrganizationApplicationDocument"
       :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }"
