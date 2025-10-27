@@ -335,13 +335,13 @@
       "notVerified": "nepreverjen"
     },
     "CredentialAdd": {
-      "addCredential": "Dodaj metodo avtentikacije",
+      "addCredential": "Dodajte metodo za avtentikacijo",
       "availableOptions": "Metode, ki so na voljo",
-      "passkeyInstructions": "Your device will prompt you to create a passkey. This allows you to sign in without a password.",
-      "addPasskeyButton": "Create Passkey",
-      "passkeyNotSupported": "Your browser does not support passkeys.",
-      "credentialTypes": "Credential type",
-      "label": "Label"
+      "passkeyInstructions": "Dodajte {strongPasskey}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave.",
+      "addPasskeyButton": "Ustvarite passkey",
+      "passkeyNotSupported": "Vaš brskalnik ne podpira passkey.",
+      "credentialTypes": "Vrsta poverilnice",
+      "label": "Oznaka"
     }
   }
 }

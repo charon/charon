@@ -31,38 +31,38 @@ var (
 	credentialSessionsMu sync.RWMutex                                      //nolint:gochecknoglobals
 )
 
-type CredentialInfo struct {
+type credentialInfo struct {
 	ID          string   `json:"id"`
 	Provider    Provider `json:"provider"`
 	DisplayName string   `json:"displayName"`
 	Label       string   `json:"label,omitempty"`
 }
 
-type CredentialAddPasswordStartResponse struct {
+type credentialAddPasswordStartResponse struct {
 	PublicKey      []byte                                 `json:"publicKey"`
 	SessionKey     string                                 `json:"sessionKey"`
 	DeriveOptions  AuthFlowResponsePasswordDeriveOptions  `json:"deriveOptions"`
 	EncryptOptions AuthFlowResponsePasswordEncryptOptions `json:"encryptOptions"`
 }
 
-type CredentialAddPasswordCompleteRequest struct {
+type credentialAddPasswordCompleteRequest struct {
 	PublicKey  []byte `json:"publicKey"`
 	SessionKey string `json:"sessionKey"`
 	Password   []byte `json:"password"`
 	Label      string `json:"label,omitempty"`
 }
 
-type CredentialAddPasskeyStartResponse struct {
+type credentialAddPasskeyStartResponse struct {
 	SessionKey    string                       `json:"sessionKey"`
 	CreateOptions *protocol.CredentialCreation `json:"createOptions"`
 }
 
-type CredentialAddPasskeyCompleteRequest struct {
+type credentialAddPasskeyCompleteRequest struct {
 	SessionKey     string                              `json:"sessionKey"`
 	CreateResponse protocol.CredentialCreationResponse `json:"createResponse"`
 }
 
-type CredentialAddSession struct {
+type credentialAddSession struct {
 	Type       string
 	PrivateKey []byte
 	Nonce      []byte
@@ -75,7 +75,7 @@ type addPasswordCredential struct {
 	Label string `json:"label"`
 }
 
-func (s *Service) getCredentialInfo(provider Provider, credential Credential, index int) (CredentialInfo, errors.E) {
+func (s *Service) getCredentialInfo(provider Provider, credential Credential, index int) (credentialInfo, errors.E) {
 	var displayName string
 	var label string
 
@@ -84,21 +84,21 @@ func (s *Service) getCredentialInfo(provider Provider, credential Credential, in
 		var ec emailCredential
 		errE := x.Unmarshal(credential.Data, &ec)
 		if errE != nil {
-			return CredentialInfo{}, errE
+			return credentialInfo{}, errE
 		}
 		displayName = ec.Email
 	case ProviderUsername:
 		var uc usernameCredential
 		errE := x.Unmarshal(credential.Data, &uc)
 		if errE != nil {
-			return CredentialInfo{}, errE
+			return credentialInfo{}, errE
 		}
 		displayName = uc.Username
 	case ProviderPassword:
 		var pc addPasswordCredential
 		errE := x.Unmarshal(credential.Data, &pc)
 		if errE != nil {
-			return CredentialInfo{}, errE
+			return credentialInfo{}, errE
 		}
 		label = pc.Label
 		if label == "" {
@@ -108,7 +108,7 @@ func (s *Service) getCredentialInfo(provider Provider, credential Credential, in
 	case ProviderPasskey:
 		displayName = fmt.Sprintf("Passkey #%d", index+1)
 	case ProviderCode:
-		return CredentialInfo{}, errors.New("code provider should not be returned")
+		return credentialInfo{}, errors.New("code provider should not be returned")
 	default:
 		providerName := string(provider)
 		if p, ok := s.oidcProviders()[provider]; ok {
@@ -129,7 +129,7 @@ func (s *Service) getCredentialInfo(provider Provider, credential Credential, in
 		}
 	}
 
-	return CredentialInfo{
+	return credentialInfo{
 		ID:          credential.ID,
 		Provider:    provider,
 		DisplayName: displayName,
@@ -171,6 +171,7 @@ func (s *Service) addCredentialToAccount(ctx context.Context, accountID identifi
 	return nil
 }
 
+// CredentialList is the frontend handler for getting credentials.
 func (s *Service) CredentialList(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
@@ -179,6 +180,7 @@ func (s *Service) CredentialList(w http.ResponseWriter, req *http.Request, _ waf
 	}
 }
 
+// CredentialListGet is the API handler for listing credentials, GET request.
 func (s *Service) CredentialListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	ctx := s.requireAuthenticatedForIdentity(w, req)
 	if ctx == nil {
@@ -200,7 +202,7 @@ func (s *Service) CredentialListGet(w http.ResponseWriter, req *http.Request, _ 
 	for _, creds := range account.Credentials {
 		total += len(creds)
 	}
-	result := make([]CredentialInfo, 0, total)
+	result := make([]credentialInfo, 0, total)
 
 	for provider, credentials := range account.Credentials {
 		for i, credential := range credentials {
@@ -216,6 +218,7 @@ func (s *Service) CredentialListGet(w http.ResponseWriter, req *http.Request, _ 
 	s.WriteJSON(w, req, result, nil)
 }
 
+// CredentialGet is the frontend handler for getting credentials.
 func (s *Service) CredentialGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
@@ -224,6 +227,7 @@ func (s *Service) CredentialGet(w http.ResponseWriter, req *http.Request, _ waf.
 	}
 }
 
+// CredentialGetGet is the API handler for getting the credential, GET request.
 func (s *Service) CredentialGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := s.requireAuthenticatedForIdentity(w, req)
 	if ctx == nil {
@@ -256,6 +260,7 @@ func (s *Service) CredentialGetGet(w http.ResponseWriter, req *http.Request, par
 	s.NotFound(w, req)
 }
 
+// CredentialAdd is the frontend handler for adding a credential.
 func (s *Service) CredentialAdd(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
@@ -264,8 +269,9 @@ func (s *Service) CredentialAdd(w http.ResponseWriter, req *http.Request, _ waf.
 	}
 }
 
+// CredentialAddEmailPost is the API handler for adding a credential to account, POST request.
 func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := s.requireAuthenticatedForIdentity(w, req)
@@ -330,8 +336,9 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 	}, nil)
 }
 
+// CredentialAddUsernamePost is the API handler for adding a credential to account, POST request.
 func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := s.requireAuthenticatedForIdentity(w, req)
@@ -396,8 +403,9 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 	}, nil)
 }
 
+// CredentialAddPasswordStartPost is the API handler to start the password credential step, POST request.
 func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := s.requireAuthenticatedForIdentity(w, req)
@@ -430,7 +438,7 @@ func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *htt
 		return
 	}
 
-	session := CredentialAddSession{
+	session := credentialAddSession{
 		Type:       "password",
 		PrivateKey: privateKey.Bytes(),
 		Nonce:      nonce,
@@ -448,7 +456,7 @@ func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *htt
 	credentialSessions[sessionKey] = sessionData
 	credentialSessionsMu.Unlock()
 
-	response := CredentialAddPasswordStartResponse{
+	response := credentialAddPasswordStartResponse{
 		PublicKey:  privateKey.PublicKey().Bytes(),
 		SessionKey: sessionKey.String(),
 		DeriveOptions: AuthFlowResponsePasswordDeriveOptions{
@@ -466,8 +474,9 @@ func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *htt
 	s.WriteJSON(w, req, response, nil)
 }
 
+// CredentialAddPasswordCompletePost is the API handler to complete the password credential step, POST request.
 func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := s.requireAuthenticatedForIdentity(w, req)
@@ -477,7 +486,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 
 	accountID := mustGetAccountID(ctx)
 
-	var request CredentialAddPasswordCompleteRequest
+	var request credentialAddPasswordCompleteRequest
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &request)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
@@ -493,11 +502,11 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 	credentialSessionsMu.Unlock()
 
 	if !ok {
-		s.BadRequestWithError(w, req, errors.WithDetails(ErrSessionNotFound, "sessionKeyID", sessionKeyID))
+		s.BadRequestWithError(w, req, errors.WithDetails(errSessionNotFound, "sessionKeyID", sessionKeyID))
 		return
 	}
 
-	var session CredentialAddSession
+	var session credentialAddSession
 	errE = x.UnmarshalWithoutUnknownFields(sessionData, &session)
 	if errE != nil {
 		errors.Details(errE)["sessionKeyID"] = sessionKeyID
@@ -506,7 +515,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 	}
 
 	if time.Since(session.CreatedAt) > (defaultPasskeyTimeout) {
-		s.BadRequestWithError(w, req, errors.WithDetails(ErrSessionNotFound, "expired"))
+		s.BadRequestWithError(w, req, errors.WithDetails(errSessionNotFound, "expired"))
 		return
 	}
 
@@ -562,7 +571,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	hashedPassword, err := argon2id.CreateHash(string(plainPassword), &Argon2idParams)
+	hashedPassword, err := argon2id.CreateHash(string(plainPassword), &argon2idParams)
 	if err != nil {
 		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
 		return
@@ -616,8 +625,9 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 	}, nil)
 }
 
+// CredentialAddPasskeyStartPost is the API handler to start the passkey credential step, POST request.
 func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := s.requireAuthenticatedForIdentity(w, req)
@@ -659,7 +669,7 @@ func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http
 			ResidentKey:             protocol.ResidentKeyRequirementRequired,
 			UserVerification:        protocol.VerificationDiscouraged,
 		}),
-		WithPreferredCredentialAlgorithms([]webauthncose.COSEAlgorithmIdentifier{
+		withPreferredCredentialAlgorithms([]webauthncose.COSEAlgorithmIdentifier{
 			webauthncose.AlgEdDSA,
 			webauthncose.AlgES256,
 			webauthncose.AlgRS256,
@@ -670,7 +680,7 @@ func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http
 		return
 	}
 
-	session := CredentialAddSession{
+	session := credentialAddSession{
 		Type:       "passkey",
 		PrivateKey: nil,
 		Nonce:      nil,
@@ -688,14 +698,15 @@ func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http
 	credentialSessions[sessionKey] = sessionDataBytes
 	credentialSessionsMu.Unlock()
 
-	s.WriteJSON(w, req, CredentialAddPasskeyStartResponse{
+	s.WriteJSON(w, req, credentialAddPasskeyStartResponse{
 		SessionKey:    sessionKey.String(),
 		CreateOptions: options,
 	}, nil)
 }
 
+// CredentialAddPasskeyCompletePost is the API handler to complete the passkey credential step, POST request.
 func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := s.requireAuthenticatedForIdentity(w, req)
@@ -705,7 +716,7 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 
 	accountID := mustGetAccountID(ctx)
 
-	var request CredentialAddPasskeyCompleteRequest
+	var request credentialAddPasskeyCompleteRequest
 	errE := x.DecodeJSON(req.Body, &request)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
@@ -722,11 +733,11 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 	credentialSessionsMu.Unlock()
 
 	if !ok {
-		s.BadRequestWithError(w, req, errors.WithDetails(ErrSessionNotFound, "sessionKeyID", sessionKeyID))
+		s.BadRequestWithError(w, req, errors.WithDetails(errSessionNotFound, "sessionKeyID", sessionKeyID))
 		return
 	}
 
-	var session CredentialAddSession
+	var session credentialAddSession
 	errE = x.UnmarshalWithoutUnknownFields(sessionData, &session)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -734,7 +745,7 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 	}
 
 	if time.Since(session.CreatedAt) > (defaultPasskeyTimeout) {
-		s.BadRequestWithError(w, req, errors.WithDetails(ErrSessionNotFound, "expired"))
+		s.BadRequestWithError(w, req, errors.WithDetails(errSessionNotFound, "expired"))
 		return
 	}
 
@@ -788,8 +799,9 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 	}, nil)
 }
 
+// CredentialAddThirdPartyProviderStartPost is the API handler for starting the third-party credential step, POST request.
 func (s *Service) CredentialAddThirdPartyProviderStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := s.requireAuthenticatedForIdentity(w, req)
@@ -800,7 +812,7 @@ func (s *Service) CredentialAddThirdPartyProviderStartPost(w http.ResponseWriter
 	sessionID := mustGetSessionID(ctx)
 	providerKey := Provider(params["provider"])
 
-	flow := &Flow{
+	flow := &flow{
 		ID:        identifier.New(),
 		CreatedAt: time.Now().UTC(),
 		Completed: []Completed{},
@@ -848,29 +860,9 @@ func (s *Service) CredentialAddThirdPartyProviderStartPost(w http.ResponseWriter
 	}, nil)
 }
 
-func (s *Service) CredentialAddThirdPartyProviderCallback(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	providerKey := Provider(params["provider"])
-
-	if p, ok := s.oidcProviders()[providerKey]; ok {
-		s.handleCredentialAddOIDCCallback(w, req, providerKey, p)
-		return
-	}
-
-	errE := errors.New("unknown provider")
-	errors.Details(errE)["provider"] = providerKey
-	s.NotFoundWithError(w, req, errE)
-}
-
-func (s *Service) CredentialRemove(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	if s.ProxyStaticTo != "" {
-		s.Proxy(w, req)
-	} else {
-		s.ServeStaticFile(w, req, "/index.html")
-	}
-}
-
+// CredentialRemovePost is the API handler for removing credential, POST request.
 func (s *Service) CredentialRemovePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := s.requireAuthenticatedForIdentity(w, req)
@@ -927,13 +919,13 @@ func (s *Service) CredentialRemovePost(w http.ResponseWriter, req *http.Request,
 	}, nil)
 }
 
-func (s *Service) handleCredentialAddSAMLStart(ctx context.Context, flow *Flow, provider samlProvider) (string, errors.E) {
+func (s *Service) handleCredentialAddSAMLStart(ctx context.Context, flow *flow, provider samlProvider) (string, errors.E) {
 	authURL, requestID, errE := samlBuildAuthURL(provider.Provider, flow.ID.String())
 	if errE != nil {
 		return "", errE
 	}
 
-	flow.SAMLProvider = &FlowSAMLProvider{
+	flow.SAMLProvider = &flowSAMLProvider{
 		RequestID: requestID,
 	}
 
@@ -945,7 +937,7 @@ func (s *Service) handleCredentialAddSAMLStart(ctx context.Context, flow *Flow, 
 }
 
 func (s *Service) handleCredentialAddSAMLCallback(w http.ResponseWriter, req *http.Request, providerKey Provider, provider samlProvider) {
-	defer req.Body.Close()
+	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
 	ctx := req.Context()
@@ -956,7 +948,7 @@ func (s *Service) handleCredentialAddSAMLCallback(w http.ResponseWriter, req *ht
 		return
 	}
 
-	flow := s.GetActiveFlow(w, req, req.Form.Get("RelayState"))
+	flow := s.getActiveFlow(w, req, req.Form.Get("RelayState"))
 	if flow == nil {
 		return
 	}
@@ -1030,9 +1022,9 @@ func (s *Service) handleCredentialAddSAMLCallback(w http.ResponseWriter, req *ht
 		return
 	}
 
-	jsonData, err := json.Marshal(attributes)
-	if err != nil {
-		log.Warn().Err(err).Msg("marshal error")
+	jsonData, errE := x.MarshalWithoutEscapeHTML(attributes)
+	if errE != nil {
+		log.Warn().Err(errE).Msg("marshal error")
 		s.TemporaryRedirectGetMethod(w, req, location)
 		return
 	}
@@ -1053,10 +1045,12 @@ func (s *Service) handleCredentialAddSAMLCallback(w http.ResponseWriter, req *ht
 	s.TemporaryRedirectGetMethod(w, req, location)
 }
 
-func (s *Service) handleCredentialAddOIDCStart(_ context.Context, _ *Flow, _ oidcProvider) (string, errors.E) {
+func (s *Service) handleCredentialAddOIDCStart(_ context.Context, _ *flow, _ oidcProvider) (string, errors.E) {
 	return "", errors.New("To Do")
 }
 
+/*
 func (s *Service) handleCredentialAddOIDCCallback(w http.ResponseWriter, _ *http.Request, _ Provider, _ oidcProvider) {
 	http.Error(w, "To Do", http.StatusBadRequest)
-}
+}.
+*/

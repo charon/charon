@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import type { Credentials } from "@/types"
 
+import { getCredentials, removeCredential } from "@/api"
+import { isSignedIn } from "@/auth"
+import ButtonLink from "@/components/ButtonLink.vue"
+import CredentialListItem from "@/partials/CredentialListItem.vue"
+import Footer from "@/partials/Footer.vue"
+import NavBar from "@/partials/NavBar.vue"
+import { injectProgress } from "@/progress"
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRoute, useRouter } from "vue-router"
-import CredentialListItem from "@/partials/CredentialListItem.vue"
-import ButtonLink from "@/components/ButtonLink.vue"
-import NavBar from "@/partials/NavBar.vue"
-import Footer from "@/partials/Footer.vue"
-import { getCredentials, removeCredential } from "@/api"
-import { injectProgress } from "@/progress"
-import { isSignedIn } from "@/auth"
 
 const { t } = useI18n({ useScope: "global" })
 const route = useRoute()

@@ -48,7 +48,7 @@ func (s *Service) AuthThirdPartyProviderPost(w http.ResponseWriter, req *http.Re
 
 		relayState := req.Form.Get("RelayState")
 
-		flow := s.GetFlowHandler(w, req, relayState)
+		flow := s.getFlowHandler(w, req, relayState)
 		if flow == nil {
 			s.BadRequestWithError(w, req, errors.WithStack(err))
 			return

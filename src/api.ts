@@ -6,17 +6,17 @@ import type {
   AuthFlowPasswordStartRequest,
   AuthFlowResponse,
   AuthFlowResponsePassword,
+  CredentialAddPasskeyCompleteRequest,
+  CredentialAddPasskeyStartResponse,
+  CredentialAddPasswordCompleteRequest,
+  CredentialAddPasswordStartResponse,
+  CredentialAddResponse,
+  Credentials,
   Flow,
   Identities,
   Identity,
   Metadata,
   OrganizationBlockedStatus,
-  Credentials,
-  CredentialAddResponse,
-  CredentialAddPasswordStartResponse,
-  CredentialAddPasswordCompleteRequest,
-  CredentialAddPasskeyStartResponse,
-  CredentialAddPasskeyCompleteRequest,
 } from "@/types"
 
 import { accessToken } from "@/auth"

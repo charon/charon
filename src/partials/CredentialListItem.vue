@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import type { DeepReadonly } from "vue"
+
 import type { CredentialInfo } from "@/types"
 
-import { useI18n } from "vue-i18n"
-import { type DeepReadonly } from "vue"
 import Button from "@/components/Button.vue"
 import { injectProgress } from "@/progress"
+import { useI18n } from "vue-i18n"
 
 const { t } = useI18n({ useScope: "global" })
 const progress = injectProgress()

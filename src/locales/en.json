@@ -341,7 +341,7 @@
       "addPasskeyButton": "Create Passkey",
       "passkeyNotSupported": "Your browser does not support passkeys.",
       "credentialTypes": "Credential type",
-      "label": "Oznaka"
+      "label": "Label"
     }
   }
 }
