@@ -282,16 +282,16 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
     Use of v-if="!dataLoading" is critical here, because otherwise onAfterEnter on step components can be called twice.
     Also transitions break because it can happen that first start step is rendered and then it is updated to another one after data loads.
   -->
-  <div v-if="!dataLoading" class="w-full self-stretch overflow-x-hidden flex flex-col items-center justify-center">
+  <div v-if="!dataLoading" class="flex w-full flex-col items-center justify-center self-stretch overflow-x-hidden">
     <!--
       We use grid here to have contents of maximum 65ch and grow to 65ch even if contents are narrower,
       but allow contents to shrink if necessary to fit into the smaller window width.
     -->
-    <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
-      <div v-if="unexpectedError" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm text-error-600">{{ t("common.errors.unexpected") }}</div>
+    <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,_65ch)] gap-1 sm:m-4 sm:gap-4">
+      <div v-if="unexpectedError" class="w-full rounded-sm border border-gray-200 bg-white p-4 text-error-600 shadow-sm">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
         <div class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
-          <h2 class="text-center mx-4 mb-4 text-xl font-bold uppercase">{{ t("common.buttons.signIn") }}</h2>
+          <h2 class="mx-4 mb-4 text-center text-xl font-bold uppercase">{{ t("common.buttons.signIn") }}</h2>
           <div class="mb-4">
             <i18n-t keypath="views.AuthFlowGet.instructionsMessage" scope="global">
               <template #appLink>
@@ -347,7 +347,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
             </li>
           </Stepper>
         </div>
-        <div class="w-full relative">
+        <div class="relative w-full">
           <Transition
             :name="direction"
             @after-enter="onAfterEnter"

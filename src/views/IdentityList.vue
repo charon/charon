@@ -61,18 +61,18 @@ const WithIdentityDocument = WithDocument<Identity>
   <Teleport to="header">
     <NavBar></NavBar>
   </Teleport>
-  <div class="w-full flex flex-col items-center mt-12 sm:mt-[4.5rem] border-t border-transparent">
-    <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
-      <div class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm flex flex-col gap-4">
-        <div class="flex flex-row justify-between items-center gap-4">
+  <div class="mt-12 flex w-full flex-col items-center border-t border-transparent sm:mt-[4.5rem]">
+    <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,_65ch)] gap-1 sm:m-4 sm:gap-4">
+      <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
+        <div class="flex flex-row items-center justify-between gap-4">
           <h1 class="text-2xl font-bold">{{ t("common.entities.identities") }}</h1>
           <ButtonLink v-if="isSignedIn()" :to="{ name: 'IdentityCreate' }" :progress="progress" primary>{{ t("common.buttons.create") }}</ButtonLink>
         </div>
       </div>
       <div v-if="dataLoading" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">{{ t("common.data.dataLoading") }}</div>
-      <div v-else-if="dataLoadingError" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm text-error-600">{{ t("common.errors.unexpected") }}</div>
+      <div v-else-if="dataLoadingError" class="w-full rounded-sm border border-gray-200 bg-white p-4 text-error-600 shadow-sm">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
-        <div v-if="!identities.length" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm italic">
+        <div v-if="!identities.length" class="w-full rounded-sm border border-gray-200 bg-white p-4 italic shadow-sm">
           {{ isSignedIn() ? t("views.IdentityList.noIdentitiesCreate") : t("views.IdentityList.noIdentitiesSignIn") }}
         </div>
         <div v-for="identity in identities" :key="identity.id" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">

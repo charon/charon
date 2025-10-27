@@ -308,7 +308,7 @@ async function onCode() {
 </script>
 
 <template>
-  <div class="flex flex-col rounded-sm border border-gray-200 bg-white p-4 shadow-sm w-full">
+  <div class="flex w-full flex-col rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
     <div class="flex flex-col">
       <label for="email-or-username" class="mb-1">{{
         isEmail(flow.getEmailOrUsername()) ? t("partials.AuthPassword.emailAddressLabel") : t("partials.AuthPassword.usernameLabel")
@@ -317,7 +317,7 @@ async function onCode() {
         {{ flow.getEmailOrUsername() }}
       </InputTextButton>
     </div>
-    <div class="flex flex-col mt-4">
+    <div class="mt-4 flex flex-col">
       <label for="authpassword-input-currentpassword" class="mb-1">{{ t("partials.AuthPassword.passwordLabel") }}</label>
       <!--
         We set novalidate because we do not UA to show hints.
@@ -347,7 +347,7 @@ async function onCode() {
           minlength="8"
           tabindex="1"
           :invalid="!!passwordError"
-          class="grow flex-auto min-w-0"
+          class="min-w-0 flex-auto grow"
           :progress="progress"
           autocomplete="current-password"
           autocorrect="off"

@@ -208,7 +208,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
     <template #default="{ doc: originalDoc, url }">
       <LocalScope v-slot="{ doc }" :doc="transformActivity(originalDoc)">
         <div class="flex items-start gap-4" :data-url="url">
-          <div class="shrink-0 w-8 h-8 flex items-center justify-center">
+          <div class="flex h-8 w-8 shrink-0 items-center justify-center">
             <component :is="getActivityIcon(doc.type)" />
           </div>
           <div class="grow">
@@ -227,13 +227,13 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                       doc.organizationApplications?.length || 0,
                     )"
                     :key="i"
-                    class="rounded-xs bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-xs text-sm leading-none"
+                    class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs"
                     >{{ description }}</span
                   >
                 </template>
               </div>
               <div v-if="doc.providers?.length" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm">
-                <span v-for="provider in doc.providers" :key="provider" class="rounded-xs bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-xs text-sm leading-none">{{
+                <span v-for="provider in doc.providers" :key="provider" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{
                   getProviderName(t, provider)
                 }}</span>
               </div>
@@ -336,7 +336,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
     </template>
     <template #error="{ url }">
       <div class="flex flex-row gap-4" :data-url="url">
-        <div class="grow flex">
+        <div class="flex grow">
           <span class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
         </div>
       </div>

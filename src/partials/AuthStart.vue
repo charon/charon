@@ -131,7 +131,7 @@ async function onThirdPartyProvider(provider: string) {
 </script>
 
 <template>
-  <div class="flex flex-col rounded-sm border border-gray-200 bg-white p-4 shadow-sm w-full">
+  <div class="flex w-full flex-col rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
     <div class="flex flex-col">
       <label for="authstart-input-email" class="mb-1">{{ t("partials.AuthStart.emailOrUsernameLabel") }}</label>
       <!--
@@ -143,7 +143,7 @@ async function onThirdPartyProvider(provider: string) {
           id="authstart-input-email"
           v-model="emailOrUsernameProxy"
           name="email"
-          class="grow flex-auto min-w-0"
+          class="min-w-0 flex-auto grow"
           :progress="progress"
           :invalid="!!passwordError"
           autocomplete="username"
@@ -174,7 +174,7 @@ async function onThirdPartyProvider(provider: string) {
       </div>
       <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     </div>
-    <h2 class="text-center m-4 text-xl font-bold uppercase">{{ t("partials.AuthStart.orUse") }}</h2>
+    <h2 class="m-4 text-center text-xl font-bold uppercase">{{ t("partials.AuthStart.orUse") }}</h2>
     <Button primary type="button" :disabled="!browserSupportsWebAuthn()" :progress="progress" @click.prevent="onPasskey">Passkey</Button>
     <Button v-for="p in siteContext.providers" :key="p.key" primary type="button" class="mt-4" :progress="progress" @click.prevent="onThirdPartyProvider(p.key)">{{
       p.name

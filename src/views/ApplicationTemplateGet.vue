@@ -648,9 +648,9 @@ function onAddAdmin() {
   <Teleport to="header">
     <NavBar></NavBar>
   </Teleport>
-  <div class="w-full flex flex-col items-center mt-12 sm:mt-[4.5rem] border-t border-transparent">
-    <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
-      <div class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm flex flex-col gap-4">
+  <div class="mt-12 flex w-full flex-col items-center border-t border-transparent sm:mt-[4.5rem]">
+    <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,_65ch)] gap-1 sm:m-4 sm:gap-4">
+      <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <div class="flex flex-row items-center">
           <h1 class="text-2xl font-bold">{{ t("common.entities.applicationTemplates") }}</h1>
         </div>
@@ -659,22 +659,22 @@ function onAddAdmin() {
         <template v-else>
           <form class="flex flex-col" novalidate @submit.prevent="onBasicSubmit">
             <label for="name" class="mb-1">{{ t("views.ApplicationTemplateGet.applicationTemplateName") }}</label>
-            <InputText id="name" v-model="name" class="grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" required />
-            <label for="description" class="mb-1 mt-4"
+            <InputText id="name" v-model="name" class="min-w-0 flex-auto grow" :readonly="!metadata.can_update" :progress="progress" required />
+            <label for="description" class="mt-4 mb-1"
               >{{ t("common.fields.description") }}
-              <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
+              <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
             >
-            <TextArea id="description" v-model="description" class="grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" />
-            <label for="homepageTemplate" class="mb-1 mt-4">{{ t("views.ApplicationTemplateGet.homepageTemplate") }}</label>
-            <InputText id="homepageTemplate" v-model="homepageTemplate" class="grow flex-auto min-w-0" :readonly="!metadata.can_update" :progress="progress" required />
-            <label for="idScopes" class="mb-1 mt-4"
+            <TextArea id="description" v-model="description" class="min-w-0 flex-auto grow" :readonly="!metadata.can_update" :progress="progress" />
+            <label for="homepageTemplate" class="mt-4 mb-1">{{ t("views.ApplicationTemplateGet.homepageTemplate") }}</label>
+            <InputText id="homepageTemplate" v-model="homepageTemplate" class="min-w-0 flex-auto grow" :readonly="!metadata.can_update" :progress="progress" required />
+            <label for="idScopes" class="mt-4 mb-1"
               >{{ t("views.ApplicationTemplateGet.spaceSeparatedScopes") }}
-              <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
+              <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
             >
             <TextArea
               id="idScopes"
               :model-value="idScopes.join(' ')"
-              class="grow flex-auto min-w-0"
+              class="min-w-0 flex-auto grow"
               :readonly="!metadata.can_update"
               :progress="progress"
               @update:model-value="(v) => (idScopes = splitSpace(v))"
@@ -694,26 +694,26 @@ function onAddAdmin() {
             <div v-else-if="variablesUpdated" class="text-success-600">{{ t("views.ApplicationTemplateGet.variablesUpdated") }}</div>
             <form v-if="metadata.can_update || variables.length || canVariablesSubmit()" class="flex flex-col" novalidate @submit.prevent="onVariablesSubmit">
               <ol>
-                <li v-for="(variable, i) in variables" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
+                <li v-for="(variable, i) in variables" :key="i" class="mb-4 grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
                     <label :for="`variable-${i}-name`" class="mb-1">{{ t("views.ApplicationTemplateGet.name") }}</label>
                     <InputText
                       :id="`variable-${i}-name`"
                       v-model="variable.name"
-                      class="grow flex-auto min-w-0"
+                      class="min-w-0 flex-auto grow"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                       required
                     />
-                    <label :for="`variable-${i}-description`" class="mb-1 mt-4"
+                    <label :for="`variable-${i}-description`" class="mt-4 mb-1"
                       >{{ t("common.fields.description") }}
-                      <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
+                      <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`variable-${i}-description`"
                       v-model="variable.description"
-                      class="grow flex-auto min-w-0"
+                      class="min-w-0 flex-auto grow"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
@@ -738,19 +738,19 @@ function onAddAdmin() {
             <div v-else-if="clientsPublicUpdated" class="text-success-600">{{ t("views.ApplicationTemplateGet.publicClientsUpdated") }}</div>
             <form v-if="metadata.can_update || clientsPublic.length || canClientsPublicSubmit()" class="flex flex-col" novalidate @submit.prevent="onClientsPublicSubmit">
               <ol>
-                <li v-for="(client, i) in clientsPublic" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
+                <li v-for="(client, i) in clientsPublic" :key="i" class="mb-4 grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
                     <fieldset>
                       <legend>{{ t("views.ApplicationTemplateGet.oidcRedirectUriTemplates") }}</legend>
                       <ol>
-                        <li v-for="(_, j) in client.redirectUriTemplates" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
+                        <li v-for="(_, j) in client.redirectUriTemplates" :key="j" class="mt-4 grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
                           <div>{{ j + 1 }}.</div>
                           <div class="flex flex-row gap-4">
                             <InputText
                               :id="`client-public-${i}-redirectUriTemplates-${j}`"
                               v-model="client.redirectUriTemplates[j]"
-                              class="grow flex-auto min-w-0"
+                              class="min-w-0 flex-auto grow"
                               :readonly="!metadata.can_update"
                               :progress="progress"
                               required
@@ -771,25 +771,25 @@ function onAddAdmin() {
                         >{{ t("views.ApplicationTemplateGet.addRedirectUri") }}</Button
                       >
                     </div>
-                    <label :for="`client-public-${i}-description`" class="mb-1 mt-4"
+                    <label :for="`client-public-${i}-description`" class="mt-4 mb-1"
                       >{{ t("common.fields.description") }}
-                      <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
+                      <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-public-${i}-description`"
                       v-model="client.description"
-                      class="grow flex-auto min-w-0"
+                      class="min-w-0 flex-auto grow"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
-                    <label :for="`client-public-${i}-additionalScopes`" class="mb-1 mt-4"
+                    <label :for="`client-public-${i}-additionalScopes`" class="mt-4 mb-1"
                       >{{ t("views.ApplicationTemplateGet.spaceSeparatedAdditionalScopes") }}
-                      <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
+                      <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-public-${i}-additionalScopes`"
                       :model-value="client.additionalScopes.join(' ')"
-                      class="grow flex-auto min-w-0"
+                      class="min-w-0 flex-auto grow"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                       @update:model-value="(v) => (client.additionalScopes = splitSpace(v))"
@@ -829,30 +829,30 @@ function onAddAdmin() {
                         </div>
                       </div>
                     </fieldset>
-                    <label :for="`client-public-${i}-accessTokenLifespan`" class="mb-1 mt-4">{{ t("views.ApplicationTemplateGet.accessTokenLifespan") }}</label>
+                    <label :for="`client-public-${i}-accessTokenLifespan`" class="mt-4 mb-1">{{ t("views.ApplicationTemplateGet.accessTokenLifespan") }}</label>
                     <TextArea
                       :id="`client-public-${i}-accessTokenLifespan`"
                       v-model="client.accessTokenLifespan"
-                      class="grow flex-auto min-w-0"
+                      class="min-w-0 flex-auto grow"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
-                    <label :for="`client-public-${i}-idTokenLifespan`" class="mb-1 mt-4">{{ t("views.ApplicationTemplateGet.idTokenLifespan") }}</label>
+                    <label :for="`client-public-${i}-idTokenLifespan`" class="mt-4 mb-1">{{ t("views.ApplicationTemplateGet.idTokenLifespan") }}</label>
                     <TextArea
                       :id="`client-public-${i}-idTokenLifespan`"
                       v-model="client.idTokenLifespan"
-                      class="grow flex-auto min-w-0"
+                      class="min-w-0 flex-auto grow"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
-                    <label :for="`client-public-${i}-refreshTokenLifespan`" class="mb-1 mt-4"
+                    <label :for="`client-public-${i}-refreshTokenLifespan`" class="mt-4 mb-1"
                       >{{ t("views.ApplicationTemplateGet.refreshTokenLifespan") }}
-                      <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
+                      <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-public-${i}-refreshTokenLifespan`"
                       v-model="client.refreshTokenLifespan"
-                      class="grow flex-auto min-w-0"
+                      class="min-w-0 flex-auto grow"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
@@ -882,19 +882,19 @@ function onAddAdmin() {
               @submit.prevent="onClientsBackendSubmit"
             >
               <ol>
-                <li v-for="(client, i) in clientsBackend" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
+                <li v-for="(client, i) in clientsBackend" :key="i" class="mb-4 grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
                     <fieldset>
                       <legend>{{ t("views.ApplicationTemplateGet.oidcRedirectUriTemplates") }}</legend>
                       <ol>
-                        <li v-for="(_, j) in client.redirectUriTemplates" :key="j" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mt-4">
+                        <li v-for="(_, j) in client.redirectUriTemplates" :key="j" class="mt-4 grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
                           <div>{{ j + 1 }}.</div>
                           <div class="flex flex-row gap-4">
                             <InputText
                               :id="`client-backend-${i}-redirectUriTemplates-${j}`"
                               v-model="client.redirectUriTemplates[j]"
-                              class="grow flex-auto min-w-0"
+                              class="min-w-0 flex-auto grow"
                               :readonly="!metadata.can_update"
                               :progress="progress"
                               required
@@ -915,25 +915,25 @@ function onAddAdmin() {
                         >{{ t("views.ApplicationTemplateGet.addRedirectUri") }}</Button
                       >
                     </div>
-                    <label :for="`client-backend-${i}-description`" class="mb-1 mt-4"
+                    <label :for="`client-backend-${i}-description`" class="mt-4 mb-1"
                       >{{ t("common.fields.description") }}
-                      <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
+                      <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-backend-${i}-description`"
                       v-model="client.description"
-                      class="grow flex-auto min-w-0"
+                      class="min-w-0 flex-auto grow"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
-                    <label :for="`client-backend-${i}-additionalScopes`" class="mb-1 mt-4"
+                    <label :for="`client-backend-${i}-additionalScopes`" class="mt-4 mb-1"
                       >{{ t("views.ApplicationTemplateGet.spaceSeparatedAdditionalScopes") }}
-                      <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
+                      <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-backend-${i}-additionalScopes`"
                       :model-value="client.additionalScopes.join(' ')"
-                      class="grow flex-auto min-w-0"
+                      class="min-w-0 flex-auto grow"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                       @update:model-value="(v) => (client.additionalScopes = splitSpace(v))"
@@ -1008,30 +1008,30 @@ function onAddAdmin() {
                         </div>
                       </div>
                     </fieldset>
-                    <label :for="`client-backend-${i}-accessTokenLifespan`" class="mb-1 mt-4">{{ t("views.ApplicationTemplateGet.accessTokenLifespan") }}</label>
+                    <label :for="`client-backend-${i}-accessTokenLifespan`" class="mt-4 mb-1">{{ t("views.ApplicationTemplateGet.accessTokenLifespan") }}</label>
                     <TextArea
                       :id="`client-backend-${i}-accessTokenLifespan`"
                       v-model="client.accessTokenLifespan"
-                      class="grow flex-auto min-w-0"
+                      class="min-w-0 flex-auto grow"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
-                    <label :for="`client-backend-${i}-idTokenLifespan`" class="mb-1 mt-4">{{ t("views.ApplicationTemplateGet.idTokenLifespan") }}</label>
+                    <label :for="`client-backend-${i}-idTokenLifespan`" class="mt-4 mb-1">{{ t("views.ApplicationTemplateGet.idTokenLifespan") }}</label>
                     <TextArea
                       :id="`client-backend-${i}-idTokenLifespan`"
                       v-model="client.idTokenLifespan"
-                      class="grow flex-auto min-w-0"
+                      class="min-w-0 flex-auto grow"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
-                    <label :for="`client-backend-${i}-refreshTokenLifespan`" class="mb-1 mt-4"
+                    <label :for="`client-backend-${i}-refreshTokenLifespan`" class="mt-4 mb-1"
                       >{{ t("views.ApplicationTemplateGet.refreshTokenLifespan") }}
-                      <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
+                      <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-backend-${i}-refreshTokenLifespan`"
                       v-model="client.refreshTokenLifespan"
-                      class="grow flex-auto min-w-0"
+                      class="min-w-0 flex-auto grow"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
@@ -1061,28 +1061,28 @@ function onAddAdmin() {
               @submit.prevent="onClientsServiceSubmit"
             >
               <ol>
-                <li v-for="(client, i) in clientsService" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4 mb-4">
+                <li v-for="(client, i) in clientsService" :key="i" class="mb-4 grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
                     <label :for="`client-service-${i}-description`" class="mb-1"
                       >{{ t("common.fields.description") }}
-                      <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
+                      <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-service-${i}-description`"
                       v-model="client.description"
-                      class="grow flex-auto min-w-0"
+                      class="min-w-0 flex-auto grow"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
-                    <label :for="`client-service-${i}-additionalScopes`" class="mb-1 mt-4"
+                    <label :for="`client-service-${i}-additionalScopes`" class="mt-4 mb-1"
                       >{{ t("views.ApplicationTemplateGet.spaceSeparatedAdditionalScopes") }}
-                      <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
+                      <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-service-${i}-additionalScopes`"
                       :model-value="client.additionalScopes.join(' ')"
-                      class="grow flex-auto min-w-0"
+                      class="min-w-0 flex-auto grow"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                       @update:model-value="(v) => (client.additionalScopes = splitSpace(v))"
@@ -1157,30 +1157,30 @@ function onAddAdmin() {
                         </div>
                       </div>
                     </fieldset>
-                    <label :for="`client-service-${i}-accessTokenLifespan`" class="mb-1 mt-4">{{ t("views.ApplicationTemplateGet.accessTokenLifespan") }}</label>
+                    <label :for="`client-service-${i}-accessTokenLifespan`" class="mt-4 mb-1">{{ t("views.ApplicationTemplateGet.accessTokenLifespan") }}</label>
                     <TextArea
                       :id="`client-service-${i}-accessTokenLifespan`"
                       v-model="client.accessTokenLifespan"
-                      class="grow flex-auto min-w-0"
+                      class="min-w-0 flex-auto grow"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
-                    <label :for="`client-service-${i}-idTokenLifespan`" class="mb-1 mt-4">{{ t("views.ApplicationTemplateGet.idTokenLifespan") }}</label>
+                    <label :for="`client-service-${i}-idTokenLifespan`" class="mt-4 mb-1">{{ t("views.ApplicationTemplateGet.idTokenLifespan") }}</label>
                     <TextArea
                       :id="`client-service-${i}-idTokenLifespan`"
                       v-model="client.idTokenLifespan"
-                      class="grow flex-auto min-w-0"
+                      class="min-w-0 flex-auto grow"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
-                    <label :for="`client-service-${i}-refreshTokenLifespan`" class="mb-1 mt-4"
+                    <label :for="`client-service-${i}-refreshTokenLifespan`" class="mt-4 mb-1"
                       >{{ t("views.ApplicationTemplateGet.refreshTokenLifespan") }}
-                      <span v-if="metadata.can_update" class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
+                      <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
                       :id="`client-service-${i}-refreshTokenLifespan`"
                       v-model="client.refreshTokenLifespan"
-                      class="grow flex-auto min-w-0"
+                      class="min-w-0 flex-auto grow"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                     />
@@ -1218,7 +1218,7 @@ function onAddAdmin() {
                       </div>
                     </WithIdentityPublicDocument>
                     <div v-else class="flex flex-row gap-4">
-                      <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="grow flex-auto min-w-0" :progress="progress" required />
+                      <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="min-w-0 flex-auto grow" :progress="progress" required />
                       <Button type="button" @click.prevent="admins.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                     </div>
                   </div>
