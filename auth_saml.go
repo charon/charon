@@ -329,8 +329,20 @@ func validateSAMLAssertion(assertionInfo *saml2.AssertionInfo) errors.E {
 		return errors.New("SAML assertion info is nil")
 	}
 
-	if !assertionInfo.ResponseSignatureValidated {
-		return errors.New("SAML assertion response signature not validated")
+	allAssertionSignaturesValidated := true
+	for _, assertion := range assertionInfo.Assertions {
+		if !assertion.SignatureValidated {
+			allAssertionSignaturesValidated = false
+			break
+		}
+	}
+
+	// If signatures exist but are not valid, then gosaml2 library returns an error. We are here because a) there
+	// is a response signature and it is valid (then assertion signatures are not checked at all), or b) there
+	// is no response signature and assertion signatures exist and are valid. So this check here is just
+	// a sanity check and should always be true. Either response or all assertions must have a validated signature.
+	if !(assertionInfo.ResponseSignatureValidated || allAssertionSignaturesValidated) { //nolint:staticcheck
+		return errors.New("SAML response and assertion signatures are not validated")
 	}
 
 	if assertionInfo.WarningInfo.InvalidTime {
@@ -440,6 +452,18 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		errors.Details(errE)["response"] = response.InResponseTo
 		s.BadRequestWithError(w, req, errE)
 		return
+	}
+
+	for _, assertion := range assertionInfo.Assertions {
+		scd := assertion.Subject.SubjectConfirmation.SubjectConfirmationData
+		if scd.InResponseTo != "" && scd.InResponseTo != flowSAML.RequestID {
+			errE = errors.New("SAML SubjectConfirmationData response ID does not match request ID")
+			errors.Details(errE)["provider"] = providerKey
+			errors.Details(errE)["request"] = flowSAML.RequestID
+			errors.Details(errE)["response-assertion"] = scd.InResponseTo
+			s.BadRequestWithError(w, req, errE)
+			return
+		}
 	}
 
 	attributes, errE := getSAMLAttributes(assertionInfo, provider.Mapping)
