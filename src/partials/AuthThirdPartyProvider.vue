@@ -181,7 +181,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
+  <div class="flex flex-col rounded border bg-white p-4 shadow-sm w-full">
     <div>
       <i18n-t keypath="partials.AuthThirdPartyProvider.redirectMessage" scope="global">
         <template #time>{{ t("common.time.seconds", seconds) }}</template>

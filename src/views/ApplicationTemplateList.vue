@@ -58,19 +58,19 @@ onBeforeMount(async () => {
   </Teleport>
   <div class="w-full flex flex-col items-center mt-12 sm:mt-[4.5rem] border-t border-transparent">
     <div class="grid auto-rows-auto grid-cols-[minmax(0,_65ch)] m-1 sm:m-4 gap-1 sm:gap-4">
-      <div class="w-full rounded border bg-white p-4 shadow flex flex-col gap-4">
+      <div class="w-full rounded border bg-white p-4 shadow-sm flex flex-col gap-4">
         <div class="flex flex-row justify-between items-center gap-4">
           <h1 class="text-2xl font-bold">{{ t("common.entities.applicationTemplates") }}</h1>
           <ButtonLink v-if="isSignedIn()" :to="{ name: 'ApplicationTemplateCreate' }" :progress="progress" primary>{{ t("common.buttons.create") }}</ButtonLink>
         </div>
       </div>
-      <div v-if="dataLoading" class="w-full rounded border bg-white p-4 shadow">{{ t("common.data.dataLoading") }}</div>
-      <div v-else-if="dataLoadingError" class="w-full rounded border bg-white p-4 shadow text-error-600">{{ t("common.errors.unexpected") }}</div>
+      <div v-if="dataLoading" class="w-full rounded border bg-white p-4 shadow-sm">{{ t("common.data.dataLoading") }}</div>
+      <div v-else-if="dataLoadingError" class="w-full rounded border bg-white p-4 shadow-sm text-error-600">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
-        <div v-if="!applicationTemplates.length" class="w-full rounded border bg-white p-4 shadow italic">
+        <div v-if="!applicationTemplates.length" class="w-full rounded border bg-white p-4 shadow-sm italic">
           {{ isSignedIn() ? t("views.ApplicationTemplateList.noApplicationTemplatesCreate") : t("views.ApplicationTemplateList.noApplicationTemplatesSignIn") }}
         </div>
-        <div v-for="applicationTemplate in applicationTemplates" :key="applicationTemplate.id" class="w-full rounded border bg-white p-4 shadow">
+        <div v-for="applicationTemplate in applicationTemplates" :key="applicationTemplate.id" class="w-full rounded border bg-white p-4 shadow-sm">
           <ApplicationTemplateListItem :item="applicationTemplate" />
         </div>
       </template>

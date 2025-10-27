@@ -159,7 +159,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
 </script>
 
 <template>
-  <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
+  <div class="flex flex-col rounded border bg-white p-4 shadow-sm w-full">
     <WithOrganizationApplicationDocument :params="{ id: flow.getOrganizationId(), appId: flow.getAppId() }" name="OrganizationApp">
       <template #default="{ doc }">
         <div v-if="flow.getCompleted().includes('identity')" class="mb-4">

@@ -131,7 +131,7 @@ async function onThirdPartyProvider(provider: string) {
 </script>
 
 <template>
-  <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
+  <div class="flex flex-col rounded border bg-white p-4 shadow-sm w-full">
     <div class="flex flex-col">
       <label for="authstart-input-email" class="mb-1">{{ t("partials.AuthStart.emailOrUsernameLabel") }}</label>
       <!--

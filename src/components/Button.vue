@@ -24,7 +24,7 @@ withDefaults(
 <template>
   <button
     :disabled="progress > 0 || disabled"
-    class="relative select-none rounded font-medium uppercase leading-tight shadow outline-none focus:ring-2 focus:ring-offset-1 text-center"
+    class="relative select-none rounded font-medium uppercase leading-tight shadow-sm outline-none focus:ring-2 focus:ring-offset-1 text-center"
     :class="{
       'cursor-not-allowed': progress > 0 || disabled,
       'px-6 py-2.5 ': primary,

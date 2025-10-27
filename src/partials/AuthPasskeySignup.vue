@@ -142,7 +142,7 @@ async function onPasskeySignup() {
 </script>
 
 <template>
-  <div class="flex flex-col rounded border bg-white p-4 shadow w-full">
+  <div class="flex flex-col rounded border bg-white p-4 shadow-sm w-full">
     <div v-if="signupAttempted && signupFailed">
       <i18n-t keypath="partials.AuthPasskeySignup.failed" scope="global">
         <template #strongPasskey
