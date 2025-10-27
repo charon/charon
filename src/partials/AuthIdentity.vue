@@ -317,7 +317,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
 </script>
 
 <template>
-  <div class="flex flex-col rounded-xs border bg-white p-4 shadow-sm w-full">
+  <div class="flex flex-col rounded-xs border border-gray-200 bg-white p-4 shadow-sm w-full">
     <div class="flex flex-col">
       <div v-if="flow.getCompleted().includes('signin')" class="mb-4">
         <i18n-t keypath="partials.AuthIdentity.signinSuccess" scope="global">
