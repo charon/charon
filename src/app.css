@@ -88,6 +88,12 @@
   }
 }
 
+@layer base {
+  button:not(:disabled), [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
 @layer components {
   a:has(img) {
     @apply outline-none;
