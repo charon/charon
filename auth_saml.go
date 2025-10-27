@@ -456,8 +456,8 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 
 	for _, assertion := range assertionInfo.Assertions {
 		scd := assertion.Subject.SubjectConfirmation.SubjectConfirmationData
-		if scd.InResponseTo != flowSAML.RequestID && scd.InResponseTo != "" {
-			errE = errors.New("SAML SubjectConfirmationData InResponseTo does not match request ID")
+		if scd.InResponseTo != "" && scd.InResponseTo != flowSAML.RequestID {
+			errE = errors.New("SAML SubjectConfirmationData response ID does not match request ID")
 			errors.Details(errE)["provider"] = providerKey
 			errors.Details(errE)["request"] = flowSAML.RequestID
 			errors.Details(errE)["response-assertion"] = scd.InResponseTo
