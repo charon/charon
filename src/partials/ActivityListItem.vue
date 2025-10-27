@@ -227,13 +227,13 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                       doc.organizationApplications?.length || 0,
                     )"
                     :key="i"
-                    class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-xs text-sm leading-none"
+                    class="rounded-xs bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-xs text-sm leading-none"
                     >{{ description }}</span
                   >
                 </template>
               </div>
               <div v-if="doc.providers?.length" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm">
-                <span v-for="provider in doc.providers" :key="provider" class="rounded-sm bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-xs text-sm leading-none">{{
+                <span v-for="provider in doc.providers" :key="provider" class="rounded-xs bg-slate-100 py-0.5 px-1.5 text-gray-600 shadow-xs text-sm leading-none">{{
                   getProviderName(t, provider)
                 }}</span>
               </div>

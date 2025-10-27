@@ -94,7 +94,7 @@
   }
 
   .link {
-    @apply rounded-sm font-medium text-primary-600 outline-none drop-shadow-xs;
+    @apply rounded-xs font-medium text-primary-600 outline-none drop-shadow-xs;
 
     text-decoration: unset;
   }
@@ -104,7 +104,7 @@
   }
 
   a > img {
-    @apply rounded-sm drop-shadow-xs;
+    @apply rounded-xs drop-shadow-xs;
   }
 
   .link:focus,

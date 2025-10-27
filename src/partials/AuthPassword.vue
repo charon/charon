@@ -308,7 +308,7 @@ async function onCode() {
 </script>
 
 <template>
-  <div class="flex flex-col rounded border bg-white p-4 shadow-sm w-full">
+  <div class="flex flex-col rounded-sm border bg-white p-4 shadow-sm w-full">
     <div class="flex flex-col">
       <label for="email-or-username" class="mb-1">{{
         isEmail(flow.getEmailOrUsername()) ? t("partials.AuthPassword.emailAddressLabel") : t("partials.AuthPassword.usernameLabel")
