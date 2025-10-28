@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/alexedwards/argon2id"
+	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/protocol/webauthncose"
 	"github.com/go-webauthn/webauthn/webauthn"
@@ -24,6 +25,7 @@ import (
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
+	"golang.org/x/oauth2"
 )
 
 var (
@@ -182,6 +184,14 @@ func (s *Service) CredentialList(w http.ResponseWriter, req *http.Request, _ waf
 
 // CredentialListGet is the API handler for listing credentials, GET request.
 func (s *Service) CredentialListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	defer req.Body.Close()              //nolint:errcheck
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	err := req.ParseForm()
+	if err != nil {
+		s.BadRequestWithError(w, req, errors.WithStack(err))
+		return
+	}
 	ctx := s.requireAuthenticatedForIdentity(w, req)
 	if ctx == nil {
 		return
@@ -229,6 +239,14 @@ func (s *Service) CredentialGet(w http.ResponseWriter, req *http.Request, _ waf.
 
 // CredentialGetGet is the API handler for getting the credential, GET request.
 func (s *Service) CredentialGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	defer req.Body.Close()              //nolint:errcheck
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	err := req.ParseForm()
+	if err != nil {
+		s.BadRequestWithError(w, req, errors.WithStack(err))
+		return
+	}
 	ctx := s.requireAuthenticatedForIdentity(w, req)
 	if ctx == nil {
 		return
@@ -1040,17 +1058,188 @@ func (s *Service) handleCredentialAddSAMLCallback(w http.ResponseWriter, req *ht
 	if errE != nil {
 		log.Warn().Err(errE).Msg("failed to add SAML credential")
 		s.BadRequestWithError(w, req, errE)
+		return
 	}
 
 	s.TemporaryRedirectGetMethod(w, req, location)
 }
 
-func (s *Service) handleCredentialAddOIDCStart(_ context.Context, _ *flow, _ oidcProvider) (string, errors.E) {
-	return "", errors.New("To Do")
+func (s *Service) handleCredentialAddOIDCStart(ctx context.Context, flow *flow, provider oidcProvider) (string, errors.E) {
+	flow.OIDCProvider = &flowOIDCProvider{
+		Verifier: "",
+		Nonce:    identifier.New().String(),
+	}
+
+	opts := []oauth2.AuthCodeOption{}
+	opts = append(opts, oidc.Nonce(flow.OIDCProvider.Nonce))
+
+	if provider.SupportsPKCE {
+		flow.OIDCProvider.Verifier = oauth2.GenerateVerifier()
+		opts = append(opts, oauth2.S256ChallengeOption(flow.OIDCProvider.Verifier))
+	}
+
+	errE := s.setFlow(ctx, flow)
+	if errE != nil {
+		return "", errE
+	}
+
+	return provider.Config.AuthCodeURL(flow.ID.String(), opts...), nil
 }
 
-/*
-func (s *Service) handleCredentialAddOIDCCallback(w http.ResponseWriter, _ *http.Request, _ Provider, _ oidcProvider) {
-	http.Error(w, "To Do", http.StatusBadRequest)
-}.
-*/
+func (s *Service) handleCredentialAddOIDCCallback(w http.ResponseWriter, req *http.Request, providerKey Provider, provider oidcProvider) {
+	defer req.Body.Close()              //nolint:errcheck
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	ctx := req.Context()
+
+	err := req.ParseForm()
+	if err != nil {
+		s.BadRequestWithError(w, req, errors.WithStack(err))
+		return
+	}
+
+	flow := s.getActiveFlow(w, req, req.Form.Get("state"))
+	if flow == nil {
+		return
+	}
+
+	if flow.OIDCProvider == nil {
+		s.BadRequestWithError(w, req, errors.New("OIDC provider not started"))
+		return
+	}
+
+	flowOIDC := *flow.OIDCProvider
+
+	// We reset flow.OIDCProvider to nil always after this point, even if there is a failure,
+	// so that nonce cannot be reused.
+	flow.OIDCProvider = nil
+	errE := s.setFlow(ctx, flow)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	if flow.SessionID == nil {
+		s.InternalServerErrorWithError(w, req, errors.New("missing session ID for credential addition"))
+		return
+	}
+
+	ses, errE := s.getSession(ctx, *flow.SessionID)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	accountID := ses.AccountID
+
+	log := s.Logger.With().
+		Str("provider", string(providerKey)).
+		Str("flow_id", flow.ID.String()).
+		Str("account_id", accountID.String()).
+		Logger()
+
+	location, errE := s.Reverse("CredentialList", nil, nil)
+	if errE != nil {
+		log.Warn().Err(errE).Msg("reverse route failure")
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	errorCode := req.Form.Get("error")
+	errorDescription := req.Form.Get("error_description")
+	if errorCode != "" || errorDescription != "" {
+		log.Warn().Str("error_code", errorCode).Str("error_description", errorDescription).Msg("OIDC authorization error")
+		s.TemporaryRedirectGetMethod(w, req, location)
+		return
+	}
+
+	ctx = oidc.ClientContext(ctx, provider.Client)
+
+	opts := []oauth2.AuthCodeOption{}
+	if provider.SupportsPKCE {
+		opts = append(opts, oauth2.VerifierOption(flowOIDC.Verifier))
+	}
+
+	oauth2Token, err := provider.Config.Exchange(ctx, req.Form.Get("code"), opts...)
+	if err != nil {
+		log.Warn().Err(err).Msg("token exchange failed")
+		s.TemporaryRedirectGetMethod(w, req, location)
+		return
+	}
+
+	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
+	if !ok {
+		log.Warn().Msg("ID token missing")
+		s.TemporaryRedirectGetMethod(w, req, location)
+		return
+	}
+
+	idToken, err := provider.Verifier.Verify(ctx, rawIDToken)
+	if err != nil {
+		log.Warn().Err(err).Msg("ID token verification failed")
+		s.TemporaryRedirectGetMethod(w, req, location)
+		return
+	}
+
+	if idToken.Nonce != flowOIDC.Nonce {
+		log.Warn().Msg("nonce mismatch")
+		s.TemporaryRedirectGetMethod(w, req, location)
+		return
+	}
+
+	var jsonData json.RawMessage
+	err = idToken.Claims(&jsonData)
+	if err != nil {
+		log.Warn().Err(err).Msg("claims extraction failed")
+		s.TemporaryRedirectGetMethod(w, req, location)
+		return
+	}
+
+	credentialID := idToken.Subject
+
+	errE = s.addCredentialToAccount(ctx, accountID, providerKey, credentialID, jsonData)
+	if errE != nil {
+		log.Warn().Err(errE).Msg("failed to add OIDC credential")
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	token, signature, err := s.hmac.Generate(ctx)
+	if err != nil {
+		s.InternalServerErrorWithError(w, req, withFositeError(err))
+		return
+	}
+
+	secretID, err := base64.RawURLEncoding.DecodeString(signature)
+	if err != nil {
+		panic(errors.WithStack(err))
+	}
+
+	errE = s.setSession(ctx, &session{
+		ID:        *flow.SessionID,
+		SecretID:  [32]byte(secretID),
+		CreatedAt: ses.CreatedAt,
+		Active:    true,
+		AccountID: accountID,
+	})
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	cookie := http.Cookie{ //nolint:exhaustruct
+		Name:     sessionCookiePrefix + flow.ID.String(),
+		Value:    SecretPrefixSession + token,
+		Path:     "/",
+		Domain:   "",
+		Expires:  time.Now().Add(sessionExpiration),
+		MaxAge:   0,
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	}
+
+	http.SetCookie(w, &cookie)
+
+	s.TemporaryRedirectGetMethod(w, req, location)
+}

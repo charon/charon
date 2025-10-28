@@ -308,13 +308,11 @@ export async function getAllIdentities(
   }
 }
 
-export async function getCredentials(router: Router, abortController: AbortController, progress: Ref<number>, flowId?: string | null): Promise<Credentials | null> {
+export async function getCredentials(router: Router, abortController: AbortController, progress: Ref<number>): Promise<Credentials | null> {
   progress.value += 1
   try {
-    const query = flowId ? encodeQuery({ flow: flowId }) : undefined
     const url = router.apiResolve({
       name: "CredentialList",
-      query,
     }).href
 
     const response = await getURL<Credentials>(url, null, abortController.signal, progress)

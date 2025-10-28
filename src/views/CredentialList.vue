@@ -3,7 +3,7 @@ import type { CredentialInfo, Credentials } from "@/types"
 
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useI18n } from "vue-i18n"
-import { useRoute, useRouter } from "vue-router"
+import { useRouter } from "vue-router"
 
 import { getCredentials, removeCredential } from "@/api"
 import { isSignedIn } from "@/auth"
@@ -16,7 +16,6 @@ import NavBar from "@/partials/NavBar.vue"
 import { injectProgress } from "@/progress"
 
 const { t } = useI18n({ useScope: "global" })
-const route = useRoute()
 const router = useRouter()
 const progress = injectProgress()
 
@@ -33,8 +32,7 @@ onBeforeUnmount(() => {
 onBeforeMount(async () => {
   progress.value += 1
   try {
-    const flowId = route.query.flow as string | undefined
-    const result = await getCredentials(router, abortController, progress, flowId)
+    const result = await getCredentials(router, abortController, progress)
     if (abortController.signal.aborted) {
       return
     }

@@ -78,7 +78,7 @@ func (p *OIDCProvider) Validate() error {
 			return errors.New("missing client ID for provided secret")
 		}
 		if p.Secret == nil {
-			return errors.New("missing client ID for provided secret")
+			return errors.New("missing client secret for provided client ID")
 		}
 	}
 	return nil
