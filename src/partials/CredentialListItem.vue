@@ -43,7 +43,7 @@ function getCredentialDisplay(credential: CredentialInfo): string {
 </script>
 
 <template>
-  <div class="w-full rounded border bg-white p-4 shadow">
+  <div class="w-full rounded border border-gray-200 bg-white p-4 shadow">
     <div class="flex flex-row justify-between items-center gap-4">
       <div class="flex-grow">
         <h2
