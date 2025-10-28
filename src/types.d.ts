@@ -456,7 +456,7 @@ export type Mutable<T> = {
 }
 
 export type CredentialInfoRef = {
-    id: string
+  id: string
 }
 
 export type CredentialInfo = {

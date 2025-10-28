@@ -34,7 +34,7 @@ const credentialDisplay = computed(() => {
 </script>
 
 <template>
-  <div class="flex flex-row justify-between items-center gap-4" :data-url="url">
+  <div class="flex flex-row items-center justify-between gap-4" :data-url="url">
     <div class="flex-grow">
       <h2 v-if="!isBuiltInProvider" :id="`credentialfull-provider-${credential.id}`" class="text-xl font-semibold">
         {{ t("views.CredentialList.thirdPartyProviders") }}
@@ -47,7 +47,7 @@ const credentialDisplay = computed(() => {
       <div v-if="credential.provider === 'email'" class="mt-2">
         <div :id="`credentialfull-display-${credential.id}`" class="font-medium">
           {{ credential.displayName }}
-          <span :id="`credentialfull-verified-${credential.id}`" class="inline-block border border-gray-600 px-2 ml-1">
+          <span :id="`credentialfull-verified-${credential.id}`" class="ml-1 inline-block border border-gray-600 px-2">
             {{ credential.verified ? t("views.CredentialList.verified") : t("views.CredentialList.notVerified") }}
           </span>
         </div>

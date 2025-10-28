@@ -113,23 +113,16 @@ const WithCredentialDocument = WithDocument<CredentialInfo>
             <template #default="{ doc, url }">
               <CredentialFull :credential="doc" :url="url">
                 <template #default="{ credential: cred }">
-                  <Button
-                      v-if="cred.provider === 'email'"
-                      :id="`credentiallist-button-verify-${cred.id}`"
-                      type="button"
-                      secondary
-                      disabled
-                      class="text-sm"
-                  >
+                  <Button v-if="cred.provider === 'email'" :id="`credentiallist-button-verify-${cred.id}`" type="button" secondary disabled class="text-sm">
                     {{ t("views.CredentialList.verify") }}
                   </Button>
                   <Button
-                      :id="`credentiallist-button-remove-${cred.id}`"
-                      type="button"
-                      :progress="progress"
-                      :disabled="removingCredentialId === cred.id"
-                      class="text-error-600 hover:text-error-700"
-                      @click="handleRemove(cred.id)"
+                    :id="`credentiallist-button-remove-${cred.id}`"
+                    type="button"
+                    :progress="progress"
+                    :disabled="removingCredentialId === cred.id"
+                    class="text-error-600 hover:text-error-700"
+                    @click="handleRemove(cred.id)"
                   >
                     {{ t("common.buttons.remove") }}
                   </Button>
