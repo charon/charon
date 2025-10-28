@@ -180,15 +180,15 @@ async function addPassword() {
     }
 
     const result = await completeAddPasswordCredential(
-      router,
-      {
-        sessionKey: startResponse.sessionKey,
-        publicKey: Array.from(new Uint8Array(publicKeyExport)),
-        password: Array.from(new Uint8Array(ciphertext)),
-        label: passwordLabel.value,
-      },
-      abortController,
-      progress,
+        router,
+        {
+          sessionKey: startResponse.sessionKey,
+          publicKey: Array.from(new Uint8Array(publicKeyExport)),
+          password: Array.from(new Uint8Array(ciphertext)),
+          label: passwordLabel.value,
+        },
+        abortController,
+        progress,
     )
 
     if (abortController.signal.aborted) {
@@ -352,7 +352,7 @@ async function startThirdPartyProvider(providerKey: string) {
         <!-- Email Form -->
         <form v-if="credentialType === 'email'" class="flex flex-col mt-6" @submit.prevent="addEmail">
           <label for="email" class="mb-1">{{ t("common.fields.email") }}</label>
-          <InputText id="credential-input-email" v-model="email" class="flex-grow flex-auto min-w-0" type="email" :progress="progress" required />
+          <InputText id="credentialadd-input-email" v-model="email" class="flex-grow flex-auto min-w-0" type="email" :progress="progress" required />
           <div v-if="error" class="mt-4 text-error-600">{{ error }}</div>
           <div class="flex flex-row justify-end gap-4 mt-4">
             <Button type="button" secondary @click="resetForm">{{ t("common.buttons.cancel") }}</Button>
@@ -362,7 +362,7 @@ async function startThirdPartyProvider(providerKey: string) {
         <!-- Username Form -->
         <form v-if="credentialType === 'username'" class="flex flex-col mt-6" @submit.prevent="addUsername">
           <label for="username" class="mb-1">{{ t("common.fields.username") }}</label>
-          <InputText id="credential-input-username" v-model="username" class="flex-grow flex-auto min-w-0" type="text" :progress="progress" required />
+          <InputText id="credentialadd-input-username" v-model="username" class="flex-grow flex-auto min-w-0" type="text" :progress="progress" required />
           <div v-if="error" class="mt-4 text-error-600">{{ error }}</div>
           <div class="flex flex-row justify-end gap-4 mt-4">
             <Button type="button" secondary @click="resetForm">{{ t("common.buttons.cancel") }}</Button>
@@ -372,11 +372,11 @@ async function startThirdPartyProvider(providerKey: string) {
         <!-- Password Form -->
         <form v-if="credentialType === 'password'" class="flex flex-col mt-6" @submit.prevent="addPassword">
           <label for="password" class="mb-1">{{ t("views.CredentialList.password") }}</label>
-          <InputText id="credential-input-password" v-model="password" class="flex-grow flex-auto min-w-0" type="password" :progress="progress" required />
+          <InputText id="credentialadd-input-password" v-model="password" class="flex-grow flex-auto min-w-0" type="password" :progress="progress" required />
           <label for="password-label" class="mb-1 mt-4"
             >{{ t("views.CredentialAdd.label") }}<span class="text-neutral-500 italic text-sm">{{ t("common.labels.optional") }}</span></label
           >
-          <InputText id="credential-input-passwordlabel" v-model="passwordLabel" class="flex flex-row gap-4 mt-2" type="text" :progress="progress" />
+          <InputText id="credentialadd-input-passwordlabel" v-model="passwordLabel" class="flex flex-row gap-4 mt-2" type="text" :progress="progress" />
           <div v-if="error" class="mt-4 text-error-600">{{ error }}</div>
           <div class="flex flex-row justify-end gap-4 mt-4">
             <Button type="button" secondary @click="resetForm">{{ t("common.buttons.cancel") }}</Button>

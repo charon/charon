@@ -1,16 +1,19 @@
 <script setup lang="ts">
-import type { Credentials } from "@/types"
+import type { CredentialInfo, Credentials } from "@/types"
 
-import { getCredentials, removeCredential } from "@/api"
-import { isSignedIn } from "@/auth"
-import ButtonLink from "@/components/ButtonLink.vue"
-import CredentialListItem from "@/partials/CredentialListItem.vue"
-import Footer from "@/partials/Footer.vue"
-import NavBar from "@/partials/NavBar.vue"
-import { injectProgress } from "@/progress"
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRoute, useRouter } from "vue-router"
+
+import { getCredentials, removeCredential } from "@/api"
+import { isSignedIn } from "@/auth"
+import Button from "@/components/Button.vue"
+import ButtonLink from "@/components/ButtonLink.vue"
+import WithDocument from "@/components/WithDocument.vue"
+import CredentialFull from "@/partials/CredentialFull.vue"
+import Footer from "@/partials/Footer.vue"
+import NavBar from "@/partials/NavBar.vue"
+import { injectProgress } from "@/progress"
 
 const { t } = useI18n({ useScope: "global" })
 const route = useRoute()
@@ -81,6 +84,8 @@ async function handleRemove(credentialId: string) {
     removingCredentialId.value = null
   }
 }
+
+const WithCredentialDocument = WithDocument<CredentialInfo>
 </script>
 
 <template>
@@ -103,14 +108,36 @@ async function handleRemove(credentialId: string) {
         <div v-if="!credentials.length" class="w-full rounded-sm border border-gray-200 bg-white p-4 italic shadow-sm">
           {{ isSignedIn() ? t("views.CredentialList.noCredentialsCreate") : t("views.CredentialList.noCredentialsSignIn") }}
         </div>
-        <CredentialListItem
-          v-for="credential in credentials"
-          :key="credential.id"
-          :credential="credential"
-          :removing="removingCredentialId === credential.id"
-          :progress="progress"
-          @remove="handleRemove"
-        />
+        <div v-for="credential in credentials" :key="credential.id" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
+          <WithCredentialDocument :params="{ id: credential.id }" name="CredentialGet">
+            <template #default="{ doc, url }">
+              <CredentialFull :credential="doc" :url="url">
+                <template #default="{ credential: cred }">
+                  <Button
+                      v-if="cred.provider === 'email'"
+                      :id="`credentiallist-button-verify-${cred.id}`"
+                      type="button"
+                      secondary
+                      disabled
+                      class="text-sm"
+                  >
+                    {{ t("views.CredentialList.verify") }}
+                  </Button>
+                  <Button
+                      :id="`credentiallist-button-remove-${cred.id}`"
+                      type="button"
+                      :progress="progress"
+                      :disabled="removingCredentialId === cred.id"
+                      class="text-error-600 hover:text-error-700"
+                      @click="handleRemove(cred.id)"
+                  >
+                    {{ t("common.buttons.remove") }}
+                  </Button>
+                </template>
+              </CredentialFull>
+            </template>
+          </WithCredentialDocument>
+        </div>
       </template>
     </div>
   </div>

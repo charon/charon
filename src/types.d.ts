@@ -455,6 +455,10 @@ export type Mutable<T> = {
   -readonly [k in keyof T]: Mutable<T[k]>
 }
 
+export type CredentialInfoRef = {
+    id: string
+}
+
 export type CredentialInfo = {
   id: string
   provider: string
@@ -463,7 +467,7 @@ export type CredentialInfo = {
   verified: false // TODO: When verifying emails.
 }
 
-export type Credentials = CredentialInfo[]
+export type Credentials = CredentialInfoRef[]
 
 export type CredentialAddResponse = {
   success: boolean
