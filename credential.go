@@ -873,6 +873,33 @@ func (s *Service) CredentialAddThirdPartyProviderStartPost(w http.ResponseWriter
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
+
+	var existingToken string
+	for _, cookie := range req.Cookies() {
+		if strings.HasPrefix(cookie.Name, sessionCookiePrefix) {
+			ses, errE := s.getSessionFromCookieValue(ctx, cookie.Value)
+			if errE == nil && ses.ID == sessionID {
+				existingToken = cookie.Value
+				break
+			}
+		}
+	}
+
+	if existingToken != "" {
+		cookie := http.Cookie{
+			Name:     sessionCookiePrefix + flow.ID.String(),
+			Value:    existingToken,
+			Path:     "/",
+			Domain:   "",
+			Expires:  time.Now().Add(sessionExpiration),
+			MaxAge:   0,
+			Secure:   true,
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		}
+		http.SetCookie(w, &cookie)
+	}
+
 	s.WriteJSON(w, req, map[string]interface{}{
 		"location": location,
 	}, nil)
@@ -938,13 +965,10 @@ func (s *Service) CredentialRemovePost(w http.ResponseWriter, req *http.Request,
 }
 
 func (s *Service) handleCredentialAddSAMLStart(ctx context.Context, flow *flow, provider samlProvider) (string, errors.E) {
-	authURL, requestID, errE := samlBuildAuthURL(provider.Provider, flow.ID.String())
+	handler := s.handlerSAMLStart(provider)
+	authURL, errE := handler(flow)
 	if errE != nil {
 		return "", errE
-	}
-
-	flow.SAMLProvider = &flowSAMLProvider{
-		RequestID: requestID,
 	}
 
 	errE = s.setFlow(ctx, flow)
@@ -1203,43 +1227,6 @@ func (s *Service) handleCredentialAddOIDCCallback(w http.ResponseWriter, req *ht
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
-
-	token, signature, err := s.hmac.Generate(ctx)
-	if err != nil {
-		s.InternalServerErrorWithError(w, req, withFositeError(err))
-		return
-	}
-
-	secretID, err := base64.RawURLEncoding.DecodeString(signature)
-	if err != nil {
-		panic(errors.WithStack(err))
-	}
-
-	errE = s.setSession(ctx, &session{
-		ID:        *flow.SessionID,
-		SecretID:  [32]byte(secretID),
-		CreatedAt: ses.CreatedAt,
-		Active:    true,
-		AccountID: accountID,
-	})
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	cookie := http.Cookie{ //nolint:exhaustruct
-		Name:     sessionCookiePrefix + flow.ID.String(),
-		Value:    SecretPrefixSession + token,
-		Path:     "/",
-		Domain:   "",
-		Expires:  time.Now().Add(sessionExpiration),
-		MaxAge:   0,
-		Secure:   true,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-	}
-
-	http.SetCookie(w, &cookie)
 
 	s.TemporaryRedirectGetMethod(w, req, location)
 }
