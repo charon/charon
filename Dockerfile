@@ -16,16 +16,16 @@ FROM golang:1.25-alpine3.22 AS go-build
 RUN apk --update add make bash git gcc musl-dev ca-certificates tzdata mailcap && \
   adduser -D -H -g "" -s /sbin/nologin -u 1000 user
 COPY . /src/charon
-# We make an empty node_modules so that Makefile does not try to run npm install (dist files are
-# copied next). It has to be made before COPY so that it looks older than dist to make.
-RUN mkdir /src/charon/node_modules
 COPY --from=node-build /src/charon/dist /src/charon/dist
 WORKDIR /src/charon
 # We want Docker image for build timestamp label to match the one in
 # the binary so we take a timestamp once outside and pass it in.
 ARG BUILD_TIMESTAMP
+# We run make with "-o dist" which prevents dist from being build here as it was done
+# in the node-build stage and we cannot (missing node, etc.) and do not want to build
+# it again, but it might have file timestamps which would otherwise trigger a build.
 RUN \
-  BUILD_TIMESTAMP=$BUILD_TIMESTAMP make build-static && \
+  BUILD_TIMESTAMP=$BUILD_TIMESTAMP make -o dist build-static && \
   mv charon /go/bin/charon
 
 FROM alpine:3.22 AS debug
