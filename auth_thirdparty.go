@@ -26,20 +26,6 @@ func (s *Service) AuthThirdPartyProvider(w http.ResponseWriter, req *http.Reques
 
 	// Only OIDC providers use GET requests for callbacks (response type is code which has response mode query).
 	if p, ok := s.oidcProviders()[providerKey]; providerKey != "" && ok {
-		err := req.ParseForm()
-		if err != nil {
-			s.BadRequestWithError(w, req, errors.WithStack(err))
-			return
-		}
-
-		state := req.Form.Get("state")
-		if state != "" {
-			flow := s.getFlowHandler(w, req, state)
-			if flow != nil && flow.SessionID != nil {
-				s.handleCredentialAddOIDCCallback(w, req, providerKey, p)
-				return
-			}
-		}
 		s.handleOIDCCallback(w, req, providerKey, p)
 		return
 	}
@@ -55,22 +41,6 @@ func (s *Service) AuthThirdPartyProviderPost(w http.ResponseWriter, req *http.Re
 
 	// Only SAML providers use POST requests for callbacks (HTTP-POST binding).
 	if p, ok := s.samlProviders()[providerKey]; providerKey != "" && ok {
-		err := req.ParseForm()
-		if err != nil {
-			s.BadRequestWithError(w, req, errors.WithStack(err))
-		}
-
-		relayState := req.Form.Get("RelayState")
-
-		flow := s.getFlowHandler(w, req, relayState)
-		if flow == nil {
-			s.BadRequestWithError(w, req, errors.WithStack(err))
-			return
-		}
-		if flow.SessionID != nil {
-			s.handleCredentialAddSAMLCallback(w, req, providerKey, p)
-			return
-		}
 		s.handleSAMLCallback(w, req, providerKey, p)
 		return
 	}

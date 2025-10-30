@@ -41,7 +41,9 @@
       "shortEmailOrUsername": {
         "email": "E-mail address should be at least 3 characters.",
         "username": "Username should be at least 3 characters."
-      }
+      },
+      "credentialAlreadyExists": "Credential already exists",
+      "credentialAlreadyUsed": "Credential already used"
     },
     "labels": {
       "optional": "(optional)",

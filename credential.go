@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/alexedwards/argon2id"
-	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/protocol/webauthncose"
 	"github.com/go-webauthn/webauthn/webauthn"
@@ -25,7 +24,11 @@ import (
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
-	"golang.org/x/oauth2"
+)
+
+const (
+	ErrorCodeCredentialAlreadyExists ErrorCode = "credentialAlreadyExists"
+	ErrorCodeCredentialAlreadyUsed   ErrorCode = "credentialAlreadyUsed"
 )
 
 var (
@@ -75,6 +78,27 @@ type credentialAddSession struct {
 type addPasswordCredential struct {
 	Hash  string `json:"hash"`
 	Label string `json:"label"`
+}
+
+func (s *Service) credentialError(w http.ResponseWriter, req *http.Request, errorCode ErrorCode) {
+	ctx := req.Context()
+
+	errE := errors.New("credential error")
+	errors.Details(errE)["code"] = errorCode
+	s.WithError(ctx, errE)
+
+	response := map[string]interface{}{
+		"success": false,
+		"error":   errorCode,
+	}
+
+	encoded := s.PrepareJSON(w, req, response, nil)
+	if encoded == nil {
+		return
+	}
+
+	w.WriteHeader(http.StatusBadRequest)
+	_, _ = w.Write(encoded)
 }
 
 func (s *Service) getCredentialInfo(provider Provider, credential Credential, index int) (credentialInfo, errors.E) {
@@ -314,24 +338,27 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 		return
 	}
 	if len(preservedEmail) < emailOrUsernameMinLength {
-		s.BadRequestWithError(w, req, errors.New("email too short"))
+		s.credentialError(w, req, ErrorCodeShortEmailOrUsername)
 		return
 	}
 
 	if !strings.Contains(preservedEmail, "@") {
-		s.BadRequestWithError(w, req, errors.New("invalid email address"))
+		s.credentialError(w, req, ErrorCodeInvalidEmailOrUsername)
 		return
 	}
 
 	mappedEmail, errE := normalizeUsernameCaseMapped(preservedEmail)
 	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
+		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
 	existingAccount, errE := s.getAccountByCredential(ctx, ProviderEmail, mappedEmail)
 	if errE == nil && existingAccount.ID != accountID {
-		s.BadRequestWithError(w, req, errors.New("email already in use"))
+		s.credentialError(w, req, ErrorCodeCredentialAlreadyUsed)
+		return
+	} else if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
+		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
@@ -339,12 +366,12 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 		Email: preservedEmail,
 	})
 	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
+		s.BadRequestWithError(w, req, errE)
 		return
 	}
 	errE = s.addCredentialToAccount(ctx, accountID, ProviderEmail, mappedEmail, jsonData)
 	if errE != nil {
-		s.BadRequestWithError(w, req, errE)
+		s.credentialError(w, req, ErrorCodeCredentialAlreadyExists)
 		return
 	}
 
@@ -377,24 +404,29 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 
 	preservedUsername, errE := normalizeUsernameCasePreserved(request.Username)
 	if errE != nil {
-		s.BadRequestWithError(w, req, errE)
+		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
 	if strings.Contains(preservedUsername, "@") {
-		s.BadRequestWithError(w, req, errors.New("username cannot contain @"))
+		s.credentialError(w, req, ErrorCodeInvalidEmailOrUsername)
 		return
 	}
 
 	mappedUsername, errE := normalizeUsernameCaseMapped(preservedUsername)
 	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	if len(preservedUsername) < emailOrUsernameMinLength {
+		s.credentialError(w, req, ErrorCodeShortEmailOrUsername)
 		return
 	}
 
 	existingAccount, errE := s.getAccountByCredential(ctx, ProviderUsername, mappedUsername)
 	if errE == nil && existingAccount.ID != accountID {
-		s.BadRequestWithError(w, req, errors.New("username already in use"))
+		s.credentialError(w, req, ErrorCodeCredentialAlreadyUsed)
 		return
 	} else if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -405,13 +437,13 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 		Username: preservedUsername,
 	})
 	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
+		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
 	errE = s.addCredentialToAccount(ctx, accountID, ProviderUsername, mappedUsername, jsonData)
 	if errE != nil {
-		s.BadRequestWithError(w, req, errE)
+		s.credentialError(w, req, ErrorCodeCredentialAlreadyExists)
 		return
 	}
 
@@ -524,25 +556,25 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	var session credentialAddSession
-	errE = x.UnmarshalWithoutUnknownFields(sessionData, &session)
+	var cas credentialAddSession
+	errE = x.UnmarshalWithoutUnknownFields(sessionData, &cas)
 	if errE != nil {
 		errors.Details(errE)["sessionKeyID"] = sessionKeyID
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	if time.Since(session.CreatedAt) > (defaultPasskeyTimeout) {
+	if time.Since(cas.CreatedAt) > (defaultPasskeyTimeout) {
 		s.BadRequestWithError(w, req, errors.WithDetails(errSessionNotFound, "expired"))
 		return
 	}
 
-	if session.Type != "password" || session.PrivateKey == nil || session.Nonce == nil {
+	if cas.Type != "password" || cas.PrivateKey == nil || cas.Nonce == nil {
 		s.BadRequestWithError(w, req, errors.New("invalid session type"))
 		return
 	}
 
-	privateKey, err := ecdh.P256().NewPrivateKey(session.PrivateKey)
+	privateKey, err := ecdh.P256().NewPrivateKey(cas.PrivateKey)
 	if err != nil {
 		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
 		return
@@ -572,7 +604,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	plainPassword, err := aesgcm.Open(nil, session.Nonce, request.Password, nil)
+	plainPassword, err := aesgcm.Open(nil, cas.Nonce, request.Password, nil)
 	if err != nil {
 		s.BadRequestWithError(w, req, errors.WithStack(err))
 		return
@@ -585,7 +617,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 	}
 
 	if len(plainPassword) < passwordMinLength {
-		s.BadRequestWithError(w, req, errors.New(string(ErrorCodeShortPassword)))
+		s.credentialError(w, req, ErrorCodeShortPassword)
 		return
 	}
 
@@ -616,7 +648,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 		}
 
 		if exists {
-			s.BadRequestWithError(w, req, errors.New("password already used on this account"))
+			s.credentialError(w, req, ErrorCodeCredentialAlreadyUsed)
 			return
 		}
 	}
@@ -633,7 +665,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 	credentialID := identifier.New().String()
 	errE = s.addCredentialToAccount(ctx, accountID, ProviderPassword, credentialID, jsonData)
 	if errE != nil {
-		s.BadRequestWithError(w, req, errE)
+		s.credentialError(w, req, ErrorCodeCredentialAlreadyExists)
 		return
 	}
 
@@ -755,19 +787,19 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 		return
 	}
 
-	var session credentialAddSession
-	errE = x.UnmarshalWithoutUnknownFields(sessionData, &session)
+	var cas credentialAddSession
+	errE = x.UnmarshalWithoutUnknownFields(sessionData, &cas)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	if time.Since(session.CreatedAt) > (defaultPasskeyTimeout) {
+	if time.Since(cas.CreatedAt) > (defaultPasskeyTimeout) {
 		s.BadRequestWithError(w, req, errors.WithDetails(errSessionNotFound, "expired"))
 		return
 	}
 
-	if session.Type != "passkey" || session.Passkey == nil {
+	if cas.Type != "passkey" || cas.Passkey == nil {
 		s.BadRequestWithError(w, req, errors.New("invalid session type"))
 		return
 	}
@@ -778,7 +810,7 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 		return
 	}
 
-	credential, err := s.passkeyProvider().CreateCredential(&charonUser{nil}, *session.Passkey, parsedResponse)
+	credential, err := s.passkeyProvider().CreateCredential(&charonUser{nil}, *cas.Passkey, parsedResponse)
 	if err != nil {
 		s.BadRequestWithError(w, req, withWebauthnError(err))
 		return
@@ -791,8 +823,8 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 	}
 
 	existingAccount, errE := s.getAccountByCredential(ctx, ProviderPasskey, credentialID)
-	if errE == nil && existingAccount != nil {
-		s.BadRequestWithError(w, req, errors.New("passkey already registered to this account"))
+	if errE == nil && existingAccount.ID != accountID {
+		s.credentialError(w, req, ErrorCodeCredentialAlreadyUsed)
 		return
 	} else if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -807,101 +839,13 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 
 	errE = s.addCredentialToAccount(ctx, accountID, ProviderPasskey, credentialID, jsonData)
 	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
+		s.credentialError(w, req, ErrorCodeCredentialAlreadyExists)
 		return
 	}
 
 	s.WriteJSON(w, req, map[string]interface{}{
 		"success": true,
 		"id":      credentialID,
-	}, nil)
-}
-
-// CredentialAddThirdPartyProviderStartPost is the API handler for starting the third-party credential step, POST request.
-func (s *Service) CredentialAddThirdPartyProviderStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	defer req.Body.Close()              //nolint:errcheck
-	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
-
-	ctx := s.requireAuthenticatedForIdentity(w, req)
-	if ctx == nil {
-		return
-	}
-
-	sessionID := mustGetSessionID(ctx)
-	providerKey := Provider(params["provider"])
-
-	flow := &flow{
-		ID:        identifier.New(),
-		CreatedAt: time.Now().UTC(),
-		Completed: []Completed{},
-		AuthTime:  nil,
-
-		OrganizationID: identifier.Identifier{},
-		AppID:          identifier.Identifier{},
-
-		SessionID: &sessionID,
-		Identity:  nil,
-
-		OIDCAuthorizeRequest: nil,
-
-		AuthAttempts:    0,
-		Providers:       []Provider{providerKey},
-		EmailOrUsername: "",
-		OIDCProvider:    nil,
-		SAMLProvider:    nil,
-		Passkey:         nil,
-		Password:        nil,
-		Code:            nil,
-	}
-	var errE errors.E
-	var location string
-
-	if p, ok := s.oidcProviders()[providerKey]; ok {
-		location, errE = s.handleCredentialAddOIDCStart(ctx, flow, p)
-	}
-	if p, ok := s.samlProviders()[providerKey]; ok {
-		location, errE = s.handleCredentialAddSAMLStart(ctx, flow, p)
-	}
-	if location == "" {
-		errE = errors.New("unknown provider")
-		errors.Details(errE)["provider"] = providerKey
-		s.NotFoundWithError(w, req, errE)
-		return
-	}
-
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	var existingToken string
-	for _, cookie := range req.Cookies() {
-		if strings.HasPrefix(cookie.Name, sessionCookiePrefix) {
-			ses, errE := s.getSessionFromCookieValue(ctx, cookie.Value)
-			if errE == nil && ses.ID == sessionID {
-				existingToken = cookie.Value
-				break
-			}
-		}
-	}
-
-	if existingToken != "" {
-		cookie := http.Cookie{
-			Name:     sessionCookiePrefix + flow.ID.String(),
-			Value:    existingToken,
-			Path:     "/",
-			Domain:   "",
-			Expires:  time.Now().Add(sessionExpiration),
-			MaxAge:   0,
-			Secure:   true,
-			HttpOnly: true,
-			SameSite: http.SameSiteLaxMode,
-		}
-		http.SetCookie(w, &cookie)
-	}
-
-	s.WriteJSON(w, req, map[string]interface{}{
-		"location": location,
 	}, nil)
 }
 
@@ -962,271 +906,4 @@ func (s *Service) CredentialRemovePost(w http.ResponseWriter, req *http.Request,
 	s.WriteJSON(w, req, map[string]interface{}{
 		"success": true,
 	}, nil)
-}
-
-func (s *Service) handleCredentialAddSAMLStart(ctx context.Context, flow *flow, provider samlProvider) (string, errors.E) {
-	handler := s.handlerSAMLStart(provider)
-	authURL, errE := handler(flow)
-	if errE != nil {
-		return "", errE
-	}
-
-	errE = s.setFlow(ctx, flow)
-	if errE != nil {
-		return "", errE
-	}
-	return authURL, nil
-}
-
-func (s *Service) handleCredentialAddSAMLCallback(w http.ResponseWriter, req *http.Request, providerKey Provider, provider samlProvider) {
-	defer req.Body.Close()              //nolint:errcheck
-	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
-
-	ctx := req.Context()
-
-	err := req.ParseForm()
-	if err != nil {
-		s.BadRequestWithError(w, req, errors.WithStack(err))
-		return
-	}
-
-	flow := s.getActiveFlow(w, req, req.Form.Get("RelayState"))
-	if flow == nil {
-		return
-	}
-
-	flowSAML := *flow.SAMLProvider
-	flow.SAMLProvider = nil
-	errE := s.setFlow(ctx, flow)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	if flow.SessionID == nil {
-		s.InternalServerErrorWithError(w, req, errors.New("missing session ID for credential addition"))
-		return
-	}
-
-	session, errE := s.getSession(ctx, *flow.SessionID)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	accountID := session.AccountID
-
-	log := s.Logger.With().
-		Str("provider", string(providerKey)).
-		Str("flow_id", flow.ID.String()).
-		Str("account_id", accountID.String()).
-		Logger()
-
-	samlResponse := req.Form.Get("SAMLResponse")
-	if samlResponse == "" {
-		log.Warn().Msg("missing SAMLResponse in callback")
-		s.BadRequestWithError(w, req, errors.New("missing SAMLResponse"))
-		return
-	}
-
-	location, errE := s.Reverse("CredentialList", nil, nil)
-	if errE != nil {
-		log.Warn().Err(errE).Msg("reverse route failure")
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	assertionInfo, response, errE := retrieveAssertionInfoWithResponse(provider.Provider, samlResponse)
-	if errE != nil {
-		log.Warn().Err(errE).Msg("assertion retrieval failed")
-		s.TemporaryRedirectGetMethod(w, req, location)
-		return
-	}
-
-	errE = validateSAMLAssertion(assertionInfo)
-	if errE != nil {
-		log.Warn().Err(errE).Msg("saml assertion validation failed")
-		s.TemporaryRedirectGetMethod(w, req, location)
-		return
-	}
-
-	if response.InResponseTo != flowSAML.RequestID {
-		log.Warn().Str("response_in_response_to", response.InResponseTo).
-			Msg("saml response ID does not match request ID")
-		s.TemporaryRedirectGetMethod(w, req, location)
-		return
-	}
-
-	attributes, errE := getSAMLAttributes(assertionInfo, provider.Mapping)
-	if errE != nil {
-		log.Warn().Err(errE).Msg("getting SAML attributes failed")
-		s.TemporaryRedirectGetMethod(w, req, location)
-		return
-	}
-
-	jsonData, errE := x.MarshalWithoutEscapeHTML(attributes)
-	if errE != nil {
-		log.Warn().Err(errE).Msg("marshal error")
-		s.TemporaryRedirectGetMethod(w, req, location)
-		return
-	}
-
-	credentialID, errE := getSAMLCredentialID(assertionInfo, attributes, provider.Mapping.CredentialIDAttributes, samlResponse)
-	if errE != nil {
-		log.Warn().Err(errE).Msg("credentialID error")
-		s.TemporaryRedirectGetMethod(w, req, location)
-		return
-	}
-
-	errE = s.addCredentialToAccount(ctx, accountID, providerKey, credentialID, jsonData)
-	if errE != nil {
-		log.Warn().Err(errE).Msg("failed to add SAML credential")
-		s.BadRequestWithError(w, req, errE)
-		return
-	}
-
-	s.TemporaryRedirectGetMethod(w, req, location)
-}
-
-func (s *Service) handleCredentialAddOIDCStart(ctx context.Context, flow *flow, provider oidcProvider) (string, errors.E) {
-	flow.OIDCProvider = &flowOIDCProvider{
-		Verifier: "",
-		Nonce:    identifier.New().String(),
-	}
-
-	opts := []oauth2.AuthCodeOption{}
-	opts = append(opts, oidc.Nonce(flow.OIDCProvider.Nonce))
-
-	if provider.SupportsPKCE {
-		flow.OIDCProvider.Verifier = oauth2.GenerateVerifier()
-		opts = append(opts, oauth2.S256ChallengeOption(flow.OIDCProvider.Verifier))
-	}
-
-	errE := s.setFlow(ctx, flow)
-	if errE != nil {
-		return "", errE
-	}
-
-	return provider.Config.AuthCodeURL(flow.ID.String(), opts...), nil
-}
-
-func (s *Service) handleCredentialAddOIDCCallback(w http.ResponseWriter, req *http.Request, providerKey Provider, provider oidcProvider) {
-	defer req.Body.Close()              //nolint:errcheck
-	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
-
-	ctx := req.Context()
-
-	err := req.ParseForm()
-	if err != nil {
-		s.BadRequestWithError(w, req, errors.WithStack(err))
-		return
-	}
-
-	flow := s.getActiveFlow(w, req, req.Form.Get("state"))
-	if flow == nil {
-		return
-	}
-
-	if flow.OIDCProvider == nil {
-		s.BadRequestWithError(w, req, errors.New("OIDC provider not started"))
-		return
-	}
-
-	flowOIDC := *flow.OIDCProvider
-
-	// We reset flow.OIDCProvider to nil always after this point, even if there is a failure,
-	// so that nonce cannot be reused.
-	flow.OIDCProvider = nil
-	errE := s.setFlow(ctx, flow)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	if flow.SessionID == nil {
-		s.InternalServerErrorWithError(w, req, errors.New("missing session ID for credential addition"))
-		return
-	}
-
-	ses, errE := s.getSession(ctx, *flow.SessionID)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	accountID := ses.AccountID
-
-	log := s.Logger.With().
-		Str("provider", string(providerKey)).
-		Str("flow_id", flow.ID.String()).
-		Str("account_id", accountID.String()).
-		Logger()
-
-	location, errE := s.Reverse("CredentialList", nil, nil)
-	if errE != nil {
-		log.Warn().Err(errE).Msg("reverse route failure")
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	errorCode := req.Form.Get("error")
-	errorDescription := req.Form.Get("error_description")
-	if errorCode != "" || errorDescription != "" {
-		log.Warn().Str("error_code", errorCode).Str("error_description", errorDescription).Msg("OIDC authorization error")
-		s.TemporaryRedirectGetMethod(w, req, location)
-		return
-	}
-
-	ctx = oidc.ClientContext(ctx, provider.Client)
-
-	opts := []oauth2.AuthCodeOption{}
-	if provider.SupportsPKCE {
-		opts = append(opts, oauth2.VerifierOption(flowOIDC.Verifier))
-	}
-
-	oauth2Token, err := provider.Config.Exchange(ctx, req.Form.Get("code"), opts...)
-	if err != nil {
-		log.Warn().Err(err).Msg("token exchange failed")
-		s.TemporaryRedirectGetMethod(w, req, location)
-		return
-	}
-
-	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
-	if !ok {
-		log.Warn().Msg("ID token missing")
-		s.TemporaryRedirectGetMethod(w, req, location)
-		return
-	}
-
-	idToken, err := provider.Verifier.Verify(ctx, rawIDToken)
-	if err != nil {
-		log.Warn().Err(err).Msg("ID token verification failed")
-		s.TemporaryRedirectGetMethod(w, req, location)
-		return
-	}
-
-	if idToken.Nonce != flowOIDC.Nonce {
-		log.Warn().Msg("nonce mismatch")
-		s.TemporaryRedirectGetMethod(w, req, location)
-		return
-	}
-
-	var jsonData json.RawMessage
-	err = idToken.Claims(&jsonData)
-	if err != nil {
-		log.Warn().Err(err).Msg("claims extraction failed")
-		s.TemporaryRedirectGetMethod(w, req, location)
-		return
-	}
-
-	credentialID := idToken.Subject
-
-	errE = s.addCredentialToAccount(ctx, accountID, providerKey, credentialID, jsonData)
-	if errE != nil {
-		log.Warn().Err(errE).Msg("failed to add OIDC credential")
-		s.BadRequestWithError(w, req, errE)
-		return
-	}
-
-	s.TemporaryRedirectGetMethod(w, req, location)
 }

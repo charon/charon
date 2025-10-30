@@ -4,8 +4,6 @@ import {
   addUsernameCredential,
   completeAddPasskeyCredential,
   completeAddPasswordCredential,
-  FetchError,
-  postJSON,
   startAddPasskeyCredential,
   startAddPasswordCredential,
 } from "@/api"
@@ -13,7 +11,6 @@ import { isSignedIn } from "@/auth"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import RadioButton from "@/components/RadioButton.vue"
-import siteContext from "@/context"
 import Footer from "@/partials/Footer.vue"
 import NavBar from "@/partials/NavBar.vue"
 import { injectProgress } from "@/progress"
@@ -25,10 +22,9 @@ import { useRouter } from "vue-router"
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
 const progress = injectProgress()
-const availableProviders = siteContext.providers
 
 const abortController = new AbortController()
-const credentialType = ref<"email" | "username" | "password" | "passkey" | "thirdParty" | null>(null)
+const credentialType = ref<"email" | "username" | "password" | "passkey" | null>(null)
 const error = ref("")
 
 const email = ref("")
@@ -39,6 +35,36 @@ const passwordLabel = ref("")
 interface CredentialTypeOption {
   key: string
   label: string
+}
+
+function getErrorMessage(errorCode: string) {
+  switch (errorCode) {
+    case "invalidEmailOrUsername":
+      if (credentialType.value === "email") {
+        return t("common.errors.invalidEmailOrUsername.email")
+      } else if (credentialType.value === "username") {
+        return t("common.errors.invalidEmailOrUsername.username")
+      }
+      return t("common.errors.unexpected")
+    case "shortEmailOrUsername":
+      if (credentialType.value === "email") {
+        return t("common.errors.shortEmailOrUsername.email")
+      } else if (credentialType.value === "username") {
+        return t("common.errors.shortEmailOrUsername.username")
+      }
+      return t("common.errors.unexpected")
+    case "credentialAlreadyUsed":
+      return t("common.errors.credentialAlreadyUsed")
+    case "credentialAlreadyExists":
+      return t("common.errors.credentialAlreadyExists")
+    case "shortPassword":
+      return t("common.errors.shortPassword")
+    default:
+      if (errorCode) {
+        console.warn("Unknown error code:", errorCode)
+      }
+      return t("common.errors.unexpected")
+  }
 }
 
 function resetOnInteraction() {
@@ -71,7 +97,7 @@ async function addEmail() {
     return
   }
 
-  error.value = ""
+  resetOnInteraction()
 
   try {
     const result = await addEmailCredential(router, email.value, abortController, progress)
@@ -79,21 +105,22 @@ async function addEmail() {
       return
     }
 
-    if (result?.success) {
-      await router.push({ name: "CredentialList" })
-    } else {
-      error.value = t("common.errors.unexpected")
+    if (!result) {
+      return
     }
+    if (!result.success) {
+      error.value = getErrorMessage(result.error)
+      return
+    }
+
+
+    await router.push({name: "CredentialList"})
   } catch (err) {
     if (abortController.signal.aborted) {
       return
     }
     console.error("CredentialAdd.addEmail", err)
-    if (err instanceof FetchError) {
-      error.value = err.body || t("common.errors.unexpected")
-    } else {
-      error.value = `${err}`
-    }
+    error.value = t("common.errors.unexpected")
   }
 }
 
@@ -102,7 +129,7 @@ async function addUsername() {
     return
   }
 
-  error.value = ""
+  resetOnInteraction()
 
   try {
     const result = await addUsernameCredential(router, username.value, abortController, progress)
@@ -110,21 +137,22 @@ async function addUsername() {
       return
     }
 
-    if (result?.success) {
-      await router.push({ name: "CredentialList" })
-    } else {
-      error.value = t("common.errors.unexpected")
+    if (!result) {
+      return
     }
+
+    if (!result.success) {
+      error.value = getErrorMessage(result.error)
+      return
+    }
+
+    await router.push({ name: "CredentialList" })
   } catch (err) {
     if (abortController.signal.aborted) {
       return
     }
     console.error("CredentialAdd.addUsername", err)
-    if (err instanceof FetchError) {
-      error.value = err.body || t("common.errors.unexpected")
-    } else {
-      error.value = `${err}`
-    }
+    error.value = t("common.errors.unexpected")
   }
 }
 
@@ -133,7 +161,7 @@ async function addPassword() {
     return
   }
 
-  error.value = ""
+  resetOnInteraction()
 
   try {
     const startResponse = await startAddPasswordCredential(router, abortController, progress)
@@ -195,21 +223,22 @@ async function addPassword() {
       return
     }
 
-    if (result?.success) {
-      await router.push({ name: "CredentialList" })
-    } else {
-      error.value = t("common.errors.unexpected")
+    if (!result) {
+      return
     }
+
+    if (!result.success) {
+      error.value = getErrorMessage(result.error)
+      return
+    }
+
+    await router.push({ name: "CredentialList" })
   } catch (err) {
     if (abortController.signal.aborted) {
       return
     }
     console.error("CredentialAdd.addPassword", err)
-    if (err instanceof FetchError) {
-      error.value = err.body || t("common.errors.unexpected")
-    } else {
-      error.value = `${err}`
-    }
+    error.value = t("common.errors.unexpected")
   }
 }
 
@@ -218,7 +247,7 @@ async function addPasskey() {
     return
   }
 
-  error.value = ""
+  resetOnInteraction()
 
   try {
     if (!browserSupportsWebAuthn()) {
@@ -250,21 +279,22 @@ async function addPasskey() {
       return
     }
 
-    if (result?.success) {
-      await router.push({ name: "CredentialList" })
-    } else {
-      error.value = t("common.errors.unexpected")
+    if (!result) {
+      return
     }
+
+    if (!result.success) {
+      error.value = getErrorMessage(result.error)
+      return
+    }
+
+    await router.push({ name: "CredentialList" })
   } catch (err) {
     if (abortController.signal.aborted) {
       return
     }
     console.error("CredentialAdd.addPasskey", err)
-    if (err instanceof FetchError) {
-      error.value = err.body || t("common.errors.unexpected")
-    } else {
-      error.value = `${err}`
-    }
+    error.value = t("common.errors.unexpected")
   }
 }
 
@@ -281,46 +311,6 @@ const builtInCredentialTypes = computed<CredentialTypeOption[]>(() => {
 
   return types
 })
-
-const allCredentialTypes = computed<CredentialTypeOption[]>(() => {
-  return [...builtInCredentialTypes.value, ...availableProviders.map((p) => ({ key: p.key, label: p.name }))]
-})
-
-async function startThirdPartyProvider(providerKey: string) {
-  if (abortController.signal.aborted) {
-    return
-  }
-
-  error.value = ""
-
-  try {
-    progress.value += 1
-
-    const url = router.apiResolve({
-      name: "CredentialAddThirdPartyProviderStart",
-      params: { provider: providerKey },
-    }).href
-
-    const response = await postJSON<{ location: string }>(url, {}, abortController.signal, progress)
-    if (abortController.signal.aborted) {
-      progress.value -= 1
-      return
-    }
-
-    if (response.location) {
-      window.location.href = response.location
-    } else {
-      error.value = t("common.errors.unexpected")
-      progress.value -= 1
-    }
-  } catch (error) {
-    if (abortController.signal.aborted) {
-      return
-    }
-    console.error("CredentialAdd.startThirdPartyProvider", error)
-    progress.value -= 1
-  }
-}
 </script>
 
 <template>
@@ -334,15 +324,14 @@ async function startThirdPartyProvider(providerKey: string) {
           <h1 class="text-2xl font-bold">{{ t("views.CredentialAdd.addCredential") }}</h1>
         </div>
       </div>
-
       <!-- Credential Type Selection -->
       <div class="w-full rounded border border-gray-200 bg-white p-4 shadow">
         <h2 class="mb-4 text-lg font-semibold">{{ t("views.CredentialAdd.availableOptions") }}</h2>
         <fieldset>
           <legend class="sr-only">{{ t("views.CredentialAdd.credentialTypes") }}</legend>
           <div class="flex flex-col gap-3">
-            <div v-for="type in allCredentialTypes" :key="type.key" class="flex items-center">
-              <RadioButton :id="`credential-type-${type.key}`" v-model="credentialType" :value="type.key" :progress="progress" class="mx-2" />
+            <div v-for="type in builtInCredentialTypes" :key="type.key" class="flex items-center">
+              <RadioButton :id="`credentialadd-radio-${type.key}`" v-model="credentialType" :value="type.key" :progress="progress" class="mx-2" />
               <label :for="`credential-type-${type.key}`" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">
                 {{ type.label }}
               </label>
@@ -350,61 +339,84 @@ async function startThirdPartyProvider(providerKey: string) {
           </div>
         </fieldset>
         <!-- Email Form -->
-        <form v-if="credentialType === 'email'" class="mt-6 flex flex-col" @submit.prevent="addEmail">
-          <label for="email" class="mb-1">{{ t("common.fields.email") }}</label>
-          <InputText id="credentialadd-input-email" v-model="email" class="min-w-0 flex-auto flex-grow" type="email" :progress="progress" required />
-          <div v-if="error" class="mt-4 text-error-600">{{ error }}</div>
+        <form v-if="credentialType === 'email'" class="mt-6 flex flex-col" novalidate @submit.prevent="addEmail" >
+          <label for="credentialadd-input-email" class="mb-1"> {{ t("common.fields.email") }} </label>
+          <InputText
+              id="credentialadd-input-email"
+              v-model="email"
+              name="email"
+              class="min-w-0 flex-auto grow"
+              :progress="progress"
+              :invalid="!!error"
+              autocomplete="username"
+              autocorrect="off"
+              autocapitalize="none"
+              spellcheck="false"
+              type="email"
+              minlength="3"
+              required
+          />
+          <div v-if="error" class="mt-4 text-error-600">
+            {{ error }}
+          </div>
           <div class="mt-4 flex flex-row justify-end gap-4">
             <Button type="button" secondary @click="resetForm">{{ t("common.buttons.cancel") }}</Button>
             <Button type="submit" primary :progress="progress">{{ t("common.buttons.add") }}</Button>
           </div>
         </form>
         <!-- Username Form -->
-        <form v-if="credentialType === 'username'" class="mt-6 flex flex-col" @submit.prevent="addUsername">
+        <form v-if="credentialType === 'username'" class="mt-6 flex flex-col" novalidate @submit.prevent="addUsername">
           <label for="username" class="mb-1">{{ t("common.fields.username") }}</label>
           <InputText id="credentialadd-input-username" v-model="username" class="min-w-0 flex-auto flex-grow" type="text" :progress="progress" required />
-          <div v-if="error" class="mt-4 text-error-600">{{ error }}</div>
+          <div v-if="error" class="mt-4 text-error-600">
+            {{ error }}
+          </div>
           <div class="mt-4 flex flex-row justify-end gap-4">
             <Button type="button" secondary @click="resetForm">{{ t("common.buttons.cancel") }}</Button>
             <Button type="submit" primary :progress="progress">{{ t("common.buttons.add") }}</Button>
           </div>
         </form>
         <!-- Password Form -->
-        <form v-if="credentialType === 'password'" class="mt-6 flex flex-col" @submit.prevent="addPassword">
+        <form v-if="credentialType === 'password'" class="mt-6 flex flex-col" novalidate @submit.prevent="addPassword">
           <label for="password" class="mb-1">{{ t("views.CredentialList.password") }}</label>
-          <InputText id="credentialadd-input-password" v-model="password" class="min-w-0 flex-auto flex-grow" type="password" :progress="progress" required />
+          <InputText
+              id="credentialadd-input-password"
+              v-model="password"
+              class="min-w-0 flex-auto flex-grow"
+              type="password"
+              :progress="progress"
+              required />
           <label for="password-label" class="mt-4 mb-1"
             >{{ t("views.CredentialAdd.label") }}<span class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
           >
-          <InputText id="credentialadd-input-passwordlabel" v-model="passwordLabel" class="mt-2 flex flex-row gap-4" type="text" :progress="progress" />
-          <div v-if="error" class="mt-4 text-error-600">{{ error }}</div>
+          <InputText
+              id="credentialadd-input-passwordlabel"
+              v-model="passwordLabel"
+              name="new-password"
+              autocomplete="new-password"
+              class="mt-2 flex flex-row gap-4"
+              type="text"
+              :progress="progress" />
+          <div v-if="error" class="mt-4 text-error-600">
+            {{ error }}
+          </div>
           <div class="mt-4 flex flex-row justify-end gap-4">
             <Button type="button" secondary @click="resetForm">{{ t("common.buttons.cancel") }}</Button>
             <Button type="submit" primary :progress="progress">{{ t("common.buttons.add") }}</Button>
           </div>
         </form>
         <!-- Passkey Form -->
-        <form v-if="credentialType === 'passkey'" class="mt-6 flex flex-col" @submit.prevent="addPasskey">
+        <form v-if="credentialType === 'passkey'" class="mt-6 flex flex-col" novalidate @submit.prevent="addPasskey">
           <p class="mt-2 mb-4">{{ t("views.CredentialAdd.passkeyInstructions") }}</p>
-          <div v-if="error" class="mt-4 text-error-600">{{ error }}</div>
+          <div v-if="error" class="mt-4 text-error-600">
+            {{ error }}
+          </div>
           <div class="flex flex-row justify-end gap-4">
             <Button type="button" secondary @click="resetForm">{{ t("common.buttons.cancel") }}</Button>
             <Button type="submit" primary :progress="progress">{{ t("views.CredentialAdd.addPasskeyButton") }}</Button>
           </div>
         </form>
 
-        <!-- Third-Party Provider Form -->
-        <form v-if="availableProviders.some((p) => p.key === credentialType)" class="mt-6" @submit.prevent="startThirdPartyProvider(credentialType!)">
-          <div v-if="error" class="mt-4 text-error-600">{{ error }}</div>
-          <div class="mt-4 flex flex-row justify-end gap-4">
-            <Button type="button" secondary @click="resetForm">
-              {{ t("common.buttons.cancel") }}
-            </Button>
-            <Button type="submit" primary :progress="progress">
-              {{ t("common.buttons.add") }}
-            </Button>
-          </div>
-        </form>
       </div>
     </div>
   </div>

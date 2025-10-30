@@ -341,22 +341,31 @@ export async function removeCredential(router: Router, id: string, abortControll
   }
 }
 
-export async function addEmailCredential(router: Router, email: string, abortController: AbortController, progress: Ref<number>): Promise<CredentialAddResponse | null> {
-  progress.value += 1
-  try {
-    const url = router.apiResolve({
-      name: "CredentialAddEmail",
-    }).href
+export async function addEmailCredential(
+    router: Router,
+    email: string,
+    abortController: AbortController,
+    progress: Ref<number>,
+): Promise<CredentialAddResponse | null> {
+    progress.value += 1
+    try {
+        const url = router.apiResolve({
+            name: "CredentialAddEmail",
+        }).href
 
-    const response = await postJSON<CredentialAddResponse>(url, { email }, abortController.signal, progress)
-    if (abortController.signal.aborted) {
-      return null
+        const response = await postJSON<CredentialAddResponse>(
+            url,
+            { email },
+            abortController.signal,
+            progress)
+        if (abortController.signal.aborted) {
+            return null
+        }
+
+        return response
+    } finally {
+        progress.value -= 1
     }
-
-    return response
-  } finally {
-    progress.value -= 1
-  }
 }
 
 export async function addUsernameCredential(
