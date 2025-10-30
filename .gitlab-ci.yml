@@ -158,12 +158,12 @@ test_e2e:
     - |
       mkdir playwright-screenshots
       if [ -n "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" ]; then
-        # Download screenshots from CI_MERGE_REQUEST_TARGET_BRANCH_NAME.
+        echo "Download screenshots from $CI_MERGE_REQUEST_TARGET_BRANCH_NAME."
         apk --update add curl
         curl --location --output artifacts.zip "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/jobs/artifacts/${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}/download?job=test_e2e"
         unzip -o artifacts.zip -x playwright-report/\* -x test-results/\*
       else
-        # Not a merge request pipeline, update screenshots.
+        echo "Not a merge request pipeline, update screenshots."
         export UPDATE_SCREENSHOTS=changed
       fi
 
