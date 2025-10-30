@@ -32,6 +32,8 @@ const (
 	ErrorCodeCredentialAlreadyUsed   ErrorCode = "credentialAlreadyUsed"   //nolint:gosec
 )
 
+const defaultPasswordTimeout = 60 * time.Second
+
 var (
 	credentialSessions   = make(map[identifier.Identifier]json.RawMessage) //nolint:gochecknoglobals
 	credentialSessionsMu sync.RWMutex                                      //nolint:gochecknoglobals
@@ -100,6 +102,26 @@ func (s *Service) credentialError(w http.ResponseWriter, req *http.Request, erro
 
 	w.WriteHeader(http.StatusBadRequest)
 	_, _ = w.Write(encoded)
+}
+
+func validateEmail(value string) ErrorCode {
+	if len(value) < emailOrUsernameMinLength {
+		return ErrorCodeShortEmailOrUsername
+	}
+	if !strings.Contains(value, "@") {
+		return ErrorCodeInvalidEmailOrUsername
+	}
+	return ""
+}
+
+func validateUsername(value string) ErrorCode {
+	if strings.Contains(value, "@") {
+		return ErrorCodeInvalidEmailOrUsername
+	}
+	if len(value) < emailOrUsernameMinLength {
+		return ErrorCodeShortEmailOrUsername
+	}
+	return ""
 }
 
 func (s *Service) getCredentialInfo(provider Provider, credential Credential, index int) (credentialInfo, errors.E) {
@@ -312,6 +334,83 @@ func (s *Service) CredentialAdd(w http.ResponseWriter, req *http.Request, _ waf.
 	}
 }
 
+func (s *Service) addSimpleCredential(
+	ctx context.Context,
+	w http.ResponseWriter,
+	req *http.Request,
+	accountID identifier.Identifier,
+	provider Provider,
+	value string,
+	validateFunc func(string) ErrorCode,
+) {
+	preservedValue, errE := normalizeUsernameCasePreserved(value)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	if errorCode := validateFunc(preservedValue); errorCode != "" {
+		s.credentialError(w, req, errorCode)
+		return
+	}
+
+	mappedValue, errE := normalizeUsernameCaseMapped(preservedValue)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	existingAccount, errE := s.getAccountByCredential(ctx, provider, mappedValue)
+	if errE == nil && existingAccount.ID != accountID {
+		s.credentialError(w, req, ErrorCodeCredentialAlreadyUsed)
+		return
+	} else if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	var jsonData []byte
+	if provider == ProviderEmail {
+		jsonData, errE = x.MarshalWithoutEscapeHTML(emailCredential{Email: preservedValue})
+	} else {
+		jsonData, errE = x.MarshalWithoutEscapeHTML(usernameCredential{Username: preservedValue})
+	}
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	errE = s.addCredentialToAccount(ctx, accountID, provider, mappedValue, jsonData)
+	if errE != nil {
+		s.credentialError(w, req, ErrorCodeCredentialAlreadyExists)
+		return
+	}
+
+	s.WriteJSON(w, req, map[string]interface{}{
+		"success": true,
+		"id":      mappedValue,
+	}, nil)
+}
+
+func validateCredentialSession(cas *credentialAddSession, expectedType string, timeout time.Duration) errors.E {
+	if time.Since(cas.CreatedAt) > timeout {
+		return errors.WithDetails(errSessionNotFound, "expired")
+	}
+
+	switch expectedType {
+	case "password":
+		if cas.Type != "password" || cas.PrivateKey == nil || cas.Nonce == nil {
+			return errors.New("invalid session type")
+		}
+	case "passkey":
+		if cas.Type != "passkey" || cas.Passkey == nil {
+			return errors.New("invalid session type")
+		}
+	}
+
+	return nil
+}
+
 // CredentialAddEmailPost is the API handler for adding a credential to account, POST request.
 func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
@@ -333,53 +432,7 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
-	preservedEmail, errE := normalizeUsernameCasePreserved(request.Email)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-	if len(preservedEmail) < emailOrUsernameMinLength {
-		s.credentialError(w, req, ErrorCodeShortEmailOrUsername)
-		return
-	}
-
-	if !strings.Contains(preservedEmail, "@") {
-		s.credentialError(w, req, ErrorCodeInvalidEmailOrUsername)
-		return
-	}
-
-	mappedEmail, errE := normalizeUsernameCaseMapped(preservedEmail)
-	if errE != nil {
-		s.BadRequestWithError(w, req, errE)
-		return
-	}
-
-	existingAccount, errE := s.getAccountByCredential(ctx, ProviderEmail, mappedEmail)
-	if errE == nil && existingAccount.ID != accountID {
-		s.credentialError(w, req, ErrorCodeCredentialAlreadyUsed)
-		return
-	} else if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
-		s.BadRequestWithError(w, req, errE)
-		return
-	}
-
-	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{
-		Email: preservedEmail,
-	})
-	if errE != nil {
-		s.BadRequestWithError(w, req, errE)
-		return
-	}
-	errE = s.addCredentialToAccount(ctx, accountID, ProviderEmail, mappedEmail, jsonData)
-	if errE != nil {
-		s.credentialError(w, req, ErrorCodeCredentialAlreadyExists)
-		return
-	}
-
-	s.WriteJSON(w, req, map[string]interface{}{
-		"success": true,
-		"id":      mappedEmail,
-	}, nil)
+	s.addSimpleCredential(ctx, w, req, accountID, ProviderEmail, request.Email, validateEmail)
 }
 
 // CredentialAddUsernamePost is the API handler for adding a credential to account, POST request.
@@ -403,55 +456,7 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	preservedUsername, errE := normalizeUsernameCasePreserved(request.Username)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	if strings.Contains(preservedUsername, "@") {
-		s.credentialError(w, req, ErrorCodeInvalidEmailOrUsername)
-		return
-	}
-
-	mappedUsername, errE := normalizeUsernameCaseMapped(preservedUsername)
-	if errE != nil {
-		s.BadRequestWithError(w, req, errE)
-		return
-	}
-
-	if len(preservedUsername) < emailOrUsernameMinLength {
-		s.credentialError(w, req, ErrorCodeShortEmailOrUsername)
-		return
-	}
-
-	existingAccount, errE := s.getAccountByCredential(ctx, ProviderUsername, mappedUsername)
-	if errE == nil && existingAccount.ID != accountID {
-		s.credentialError(w, req, ErrorCodeCredentialAlreadyUsed)
-		return
-	} else if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	jsonData, errE := x.MarshalWithoutEscapeHTML(usernameCredential{
-		Username: preservedUsername,
-	})
-	if errE != nil {
-		s.BadRequestWithError(w, req, errE)
-		return
-	}
-
-	errE = s.addCredentialToAccount(ctx, accountID, ProviderUsername, mappedUsername, jsonData)
-	if errE != nil {
-		s.credentialError(w, req, ErrorCodeCredentialAlreadyExists)
-		return
-	}
-
-	s.WriteJSON(w, req, map[string]interface{}{
-		"success": true,
-		"id":      mappedUsername,
-	}, nil)
+	s.addSimpleCredential(ctx, w, req, accountID, ProviderUsername, request.Username, validateUsername)
 }
 
 // CredentialAddPasswordStartPost is the API handler to start the password credential step, POST request.
@@ -543,35 +548,16 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
-	sessionKeyID := identifier.String(request.SessionKey)
-
-	credentialSessionsMu.Lock()
-	sessionData, ok := credentialSessions[sessionKeyID]
-	if ok {
-		delete(credentialSessions, sessionKeyID)
-	}
-	credentialSessionsMu.Unlock()
-
-	if !ok {
-		s.BadRequestWithError(w, req, errors.WithDetails(errSessionNotFound, "sessionKeyID", sessionKeyID))
-		return
-	}
-
-	var cas credentialAddSession
-	errE = x.UnmarshalWithoutUnknownFields(sessionData, &cas)
+	var cas *credentialAddSession
+	cas, errE = getAndDeleteCredentialSession(request.SessionKey)
 	if errE != nil {
-		errors.Details(errE)["sessionKeyID"] = sessionKeyID
-		s.InternalServerErrorWithError(w, req, errE)
+		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
-	if time.Since(cas.CreatedAt) > (defaultPasskeyTimeout) {
-		s.BadRequestWithError(w, req, errors.WithDetails(errSessionNotFound, "expired"))
-		return
-	}
-
-	if cas.Type != "password" || cas.PrivateKey == nil || cas.Nonce == nil {
-		s.BadRequestWithError(w, req, errors.New("invalid session type"))
+	errE = validateCredentialSession(cas, "password", defaultPasswordTimeout)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
@@ -676,6 +662,30 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 	}, nil)
 }
 
+func getAndDeleteCredentialSession(sessionKey string) (*credentialAddSession, errors.E) {
+	sessionKeyID := identifier.String(sessionKey)
+
+	credentialSessionsMu.Lock()
+	sessionData, ok := credentialSessions[sessionKeyID]
+	if ok {
+		delete(credentialSessions, sessionKeyID)
+	}
+	credentialSessionsMu.Unlock()
+
+	if !ok {
+		return nil, errors.WithDetails(errSessionNotFound, "sessionKeyID", sessionKeyID)
+	}
+
+	var cas credentialAddSession
+	errE := x.UnmarshalWithoutUnknownFields(sessionData, &cas)
+	if errE != nil {
+		errors.Details(errE)["sessionKeyID"] = sessionKeyID
+		return nil, errE
+	}
+
+	return &cas, nil
+}
+
 // CredentialAddPasskeyStartPost is the API handler to start the passkey credential step, POST request.
 func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
@@ -774,34 +784,16 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 		return
 	}
 
-	sessionKeyID := identifier.String(request.SessionKey)
-
-	credentialSessionsMu.Lock()
-	sessionData, ok := credentialSessions[sessionKeyID]
-	if ok {
-		delete(credentialSessions, sessionKeyID)
-	}
-	credentialSessionsMu.Unlock()
-
-	if !ok {
-		s.BadRequestWithError(w, req, errors.WithDetails(errSessionNotFound, "sessionKeyID", sessionKeyID))
-		return
-	}
-
-	var cas credentialAddSession
-	errE = x.UnmarshalWithoutUnknownFields(sessionData, &cas)
+	var cas *credentialAddSession
+	cas, errE = getAndDeleteCredentialSession(request.SessionKey)
 	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
+		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
-	if time.Since(cas.CreatedAt) > (defaultPasskeyTimeout) {
-		s.BadRequestWithError(w, req, errors.WithDetails(errSessionNotFound, "expired"))
-		return
-	}
-
-	if cas.Type != "passkey" || cas.Passkey == nil {
-		s.BadRequestWithError(w, req, errors.New("invalid session type"))
+	errE = validateCredentialSession(cas, "passkey", defaultPasskeyTimeout)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
