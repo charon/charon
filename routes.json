@@ -346,16 +346,16 @@
       "get": {}
     },
     {
-      "name": "CredentialGet",
-      "path": "/credential/:id",
-      "api": {},
-      "get": null
-    },
-    {
       "name": "CredentialAdd",
       "path": "/credential/add",
       "api": null,
       "get": {}
+    },
+    {
+      "name": "CredentialGet",
+      "path": "/credential/:id",
+      "api": {},
+      "get": null
     },
     {
       "name": "CredentialAddEmail",
@@ -396,12 +396,6 @@
     {
       "name": "CredentialRemove",
       "path": "/credential/remove/:id",
-      "api": {},
-      "get": null
-    },
-    {
-      "name": "CredentialAddThirdPartyProviderStart",
-      "path": "/credential/add/provider/:provider",
       "api": {},
       "get": null
     }
