@@ -469,14 +469,15 @@ export type CredentialInfo = {
 
 export type Credentials = CredentialInfoRef[]
 
-export type CredentialAddResponse = | {
-    success: true
-    id: string
-}
-    | {
-    success: false
-    error: string
-}
+export type CredentialAddResponse =
+  | {
+      success: true
+      id: string
+    }
+  | {
+      success: false
+      error: string
+    }
 
 export type CredentialAddPasswordStartResponse = {
   publicKey: string

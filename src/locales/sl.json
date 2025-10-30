@@ -41,7 +41,9 @@
       "shortEmailOrUsername": {
         "email": "E-naslov mora biti dolg vsaj 3 znake.",
         "username": "Uporabniško ime mora biti dolgo vsaj 3 znake."
-      }
+      },
+      "credentialAlreadyExists": "Poverilnica že obstaja",
+      "credentialAlreadyUsed": "Poverilnica je že v uporabi"
     },
     "labels": {
       "optional": "(neobvezno)",

@@ -26,9 +26,10 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
+// ErrorCode values.
 const (
-	ErrorCodeCredentialAlreadyExists ErrorCode = "credentialAlreadyExists"
-	ErrorCodeCredentialAlreadyUsed   ErrorCode = "credentialAlreadyUsed"
+	ErrorCodeCredentialAlreadyExists ErrorCode = "credentialAlreadyExists" //nolint:gosec
+	ErrorCodeCredentialAlreadyUsed   ErrorCode = "credentialAlreadyUsed"   //nolint:gosec
 )
 
 var (

@@ -113,8 +113,7 @@ async function addEmail() {
       return
     }
 
-
-    await router.push({name: "CredentialList"})
+    await router.push({ name: "CredentialList" })
   } catch (err) {
     if (abortController.signal.aborted) {
       return
@@ -339,22 +338,22 @@ const builtInCredentialTypes = computed<CredentialTypeOption[]>(() => {
           </div>
         </fieldset>
         <!-- Email Form -->
-        <form v-if="credentialType === 'email'" class="mt-6 flex flex-col" novalidate @submit.prevent="addEmail" >
+        <form v-if="credentialType === 'email'" class="mt-6 flex flex-col" novalidate @submit.prevent="addEmail">
           <label for="credentialadd-input-email" class="mb-1"> {{ t("common.fields.email") }} </label>
           <InputText
-              id="credentialadd-input-email"
-              v-model="email"
-              name="email"
-              class="min-w-0 flex-auto grow"
-              :progress="progress"
-              :invalid="!!error"
-              autocomplete="username"
-              autocorrect="off"
-              autocapitalize="none"
-              spellcheck="false"
-              type="email"
-              minlength="3"
-              required
+            id="credentialadd-input-email"
+            v-model="email"
+            name="email"
+            class="min-w-0 flex-auto grow"
+            :progress="progress"
+            :invalid="!!error"
+            autocomplete="username"
+            autocorrect="off"
+            autocapitalize="none"
+            spellcheck="false"
+            type="email"
+            minlength="3"
+            required
           />
           <div v-if="error" class="mt-4 text-error-600">
             {{ error }}
@@ -379,24 +378,19 @@ const builtInCredentialTypes = computed<CredentialTypeOption[]>(() => {
         <!-- Password Form -->
         <form v-if="credentialType === 'password'" class="mt-6 flex flex-col" novalidate @submit.prevent="addPassword">
           <label for="password" class="mb-1">{{ t("views.CredentialList.password") }}</label>
-          <InputText
-              id="credentialadd-input-password"
-              v-model="password"
-              class="min-w-0 flex-auto flex-grow"
-              type="password"
-              :progress="progress"
-              required />
+          <InputText id="credentialadd-input-password" v-model="password" class="min-w-0 flex-auto flex-grow" type="password" :progress="progress" required />
           <label for="password-label" class="mt-4 mb-1"
             >{{ t("views.CredentialAdd.label") }}<span class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
           >
           <InputText
-              id="credentialadd-input-passwordlabel"
-              v-model="passwordLabel"
-              name="new-password"
-              autocomplete="new-password"
-              class="mt-2 flex flex-row gap-4"
-              type="text"
-              :progress="progress" />
+            id="credentialadd-input-passwordlabel"
+            v-model="passwordLabel"
+            name="new-password"
+            autocomplete="new-password"
+            class="mt-2 flex flex-row gap-4"
+            type="text"
+            :progress="progress"
+          />
           <div v-if="error" class="mt-4 text-error-600">
             {{ error }}
           </div>
@@ -416,7 +410,6 @@ const builtInCredentialTypes = computed<CredentialTypeOption[]>(() => {
             <Button type="submit" primary :progress="progress">{{ t("views.CredentialAdd.addPasskeyButton") }}</Button>
           </div>
         </form>
-
       </div>
     </div>
   </div>

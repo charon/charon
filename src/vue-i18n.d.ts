@@ -53,6 +53,8 @@ declare module "vue-i18n" {
           email: string
           username: string
         }
+        credentialAlreadyExists: string
+        credentialAlreadyUsed: string
       }
       labels: {
         optional: string
