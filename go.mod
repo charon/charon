@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/alecthomas/kong v1.12.2-0.20250922094329-a62e6a47decf
-	github.com/alexedwards/argon2id v1.0.0
+	github.com/alexedwards/argon2id v1.0.1-0.20251028180742-493d7dead70e
 	github.com/automattic/go-gravatar v0.0.0-20210818030622-453d3c921ea3
 	github.com/go-jose/go-jose/v3 v3.0.4
 	github.com/go-jose/go-jose/v4 v4.1.3

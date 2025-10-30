@@ -1,6 +1,7 @@
 package charon
 
 import (
+	"bytes"
 	"context"
 	"strings"
 	"time"
@@ -27,19 +28,18 @@ const (
 	SecretPrefixAuthorizeCode = "cac-"
 )
 
+var secretPrefixClientSecret = x.String2ByteSlice(SecretPrefixClientSecret) //nolint:gochecknoglobals
+
 var oidcStore = newOIDCStore() //nolint:gochecknoglobals
 
 type argon2idHasher struct{}
 
 func (argon2idHasher) Compare(_ context.Context, hash, data []byte) error {
-	strData := string(data)
-	if !strings.HasPrefix(strData, SecretPrefixClientSecret) {
-		return errors.Errorf(`secret does not have "%s" prefix`, SecretPrefixClientSecret)
+	if !bytes.HasPrefix(data, secretPrefixClientSecret) {
+		return errors.Errorf(`secret does not have "%s" prefix`, secretPrefixClientSecret)
 	}
-	strData = strings.TrimPrefix(strData, SecretPrefixClientSecret)
-	// TODO: Use byte as input and not string.
-	//       See: https://github.com/alexedwards/argon2id/issues/26
-	match, err := argon2id.ComparePasswordAndHash(strData, string(hash))
+	data = bytes.TrimPrefix(data, secretPrefixClientSecret)
+	match, err := argon2id.ComparePasswordAndHash(data, x.ByteSlice2String(hash))
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -52,13 +52,11 @@ func (argon2idHasher) Compare(_ context.Context, hash, data []byte) error {
 }
 
 func (argon2idHasher) Hash(_ context.Context, data []byte) ([]byte, error) {
-	// TODO: Use byte as input and not string.
-	//       See: https://github.com/alexedwards/argon2id/issues/26
-	hashedPassword, err := argon2id.CreateHash(string(data), &argon2idParams)
+	hashedPassword, err := argon2id.CreateHash(data, &argon2idParams)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return []byte(hashedPassword), nil
+	return x.String2ByteSlice(hashedPassword), nil
 }
 
 var _ oauth2.CoreStrategy = (*hmacSHAStrategy)(nil)

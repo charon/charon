@@ -46,6 +46,8 @@ const (
 	SecretPrefixSession      = "chse-"
 )
 
+var secretPrefixCharonConfig = x.String2ByteSlice(SecretPrefixCharonConfig) //nolint:gochecknoglobals
+
 const expectedSecretSize = 32
 
 //go:embed routes.json
@@ -352,10 +354,10 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 	var secret []byte
 	if config.Secret != nil {
 		// We use a prefix to aid secret scanners.
-		if !bytes.HasPrefix(config.Secret, []byte(SecretPrefixCharonConfig)) {
+		if !bytes.HasPrefix(config.Secret, secretPrefixCharonConfig) {
 			return nil, nil, errors.Errorf(`secret does not have "%s" prefix`, SecretPrefixCharonConfig)
 		}
-		encodedSecret := bytes.TrimPrefix(config.Secret, []byte(SecretPrefixCharonConfig))
+		encodedSecret := bytes.TrimPrefix(config.Secret, secretPrefixCharonConfig)
 		// We trim space so that the file can contain whitespace (e.g., a newline) at the end.
 		encodedSecret = bytes.TrimSpace(encodedSecret)
 		secret = make([]byte, base64.RawURLEncoding.DecodedLen(len(encodedSecret)))

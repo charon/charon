@@ -306,9 +306,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 				return
 			}
 
-			// TODO: Use byte as input and not string.
-			//       See: https://github.com/alexedwards/argon2id/issues/26
-			match, options, err := argon2id.CheckHash(string(plainPassword), pc.Hash) //nolint:govet
+			match, options, err := argon2id.CheckHash(plainPassword, pc.Hash) //nolint:govet
 			if err != nil {
 				s.InternalServerErrorWithError(w, req, errors.WithStack(err))
 				return
@@ -319,9 +317,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 				jsonData := credential.Data
 				// If options are different, we migrate the password to new options.
 				if *options != argon2idParams {
-					// TODO: Use byte as input and not string.
-					//       See: https://github.com/alexedwards/argon2id/issues/26
-					hashedPassword, err := argon2id.CreateHash(string(plainPassword), &argon2idParams)
+					hashedPassword, err := argon2id.CreateHash(plainPassword, &argon2idParams)
 					if err != nil {
 						s.InternalServerErrorWithError(w, req, errors.WithStack(err))
 						return
@@ -385,9 +381,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 		})
 	}
 
-	// TODO: Use byte as input and not string.
-	//       See: https://github.com/alexedwards/argon2id/issues/26
-	hashedPassword, err := argon2id.CreateHash(string(plainPassword), &argon2idParams)
+	hashedPassword, err := argon2id.CreateHash(plainPassword, &argon2idParams)
 	if err != nil {
 		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
 		return

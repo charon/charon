@@ -182,7 +182,7 @@ func fetchSAMLMetadata(ctx context.Context, client *http.Client, metadataURL str
 		errE := errors.New("bad response status")
 		errors.Details(errE)["url"] = resp.Request.URL.String()
 		errors.Details(errE)["code"] = resp.StatusCode
-		errors.Details(errE)["body"] = strings.TrimSpace(string(body))
+		errors.Details(errE)["body"] = strings.TrimSpace(x.ByteSlice2String(body))
 		return types.EntityDescriptor{}, errE
 	}
 
@@ -198,7 +198,7 @@ func fetchSAMLMetadata(ctx context.Context, client *http.Client, metadataURL str
 	if err != nil {
 		errE := errors.WithStack(err)
 		errors.Details(errE)["url"] = metadataURL
-		errors.Details(errE)["metadata"] = string(rawMetadata)
+		errors.Details(errE)["metadata"] = x.ByteSlice2String(rawMetadata)
 		return types.EntityDescriptor{}, errE
 	}
 

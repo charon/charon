@@ -89,7 +89,7 @@ func getSAMLCredentialID(assertionInfo *saml2.AssertionInfo, attributes map[stri
 	if errE != nil {
 		return "", errE
 	}
-	return string(credentialID), nil
+	return x.ByteSlice2String(credentialID), nil
 }
 
 var xmlTimeFormats = []string{ //nolint:gochecknoglobals
@@ -309,7 +309,7 @@ func extractNameIDFormatFromXML(rawXML string) (string, string, errors.E) {
 	var resp Response
 	err = xml.Unmarshal(decodedXML, &resp)
 	if err != nil {
-		return "", "", errors.WithDetails(err, "xml", string(decodedXML))
+		return "", "", errors.WithDetails(err, "xml", x.ByteSlice2String(decodedXML))
 	}
 
 	if len(resp.Assertions) == 0 {
