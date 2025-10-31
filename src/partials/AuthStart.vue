@@ -67,7 +67,7 @@ defineExpose({
 onBeforeUnmount(onBeforeLeave)
 
 function onAfterEnter() {
-  document.getElementById("email")?.focus()
+  document.getElementById("authstart-input-email")?.focus()
 }
 
 function onBeforeLeave() {

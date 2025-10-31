@@ -56,7 +56,7 @@ defineExpose({
 onBeforeUnmount(onBeforeLeave)
 
 function onAfterEnter() {
-  document.getElementById("current-password")?.focus()
+  document.getElementById("authpassword-input-currentpassword")?.focus()
 
   // If public key or options are not available, we fetch them early so that user
   // does not have to wait later on for us to fetch them.
