@@ -94,7 +94,7 @@ async function onPasskeySignup() {
 
     let attestation
     try {
-      attestation = await startRegistration(start.passkey.createOptions.publicKey)
+      attestation = await startRegistration({optionsJSON: start.passkey.createOptions.publicKey})
     } catch (error) {
       if (abortController.signal.aborted) {
         return
