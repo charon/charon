@@ -47,7 +47,7 @@ const credentialDisplay = computed(() => {
       <div v-if="credential.provider === 'email'" class="mt-2">
         <div :id="`credentialfull-display-${credential.id}`" class="font-medium">
           {{ credential.displayName }}
-          <span :id="`credentialfull-verified-${credential.id}`" class="ml-1 inline-block border border-gray-600 px-2">
+          <span :id="`credentialfull-verified-${credential.id}`" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">
             {{ credential.verified ? t("views.CredentialList.verified") : t("views.CredentialList.notVerified") }}
           </span>
         </div>
