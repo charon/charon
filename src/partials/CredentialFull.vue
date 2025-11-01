@@ -35,7 +35,7 @@ const credentialDisplay = computed(() => {
 
 <template>
   <div class="flex flex-row items-center justify-between gap-4" :data-url="url">
-    <div class="flex-grow">
+    <div class="grow">
       <h2 v-if="!isBuiltInProvider" :id="`credentialfull-provider-${credential.id}`" class="text-xl font-semibold">
         {{ t("views.CredentialList.thirdPartyProviders") }}
       </h2>

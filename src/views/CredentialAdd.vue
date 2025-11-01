@@ -366,7 +366,7 @@ const builtInCredentialTypes = computed<CredentialTypeOption[]>(() => {
         <!-- Username Form -->
         <form v-if="credentialType === 'username'" class="mt-6 flex flex-col" novalidate @submit.prevent="addUsername">
           <label for="username" class="mb-1">{{ t("common.fields.username") }}</label>
-          <InputText id="credentialadd-input-username" v-model="username" class="min-w-0 flex-auto flex-grow" type="text" :progress="progress" required />
+          <InputText id="credentialadd-input-username" v-model="username" class="min-w-0 flex-auto grow" type="text" :progress="progress" required />
           <div v-if="error" class="mt-4 text-error-600">
             {{ error }}
           </div>
@@ -378,7 +378,7 @@ const builtInCredentialTypes = computed<CredentialTypeOption[]>(() => {
         <!-- Password Form -->
         <form v-if="credentialType === 'password'" class="mt-6 flex flex-col" novalidate @submit.prevent="addPassword">
           <label for="password" class="mb-1">{{ t("views.CredentialList.password") }}</label>
-          <InputText id="credentialadd-input-password" v-model="password" class="min-w-0 flex-auto flex-grow" type="password" :progress="progress" required />
+          <InputText id="credentialadd-input-password" v-model="password" class="min-w-0 flex-auto grow" type="password" :progress="progress" required />
           <label for="password-label" class="mt-4 mb-1"
             >{{ t("views.CredentialAdd.label") }}<span class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
           >
