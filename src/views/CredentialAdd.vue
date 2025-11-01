@@ -324,7 +324,7 @@ const builtInCredentialTypes = computed<CredentialTypeOption[]>(() => {
         </div>
       </div>
       <!-- Credential Type Selection -->
-      <div class="w-full rounded border border-gray-200 bg-white p-4 shadow">
+      <div class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <h2 class="mb-4 text-lg font-semibold">{{ t("views.CredentialAdd.availableOptions") }}</h2>
         <fieldset>
           <legend class="sr-only">{{ t("views.CredentialAdd.credentialTypes") }}</legend>
