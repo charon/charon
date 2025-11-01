@@ -627,6 +627,7 @@ func generateEllipticKey(c elliptic.Curve, algorithm string) (*jose.JSONWebKey, 
 	return makeJSONWebKey(privateKey, algorithm)
 }
 
+//nolint:unused
 func makeEllipticKey(privateKey []byte, c elliptic.Curve, algorithm string) (*jose.JSONWebKey, errors.E) {
 	var jwk jose.JSONWebKey
 	err := json.Unmarshal(privateKey, &jwk)
@@ -679,6 +680,34 @@ func makeRSAKey(privateKey []byte) (*jose.JSONWebKey, errors.E) {
 	// TODO: This is currently hard-coded to RS256 until we can support all from signingAlgValuesSupported.
 	//       See: https://github.com/ory/fosite/issues/788
 	return makeJSONWebKey(key, "RS256")
+}
+
+func makeAnyKey(privateKey []byte) (*jose.JSONWebKey, errors.E) {
+	var jwk jose.JSONWebKey
+	err := json.Unmarshal(privateKey, &jwk)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	// We on purpose ignore all other fields and reconstruct JWK from scratch.
+	// This assures all our keys have same JWK representation.
+	switch key := jwk.Key.(type) {
+	case *rsa.PrivateKey:
+		// TODO: This is currently hard-coded to RS256 until we can support all from signingAlgValuesSupported.
+		//       See: https://github.com/ory/fosite/issues/788
+		return makeJSONWebKey(key, "RS256")
+	case *ecdsa.PrivateKey:
+		switch key.Params().Name {
+		case elliptic.P256().Params().Name:
+			return makeJSONWebKey(key, "ES256")
+		case elliptic.P384().Params().Name:
+			return makeJSONWebKey(key, "ES384")
+		case elliptic.P521().Params().Name:
+			return makeJSONWebKey(key, "ES512")
+		}
+	}
+
+	return nil, errors.New("unsupported private key")
 }
 
 func validRedirectLocation(service *Service, location string) (string, errors.E) {

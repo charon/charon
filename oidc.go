@@ -266,7 +266,16 @@ func initOIDC(config *Config, service *Service, domain string, hmacStrategy *hma
 		// TODO: Implement support and add all from signingAlgValuesSupported.
 		//       See: https://github.com/ory/fosite/issues/788
 		getPrivateKey := func(context.Context) (interface{}, error) {
-			return service.oidcKeys.rsa, nil
+			for _, key := range service.oidcKeys {
+				// TODO: This is currently hard-coded to RS256 until we can support all from signingAlgValuesSupported.
+				//       See: https://github.com/ory/fosite/issues/788
+				if key.Algorithm == "RS256" {
+					return key, nil
+				}
+			}
+			// Internal error: this should never happen.
+			// We check for this in OIDC.Init.
+			panic(errors.New("OIDC RSA private key not provided"))
 		}
 
 		oAuth2HMACStrategy := newHMACSHAStrategy(hmacStrategy, config)

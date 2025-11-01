@@ -98,9 +98,9 @@ type GenericOIDCProvider struct {
 //
 //nolint:lll
 type SAMLProvider struct {
-	MetadataURL string               `default:"${defaultMetadataURL}" env:"METADATA_URL" help:"${provider}'s metadata URL."                          placeholder:"URL"  yaml:"metadataUrl"`
-	EntityID    string               `                                env:"ENTITY_ID"    help:"${provider}'s entity ID."                                                yaml:"entityId"`
-	Key         kong.FileContentFlag `                                env:"KEY"          help:"File with private key to be used with this provider." placeholder:"PATH" yaml:"key"`
+	MetadataURL string               `default:"${defaultMetadataURL}" env:"METADATA_URL" help:"${provider}'s metadata URL."                                                                                              placeholder:"URL"  yaml:"metadataUrl"`
+	EntityID    string               `                                env:"ENTITY_ID"    help:"${provider}'s entity ID."                                                                                                                    yaml:"entityId"`
+	Key         kong.FileContentFlag `                                env:"KEY"          help:"File with RSA private key for this provider. In JWK format. Only the key from the JWK is used, other fields are ignored." placeholder:"PATH" yaml:"key"`
 }
 
 // Validate validates the SAMLProvider struct.
@@ -176,85 +176,65 @@ type Mail struct {
 	NotRequiredTLS bool `json:"-" kong:"-" yaml:"-"`
 }
 
-// Keys represents the configuration of OIDC keys.
-type Keys struct {
-	RSA  kong.FileContentFlag `env:"RSA_PATH"  help:"File with RSA private key."               placeholder:"PATH" yaml:"rsa"`
-	P256 kong.FileContentFlag `env:"P256_PATH" help:"File with P-256 private key." name:"p256" placeholder:"PATH" yaml:"p256"`
-	P384 kong.FileContentFlag `env:"P384_PATH" help:"File with P-384 private key." name:"p384" placeholder:"PATH" yaml:"p384"`
-	P521 kong.FileContentFlag `env:"P521_PATH" help:"File with P-521 private key." name:"p521" placeholder:"PATH" yaml:"p521"`
+// OIDC represents the configuration of OIDC.
+//
+//nolint:lll
+type OIDC struct {
+	Keys []kong.NamedFileContentFlag `env:"KEY" help:"File(s) with RSA, P-256, P-384, or P-521 private key(s) for signing tokens. In JWK format. Only the key from the JWK is used, other fields are ignored." name:"key" placeholder:"PATH" yaml:"keys"`
 
-	rsa  *jose.JSONWebKey
-	p256 *jose.JSONWebKey
-	p384 *jose.JSONWebKey
-	p521 *jose.JSONWebKey
+	keys []*jose.JSONWebKey
 }
 
 // Init initializes the Keys struct.
-func (k *Keys) Init(development bool) errors.E {
-	if k.RSA != nil {
-		key, errE := makeRSAKey(k.RSA)
+func (o *OIDC) Init(development bool) errors.E {
+	for _, key := range o.Keys {
+		k, errE := makeAnyKey(key.Contents)
 		if errE != nil {
-			return errors.WithMessage(errE, "invalid RSA private key")
+			errE = errors.WithMessage(errE, "invalid private key")
+			errors.Details(errE)["path"] = key.Filename
+			return errE
 		}
-		k.rsa = key
-	} else if development {
+		o.keys = append(o.keys, k)
+	}
+
+	if len(o.keys) == 0 && development {
 		key, errE := generateRSAKey()
 		if errE != nil {
 			return errE
 		}
-		k.rsa = key
-	} else {
-		return errors.New("OIDC RSA private key not provided")
-	}
+		o.keys = append(o.keys, key)
 
-	if k.P256 != nil {
-		key, errE := makeEllipticKey(k.P256, elliptic.P256(), "ES256")
-		if errE != nil {
-			return errors.WithMessage(errE, "invalid P256 private key")
-		}
-		k.p256 = key
-	} else if development {
-		key, errE := generateEllipticKey(elliptic.P256(), "ES256")
+		key, errE = generateEllipticKey(elliptic.P256(), "ES256")
 		if errE != nil {
 			return errE
 		}
-		k.p256 = key
-	}
+		o.keys = append(o.keys, key)
 
-	if k.P384 != nil {
-		key, errE := makeEllipticKey(k.P384, elliptic.P384(), "ES384")
-		if errE != nil {
-			return errors.WithMessage(errE, "invalid P384 private key")
-		}
-		k.p384 = key
-	} else if development {
-		key, errE := generateEllipticKey(elliptic.P384(), "ES384")
+		key, errE = generateEllipticKey(elliptic.P384(), "ES384")
 		if errE != nil {
 			return errE
 		}
-		k.p384 = key
-	}
+		o.keys = append(o.keys, key)
 
-	if k.P521 != nil {
-		key, errE := makeEllipticKey(k.P521, elliptic.P521(), "ES512")
-		if errE != nil {
-			return errors.WithMessage(errE, "invalid P521 private key")
-		}
-		k.p521 = key
-	} else if development {
-		key, errE := generateEllipticKey(elliptic.P521(), "ES512")
+		key, errE = generateEllipticKey(elliptic.P521(), "ES512")
 		if errE != nil {
 			return errE
 		}
-		k.p521 = key
+		o.keys = append(o.keys, key)
 	}
 
-	return nil
-}
+	// We currently require RSA private key (among others).
+	// TODO: Replace with check that at least one key is provided, once we support all algorithms from signingAlgValuesSupported.
+	for _, key := range o.keys {
+		// TODO: This is currently hard-coded to RS256 until we can support all from signingAlgValuesSupported.
+		//       See: https://github.com/ory/fosite/issues/788
+		if key.Algorithm == "RS256" {
+			// We have the right key.
+			return nil
+		}
+	}
 
-// OIDC represents the configuration of OIDC.
-type OIDC struct {
-	Keys Keys `embed:"" envprefix:"KEYS_" prefix:"keys." yaml:"keys"`
+	return errors.New("OIDC RSA private key not provided")
 }
 
 // Config represents the Charon configuration.
@@ -303,7 +283,7 @@ type Service struct {
 	hmac *hmac.HMACStrategy
 
 	oidc     func() *fosite.Fosite
-	oidcKeys *Keys
+	oidcKeys []*jose.JSONWebKey
 
 	oidcProviders      func() map[Provider]oidcProvider
 	samlProviders      func() map[Provider]samlProvider
@@ -382,7 +362,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		return nil, nil, errors.New("secret not provided")
 	}
 
-	errE := config.OIDC.Keys.Init(config.Server.Development)
+	errE := config.OIDC.Init(config.Server.Development)
 	if errE != nil {
 		return nil, nil, errE
 	}
@@ -673,7 +653,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		},
 		hmac:                   hmacStrategy,
 		oidc:                   nil,
-		oidcKeys:               &config.OIDC.Keys,
+		oidcKeys:               config.OIDC.keys,
 		oidcProviders:          nil,
 		samlProviders:          nil,
 		passkeyProvider:        nil,

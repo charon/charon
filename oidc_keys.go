@@ -14,17 +14,8 @@ import (
 func (s *Service) OIDCKeys(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	keys := []jose.JSONWebKey{}
 
-	if s.oidcKeys.rsa != nil {
-		keys = append(keys, s.oidcKeys.rsa.Public())
-	}
-	if s.oidcKeys.p256 != nil {
-		keys = append(keys, s.oidcKeys.p256.Public())
-	}
-	if s.oidcKeys.p384 != nil {
-		keys = append(keys, s.oidcKeys.p384.Public())
-	}
-	if s.oidcKeys.p521 != nil {
-		keys = append(keys, s.oidcKeys.p521.Public())
+	for _, key := range s.oidcKeys {
+		keys = append(keys, key.Public())
 	}
 
 	response := jose.JSONWebKeySet{

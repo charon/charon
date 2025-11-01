@@ -105,7 +105,7 @@ docker run --rm -d \
   -k /data/charon-container+2.pem \
   -K /data/charon-container+2-key.pem \
   --secret=/data/.hmac.secret \
-  --oidc.keys.rsa=/data/.rsa-key.jwk
+  --oidc.key=/data/.rsa-key.jwk
 cleanup_charon_container=1
 
 echo "4. Waiting for Charon service to be ready..."

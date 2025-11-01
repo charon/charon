@@ -31,7 +31,5 @@ func main() {
 		"developmentModeHelp":      " Proxy unknown requests, send debug messages to clients, generate the secret and private keys if not provided, enable MockSAML provider. LEAKS SENSITIVE INFORMATION!",
 	}, func(ctx *kong.Context) errors.E {
 		return errors.WithStack(ctx.Run())
-	}, kong.Groups{
-		"OIDC:": "OIDC:\nPrivate keys for signing tokens should be in JWK format. Only keys in JWKs are used, other fields are ignored.",
 	})
 }

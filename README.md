@@ -125,7 +125,7 @@ to the container through a volume, e.g.:
 docker run -d --name charon -p 8080:8080 -v "$(pwd):/data" \
  registry.gitlab.com/charon/charon/branch/main:latest \
  -k /data/localhost+2.pem -K /data/localhost+2-key.pem \
- --secret=/data/.hmac.secret --oidc.keys.rsa=/data/.rsa-key.jwk
+ --secret=/data/.hmac.secret --oidc.key=/data/.rsa-key.jwk
 ```
 
 Open [https://localhost:8080/](https://localhost:8080/) in your browser to access the web interface.
@@ -141,7 +141,7 @@ obtain a HTTPS TLS certificate from [Let's Encrypt](https://letsencrypt.org) aut
 ```sh
 docker run -d --name charon -p 443:8080 -v "$(pwd):/data" \
  registry.gitlab.com/charon/charon/branch/main:latest \
- --secret=/data/.hmac.secret --oidc.keys.rsa=/data/.rsa-key.jwk \
+ --secret=/data/.hmac.secret --oidc.key=/data/.rsa-key.jwk \
  --domain public.domain.example.com -E name@example.com -C /data/letsencrypt
 ```
 
