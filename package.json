@@ -28,7 +28,7 @@
     "test": "vitest",
     "coverage": "vitest --coverage",
     "test-ci": "vitest run --reporter junit --reporter default --outputFile tests.xml --coverage",
-    "test-e2e": "playwright test --config=playwright.config.ts --update-snapshots=${UPDATE_SCREENSHOTS:-missing}",
+    "test-e2e": "playwright test --config=playwright.config.ts --update-snapshots=${UPDATE_SCREENSHOTS:-missing} && nyc report",
     "test-e2e-install": "playwright install --with-deps chromium",
     "generate-vue-i18n": "node generate-vue-i18n.js",
     "upgrade": "ncu -u"
@@ -48,6 +48,7 @@
     "vue-router": "^4.6.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.0",
     "@babel/types": "^7.28.5",
     "@eslint/compat": "^1.4.0",
     "@eslint/js": "^9.38.0",
@@ -66,12 +67,15 @@
     "@vitest/coverage-v8": "^4.0.3",
     "@vue/eslint-config-typescript": "^14.6.0",
     "autoprefixer": "^10.4.21",
+    "axe-html-reporter": "^2.2.11",
+    "canonicalize": "^2.1.0",
     "eslint": "^9.38.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-formatter-gitlab": "^6.0.1",
     "eslint-plugin-vue": "^10.5.1",
     "globals": "^16.4.0",
     "npm-check-updates": "^19.1.1",
+    "nyc": "^17.1.0",
     "prettier": "^3.6.2",
     "prettier-plugin-organize-imports": "^4.3.0",
     "prettier-plugin-tailwindcss": "^0.7.1",
@@ -84,6 +88,7 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.2",
     "vite": "^7.1.12",
+    "vite-plugin-istanbul": "^7.2.0",
     "vitest": "^4.0.3",
     "vue-component-type-helpers": "^3.1.2",
     "vue-tsc": "^3.1.2"

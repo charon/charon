@@ -167,22 +167,58 @@ test_e2e:
         export UPDATE_SCREENSHOTS=changed
       fi
 
+  # TODO: Use go tool covdata percent to obtain total coverage instead of the workaround with go tool cover -func.
+  #       See: https://github.com/golang/go/issues/66506
   script:
     - ./test-e2e.sh
+    - go tool covdata textfmt -i=coverage -o coverage.txt
+    - go tool cover -html=coverage.txt -o coverage.html
+    - gocover-cobertura < coverage.txt > coverage.xml
+    - go tool cover -func=coverage.txt
 
   artifacts:
     when: always
     reports:
       junit: test-results/junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
       dotenv:
         - link_publish.env
     paths:
       - playwright-report/
       - test-results/
       - playwright-screenshots/
+      - coverage.html
+      - coverage.xml
+      - coverage-frontend/
+      - a11y-report/a11y-report.html
     expire_in: never
 
-test_e2e_link_publish:
+  coverage: '/total:.+statements.+\d+\.\d+%/'
+
+# We need an extra job to report frontend coverage from test_e2e because
+# GitLab cannot capture two coverage numbers from one job.
+test_e2e_frontend:
+  stage: test
+
+  needs:
+    - test_e2e
+
+  script:
+    - echo "Frontend coverage:" $(grep -oP '<span class="strong">\K\d+\.\d+(?=% </span>)' coverage-frontend/index.html | head -1)%
+
+  artifacts:
+    when: always
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage-frontend/cobertura-coverage.xml
+
+  # Reports grep output with distinctive prefix.
+  coverage: '/Frontend coverage: (\d+\.\d+)%/'
+
+test_e2e_link_publish_report:
   stage: deploy
 
   rules:
@@ -197,11 +233,77 @@ test_e2e_link_publish:
   when: always
 
   script:
-    - echo "Publishing link"
+    - echo "Publishing E2E report link"
 
   environment:
     name: MR/${CI_MERGE_REQUEST_IID}/e2e_report
     url: https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/playwright-report/index.html
+    deployment_tier: other
+
+test_e2e_link_publish_coverage:
+  stage: deploy
+
+  rules:
+    # We create a link only for merge request pipelines.
+    # Created environment is automatically removed when the merge request is closed.
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+
+  needs:
+    - test_e2e
+
+  # Publish the link even if test_e2e fails.
+  when: always
+
+  script:
+    - echo "Publishing E2E backend coverage link"
+
+  environment:
+    name: MR/${CI_MERGE_REQUEST_IID}/e2e_backend_coverage
+    url: https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage.html
+    deployment_tier: other
+
+test_e2e_link_publish_frontend_coverage:
+  stage: deploy
+
+  rules:
+    # We create a link only for merge request pipelines.
+    # Created environment is automatically removed when the merge request is closed.
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+
+  needs:
+    - test_e2e
+
+  # Publish the link even if test_e2e fails.
+  when: always
+
+  script:
+    - echo "Publishing E2E frontend coverage link"
+
+  environment:
+    name: MR/${CI_MERGE_REQUEST_IID}/e2e_frontend_coverage
+    url: https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage-frontend/index.html
+    deployment_tier: other
+
+test_e2e_link_publish_a11y:
+  stage: deploy
+
+  rules:
+    # We create a link only for merge request pipelines.
+    # Created environment is automatically removed when the merge request is closed.
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+
+  needs:
+    - test_e2e
+
+  # Publish the link even if test_e2e fails.
+  when: always
+
+  script:
+    - echo "Publishing accessibility report link"
+
+  environment:
+    name: MR/${CI_MERGE_REQUEST_IID}/a11y_report
+    url: https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/a11y-report/a11y-report.html
     deployment_tier: other
 
 lint_go:

@@ -3,13 +3,15 @@
 # for the Dockerfile frontend image to be pulled.
 FROM node:24.10-alpine3.22 AS node-build
 
+ARG VITE_COVERAGE
+
 RUN apk --update add make bash
 COPY . /src/charon
 WORKDIR /src/charon
 RUN \
   npm ci --audit=false && \
   npm audit signatures && \
-  make dist
+  VITE_COVERAGE=$VITE_COVERAGE make dist
 
 FROM golang:1.25-alpine3.22 AS go-build
 
@@ -21,11 +23,12 @@ WORKDIR /src/charon
 # We want Docker image for build timestamp label to match the one in
 # the binary so we take a timestamp once outside and pass it in.
 ARG BUILD_TIMESTAMP
+ARG CHARON_BUILD_FLAGS
 # We run make with "-o dist" which prevents dist from being build here as it was done
 # in the node-build stage and we cannot (missing node, etc.) and do not want to build
 # it again, but it might have file timestamps which would otherwise trigger a build.
 RUN \
-  BUILD_TIMESTAMP=$BUILD_TIMESTAMP make -o dist build-static && \
+  BUILD_TIMESTAMP=$BUILD_TIMESTAMP CHARON_BUILD_FLAGS="$CHARON_BUILD_FLAGS" make -o dist build-static && \
   mv charon /go/bin/charon
 
 FROM alpine:3.22 AS debug

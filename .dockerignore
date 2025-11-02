@@ -34,6 +34,7 @@ codeclimate.json
 /playwright-report
 /playwright-screenshots
 /test-results
+/a11y-report
 *.pem
 /keys.txt
 *.env

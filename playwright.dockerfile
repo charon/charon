@@ -17,15 +17,11 @@ ENV NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/cacerts.crt
 
 # Install playwright.
 
-WORKDIR /app
-
-COPY package*.json ./
+COPY . /src/charon
+WORKDIR /src/charon
 
 RUN npm ci --audit=false
 RUN npm run test-e2e-install
-
-COPY playwright.config.ts ./
-COPY tests/ ./tests/
 
 ENV CHARON_URL=
 ENV LINK_PUBLISH_JOB_ID=

@@ -1,5 +1,6 @@
 import { defineConfig, configDefaults } from "vitest/config"
 import vue from "@vitejs/plugin-vue"
+import istanbul from "vite-plugin-istanbul"
 import license from "rollup-plugin-license"
 import VueI18n from "@intlify/unplugin-vue-i18n/vite"
 import tailwindcss from "@tailwindcss/vite";
@@ -17,6 +18,14 @@ export default defineConfig({
       dropMessageCompiler: true,
       fullInstall: true,
       forceStringify: true,
+    }),
+    istanbul({
+      include: "src/**/*",
+      exclude: ["node_modules", "tests/"],
+      extension: [".js", ".ts", ".vue"],
+      // Only instrument for E2E coverage when VITE_COVERAGE is set to "true".
+      requireEnv: true,
+      forceBuildInstrument: true,
     }),
     license({
       sourcemap: true,
@@ -42,7 +51,7 @@ export default defineConfig({
       clientPort: 8080,
     },
     // Used for testing SIPASS integration.
-    allowedHosts:["sipasstest.peer.id"],
+    allowedHosts: ["sipasstest.peer.id"],
   },
   resolve: {
     alias: {
