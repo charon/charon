@@ -35,8 +35,23 @@ function resize() {
     return
   }
 
-  el.value.style.height = "0"
-  el.value.style.height = el.value.scrollHeight + "px"
+  let changed = false
+  if (el.value.value === "") {
+    // If input is empty and read-only, we temporary set it to empty space so that its height is computed
+    // correctly on Chrome. Otherwise scrollHeight on Chrome does not include line height.
+    changed = true
+    el.value.value = " "
+  }
+  try {
+    // We set it to 0 to have only one line when empty or short (so that it looks like one-line input box).
+    el.value.style.height = "0"
+    el.value.style.height = el.value.scrollHeight + "px"
+  }
+  finally {
+    if (changed) {
+      el.value.value = ""
+    }
+  }
 }
 
 onMounted(resize)
