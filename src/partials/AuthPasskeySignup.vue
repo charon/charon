@@ -164,6 +164,7 @@ async function onPasskeySignup() {
         >
       </i18n-t>
     </div>
+    <div class="mt-4">{{ t("partials.AuthPasskeySignup.signupInfo") }}</div>
     <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="2" @click.prevent="onBack">{{ t("partials.AuthPasskeySignup.retrySigninButton") }}</Button>

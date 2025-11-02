@@ -154,7 +154,8 @@
       "retrySigninButton": "Retry sign-in",
       "passkeySignupButton": "Passkey sign-up",
       "retrySignupButton": "Retry sign-up",
-      "passkey": "@:common.providers.passkey"
+      "passkey": "@:common.providers.passkey",
+      "signupInfo": "If you have already signed up with passkey, this will sign you up again and create another Charon account for you."
     },
     "AuthPassword": {
       "emailAddressLabel": "Your e-mail address",

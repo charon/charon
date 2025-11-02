@@ -154,7 +154,8 @@
       "retrySigninButton": "Poskusi prijavo znova",
       "passkeySignupButton": "Registracija s passkey",
       "retrySignupButton": "Poskusi registracijo znova",
-      "passkey": "@:common.providers.passkey"
+      "passkey": "@:common.providers.passkey",
+      "signupInfo": "Če ste se že registrirali s passkey, se boste znova registrirali in ustvarili še en račun Charon."
     },
     "AuthPassword": {
       "emailAddressLabel": "Vaš e-naslov",

@@ -2,6 +2,7 @@ package charon
 
 import (
 	"encoding/base64"
+	"fmt"
 	"io"
 	"net/http"
 	"slices"
@@ -13,6 +14,7 @@ import (
 	"github.com/rs/zerolog"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
+	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 )
 
@@ -27,28 +29,33 @@ type AuthFlowResponsePasskey struct {
 
 const defaultPasskeyTimeout = 60 * time.Second
 
-type charonUser struct {
-	Credentials []webauthn.Credential
+type passkeyCredential struct {
+	ID         identifier.Identifier `json:"id"`
+	Label      string                `json:"label"`
+	Credential *webauthn.Credential  `json:"credential"`
 }
 
-func (*charonUser) WebAuthnID() []byte {
-	return []byte{0}
+func (c passkeyCredential) WebAuthnID() []byte {
+	return c.ID[:]
 }
 
-func (*charonUser) WebAuthnName() string {
-	return "charon-passkey"
+func (c passkeyCredential) WebAuthnName() string {
+	return c.WebAuthnDisplayName()
 }
 
-func (*charonUser) WebAuthnDisplayName() string {
-	return "Charon passkey"
+func (c passkeyCredential) WebAuthnDisplayName() string {
+	return fmt.Sprintf("Charon (%s)", c.Label)
 }
 
-func (*charonUser) WebAuthnIcon() string {
+func (passkeyCredential) WebAuthnIcon() string {
 	return ""
 }
 
-func (u *charonUser) WebAuthnCredentials() []webauthn.Credential {
-	return u.Credentials
+func (c passkeyCredential) WebAuthnCredentials() []webauthn.Credential {
+	if c.Credential != nil {
+		return []webauthn.Credential{*c.Credential}
+	}
+	return nil
 }
 
 func withPreferredCredentialAlgorithms(preferredAlgorithms []webauthncose.COSEAlgorithmIdentifier) webauthn.RegistrationOption {
@@ -215,29 +222,33 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		return
 	}
 
-	credential, err := s.passkeyProvider().ValidateDiscoverableLogin(func(rawID, _ []byte) (webauthn.User, error) {
+	user, newCredential, err := s.passkeyProvider().ValidatePasskeyLogin(func(rawID, _ []byte) (webauthn.User, error) {
 		id := base64.RawURLEncoding.EncodeToString(rawID)
 		account, errE := s.getAccountByCredential(ctx, ProviderPasskey, id) //nolint:govet
 		if errE != nil {
 			return nil, errE
 		}
-		var c webauthn.Credential
-		errE = x.Unmarshal(account.GetCredential(ProviderPasskey, id).Data, &c)
+		var credential passkeyCredential
+		errE = x.Unmarshal(account.GetCredential(ProviderPasskey, id).Data, &credential)
 		if errE != nil {
 			return nil, errE
 		}
-		return &charonUser{
-			Credentials: []webauthn.Credential{c},
-		}, nil
+		return credential, nil
 	}, *flowPasskey, parsedResponse)
 	if err != nil {
 		s.BadRequestWithError(w, req, withWebauthnError(err))
 		return
 	}
 
-	credentialID := base64.RawURLEncoding.EncodeToString(credential.ID)
+	// We know the user is passkeyCredential because we just created it above..
+	credential := user.(passkeyCredential) //nolint:errcheck,forcetypeassert
+	// Credential is changed by ValidatePasskeyLogin (e.g., its Authenticator.UpdateCounter
+	// is called to update its sign count) so we set it back here.
+	credential.Credential = newCredential
 
-	if credential.Authenticator.CloneWarning {
+	credentialID := base64.RawURLEncoding.EncodeToString(credential.Credential.ID)
+
+	if credential.Credential.Authenticator.CloneWarning {
 		zerolog.Ctx(ctx).Warn().Str("credential", credentialID).Msg("authenticator may be cloned")
 	}
 
@@ -275,16 +286,23 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 		return
 	}
 
+	userID := identifier.New()
+
 	options, session, err := s.passkeyProvider().BeginRegistration(
-		&charonUser{nil},
+		passkeyCredential{
+			ID:         userID,
+			Label:      userID.String(),
+			Credential: nil,
+		},
 		webauthn.WithExtensions(protocol.AuthenticationExtensions{
-			"credentialProtectionPolicy": "userVerificationOptional",
+			"credentialProtectionPolicy":        "userVerificationRequired",
+			"enforceCredentialProtectionPolicy": false,
 		}),
 		webauthn.WithAuthenticatorSelection(protocol.AuthenticatorSelection{
 			AuthenticatorAttachment: "",
 			RequireResidentKey:      protocol.ResidentKeyRequired(),
 			ResidentKey:             protocol.ResidentKeyRequirementRequired,
-			UserVerification:        protocol.VerificationDiscouraged,
+			UserVerification:        protocol.VerificationRequired,
 		}),
 		withPreferredCredentialAlgorithms([]webauthncose.COSEAlgorithmIdentifier{
 			webauthncose.AlgEdDSA,
@@ -363,13 +381,21 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	credential, err := s.passkeyProvider().CreateCredential(&charonUser{nil}, *flowPasskey, parsedResponse)
+	userID := identifier.Data([16]byte(flowPasskey.UserID))
+
+	credential := passkeyCredential{
+		ID:         userID,
+		Label:      userID.String(),
+		Credential: nil,
+	}
+
+	credential.Credential, err = s.passkeyProvider().CreateCredential(credential, *flowPasskey, parsedResponse)
 	if err != nil {
 		s.BadRequestWithError(w, req, withWebauthnError(err))
 		return
 	}
 
-	credentialID := base64.RawURLEncoding.EncodeToString(credential.ID)
+	credentialID := base64.RawURLEncoding.EncodeToString(credential.Credential.ID)
 
 	jsonData, errE := x.MarshalWithoutEscapeHTML(credential)
 	if errE != nil {
