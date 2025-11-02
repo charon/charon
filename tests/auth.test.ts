@@ -1,31 +1,7 @@
-import type { Browser, BrowserContext, Page } from "@playwright/test"
-
-import { chromium, expect, test } from "@playwright/test"
-import { existsSync } from "node:fs"
-
-const CHARON_URL = process.env.CHARON_URL || "https://localhost:8080"
+import { CHARON_URL, checkpoint, expect, test } from "./utils.ts"
 
 test.describe.serial("Charon Sign-in Flows", () => {
-  let browser: Browser
-  let context: BrowserContext
-
-  test.beforeAll(async () => {
-    browser = await chromium.launch()
-  })
-
-  test.afterAll(async () => {
-    await browser.close()
-  })
-
-  test.beforeEach(async () => {
-    context = await browser.newContext()
-  })
-
-  test.afterEach(async () => {
-    await context.close()
-  })
-
-  test("Successful password sign-in flow", async () => {
+  test("Successful password sign-in flow", async ({ context }) => {
     const page = await context.newPage()
 
     await page.goto(CHARON_URL)
@@ -86,7 +62,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     console.log("Successfully completed sign-in flow: entered credentials, navigated through flow, selected tester identity, and verified Identities link is visible")
   })
 
-  test("Wrong password sign-in flow", async () => {
+  test("Wrong password sign-in flow", async ({ context }) => {
     const page = await context.newPage()
 
     await page.goto(CHARON_URL)
@@ -132,16 +108,3 @@ test.describe.serial("Charon Sign-in Flows", () => {
     console.log("Successfully tested wrong password flow: entered wrong password and verified error message appeared")
   })
 })
-
-async function checkpoint(page: Page, name: string) {
-  await page.waitForLoadState("networkidle")
-
-  // TODO: Remove when supported by Playwright.
-  //       See: https://github.com/microsoft/playwright/issues/23502
-  const screenshotPath = test.info().snapshotPath(`${name}.png`, { kind: "screenshot" })
-  if (existsSync(screenshotPath)) {
-    await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: true })
-  } else {
-    await page.screenshot({ path: screenshotPath, fullPage: true })
-  }
-}
