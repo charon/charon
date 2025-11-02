@@ -166,6 +166,7 @@ declare module "vue-i18n" {
         passkeySignupButton: string
         retrySignupButton: string
         passkey: string
+        signupInfo: string
       }
       AuthPassword: {
         emailAddressLabel: string
