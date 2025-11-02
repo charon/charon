@@ -51,7 +51,9 @@
       "disabled": "disabled",
       "added": "added",
       "creator": "creator",
-      "blocked": "blocked"
+      "blocked": "blocked",
+      "shared": "shared",
+      "individual": "individual"
     },
     "data": {
       "dataLoading": "Loading...",

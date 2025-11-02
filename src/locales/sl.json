@@ -51,7 +51,9 @@
       "disabled": "onemogočena",
       "added": "dodana",
       "creator": "ustvarjalec",
-      "blocked": "blokirana"
+      "blocked": "blokirana",
+      "shared": "skupna",
+      "individual": "individualna"
     },
     "data": {
       "dataLoading": "Nalaganje...",

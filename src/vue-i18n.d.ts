@@ -63,6 +63,8 @@ declare module "vue-i18n" {
         added: string
         creator: string
         blocked: string
+        shared: string
+        individual: string
       }
       data: {
         dataLoading: string
