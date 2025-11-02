@@ -426,7 +426,7 @@ function organizationLabels(identityOrganization: IdentityOrganizationType | Dee
     <NavBar></NavBar>
   </Teleport>
   <div class="mt-12 flex w-full flex-col items-center border-t border-transparent sm:mt-[4.5rem]">
-    <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,_65ch)] gap-1 sm:m-4 sm:gap-4">
+    <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,65ch)] gap-1 sm:m-4 sm:gap-4">
       <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <div class="flex flex-row items-center">
           <h1 class="text-2xl font-bold">{{ t("common.entities.identity") }}</h1>
@@ -475,7 +475,7 @@ function organizationLabels(identityOrganization: IdentityOrganizationType | Dee
           <div v-else-if="usersUpdated" class="text-success-600">{{ t("views.IdentityGet.usersUpdated") }}</div>
           <form class="flex flex-col" novalidate @submit.prevent="onUsersSubmit">
             <ol class="flex flex-col gap-y-4">
-              <li v-for="(user, i) in users" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
+              <li v-for="(user, i) in users" :key="i" class="grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
                 <div>{{ i + 1 }}.</div>
                 <div class="flex flex-col">
                   <WithIdentityPublicDocument
@@ -508,7 +508,7 @@ function organizationLabels(identityOrganization: IdentityOrganizationType | Dee
           <div v-else-if="adminsUpdated" class="text-success-600">{{ t("common.data.adminsUpdated") }}</div>
           <form class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
             <ol class="flex flex-col gap-y-4">
-              <li v-for="(admin, i) in admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
+              <li v-for="(admin, i) in admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
                 <div>{{ i + 1 }}.</div>
                 <div class="flex flex-col">
                   <WithIdentityPublicDocument

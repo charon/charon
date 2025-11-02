@@ -287,7 +287,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
       We use grid here to have contents of maximum 65ch and grow to 65ch even if contents are narrower,
       but allow contents to shrink if necessary to fit into the smaller window width.
     -->
-    <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,_65ch)] gap-1 sm:m-4 sm:gap-4">
+    <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,65ch)] gap-1 sm:m-4 sm:gap-4">
       <div v-if="unexpectedError" class="w-full rounded-sm border border-gray-200 bg-white p-4 text-error-600 shadow-sm">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
         <div class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">

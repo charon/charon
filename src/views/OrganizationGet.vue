@@ -645,7 +645,7 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
     <NavBar></NavBar>
   </Teleport>
   <div class="mt-12 flex w-full flex-col items-center border-t border-transparent sm:mt-[4.5rem]">
-    <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,_65ch)] gap-1 sm:m-4 sm:gap-4">
+    <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,65ch)] gap-1 sm:m-4 sm:gap-4">
       <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <div class="flex flex-row items-center">
           <h1 class="text-2xl font-bold">{{ t("common.entities.organization") }}</h1>
@@ -698,11 +698,11 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
                     </fieldset>
                     <h4 v-if="application.clientsPublic?.length" class="mt-4 font-bold">{{ t("views.OrganizationGet.publicClients") }}</h4>
                     <ol v-if="application.clientsPublic?.length">
-                      <li v-for="(client, j) in application.clientsPublic" :key="j" class="mt-4 grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
+                      <li v-for="(client, j) in application.clientsPublic" :key="j" class="mt-4 grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
                         <div>{{ j + 1 }}.</div>
                         <div class="flex flex-col gap-4">
                           <div v-if="getPublicClientDescription(application, client.client.id)">{{ getPublicClientDescription(application, client.client.id) }}</div>
-                          <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
+                          <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
                             <div>{{ t("views.OrganizationGet.clientId") }}</div>
                             <div v-if="client.id">
                               <code>{{ client.id }}</code>
@@ -716,11 +716,11 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
                     </ol>
                     <h4 v-if="application.clientsBackend?.length" class="mt-4 font-bold">{{ t("views.OrganizationGet.backendClients") }}</h4>
                     <ol v-if="application.clientsBackend?.length">
-                      <li v-for="(client, j) in application.clientsBackend" :key="j" class="mt-4 grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
+                      <li v-for="(client, j) in application.clientsBackend" :key="j" class="mt-4 grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
                         <div>{{ j + 1 }}.</div>
                         <div class="flex flex-col gap-4">
                           <div v-if="getBackendClientDescription(application, client.client.id)">{{ getBackendClientDescription(application, client.client.id) }}</div>
-                          <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
+                          <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
                             <div>{{ t("views.OrganizationGet.clientId") }}</div>
                             <div v-if="client.id">
                               <code>{{ client.id }}</code>
@@ -740,11 +740,11 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
                     </ol>
                     <h4 v-if="application.clientsService?.length" class="mt-4 font-bold">{{ t("views.OrganizationGet.serviceClients") }}</h4>
                     <ol v-if="application.clientsService?.length">
-                      <li v-for="(client, j) in application.clientsService" :key="j" class="mt-4 grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
+                      <li v-for="(client, j) in application.clientsService" :key="j" class="mt-4 grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
                         <div>{{ j + 1 }}.</div>
                         <div class="flex flex-col gap-4">
                           <div v-if="getServiceClientDescription(application, client.client.id)">{{ getServiceClientDescription(application, client.client.id) }}</div>
-                          <div class="grid auto-rows-auto grid-cols-[max-content,auto] gap-x-1">
+                          <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
                             <div>{{ t("views.OrganizationGet.clientId") }}</div>
                             <div v-if="client.id">
                               <code>{{ client.id }}</code>
@@ -808,7 +808,7 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
             <div v-else-if="adminsUpdated" class="text-success-600">{{ t("common.data.adminsUpdated") }}</div>
             <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
               <ol class="flex flex-col gap-y-4">
-                <li v-for="(admin, i) in admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content,auto] gap-x-4">
+                <li v-for="(admin, i) in admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
                     <WithIdentityPublicDocument v-if="organization?.admins?.find((a) => a.id === admin.id)" :item="admin" :organization-id="siteContext.organizationId">

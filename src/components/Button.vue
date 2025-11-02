@@ -28,7 +28,7 @@ withDefaults(
     :class="{
       'cursor-not-allowed': progress > 0 || disabled,
       'px-6 py-2.5': primary,
-      'px-[calc(1.5rem_-_2px)] py-[calc(0.625rem_-_2px)]': !primary,
+      'px-[calc(1.5rem-2px)] py-[calc(0.625rem-2px)]': !primary,
       'bg-primary-300 text-gray-100': primary && (progress > 0 || disabled),
       'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 active:bg-primary-500': primary && progress === 0 && !disabled,
       'border-2 border-neutral-300 bg-gray-100 text-gray-800 shadow-none': !primary && (progress > 0 || disabled),
