@@ -3,7 +3,7 @@ import type {
   PublicKeyCredentialCreationOptionsJSON,
   PublicKeyCredentialRequestOptionsJSON,
   RegistrationResponseJSON,
-} from "@simplewebauthn/types"
+} from "@simplewebauthn/browser"
 import type { BareItem, Key } from "structured-field-values"
 import type { DeepReadonly } from "vue"
 
