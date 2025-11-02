@@ -77,7 +77,7 @@ async function onAfterEnter() {
 
     let assertion
     try {
-      assertion = await startAuthentication({optionsJSON: start.passkey.getOptions.publicKey})
+      assertion = await startAuthentication({ optionsJSON: start.passkey.getOptions.publicKey })
     } catch (error) {
       if (abortController.signal.aborted) {
         return
