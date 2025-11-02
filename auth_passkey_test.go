@@ -49,7 +49,7 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 	require.NotNil(t, authFlowResponse.Passkey)
 	require.NotNil(t, authFlowResponse.Passkey.CreateOptions)
 
-	userID, err := base64.RawURLEncoding.DecodeString(authFlowResponse.Passkey.CreateOptions.Response.User.ID.(string))
+	userID, err := base64.RawURLEncoding.DecodeString(authFlowResponse.Passkey.CreateOptions.Response.User.ID.(string)) //nolint:errcheck,forcetypeassert
 	require.NoError(t, err)
 
 	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
