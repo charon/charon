@@ -49,6 +49,9 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 	require.NotNil(t, authFlowResponse.Passkey)
 	require.NotNil(t, authFlowResponse.Passkey.CreateOptions)
 
+	userID, err := base64.RawURLEncoding.DecodeString(authFlowResponse.Passkey.CreateOptions.Response.User.ID.(string))
+	require.NoError(t, err)
+
 	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
@@ -97,7 +100,7 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 	// RPIDHash.
 	rawAuthData = append(rawAuthData, rpIDHash[:]...)
 	// Flags.
-	rawAuthData = append(rawAuthData, byte(protocol.FlagUserPresent|protocol.FlagAttestedCredentialData))
+	rawAuthData = append(rawAuthData, byte(protocol.FlagUserPresent|protocol.FlagAttestedCredentialData|protocol.FlagUserVerified))
 	// Counter.
 	rawAuthData = binary.BigEndian.AppendUint32(rawAuthData, 0)
 	// AAGUID.
@@ -230,7 +233,7 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 				},
 				AuthenticatorData: rawAuthData,
 				Signature:         signature,
-				UserHandle:        []byte{0},
+				UserHandle:        userID,
 			},
 		},
 	}
