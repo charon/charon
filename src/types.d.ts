@@ -328,6 +328,7 @@ export type AllIdentity = {
   url: string
   isCurrent: boolean
   canUpdate: boolean
+  isShared: boolean
   blocked: BlockedIdentityType
 }
 

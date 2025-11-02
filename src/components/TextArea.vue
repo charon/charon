@@ -46,8 +46,7 @@ function resize() {
     // We set it to 0 to have only one line when empty or short (so that it looks like one-line input box).
     el.value.style.height = "0"
     el.value.style.height = el.value.scrollHeight + "px"
-  }
-  finally {
+  } finally {
     if (changed) {
       el.value.value = ""
     }

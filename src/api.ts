@@ -288,6 +288,7 @@ export async function getAllIdentities(
         url: identityURL,
         isCurrent: !!identityResponse.metadata.is_current,
         canUpdate: !!identityResponse.metadata.can_update,
+        isShared: identityResponse.doc.admins.length + (identityResponse.doc.users?.length || 0) > 1,
         blocked: blockedStatus.blocked,
       })
     }

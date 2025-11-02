@@ -352,7 +352,13 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
         <div v-else-if="usedIdentities.length === 0" class="mb-4 italic">{{ t("partials.AuthIdentity.previouslyUsedDisabled") }}</div>
         <ul v-else>
           <li v-for="allIdentity in usedIdentities" :key="allIdentity.identity.id" class="mb-4">
-            <IdentityPublic :identity="allIdentity.identity" :url="allIdentity.url" :is-current="allIdentity.isCurrent" :can-update="allIdentity.canUpdate">
+            <IdentityPublic
+              :identity="allIdentity.identity"
+              :url="allIdentity.url"
+              :is-current="allIdentity.isCurrent"
+              :can-update="allIdentity.canUpdate"
+              :is-shared="allIdentity.isShared"
+            >
               <div class="flex flex-col items-start">
                 <Button
                   class="authidentity-selector-identity"
@@ -371,7 +377,13 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
           <h3 class="text-l mb-4 font-bold">{{ t("partials.AuthIdentity.identitiesUsedWithOrg") }}</h3>
           <ul>
             <li v-for="allIdentity in addedIdentities" :key="allIdentity.identity.id" class="mb-4">
-              <IdentityPublic :identity="allIdentity.identity" :url="allIdentity.url" :is-current="allIdentity.isCurrent" :can-update="allIdentity.canUpdate">
+              <IdentityPublic
+                :identity="allIdentity.identity"
+                :url="allIdentity.url"
+                :is-current="allIdentity.isCurrent"
+                :can-update="allIdentity.canUpdate"
+                :is-shared="allIdentity.isShared"
+              >
                 <div class="flex flex-col items-start">
                   <Button
                     primary
@@ -394,7 +406,13 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
         <div v-else-if="otherIdentities.length === 0" class="mb-4 italic">{{ t("partials.AuthIdentity.noOtherIdentitiesCreateOne") }}</div>
         <ul v-else>
           <li v-for="allIdentity in otherIdentities" :key="allIdentity.identity.id" class="mb-4">
-            <IdentityPublic :identity="allIdentity.identity" :url="allIdentity.url" :is-current="allIdentity.isCurrent" :can-update="allIdentity.canUpdate">
+            <IdentityPublic
+              :identity="allIdentity.identity"
+              :url="allIdentity.url"
+              :is-current="allIdentity.isCurrent"
+              :can-update="allIdentity.canUpdate"
+              :is-shared="allIdentity.isShared"
+            >
               <div class="flex flex-col items-start">
                 <Button
                   primary
@@ -418,6 +436,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
                 :url="allIdentity.url"
                 :is-current="allIdentity.isCurrent"
                 :can-update="allIdentity.canUpdate"
+                :is-shared="allIdentity.isShared"
                 :labels="[t('common.labels.disabled')]"
               >
                 <div class="flex flex-col items-start">
@@ -438,6 +457,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
                 :url="allIdentity.url"
                 :is-current="allIdentity.isCurrent"
                 :can-update="allIdentity.canUpdate"
+                :is-shared="allIdentity.isShared"
                 :labels="[t('common.labels.blocked')]"
               ></IdentityPublic>
             </li>

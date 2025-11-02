@@ -5,13 +5,23 @@ import type { IdentityPublic } from "@/types"
 
 import { useI18n } from "vue-i18n"
 
-defineProps<{
-  identity: IdentityPublic | DeepReadonly<IdentityPublic>
-  url?: string
-  isCurrent?: boolean
-  canUpdate?: boolean
-  labels?: string[]
-}>()
+withDefaults(
+  defineProps<{
+    identity: IdentityPublic | DeepReadonly<IdentityPublic>
+    url?: string
+    isCurrent?: boolean
+    canUpdate?: boolean
+    isShared?: boolean
+    labels?: string[]
+  }>(),
+  {
+    // Optional booleans are false by default, but we want them to be undefined.
+    isShared: undefined,
+    // Other optional props we set to undefined, which is also default.
+    url: undefined,
+    labels: undefined,
+  },
+)
 
 const { t } = useI18n({ useScope: "global" })
 </script>
@@ -27,43 +37,63 @@ const { t } = useI18n({ useScope: "global" })
         Keep it in sync with to IdentityFull component, too.
       -->
       <h2 v-if="identity.username" class="text-xl">
-        <ul v-if="canUpdate || isCurrent || labels?.length" class="float-right flex flex-row flex-wrap content-start items-start gap-1 text-sm">
+        <ul v-if="canUpdate || isCurrent || labels?.length || isShared !== undefined" class="float-right flex flex-row flex-wrap content-start items-start gap-1 text-sm">
           <li v-for="label in labels || []" :key="label" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{ label }}</li>
           <li v-if="isCurrent" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.current") }}</li>
+          <li v-if="isShared" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.shared") }}</li>
+          <li v-else-if="isShared !== undefined" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">
+            {{ t("common.labels.individual") }}
+          </li>
           <li v-if="canUpdate" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.admin") }}</li>
         </ul>
         {{ identity.username }}
         <span v-if="identity.email"> ({{ identity.email }})</span>
       </h2>
       <h2 v-else-if="identity.email" class="text-xl">
-        <ul v-if="canUpdate || isCurrent || labels?.length" class="float-right flex flex-row flex-wrap content-start items-start gap-1 text-sm">
+        <ul v-if="canUpdate || isCurrent || labels?.length || isShared !== undefined" class="float-right flex flex-row flex-wrap content-start items-start gap-1 text-sm">
           <li v-for="label in labels || []" :key="label" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{ label }}</li>
           <li v-if="isCurrent" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.current") }}</li>
+          <li v-if="isShared" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.shared") }}</li>
+          <li v-else-if="isShared !== undefined" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">
+            {{ t("common.labels.individual") }}
+          </li>
           <li v-if="canUpdate" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.admin") }}</li>
         </ul>
         {{ identity.email }}
       </h2>
       <h2 v-else-if="identity.givenName" class="text-xl">
-        <ul v-if="canUpdate || isCurrent || labels?.length" class="float-right flex flex-row flex-wrap content-start items-start gap-1 text-sm">
+        <ul v-if="canUpdate || isCurrent || labels?.length || isShared !== undefined" class="float-right flex flex-row flex-wrap content-start items-start gap-1 text-sm">
           <li v-for="label in labels || []" :key="label" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{ label }}</li>
           <li v-if="isCurrent" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.current") }}</li>
+          <li v-if="isShared" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.shared") }}</li>
+          <li v-else-if="isShared !== undefined" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">
+            {{ t("common.labels.individual") }}
+          </li>
           <li v-if="canUpdate" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.admin") }}</li>
         </ul>
         {{ identity.givenName }}
         <span v-if="identity.fullName"> ({{ identity.fullName }})</span>
       </h2>
       <h2 v-else-if="identity.fullName" class="text-xl">
-        <ul v-if="canUpdate || isCurrent || labels?.length" class="float-right flex flex-row flex-wrap content-start items-start gap-1 text-sm">
+        <ul v-if="canUpdate || isCurrent || labels?.length || isShared !== undefined" class="float-right flex flex-row flex-wrap content-start items-start gap-1 text-sm">
           <li v-for="label in labels || []" :key="label" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{ label }}</li>
           <li v-if="isCurrent" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.current") }}</li>
+          <li v-if="isShared" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.shared") }}</li>
+          <li v-else-if="isShared !== undefined" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">
+            {{ t("common.labels.individual") }}
+          </li>
           <li v-if="canUpdate" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.admin") }}</li>
         </ul>
         {{ identity.fullName }}
       </h2>
-      <div v-else-if="canUpdate || isCurrent || labels?.length">
+      <div v-else-if="canUpdate || isCurrent || labels?.length || isShared !== undefined">
         <ul class="float-right flex flex-row flex-wrap content-start items-start gap-1 text-sm">
           <li v-for="label in labels || []" :key="label" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{ label }}</li>
           <li v-if="isCurrent" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.current") }}</li>
+          <li v-if="isShared" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.shared") }}</li>
+          <li v-else-if="isShared !== undefined" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">
+            {{ t("common.labels.individual") }}
+          </li>
           <li v-if="canUpdate" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.admin") }}</li>
         </ul>
       </div>
@@ -75,6 +105,6 @@ const { t } = useI18n({ useScope: "global" })
         {{ identity.fullName }}
       </div>
     </div>
-    <slot :identity="identity" :is-current="isCurrent" :can-update="canUpdate"></slot>
+    <slot :identity="identity" :is-current="isCurrent" :can-update="canUpdate" :is-shared="isShared"></slot>
   </div>
 </template>
