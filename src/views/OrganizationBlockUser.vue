@@ -115,19 +115,15 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
           <p>{{ t("views.OrganizationBlockUser.blockConfirmation") }}</p>
           <fieldset class="mt-4">
             <legend class="mb-1">{{ t("views.OrganizationBlockUser.blockType") }}</legend>
-            <div class="flex flex-col gap-1">
-              <div>
-                <RadioButton id="blockType-onlyIdentity" v-model="blockType" value="onlyIdentity" :progress="progress" class="mx-2" />
-                <label for="blockType-onlyIdentity" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
-                  t("views.OrganizationBlockUser.blockOnlyIdentity")
-                }}</label>
-              </div>
-              <div>
-                <RadioButton id="blockType-identityAndAccounts" v-model="blockType" value="identityAndAccounts" :progress="progress" class="mx-2" />
-                <label for="blockType-identityAndAccounts" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
-                  t("views.OrganizationBlockUser.blockIdentityAndAccounts")
-                }}</label>
-              </div>
+            <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+              <RadioButton id="blockType-onlyIdentity" v-model="blockType" value="onlyIdentity" :progress="progress" class="mx-2" />
+              <label for="blockType-onlyIdentity" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
+                t("views.OrganizationBlockUser.blockOnlyIdentity")
+              }}</label>
+              <RadioButton id="blockType-identityAndAccounts" v-model="blockType" value="identityAndAccounts" :progress="progress" class="mx-2" />
+              <label for="blockType-identityAndAccounts" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
+                t("views.OrganizationBlockUser.blockIdentityAndAccounts")
+              }}</label>
             </div>
           </fieldset>
           <label for="organizationNote" class="mt-4 mb-1"

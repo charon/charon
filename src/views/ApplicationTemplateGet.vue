@@ -796,37 +796,33 @@ function onAddAdmin() {
                     />
                     <fieldset class="mt-4">
                       <legend class="mb-1">{{ t("views.ApplicationTemplateGet.accessTokenType") }}</legend>
-                      <div class="flex flex-col gap-1">
-                        <div>
-                          <RadioButton
-                            :id="`client-public-${i}-accessTokenType-hmac`"
-                            v-model="client.accessTokenType"
-                            value="hmac"
-                            :disabled="!metadata.can_update"
-                            :progress="progress"
-                            class="mx-2"
-                          />
-                          <label
-                            :for="`client-public-${i}-accessTokenType-hmac`"
-                            :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                            >{{ t("views.ApplicationTemplateGet.hmac") }}</label
-                          >
-                        </div>
-                        <div>
-                          <RadioButton
-                            :id="`client-public-${i}-accessTokenType-jwt`"
-                            v-model="client.accessTokenType"
-                            value="jwt"
-                            :disabled="!metadata.can_update"
-                            :progress="progress"
-                            class="mx-2"
-                          />
-                          <label
-                            :for="`client-public-${i}-accessTokenType-jwt`"
-                            :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                            >{{ t("views.ApplicationTemplateGet.jwt") }}</label
-                          >
-                        </div>
+                      <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                        <RadioButton
+                          :id="`client-public-${i}-accessTokenType-hmac`"
+                          v-model="client.accessTokenType"
+                          value="hmac"
+                          :disabled="!metadata.can_update"
+                          :progress="progress"
+                          class="mx-2"
+                        />
+                        <label
+                          :for="`client-public-${i}-accessTokenType-hmac`"
+                          :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                          >{{ t("views.ApplicationTemplateGet.hmac") }}</label
+                        >
+                        <RadioButton
+                          :id="`client-public-${i}-accessTokenType-jwt`"
+                          v-model="client.accessTokenType"
+                          value="jwt"
+                          :disabled="!metadata.can_update"
+                          :progress="progress"
+                          class="mx-2"
+                        />
+                        <label
+                          :for="`client-public-${i}-accessTokenType-jwt`"
+                          :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                          >{{ t("views.ApplicationTemplateGet.jwt") }}</label
+                        >
                       </div>
                     </fieldset>
                     <label :for="`client-public-${i}-accessTokenLifespan`" class="mt-4 mb-1">{{ t("views.ApplicationTemplateGet.accessTokenLifespan") }}</label>
@@ -940,72 +936,64 @@ function onAddAdmin() {
                     />
                     <fieldset class="mt-4">
                       <legend class="mb-1">{{ t("views.ApplicationTemplateGet.accessTokenType") }}</legend>
-                      <div class="flex flex-col gap-1">
-                        <div>
-                          <RadioButton
-                            :id="`client-backend-${i}-accessTokenType-hmac`"
-                            v-model="client.accessTokenType"
-                            value="hmac"
-                            :disabled="!metadata.can_update"
-                            :progress="progress"
-                            class="mx-2"
-                          />
-                          <label
-                            :for="`client-backend-${i}-accessTokenType-hmac`"
-                            :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                            >{{ t("views.ApplicationTemplateGet.hmac") }}</label
-                          >
-                        </div>
-                        <div>
-                          <RadioButton
-                            :id="`client-backend-${i}-accessTokenType-jwt`"
-                            v-model="client.accessTokenType"
-                            value="jwt"
-                            :disabled="!metadata.can_update"
-                            :progress="progress"
-                            class="mx-2"
-                          />
-                          <label
-                            :for="`client-backend-${i}-accessTokenType-jwt`"
-                            :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                            >{{ t("views.ApplicationTemplateGet.jwt") }}</label
-                          >
-                        </div>
+                      <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                        <RadioButton
+                          :id="`client-backend-${i}-accessTokenType-hmac`"
+                          v-model="client.accessTokenType"
+                          value="hmac"
+                          :disabled="!metadata.can_update"
+                          :progress="progress"
+                          class="mx-2"
+                        />
+                        <label
+                          :for="`client-backend-${i}-accessTokenType-hmac`"
+                          :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                          >{{ t("views.ApplicationTemplateGet.hmac") }}</label
+                        >
+                        <RadioButton
+                          :id="`client-backend-${i}-accessTokenType-jwt`"
+                          v-model="client.accessTokenType"
+                          value="jwt"
+                          :disabled="!metadata.can_update"
+                          :progress="progress"
+                          class="mx-2"
+                        />
+                        <label
+                          :for="`client-backend-${i}-accessTokenType-jwt`"
+                          :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                          >{{ t("views.ApplicationTemplateGet.jwt") }}</label
+                        >
                       </div>
                     </fieldset>
                     <fieldset class="mt-4">
                       <legend class="mb-1">{{ t("views.ApplicationTemplateGet.tokenEndpointAuthMethod") }}</legend>
-                      <div class="flex flex-col gap-1">
-                        <div>
-                          <RadioButton
-                            :id="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_post`"
-                            v-model="client.tokenEndpointAuthMethod"
-                            value="client_secret_post"
-                            :disabled="!metadata.can_update"
-                            :progress="progress"
-                            class="mx-2"
-                          />
-                          <label
-                            :for="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_post`"
-                            :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                            ><code>client_secret_post</code></label
-                          >
-                        </div>
-                        <div>
-                          <RadioButton
-                            :id="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_basic`"
-                            v-model="client.tokenEndpointAuthMethod"
-                            value="client_secret_basic"
-                            :disabled="!metadata.can_update"
-                            :progress="progress"
-                            class="mx-2"
-                          />
-                          <label
-                            :for="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_basic`"
-                            :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                            ><code>client_secret_basic</code></label
-                          >
-                        </div>
+                      <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                        <RadioButton
+                          :id="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_post`"
+                          v-model="client.tokenEndpointAuthMethod"
+                          value="client_secret_post"
+                          :disabled="!metadata.can_update"
+                          :progress="progress"
+                          class="mx-2"
+                        />
+                        <label
+                          :for="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_post`"
+                          :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                          ><code>client_secret_post</code></label
+                        >
+                        <RadioButton
+                          :id="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_basic`"
+                          v-model="client.tokenEndpointAuthMethod"
+                          value="client_secret_basic"
+                          :disabled="!metadata.can_update"
+                          :progress="progress"
+                          class="mx-2"
+                        />
+                        <label
+                          :for="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_basic`"
+                          :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                          ><code>client_secret_basic</code></label
+                        >
                       </div>
                     </fieldset>
                     <label :for="`client-backend-${i}-accessTokenLifespan`" class="mt-4 mb-1">{{ t("views.ApplicationTemplateGet.accessTokenLifespan") }}</label>
@@ -1089,72 +1077,64 @@ function onAddAdmin() {
                     />
                     <fieldset class="mt-4">
                       <legend class="mb-1">{{ t("views.ApplicationTemplateGet.accessTokenType") }}</legend>
-                      <div class="flex flex-col gap-1">
-                        <div>
-                          <RadioButton
-                            :id="`client-service-${i}-accessTokenType-hmac`"
-                            v-model="client.accessTokenType"
-                            value="hmac"
-                            :disabled="!metadata.can_update"
-                            :progress="progress"
-                            class="mx-2"
-                          />
-                          <label
-                            :for="`client-service-${i}-accessTokenType-hmac`"
-                            :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                            >{{ t("views.ApplicationTemplateGet.hmac") }}</label
-                          >
-                        </div>
-                        <div>
-                          <RadioButton
-                            :id="`client-service-${i}-accessTokenType-jwt`"
-                            v-model="client.accessTokenType"
-                            value="jwt"
-                            :disabled="!metadata.can_update"
-                            :progress="progress"
-                            class="mx-2"
-                          />
-                          <label
-                            :for="`client-service-${i}-accessTokenType-jwt`"
-                            :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                            >{{ t("views.ApplicationTemplateGet.jwt") }}</label
-                          >
-                        </div>
+                      <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                        <RadioButton
+                          :id="`client-service-${i}-accessTokenType-hmac`"
+                          v-model="client.accessTokenType"
+                          value="hmac"
+                          :disabled="!metadata.can_update"
+                          :progress="progress"
+                          class="mx-2"
+                        />
+                        <label
+                          :for="`client-service-${i}-accessTokenType-hmac`"
+                          :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                          >{{ t("views.ApplicationTemplateGet.hmac") }}</label
+                        >
+                        <RadioButton
+                          :id="`client-service-${i}-accessTokenType-jwt`"
+                          v-model="client.accessTokenType"
+                          value="jwt"
+                          :disabled="!metadata.can_update"
+                          :progress="progress"
+                          class="mx-2"
+                        />
+                        <label
+                          :for="`client-service-${i}-accessTokenType-jwt`"
+                          :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                          >{{ t("views.ApplicationTemplateGet.jwt") }}</label
+                        >
                       </div>
                     </fieldset>
                     <fieldset class="mt-4">
                       <legend class="mb-1">{{ t("views.ApplicationTemplateGet.tokenEndpointAuthMethod") }}</legend>
-                      <div class="flex flex-col gap-1">
-                        <div>
-                          <RadioButton
-                            :id="`client-service-${i}-tokenEndpointAuthMethod-client_secret_post`"
-                            v-model="client.tokenEndpointAuthMethod"
-                            value="client_secret_post"
-                            :disabled="!metadata.can_update"
-                            :progress="progress"
-                            class="mx-2"
-                          />
-                          <label
-                            :for="`client-service-${i}-tokenEndpointAuthMethod-client_secret_post`"
-                            :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                            ><code>client_secret_post</code></label
-                          >
-                        </div>
-                        <div>
-                          <RadioButton
-                            :id="`client-service-${i}-tokenEndpointAuthMethod-client_secret_basic`"
-                            v-model="client.tokenEndpointAuthMethod"
-                            value="client_secret_basic"
-                            :disabled="!metadata.can_update"
-                            :progress="progress"
-                            class="mx-2"
-                          />
-                          <label
-                            :for="`client-service-${i}-tokenEndpointAuthMethod-client_secret_basic`"
-                            :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                            ><code>client_secret_basic</code></label
-                          >
-                        </div>
+                      <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                        <RadioButton
+                          :id="`client-service-${i}-tokenEndpointAuthMethod-client_secret_post`"
+                          v-model="client.tokenEndpointAuthMethod"
+                          value="client_secret_post"
+                          :disabled="!metadata.can_update"
+                          :progress="progress"
+                          class="mx-2"
+                        />
+                        <label
+                          :for="`client-service-${i}-tokenEndpointAuthMethod-client_secret_post`"
+                          :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                          ><code>client_secret_post</code></label
+                        >
+                        <RadioButton
+                          :id="`client-service-${i}-tokenEndpointAuthMethod-client_secret_basic`"
+                          v-model="client.tokenEndpointAuthMethod"
+                          value="client_secret_basic"
+                          :disabled="!metadata.can_update"
+                          :progress="progress"
+                          class="mx-2"
+                        />
+                        <label
+                          :for="`client-service-${i}-tokenEndpointAuthMethod-client_secret_basic`"
+                          :class="progress > 0 || !metadata.can_update ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                          ><code>client_secret_basic</code></label
+                        >
                       </div>
                     </fieldset>
                     <label :for="`client-service-${i}-accessTokenLifespan`" class="mt-4 mb-1">{{ t("views.ApplicationTemplateGet.accessTokenLifespan") }}</label>
