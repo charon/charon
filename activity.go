@@ -81,7 +81,7 @@ type Activity struct {
 	// Details about what was changed during this activity.
 	Changes []ActivityChangeType `json:"changes,omitempty"`
 
-	// Session and request IDs from the WAF framework.
+	// Session and request IDs from the waf framework.
 	SessionID identifier.Identifier `json:"sessionId"`
 	RequestID identifier.Identifier `json:"requestId"`
 }
