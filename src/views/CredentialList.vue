@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import type { CredentialInfo, Credentials } from "@/types"
 
-import { onBeforeMount, onBeforeUnmount, ref } from "vue"
+import { onBeforeMount, onBeforeUnmount, Ref, ref } from "vue"
 import { useI18n } from "vue-i18n"
-import { useRouter } from "vue-router"
+import { Router, useRouter } from "vue-router"
 
-import { getCredentials, removeCredential } from "@/api"
+import { getCredentials, postJSON } from "@/api"
 import { isSignedIn } from "@/auth"
 import Button from "@/components/Button.vue"
 import ButtonLink from "@/components/ButtonLink.vue"
 import WithDocument from "@/components/WithDocument.vue"
-import CredentialFull from "@/partials/CredentialFull.vue"
+import CredentialFull from "@/partials/credentials/CredentialFull.vue"
 import Footer from "@/partials/Footer.vue"
 import NavBar from "@/partials/NavBar.vue"
 import { injectProgress } from "@/progress"
@@ -20,10 +20,10 @@ const router = useRouter()
 const progress = injectProgress()
 
 const abortController = new AbortController()
+const unexpectedError = ref("")
 const dataLoading = ref(true)
 const dataLoadingError = ref("")
 const credentials = ref<Credentials>([])
-const removingCredentialId = ref<string | null>(null)
 
 onBeforeUnmount(() => {
   abortController.abort()
@@ -33,12 +33,7 @@ onBeforeMount(async () => {
   progress.value += 1
   try {
     const result = await getCredentials(router, abortController, progress)
-    if (abortController.signal.aborted) {
-      return
-    }
-
-    if (result === null) {
-      dataLoadingError.value = t("common.errors.unexpected")
+    if (abortController.signal.aborted || !result) {
       return
     }
 
@@ -55,31 +50,50 @@ onBeforeMount(async () => {
   }
 })
 
-async function handleRemove(credentialId: string) {
-  if (abortController.signal.aborted || removingCredentialId.value) {
+function resetOnInteraction() {
+  // We reset the error on interaction.
+  unexpectedError.value = ""
+}
+
+async function removeCredential(router: Router, id: string, abortController: AbortController, progress: Ref<number>): Promise<boolean> {
+  progress.value += 1
+  try {
+    const url = router.apiResolve({
+      name: "CredentialRemove",
+      params: { id },
+    }).href
+
+    await postJSON(url, {}, abortController.signal, progress)
+    return !abortController.signal.aborted
+  } finally {
+    progress.value -= 1
+  }
+}
+
+async function onRemove(credentialId: string) {
+  if (abortController.signal.aborted) {
     return
   }
-
-  removingCredentialId.value = credentialId
+  resetOnInteraction()
+  progress.value += 1
 
   try {
     const success = await removeCredential(router, credentialId, abortController, progress)
     if (abortController.signal.aborted) {
       return
     }
-
-    if (success) {
-      credentials.value = credentials.value.filter((c) => c.id !== credentialId)
-    } else {
-      console.error("Failed to remove credential")
+    if (!success) {
+      throw new Error("failed to remove credential")
     }
+    credentials.value = credentials.value.filter((c) => c.id !== credentialId)
   } catch (error) {
     if (abortController.signal.aborted) {
       return
     }
-    console.error("CredentialList.handleRemove", error)
+    unexpectedError.value = `${error}`
+    console.error("CredentialList.onRemove", error)
   } finally {
-    removingCredentialId.value = null
+    progress.value -= 1
   }
 }
 
@@ -110,20 +124,12 @@ const WithCredentialDocument = WithDocument<CredentialInfo>
           <WithCredentialDocument :params="{ id: credential.id }" name="CredentialGet">
             <template #default="{ doc, url }">
               <CredentialFull :credential="doc" :url="url">
-                <template #default="{ credential: cred }">
-                  <Button v-if="cred.provider === 'email'" :id="`credentiallist-button-verify-${cred.id}`" type="button" secondary disabled>
-                    {{ t("views.CredentialList.verify") }}
-                  </Button>
-                  <Button
-                    :id="`credentiallist-button-remove-${cred.id}`"
-                    type="button"
-                    :progress="progress"
-                    :disabled="removingCredentialId === cred.id"
-                    @click="handleRemove(cred.id)"
-                  >
-                    {{ t("common.buttons.remove") }}
-                  </Button>
-                </template>
+                <Button v-if="doc.provider === 'email'" :id="`credentiallist-button-verify-${doc.id}`" type="button" secondary disabled>
+                  {{ t("views.CredentialList.verify") }}
+                </Button>
+                <Button :id="`credentiallist-button-remove-${doc.id}`" type="button" :progress="progress" @click="onRemove(doc.id)">
+                  {{ t("common.buttons.remove") }}
+                </Button>
               </CredentialFull>
             </template>
           </WithCredentialDocument>

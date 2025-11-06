@@ -3,6 +3,9 @@ package charon
 import (
 	"context"
 	"crypto"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/ecdh"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -881,4 +884,84 @@ func findFirstString(m map[string]interface{}, keyNames ...string) string {
 		}
 	}
 	return ""
+}
+
+func generatePasswordEncryptionKeys() ([]byte, []byte, []byte, int, errors.E) {
+	privateKey, err := ecdh.P256().GenerateKey(rand.Reader)
+	if err != nil {
+		return nil, nil, nil, 0, errors.WithStack(err)
+	}
+
+	block, err := aes.NewCipher(make([]byte, secretSize))
+	if err != nil {
+		return nil, nil, nil, 0, errors.WithStack(err)
+	}
+
+	aesgcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, nil, nil, 0, errors.WithStack(err)
+	}
+
+	nonce := make([]byte, aesgcm.NonceSize())
+	_, err = rand.Read(nonce)
+	if err != nil {
+		return nil, nil, nil, 0, errors.WithStack(err)
+	}
+
+	return privateKey.Bytes(), privateKey.PublicKey().Bytes(), nonce, aesgcm.Overhead(), nil
+}
+
+func decryptPasswordECDHAESGCM(
+	privateKeyBytes []byte,
+	publicKeyBytes []byte,
+	nonce []byte,
+	encryptedPassword []byte,
+) ([]byte, errors.E, errors.E) {
+	privateKey, err := ecdh.P256().NewPrivateKey(privateKeyBytes)
+	if err != nil {
+		return nil, errors.WithStack(err), nil
+	}
+
+	remotePublicKey, err := ecdh.P256().NewPublicKey(publicKeyBytes)
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+
+	secret, err := privateKey.ECDH(remotePublicKey)
+	if err != nil {
+		return nil, errors.WithStack(err), nil
+	}
+
+	block, err := aes.NewCipher(secret)
+	if err != nil {
+		return nil, errors.WithStack(err), nil
+	}
+
+	aesgcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, errors.WithStack(err), nil
+	}
+
+	plainPassword, err := aesgcm.Open(nil, nonce, encryptedPassword, nil)
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+
+	return plainPassword, nil, nil
+}
+
+func newPasswordEncryptionResponse(publicKeyBytes, nonce []byte, overhead int) *AuthFlowResponsePassword {
+	return &AuthFlowResponsePassword{
+		PublicKey: publicKeyBytes,
+		DeriveOptions: AuthFlowResponsePasswordDeriveOptions{
+			Name:       "ECDH",
+			NamedCurve: "P-256",
+		},
+		EncryptOptions: AuthFlowResponsePasswordEncryptOptions{
+			Name:      "AES-GCM",
+			Nonce:     nonce,
+			TagLength: 8 * overhead,   //nolint:mnd
+			Length:    8 * secretSize, //nolint:mnd
+		},
+	}
 }

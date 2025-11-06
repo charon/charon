@@ -42,8 +42,8 @@
         "email": "E-mail address should be at least 3 characters.",
         "username": "Username should be at least 3 characters."
       },
-      "credentialAlreadyExists": "Credential already exists",
-      "credentialAlreadyUsed": "Credential already used"
+      "credentialAlreadyUsed": "Credential already used",
+      "passkeyBoundToOtherAccount": "Passkey is already bound to another account."
     },
     "labels": {
       "optional": "(optional)",
@@ -74,7 +74,6 @@
     "entities": {
       "admins": "Admins",
       "users": "Users",
-      "credentials": "Credentials",
       "identity": "Identity | Identities",
       "identities": "Identities",
       "organization": "Organization | Organizations",
@@ -82,6 +81,7 @@
       "applicationTemplate": "Application template | Application templates",
       "applicationTemplates": "Application templates",
       "activity": "Activity",
+      "credentials": "Credentials",
       "app": "App | Apps"
     },
     "messages": {
@@ -96,9 +96,13 @@
       "picture": "picture"
     },
     "providers": {
-      "code": "code",
+      "usernameTitle": "Username",
+      "emailTitle": "E-mail Address",
       "password": "password",
-      "passkey": "passkey"
+      "passwordTitle": "Password",
+      "passkey": "passkey",
+      "passkeyTitle": "Passkey",
+      "code": "code"
     }
   },
   "partials": {
@@ -222,6 +226,22 @@
         "identitiesRemoved": "removed identities"
       },
       "entityLinks": "{entity}: {links}"
+    },
+    "CredentialFull": {
+      "verified": "Verified",
+      "notVerified": "unverified",
+      "thirdPartyProviders": "Third-Party Providers",
+      "passwordSignUp": "Password used during sign-up",
+      "passkeySignUp": "Passkey used during sign-up"
+    },
+    "CredentialAddPassword": {
+      "label": "Password or passphrase label"
+    },
+    "CredentialAddPasskey": {
+      "label": "Passkey label",
+      "passkeyInstructions": "Your device will prompt you to create a passkey. This allows you to sign in without a password.",
+      "passkeyNotSupported": "Your browser does not support passkeys.",
+      "addPasskeyButton": "Add passkey"
     }
   },
   "views": {
@@ -325,25 +345,15 @@
       "organizationActivity": "Activity for organization",
       "noActivities": "There is no activity."
     },
+    "CredentialAdd": {
+      "addCredential": "Add credential",
+      "availableOptions": "Available Credential Types",
+      "credentialTypes": "Credential types"
+    },
     "CredentialList": {
       "noCredentialsCreate": "No authentication methods configured. Create the first one.",
       "noCredentialsSignIn": "There are no authentication methods. Sign-in or sign-up to create the first one.",
-      "password": "Password",
-      "passwordDefault": "default password",
-      "passkey": "Passkey",
-      "thirdPartyProviders": "Third-Party Providers",
-      "verify": "Verify",
-      "verified": "Verified",
-      "notVerified": "unverified"
-    },
-    "CredentialAdd": {
-      "addCredential": "Add Credential",
-      "availableOptions": "Available Credential Types",
-      "passkeyInstructions": "Your device will prompt you to create a passkey. This allows you to sign in without a password.",
-      "addPasskeyButton": "Create Passkey",
-      "passkeyNotSupported": "Your browser does not support passkeys.",
-      "credentialTypes": "Credential type",
-      "label": "Label"
+      "verify": "Verify"
     }
   }
 }

@@ -469,38 +469,47 @@ export type CredentialInfo = {
 
 export type Credentials = CredentialInfoRef[]
 
-export type CredentialAddResponse =
-  | {
-      success: true
-      id: string
-    }
-  | {
-      success: false
-      error: string
-    }
+export type CredentialAddEmailRequest = {
+  email: string
+}
 
-export type CredentialAddPasswordStartResponse = {
-  publicKey: string
-  sessionKey: string
-  deriveOptions: DeriveOptions
-  encryptOptions: EncryptOptionsJSON
+export type CredentialAddUsernameRequest = {
+  username: string
+}
+
+export type CredentialAddResponse = {
+  sessionId: string
+  credentialId?: string
+  passkey?: {
+    createOptions: {
+      publicKey: PublicKeyCredentialCreationOptionsJSON
+    }
+    getOptions: {
+      publicKey: PublicKeyCredentialRequestOptionsJSON
+    }
+  }
+  password?: {
+    publicKey: string
+    deriveOptions: DeriveOptions
+    encryptOptions: EncryptOptionsJSON
+  }
+  error?: string
+}
+
+export type EncryptedPasswordData = {
+    ciphertext:ArrayBuffer
+    publicKeyBytes: ArrayBuffer
 }
 
 export type CredentialAddPasswordCompleteRequest = {
-  sessionKey: string
+  sessionId: string
   publicKey: number[]
   password: number[]
-  label?: string
-}
-
-export type CredentialAddPasskeyStartResponse = {
-  sessionKey: string
-  createOptions: {
-    publicKey: PublicKeyCredentialCreationOptionsJSON
-  }
+  label: string
 }
 
 export type CredentialAddPasskeyCompleteRequest = {
-  sessionKey: string
+  sessionId: string
   createResponse: RegistrationResponseJSON
+  label: string
 }

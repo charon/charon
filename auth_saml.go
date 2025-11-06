@@ -24,6 +24,7 @@ import (
 	dsig "github.com/russellhaering/goxmldsig"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
+	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 )
 
@@ -497,7 +498,7 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	s.completeAuthStep(w, req, false, flow, account, []Credential{{ID: credentialID, Provider: providerKey, Data: jsonData}})
+	s.completeAuthStep(w, req, false, flow, account, []Credential{{ID: identifier.New(), ProviderID: credentialID, Provider: providerKey, Data: jsonData}})
 }
 
 // SAMLMetadataGet is the API handler for getting the SAML metadata for a third-party SAML provider, GET request.

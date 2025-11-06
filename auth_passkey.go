@@ -264,7 +264,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		return
 	}
 
-	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: credentialID, Provider: ProviderPasskey, Data: jsonData}})
+	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: credential.ID, ProviderID: credentialID, Provider: ProviderPasskey, Data: jsonData}})
 }
 
 // AuthFlowPasskeyCreateStartPost is the API handler to start the passkey provider step (sign-up), POST request.
@@ -395,7 +395,7 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	credentialID := base64.RawURLEncoding.EncodeToString(credential.Credential.ID)
+	providerID := base64.RawURLEncoding.EncodeToString(credential.Credential.ID)
 
 	jsonData, errE := x.MarshalWithoutEscapeHTML(credential)
 	if errE != nil {
@@ -403,11 +403,11 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	account, errE := s.getAccountByCredential(ctx, ProviderPasskey, credentialID)
+	account, errE := s.getAccountByCredential(ctx, ProviderPasskey, providerID)
 	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: credentialID, Provider: ProviderPasskey, Data: jsonData}})
+	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: identifier.New(), ProviderID: providerID, Provider: ProviderPasskey, Data: jsonData}})
 }

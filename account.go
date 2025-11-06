@@ -17,9 +17,10 @@ type Provider string
 
 // Credential represents a credential issued by a credential provider.
 type Credential struct {
-	ID       string
-	Provider Provider
-	Data     json.RawMessage
+	ID         identifier.Identifier
+	ProviderID string
+	Provider   Provider
+	Data       json.RawMessage
 }
 
 // Equal returns true if the two credentials are equal.
@@ -30,7 +31,7 @@ func (c1 *Credential) Equal(c2 *Credential) bool {
 	if c1 == nil || c2 == nil {
 		return false
 	}
-	return c1.ID == c2.ID && c1.Provider == c2.Provider && bytes.Equal(c1.Data, c2.Data)
+	return c1.ProviderID == c2.ProviderID && c1.Provider == c2.Provider && bytes.Equal(c1.Data, c2.Data)
 }
 
 // AccountRef is a reference to an account.
@@ -46,8 +47,8 @@ type Account struct {
 }
 
 // HasCredential returns true if the account has a credential for the given provider and credential ID.
-func (a *Account) HasCredential(provider Provider, credentialID string) bool {
-	return a.GetCredential(provider, credentialID) != nil
+func (a *Account) HasCredential(provider Provider, providerID string) bool {
+	return a.GetCredential(provider, providerID) != nil
 }
 
 // UpdateCredentials updates the credentials for the account.
@@ -55,7 +56,7 @@ func (a *Account) UpdateCredentials(credentials []Credential) {
 	for _, credential := range credentials {
 		updated := false
 		for i, c := range a.Credentials[credential.Provider] {
-			if c.ID == credential.ID {
+			if c.ProviderID == credential.ProviderID {
 				a.Credentials[credential.Provider][i] = credential
 				updated = true
 				break
@@ -68,9 +69,9 @@ func (a *Account) UpdateCredentials(credentials []Credential) {
 }
 
 // GetCredential returns the credential for the given provider and credential ID.
-func (a *Account) GetCredential(provider Provider, credentialID string) *Credential {
+func (a *Account) GetCredential(provider Provider, providerID string) *Credential {
 	for _, credential := range a.Credentials[provider] {
-		if credential.ID == credentialID {
+		if credential.ProviderID == providerID {
 			return &credential
 		}
 	}
@@ -108,7 +109,7 @@ func (s *Service) getAccount(_ context.Context, id identifier.Identifier) (*Acco
 	return &account, nil
 }
 
-func (s *Service) getAccountByCredential(ctx context.Context, provider Provider, credentialID string) (*Account, errors.E) {
+func (s *Service) getAccountByCredential(ctx context.Context, provider Provider, providerID string) (*Account, errors.E) {
 	s.accountsMu.RLock()
 	defer s.accountsMu.RUnlock()
 
@@ -118,12 +119,12 @@ func (s *Service) getAccountByCredential(ctx context.Context, provider Provider,
 			return nil, errE
 		}
 
-		if account.HasCredential(provider, credentialID) {
+		if account.HasCredential(provider, providerID) {
 			return account, nil
 		}
 	}
 
-	return nil, errors.WithDetails(ErrAccountNotFound, "provider", provider, "credentialID", credentialID)
+	return nil, errors.WithDetails(ErrAccountNotFound, "provider", provider, "providerID", providerID)
 }
 
 func (s *Service) setAccount(_ context.Context, account *Account) errors.E {

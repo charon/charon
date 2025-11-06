@@ -1,4 +1,4 @@
-import type { Ref } from "vue"
+import { Ref } from "vue"
 import type { Router } from "vue-router"
 
 import type { AuthFlowResponse, Completed, Flow, SiteProvider } from "@/types"
@@ -31,6 +31,20 @@ export function getProviderName(t: (key: string) => string, provider: string): s
   const siteProvider = getThirdPartyProvider([provider])
   if (siteProvider) {
     return siteProvider.name
+  }
+  throw new Error(`unknown provider: ${provider}`)
+}
+
+export function getBuiltInProviderTitleName(t: (key: string) => string, provider: string): string {
+  switch (provider) {
+    case "email":
+      return t("common.providers.emailTitle")
+    case "username":
+      return t("common.providers.usernameTitle")
+    case "password":
+      return t("common.providers.passwordTitle")
+    case "passkey":
+      return t("common.providers.passkeyTitle")
   }
   throw new Error(`unknown provider: ${provider}`)
 }

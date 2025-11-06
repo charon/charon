@@ -342,9 +342,10 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 		return
 	}
 	credentials := []Credential{{
-		ID:       mappedEmailOrUsername,
-		Provider: ProviderEmail,
-		Data:     jsonData,
+		ID:         identifier.New(),
+		ProviderID: mappedEmailOrUsername,
+		Provider:   ProviderEmail,
+		Data:       jsonData,
 	}}
 
 	// Account does not exist but we have an e-mail address.
