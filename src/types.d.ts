@@ -497,8 +497,8 @@ export type CredentialAddResponse = {
 }
 
 export type EncryptedPasswordData = {
-    ciphertext:ArrayBuffer
-    publicKeyBytes: ArrayBuffer
+  ciphertext: ArrayBuffer
+  publicKeyBytes: ArrayBuffer
 }
 
 export type CredentialAddPasswordCompleteRequest = {

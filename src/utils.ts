@@ -1,16 +1,16 @@
 import type { DeepReadonly, Ref } from "vue"
 
 import type {
-    DeriveOptions,
-    EncryptedPasswordData,
-    EncryptOptions,
-    Identity,
-    IdentityOrganization,
-    IdentityPublic,
-    Mutable,
-    OrganizationApplicationPublic,
-    QueryValues,
-    QueryValuesWithOptional
+  DeriveOptions,
+  EncryptedPasswordData,
+  EncryptOptions,
+  Identity,
+  IdentityOrganization,
+  IdentityPublic,
+  Mutable,
+  OrganizationApplicationPublic,
+  QueryValues,
+  QueryValuesWithOptional,
 } from "@/types"
 
 import { cloneDeep, isEqual } from "lodash-es"
@@ -224,49 +224,49 @@ export function getIdentityDisplayName(identity: IdentityPublic | DeepReadonly<I
 }
 
 export async function encryptPasswordECDHAESGCM(
-    password: string,
-    publicKey: Uint8Array<ArrayBuffer>,
-    deriveOptions: DeriveOptions,
-    encryptOptions: EncryptOptions,
-    abortController: AbortController,
+  password: string,
+  publicKey: Uint8Array<ArrayBuffer>,
+  deriveOptions: DeriveOptions,
+  encryptOptions: EncryptOptions,
+  abortController: AbortController,
 ): Promise<EncryptedPasswordData> {
-    const encoder = new TextEncoder()
-    const keyPair = await crypto.subtle.generateKey(deriveOptions, false, ["deriveKey"])
-    if (abortController.signal.aborted) {
-        throw new Error("Aborted")
-    }
+  const encoder = new TextEncoder()
+  const keyPair = await crypto.subtle.generateKey(deriveOptions, false, ["deriveKey"])
+  if (abortController.signal.aborted) {
+    throw new Error("Aborted")
+  }
 
-    const remotePublicKey = await crypto.subtle.importKey("raw", publicKey, deriveOptions, false, [])
-    if (abortController.signal.aborted) {
-        throw new Error("Aborted")
-    }
+  const remotePublicKey = await crypto.subtle.importKey("raw", publicKey, deriveOptions, false, [])
+  if (abortController.signal.aborted) {
+    throw new Error("Aborted")
+  }
 
-    const secret = await crypto.subtle.deriveKey(
-        {
-            ...deriveOptions,
-            public: remotePublicKey,
-        },
-        keyPair.privateKey,
-        encryptOptions,
-        false,
-        ["encrypt"],
-    )
-    if (abortController.signal.aborted) {
-        throw new Error("Aborted")
-    }
+  const secret = await crypto.subtle.deriveKey(
+    {
+      ...deriveOptions,
+      public: remotePublicKey,
+    },
+    keyPair.privateKey,
+    encryptOptions,
+    false,
+    ["encrypt"],
+  )
+  if (abortController.signal.aborted) {
+    throw new Error("Aborted")
+  }
 
-    const ciphertext = await crypto.subtle.encrypt(encryptOptions, secret, encoder.encode(password))
-    if (abortController.signal.aborted) {
-        throw new Error("Aborted")
-    }
+  const ciphertext = await crypto.subtle.encrypt(encryptOptions, secret, encoder.encode(password))
+  if (abortController.signal.aborted) {
+    throw new Error("Aborted")
+  }
 
-    const publicKeyBytes = await crypto.subtle.exportKey("raw", keyPair.publicKey)
-    if (abortController.signal.aborted) {
-        throw new Error("Aborted")
-    }
+  const publicKeyBytes = await crypto.subtle.exportKey("raw", keyPair.publicKey)
+  if (abortController.signal.aborted) {
+    throw new Error("Aborted")
+  }
 
-    return {
-        ciphertext,
-        publicKeyBytes,
-    }
+  return {
+    ciphertext,
+    publicKeyBytes,
+  }
 }

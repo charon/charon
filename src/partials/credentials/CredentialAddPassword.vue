@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import {
-  CredentialAddPasswordCompleteRequest, CredentialAddResponse, DeriveOptions,
-  EncryptedPasswordData, EncryptOptions
-} from "@/types"
+import { CredentialAddPasswordCompleteRequest, CredentialAddResponse, EncryptOptions } from "@/types"
 
 import { onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
@@ -12,7 +9,7 @@ import { postJSON } from "@/api.ts"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import { injectProgress } from "@/progress.ts"
-import {encryptPasswordECDHAESGCM} from "@/utils.ts";
+import { encryptPasswordECDHAESGCM } from "@/utils.ts"
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()

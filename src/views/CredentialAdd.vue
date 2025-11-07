@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, onBeforeMount, onBeforeUnmount, Ref, ref, watch} from "vue"
+import { computed, onBeforeMount, onBeforeUnmount, Ref, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 
 import { isSignedIn } from "@/auth.ts"
@@ -7,7 +7,7 @@ import RadioButton from "@/components/RadioButton.vue"
 import CredentialAddEmail from "@/partials/credentials/CredentialAddEmail.vue"
 import CredentialAddPasskey from "@/partials/credentials/CredentialAddPasskey.vue"
 import CredentialAddPassword from "@/partials/credentials/CredentialAddPassword.vue"
-import CredentialAddUsername from "@/partials/credentials/CredentialAddUsername.vue";
+import CredentialAddUsername from "@/partials/credentials/CredentialAddUsername.vue"
 import Footer from "@/partials/Footer.vue"
 import NavBar from "@/partials/NavBar.vue"
 import { injectProgress } from "@/progress"
@@ -62,7 +62,7 @@ const types: Ref<CredentialTypeOption[]> = ref([
   { key: "email", label: t("common.providers.emailTitle") },
   { key: "username", label: t("common.providers.usernameTitle") },
   { key: "password", label: t("common.providers.passwordTitle") },
-]);
+])
 
 const builtInCredentialTypes = computed<CredentialTypeOption[]>(() => {
   const clone = [...types.value]

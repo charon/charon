@@ -11,7 +11,7 @@ import InputText from "@/components/InputText.vue"
 import InputTextButton from "@/components/InputTextButton.vue"
 import { processResponse, removeSteps } from "@/flow"
 import { injectProgress } from "@/progress"
-import {encryptPasswordECDHAESGCM, isEmail, toBase64} from "@/utils"
+import { encryptPasswordECDHAESGCM, isEmail, toBase64 } from "@/utils"
 
 const props = defineProps<{
   flow: Flow

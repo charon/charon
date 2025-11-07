@@ -21,9 +21,11 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
-// Credential (username) already used by another account.
-const ErrorCodeCredentialAlreadyUsed ErrorCode = "credentialAlreadyUsed" //nolint:gosec
-const ErrorCodePasskeyBoundToOtherAccount ErrorCode = "passkeyBoundToOtherAccount"
+// Credential addition error codes.
+const (
+	ErrorCodeCredentialAlreadyUsed      ErrorCode = "credentialAlreadyUsed"      //nolint:gosec
+	ErrorCodePasskeyBoundToOtherAccount ErrorCode = "passkeyBoundToOtherAccount" //nolint:gosec
+)
 
 const credentialAddSessionExpiration = time.Hour * 24
 
