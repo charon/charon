@@ -42,7 +42,8 @@
         "email": "E-mail address should be at least 3 characters.",
         "username": "Username should be at least 3 characters."
       },
-      "credentialAlreadyUsed": "Credential already used",
+      "credentialAlreadyUsed": "Credential already used.",
+      "credentialLabelInUse": "Credential label is already in use.",
       "passkeyBoundToOtherAccount": "Passkey is already bound to another account."
     },
     "labels": {

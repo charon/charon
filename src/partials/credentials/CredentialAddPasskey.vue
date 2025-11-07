@@ -24,6 +24,8 @@ function getErrorMessage(errorCode: string | undefined) {
   switch (errorCode) {
     case "passkeyNotSupported":
       return t("partials.CredentialAddPasskey.passkeyNotSupported")
+    case "credentialLabelInUse":
+      return t("common.errors.credentialLabelInUse")
     case "passkeyBoundToOtherAccount":
       return t("partials.CredentialAddPasskey.passkeyBoundToOtherAccount")
     default:

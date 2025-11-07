@@ -25,6 +25,7 @@ import (
 const (
 	ErrorCodeCredentialAlreadyUsed      ErrorCode = "credentialAlreadyUsed"      //nolint:gosec
 	ErrorCodePasskeyBoundToOtherAccount ErrorCode = "passkeyBoundToOtherAccount" //nolint:gosec
+	ErrorCodeCredentialLabelInUse       ErrorCode = "credentialLabelInUse"
 )
 
 const credentialAddSessionExpiration = time.Hour * 24
@@ -596,6 +597,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
+	requestLabel := strings.TrimSpace(request.Label)
 	for _, credential := range account.Credentials[ProviderPassword] {
 		var pc passwordCredential
 		errE = x.Unmarshal(credential.Data, &pc)
@@ -620,11 +622,22 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 			}, nil)
 			return
 		}
+
+		if requestLabel == strings.TrimSpace(pc.Label) {
+			s.WriteJSON(w, req, CredentialAddResponse{
+				SessionID:    cas.ID,
+				CredentialID: nil,
+				Passkey:      nil,
+				Password:     nil,
+				Error:        ErrorCodeCredentialLabelInUse,
+			}, nil)
+			return
+		}
 	}
 
 	jsonData, errE := x.MarshalWithoutEscapeHTML(passwordCredential{
 		Hash:  hashedPassword,
-		Label: request.Label,
+		Label: requestLabel,
 	})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -777,6 +790,7 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 		return
 	}
 
+	requestLabel := strings.TrimSpace(request.Label)
 	for _, cred := range account.Credentials[ProviderPasskey] {
 		if cred.ProviderID == providerID {
 			s.WriteJSON(w, req, CredentialAddResponse{
@@ -785,6 +799,24 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 				Passkey:      nil,
 				Password:     nil,
 				Error:        "",
+			}, nil)
+			return
+		}
+
+		var pkc passkeyCredential
+		errE = x.Unmarshal(cred.Data, &pkc)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+
+		if requestLabel == strings.TrimSpace(pkc.Label) {
+			s.WriteJSON(w, req, CredentialAddResponse{
+				SessionID:    cas.ID,
+				CredentialID: nil,
+				Passkey:      nil,
+				Password:     nil,
+				Error:        ErrorCodeCredentialLabelInUse,
 			}, nil)
 			return
 		}

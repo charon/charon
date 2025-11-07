@@ -39,6 +39,8 @@ function getErrorMessage(errorCode: string) {
   switch (errorCode) {
     case "shortPassword":
       return t("common.errors.shortPassword")
+    case "credentialLabelInUse":
+      return t("common.errors.credentialLabelInUse")
     default:
       return t("common.errors.unexpected")
   }
