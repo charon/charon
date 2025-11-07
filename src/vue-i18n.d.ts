@@ -53,8 +53,8 @@ declare module "vue-i18n" {
           email: string
           username: string
         }
-        credentialAlreadyExists: string
         credentialAlreadyUsed: string
+        passkeyBoundToOtherAccount: string
       }
       labels: {
         optional: string
@@ -85,7 +85,6 @@ declare module "vue-i18n" {
       entities: {
         admins: string
         users: string
-        credentials: string
         identity: string
         identities: string
         organization: string
@@ -93,6 +92,7 @@ declare module "vue-i18n" {
         applicationTemplate: string
         applicationTemplates: string
         activity: string
+        credentials: string
         app: string
       }
       messages: {
@@ -107,9 +107,13 @@ declare module "vue-i18n" {
         picture: string
       }
       providers: {
-        code: string
+        usernameTitle: string
+        emailTitle: string
         password: string
+        passwordTitle: string
         passkey: string
+        passkeyTitle: string
+        code: string
       }
     }
     partials: {
@@ -234,6 +238,21 @@ declare module "vue-i18n" {
         }
         entityLinks: string
       }
+      CredentialFull: {
+        verified: string
+        notVerified: string
+        thirdPartyProviders: string
+        passwordSignUp: string
+      }
+      CredentialAddPassword: {
+        label: string
+      }
+      CredentialAddPasskey: {
+        label: string
+        passkeyInstructions: string
+        passkeyNotSupported: string
+        addPasskeyButton: string
+      }
     }
     views: {
       ApplicationTemplateCreate: {
@@ -336,25 +355,15 @@ declare module "vue-i18n" {
         organizationActivity: string
         noActivities: string
       }
-      CredentialList: {
-        noCredentialsCreate: string
-        noCredentialsSignIn: string
-        password: string
-        passwordDefault: string
-        passkey: string
-        thirdPartyProviders: string
-        verify: string
-        verified: string
-        notVerified: string
-      }
       CredentialAdd: {
         addCredential: string
         availableOptions: string
-        passkeyInstructions: string
-        addPasskeyButton: string
-        passkeyNotSupported: string
         credentialTypes: string
-        label: string
+      }
+      CredentialList: {
+        noCredentialsCreate: string
+        noCredentialsSignIn: string
+        verify: string
       }
     }
   }

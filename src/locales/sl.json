@@ -42,8 +42,8 @@
         "email": "E-naslov mora biti dolg vsaj 3 znake.",
         "username": "Uporabniško ime mora biti dolgo vsaj 3 znake."
       },
-      "credentialAlreadyExists": "Poverilnica že obstaja",
-      "credentialAlreadyUsed": "Poverilnica je že v uporabi"
+      "credentialAlreadyUsed": "Poverilnica je že uporabljena",
+      "passkeyBoundToOtherAccount": "Passkey je vezan na drug račun."
     },
     "labels": {
       "optional": "(neobvezno)",
@@ -74,7 +74,6 @@
     "entities": {
       "admins": "Administratorji",
       "users": "Uporabniki",
-      "credentials": "Metode avtentikacije",
       "identity": "Identiteta | Identiteti | Identitete | Identitet",
       "identities": "Identitete",
       "organization": "Organizacija | Organizacije | Organizacije | Organizacij",
@@ -82,7 +81,8 @@
       "applicationTemplate": "Predloga aplikacije | Predlogi aplikacij | Predloge aplikacij | Predlog aplikacij",
       "applicationTemplates": "Predloge aplikacij",
       "activity": "Aktivnost",
-      "app": "Aplikacija | Aplikaciji | Aplikacije | Aplikacij"
+      "app": "Aplikacija | Aplikaciji | Aplikacije | Aplikacij",
+      "credentials": "Metode avtentikacije"
     },
     "messages": {
       "congratulations": "Čestitamo.",
@@ -96,9 +96,13 @@
       "picture": "slika"
     },
     "providers": {
+      "usernameTitle": "Uporabniško ime",
+      "emailTitle": "E-poštni naslov",
       "code": "koda",
       "password": "geslo",
-      "passkey": "passkey"
+      "passwordTitle": "Geslo",
+      "passkey": "passkey",
+      "passkeyTitle": "Passkey"
     }
   },
   "partials": {
@@ -222,6 +226,21 @@
         "identitiesRemoved": "odstranjene identitete"
       },
       "entityLinks": "{entity}: {links}"
+    },
+    "CredentialFull": {
+      "verified": "Potrjen",
+      "notVerified": "Nepotrjen",
+      "thirdPartyProviders": "Ponudniki tretjih storitev",
+      "passwordSignUp": "Geslo uporabljeno pri registraciji"
+    },
+    "CredentialAddPassword": {
+      "label": "Oznaka za geslo ali geslovni stavek"
+    },
+    "CredentialAddPasskey": {
+      "label": "Oznaka za Passkey",
+      "passkeyInstructions": "Dodajte {strongPasskey}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave.",
+      "passkeyNotSupported": "Vaš brskalnik ne podpira passkey.",
+      "addPasskeyButton": "Dodajte passkey"
     }
   },
   "views": {
@@ -325,25 +344,15 @@
       "userNote": "Opomba za blokiranega uporabnika oziroma uporabnike",
       "blockingSuccess": "Uporabnik je bil uspešno blokiran."
     },
+    "CredentialAdd": {
+      "addCredential": "Dodajte poverilnico",
+      "availableOptions": "Metode, ki so na voljo",
+      "credentialTypes": "Vrsta poverilnice"
+    },
     "CredentialList": {
       "noCredentialsCreate": "Ni metod za avtentikacijo. Ustvarite prvo.",
       "noCredentialsSignIn": "Ni metod za avtentikacijo. Prijavite se ali registrirajte, da ustvarite prvo.",
-      "password": "Geslo",
-      "passwordDefault": "privzeto geslo",
-      "passkey": "Passkey",
-      "thirdPartyProviders": "Tretji ponudniki storitev",
-      "verify": "Preveri",
-      "verified": "preverjen",
-      "notVerified": "nepreverjen"
-    },
-    "CredentialAdd": {
-      "addCredential": "Dodajte metodo za avtentikacijo",
-      "availableOptions": "Metode, ki so na voljo",
-      "passkeyInstructions": "Dodajte {strongPasskey}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave.",
-      "addPasskeyButton": "Ustvarite passkey",
-      "passkeyNotSupported": "Vaš brskalnik ne podpira passkey.",
-      "credentialTypes": "Vrsta poverilnice",
-      "label": "Oznaka"
+      "verify": "Preveri"
     }
   }
 }

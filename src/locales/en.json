@@ -231,8 +231,7 @@
       "verified": "Verified",
       "notVerified": "unverified",
       "thirdPartyProviders": "Third-Party Providers",
-      "passwordSignUp": "Password used during sign-up",
-      "passkeySignUp": "Passkey used during sign-up"
+      "passwordSignUp": "Password used during sign-up"
     },
     "CredentialAddPassword": {
       "label": "Password or passphrase label"

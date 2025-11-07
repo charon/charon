@@ -25,9 +25,6 @@ const credentialDisplay = computed(() => {
     if (provider === "password") {
       return t("partials.CredentialFull.passwordSignUp")
     }
-    if (provider === "passkey") {
-      return t("partials.CredentialFull.passkeySignUp")
-    }
   }
 
   return props.credential.displayName
