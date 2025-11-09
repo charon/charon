@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support for SAML 3rd party identity providers.
+- Support for [SIPASS identity provider](https://www.si-trust.gov.si/en/si-pass).
+  [#7](https://gitlab.com/charon/charon/-/issues/7)
+
 ### Changed
 
 - Go 1.25 or newer and Node 24 or newer is required.
