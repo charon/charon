@@ -88,48 +88,47 @@ func emailCredentialsEqual(credentialsA, credentialsB []Credential) bool {
 	return emailCredentialA.Equal(emailCredentialB)
 }
 
-func updateCredentialsByProvider(existingCredentials, newCredentials []Credential) ([]Credential, errors.E) {
-	existingEmailCredential, errE := getCredentialByProvider(existingCredentials, ProviderEmail)
+func (fc *flowCode) updateCredentials(newCredentials []Credential) errors.E {
+	existingEmailCredential, errE := getCredentialByProvider(fc.Credentials, ProviderEmail)
 	if errE != nil {
 		// More than one e-mail credential, there should be at most one.
-		return nil, errE
+		return errE
 	}
 
 	newEmailCredential, errE := getCredentialByProvider(newCredentials, ProviderEmail)
 	if errE != nil {
 		// More than one e-mail credential, there should be at most one.
-		return nil, errE
+		return errE
 	}
 
 	if !existingEmailCredential.Equal(newEmailCredential) {
 		// This should have already been checked.
-		return nil, errors.New("e-mail credentials not equal, but they should be")
+		return errors.New("e-mail credentials not equal, but they should be")
 	}
 
-	if len(existingCredentials) > 2 || len(newCredentials) > 2 {
+	if len(fc.Credentials) > 2 || len(newCredentials) > 2 {
 		// There should be at most two credentials (e-mail and password).
-		return nil, errors.New("more than two credentials")
+		return errors.New("more than two credentials")
 	}
 
-	existingPasswordCredential, errE := getCredentialByProvider(existingCredentials, ProviderPassword)
+	existingPasswordCredential, errE := getCredentialByProvider(fc.Credentials, ProviderPassword)
 	if errE != nil {
 		// More than one password credential, there should be at most one.
-		return nil, errE
+		return errE
 	}
 
 	newPasswordCredential, errE := getCredentialByProvider(newCredentials, ProviderPassword)
 	if errE != nil {
 		// More than one password credential, there should be at most one.
-		return nil, errE
+		return errE
 	}
 
-	var updatedCredentials []Credential
 	// E-mail credential is copied over.
-	if newEmailCredential != nil {
-		// It does not matter if we use newEmailCredential or existingEmailCredential
-		// because they are equal at this point.
-		updatedCredentials = append(updatedCredentials, *newEmailCredential)
-	}
+	var updatedCredentials []Credential
+
+	// It does not matter if we use newEmailCredential or existingEmailCredential
+	// because they are equal and not nil at this point.
+	updatedCredentials = append(updatedCredentials, *newEmailCredential)
 
 	// New password credential is preferred over the existing one (which might not exist).
 	if newPasswordCredential != nil {
@@ -138,7 +137,8 @@ func updateCredentialsByProvider(existingCredentials, newCredentials []Credentia
 		updatedCredentials = append(updatedCredentials, *existingPasswordCredential)
 	}
 
-	return updatedCredentials, nil
+	fc.Credentials = updatedCredentials
+	return nil
 }
 
 func (s *Service) sendCodeForExistingAccount(
@@ -235,7 +235,7 @@ func (s *Service) sendCode(
 	} else if credentials != nil {
 		// It could happen that the user first initiated the code provider by not providing a password but then decided to go back and add a password
 		// which then (for non-existent accounts) continue into the code provider, so we want to update credentials with the password.
-		flow.Code.Credentials, errE = updateCredentialsByProvider(flow.Code.Credentials, credentials)
+		errE = flow.Code.updateCredentials(credentials)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
