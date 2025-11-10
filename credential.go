@@ -23,9 +23,8 @@ import (
 
 // Credential addition error codes.
 const (
-	ErrorCodeCredentialInUse            ErrorCode = "credentialInUse"            //nolint:gosec
-	ErrorCodePasskeyBoundToOtherAccount ErrorCode = "passkeyBoundToOtherAccount" //nolint:gosec
-	ErrorCodeCredentialLabelInUse       ErrorCode = "credentialLabelInUse"
+	ErrorCodeCredentialInUse      ErrorCode = "credentialInUse" //nolint:gosec
+	ErrorCodeCredentialLabelInUse ErrorCode = "credentialLabelInUse"
 )
 
 const credentialAddSessionExpiration = time.Hour * 24
@@ -788,17 +787,6 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 
 	requestLabel := strings.TrimSpace(request.Label)
 	for _, cred := range account.Credentials[ProviderPasskey] {
-		if cred.ProviderID == providerID {
-			s.WriteJSON(w, req, CredentialAddResponse{
-				SessionID:    cas.ID,
-				CredentialID: &cred.ID,
-				Passkey:      nil,
-				Password:     nil,
-				Error:        "",
-			}, nil)
-			return
-		}
-
 		var pkc passkeyCredential
 		errE = x.Unmarshal(cred.Data, &pkc)
 		if errE != nil {
@@ -820,21 +808,6 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 
 	if credential.Credential.Authenticator.CloneWarning {
 		zerolog.Ctx(ctx).Warn().Str("credential", providerID).Msg("authenticator may be cloned")
-	}
-
-	existingAccount, errE := s.getAccountByCredential(ctx, ProviderPasskey, providerID)
-	if errE == nil && existingAccount.ID != accountID {
-		s.WriteJSON(w, req, CredentialAddResponse{
-			SessionID:    cas.ID,
-			CredentialID: nil,
-			Passkey:      nil,
-			Password:     nil,
-			Error:        ErrorCodePasskeyBoundToOtherAccount,
-		}, nil)
-		return
-	} else if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
 	}
 
 	jsonData, errE := x.MarshalWithoutEscapeHTML(credential)

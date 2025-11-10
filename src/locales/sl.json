@@ -44,7 +44,6 @@
       },
       "credentialInUse": "Poverilnica je že v uporabi.",
       "credentialLabelInUse": "Oznaka poverilnice je že v uporabi.",
-      "passkeyBoundToOtherAccount": "Passkey je vezan na drug račun."
     },
     "labels": {
       "optional": "(neobvezno)",
