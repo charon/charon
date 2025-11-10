@@ -765,19 +765,19 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 		label = userID.String()
 	}
 
-	credential := passkeyCredential{
+	pkCredential := passkeyCredential{
 		ID:         userID,
 		Label:      label,
 		Credential: nil,
 	}
 
-	credential.Credential, err = s.passkeyProvider().CreateCredential(credential, *cas.Passkey, parsedResponse)
+	pkCredential.Credential, err = s.passkeyProvider().CreateCredential(pkCredential, *cas.Passkey, parsedResponse)
 	if err != nil {
 		s.BadRequestWithError(w, req, withWebauthnError(err))
 		return
 	}
 
-	providerID := base64.RawURLEncoding.EncodeToString(credential.Credential.ID)
+	providerID := base64.RawURLEncoding.EncodeToString(pkCredential.Credential.ID)
 
 	account, errE := s.getAccount(ctx, accountID)
 	if errE != nil {
@@ -786,9 +786,9 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 	}
 
 	requestLabel := strings.TrimSpace(request.Label)
-	for _, cred := range account.Credentials[ProviderPasskey] {
+	for _, credential := range account.Credentials[ProviderPasskey] {
 		var pkc passkeyCredential
-		errE = x.Unmarshal(cred.Data, &pkc)
+		errE = x.Unmarshal(credential.Data, &pkc)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
@@ -806,11 +806,11 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 		}
 	}
 
-	if credential.Credential.Authenticator.CloneWarning {
+	if pkCredential.Credential.Authenticator.CloneWarning {
 		zerolog.Ctx(ctx).Warn().Str("credential", providerID).Msg("authenticator may be cloned")
 	}
 
-	jsonData, errE := x.MarshalWithoutEscapeHTML(credential)
+	jsonData, errE := x.MarshalWithoutEscapeHTML(pkCredential)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
