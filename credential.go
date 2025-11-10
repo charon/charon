@@ -23,7 +23,7 @@ import (
 
 // Credential addition error codes.
 const (
-	ErrorCodeCredentialAlreadyUsed      ErrorCode = "credentialAlreadyUsed"      //nolint:gosec
+	ErrorCodeCredentialInUse            ErrorCode = "credentialInUse"            //nolint:gosec
 	ErrorCodePasskeyBoundToOtherAccount ErrorCode = "passkeyBoundToOtherAccount" //nolint:gosec
 	ErrorCodeCredentialLabelInUse       ErrorCode = "credentialLabelInUse"
 )
@@ -455,7 +455,7 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 			CredentialID: nil,
 			Passkey:      nil,
 			Password:     nil,
-			Error:        ErrorCodeCredentialAlreadyUsed,
+			Error:        ErrorCodeCredentialInUse,
 		}, nil)
 		return
 	} else if errE != nil && !errors.Is(errE, ErrAccountNotFound) {

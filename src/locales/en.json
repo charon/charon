@@ -42,7 +42,7 @@
         "email": "E-mail address should be at least 3 characters.",
         "username": "Username should be at least 3 characters."
       },
-      "credentialAlreadyUsed": "Credential already used.",
+      "credentialInUse": "Credential in use.",
       "credentialLabelInUse": "Credential label is already in use.",
       "passkeyBoundToOtherAccount": "Passkey is already bound to another account."
     },
