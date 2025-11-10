@@ -201,16 +201,13 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-	plainPassword, internalServerErrE, badRequestErrE := decryptPasswordECDHAESGCM(
+	plainPassword, errE := decryptPasswordECDHAESGCM(
 		flowPassword.PrivateKey,
 		passwordComplete.PublicKey,
 		flowPassword.Nonce,
 		passwordComplete.Password)
-	if internalServerErrE != nil {
-		s.InternalServerErrorWithError(w, req, internalServerErrE)
-	}
-	if badRequestErrE != nil {
-		s.BadRequestWithError(w, req, badRequestErrE)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
 	}
 
 	plainPassword, errE = normalizePassword(plainPassword)

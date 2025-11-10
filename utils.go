@@ -916,38 +916,38 @@ func decryptPasswordECDHAESGCM(
 	publicKeyBytes []byte,
 	nonce []byte,
 	encryptedPassword []byte,
-) ([]byte, errors.E, errors.E) {
+) ([]byte, errors.E) {
 	privateKey, err := ecdh.P256().NewPrivateKey(privateKeyBytes)
 	if err != nil {
-		return nil, errors.WithStack(err), nil
+		return nil, errors.WithStack(err)
 	}
 
 	remotePublicKey, err := ecdh.P256().NewPublicKey(publicKeyBytes)
 	if err != nil {
-		return nil, nil, errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 
 	secret, err := privateKey.ECDH(remotePublicKey)
 	if err != nil {
-		return nil, errors.WithStack(err), nil
+		return nil, errors.WithStack(err)
 	}
 
 	block, err := aes.NewCipher(secret)
 	if err != nil {
-		return nil, errors.WithStack(err), nil
+		return nil, errors.WithStack(err)
 	}
 
 	aesgcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return nil, errors.WithStack(err), nil
+		return nil, errors.WithStack(err)
 	}
 
 	plainPassword, err := aesgcm.Open(nil, nonce, encryptedPassword, nil)
 	if err != nil {
-		return nil, nil, errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 
-	return plainPassword, nil, nil
+	return plainPassword, nil
 }
 
 func newPasswordEncryptionResponse(publicKeyBytes, nonce []byte, overhead int) *AuthFlowResponsePassword {

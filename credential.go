@@ -559,13 +559,9 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
-	plainPassword, internalServerErrE, badRequestErrE := decryptPasswordECDHAESGCM(cas.Password.PrivateKey, request.PublicKey, cas.Password.Nonce, request.Password)
-	if internalServerErrE != nil {
-		s.BadRequestWithError(w, req, internalServerErrE)
-		return
-	}
-	if badRequestErrE != nil {
-		s.InternalServerErrorWithError(w, req, badRequestErrE)
+	plainPassword, errE := decryptPasswordECDHAESGCM(cas.Password.PrivateKey, request.PublicKey, cas.Password.Nonce, request.Password)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
 	}
 
 	plainPassword, errE = normalizePassword(plainPassword)
