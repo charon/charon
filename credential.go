@@ -34,22 +34,13 @@ var (
 	credentialSessionsMu sync.RWMutex                                      //nolint:gochecknoglobals
 )
 
-// CredentialAddEmailRequest represents data of email credential addition request.
-type CredentialAddEmailRequest struct {
-	Email string `json:"email"`
-}
-
-// CredentialAddUsernameRequest represents data of username credential addition request.
-type CredentialAddUsernameRequest struct {
-	Username string `json:"username"`
-}
-
 // CredentialInfo represents information about a credential.
 type CredentialInfo struct {
 	ID          identifier.Identifier `json:"id"`
 	Provider    Provider              `json:"provider"`
 	DisplayName string                `json:"displayName"`
 	Label       string                `json:"label,omitempty"`
+	Verified    bool                  `json:"verified,omitempty"`
 }
 
 // CredentialInfoRef represents a reference to a credential.
@@ -113,6 +104,7 @@ func validateUsername(value string) ErrorCode {
 func (s *Service) getCredentialInfo(provider Provider, credential Credential) (CredentialInfo, errors.E) {
 	var displayName string
 	var label string
+	var verified bool
 
 	switch provider {
 	case ProviderEmail:
@@ -122,6 +114,7 @@ func (s *Service) getCredentialInfo(provider Provider, credential Credential) (C
 			return CredentialInfo{}, errE
 		}
 		displayName = ec.Email
+		verified = ec.Verified
 	case ProviderUsername:
 		var uc usernameCredential
 		errE := x.Unmarshal(credential.Data, &uc)
@@ -170,6 +163,7 @@ func (s *Service) getCredentialInfo(provider Provider, credential Credential) (C
 		Provider:    provider,
 		DisplayName: displayName,
 		Label:       label,
+		Verified:    verified,
 	}, nil
 }
 
@@ -318,7 +312,7 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 	}
 
 	accountID := mustGetAccountID(ctx)
-	request := CredentialAddEmailRequest{}
+	request := emailCredential{}
 
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &request)
 	if errE != nil {
@@ -365,7 +359,8 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 			return
 		}
 	}
-	jsonData, errE := x.MarshalWithoutEscapeHTML(CredentialAddEmailRequest{Email: preservedEmail})
+
+	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{Email: preservedEmail, Verified: false})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -398,7 +393,7 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 
 	accountID := mustGetAccountID(ctx)
 
-	request := CredentialAddUsernameRequest{}
+	request := usernameCredential{}
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &request)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
@@ -462,7 +457,7 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	jsonData, errE := x.MarshalWithoutEscapeHTML(CredentialAddUsernameRequest{Username: preservedUsername})
+	jsonData, errE := x.MarshalWithoutEscapeHTML(usernameCredential{preservedUsername})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return

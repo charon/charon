@@ -147,8 +147,8 @@ func (s *Service) sendCodeForExistingAccount(
 ) {
 	var emails []string
 	if strings.Contains(mappedEmailOrUsername, "@") {
-		// We know that such credential must exist on this account because
-		// we found this account using mappedEmailOrUsername.
+		// We know that such credential must exist and is verified on this account
+		// because we found this account using getAccountByVerifiedEmailCredential.
 		credential := account.GetCredential(ProviderEmail, mappedEmailOrUsername)
 		var ec emailCredential
 		errE := x.Unmarshal(credential.Data, &ec)
@@ -312,7 +312,7 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 
 	var account *Account
 	if strings.Contains(mappedEmailOrUsername, "@") {
-		account, errE = s.getAccountByCredential(ctx, ProviderEmail, mappedEmailOrUsername)
+		account, errE = s.getAccountByVerifiedEmail(ctx, mappedEmailOrUsername)
 	} else {
 		account, errE = s.getAccountByCredential(ctx, ProviderUsername, mappedEmailOrUsername)
 	}
@@ -326,7 +326,7 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	// Account does not exist.
+	// Account does not exist OR email is not verified.
 
 	// We can send a code only if we have an e-mail address.
 	if !strings.Contains(mappedEmailOrUsername, "@") {
@@ -335,7 +335,8 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 	}
 
 	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{
-		Email: preservedEmailOrUsername,
+		Email:    preservedEmailOrUsername,
+		Verified: false,
 	})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -408,6 +409,29 @@ func (s *Service) AuthFlowCodeCompletePost(w http.ResponseWriter, req *http.Requ
 			// case it does not matter too much which error we return.
 			s.InternalServerErrorWithError(w, req, errE)
 			return
+		}
+	}
+
+	if flow.Code.Credentials != nil {
+		for i, cred := range flow.Code.Credentials {
+			if cred.Provider == ProviderEmail {
+				var ec emailCredential
+				errE := x.Unmarshal(cred.Data, &ec)
+				if errE != nil {
+					s.InternalServerErrorWithError(w, req, errE)
+					return
+				}
+				ec.Verified = true
+
+				jsonData, errE := x.MarshalWithoutEscapeHTML(ec)
+				if errE != nil {
+					s.InternalServerErrorWithError(w, req, errE)
+					return
+				}
+
+				flow.Code.Credentials[i].Data = jsonData
+				break
+			}
 		}
 	}
 

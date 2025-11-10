@@ -127,6 +127,30 @@ func (s *Service) getAccountByCredential(ctx context.Context, provider Provider,
 	return nil, errors.WithDetails(ErrAccountNotFound, "provider", provider, "providerID", providerID)
 }
 
+func (s *Service) getAccountByVerifiedEmail(ctx context.Context, email string) (*Account, errors.E) {
+	account, errE := s.getAccountByCredential(ctx, ProviderEmail, email)
+	if errE != nil {
+		return nil, errE
+	}
+
+	credential := account.GetCredential(ProviderEmail, email)
+	if credential == nil {
+		// This should not happen, getAccountByCredential found the account.
+		return nil, errors.WithDetails(ErrAccountNotFound, "provider", ProviderEmail, "providerID", email)
+	}
+
+	var ec emailCredential
+	errE = x.Unmarshal(credential.Data, &ec)
+	if errE != nil {
+		return nil, errE
+	}
+	if !ec.Verified {
+		return nil, errors.WithDetails(ErrAccountNotFound, "provider", ProviderEmail, "providerID", email)
+	}
+
+	return account, nil
+}
+
 func (s *Service) setAccount(_ context.Context, account *Account) errors.E {
 	data, errE := x.MarshalWithoutEscapeHTML(account)
 	if errE != nil {

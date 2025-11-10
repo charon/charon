@@ -71,7 +71,8 @@ type passwordCredential struct {
 }
 
 type emailCredential struct {
-	Email string `json:"email"`
+	Email    string `json:"email"`
+	Verified bool   `json:"verified"`
 }
 
 type usernameCredential struct {
@@ -226,7 +227,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 
 	var account *Account
 	if strings.Contains(mappedEmailOrUsername, "@") {
-		account, errE = s.getAccountByCredential(ctx, ProviderEmail, mappedEmailOrUsername)
+		account, errE = s.getAccountByVerifiedEmail(ctx, mappedEmailOrUsername)
 	} else {
 		account, errE = s.getAccountByCredential(ctx, ProviderUsername, mappedEmailOrUsername)
 	}
@@ -287,12 +288,13 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 		return
 	}
 
-	// Account does not exist.
+	// Account does not exist OR email is not verified.
 
 	credentials := []Credential{}
 	if strings.Contains(mappedEmailOrUsername, "@") {
-		jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{
-			Email: flow.EmailOrUsername,
+		jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{ //nolint:govet
+			Email:    flow.EmailOrUsername,
+			Verified: false,
 		})
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
