@@ -43,7 +43,7 @@
         "username": "Uporabniško ime mora biti dolgo vsaj 3 znake."
       },
       "credentialInUse": "Poverilnica je že v uporabi.",
-      "credentialLabelInUse": "Oznaka poverilnice je že v uporabi.",
+      "credentialLabelInUse": "Oznaka poverilnice je že v uporabi."
     },
     "labels": {
       "optional": "(neobvezno)",

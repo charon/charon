@@ -43,7 +43,7 @@
         "username": "Username should be at least 3 characters."
       },
       "credentialInUse": "Credential in use.",
-      "credentialLabelInUse": "Credential label is already in use.",
+      "credentialLabelInUse": "Credential label is already in use."
     },
     "labels": {
       "optional": "(optional)",

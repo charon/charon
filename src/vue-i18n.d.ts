@@ -53,9 +53,8 @@ declare module "vue-i18n" {
           email: string
           username: string
         }
-        credentialAlreadyUsed: string
+        credentialInUse: string
         credentialLabelInUse: string
-        passkeyBoundToOtherAccount: string
       }
       labels: {
         optional: string
