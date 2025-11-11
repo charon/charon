@@ -240,7 +240,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		return
 	}
 
-	// We know the user is passkeyCredential because we just created it above..
+	// We know the user is passkeyCredential because we just created it above.
 	credential := user.(passkeyCredential) //nolint:errcheck,forcetypeassert
 	// Credential is changed by ValidatePasskeyLogin (e.g., its Authenticator.UpdateCounter
 	// is called to update its sign count) so we set it back here.
