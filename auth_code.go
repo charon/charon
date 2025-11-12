@@ -83,7 +83,7 @@ func emailCredentialsEqual(credentialsA, credentialsB []Credential) bool {
 		return false
 	}
 
-	// If credentialsA is nil and credentialsB are nil, then also emailCredentialA
+	// If credentialsA and credentialsB are nil, then also emailCredentialA
 	// and emailCredentialB are nil and comparison returns true.
 	return emailCredentialA.Equal(emailCredentialB)
 }
