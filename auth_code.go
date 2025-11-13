@@ -126,8 +126,11 @@ func (f *flowCode) updateCredentials(newCredentials []Credential) errors.E {
 	// E-mail credential is copied over.
 	var updatedCredentials []Credential
 
+	if newEmailCredential == nil {
+		return errors.New("missing e-mail credential")
+	}
 	// It does not matter if we use newEmailCredential or existingEmailCredential
-	// because they are equal and not nil at this point.
+	// because they are equal at this point.
 	updatedCredentials = append(updatedCredentials, *newEmailCredential)
 
 	// New password credential is preferred over the existing one (which might not exist).
@@ -335,7 +338,7 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 
 	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{
 		Email:    preservedEmailOrUsername,
-		Verified: false,
+		Verified: true,
 	})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)

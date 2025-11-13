@@ -598,7 +598,7 @@ func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http
 	options, sessionData, err := s.passkeyProvider().BeginRegistration(
 		passkeyCredential{
 			ID:         userID,
-			Label:      "",
+			Label:      userID.String(),
 			Credential: nil,
 		},
 		webauthn.WithExtensions(protocol.AuthenticationExtensions{

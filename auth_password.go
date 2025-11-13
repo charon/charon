@@ -290,12 +290,11 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 	}
 
 	// Account does not exist (by username or by verified email).
-
 	credentials := []Credential{}
 	if strings.Contains(mappedEmailOrUsername, "@") {
 		jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{ //nolint:govet
 			Email:    flow.EmailOrUsername,
-			Verified: false,
+			Verified: true,
 		})
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
@@ -330,8 +329,9 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 	}
 
 	jsonData, errE := x.MarshalWithoutEscapeHTML(passwordCredential{
-		Hash:  hashedPassword,
-		Label: "",
+		Hash: hashedPassword,
+		// TODO: Translate this to user's language.
+		Label: "default password",
 	})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)

@@ -299,7 +299,6 @@ func TestNormalizeEmailOrUsername(t *testing.T) {
 			} else {
 				assert.NoError(t, errE, "unexpected error", errE)
 			}
-
 		})
 	}
 }
