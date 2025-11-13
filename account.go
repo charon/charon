@@ -46,7 +46,7 @@ type Account struct {
 	Credentials map[Provider][]Credential
 }
 
-// HasCredential returns true if the account has a credential for the given provider and credential ID.
+// HasCredential returns true if the account has a credential for the given provider and provider ID.
 func (a *Account) HasCredential(provider Provider, providerID string) bool {
 	return a.GetCredential(provider, providerID) != nil
 }
@@ -57,6 +57,7 @@ func (a *Account) UpdateCredentials(credentials []Credential) {
 		updated := false
 		for i, c := range a.Credentials[credential.Provider] {
 			if c.ProviderID == credential.ProviderID {
+				credential.ID = c.ID
 				a.Credentials[credential.Provider][i] = credential
 				updated = true
 				break
@@ -68,7 +69,7 @@ func (a *Account) UpdateCredentials(credentials []Credential) {
 	}
 }
 
-// GetCredential returns the credential for the given provider and credential ID.
+// GetCredential returns the credential for the given provider and provider ID.
 func (a *Account) GetCredential(provider Provider, providerID string) *Credential {
 	for _, credential := range a.Credentials[provider] {
 		if credential.ProviderID == providerID {

@@ -288,7 +288,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 		return
 	}
 
-	// Account does not exist OR email is not verified.
+	// Account does not exist (by username or by verified email).
 
 	credentials := []Credential{}
 	if strings.Contains(mappedEmailOrUsername, "@") {

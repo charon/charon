@@ -326,7 +326,7 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	// Account does not exist OR email is not verified.
+	// Account does not exist (by username or by verified email).
 
 	// We can send a code only if we have an e-mail address.
 	if !strings.Contains(mappedEmailOrUsername, "@") {

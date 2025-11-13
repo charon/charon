@@ -34,7 +34,7 @@ var (
 	credentialSessionsMu sync.RWMutex                                      //nolint:gochecknoglobals
 )
 
-// CredentialInfo represents information about a credential.
+// CredentialInfo represents public information about a credential.
 type CredentialInfo struct {
 	ID          identifier.Identifier `json:"id"`
 	Provider    Provider              `json:"provider"`
@@ -72,9 +72,9 @@ type credentialAddPasskeyCompleteRequest struct {
 
 type credentialAddSession struct {
 	ID        identifier.Identifier
-	Password  *flowPassword
-	Passkey   *webauthn.SessionData
 	CreatedAt time.Time
+	Passkey   *webauthn.SessionData
+	Password  *flowPassword
 }
 
 func (s credentialAddSession) Expired() bool {
@@ -230,7 +230,7 @@ func (s *Service) CredentialListGet(w http.ResponseWriter, req *http.Request, _ 
 	s.WriteJSON(w, req, result, nil)
 }
 
-// CredentialGet is the frontend handler for getting credentials.
+// CredentialGet is the frontend handler for getting the credential.
 func (s *Service) CredentialGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
@@ -273,7 +273,7 @@ func (s *Service) CredentialGetGet(w http.ResponseWriter, req *http.Request, par
 	s.NotFound(w, req)
 }
 
-// CredentialAdd is the frontend handler for adding a credential.
+// CredentialAdd is the frontend handler for adding a credential to account.
 func (s *Service) CredentialAdd(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
@@ -301,7 +301,7 @@ func validateCredentialSession(cas *credentialAddSession, expectedType string) e
 	return nil
 }
 
-// CredentialAddEmailPost is the API handler for adding a credential to account, POST request.
+// CredentialAddEmailPost is the API handler for adding an e-mail credential to account, POST request.
 func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
@@ -381,7 +381,7 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 	}, nil)
 }
 
-// CredentialAddUsernamePost is the API handler for adding a credential to account, POST request.
+// CredentialAddUsernamePost is the API handler for adding a username credential to account, POST request.
 func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
@@ -575,7 +575,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	hashedPassword, err := argon2id.CreateHash(string(plainPassword), &argon2idParams)
+	hashedPassword, err := argon2id.CreateHash(plainPassword, &argon2idParams)
 	if err != nil {
 		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
 		return
@@ -588,6 +588,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 	}
 
 	requestLabel := strings.TrimSpace(request.Label)
+	# We check if the same password is already set and if the label is already in use.
 	for _, credential := range account.Credentials[ProviderPassword] {
 		var pc passwordCredential
 		errE = x.Unmarshal(credential.Data, &pc)
@@ -596,13 +597,14 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 			return
 		}
 
-		exists, err := argon2id.ComparePasswordAndHash(string(plainPassword), pc.Hash)
+		match, err := argon2id.ComparePasswordAndHash(plainPassword, pc.Hash)
 		if err != nil {
 			s.InternalServerErrorWithError(w, req, errors.WithStack(err))
 			return
 		}
 
 		if exists {
+			// TODO: If options are different, migrate the password to new options.
 			s.WriteJSON(w, req, CredentialAddResponse{
 				SessionID:    cas.ID,
 				CredentialID: &credential.ID,
@@ -625,6 +627,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 		}
 	}
 
+	# Password is not already set.
 	jsonData, errE := x.MarshalWithoutEscapeHTML(passwordCredential{
 		Hash:  hashedPassword,
 		Label: requestLabel,
@@ -735,8 +738,7 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 		return
 	}
 
-	var cas *credentialAddSession
-	cas, errE = getAndDeleteCredentialSession(request.SessionID)
+	cas, errE := getAndDeleteCredentialSession(request.SessionID)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
@@ -903,7 +905,5 @@ func (s *Service) CredentialRemovePost(w http.ResponseWriter, req *http.Request,
 		return
 	}
 
-	s.WriteJSON(w, req, map[string]interface{}{
-		"success": true,
-	}, nil)
+	s.WriteJSON(w, req, []byte(`{"success":true}`), nil)
 }
