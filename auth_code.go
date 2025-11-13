@@ -88,8 +88,8 @@ func emailCredentialsEqual(credentialsA, credentialsB []Credential) bool {
 	return emailCredentialA.Equal(emailCredentialB)
 }
 
-func (fc *flowCode) updateCredentials(newCredentials []Credential) errors.E {
-	existingEmailCredential, errE := getCredentialByProvider(fc.Credentials, ProviderEmail)
+func (f *flowCode) updateCredentials(newCredentials []Credential) errors.E {
+	existingEmailCredential, errE := getCredentialByProvider(f.Credentials, ProviderEmail)
 	if errE != nil {
 		// More than one e-mail credential, there should be at most one.
 		return errE
@@ -106,12 +106,12 @@ func (fc *flowCode) updateCredentials(newCredentials []Credential) errors.E {
 		return errors.New("e-mail credentials not equal, but they should be")
 	}
 
-	if len(fc.Credentials) > 2 || len(newCredentials) > 2 {
+	if len(f.Credentials) > 2 || len(newCredentials) > 2 {
 		// There should be at most two credentials (e-mail and password).
 		return errors.New("more than two credentials")
 	}
 
-	existingPasswordCredential, errE := getCredentialByProvider(fc.Credentials, ProviderPassword)
+	existingPasswordCredential, errE := getCredentialByProvider(f.Credentials, ProviderPassword)
 	if errE != nil {
 		// More than one password credential, there should be at most one.
 		return errE
@@ -137,7 +137,7 @@ func (fc *flowCode) updateCredentials(newCredentials []Credential) errors.E {
 		updatedCredentials = append(updatedCredentials, *existingPasswordCredential)
 	}
 
-	fc.Credentials = updatedCredentials
+	f.Credentials = updatedCredentials
 	return nil
 }
 
@@ -327,7 +327,6 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 	}
 
 	// Account does not exist (by username or by verified email).
-
 	// We can send a code only if we have an e-mail address.
 	if !strings.Contains(mappedEmailOrUsername, "@") {
 		s.flowError(w, req, flow, ErrorCodeNoAccount, nil)
