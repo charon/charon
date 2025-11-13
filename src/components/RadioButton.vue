@@ -14,6 +14,7 @@ const props = withDefaults(
     progress?: number
     disabled?: boolean
     modelValue?: T
+    value: T
   }>(),
   {
     progress: 0,
@@ -43,6 +44,7 @@ const v = computed({
   <div>
     <input
       v-model="v"
+      :value="props.value"
       :disabled="progress > 0 || disabled"
       type="radio"
       class="-mt-0.5 align-middle"
