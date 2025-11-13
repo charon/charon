@@ -340,7 +340,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 
 	credentials = append(credentials, Credential{
 		ID:         identifier.New(),
-		ProviderID: identifier.New().String(),
+		ProviderID: "",
 		Provider:   ProviderPassword,
 		Data:       jsonData,
 	})
