@@ -57,27 +57,31 @@ type CredentialAddResponse struct {
 	Error        ErrorCode                 `json:"error,omitempty"`
 }
 
-type credentialAddPasswordCompleteRequest struct {
+// CredentialAddPasswordCompleteRequest represents the request body for the CredentialAddPasswordCompletePost handler.
+type CredentialAddPasswordCompleteRequest struct {
 	AuthFlowPasswordCompleteRequest
 
 	SessionID identifier.Identifier `json:"sessionId"`
-	Label     string                `json:"label,omitempty"`
+	Label     string                `json:"label"`
 }
 
-type credentialAddPasskeyCompleteRequest struct {
+// CredentialAddPasskeyCompleteRequest represents the request body for the CredentialAddPasskeyCompletePost handler.
+type CredentialAddPasskeyCompleteRequest struct {
 	SessionID      identifier.Identifier               `json:"sessionId"`
 	CreateResponse protocol.CredentialCreationResponse `json:"createResponse"`
 	Label          string                              `json:"label"`
 }
 
-type credentialAddSession struct {
+// CredentialAddSession represents session data for adding credential.
+type CredentialAddSession struct {
 	ID        identifier.Identifier
 	CreatedAt time.Time
 	Passkey   *webauthn.SessionData
 	Password  *flowPassword
 }
 
-func (s credentialAddSession) Expired() bool {
+// Expired returns true if the credential add session has expired.
+func (s CredentialAddSession) Expired() bool {
 	return time.Now().After(s.CreatedAt.Add(credentialAddSessionExpiration))
 }
 
@@ -282,7 +286,7 @@ func (s *Service) CredentialAdd(w http.ResponseWriter, req *http.Request, _ waf.
 	}
 }
 
-func validateCredentialSession(cas *credentialAddSession, expectedType string) errors.E {
+func validateCredentialSession(cas *CredentialAddSession, expectedType string) errors.E {
 	if cas.Expired() {
 		return errors.WithDetails(errSessionNotFound, "expired")
 	}
@@ -492,7 +496,7 @@ func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *htt
 		s.InternalServerErrorWithError(w, req, errE)
 	}
 
-	session := credentialAddSession{
+	session := CredentialAddSession{
 		ID: identifier.New(),
 		Password: &flowPassword{
 			PrivateKey: privateKeyBytes,
@@ -535,13 +539,13 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 
 	accountID := mustGetAccountID(ctx)
 
-	var request credentialAddPasswordCompleteRequest
+	var request CredentialAddPasswordCompleteRequest
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &request)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
-	var cas *credentialAddSession
+	var cas *CredentialAddSession
 	cas, errE = getAndDeleteCredentialSession(request.SessionID)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
@@ -588,7 +592,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 	}
 
 	requestLabel := strings.TrimSpace(request.Label)
-	# We check if the same password is already set and if the label is already in use.
+	// We check if the same password is already set and if the label is already in use.
 	for _, credential := range account.Credentials[ProviderPassword] {
 		var pc passwordCredential
 		errE = x.Unmarshal(credential.Data, &pc)
@@ -603,7 +607,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 			return
 		}
 
-		if exists {
+		if match {
 			// TODO: If options are different, migrate the password to new options.
 			s.WriteJSON(w, req, CredentialAddResponse{
 				SessionID:    cas.ID,
@@ -627,7 +631,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 		}
 	}
 
-	# Password is not already set.
+	// Password is not already set.
 	jsonData, errE := x.MarshalWithoutEscapeHTML(passwordCredential{
 		Hash:  hashedPassword,
 		Label: requestLabel,
@@ -691,7 +695,7 @@ func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http
 		return
 	}
 
-	session := credentialAddSession{
+	session := CredentialAddSession{
 		ID:        identifier.New(),
 		Password:  nil,
 		Passkey:   sessionData,
@@ -731,7 +735,7 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 
 	accountID := mustGetAccountID(ctx)
 
-	var request credentialAddPasskeyCompleteRequest
+	var request CredentialAddPasskeyCompleteRequest
 	errE := x.DecodeJSON(req.Body, &request)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
@@ -828,7 +832,7 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 	}, nil)
 }
 
-func getAndDeleteCredentialSession(sessionID identifier.Identifier) (*credentialAddSession, errors.E) {
+func getAndDeleteCredentialSession(sessionID identifier.Identifier) (*CredentialAddSession, errors.E) {
 	credentialSessionsMu.Lock()
 	sessionData, ok := credentialSessions[sessionID]
 	if ok {
@@ -840,7 +844,7 @@ func getAndDeleteCredentialSession(sessionID identifier.Identifier) (*credential
 		return nil, errors.WithDetails(errSessionNotFound, "sessionID", sessionID)
 	}
 
-	var cas credentialAddSession
+	var cas CredentialAddSession
 	errE := x.UnmarshalWithoutUnknownFields(sessionData, &cas)
 	if errE != nil {
 		errors.Details(errE)["sessionID"] = sessionID
