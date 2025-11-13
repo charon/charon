@@ -222,3 +222,84 @@ func TestFindFirstString(t *testing.T) {
 		})
 	}
 }
+
+func TestNormalizeEmailOrUsername(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name          string
+		input         string
+		check         charon.EmailOrUsernameCheck
+		wantPreserved string
+		wantMapped    string
+		wantErrorCode charon.ErrorCode
+		wantErr       bool
+	}{
+		{
+			"valid email - any", "user@example.com", charon.EmailOrUsernameCheckAny,
+			"user@example.com", "user@example.com", "", false,
+		},
+		{
+			"valid email w/ whitespace - any", "  user@example.com  ", charon.EmailOrUsernameCheckAny,
+			"user@example.com", "user@example.com", "", false,
+		},
+		{
+			"valid email - email required", "user@example.com", charon.EmailOrUsernameCheckEmail,
+			"user@example.com", "user@example.com", "", false,
+		},
+		{
+			"valid username - any", "username", charon.EmailOrUsernameCheckAny,
+			"username", "username", "", false,
+		},
+		{
+			"valid username with case - any", "UserName", charon.EmailOrUsernameCheckAny,
+			"UserName", "username", "", false,
+		},
+		{
+			"valid username - username required", "username", charon.EmailOrUsernameCheckUsername,
+			"username", "username", "", false,
+		},
+		{
+			"username when email required", "username", charon.EmailOrUsernameCheckEmail,
+			"", "", charon.ErrorCodeInvalidEmailOrUsername, false,
+		},
+		{
+			"email when username required", "user@example.com", charon.EmailOrUsernameCheckUsername,
+			"", "", charon.ErrorCodeInvalidEmailOrUsername, false,
+		},
+		{
+			"too short email", "a@", charon.EmailOrUsernameCheckAny, "",
+			"", charon.ErrorCodeShortEmailOrUsername, false,
+		},
+		{
+			"too short username", "ab", charon.EmailOrUsernameCheckAny, "",
+			"", charon.ErrorCodeShortEmailOrUsername, false,
+		},
+		{
+			"unicode username preserved case", "ΣΣΣΣ", charon.EmailOrUsernameCheckUsername,
+			"ΣΣΣΣ", "σσσσ", "", false,
+		},
+		{
+			"unicode username mapped case", "σσσσ", charon.EmailOrUsernameCheckUsername,
+			"σσσσ", "σσσσ", "", false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			preserved, mapped, errorCode, errE := charon.TestingNormalizeEmailOrUsername(tt.input, tt.check)
+
+			assert.Equal(t, tt.wantPreserved, preserved, "preserved value mismatch")
+			assert.Equal(t, tt.wantMapped, mapped, "mapped value mismatch")
+			assert.Equal(t, tt.wantErrorCode, errorCode, "error code mismatch")
+
+			if tt.wantErr {
+				assert.Error(t, errE, "expected an error but got nil", errE)
+			} else {
+				assert.NoError(t, errE, "unexpected error", errE)
+			}
+
+		})
+	}
+}

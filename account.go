@@ -195,7 +195,7 @@ func (c *Credential) ToCredentialInfo() (CredentialInfo, errors.E) {
 		}
 		displayName = pkc.Label
 	case ProviderCode:
-		return CredentialInfo{}, errors.New("code provider should not be returned")
+		return CredentialInfo{}, errors.New("not allowed")
 	default:
 		var token map[string]interface{}
 		errE := x.Unmarshal(c.Data, &token)

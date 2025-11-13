@@ -87,26 +87,6 @@ func (s CredentialAddSession) Expired() bool {
 	return time.Now().After(s.CreatedAt.Add(credentialAddSessionExpiration))
 }
 
-func validateEmail(value string) ErrorCode {
-	if !strings.Contains(value, "@") {
-		return ErrorCodeInvalidEmailOrUsername
-	}
-	if len(value) < emailOrUsernameMinLength {
-		return ErrorCodeShortEmailOrUsername
-	}
-	return ""
-}
-
-func validateUsername(value string) ErrorCode {
-	if strings.Contains(value, "@") {
-		return ErrorCodeInvalidEmailOrUsername
-	}
-	if len(value) < emailOrUsernameMinLength {
-		return ErrorCodeShortEmailOrUsername
-	}
-	return ""
-}
-
 func (s *Service) addCredentialToAccount(
 	ctx context.Context, accountID identifier.Identifier, providerKey Provider, providerID string,
 	jsonData json.RawMessage,
@@ -192,15 +172,15 @@ func (s *Service) CredentialGetGet(w http.ResponseWriter, req *http.Request, par
 	}
 
 	accountID := mustGetAccountID(ctx)
-	credentialID, errE := identifier.MaybeString(params["id"])
-	if errE != nil {
-		s.BadRequestWithError(w, req, errE)
-		return
-	}
-
 	account, errE := s.getAccount(ctx, accountID)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	credentialID, errE := identifier.MaybeString(params["id"])
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
@@ -268,12 +248,12 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	preservedEmail, errE := normalizeUsernameCasePreserved(request.Email)
+	preservedEmail, mappedEmail, errorCode, errE := normalizeEmailOrUsername(request.Email, EmailOrUsernameCheckEmail)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-	if errorCode := validateEmail(preservedEmail); errorCode != "" {
+	if errorCode != "" {
 		s.WriteJSON(w, req, CredentialAddResponse{
 			SessionID:    &identifier.Identifier{},
 			CredentialID: nil,
@@ -281,12 +261,6 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 			Password:     nil,
 			Error:        errorCode,
 		}, nil)
-		return
-	}
-
-	mappedEmail, errE := normalizeUsernameCaseMapped(preservedEmail)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
@@ -347,13 +321,13 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
-	preservedUsername, errE := normalizeUsernameCasePreserved(request.Username)
+
+	preservedUsername, mappedUsername, errorCode, errE := normalizeEmailOrUsername(request.Username, EmailOrUsernameCheckUsername)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-
-	if errorCode := validateUsername(preservedUsername); errorCode != "" {
+	if errorCode != "" {
 		s.WriteJSON(w, req, CredentialAddResponse{
 			SessionID:    &identifier.Identifier{},
 			CredentialID: nil,
@@ -361,12 +335,6 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 			Password:     nil,
 			Error:        errorCode,
 		}, nil)
-		return
-	}
-
-	mappedUsername, errE := normalizeUsernameCaseMapped(preservedUsername)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
@@ -830,10 +798,8 @@ func (s *Service) CredentialRemovePost(w http.ResponseWriter, req *http.Request,
 	if ctx == nil {
 		return
 	}
-	accountID := mustGetAccountID(ctx)
-	credentialIDStr := params["id"]
-	credentialID := identifier.String(credentialIDStr)
 
+	accountID := mustGetAccountID(ctx)
 	account, errE := s.getAccount(ctx, accountID)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -842,6 +808,12 @@ func (s *Service) CredentialRemovePost(w http.ResponseWriter, req *http.Request,
 
 	var foundProvider Provider
 	foundIndex := -1
+
+	credentialID, errE := identifier.MaybeString(params["id"])
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
 
 	for provider, credentials := range account.Credentials {
 		for i, credential := range credentials {

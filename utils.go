@@ -964,3 +964,52 @@ func newPasswordEncryptionResponse(publicKeyBytes, nonce []byte, overhead int) *
 		},
 	}
 }
+
+// EmailOrUsernameCheck specifies validation requirements for email or username input.
+type EmailOrUsernameCheck int
+
+const (
+	// EmailOrUsernameCheckAny does not check for "@".
+	EmailOrUsernameCheckAny EmailOrUsernameCheck = iota
+	// EmailOrUsernameCheckEmail requires "@" (email format).
+	EmailOrUsernameCheckEmail
+	// EmailOrUsernameCheckUsername requires NO "@" (username format).
+	EmailOrUsernameCheckUsername
+)
+
+func normalizeEmailOrUsername(emailOrUsername string, check EmailOrUsernameCheck) (string, string, ErrorCode, errors.E) {
+	fmt.Print("normalize email or password time\n")
+	fmt.Print(emailOrUsername + "\n")
+	preserved, errE := normalizeUsernameCasePreserved(emailOrUsername)
+	if errE != nil {
+		return "", "", "", errE
+	}
+	fmt.Print(preserved + "\n")
+
+	if len(preserved) < emailOrUsernameMinLength {
+		return "", "", ErrorCodeShortEmailOrUsername, nil
+	}
+
+	containsAt := strings.Contains(preserved, "@")
+
+	fmt.Print("\ncontainsAt:", containsAt)
+	fmt.Print("\ncheck:", check)
+	switch check {
+	case EmailOrUsernameCheckAny:
+	case EmailOrUsernameCheckEmail:
+		if !containsAt {
+			return "", "", ErrorCodeInvalidEmailOrUsername, nil
+		}
+	case EmailOrUsernameCheckUsername:
+		if containsAt {
+			return "", "", ErrorCodeInvalidEmailOrUsername, nil
+		}
+	}
+
+	mapped, errE := normalizeUsernameCaseMapped(preserved)
+	if errE != nil {
+		return "", "", "", errE
+	}
+
+	return preserved, mapped, "", nil
+}
