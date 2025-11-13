@@ -246,10 +246,10 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 	// is called to update its sign count) so we set it back here.
 	credential.Credential = newCredential
 
-	credentialID := base64.RawURLEncoding.EncodeToString(credential.Credential.ID)
+	providerID := base64.RawURLEncoding.EncodeToString(credential.Credential.ID)
 
 	if credential.Credential.Authenticator.CloneWarning {
-		zerolog.Ctx(ctx).Warn().Str("credential", credentialID).Msg("authenticator may be cloned")
+		zerolog.Ctx(ctx).Warn().Str("credential", providerID).Msg("authenticator may be cloned")
 	}
 
 	jsonData, errE := x.MarshalWithoutEscapeHTML(credential)
@@ -258,13 +258,13 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		return
 	}
 
-	account, errE := s.getAccountByCredential(ctx, ProviderPasskey, credentialID)
+	account, errE := s.getAccountByCredential(ctx, ProviderPasskey, providerID)
 	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: credential.ID, ProviderID: credentialID, Provider: ProviderPasskey, Data: jsonData}})
+	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: credential.ID, ProviderID: providerID, Provider: ProviderPasskey, Data: jsonData}})
 }
 
 // AuthFlowPasskeyCreateStartPost is the API handler to start the passkey provider step (sign-up), POST request.
