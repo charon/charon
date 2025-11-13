@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -23,8 +24,9 @@ import (
 
 // Credential addition error codes.
 const (
-	ErrorCodeCredentialInUse      ErrorCode = "credentialInUse" //nolint:gosec
-	ErrorCodeCredentialLabelInUse ErrorCode = "credentialLabelInUse"
+	ErrorCodeCredentialInUse        ErrorCode = "credentialInUse" //nolint:gosec
+	ErrorCodeCredentialLabelInUse   ErrorCode = "credentialLabelInUse"
+	ErrorCodeCredentialLabelMissing ErrorCode = "credentialLabelMissing" //nolint:gosec
 )
 
 const credentialAddSessionExpiration = time.Hour * 24
@@ -38,8 +40,7 @@ var (
 type CredentialInfo struct {
 	ID          identifier.Identifier `json:"id"`
 	Provider    Provider              `json:"provider"`
-	DisplayName string                `json:"displayName"`
-	Label       string                `json:"label,omitempty"`
+	DisplayName string                `json:"displayName,omitempty"`
 	Verified    bool                  `json:"verified,omitempty"`
 }
 
@@ -50,7 +51,7 @@ type CredentialInfoRef struct {
 
 // CredentialAddResponse represents the response for credential addition operations.
 type CredentialAddResponse struct {
-	SessionID    identifier.Identifier     `json:"sessionId"`
+	SessionID    *identifier.Identifier    `json:"sessionId"`
 	CredentialID *identifier.Identifier    `json:"credentialId,omitempty"`
 	Passkey      *AuthFlowResponsePasskey  `json:"passkey,omitempty"`
 	Password     *AuthFlowResponsePassword `json:"password,omitempty"`
@@ -67,9 +68,10 @@ type CredentialAddPasswordCompleteRequest struct {
 
 // CredentialAddPasskeyCompleteRequest represents the request body for the CredentialAddPasskeyCompletePost handler.
 type CredentialAddPasskeyCompleteRequest struct {
-	SessionID      identifier.Identifier               `json:"sessionId"`
-	CreateResponse protocol.CredentialCreationResponse `json:"createResponse"`
-	Label          string                              `json:"label"`
+	AuthFlowPasskeyCreateCompleteRequest
+
+	SessionID identifier.Identifier `json:"sessionId"`
+	Label     string                `json:"label"`
 }
 
 // CredentialAddSession represents session data for adding credential.
@@ -86,11 +88,11 @@ func (s CredentialAddSession) Expired() bool {
 }
 
 func validateEmail(value string) ErrorCode {
-	if len(value) < emailOrUsernameMinLength {
-		return ErrorCodeShortEmailOrUsername
-	}
 	if !strings.Contains(value, "@") {
 		return ErrorCodeInvalidEmailOrUsername
+	}
+	if len(value) < emailOrUsernameMinLength {
+		return ErrorCodeShortEmailOrUsername
 	}
 	return ""
 }
@@ -105,74 +107,9 @@ func validateUsername(value string) ErrorCode {
 	return ""
 }
 
-func (s *Service) getCredentialInfo(provider Provider, credential Credential) (CredentialInfo, errors.E) {
-	var displayName string
-	var label string
-	var verified bool
-
-	switch provider {
-	case ProviderEmail:
-		var ec emailCredential
-		errE := x.Unmarshal(credential.Data, &ec)
-		if errE != nil {
-			return CredentialInfo{}, errE
-		}
-		displayName = ec.Email
-		verified = ec.Verified
-	case ProviderUsername:
-		var uc usernameCredential
-		errE := x.Unmarshal(credential.Data, &uc)
-		if errE != nil {
-			return CredentialInfo{}, errE
-		}
-		displayName = uc.Username
-	case ProviderPassword:
-		var pc passwordCredential
-		errE := x.Unmarshal(credential.Data, &pc)
-		if errE != nil {
-			return CredentialInfo{}, errE
-		}
-		label = pc.Label
-	case ProviderPasskey:
-		var pkc passkeyCredential
-		errE := x.Unmarshal(credential.Data, &pkc)
-		if errE != nil {
-			return CredentialInfo{}, errE
-		}
-		label = pkc.Label
-	case ProviderCode:
-		return CredentialInfo{}, errors.New("code provider should not be returned")
-	default:
-		providerName := string(provider)
-		if p, ok := s.oidcProviders()[provider]; ok {
-			providerName = p.Name
-		} else if p, ok := s.samlProviders()[provider]; ok {
-			providerName = p.Name
-		}
-
-		displayName = providerName
-
-		var token map[string]interface{}
-		errE := x.Unmarshal(credential.Data, &token)
-		if errE == nil {
-			email := findFirstString(token, "email", "eMailAddress", "emailAddress", "email_address")
-			if email != "" {
-				displayName = email
-			}
-		}
-	}
-
-	return CredentialInfo{
-		ID:          credential.ID,
-		Provider:    provider,
-		DisplayName: displayName,
-		Label:       label,
-		Verified:    verified,
-	}, nil
-}
-
-func (s *Service) addCredentialToAccount(ctx context.Context, accountID identifier.Identifier, providerKey Provider,
-	providerID string, jsonData json.RawMessage,
+func (s *Service) addCredentialToAccount(
+	ctx context.Context, accountID identifier.Identifier, providerKey Provider, providerID string,
+	jsonData json.RawMessage,
 ) (identifier.Identifier, errors.E) {
 	account, errE := s.getAccount(ctx, accountID)
 	if errE != nil {
@@ -227,7 +164,11 @@ func (s *Service) CredentialListGet(w http.ResponseWriter, req *http.Request, _ 
 	var result []CredentialInfoRef
 	for _, credentials := range account.Credentials {
 		for _, credential := range credentials {
-			result = append(result, CredentialInfoRef{ID: credential.ID})
+			credentialInfo, errE := credential.ToCredentialInfo()
+			if errE != nil {
+				continue
+			}
+			result = append(result, CredentialInfoRef{ID: credentialInfo.ID})
 		}
 	}
 
@@ -251,8 +192,11 @@ func (s *Service) CredentialGetGet(w http.ResponseWriter, req *http.Request, par
 	}
 
 	accountID := mustGetAccountID(ctx)
-	credentialIDStr := params["id"]
-	credentialID := identifier.String(credentialIDStr)
+	credentialID, errE := identifier.MaybeString(params["id"])
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
 
 	account, errE := s.getAccount(ctx, accountID)
 	if errE != nil {
@@ -260,10 +204,10 @@ func (s *Service) CredentialGetGet(w http.ResponseWriter, req *http.Request, par
 		return
 	}
 
-	for provider, credentials := range account.Credentials {
-		for _, credential := range credentials {
-			if credential.ID == credentialID {
-				info, errE := s.getCredentialInfo(provider, credential)
+	for _, credentials := range account.Credentials {
+		for _, c := range credentials {
+			if c.ID == credentialID {
+				info, errE := c.ToCredentialInfo()
 				if errE != nil {
 					s.InternalServerErrorWithError(w, req, errE)
 					return
@@ -316,8 +260,8 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 	}
 
 	accountID := mustGetAccountID(ctx)
-	request := emailCredential{}
 
+	var request emailCredential
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &request)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
@@ -331,7 +275,7 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 	}
 	if errorCode := validateEmail(preservedEmail); errorCode != "" {
 		s.WriteJSON(w, req, CredentialAddResponse{
-			SessionID:    identifier.Identifier{},
+			SessionID:    &identifier.Identifier{},
 			CredentialID: nil,
 			Passkey:      nil,
 			Password:     nil,
@@ -354,7 +298,7 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 	for _, credential := range account.Credentials[ProviderEmail] {
 		if credential.ProviderID == mappedEmail {
 			s.WriteJSON(w, req, CredentialAddResponse{
-				SessionID:    identifier.Identifier{},
+				SessionID:    &identifier.Identifier{},
 				CredentialID: &credential.ID,
 				Passkey:      nil,
 				Password:     nil,
@@ -377,7 +321,7 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 	}
 
 	s.WriteJSON(w, req, CredentialAddResponse{
-		SessionID:    identifier.Identifier{},
+		SessionID:    &identifier.Identifier{},
 		CredentialID: &credentialID,
 		Passkey:      nil,
 		Password:     nil,
@@ -411,7 +355,7 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 
 	if errorCode := validateUsername(preservedUsername); errorCode != "" {
 		s.WriteJSON(w, req, CredentialAddResponse{
-			SessionID:    identifier.Identifier{},
+			SessionID:    &identifier.Identifier{},
 			CredentialID: nil,
 			Passkey:      nil,
 			Password:     nil,
@@ -435,7 +379,7 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 	for _, credential := range account.Credentials[ProviderUsername] {
 		if credential.ProviderID == mappedUsername {
 			s.WriteJSON(w, req, CredentialAddResponse{
-				SessionID:    identifier.Identifier{},
+				SessionID:    &identifier.Identifier{},
 				CredentialID: &credential.ID,
 				Passkey:      nil,
 				Password:     nil,
@@ -449,7 +393,7 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 	existingAccount, errE := s.getAccountByCredential(ctx, ProviderUsername, mappedUsername)
 	if errE == nil && existingAccount.ID != accountID {
 		s.WriteJSON(w, req, CredentialAddResponse{
-			SessionID:    identifier.Identifier{},
+			SessionID:    &identifier.Identifier{},
 			CredentialID: nil,
 			Passkey:      nil,
 			Password:     nil,
@@ -473,7 +417,7 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 		return
 	}
 	s.WriteJSON(w, req, CredentialAddResponse{
-		SessionID:    identifier.Identifier{},
+		SessionID:    &identifier.Identifier{},
 		CredentialID: &credentialID,
 		Passkey:      nil,
 		Password:     nil,
@@ -511,13 +455,12 @@ func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *htt
 		return
 	}
 
-	sessionID := session.ID
 	credentialSessionsMu.Lock()
-	credentialSessions[sessionID] = sessionData
+	credentialSessions[session.ID] = sessionData
 	credentialSessionsMu.Unlock()
 
 	response := CredentialAddResponse{
-		SessionID:    sessionID,
+		SessionID:    &session.ID,
 		CredentialID: nil,
 		Passkey:      nil,
 		Password:     newPasswordEncryptionResponse(publicKeyBytes, nonce, overhead),
@@ -564,19 +507,36 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 
 	plainPassword, errE = normalizePassword(plainPassword)
 	if errE != nil {
-		s.BadRequestWithError(w, req, errE)
+		s.WriteJSON(w, req, CredentialAddResponse{
+			SessionID:    &cas.ID,
+			CredentialID: nil,
+			Passkey:      nil,
+			Password:     nil,
+			Error:        ErrorCodeInvalidPassword,
+		}, nil)
 		return
 	}
 
 	if len(plainPassword) < passwordMinLength {
 		s.WriteJSON(w, req, CredentialAddResponse{
-			SessionID:    cas.ID,
+			SessionID:    &cas.ID,
 			CredentialID: nil,
 			Passkey:      nil,
 			Password:     nil,
 			Error:        ErrorCodeShortPassword,
 		}, nil)
 		return
+	}
+
+	requestLabel := strings.TrimSpace(request.Label)
+	if requestLabel == "" {
+		s.WriteJSON(w, req, CredentialAddResponse{
+			SessionID:    &cas.ID,
+			CredentialID: nil,
+			Passkey:      nil,
+			Password:     nil,
+			Error:        ErrorCodeCredentialLabelMissing,
+		}, nil)
 	}
 
 	hashedPassword, err := argon2id.CreateHash(plainPassword, &argon2idParams)
@@ -591,7 +551,6 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	requestLabel := strings.TrimSpace(request.Label)
 	// We check if the same password is already set and if the label is already in use.
 	for _, credential := range account.Credentials[ProviderPassword] {
 		var pc passwordCredential
@@ -610,7 +569,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 		if match {
 			// TODO: If options are different, migrate the password to new options.
 			s.WriteJSON(w, req, CredentialAddResponse{
-				SessionID:    cas.ID,
+				SessionID:    &cas.ID,
 				CredentialID: &credential.ID,
 				Passkey:      nil,
 				Password:     nil,
@@ -619,9 +578,9 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 			return
 		}
 
-		if requestLabel == strings.TrimSpace(pc.Label) {
+		if requestLabel == pc.Label {
 			s.WriteJSON(w, req, CredentialAddResponse{
-				SessionID:    cas.ID,
+				SessionID:    &cas.ID,
 				CredentialID: nil,
 				Passkey:      nil,
 				Password:     nil,
@@ -641,7 +600,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	providerID := identifier.New().String()
+	providerID := ""
 	credentialID, errE := s.addCredentialToAccount(ctx, accountID, ProviderPassword, providerID, jsonData)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -649,7 +608,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 	}
 
 	s.WriteJSON(w, req, CredentialAddResponse{
-		SessionID:    cas.ID,
+		SessionID:    nil,
 		CredentialID: &credentialID,
 		Passkey:      nil,
 		Password:     nil,
@@ -706,13 +665,12 @@ func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-	sessionID := session.ID
 	credentialSessionsMu.Lock()
-	credentialSessions[sessionID] = sessionDataBytes
+	credentialSessions[session.ID] = sessionDataBytes
 	credentialSessionsMu.Unlock()
 
 	s.WriteJSON(w, req, CredentialAddResponse{
-		SessionID:    sessionID,
+		SessionID:    &session.ID,
 		CredentialID: nil,
 		Passkey: &AuthFlowResponsePasskey{
 			CreateOptions: options,
@@ -787,6 +745,15 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 	}
 
 	requestLabel := strings.TrimSpace(request.Label)
+	if requestLabel == "" {
+		s.WriteJSON(w, req, CredentialAddResponse{
+			SessionID:    &cas.ID,
+			CredentialID: nil,
+			Passkey:      nil,
+			Password:     nil,
+			Error:        ErrorCodeCredentialLabelMissing,
+		}, nil)
+	}
 	for _, credential := range account.Credentials[ProviderPasskey] {
 		var pkc passkeyCredential
 		errE = x.Unmarshal(credential.Data, &pkc)
@@ -797,7 +764,7 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 
 		if requestLabel == strings.TrimSpace(pkc.Label) {
 			s.WriteJSON(w, req, CredentialAddResponse{
-				SessionID:    cas.ID,
+				SessionID:    &cas.ID,
 				CredentialID: nil,
 				Passkey:      nil,
 				Password:     nil,
@@ -824,7 +791,7 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 	}
 
 	s.WriteJSON(w, req, CredentialAddResponse{
-		SessionID:    cas.ID,
+		SessionID:    nil,
 		CredentialID: &credentialID,
 		Passkey:      nil,
 		Password:     nil,
@@ -894,10 +861,7 @@ func (s *Service) CredentialRemovePost(w http.ResponseWriter, req *http.Request,
 		return
 	}
 
-	account.Credentials[foundProvider] = append(
-		account.Credentials[foundProvider][:foundIndex],
-		account.Credentials[foundProvider][foundIndex+1:]...,
-	)
+	account.Credentials[foundProvider] = slices.Delete(account.Credentials[foundProvider], foundIndex, foundIndex+1)
 
 	if len(account.Credentials[foundProvider]) == 0 {
 		delete(account.Credentials, foundProvider)

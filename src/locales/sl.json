@@ -45,7 +45,8 @@
       "credentialInUse": {
         "username": "Uporabniško ime je že v uporabi na drugem računu."
       },
-      "credentialLabelInUse": "Oznaka metode avtentikacije je že v uporabi."
+      "credentialLabelInUse": "Oznaka metode avtentikacije je že v uporabi.",
+      "credentialLabelMissing": "Metodi avtentikacije manjka oznaka."
     },
     "labels": {
       "optional": "(neobvezno)",

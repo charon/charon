@@ -24,14 +24,14 @@ type Credential struct {
 }
 
 // Equal returns true if the two credentials are equal.
-func (c1 *Credential) Equal(c2 *Credential) bool {
-	if c1 == nil && c2 == nil {
+func (c *Credential) Equal(c2 *Credential) bool {
+	if c == nil && c2 == nil {
 		return true
 	}
-	if c1 == nil || c2 == nil {
+	if c == nil || c2 == nil {
 		return false
 	}
-	return c1.ProviderID == c2.ProviderID && c1.Provider == c2.Provider && bytes.Equal(c1.Data, c2.Data)
+	return c.ProviderID == c2.ProviderID && c.Provider == c2.Provider && bytes.Equal(c.Data, c2.Data)
 }
 
 // AccountRef is a reference to an account.
@@ -156,4 +156,58 @@ func (s *Service) setAccount(_ context.Context, account *Account) errors.E {
 
 	s.accounts[account.ID] = data
 	return nil
+}
+
+// ToCredentialInfo converts the credential to a CredentialInfo used for display.
+func (c *Credential) ToCredentialInfo() (CredentialInfo, errors.E) {
+	var displayName string
+	var verified bool
+	provider := c.Provider
+
+	switch provider {
+	case ProviderEmail:
+		var ec emailCredential
+		errE := x.Unmarshal(c.Data, &ec)
+		if errE != nil {
+			return CredentialInfo{}, errE
+		}
+		displayName = ec.Email
+		verified = ec.Verified
+	case ProviderUsername:
+		var uc usernameCredential
+		errE := x.Unmarshal(c.Data, &uc)
+		if errE != nil {
+			return CredentialInfo{}, errE
+		}
+		displayName = uc.Username
+	case ProviderPassword:
+		var pc passwordCredential
+		errE := x.Unmarshal(c.Data, &pc)
+		if errE != nil {
+			return CredentialInfo{}, errE
+		}
+		displayName = pc.Label
+	case ProviderPasskey:
+		var pkc passkeyCredential
+		errE := x.Unmarshal(c.Data, &pkc)
+		if errE != nil {
+			return CredentialInfo{}, errE
+		}
+		displayName = pkc.Label
+	case ProviderCode:
+		return CredentialInfo{}, errors.New("code provider should not be returned")
+	default:
+		var token map[string]interface{}
+		errE := x.Unmarshal(c.Data, &token)
+		if errE == nil {
+			displayName = findFirstString(token, "username", "preferred_username", "email", "eMailAddress", "emailAddress", "email_address")
+		}
+	}
+
+	return CredentialInfo{
+		ID:          c.ID,
+		Provider:    provider,
+		DisplayName: displayName,
+		Verified:    verified,
+	}, nil
 }

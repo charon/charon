@@ -45,7 +45,8 @@
       "credentialInUse": {
         "username": "Username is already in use by another account."
       },
-      "credentialLabelInUse": "Credential label is already in use."
+      "credentialLabelInUse": "Credential label is already in use.",
+      "credentialLabelMissing": "Credential label is missing."
     },
     "labels": {
       "optional": "(optional)",

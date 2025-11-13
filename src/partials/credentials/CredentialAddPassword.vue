@@ -41,6 +41,8 @@ function getErrorMessage(errorCode: string) {
       return t("common.errors.shortPassword")
     case "credentialLabelInUse":
       return t("common.errors.credentialLabelInUse")
+    case "credentialLabelMissing" :
+      return t("common.errors.credentialLabelMissing")
     default:
       return t("common.errors.unexpected")
   }
