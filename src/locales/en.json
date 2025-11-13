@@ -42,7 +42,9 @@
         "email": "E-mail address should be at least 3 characters.",
         "username": "Username should be at least 3 characters."
       },
-      "credentialInUse": "Credential in use.",
+      "credentialInUse": {
+        "username": "Username is already in use by another account."
+      },
       "credentialLabelInUse": "Credential label is already in use."
     },
     "labels": {
@@ -55,7 +57,9 @@
       "creator": "creator",
       "blocked": "blocked",
       "shared": "shared",
-      "individual": "individual"
+      "individual": "individual",
+      "verified": "verified",
+      "notVerified": "unverified"
     },
     "data": {
       "dataLoading": "Loading...",
@@ -81,8 +85,8 @@
       "applicationTemplate": "Application template | Application templates",
       "applicationTemplates": "Application templates",
       "activity": "Activity",
-      "credentials": "Credentials",
-      "app": "App | Apps"
+      "app": "App | Apps",
+      "credentials": "Credentials"
     },
     "messages": {
       "congratulations": "Congratulations.",
@@ -228,19 +232,15 @@
       "entityLinks": "{entity}: {links}"
     },
     "CredentialFull": {
-      "verified": "Verified",
-      "notVerified": "unverified",
       "thirdPartyProviders": "Third-Party Providers",
       "passwordSignUp": "Password used during sign-up"
     },
     "CredentialAddPassword": {
-      "label": "Password or passphrase label"
+      "label": "Label"
     },
     "CredentialAddPasskey": {
-      "label": "Passkey label",
-      "passkeyInstructions": "Your device will prompt you to create a passkey. This allows you to sign in without a password.",
-      "passkeyNotSupported": "Your browser does not support passkeys.",
-      "addPasskeyButton": "Add passkey"
+      "label": "@:partials.CredentialAddPassword.label",
+      "passkeyInstructions": "Your device will prompt you to create a passkey. This allows you to sign in without a password."
     }
   },
   "views": {

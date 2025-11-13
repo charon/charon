@@ -42,8 +42,10 @@
         "email": "E-naslov mora biti dolg vsaj 3 znake.",
         "username": "Uporabniško ime mora biti dolgo vsaj 3 znake."
       },
-      "credentialInUse": "Poverilnica je že v uporabi.",
-      "credentialLabelInUse": "Oznaka poverilnice je že v uporabi."
+      "credentialInUse": {
+        "username": "Uporabniško ime je že v uporabi na drugem računu."
+      },
+      "credentialLabelInUse": "Oznaka metode avtentikacije je že v uporabi."
     },
     "labels": {
       "optional": "(neobvezno)",
@@ -55,7 +57,9 @@
       "creator": "ustvarjalec",
       "blocked": "blokirana",
       "shared": "skupna",
-      "individual": "individualna"
+      "individual": "individualna",
+      "verified": "potrjen",
+      "notVerified": "nepotrjen"
     },
     "data": {
       "dataLoading": "Nalaganje...",
@@ -228,19 +232,15 @@
       "entityLinks": "{entity}: {links}"
     },
     "CredentialFull": {
-      "verified": "Potrjen",
-      "notVerified": "Nepotrjen",
       "thirdPartyProviders": "Ponudniki tretjih storitev",
       "passwordSignUp": "Geslo uporabljeno pri registraciji"
     },
     "CredentialAddPassword": {
-      "label": "Oznaka za geslo ali geslovni stavek"
+      "label": "Oznaka"
     },
     "CredentialAddPasskey": {
-      "label": "Oznaka za Passkey",
-      "passkeyInstructions": "Dodajte {strongPasskey}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave.",
-      "passkeyNotSupported": "Vaš brskalnik ne podpira passkey.",
-      "addPasskeyButton": "Dodajte passkey"
+      "label": "Oznaka",
+      "passkeyInstructions": "Dodajte {strongPasskey}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave."
     }
   },
   "views": {

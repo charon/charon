@@ -148,7 +148,7 @@ func (s *Service) sendCodeForExistingAccount(
 	var emails []string
 	if strings.Contains(mappedEmailOrUsername, "@") {
 		// We know that such credential must exist and is verified on this account
-		// because we found this account using getAccountByVerifiedEmailCredential.
+		// because we found this account using getAccountByCredential.
 		credential := account.GetCredential(ProviderEmail, mappedEmailOrUsername)
 		var ec emailCredential
 		errE := x.Unmarshal(credential.Data, &ec)
@@ -312,7 +312,7 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 
 	var account *Account
 	if strings.Contains(mappedEmailOrUsername, "@") {
-		account, errE = s.getAccountByVerifiedEmail(ctx, mappedEmailOrUsername)
+		account, errE = s.getAccountByCredential(ctx, ProviderEmail, mappedEmailOrUsername)
 	} else {
 		account, errE = s.getAccountByCredential(ctx, ProviderUsername, mappedEmailOrUsername)
 	}

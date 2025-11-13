@@ -53,7 +53,9 @@ declare module "vue-i18n" {
           email: string
           username: string
         }
-        credentialInUse: string
+        credentialInUse: {
+          username: string
+        }
         credentialLabelInUse: string
       }
       labels: {
@@ -67,6 +69,8 @@ declare module "vue-i18n" {
         blocked: string
         shared: string
         individual: string
+        verified: string
+        notVerified: string
       }
       data: {
         dataLoading: string
@@ -92,8 +96,8 @@ declare module "vue-i18n" {
         applicationTemplate: string
         applicationTemplates: string
         activity: string
-        credentials: string
         app: string
+        credentials: string
       }
       messages: {
         congratulations: string
@@ -239,8 +243,6 @@ declare module "vue-i18n" {
         entityLinks: string
       }
       CredentialFull: {
-        verified: string
-        notVerified: string
         thirdPartyProviders: string
         passwordSignUp: string
       }
@@ -250,8 +252,6 @@ declare module "vue-i18n" {
       CredentialAddPasskey: {
         label: string
         passkeyInstructions: string
-        passkeyNotSupported: string
-        addPasskeyButton: string
       }
     }
     views: {

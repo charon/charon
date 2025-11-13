@@ -49,7 +49,7 @@ const credentialDisplay = computed(() => {
         <div :id="`credentialfull-display-${credential.id}`" class="font-medium">
           {{ credentialDisplay }}
           <span :id="`credentialfull-verified-${credential.id}`" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">
-            {{ credential.verified ? t("partials.CredentialFull.verified") : t("partials.CredentialFull.notVerified") }}
+            {{ credential.verified ? t("common.labels.verified") : t("common.labels.notVerified") }}
           </span>
         </div>
       </div>

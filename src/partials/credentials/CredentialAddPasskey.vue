@@ -9,7 +9,7 @@ import { postJSON } from "@/api.ts"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import { injectProgress } from "@/progress.ts"
-import { browserSupportsWebAuthn, startRegistration } from "@simplewebauthn/browser"
+import { startRegistration } from "@simplewebauthn/browser"
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
@@ -22,8 +22,6 @@ const unexpectedError = ref("")
 
 function getErrorMessage(errorCode: string | undefined) {
   switch (errorCode) {
-    case "passkeyNotSupported":
-      return t("partials.CredentialAddPasskey.passkeyNotSupported")
     case "credentialLabelInUse":
       return t("common.errors.credentialLabelInUse")
     default:
@@ -74,15 +72,12 @@ async function onSubmit() {
 
   progress.value += 1
   try {
-    if (!browserSupportsWebAuthn()) {
-      unexpectedError.value = t("partials.CredentialAddPasskey.passkeyNotSupported")
-      return
-    }
 
     const startResponse = await startAddPasskeyCredential(router, abortController)
     if (abortController.signal.aborted || !startResponse) {
       return
     }
+    console.log("after startResponse")
 
     if (!startResponse.passkey) {
       throw new Error("missing passkey parameters")
@@ -91,6 +86,7 @@ async function onSubmit() {
       passkeyError.value = startResponse.error
       return
     }
+    console.log("after errors")
 
     const regResponse = await startRegistration({ optionsJSON: startResponse.passkey.createOptions.publicKey })
     if (abortController.signal.aborted) {
@@ -145,7 +141,7 @@ async function onSubmit() {
     <div v-if="unexpectedError" class="mt-4 text-error-600">{{ unexpectedError }}</div>
     <div v-else-if="passkeyError" class="mt-4 text-error-600">{{ getErrorMessage(passkeyError) }}</div>
     <div class="mt-4 flex flex-row justify-end gap-4">
-      <Button type="submit" primary :disabled="!canSubmit()" :progress="progress">{{ t("partials.CredentialAddPasskey.addPasskeyButton") }}</Button>
+      <Button type="submit" primary :disabled="!canSubmit()" :progress="progress">{{ t("common.buttons.add") }}</Button>
     </div>
   </form>
 </template>

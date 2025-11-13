@@ -464,7 +464,7 @@ export type CredentialInfo = {
   provider: string
   displayName: string
   label?: string
-  verified: false // TODO: When verifying emails.
+  verified: boolean // TODO: When verifying emails.
 }
 
 export type Credentials = CredentialInfoRef[]

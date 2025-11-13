@@ -352,50 +352,50 @@
       "get": {}
     },
     {
-      "name": "CredentialGet",
-      "path": "/credential/:id",
-      "api": {},
-      "get": null
-    },
-    {
       "name": "CredentialAddEmail",
-      "path": "/credential/add/email",
+      "path": "/credential/emailAdd",
       "api": {},
       "get": null
     },
     {
       "name": "CredentialAddUsername",
-      "path": "/credential/add/username",
+      "path": "/credential/usernameAdd",
       "api": {},
       "get": null
     },
     {
       "name": "CredentialAddPasswordStart",
-      "path": "/credential/add/password/start",
+      "path": "/credential/passwordAddStart",
       "api": {},
       "get": null
     },
     {
       "name": "CredentialAddPasswordComplete",
-      "path": "/credential/add/password/complete",
+      "path": "/credential/passwordAddComplete",
       "api": {},
       "get": null
     },
     {
       "name": "CredentialAddPasskeyStart",
-      "path": "/credential/add/passkey/start",
+      "path": "/credential/passkeyAddStart",
       "api": {},
       "get": null
     },
     {
       "name": "CredentialAddPasskeyComplete",
-      "path": "/credential/add/passkey/complete",
+      "path": "/credential/passkeyAddComplete",
       "api": {},
       "get": null
     },
     {
       "name": "CredentialRemove",
       "path": "/credential/remove/:id",
+      "api": {},
+      "get": null
+    },
+    {
+      "name": "CredentialGet",
+      "path": "/credential/:id",
       "api": {},
       "get": null
     }

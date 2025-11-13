@@ -202,11 +202,12 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-	plainPassword, errE := decryptPasswordECDHAESGCM(
+	plainPassword, errE := decryptEncryptedPassword(
 		flowPassword.PrivateKey,
 		passwordComplete.PublicKey,
 		flowPassword.Nonce,
-		passwordComplete.Password)
+		passwordComplete.Password,
+	)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 	}
@@ -227,7 +228,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 
 	var account *Account
 	if strings.Contains(mappedEmailOrUsername, "@") {
-		account, errE = s.getAccountByVerifiedEmail(ctx, mappedEmailOrUsername)
+		account, errE = s.getAccountByCredential(ctx, ProviderEmail, mappedEmailOrUsername)
 	} else {
 		account, errE = s.getAccountByCredential(ctx, ProviderUsername, mappedEmailOrUsername)
 	}
@@ -260,7 +261,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 					}
 					jsonData, errE = x.MarshalWithoutEscapeHTML(passwordCredential{
 						Hash:  hashedPassword,
-						Label: "",
+						Label: pc.Label,
 					})
 					if errE != nil {
 						s.InternalServerErrorWithError(w, req, errE)

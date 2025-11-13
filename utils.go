@@ -892,6 +892,7 @@ func generatePasswordEncryptionKeys() ([]byte, []byte, []byte, int, errors.E) {
 		return nil, nil, nil, 0, errors.WithStack(err)
 	}
 
+	// We create a dummy cipher so that we can obtain nonce size later on.
 	block, err := aes.NewCipher(make([]byte, secretSize))
 	if err != nil {
 		return nil, nil, nil, 0, errors.WithStack(err)
@@ -911,11 +912,7 @@ func generatePasswordEncryptionKeys() ([]byte, []byte, []byte, int, errors.E) {
 	return privateKey.Bytes(), privateKey.PublicKey().Bytes(), nonce, aesgcm.Overhead(), nil
 }
 
-func decryptPasswordECDHAESGCM(
-	privateKeyBytes []byte,
-	publicKeyBytes []byte,
-	nonce []byte,
-	encryptedPassword []byte,
+func decryptEncryptedPassword(privateKeyBytes []byte, publicKeyBytes []byte, nonce []byte, encryptedPassword []byte,
 ) ([]byte, errors.E) {
 	privateKey, err := ecdh.P256().NewPrivateKey(privateKeyBytes)
 	if err != nil {
@@ -942,6 +939,8 @@ func decryptPasswordECDHAESGCM(
 		return nil, errors.WithStack(err)
 	}
 
+	// TODO: Use memguard to protect plain password in memory.
+	//       See: https://github.com/awnumar/memguard
 	plainPassword, err := aesgcm.Open(nil, nonce, encryptedPassword, nil)
 	if err != nil {
 		return nil, errors.WithStack(err)
