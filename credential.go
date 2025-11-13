@@ -210,25 +210,6 @@ func (s *Service) CredentialAdd(w http.ResponseWriter, req *http.Request, _ waf.
 	}
 }
 
-func validateCredentialSession(cas *CredentialAddSession, expectedType string) errors.E {
-	if cas.Expired() {
-		return errors.WithDetails(errSessionNotFound, "expired")
-	}
-
-	switch expectedType {
-	case "password":
-		if cas.Password == nil {
-			return errors.New("invalid session type")
-		}
-	case "passkey":
-		if cas.Passkey == nil {
-			return errors.New("invalid session type")
-		}
-	}
-
-	return nil
-}
-
 // CredentialAddEmailPost is the API handler for adding an e-mail credential to account, POST request.
 func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
@@ -463,11 +444,11 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	errE = validateCredentialSession(cas, "password")
-	if errE != nil {
-		s.BadRequestWithError(w, req, errE)
+	if cas.Password == nil {
+		s.BadRequestWithError(w, req, errors.New("invalid session type"))
 		return
 	}
+
 	plainPassword, errE := decryptEncryptedPassword(cas.Password.PrivateKey, request.PublicKey, cas.Password.Nonce, request.Password)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
@@ -674,9 +655,8 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 		return
 	}
 
-	errE = validateCredentialSession(cas, "passkey")
-	if errE != nil {
-		s.BadRequestWithError(w, req, errE)
+	if cas.Passkey == nil {
+		s.BadRequestWithError(w, req, errors.New("invalid session type"))
 		return
 	}
 
@@ -784,6 +764,10 @@ func getAndDeleteCredentialSession(sessionID identifier.Identifier) (*Credential
 	if errE != nil {
 		errors.Details(errE)["sessionID"] = sessionID
 		return nil, errE
+	}
+
+	if cas.Expired() {
+		return nil, errors.WithDetails(errSessionNotFound, "expired sessionID", sessionID)
 	}
 
 	return &cas, nil

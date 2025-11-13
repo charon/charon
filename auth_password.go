@@ -270,7 +270,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 				}
 				s.completeAuthStep(w, req, true, flow, account, []Credential{{
 					ID:         credential.ID,
-					ProviderID: credential.ProviderID,
+					ProviderID: "",
 					Provider:   ProviderPassword,
 					Data:       jsonData,
 				}})
