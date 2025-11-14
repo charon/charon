@@ -287,29 +287,7 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 	}
 
 	userID := identifier.New()
-
-	options, session, err := s.passkeyProvider().BeginRegistration(
-		passkeyCredential{
-			ID:         userID,
-			Label:      userID.String(),
-			Credential: nil,
-		},
-		webauthn.WithExtensions(protocol.AuthenticationExtensions{
-			"credentialProtectionPolicy":        "userVerificationRequired",
-			"enforceCredentialProtectionPolicy": false,
-		}),
-		webauthn.WithAuthenticatorSelection(protocol.AuthenticatorSelection{
-			AuthenticatorAttachment: "",
-			RequireResidentKey:      protocol.ResidentKeyRequired(),
-			ResidentKey:             protocol.ResidentKeyRequirementRequired,
-			UserVerification:        protocol.VerificationRequired,
-		}),
-		withPreferredCredentialAlgorithms([]webauthncose.COSEAlgorithmIdentifier{
-			webauthncose.AlgEdDSA,
-			webauthncose.AlgES256,
-			webauthncose.AlgRS256,
-		}),
-	)
+	options, session, err := beginPasskeyRegistration(s.passkeyProvider(), userID, userID.String())
 	if err != nil {
 		s.InternalServerErrorWithError(w, req, withWebauthnError(err))
 		return

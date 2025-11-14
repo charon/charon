@@ -49,8 +49,8 @@ const v = computed({
       type="radio"
       class="-mt-0.5 align-middle"
       :class="{
-      'cursor-not-allowed bg-gray-100 text-primary-300': progress > 0 || disabled,
-      'cursor-pointer text-primary-600 focus:ring-primary-500': progress === 0 && !disabled,
+        'cursor-not-allowed bg-gray-100 text-primary-300': progress > 0 || disabled,
+        'cursor-pointer text-primary-600 focus:ring-primary-500': progress === 0 && !disabled,
       }"
     />
   </div>

@@ -463,7 +463,6 @@ export type CredentialInfo = {
   id: string
   provider: string
   displayName: string
-  label?: string
   verified: boolean // TODO: When verifying emails.
 }
 
@@ -501,15 +500,17 @@ export type EncryptedPasswordData = {
   publicKeyBytes: ArrayBuffer
 }
 
+export type CredentialAddCredentialWithLabelStartRequest = {
+    label: string
+}
+
 export type CredentialAddPasswordCompleteRequest = {
   sessionId: string
   publicKey: number[]
   password: number[]
-  label: string
 }
 
 export type CredentialAddPasskeyCompleteRequest = {
   sessionId: string
   createResponse: RegistrationResponseJSON
-  label: string
 }

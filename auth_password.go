@@ -293,7 +293,9 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 	credentials := []Credential{}
 	if strings.Contains(mappedEmailOrUsername, "@") {
 		jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{ //nolint:govet
-			Email:    flow.EmailOrUsername,
+			Email: flow.EmailOrUsername,
+			// We set verified to true because this credential is stored with
+			// the account only after the e-mail gets verified.
 			Verified: true,
 		})
 		if errE != nil {

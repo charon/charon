@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CredentialAddPasskeyCompleteRequest, CredentialAddResponse } from "@/types"
+import { CredentialAddPasskeyCompleteRequest, CredentialAddCredentialWithLabelStartRequest, CredentialAddResponse } from "@/types"
 
 import { onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
@@ -24,19 +24,20 @@ if (!browserSupportsWebAuthn()) {
   throw new Error("webauthn is required for this partial")
 }
 
-
 function getErrorMessage(errorCode: string | undefined) {
   switch (errorCode) {
     case "credentialLabelInUse":
       return t("common.errors.credentialLabelInUse")
+    case "credentialLabelMissing":
+      return t("common.errors.credentialLabelMissing")
     default:
       return t("common.errors.unexpected")
   }
 }
 
-async function startAddPasskeyCredential(router: Router, abortController: AbortController): Promise<CredentialAddResponse> {
+async function startAddPasskeyCredential(router: Router, label: string, abortController: AbortController): Promise<CredentialAddResponse> {
   const url = router.apiResolve({ name: "CredentialAddPasskeyStart" }).href
-  return await postJSON<CredentialAddResponse>(url, {}, abortController.signal, progress)
+  return await postJSON<CredentialAddResponse>(url, { label: label } as CredentialAddCredentialWithLabelStartRequest, abortController.signal, progress)
 }
 
 async function completeAddPasskeyCredential(
@@ -77,12 +78,10 @@ async function onSubmit() {
 
   progress.value += 1
   try {
-
-    const startResponse = await startAddPasskeyCredential(router, abortController)
+    const startResponse = await startAddPasskeyCredential(router, passkeyLabel.value.trim(), abortController)
     if (abortController.signal.aborted || !startResponse) {
       return
     }
-    console.log("after startResponse")
 
     if (!startResponse.passkey) {
       throw new Error("missing passkey parameters")
@@ -91,7 +90,6 @@ async function onSubmit() {
       passkeyError.value = startResponse.error
       return
     }
-    console.log("after errors")
 
     const regResponse = await startRegistration({ optionsJSON: startResponse.passkey.createOptions.publicKey })
     if (abortController.signal.aborted) {
@@ -103,7 +101,6 @@ async function onSubmit() {
       {
         sessionId: startResponse.sessionId,
         createResponse: regResponse,
-        label: passkeyLabel.value.trim(),
       } as CredentialAddPasskeyCompleteRequest,
       abortController,
     )

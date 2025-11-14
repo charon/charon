@@ -28,6 +28,8 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/go-jose/go-jose/v3"
 	"github.com/go-webauthn/webauthn/protocol"
+	"github.com/go-webauthn/webauthn/protocol/webauthncose"
+	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/ory/fosite"
 	saml2 "github.com/russellhaering/gosaml2"
 	"gitlab.com/tozd/go/errors"
@@ -963,6 +965,32 @@ func newPasswordEncryptionResponse(publicKeyBytes, nonce []byte, overhead int) *
 			Length:    8 * secretSize, //nolint:mnd
 		},
 	}
+}
+
+func beginPasskeyRegistration(provider *webauthn.WebAuthn, userID identifier.Identifier, label string,
+) (*protocol.CredentialCreation, *webauthn.SessionData, error) {
+	return provider.BeginRegistration(
+		passkeyCredential{
+			ID:         userID,
+			Label:      label,
+			Credential: nil,
+		},
+		webauthn.WithExtensions(protocol.AuthenticationExtensions{
+			"credentialProtectionPolicy":        "userVerificationRequired",
+			"enforceCredentialProtectionPolicy": false,
+		}),
+		webauthn.WithAuthenticatorSelection(protocol.AuthenticatorSelection{
+			AuthenticatorAttachment: "",
+			RequireResidentKey:      protocol.ResidentKeyRequired(),
+			ResidentKey:             protocol.ResidentKeyRequirementRequired,
+			UserVerification:        protocol.VerificationRequired,
+		}),
+		withPreferredCredentialAlgorithms([]webauthncose.COSEAlgorithmIdentifier{
+			webauthncose.AlgEdDSA,
+			webauthncose.AlgES256,
+			webauthncose.AlgRS256,
+		}),
+	)
 }
 
 // EmailOrUsernameCheck specifies validation requirements for email or username input.

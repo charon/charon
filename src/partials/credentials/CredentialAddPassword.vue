@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { CredentialAddPasswordCompleteRequest, CredentialAddResponse, EncryptOptions } from "@/types"
+import {
+  CredentialAddCredentialWithLabelStartRequest,
+  CredentialAddPasswordCompleteRequest,
+  CredentialAddResponse,
+  EncryptOptions
+} from "@/types"
 
 import { onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
@@ -21,9 +26,9 @@ const passwordLabel = ref("")
 const passwordError = ref("")
 const unexpectedError = ref("")
 
-async function startAddPasswordCredential(router: Router, abortController: AbortController): Promise<CredentialAddResponse> {
+async function startAddPasswordCredential(router: Router, label: string, abortController: AbortController): Promise<CredentialAddResponse> {
   const url = router.apiResolve({ name: "CredentialAddPasswordStart" }).href
-  return await postJSON<CredentialAddResponse>(url, {}, abortController.signal, progress)
+  return await postJSON<CredentialAddResponse>(url, { label: label } as CredentialAddCredentialWithLabelStartRequest, abortController.signal, progress)
 }
 
 async function completeAddPasswordCredential(
@@ -41,7 +46,7 @@ function getErrorMessage(errorCode: string) {
       return t("common.errors.shortPassword")
     case "credentialLabelInUse":
       return t("common.errors.credentialLabelInUse")
-    case "credentialLabelMissing" :
+    case "credentialLabelMissing":
       return t("common.errors.credentialLabelMissing")
     default:
       return t("common.errors.unexpected")
@@ -77,7 +82,7 @@ async function onSubmit() {
 
   progress.value += 1
   try {
-    const startResponse = await startAddPasswordCredential(router, abortController)
+    const startResponse = await startAddPasswordCredential(router, passwordLabel.value.trim(), abortController)
     if (abortController.signal.aborted || !startResponse) {
       return
     }
@@ -107,7 +112,6 @@ async function onSubmit() {
         sessionId: startResponse.sessionId,
         publicKey: Array.from(new Uint8Array(encrypted.publicKeyBytes)),
         password: Array.from(new Uint8Array(encrypted.ciphertext)),
-        label: passwordLabel.value,
       } as CredentialAddPasswordCompleteRequest,
       abortController,
     )

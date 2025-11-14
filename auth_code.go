@@ -337,7 +337,9 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 	}
 
 	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{
-		Email:    preservedEmailOrUsername,
+		Email: preservedEmailOrUsername,
+		// We set verified to true because this credential is stored with
+		// the account only after the e-mail gets verified.
 		Verified: true,
 	})
 	if errE != nil {
@@ -411,29 +413,6 @@ func (s *Service) AuthFlowCodeCompletePost(w http.ResponseWriter, req *http.Requ
 			// case it does not matter too much which error we return.
 			s.InternalServerErrorWithError(w, req, errE)
 			return
-		}
-	}
-
-	if flow.Code.Credentials != nil {
-		for i, cred := range flow.Code.Credentials {
-			if cred.Provider == ProviderEmail {
-				var ec emailCredential
-				errE := x.Unmarshal(cred.Data, &ec)
-				if errE != nil {
-					s.InternalServerErrorWithError(w, req, errE)
-					return
-				}
-				ec.Verified = true
-
-				jsonData, errE := x.MarshalWithoutEscapeHTML(ec)
-				if errE != nil {
-					s.InternalServerErrorWithError(w, req, errE)
-					return
-				}
-
-				flow.Code.Credentials[i].Data = jsonData
-				break
-			}
 		}
 	}
 
