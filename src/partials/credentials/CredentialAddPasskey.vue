@@ -9,7 +9,7 @@ import { postJSON } from "@/api.ts"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import { injectProgress } from "@/progress.ts"
-import { startRegistration } from "@simplewebauthn/browser"
+import { browserSupportsWebAuthn, startRegistration } from "@simplewebauthn/browser"
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
@@ -19,6 +19,11 @@ const abortController = new AbortController()
 const passkeyLabel = ref("")
 const passkeyError = ref("")
 const unexpectedError = ref("")
+
+if (!browserSupportsWebAuthn()) {
+  throw new Error("webauthn is required for this partial")
+}
+
 
 function getErrorMessage(errorCode: string | undefined) {
   switch (errorCode) {

@@ -398,15 +398,12 @@ func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *htt
 		Passkey:   nil,
 		CreatedAt: time.Now(),
 	}
-	sessionData, errE := x.MarshalWithoutEscapeHTML(session)
+
+	errE = storeCredentialSession(session)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-
-	credentialSessionsMu.Lock()
-	credentialSessions[session.ID] = sessionData
-	credentialSessionsMu.Unlock()
 
 	response := CredentialAddResponse{
 		SessionID:    &session.ID,
@@ -609,14 +606,13 @@ func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http
 		Passkey:   sessionData,
 		CreatedAt: time.Now(),
 	}
-	sessionDataBytes, errE := x.MarshalWithoutEscapeHTML(session)
-	if errE != nil {
+
+	errE := storeCredentialSession(session)
+	if errEmptyIdentity != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
+
 	}
-	credentialSessionsMu.Lock()
-	credentialSessions[session.ID] = sessionDataBytes
-	credentialSessionsMu.Unlock()
 
 	s.WriteJSON(w, req, CredentialAddResponse{
 		SessionID:    &session.ID,
@@ -749,11 +745,12 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 
 func getAndDeleteCredentialSession(sessionID identifier.Identifier) (*CredentialAddSession, errors.E) {
 	credentialSessionsMu.Lock()
+	defer credentialSessionsMu.Unlock()
+
 	sessionData, ok := credentialSessions[sessionID]
 	if ok {
 		delete(credentialSessions, sessionID)
 	}
-	credentialSessionsMu.Unlock()
 
 	if !ok {
 		return nil, errors.WithDetails(errSessionNotFound, "sessionID", sessionID)
@@ -830,4 +827,17 @@ func (s *Service) CredentialRemovePost(w http.ResponseWriter, req *http.Request,
 	}
 
 	s.WriteJSON(w, req, []byte(`{"success":true}`), nil)
+}
+
+func storeCredentialSession(session CredentialAddSession) errors.E {
+	sessionData, errE := x.MarshalWithoutEscapeHTML(session)
+	if errE != nil {
+		return errE
+	}
+
+	credentialSessionsMu.Lock()
+	defer credentialSessionsMu.Unlock()
+	credentialSessions[session.ID] = sessionData
+
+	return nil
 }

@@ -978,13 +978,10 @@ const (
 )
 
 func normalizeEmailOrUsername(emailOrUsername string, check EmailOrUsernameCheck) (string, string, ErrorCode, errors.E) {
-	fmt.Print("normalize email or password time\n")
-	fmt.Print(emailOrUsername + "\n")
 	preserved, errE := normalizeUsernameCasePreserved(emailOrUsername)
 	if errE != nil {
 		return "", "", "", errE
 	}
-	fmt.Print(preserved + "\n")
 
 	if len(preserved) < emailOrUsernameMinLength {
 		return "", "", ErrorCodeShortEmailOrUsername, nil
@@ -992,8 +989,6 @@ func normalizeEmailOrUsername(emailOrUsername string, check EmailOrUsernameCheck
 
 	containsAt := strings.Contains(preserved, "@")
 
-	fmt.Print("\ncontainsAt:", containsAt)
-	fmt.Print("\ncheck:", check)
 	switch check {
 	case EmailOrUsernameCheckAny:
 	case EmailOrUsernameCheckEmail:
