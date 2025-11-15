@@ -11,6 +11,7 @@ import { computed } from "vue"
 
 const props = withDefaults(
   defineProps<{
+    id: string
     progress?: number
     disabled?: boolean
     modelValue?: T
@@ -43,6 +44,7 @@ const v = computed({
   <!-- We wrap input in div to align radio button correctly vertically inside the grid. -->
   <div>
     <input
+      :id="id"
       v-model="v"
       :value="value"
       :disabled="progress > 0 || disabled"
