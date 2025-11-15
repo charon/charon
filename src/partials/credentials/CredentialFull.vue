@@ -12,7 +12,6 @@ defineProps<{
 }>()
 
 const { t } = useI18n({ useScope: "global" })
-
 </script>
 
 <template>

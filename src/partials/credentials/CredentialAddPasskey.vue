@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CredentialAddPasskeyCompleteRequest, CredentialAddCredentialWithLabelStartRequest, CredentialAddResponse } from "@/types"
+import { CredentialAddCredentialWithLabelStartRequest, CredentialAddPasskeyCompleteRequest, CredentialAddResponse } from "@/types"
 
 import { onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"

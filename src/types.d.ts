@@ -501,7 +501,7 @@ export type EncryptedPasswordData = {
 }
 
 export type CredentialAddCredentialWithLabelStartRequest = {
-    label: string
+  label: string
 }
 
 export type CredentialAddPasswordCompleteRequest = {

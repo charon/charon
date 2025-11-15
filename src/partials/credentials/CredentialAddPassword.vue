@@ -1,10 +1,5 @@
 <script setup lang="ts">
-import {
-  CredentialAddCredentialWithLabelStartRequest,
-  CredentialAddPasswordCompleteRequest,
-  CredentialAddResponse,
-  EncryptOptions
-} from "@/types"
+import { CredentialAddCredentialWithLabelStartRequest, CredentialAddPasswordCompleteRequest, CredentialAddResponse, EncryptOptions } from "@/types"
 
 import { onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
