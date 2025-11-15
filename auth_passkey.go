@@ -360,27 +360,11 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 
 	createResponse := passkeyCreateComplete.CreateResponse
 
-	parsedResponse, err := createResponse.Parse()
-	if err != nil {
-		s.BadRequestWithError(w, req, errors.WithStack(err))
+	credential, providerID, errE := s.completePasskeyRegistration(createResponse, flowPasskey.Label, flowPasskey.SessionData)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
 		return
 	}
-
-	userID := identifier.Data([16]byte(flowPasskey.SessionData.UserID))
-
-	credential := passkeyCredential{
-		ID:         userID,
-		Label:      flowPasskey.Label,
-		Credential: nil,
-	}
-
-	credential.Credential, err = s.passkeyProvider().CreateCredential(credential, *flowPasskey.SessionData, parsedResponse)
-	if err != nil {
-		s.BadRequestWithError(w, req, withWebauthnError(err))
-		return
-	}
-
-	providerID := base64.RawURLEncoding.EncodeToString(credential.Credential.ID)
 
 	jsonData, errE := x.MarshalWithoutEscapeHTML(credential)
 	if errE != nil {
@@ -394,5 +378,6 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: identifier.New(), ProviderID: providerID, Provider: ProviderPasskey, Data: jsonData}})
+	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: credential.ID, ProviderID: providerID,
+		Provider: ProviderPasskey, Data: jsonData}})
 }

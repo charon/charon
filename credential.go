@@ -2,7 +2,6 @@ package charon
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -757,35 +756,19 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 		return
 	}
 
-	parsedResponse, err := request.CreateResponse.Parse()
-	if err != nil {
-		s.BadRequestWithError(w, req, errors.WithStack(err))
+	credential, providerID, errE := s.completePasskeyRegistration(request.CreateResponse, cas.Label, cas.Passkey)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
-	userID := identifier.Data([16]byte(cas.Passkey.UserID))
-
-	pkCredential := passkeyCredential{
-		ID:         userID,
-		Label:      cas.Label,
-		Credential: nil,
-	}
-
-	pkCredential.Credential, err = s.passkeyProvider().CreateCredential(pkCredential, *cas.Passkey, parsedResponse)
-	if err != nil {
-		s.BadRequestWithError(w, req, withWebauthnError(err))
-		return
-	}
-
-	account, errE := s.getAccount(ctx, accountID)
+	jsonData, errE := x.MarshalWithoutEscapeHTML(credential)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	providerID := base64.RawURLEncoding.EncodeToString(pkCredential.Credential.ID)
-
-	jsonData, errE := x.MarshalWithoutEscapeHTML(pkCredential)
+	account, errE := s.getAccount(ctx, accountID)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return

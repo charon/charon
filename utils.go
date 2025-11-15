@@ -1040,3 +1040,31 @@ func normalizeEmailOrUsername(emailOrUsername string, check EmailOrUsernameCheck
 
 	return preserved, mapped, "", nil
 }
+
+func (s *Service) completePasskeyRegistration(
+	createResponse protocol.CredentialCreationResponse,
+	label string,
+	sessionData *webauthn.SessionData,
+) (*passkeyCredential, string, errors.E) {
+	parsedResponse, err := createResponse.Parse()
+	if err != nil {
+		return nil, "", errors.WithStack(err)
+	}
+
+	userID := identifier.Data([16]byte(sessionData.UserID))
+
+	pkCredential := passkeyCredential{
+		ID:         userID,
+		Label:      label,
+		Credential: nil,
+	}
+
+	pkCredential.Credential, err = s.passkeyProvider().CreateCredential(pkCredential, *sessionData, parsedResponse)
+	if err != nil {
+		return nil, "", withWebauthnError(err)
+	}
+
+	providerID := base64.RawURLEncoding.EncodeToString(pkCredential.Credential.ID)
+
+	return &pkCredential, providerID, nil
+}
