@@ -13,7 +13,7 @@ const gitignorePath = path.resolve(__dirname, ".gitignore");
 
 export default tseslint.config(
   eslint.configs.recommended,
-  ...tseslint.configs.recommended,
+  ...tseslint.configs.recommendedTypeChecked,
   ...eslintPluginVue.configs['flat/recommended'],
   includeIgnoreFile(gitignorePath),
   {
@@ -21,6 +21,7 @@ export default tseslint.config(
     rules: {
       "no-unused-vars": "off",
       "no-undef": "off",
+      "@typescript-eslint/switch-exhaustiveness-check": "error",
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
@@ -38,7 +39,10 @@ export default tseslint.config(
         ...globals.es2025,
       },
       parserOptions: {
+        extraFileExtensions: [".vue"],
         parser: tseslint.parser,
+        projectService: {},
+        tsconfigRootDir: __dirname,
       },
     },
   },

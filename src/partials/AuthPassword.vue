@@ -240,6 +240,7 @@ async function onNext() {
       return
     }
     console.error("AuthPassword.onNext", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedPasswordError.value = `${error}`
   } finally {
     progress.value -= 1
@@ -300,6 +301,7 @@ async function onCode() {
       return
     }
     console.error("AuthPassword.onCode", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedCodeError.value = `${error}`
   } finally {
     progress.value -= 1

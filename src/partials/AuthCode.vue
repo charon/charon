@@ -143,6 +143,7 @@ async function onNext() {
       return
     }
     console.error("AuthCode.onNext", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1
@@ -195,6 +196,7 @@ async function onResend() {
       return
     }
     console.error("AuthCode.onResend", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1

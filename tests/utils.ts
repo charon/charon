@@ -1,6 +1,7 @@
 /// <reference types="node" />
 
 import type { BrowserContext, Page } from "@playwright/test"
+import type { Result } from "axe-core"
 
 import AxeBuilder from "@axe-core/playwright"
 import { test as baseTest } from "@playwright/test"
@@ -63,12 +64,12 @@ export const test = baseTest.extend({
 export const expect = test.expect
 
 // Generate accessibility report after all tests complete.
-test.afterAll(async () => {
+test.afterAll(() => {
   createHtmlReport({
     results: {
       violations: readdirSync("a11y-report")
         .filter((f) => f.endsWith(".json"))
-        .map((f) => JSON.parse(readFileSync(`a11y-report/${f}`, { encoding: "utf-8" }))),
+        .map((f) => JSON.parse(readFileSync(`a11y-report/${f}`, { encoding: "utf-8" })) as Result),
     },
     options: {
       projectKey: "Charon Accessibility Report",
@@ -93,7 +94,7 @@ export async function checkpoint(page: Page, name: string) {
   // Check for duplicate IDs.
   const duplicates = await page.evaluate(() => {
     const ids = Array.from(document.querySelectorAll("[id]"), (el) => (el as HTMLElement).id)
-    return Array.from(ids.reduce((acc, v) => acc.set(v, (acc.get(v) || 0) + 1), new Map()).entries())
+    return Array.from(ids.reduce((acc, v) => acc.set(v, (acc.get(v) || 0) + 1), new Map<string, number>()).entries())
       .filter(([_id, v]) => v > 1)
       .map(([id, _v]) => id)
   })

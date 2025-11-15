@@ -1,7 +1,9 @@
 <script setup lang="ts" generic="T">
+import type { DeepReadonly } from "vue"
+
 import type { Metadata, QueryValues } from "@/types"
 
-import { DeepReadonly, getCurrentInstance, onMounted, onUnmounted, onUpdated, readonly, ref, Ref, watch } from "vue"
+import { getCurrentInstance, onMounted, onUnmounted, onUpdated, readonly, ref, Ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
@@ -27,19 +29,21 @@ const router = useRouter()
 
 const mainProgress = injectMainProgress()
 
-const _doc = ref<T | null>(null) as Ref<T | null>
+const _doc = ref<T | null>(null)
 const _metadata = ref<Metadata>({})
 const _error = ref<string | null>(null)
 const _url = ref<string | null>(null)
-const doc = (import.meta.env.DEV ? readonly(_doc) : _doc) as DeepReadonly<Ref<T | null>>
-const metadata = (import.meta.env.DEV ? readonly(_metadata) : _metadata) as DeepReadonly<Ref<Metadata>>
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+const doc = (import.meta.env.DEV ? readonly(_doc) : _doc as DeepReadonly<Ref<T | null>>) as DeepReadonly<Ref<T | null>>
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+const metadata = (import.meta.env.DEV ? readonly(_metadata) : _metadata as DeepReadonly<Ref<Metadata>>) as  DeepReadonly<Ref<Metadata>>
 const error = import.meta.env.DEV ? readonly(_error) : _error
 const url = import.meta.env.DEV ? readonly(_url) : _url
 
 const el = ref<HTMLElement | null>(null)
 
 onMounted(() => {
-  el.value = getCurrentInstance()?.proxy?.$el
+  el.value = getCurrentInstance()?.proxy?.$el as HTMLElement
 })
 
 onUnmounted(() => {
@@ -47,9 +51,9 @@ onUnmounted(() => {
 })
 
 onUpdated(() => {
-  const el = getCurrentInstance()?.proxy?.$el
-  if (el !== el.value) {
-    el.value = el
+  const e = getCurrentInstance()?.proxy?.$el as HTMLElement
+  if (e !== el.value) {
+    el.value = e
   }
 })
 
@@ -62,8 +66,8 @@ watch(
   // See: https://github.com/vuejs/vue/issues/13242
   [() => JSON.stringify(props.params), () => props.name, () => JSON.stringify(props.query)],
   async ([paramsJSON, name, queryJSON], [oldParamsJSON, oldName, oldQueryJSON], onCleanup) => {
-    const params = JSON.parse(paramsJSON)
-    const query = JSON.parse(queryJSON)
+    const params = JSON.parse(paramsJSON) as QueryValues
+    const query = JSON.parse(queryJSON) as QueryValues
 
     const abortController = new AbortController()
     onCleanup(() => abortController.abort())
@@ -94,6 +98,7 @@ watch(
         return
       }
       console.error("WithDocument", error)
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       _error.value = `${error}`
       return
     }

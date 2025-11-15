@@ -47,6 +47,7 @@ onBeforeMount(async () => {
       return
     }
     console.error("IdentityList.onBeforeMount", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     dataLoadingError.value = `${error}`
   } finally {
     dataLoading.value = false

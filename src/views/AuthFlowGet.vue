@@ -160,6 +160,7 @@ onBeforeMount(async () => {
       return
     }
     console.error("AuthFLowGet.onBeforeMount", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   } finally {
     dataLoading.value = false

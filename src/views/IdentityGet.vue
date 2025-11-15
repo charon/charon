@@ -168,6 +168,7 @@ async function loadData(update: "init" | "basic" | "users" | "admins" | "organiz
     // TODO: 404 should be shown differently, but probably in the same way for all 404.
     console.error("IdentityGet.loadData", error)
     if (dataError) {
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       dataError.value = `${error}`
     }
   } finally {
@@ -209,6 +210,7 @@ async function onSubmit(payload: Identity, update: "basic" | "users" | "admins" 
         return
       }
       console.error("IdentityGet.onSubmit", error)
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       unexpectedError.value = `${error}`
     } finally {
       // We update identity state even on errors,

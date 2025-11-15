@@ -145,6 +145,7 @@ async function getIdentities() {
       return
     }
     console.error("IdentityList.getIdentities", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     allIdentitiesLoadingError.value = `${error}`
   } finally {
     // We toggle allIdentitiesLoading only the first time.
@@ -192,6 +193,7 @@ async function onSelect(id: string) {
       return
     }
     console.error("AuthIdentity.onNext", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1
@@ -214,6 +216,7 @@ async function onBack() {
       return
     }
     console.error("AuthIdentity.onBack", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1
@@ -250,6 +253,7 @@ async function onDecline() {
       return
     }
     console.error("AuthIdentity.onDecline", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1
@@ -309,6 +313,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
       return
     }
     console.error("AuthIdentity.onEnable", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1

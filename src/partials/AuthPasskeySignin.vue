@@ -117,6 +117,7 @@ async function onAfterEnter() {
       return
     }
     console.error("AuthPasskeySignin.onAfterEnter", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   }
 }

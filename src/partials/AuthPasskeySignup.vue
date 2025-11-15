@@ -133,6 +133,7 @@ async function onPasskeySignup() {
       return
     }
     console.error("AuthPasskeySignup.onPasskeySignup", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
     signupFailedAtLeastOnce.value = true
   } finally {

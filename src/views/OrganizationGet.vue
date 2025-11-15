@@ -241,6 +241,7 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
     // TODO: 404 should be shown differently, but probably in the same way for all 404.
     console.error("OrganizationGet.loadData", error)
     if (dataError) {
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       dataError.value = `${error}`
     }
   } finally {
@@ -282,6 +283,7 @@ async function onSubmit(payload: Organization, update: "basic" | "applications" 
         return
       }
       console.error("OrganizationGet.onSubmit", error)
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       unexpectedError.value = `${error}`
     } finally {
       // We update organization state even on errors,
@@ -604,6 +606,7 @@ async function onIdentitiesSubmit() {
         return
       }
       console.error("OrganizationGet.onIdentitiesSubmit", error)
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       organizationIdentitiesUnexpectedError.value = `${error}`
     } finally {
       // We always update identities state, even on errors,

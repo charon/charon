@@ -60,6 +60,7 @@ onBeforeMount(async () => {
       return
     }
     console.error("OrganizationUsers.onBeforeMount", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     dataLoadingError.value = `${error}`
   } finally {
     dataLoading.value = false
@@ -67,17 +68,17 @@ onBeforeMount(async () => {
   }
 })
 
-function onBlock(identityId: string) {
+async function onBlock(identityId: string) {
   if (abortController.signal.aborted) {
     return
   }
 
-  router.push({ name: "OrganizationBlockUser", params: { id: props.id, identityId: identityId } })
+  await router.push({ name: "OrganizationBlockUser", params: { id: props.id, identityId: identityId } })
 }
 
-type IdentityOrganizationComponent = ComponentExposed<typeof IdentityOrganization> | null
+type IdentityOrganizationComponent = ComponentExposed<typeof IdentityOrganization>
 
-function updateOrganizationBlockedStatuses(userId: string, component: IdentityOrganizationComponent) {
+function updateOrganizationBlockedStatuses(userId: string, component: IdentityOrganizationComponent | null) {
   if (component) {
     organizationBlockedStatusComponents.value.set(userId, component)
   } else {
@@ -123,7 +124,7 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
             <template #default="{ doc, metadata, url }">
               <IdentityPublic :identity="doc" :url="url" :is-current="metadata.is_current" :can-update="metadata.can_update" :labels="identityLabels(doc)" />
               <IdentityOrganization
-                :ref="(el) => updateOrganizationBlockedStatuses(user.id, el as IdentityOrganizationComponent)"
+                :ref="(el) => updateOrganizationBlockedStatuses(user.id, el as IdentityOrganizationComponent | null)"
                 :identity-organization="doc.organizations[0]"
               >
                 <template #default="{ organizationBlockedStatus }">

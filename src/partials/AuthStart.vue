@@ -101,6 +101,7 @@ async function onNext() {
       return
     }
     console.error("AuthStart.onBeforeLeave", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1

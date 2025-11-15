@@ -141,6 +141,7 @@ async function onRedirect() {
       return
     }
     console.error("AuthThirdPartyProvider.onRedirect", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
     // We reset the counter and pause it on an error.
     seconds.value = 3

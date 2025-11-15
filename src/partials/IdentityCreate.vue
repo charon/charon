@@ -85,6 +85,7 @@ async function onSubmit() {
       return
     }
     console.error("IdentityCreate.onSubmit", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1

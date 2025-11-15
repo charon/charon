@@ -78,11 +78,13 @@ async function doRedirectThirdPartyProvider() {
       return
     }
     console.error("AuthManualRedirect.doRedirectThirdPartyProvider", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   }
 }
 
 async function doRedirectHomepage() {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
   redirectServerSide(getHomepage(withOrganizationApplicationDocument.value!.doc!), true, progress)
 }
 

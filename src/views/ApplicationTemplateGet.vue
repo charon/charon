@@ -175,6 +175,7 @@ async function loadData(update: "init" | "basic" | "variables" | "clientsPublic"
     // TODO: 404 should be shown differently, but probably in the same way for all 404.
     console.error("ApplicationTemplateGet.loadData", error)
     if (dataError) {
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       dataError.value = `${error}`
     }
   } finally {
@@ -221,6 +222,7 @@ async function onSubmit(
         return
       }
       console.error("ApplicationTemplateGet.onSubmit", error)
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       unexpectedError.value = `${error}`
     } finally {
       // We update applicationTemplate state even on errors,

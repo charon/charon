@@ -77,6 +77,7 @@ async function onSubmit() {
       return
     }
     console.error("OrganizationBlockUser.onSubmit", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1
