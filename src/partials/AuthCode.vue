@@ -80,7 +80,7 @@ function onBeforeLeave() {
   abortController.abort()
 }
 
-async function onBack() {
+function onBack() {
   if (abortController.signal.aborted) {
     return
   }
@@ -89,7 +89,7 @@ async function onBack() {
   props.flow.backward("password")
 }
 
-async function onRedo() {
+function onRedo() {
   if (abortController.signal.aborted) {
     return
   }
@@ -143,6 +143,7 @@ async function onNext() {
       return
     }
     console.error("AuthCode.onNext", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1
@@ -195,6 +196,7 @@ async function onResend() {
       return
     }
     console.error("AuthCode.onResend", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1

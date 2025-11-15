@@ -7,7 +7,7 @@ its DOM attributes without flickering how the component looks.
 -->
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, onUpdated, ref } from "vue"
+import { computed, onBeforeUnmount, onMounted, onUpdated, useTemplateRef } from "vue"
 
 const props = withDefaults(
   defineProps<{
@@ -28,7 +28,7 @@ const $emit = defineEmits<{
   "update:modelValue": [value: string]
 }>()
 
-const el = ref()
+const el = useTemplateRef<HTMLFormElement>("el")
 
 function resize() {
   if (!el.value) {

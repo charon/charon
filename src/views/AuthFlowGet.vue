@@ -18,7 +18,7 @@ elements and links but that should not change how components look.
 <script setup lang="ts">
 import type { AuthFlowResponse, AuthFlowStep, Completed, DeriveOptions, EncryptOptions, Flow, Organization, OrganizationApplicationPublic, SiteProvider } from "@/types"
 
-import { onBeforeMount, onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { onBeforeMount, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
@@ -160,6 +160,7 @@ onBeforeMount(async () => {
       return
     }
     console.error("AuthFLowGet.onBeforeMount", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   } finally {
     dataLoading.value = false
@@ -187,16 +188,15 @@ async function onPreviousStep(step: string) {
   }
 }
 
-const component = ref()
+const component = useTemplateRef("component")
 
 // Call transition hooks on child components.
 // See: https://github.com/vuejs/rfcs/discussions/613
 function callHook(el: Element, hook: string) {
   if ("__vue_exposed" in el) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const exposed = el.__vue_exposed as Record<string, any> | null
+    const exposed = el.__vue_exposed as Record<string, unknown> | null
     if (exposed && hook in exposed) {
-      exposed[hook]()
+      ;(exposed[hook] as () => void)()
     }
   }
 }

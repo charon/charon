@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue"
+import { onMounted, ref, useTemplateRef } from "vue"
 
 import InputText from "@/components/InputText.vue"
 
@@ -7,7 +7,7 @@ defineProps<{
   codeLength: number
 }>()
 
-const el = ref()
+const el = useTemplateRef("el")
 const scrollLeft = ref(0)
 
 // Chromium does not yet support CSS sign function and is also currently buggy.
@@ -25,7 +25,7 @@ function updateBackgroundPosition() {
     return
   }
 
-  scrollLeft.value = el.value?.$el.scrollLeft
+  scrollLeft.value = (el.value.$el as HTMLElement).scrollLeft
 }
 </script>
 

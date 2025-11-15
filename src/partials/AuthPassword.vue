@@ -55,7 +55,7 @@ defineExpose({
 
 onBeforeUnmount(onBeforeLeave)
 
-function onAfterEnter() {
+async function onAfterEnter() {
   document.getElementById("authpassword-input-currentpassword")?.focus()
 
   // If public key or options are not available, we fetch them early so that user
@@ -63,7 +63,7 @@ function onAfterEnter() {
   if (!props.flow.getPublicKey() || !props.flow.getDeriveOptions() || !props.flow.getEncryptOptions()) {
     // We do not use await here because it is OK if everything else continues to run
     // while we are fetching the public key and options. (Also onAfterEnter is not async.)
-    getKey()
+    await getKey()
   }
 }
 
@@ -109,7 +109,7 @@ async function getKey(): Promise<boolean> {
   }
 }
 
-async function onBack() {
+function onBack() {
   if (abortController.signal.aborted) {
     return
   }
@@ -118,7 +118,7 @@ async function onBack() {
   props.flow.backward("start")
 }
 
-async function onRedo() {
+function onRedo() {
   if (abortController.signal.aborted) {
     return
   }
@@ -227,7 +227,7 @@ async function onNext() {
         removeSteps(props.flow, ["code"])
       }
       // We do not await getKey so that user can fix the password in meantime.
-      getKey()
+      void getKey()
       return
     }
     if (response.providers && response.providers.length > 0 && response.providers[response.providers.length - 1] === "code") {
@@ -240,6 +240,7 @@ async function onNext() {
       return
     }
     console.error("AuthPassword.onNext", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedPasswordError.value = `${error}`
   } finally {
     progress.value -= 1
@@ -300,6 +301,7 @@ async function onCode() {
       return
     }
     console.error("AuthPassword.onCode", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedCodeError.value = `${error}`
   } finally {
     progress.value -= 1

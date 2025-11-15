@@ -117,6 +117,7 @@ async function onAfterEnter() {
       return
     }
     console.error("AuthPasskeySignin.onAfterEnter", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   }
 }
@@ -130,7 +131,7 @@ async function onRetry() {
   await onAfterEnter()
 }
 
-async function onBack() {
+function onBack() {
   if (abortController.signal.aborted) {
     return
   }
@@ -140,7 +141,7 @@ async function onBack() {
   props.flow.backward("start")
 }
 
-async function onCancel() {
+function onCancel() {
   if (abortController.signal.aborted) {
     return
   }

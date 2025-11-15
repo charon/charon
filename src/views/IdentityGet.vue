@@ -168,6 +168,7 @@ async function loadData(update: "init" | "basic" | "users" | "admins" | "organiz
     // TODO: 404 should be shown differently, but probably in the same way for all 404.
     console.error("IdentityGet.loadData", error)
     if (dataError) {
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       dataError.value = `${error}`
     }
   } finally {
@@ -209,6 +210,7 @@ async function onSubmit(payload: Identity, update: "basic" | "users" | "admins" 
         return
       }
       console.error("IdentityGet.onSubmit", error)
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       unexpectedError.value = `${error}`
     } finally {
       // We update identity state even on errors,
@@ -293,7 +295,7 @@ async function onUsersSubmit() {
   await onSubmit(payload, "users", usersUpdated, usersUnexpectedError)
 }
 
-function onAddUser() {
+async function onAddUser() {
   if (abortController.signal.aborted) {
     return
   }
@@ -305,7 +307,7 @@ function onAddUser() {
     id: "",
   })
 
-  nextTick(() => {
+  await nextTick(() => {
     document.getElementById(`user-${users.value.length - 1}-id`)?.focus()
   })
 }
@@ -336,7 +338,7 @@ async function onAdminsSubmit() {
   await onSubmit(payload, "admins", adminsUpdated, adminsUnexpectedError)
 }
 
-function onAddAdmin() {
+async function onAddAdmin() {
   if (abortController.signal.aborted) {
     return
   }
@@ -348,7 +350,7 @@ function onAddAdmin() {
     id: "",
   })
 
-  nextTick(() => {
+  await nextTick(() => {
     document.getElementById(`admin-${admins.value.length - 1}-id`)?.focus()
   })
 }
@@ -391,7 +393,7 @@ async function onAddOrganization(organization: OrganizationRef) {
     applications: [],
   })
 
-  nextTick(() => {
+  await nextTick(() => {
     document.getElementById("organizations-update")?.focus()
   })
 }

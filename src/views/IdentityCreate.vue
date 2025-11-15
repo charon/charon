@@ -11,8 +11,8 @@ import NavBar from "@/partials/NavBar.vue"
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
 
-function onCreated(identity: IdentityRef) {
-  router.push({ name: "IdentityGet", params: { id: identity.id } })
+async function onCreated(identity: IdentityRef) {
+  await router.push({ name: "IdentityGet", params: { id: identity.id } })
 }
 </script>
 

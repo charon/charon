@@ -241,6 +241,7 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
     // TODO: 404 should be shown differently, but probably in the same way for all 404.
     console.error("OrganizationGet.loadData", error)
     if (dataError) {
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       dataError.value = `${error}`
     }
   } finally {
@@ -282,6 +283,7 @@ async function onSubmit(payload: Organization, update: "basic" | "applications" 
         return
       }
       console.error("OrganizationGet.onSubmit", error)
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       unexpectedError.value = `${error}`
     } finally {
       // We update organization state even on errors,
@@ -391,7 +393,7 @@ async function onAddApplicationTemplate(applicationTemplate: DeepReadonly<Applic
     ),
   })
 
-  nextTick(() => {
+  await nextTick(() => {
     const el = document.getElementById(`application-${applications.value.length - 1}-values-0`)
     if (el) {
       el.focus()
@@ -470,7 +472,7 @@ async function onAdminsSubmit() {
   await onSubmit(payload, "admins", adminsUpdated, adminsUnexpectedError)
 }
 
-function onAddAdmin() {
+async function onAddAdmin() {
   if (abortController.signal.aborted) {
     return
   }
@@ -482,7 +484,7 @@ function onAddAdmin() {
     id: "",
   })
 
-  nextTick(() => {
+  await nextTick(() => {
     document.getElementById(`admin-${admins.value.length - 1}-id`)?.focus()
   })
 }
@@ -516,7 +518,7 @@ async function onAddIdentity(allIdentity: AllIdentity | DeepReadonly<AllIdentity
   // would have the order in which identities were added to the organization, but we do not have that information.
   organizationIdentities.value.sort((a, b) => a.identity.id.localeCompare(b.identity.id))
 
-  nextTick(() => {
+  await nextTick(() => {
     document.getElementById("identities-update")?.focus()
   })
 }
@@ -604,6 +606,7 @@ async function onIdentitiesSubmit() {
         return
       }
       console.error("OrganizationGet.onIdentitiesSubmit", error)
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       organizationIdentitiesUnexpectedError.value = `${error}`
     } finally {
       // We always update identities state, even on errors,

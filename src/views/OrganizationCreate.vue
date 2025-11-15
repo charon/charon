@@ -56,12 +56,13 @@ async function onSubmit() {
       return
     }
 
-    router.push({ name: "OrganizationGet", params: { id: organization.id } })
+    await router.push({ name: "OrganizationGet", params: { id: organization.id } })
   } catch (error) {
     if (abortController.signal.aborted) {
       return
     }
     console.error("OrganizationCreate.onSubmit", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1

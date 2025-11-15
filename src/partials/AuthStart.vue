@@ -101,13 +101,14 @@ async function onNext() {
       return
     }
     console.error("AuthStart.onBeforeLeave", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1
   }
 }
 
-async function onPasskey() {
+function onPasskey() {
   if (abortController.signal.aborted) {
     return
   }
@@ -115,7 +116,7 @@ async function onPasskey() {
   props.flow.forward("passkeySignin")
 }
 
-async function onThirdPartyProvider(provider: string) {
+function onThirdPartyProvider(provider: string) {
   if (abortController.signal.aborted) {
     return
   }

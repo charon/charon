@@ -175,6 +175,7 @@ async function loadData(update: "init" | "basic" | "variables" | "clientsPublic"
     // TODO: 404 should be shown differently, but probably in the same way for all 404.
     console.error("ApplicationTemplateGet.loadData", error)
     if (dataError) {
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       dataError.value = `${error}`
     }
   } finally {
@@ -221,6 +222,7 @@ async function onSubmit(
         return
       }
       console.error("ApplicationTemplateGet.onSubmit", error)
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       unexpectedError.value = `${error}`
     } finally {
       // We update applicationTemplate state even on errors,
@@ -241,10 +243,10 @@ function splitSpace(str: string): string[] {
   return out
 }
 
-function addRedirectUriTemplate(client: { redirectUriTemplates: string[] }, idPrefix: string) {
+async function addRedirectUriTemplate(client: { redirectUriTemplates: string[] }, idPrefix: string) {
   client.redirectUriTemplates.push("")
 
-  nextTick(() => {
+  await nextTick(() => {
     document.getElementById(`${idPrefix}${client.redirectUriTemplates.length - 1}`)?.focus()
   })
 }
@@ -322,7 +324,7 @@ async function onVariablesSubmit() {
   await onSubmit(payload, "variables", variablesUpdated, variablesUnexpectedError)
 }
 
-function onAddVariable() {
+async function onAddVariable() {
   if (abortController.signal.aborted) {
     return
   }
@@ -336,7 +338,7 @@ function onAddVariable() {
     description: "",
   })
 
-  nextTick(() => {
+  await nextTick(() => {
     document.getElementById(`variable-${variables.value.length - 1}-name`)?.focus()
   })
 }
@@ -392,7 +394,7 @@ async function onClientsPublicSubmit() {
   await onSubmit(payload, "clientsPublic", clientsPublicUpdated, clientsPublicUnexpectedError)
 }
 
-function onAddClientPublic() {
+async function onAddClientPublic() {
   if (abortController.signal.aborted) {
     return
   }
@@ -413,7 +415,7 @@ function onAddClientPublic() {
         refreshTokenLifespan: 24 * 30 + "h0m0s",
       })
 
-      nextTick(() => {
+      await nextTick(() => {
         document.getElementById(`client-public-${clientsPublic.value.length - 1}-redirectUriTemplates-0`)?.focus()
       })
 
@@ -431,7 +433,7 @@ function onAddClientPublic() {
     refreshTokenLifespan: 24 * 30 + "h0m0s",
   })
 
-  nextTick(() => {
+  await nextTick(() => {
     document.getElementById(`client-public-${clientsPublic.value.length - 1}-addTemplate`)?.focus()
   })
 }
@@ -488,7 +490,7 @@ async function onClientsBackendSubmit() {
   await onSubmit(payload, "clientsBackend", clientsBackendUpdated, clientsBackendUnexpectedError)
 }
 
-function onAddClientBackend() {
+async function onAddClientBackend() {
   if (abortController.signal.aborted) {
     return
   }
@@ -510,7 +512,7 @@ function onAddClientBackend() {
         refreshTokenLifespan: 24 * 30 + "h0m0s",
       })
 
-      nextTick(() => {
+      await nextTick(() => {
         document.getElementById(`client-backend-${clientsBackend.value.length - 1}-redirectUriTemplates-0`)?.focus()
       })
 
@@ -529,7 +531,7 @@ function onAddClientBackend() {
     refreshTokenLifespan: 24 * 30 + "h0m0s",
   })
 
-  nextTick(() => {
+  await nextTick(() => {
     document.getElementById(`client-backend-${clientsBackend.value.length - 1}-addTemplate`)?.focus()
   })
 }
@@ -577,7 +579,7 @@ async function onClientsServiceSubmit() {
   await onSubmit(payload, "clientsService", clientsServiceUpdated, clientsServiceUnexpectedError)
 }
 
-function onAddClientService() {
+async function onAddClientService() {
   if (abortController.signal.aborted) {
     return
   }
@@ -595,7 +597,7 @@ function onAddClientService() {
     refreshTokenLifespan: 24 * 30 + "h0m0s",
   })
 
-  nextTick(() => {
+  await nextTick(() => {
     document.getElementById(`client-service-${clientsService.value.length - 1}-description`)?.focus()
   })
 }
@@ -626,7 +628,7 @@ async function onAdminsSubmit() {
   await onSubmit(payload, "admins", adminsUpdated, adminsUnexpectedError)
 }
 
-function onAddAdmin() {
+async function onAddAdmin() {
   if (abortController.signal.aborted) {
     return
   }
@@ -638,7 +640,7 @@ function onAddAdmin() {
     id: "",
   })
 
-  nextTick(() => {
+  await nextTick(() => {
     document.getElementById(`admin-${admins.value.length - 1}-id`)?.focus()
   })
 }

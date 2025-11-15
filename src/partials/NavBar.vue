@@ -46,7 +46,7 @@ async function onSignOut() {
 
     if ("location" in response) {
       if (browserSupportsWebAuthn()) {
-        navigator.credentials.preventSilentAccess()
+        await navigator.credentials.preventSilentAccess()
       }
 
       accessToken.value = ""

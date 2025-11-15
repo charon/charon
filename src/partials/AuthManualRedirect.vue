@@ -63,10 +63,10 @@ async function onRedirect() {
   } else if (props.flow.getCompleted().includes("finished")) {
     // When flow is already finished, we can redirect just to the home page
     // because the original third party provider flow has already been completed.
-    await doRedirectHomepage()
+    doRedirectHomepage()
   } else {
     // Should not happen as defined in processCompleted.
-    throw new Error(`unexpected completed: ${props.flow.getCompleted()}`)
+    throw new Error(`unexpected completed: ${props.flow.getCompleted().join(", ")}`)
   }
 }
 
@@ -78,11 +78,13 @@ async function doRedirectThirdPartyProvider() {
       return
     }
     console.error("AuthManualRedirect.doRedirectThirdPartyProvider", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   }
 }
 
-async function doRedirectHomepage() {
+function doRedirectHomepage() {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
   redirectServerSide(getHomepage(withOrganizationApplicationDocument.value!.doc!), true, progress)
 }
 
