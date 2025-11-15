@@ -108,7 +108,7 @@ async function onNext() {
   }
 }
 
-async function onPasskey() {
+function onPasskey() {
   if (abortController.signal.aborted) {
     return
   }
@@ -116,7 +116,7 @@ async function onPasskey() {
   props.flow.forward("passkeySignin")
 }
 
-async function onThirdPartyProvider(provider: string) {
+function onThirdPartyProvider(provider: string) {
   if (abortController.signal.aborted) {
     return
   }

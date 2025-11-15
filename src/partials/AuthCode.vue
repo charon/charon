@@ -80,7 +80,7 @@ function onBeforeLeave() {
   abortController.abort()
 }
 
-async function onBack() {
+function onBack() {
   if (abortController.signal.aborted) {
     return
   }
@@ -89,7 +89,7 @@ async function onBack() {
   props.flow.backward("password")
 }
 
-async function onRedo() {
+function onRedo() {
   if (abortController.signal.aborted) {
     return
   }

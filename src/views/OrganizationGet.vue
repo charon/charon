@@ -393,7 +393,7 @@ async function onAddApplicationTemplate(applicationTemplate: DeepReadonly<Applic
     ),
   })
 
-  nextTick(() => {
+  await nextTick(() => {
     const el = document.getElementById(`application-${applications.value.length - 1}-values-0`)
     if (el) {
       el.focus()
@@ -472,7 +472,7 @@ async function onAdminsSubmit() {
   await onSubmit(payload, "admins", adminsUpdated, adminsUnexpectedError)
 }
 
-function onAddAdmin() {
+async function onAddAdmin() {
   if (abortController.signal.aborted) {
     return
   }
@@ -484,7 +484,7 @@ function onAddAdmin() {
     id: "",
   })
 
-  nextTick(() => {
+  await nextTick(() => {
     document.getElementById(`admin-${admins.value.length - 1}-id`)?.focus()
   })
 }
@@ -518,7 +518,7 @@ async function onAddIdentity(allIdentity: AllIdentity | DeepReadonly<AllIdentity
   // would have the order in which identities were added to the organization, but we do not have that information.
   organizationIdentities.value.sort((a, b) => a.identity.id.localeCompare(b.identity.id))
 
-  nextTick(() => {
+  await nextTick(() => {
     document.getElementById("identities-update")?.focus()
   })
 }

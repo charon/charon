@@ -295,7 +295,7 @@ async function onUsersSubmit() {
   await onSubmit(payload, "users", usersUpdated, usersUnexpectedError)
 }
 
-function onAddUser() {
+async function onAddUser() {
   if (abortController.signal.aborted) {
     return
   }
@@ -307,7 +307,7 @@ function onAddUser() {
     id: "",
   })
 
-  nextTick(() => {
+  await nextTick(() => {
     document.getElementById(`user-${users.value.length - 1}-id`)?.focus()
   })
 }
@@ -338,7 +338,7 @@ async function onAdminsSubmit() {
   await onSubmit(payload, "admins", adminsUpdated, adminsUnexpectedError)
 }
 
-function onAddAdmin() {
+async function onAddAdmin() {
   if (abortController.signal.aborted) {
     return
   }
@@ -350,7 +350,7 @@ function onAddAdmin() {
     id: "",
   })
 
-  nextTick(() => {
+  await nextTick(() => {
     document.getElementById(`admin-${admins.value.length - 1}-id`)?.focus()
   })
 }
@@ -393,7 +393,7 @@ async function onAddOrganization(organization: OrganizationRef) {
     applications: [],
   })
 
-  nextTick(() => {
+  await nextTick(() => {
     document.getElementById("organizations-update")?.focus()
   })
 }

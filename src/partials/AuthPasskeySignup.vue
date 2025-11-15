@@ -47,7 +47,7 @@ function onBeforeLeave() {
   abortController.abort()
 }
 
-async function onBack() {
+function onBack() {
   if (abortController.signal.aborted) {
     return
   }
@@ -101,7 +101,7 @@ async function onPasskeySignup() {
       }
       signupFailed.value = true
       signupFailedAtLeastOnce.value = true
-      nextTick(() => {
+      await nextTick(() => {
         // We refocus button to retry.
         document.getElementById("passkey-signup")?.focus()
       })

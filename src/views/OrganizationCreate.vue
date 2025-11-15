@@ -56,7 +56,7 @@ async function onSubmit() {
       return
     }
 
-    router.push({ name: "OrganizationGet", params: { id: organization.id } })
+    await router.push({ name: "OrganizationGet", params: { id: organization.id } })
   } catch (error) {
     if (abortController.signal.aborted) {
       return

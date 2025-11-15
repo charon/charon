@@ -45,7 +45,7 @@ export function removeSteps(flow: Flow, targetSteps: string[]) {
   }
 }
 
-export async function updateSteps(flow: Flow, targetStep: string, force?: boolean) {
+export function updateSteps(flow: Flow, targetStep: string, force?: boolean) {
   const newSteps = [
     {
       key: "start",
@@ -122,7 +122,7 @@ export function processCompleted(router: Router, flow: Flow, progress: Ref<numbe
         redirectServerSide(redirectUrl, true, progress)
         break
       default:
-        throw new Error(`unknown completed: ${completed}`)
+        throw new Error(`unknown completed: ${completed.join(", ")}`)
     }
   } else if (oldCompleted.length > 0) {
     // New completed is empty, but old completed is not, so we have to move back to the start.

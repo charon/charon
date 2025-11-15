@@ -3,6 +3,7 @@ import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import eslintConfigPrettier from "eslint-config-prettier";
 import eslintPluginVue from 'eslint-plugin-vue';
+import vueParser from 'vue-eslint-parser'
 import globals from "globals";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -38,10 +39,13 @@ export default tseslint.config(
         ...globals.browser,
         ...globals.es2025,
       },
+      parser: vueParser,
       parserOptions: {
         extraFileExtensions: [".vue"],
         parser: tseslint.parser,
-        projectService: {},
+        projectService: {
+          allowDefaultProject: ["*.js"],
+        },
         tsconfigRootDir: __dirname,
       },
     },

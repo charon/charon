@@ -50,7 +50,7 @@ export type AuthFlowResponsePasskey =
       getOptions: { publicKey: PublicKeyCredentialRequestOptionsJSON }
     }
 
-export type Completed = "" | "signin" | "signup" | "failed" | "identity" | "declined" | "finishReady" | "finished"
+export type Completed = "signin" | "signup" | "failed" | "identity" | "declined" | "finishReady" | "finished"
 
 export type ErrorCode =
   | "wrongPassword"

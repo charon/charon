@@ -37,7 +37,9 @@ function initInterval() {
   interval = setInterval(() => {
     seconds.value -= 1
     if (seconds.value === 0) {
-      onRedirect()
+      clearInterval(interval)
+      // We do not await onRedirect.
+      void onRedirect()
     }
   }, 1000) as unknown as number // ms
 }
@@ -68,7 +70,7 @@ function onBeforeLeave() {
   abortController.abort()
 }
 
-async function onBack() {
+function onBack() {
   if (abortController.signal.aborted) {
     return
   }
@@ -79,7 +81,7 @@ async function onBack() {
   props.flow.backward("start")
 }
 
-async function onPauseResume() {
+function onPauseResume() {
   if (abortController.signal.aborted) {
     return
   }
