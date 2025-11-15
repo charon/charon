@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"slices"
@@ -442,8 +441,6 @@ func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *htt
 		}, nil)
 		return
 	}
-	fmt.Printf("Password start request")
-	fmt.Printf(request.Label)
 
 	accountID := mustGetAccountID(ctx)
 	account, errE := s.getAccount(ctx, accountID)
@@ -473,9 +470,6 @@ func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *htt
 			return
 		}
 	}
-
-	fmt.Printf("\nPassword start request 2\n")
-	fmt.Printf(requestLabel)
 
 	privateKeyBytes, publicKeyBytes, nonce, overhead, errE := generatePasswordEncryptionKeys()
 	if errE != nil {
@@ -613,8 +607,6 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 		}
 	}
 
-	fmt.Print("\nPassword complete label\n")
-	fmt.Printf(cas.Label)
 	jsonData, errE := x.MarshalWithoutEscapeHTML(passwordCredential{
 		Hash:  hashedPassword,
 		Label: cas.Label,
@@ -699,9 +691,9 @@ func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http
 	}
 
 	userID := identifier.New()
-	options, sessionData, err := beginPasskeyRegistration(s.passkeyProvider(), userID, requestLabel)
-	if err != nil {
-		s.InternalServerErrorWithError(w, req, withWebauthnError(err))
+	options, sessionData, errE := beginPasskeyRegistration(s.passkeyProvider(), userID, requestLabel)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 

@@ -968,8 +968,8 @@ func newPasswordEncryptionResponse(publicKeyBytes, nonce []byte, overhead int) *
 }
 
 func beginPasskeyRegistration(provider *webauthn.WebAuthn, userID identifier.Identifier, label string,
-) (*protocol.CredentialCreation, *webauthn.SessionData, error) {
-	return provider.BeginRegistration(
+) (*protocol.CredentialCreation, *webauthn.SessionData, errors.E) {
+	options, session, err := provider.BeginRegistration(
 		passkeyCredential{
 			ID:         userID,
 			Label:      label,
@@ -991,6 +991,10 @@ func beginPasskeyRegistration(provider *webauthn.WebAuthn, userID identifier.Ide
 			webauthncose.AlgRS256,
 		}),
 	)
+	if err != nil {
+		return nil, nil, withWebauthnError(err)
+	}
+	return options, session, nil
 }
 
 // EmailOrUsernameCheck specifies validation requirements for email or username input.

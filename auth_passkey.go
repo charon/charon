@@ -291,9 +291,9 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 
 	userID := identifier.New()
 	label := userID.String()
-	options, session, err := beginPasskeyRegistration(s.passkeyProvider(), userID, label)
-	if err != nil {
-		s.InternalServerErrorWithError(w, req, withWebauthnError(err))
+	options, session, errE := beginPasskeyRegistration(s.passkeyProvider(), userID, label)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
