@@ -31,6 +31,13 @@ export default tseslint.config(
         },
       ],
       "vue/multi-word-component-names": ["off"],
+      // TODO: Remove these once this is fixed upstream.
+      //       See: https://github.com/vuejs/eslint-plugin-vue/issues/2956
+      "@typescript-eslint/no-redundant-type-constituents": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
     },
     languageOptions: {
       ecmaVersion: "latest",
