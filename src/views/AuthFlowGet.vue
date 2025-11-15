@@ -196,7 +196,7 @@ function callHook(el: Element, hook: string) {
   if ("__vue_exposed" in el) {
     const exposed = el.__vue_exposed as Record<string, unknown> | null
     if (exposed && hook in exposed) {
-      (exposed[hook] as () => void)()
+      ;(exposed[hook] as () => void)()
     }
   }
 }
@@ -255,7 +255,6 @@ onMounted(() => {
       unwatch()
       // Call a hook if it is defined on the component.
       if ("onAfterEnter" in c) {
-
         c.onAfterEnter()
       }
     },
@@ -265,7 +264,6 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   if (component.value && "onBeforeLeave" in component.value) {
-
     component.value.onBeforeLeave()
   }
 })

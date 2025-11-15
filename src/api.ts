@@ -70,7 +70,7 @@ export async function getURL<T>(
         requestID: response.headers.get("Request-ID"),
       })
     }
-    return { doc: await response.json() as T, metadata: decodeMetadata(response.headers) }
+    return { doc: (await response.json()) as T, metadata: decodeMetadata(response.headers) }
   } finally {
     if (progress) {
       progress.value -= 1
@@ -109,7 +109,7 @@ export async function postJSON<T>(url: string, data: object, abortSignal: AbortS
         requestID: response.headers.get("Request-ID"),
       })
     }
-    return await response.json() as T
+    return (await response.json()) as T
   } finally {
     if (progress) {
       progress.value -= 1
