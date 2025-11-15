@@ -50,6 +50,11 @@ type flowPassword struct {
 	Nonce      []byte
 }
 
+type flowPasskey struct {
+	SessionData *webauthn.SessionData
+	Label       string
+}
+
 type flowCode struct {
 	Codes       []string
 	AccountID   *identifier.Identifier
@@ -81,7 +86,7 @@ type flow struct {
 	EmailOrUsername string
 	OIDCProvider    *flowOIDCProvider
 	SAMLProvider    *flowSAMLProvider
-	Passkey         *webauthn.SessionData
+	Passkey         *flowPasskey
 	Password        *flowPassword
 	Code            *flowCode
 }

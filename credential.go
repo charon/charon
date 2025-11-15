@@ -847,16 +847,14 @@ func (s *Service) CredentialRemovePost(w http.ResponseWriter, req *http.Request,
 		return
 	}
 
+FoundCredential:
 	for provider, credentials := range account.Credentials {
 		for i, credential := range credentials {
 			if credential.ID == credentialID {
 				foundProvider = provider
 				foundIndex = i
-				break
+				break FoundCredential
 			}
-		}
-		if foundIndex != -1 {
-			break
 		}
 	}
 

@@ -139,7 +139,10 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 	flow.ClearAuthStep("")
 	// Currently we support only one factor.
 	flow.Providers = []Provider{ProviderPasskey}
-	flow.Passkey = session
+	flow.Passkey = &flowPasskey{
+		SessionData: session,
+		Label:       "",
+	}
 	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -162,7 +165,7 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 	}, nil)
 }
 
-func (s *Service) getFlowPasskey(w http.ResponseWriter, req *http.Request, flow *flow) *webauthn.SessionData {
+func (s *Service) getFlowPasskey(w http.ResponseWriter, req *http.Request, flow *flow) *flowPasskey {
 	if flow.Passkey == nil {
 		s.BadRequestWithError(w, req, errors.New("passkey not started"))
 		return nil
@@ -234,7 +237,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 			return nil, errE
 		}
 		return credential, nil
-	}, *flowPasskey, parsedResponse)
+	}, *flowPasskey.SessionData, parsedResponse)
 	if err != nil {
 		s.BadRequestWithError(w, req, withWebauthnError(err))
 		return
@@ -287,7 +290,8 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 	}
 
 	userID := identifier.New()
-	options, session, err := beginPasskeyRegistration(s.passkeyProvider(), userID, userID.String())
+	label := userID.String()
+	options, session, err := beginPasskeyRegistration(s.passkeyProvider(), userID, label)
 	if err != nil {
 		s.InternalServerErrorWithError(w, req, withWebauthnError(err))
 		return
@@ -296,7 +300,10 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 	flow.ClearAuthStep("")
 	// Currently we support only one factor.
 	flow.Providers = []Provider{ProviderPasskey}
-	flow.Passkey = session
+	flow.Passkey = &flowPasskey{
+		SessionData: session,
+		Label:       label,
+	}
 	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -359,15 +366,15 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	userID := identifier.Data([16]byte(flowPasskey.UserID))
+	userID := identifier.Data([16]byte(flowPasskey.SessionData.UserID))
 
 	credential := passkeyCredential{
 		ID:         userID,
-		Label:      userID.String(),
+		Label:      flowPasskey.Label,
 		Credential: nil,
 	}
 
-	credential.Credential, err = s.passkeyProvider().CreateCredential(credential, *flowPasskey, parsedResponse)
+	credential.Credential, err = s.passkeyProvider().CreateCredential(credential, *flowPasskey.SessionData, parsedResponse)
 	if err != nil {
 		s.BadRequestWithError(w, req, withWebauthnError(err))
 		return
