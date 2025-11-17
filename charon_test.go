@@ -121,6 +121,16 @@ func TestingGenerateRSAKey() (*jose.JSONWebKey, errors.E) {
 
 type TestingFlow = flow
 
-func TestingNormalizeEmailOrUsername(emailOrUsername string, check EmailOrUsernameCheck) (string, string, ErrorCode, errors.E) {
+type TestingEmailOrUsernameCheck = emailOrUsernameCheck
+
+const (
+	TestingEmailOrUsernameCheckAny      = emailOrUsernameCheckAny
+	TestingEmailOrUsernameCheckEmail    = emailOrUsernameCheckEmail
+	TestingEmailOrUsernameCheckUsername = emailOrUsernameCheckUsername
+)
+
+func TestingNormalizeEmailOrUsername(emailOrUsername string, check emailOrUsernameCheck) (string, string, errors.E) {
 	return normalizeEmailOrUsername(emailOrUsername, check)
 }
+
+type TestingValidationError = validationError

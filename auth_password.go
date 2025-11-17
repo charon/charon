@@ -79,21 +79,6 @@ type usernameCredential struct {
 	Username string `json:"username"`
 }
 
-func (s *Service) normalizeEmailOrUsername(w http.ResponseWriter, req *http.Request, flow *flow, emailOrUsername string) string {
-	preservedEmailOrUsername, errE := normalizeUsernameCasePreserved(emailOrUsername)
-	if errE != nil {
-		s.flowError(w, req, flow, ErrorCodeInvalidEmailOrUsername, errE)
-		return ""
-	}
-
-	if len(preservedEmailOrUsername) < emailOrUsernameMinLength {
-		s.flowError(w, req, flow, ErrorCodeShortEmailOrUsername, nil)
-		return ""
-	}
-
-	return preservedEmailOrUsername
-}
-
 // AuthFlowPasswordStartRequest represents the request body for the AuthFlowPasswordStartPost handler.
 type AuthFlowPasswordStartRequest struct {
 	EmailOrUsername string `json:"emailOrUsername"`
@@ -118,8 +103,14 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	preservedEmailOrUsername := s.normalizeEmailOrUsername(w, req, flow, passwordStart.EmailOrUsername)
+	preservedEmailOrUsername, _, errE := normalizeEmailOrUsername(passwordStart.EmailOrUsername, emailOrUsernameCheckAny)
 	if preservedEmailOrUsername == "" {
+		var ve *validationError
+		if errors.As(errE, &ve) {
+			s.flowError(w, req, flow, ve.Code, errE)
+		} else {
+			s.InternalServerErrorWithError(w, req, errE)
+		}
 		return
 	}
 
@@ -196,10 +187,15 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 		return
 	}
 
-	mappedEmailOrUsername, errE := normalizeUsernameCaseMapped(flow.EmailOrUsername)
+	_, mappedEmailOrUsername, errE := normalizeEmailOrUsername(flow.EmailOrUsername, emailOrUsernameCheckAny)
 	if errE != nil {
-		// flowPassword.EmailOrUsername should already be normalized (but not mapped) so this should not error.
-		s.InternalServerErrorWithError(w, req, errE)
+		var ve *validationError
+		if errors.As(errE, &ve) {
+			s.flowError(w, req, flow, ve.Code, errE)
+		} else {
+			// flowPassword.EmailOrUsername should already be normalized (but not mapped) so this should not error.
+			s.InternalServerErrorWithError(w, req, errE)
+		}
 		return
 	}
 	plainPassword, errE := decryptEncryptedPassword(

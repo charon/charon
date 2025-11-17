@@ -1034,7 +1034,7 @@ func (s *Service) ApplicationTemplateUpdatePost(w http.ResponseWriter, req *http
 }
 
 // ApplicationTemplateCreatePost is the API handler for creating the application template, POST request.
-func (s *Service) ApplicationTemplateCreatePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+func (s *Service) ApplicationTemplateCreatePost(w http.ResponseWriter, req *http.Request, _ waf.Params) { //nolint:dupl
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 

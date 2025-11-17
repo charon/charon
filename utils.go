@@ -998,47 +998,47 @@ func beginPasskeyRegistration(provider *webauthn.WebAuthn, userID identifier.Ide
 }
 
 // EmailOrUsernameCheck specifies validation requirements for email or username input.
-type EmailOrUsernameCheck int
+type emailOrUsernameCheck int
 
 const (
-	// EmailOrUsernameCheckAny does not check for "@".
-	EmailOrUsernameCheckAny EmailOrUsernameCheck = iota
-	// EmailOrUsernameCheckEmail requires "@" (email format).
-	EmailOrUsernameCheckEmail
-	// EmailOrUsernameCheckUsername requires NO "@" (username format).
-	EmailOrUsernameCheckUsername
+	// emailOrUsernameCheckAny does not check for "@".
+	emailOrUsernameCheckAny emailOrUsernameCheck = iota
+	// emailOrUsernameCheckEmail requires "@" (email format).
+	emailOrUsernameCheckEmail
+	// emailOrUsernameCheckUsername requires NO "@" (username format).
+	emailOrUsernameCheckUsername
 )
 
-func normalizeEmailOrUsername(emailOrUsername string, check EmailOrUsernameCheck) (string, string, ErrorCode, errors.E) {
+func normalizeEmailOrUsername(emailOrUsername string, check emailOrUsernameCheck) (string, string, errors.E) {
 	preserved, errE := normalizeUsernameCasePreserved(emailOrUsername)
 	if errE != nil {
-		return "", "", "", errE
+		return "", "", newValidationError("invalid email or username", ErrorCodeInvalidEmailOrUsername)
 	}
 
 	if len(preserved) < emailOrUsernameMinLength {
-		return "", "", ErrorCodeShortEmailOrUsername, nil
+		return "", "", newValidationError("email or username too short", ErrorCodeShortEmailOrUsername)
 	}
 
 	containsAt := strings.Contains(preserved, "@")
 
 	switch check {
-	case EmailOrUsernameCheckAny:
-	case EmailOrUsernameCheckEmail:
+	case emailOrUsernameCheckAny:
+	case emailOrUsernameCheckEmail:
 		if !containsAt {
-			return "", "", ErrorCodeInvalidEmailOrUsername, nil
+			return "", "", newValidationError("email does not contain @", ErrorCodeInvalidEmailOrUsername)
 		}
-	case EmailOrUsernameCheckUsername:
+	case emailOrUsernameCheckUsername:
 		if containsAt {
-			return "", "", ErrorCodeInvalidEmailOrUsername, nil
+			return "", "", newValidationError("username contains @", ErrorCodeInvalidEmailOrUsername)
 		}
 	}
 
 	mapped, errE := normalizeUsernameCaseMapped(preserved)
 	if errE != nil {
-		return "", "", "", errE
+		return "", "", newValidationError("invalid email or username", ErrorCodeInvalidEmailOrUsername)
 	}
 
-	return preserved, mapped, "", nil
+	return preserved, mapped, nil
 }
 
 func (s *Service) completePasskeyRegistration(

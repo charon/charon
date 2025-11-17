@@ -302,14 +302,17 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	preservedEmailOrUsername := s.normalizeEmailOrUsername(w, req, flow, codeStart.EmailOrUsername)
-	if preservedEmailOrUsername == "" {
-		return
-	}
-	mappedEmailOrUsername, errE := normalizeUsernameCaseMapped(preservedEmailOrUsername)
+	preservedEmailOrUsername, mappedEmailOrUsername, errE := normalizeEmailOrUsername(codeStart.EmailOrUsername,
+		emailOrUsernameCheckAny,
+	)
 	if errE != nil {
-		// preservedEmailOrUsername should already be normalized (but not mapped) so this should not error.
-		s.InternalServerErrorWithError(w, req, errE)
+		var ve *validationError
+		if errors.As(errE, &ve) {
+			s.flowError(w, req, flow, ve.Code, errE)
+		} else {
+			// preservedEmailOrUsername should already be normalized (but not mapped) so this should not error.
+			s.InternalServerErrorWithError(w, req, errE)
+		}
 		return
 	}
 

@@ -268,19 +268,20 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	preservedEmail, mappedEmail, errorCode, errE := normalizeEmailOrUsername(request.Email, EmailOrUsernameCheckEmail)
+	preservedEmail, mappedEmail, errE := normalizeEmailOrUsername(request.Email, emailOrUsernameCheckEmail)
 	if errE != nil {
+		var ve *validationError
+		if errors.As(errE, &ve) {
+			s.WriteJSON(w, req, CredentialAddResponse{
+				SessionID:    nil,
+				CredentialID: nil,
+				Passkey:      nil,
+				Password:     nil,
+				Error:        ve.Code,
+			}, nil)
+			return
+		}
 		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-	if errorCode != "" {
-		s.WriteJSON(w, req, CredentialAddResponse{
-			SessionID:    nil,
-			CredentialID: nil,
-			Passkey:      nil,
-			Password:     nil,
-			Error:        errorCode,
-		}, nil)
 		return
 	}
 
@@ -344,19 +345,20 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	preservedUsername, mappedUsername, errorCode, errE := normalizeEmailOrUsername(request.Username, EmailOrUsernameCheckUsername)
+	preservedUsername, mappedUsername, errE := normalizeEmailOrUsername(request.Username, emailOrUsernameCheckUsername)
 	if errE != nil {
+		var ve *validationError
+		if errors.As(errE, &ve) {
+			s.WriteJSON(w, req, CredentialAddResponse{
+				SessionID:    nil,
+				CredentialID: nil,
+				Passkey:      nil,
+				Password:     nil,
+				Error:        ve.Code,
+			}, nil)
+			return
+		}
 		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-	if errorCode != "" {
-		s.WriteJSON(w, req, CredentialAddResponse{
-			SessionID:    nil,
-			CredentialID: nil,
-			Passkey:      nil,
-			Password:     nil,
-			Error:        errorCode,
-		}, nil)
 		return
 	}
 
@@ -537,7 +539,9 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	plainPassword, errE := decryptEncryptedPassword(cas.Password.PrivateKey, request.PublicKey, cas.Password.Nonce, request.Password)
+	plainPassword, errE := decryptEncryptedPassword(cas.Password.PrivateKey, request.PublicKey, cas.Password.Nonce,
+		request.Password,
+	)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
