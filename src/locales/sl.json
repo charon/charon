@@ -50,8 +50,14 @@
         "username": "To uporabniško ime je že prisotno na tem računu.",
         "password": "To geslo ali geslovni stavek je že prisotno na tem računu."
       },
-      "credentialLabelInUse": "Oznaka metode avtentikacije je že v uporabi.",
-      "credentialLabelMissing": "Metodi avtentikacije manjka oznaka."
+      "credentialLabelInUse": {
+        "password": "Oznaka gesla al igeslovnega stavka je že v uporabi.",
+        "passkey": "Oznaka za passkey je že v uporabi."
+      },
+      "credentialLabelMissing": {
+        "password": "Geslu ali geslovnemu stavku manjka oznaka.",
+        "passkey": "Passkey-u manjka oznaka."
+      }
     },
     "labels": {
       "optional": "(neobvezno)",
