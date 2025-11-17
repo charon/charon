@@ -45,13 +45,19 @@
       "credentialInUse": {
         "username": "Username is already in use by another account."
       },
-      "alreadyPresent" : {
+      "alreadyPresent": {
         "email": "This email is already present on this account.",
         "username": "This username is already present on this account.",
-        "password" : "This password or passphrase is already present on this account."
+        "password": "This password or passphrase is already present on this account."
       },
-      "credentialLabelInUse": "Credential label is already in use.",
-      "credentialLabelMissing": "Credential label is missing."
+      "credentialLabelInUse": {
+        "password": "Password label is already in use.",
+        "passkey": "Passkey label is already in use."
+      },
+      "credentialLabelMissing": {
+        "password": "Password label is missing.",
+        "passkey": "Passkey label is missing."
+      }
     },
     "labels": {
       "optional": "(optional)",
@@ -92,7 +98,7 @@
       "applicationTemplates": "Application templates",
       "activity": "Activity",
       "app": "App | Apps",
-      "credentials": "Credentials"
+      "credentials": "Authentication methods"
     },
     "messages": {
       "congratulations": "Congratulations.",
@@ -351,9 +357,9 @@
       "noActivities": "There is no activity."
     },
     "CredentialAdd": {
-      "addCredential": "Add credential",
-      "availableOptions": "Available Credential Types",
-      "credentialTypes": "Credential types"
+      "addCredential": "Add authentication method",
+      "availableOptions": "Available authentication methods",
+      "credentialTypes": "Authentication methods"
     },
     "CredentialList": {
       "noCredentialsCreate": "No authentication methods configured. Create the first one.",

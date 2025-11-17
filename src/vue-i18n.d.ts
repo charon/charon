@@ -61,8 +61,14 @@ declare module "vue-i18n" {
           username: string
           password: string
         }
-        credentialLabelInUse: string
-        credentialLabelMissing: string
+        credentialLabelInUse: {
+          password: string
+          passkey: string
+        }
+        credentialLabelMissing: {
+          password: string
+          passkey: string
+        }
       }
       labels: {
         optional: string

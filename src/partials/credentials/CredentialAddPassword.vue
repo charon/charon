@@ -44,9 +44,9 @@ function getErrorMessage(errorCode: string) {
     case "alreadyPresent":
       return t("common.errors.alreadyPresent.password")
     case "credentialLabelInUse":
-      return t("common.errors.credentialLabelInUse")
+      return t("common.errors.credentialLabelInUse.password")
     case "credentialLabelMissing":
-      return t("common.errors.credentialLabelMissing")
+      return t("common.errors.credentialLabelMissing.password")
     default:
       return t("common.errors.unexpected")
   }

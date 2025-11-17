@@ -45,10 +45,10 @@
       "credentialInUse": {
         "username": "Uporabniško ime je že v uporabi na drugem računu."
       },
-      "alreadyPresent" : {
+      "alreadyPresent": {
         "email": "Ta e-poštni naslov je že prisoten na tem računu.",
         "username": "To uporabniško ime je že prisotno na tem računu.",
-        "password" : "To geslo ali geslovni stavek je že prisotno na tem računu."
+        "password": "To geslo ali geslovni stavek je že prisotno na tem računu."
       },
       "credentialLabelInUse": "Oznaka metode avtentikacije je že v uporabi.",
       "credentialLabelMissing": "Metodi avtentikacije manjka oznaka."
@@ -351,9 +351,9 @@
       "blockingSuccess": "Uporabnik je bil uspešno blokiran."
     },
     "CredentialAdd": {
-      "addCredential": "Dodajte poverilnico",
-      "availableOptions": "Metode, ki so na voljo",
-      "credentialTypes": "Vrsta poverilnice"
+      "addCredential": "Dodajte metodo avtentikacije",
+      "availableOptions": "Metode avtentikacije, ki so na voljo",
+      "credentialTypes": "Metode avtentikacije"
     },
     "CredentialList": {
       "noCredentialsCreate": "Ni metod za avtentikacijo. Ustvarite prvo.",

@@ -27,9 +27,9 @@ if (!browserSupportsWebAuthn()) {
 function getErrorMessage(errorCode: string | undefined) {
   switch (errorCode) {
     case "credentialLabelInUse":
-      return t("common.errors.credentialLabelInUse")
+      return t("common.errors.credentialLabelInUse.passkey")
     case "credentialLabelMissing":
-      return t("common.errors.credentialLabelMissing")
+      return t("common.errors.credentialLabelMissing.passkey")
     default:
       return t("common.errors.unexpected")
   }
