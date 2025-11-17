@@ -50,7 +50,7 @@ onBeforeUnmount(() => {
   abortController.abort()
 })
 
-onBeforeMount(async () => {
+onBeforeMount(() => {
   progress.value += 1
   if (!isSignedIn()) {
     unexpectedError.value = t("common.errors.unexpected")

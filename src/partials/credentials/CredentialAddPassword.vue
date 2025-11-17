@@ -32,7 +32,7 @@ async function completeAddPasswordCredential(
   abortController: AbortController,
 ): Promise<CredentialAddResponse> {
   const url = router.apiResolve({ name: "CredentialAddPasswordComplete" }).href
-  return await postJSON<CredentialAddResponse>(url, request as CredentialAddPasswordCompleteRequest, abortController.signal, progress)
+  return await postJSON<CredentialAddResponse>(url, request, abortController.signal, progress)
 }
 
 function getErrorMessage(errorCode: string) {
@@ -129,7 +129,7 @@ async function onSubmit() {
       return
     }
 
-    router.push({ name: "CredentialList" })
+    await router.push({ name: "CredentialList" })
   } catch (error) {
     if (abortController.signal.aborted) {
       return

@@ -24,7 +24,7 @@ if (!browserSupportsWebAuthn()) {
   throw new Error("webauthn is required for this partial")
 }
 
-function getErrorMessage(errorCode: string | undefined) {
+function getErrorMessage(errorCode: string) {
   switch (errorCode) {
     case "credentialLabelInUse":
       return t("common.errors.credentialLabelInUse.passkey")
@@ -46,7 +46,7 @@ async function completeAddPasskeyCredential(
   abortController: AbortController,
 ): Promise<CredentialAddResponse> {
   const url = router.apiResolve({ name: "CredentialAddPasskeyComplete" }).href
-  return await postJSON<CredentialAddResponse>(url, request as CredentialAddPasskeyCompleteRequest, abortController.signal, progress)
+  return await postJSON<CredentialAddResponse>(url, request, abortController.signal, progress)
 }
 
 function resetOnInteraction() {
@@ -115,7 +115,7 @@ async function onSubmit() {
       return
     }
 
-    router.push({ name: "CredentialList" })
+    await router.push({ name: "CredentialList" })
   } catch (error) {
     if (abortController.signal.aborted) {
       return

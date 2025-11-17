@@ -82,7 +82,7 @@ async function onSubmit() {
       return
     }
 
-    router.push({ name: "CredentialList" })
+    await router.push({ name: "CredentialList" })
   } catch (error) {
     if (abortController.signal.aborted) {
       return

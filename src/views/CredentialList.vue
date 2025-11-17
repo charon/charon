@@ -44,8 +44,8 @@ onBeforeMount(async () => {
     if (abortController.signal.aborted) {
       return
     }
-
     console.error("CredentialList.onBeforeMount", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     dataLoadingError.value = `${error}`
   } finally {
     dataLoading.value = false
@@ -93,8 +93,9 @@ async function onRemove(credentialId: string) {
     if (abortController.signal.aborted) {
       return
     }
-    unexpectedError.value = `${error}`
     console.error("CredentialList.onRemove", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1
   }
