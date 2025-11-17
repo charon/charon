@@ -39,6 +39,10 @@ function getErrorMessage(errorCode: string) {
   switch (errorCode) {
     case "shortPassword":
       return t("common.errors.shortPassword")
+    case "invalidPassword":
+      return t("common.errors.invalidPassword")
+    case "alreadyPresent":
+      return t("common.errors.alreadyPresent.password")
     case "credentialLabelInUse":
       return t("common.errors.credentialLabelInUse")
     case "credentialLabelMissing":

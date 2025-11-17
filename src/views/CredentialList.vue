@@ -5,7 +5,7 @@ import { onBeforeMount, onBeforeUnmount, Ref, ref } from "vue"
 import { useI18n } from "vue-i18n"
 import { Router, useRouter } from "vue-router"
 
-import { getCredentials, postJSON } from "@/api"
+import {FetchError, getCredentials, postJSON} from "@/api"
 import { isSignedIn } from "@/auth"
 import Button from "@/components/Button.vue"
 import ButtonLink from "@/components/ButtonLink.vue"
@@ -43,8 +43,13 @@ onBeforeMount(async () => {
     if (abortController.signal.aborted) {
       return
     }
-    console.error("CredentialList.onBeforeMount", error)
-    dataLoadingError.value = `${error}`
+
+    if (error instanceof  FetchError && error.status === 401){
+      credentials.value = []
+    } else {
+      console.error("CredentialList.onBeforeMount", error)
+      dataLoadingError.value = `${error}`
+    }
   } finally {
     dataLoading.value = false
     progress.value -= 1

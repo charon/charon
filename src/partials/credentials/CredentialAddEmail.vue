@@ -25,6 +25,8 @@ function getErrorMessage(errorCode: string) {
       return t("common.errors.invalidEmailOrUsername.email")
     case "shortEmailOrUsername":
       return t("common.errors.shortEmailOrUsername.email")
+    case "alreadyPresent":
+      return t("common.errors.alreadyPresent.email")
     default:
       return t("common.errors.unexpected")
   }

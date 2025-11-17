@@ -45,6 +45,11 @@
       "credentialInUse": {
         "username": "Uporabniško ime je že v uporabi na drugem računu."
       },
+      "alreadyPresent" : {
+        "email": "Ta e-poštni naslov je že prisoten na tem računu.",
+        "username": "To uporabniško ime je že prisotno na tem računu.",
+        "password" : "To geslo ali geslovni stavek je že prisotno na tem računu."
+      },
       "credentialLabelInUse": "Oznaka metode avtentikacije je že v uporabi.",
       "credentialLabelMissing": "Metodi avtentikacije manjka oznaka."
     },

@@ -45,6 +45,11 @@
       "credentialInUse": {
         "username": "Username is already in use by another account."
       },
+      "alreadyPresent" : {
+        "email": "This email is already present on this account.",
+        "username": "This username is already present on this account.",
+        "password" : "This password or passphrase is already present on this account."
+      },
       "credentialLabelInUse": "Credential label is already in use.",
       "credentialLabelMissing": "Credential label is missing."
     },

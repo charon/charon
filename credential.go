@@ -20,7 +20,10 @@ import (
 
 // Credential addition error codes.
 const (
-	ErrorCodeCredentialInUse        ErrorCode = "credentialInUse" //nolint:gosec
+	// ErrorCodeCredentialInUse means credential (username) is in use by another account.
+	ErrorCodeCredentialInUse ErrorCode = "credentialInUse" //nolint:gosec
+	// ErrorCodeAlreadyPresent AlreadyPresent means credential (email, username, password) is already on this account.
+	ErrorCodeAlreadyPresent         ErrorCode = "alreadyPresent"
 	ErrorCodeCredentialLabelInUse   ErrorCode = "credentialLabelInUse"
 	ErrorCodeCredentialLabelMissing ErrorCode = "credentialLabelMissing" //nolint:gosec
 )
@@ -292,10 +295,10 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 		if credential.ProviderID == mappedEmail {
 			s.WriteJSON(w, req, CredentialAddResponse{
 				SessionID:    nil,
-				CredentialID: &credential.ID,
+				CredentialID: nil,
 				Passkey:      nil,
 				Password:     nil,
-				Error:        "",
+				Error:        ErrorCodeAlreadyPresent,
 			}, nil)
 			return
 		}
@@ -367,10 +370,10 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 		if credential.ProviderID == mappedUsername {
 			s.WriteJSON(w, req, CredentialAddResponse{
 				SessionID:    nil,
-				CredentialID: &credential.ID,
+				CredentialID: nil,
 				Passkey:      nil,
 				Password:     nil,
-				Error:        "",
+				Error:        ErrorCodeAlreadyPresent,
 			}, nil)
 			return
 		}
@@ -611,10 +614,10 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 			// TODO: If options are different, migrate the password to new options.
 			s.WriteJSON(w, req, CredentialAddResponse{
 				SessionID:    nil,
-				CredentialID: &credential.ID,
+				CredentialID: nil,
 				Passkey:      nil,
 				Password:     nil,
-				Error:        "",
+				Error:        ErrorCodeAlreadyPresent,
 			}, nil)
 			return
 		}
