@@ -81,6 +81,11 @@ async function onSubmit() {
     if (abortController.signal.aborted || !startResponse) {
       return
     }
+
+    if (startResponse.error) {
+      passwordError.value = startResponse.error
+      return
+    }
     if (!startResponse.password) {
       throw new Error("missing password parameters")
     }

@@ -450,24 +450,20 @@ func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *htt
 
 	// Check if password label is already in use on this account.
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	for _, credential := range account.Credentials[ProviderPassword] {
-		var pc passwordCredential
-		errE = x.Unmarshal(credential.Data, &pc)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-
-		if pc.Label == requestLabel {
-			s.WriteJSON(w, req, CredentialAddResponse{
-				SessionID:    nil,
-				CredentialID: nil,
-				Passkey:      nil,
-				Password:     nil,
-				Error:        ErrorCodeCredentialLabelInUse,
-			}, nil)
-			return
-		}
+	hasLabel, errE := account.HasCredentialLabel(ProviderPassword, requestLabel)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+	if hasLabel {
+		s.WriteJSON(w, req, CredentialAddResponse{
+			SessionID:    nil,
+			CredentialID: nil,
+			Passkey:      nil,
+			Password:     nil,
+			Error:        ErrorCodeCredentialLabelInUse,
+		}, nil)
+		return
 	}
 
 	privateKeyBytes, publicKeyBytes, nonce, overhead, errE := generatePasswordEncryptionKeys()
@@ -579,6 +575,24 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
+	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
+	hasLabel, errE := account.HasCredentialLabel(ProviderPassword, cas.Label)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+	if hasLabel {
+		s.WriteJSON(w, req, CredentialAddResponse{
+			SessionID:    nil,
+			CredentialID: nil,
+			Passkey:      nil,
+			Password:     nil,
+			Error:        ErrorCodeCredentialLabelInUse,
+		}, nil)
+		return
+	}
+
+	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
 	for _, credential := range account.Credentials[ProviderPassword] {
 		var pc passwordCredential
 		errE = x.Unmarshal(credential.Data, &pc)
@@ -588,13 +602,13 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 		}
 
 		// Check if password is already in use on this account.
-		// TODO: If options are different, migrate the password to new options.
 		match, err := argon2id.ComparePasswordAndHash(plainPassword, pc.Hash)
 		if err != nil {
 			s.InternalServerErrorWithError(w, req, errors.WithStack(err))
 			return
 		}
 		if match {
+			// TODO: If options are different, migrate the password to new options.
 			s.WriteJSON(w, req, CredentialAddResponse{
 				SessionID:    nil,
 				CredentialID: &credential.ID,
@@ -669,24 +683,20 @@ func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http
 
 	// Check if passkey label is already in use on this account.
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	for _, credential := range account.Credentials[ProviderPasskey] {
-		var pk passkeyCredential
-		errE = x.Unmarshal(credential.Data, &pk)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-
-		if pk.Label == requestLabel {
-			s.WriteJSON(w, req, CredentialAddResponse{
-				SessionID:    nil,
-				CredentialID: nil,
-				Passkey:      nil,
-				Password:     nil,
-				Error:        ErrorCodeCredentialLabelInUse,
-			}, nil)
-			return
-		}
+	hasLabel, errE := account.HasCredentialLabel(ProviderPasskey, requestLabel)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+	if hasLabel {
+		s.WriteJSON(w, req, CredentialAddResponse{
+			SessionID:    nil,
+			CredentialID: nil,
+			Passkey:      nil,
+			Password:     nil,
+			Error:        ErrorCodeCredentialLabelInUse,
+		}, nil)
+		return
 	}
 
 	userID := identifier.New()
@@ -771,6 +781,23 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 	account, errE := s.getAccount(ctx, accountID)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
+	hasLabel, errE := account.HasCredentialLabel(ProviderPasskey, cas.Label)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+	if hasLabel {
+		s.WriteJSON(w, req, CredentialAddResponse{
+			SessionID:    nil,
+			CredentialID: nil,
+			Passkey:      nil,
+			Password:     nil,
+			Error:        ErrorCodeCredentialLabelInUse,
+		}, nil)
 		return
 	}
 

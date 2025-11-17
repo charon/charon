@@ -83,12 +83,13 @@ async function onSubmit() {
       return
     }
 
-    if (!startResponse.passkey) {
-      throw new Error("missing passkey parameters")
-    }
     if (startResponse.error) {
       passkeyError.value = startResponse.error
       return
+    }
+
+    if (!startResponse.passkey) {
+      throw new Error("missing passkey parameters")
     }
 
     const regResponse = await startRegistration({ optionsJSON: startResponse.passkey.createOptions.publicKey })

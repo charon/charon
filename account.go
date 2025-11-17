@@ -79,6 +79,45 @@ func (a *Account) GetCredential(provider Provider, providerID string) *Credentia
 	return nil
 }
 
+// HasCredentialLabel returns true if existing label was already found for provider in account.
+func (a *Account) HasCredentialLabel(provider Provider, label string) (bool, errors.E) {
+	credentials, ok := a.Credentials[provider]
+	if !ok {
+		return false, nil
+	}
+
+	switch provider {
+	case ProviderEmail, ProviderUsername, ProviderCode:
+		return false, errors.New("provider does not support labels")
+	case ProviderPassword:
+		for _, credential := range credentials {
+			var pc passwordCredential
+			errE := x.Unmarshal(credential.Data, &pc)
+			if errE != nil {
+				return false, errE
+			}
+			if pc.Label == label {
+				return true, nil
+			}
+		}
+	case ProviderPasskey:
+		for _, credential := range credentials {
+			var pk passkeyCredential
+			errE := x.Unmarshal(credential.Data, &pk)
+			if errE != nil {
+				return false, errE
+			}
+			if pk.Label == label {
+				return true, nil
+			}
+		}
+	default:
+		return false, errors.New("third party provider does not support labels")
+	}
+
+	return false, nil
+}
+
 // GetEmailAddresses returns the email addresses of the account.
 func (a *Account) GetEmailAddresses() ([]string, errors.E) {
 	emails := []string{}
