@@ -1,12 +1,12 @@
 package charon
 
 import (
-	"encoding/json"
 	"fmt"
 	"runtime"
 	"sync"
 
 	"gitlab.com/tozd/go/errors"
+	"gitlab.com/tozd/go/x"
 )
 
 func callers(extraSkip int) []uintptr {
@@ -16,12 +16,10 @@ func callers(extraSkip int) []uintptr {
 	return pcs[0:n]
 }
 
-// ErrorCode represents the type of the error.
-type ErrorCode string
-
 type validationError struct {
 	Message   string
 	Code      ErrorCode
+	err       error
 	stack     []uintptr
 	details   map[string]interface{}
 	detailsMu *sync.Mutex
@@ -29,6 +27,10 @@ type validationError struct {
 
 func (v *validationError) Error() string {
 	return v.Message
+}
+
+func (v *validationError) Unwrap() error {
+	return v.err
 }
 
 func (v *validationError) Details() map[string]interface{} {
@@ -52,19 +54,42 @@ func (v *validationError) Format(s fmt.State, verb rune) {
 }
 
 func (v *validationError) MarshalJSON() ([]byte, error) {
-	b, err := json.Marshal(errors.Formatter{Error: v})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal validationError")
-	}
-	return b, nil
+	return x.Marshal(errors.Formatter{Error: v})
 }
 
 func newValidationError(message string, code ErrorCode) errors.E {
 	return &validationError{
 		Message:   message,
 		Code:      code,
+		err:       nil,
 		stack:     callers(0),
 		details:   nil,
 		detailsMu: new(sync.Mutex),
 	}
+}
+
+func toValidationError(err error, code ErrorCode) errors.E {
+	if err == nil {
+		return nil
+	}
+
+	ve := &validationError{
+		Message:   err.Error(),
+		Code:      code,
+		err:       err,
+		stack:     nil,
+		details:   nil,
+		detailsMu: new(sync.Mutex),
+	}
+
+	type stackTracer interface {
+		StackTrace() []uintptr
+	}
+	if st, ok := err.(stackTracer); ok {
+		ve.stack = st.StackTrace()
+	} else {
+		ve.stack = callers(0)
+	}
+
+	return ve
 }

@@ -1012,7 +1012,7 @@ const (
 func normalizeEmailOrUsername(emailOrUsername string, check emailOrUsernameCheck) (string, string, errors.E) {
 	preserved, errE := normalizeUsernameCasePreserved(emailOrUsername)
 	if errE != nil {
-		return "", "", newValidationError("invalid email or username", ErrorCodeInvalidEmailOrUsername)
+		return "", "", toValidationError(errE, ErrorCodeInvalidEmailOrUsername)
 	}
 
 	if len(preserved) < emailOrUsernameMinLength {
@@ -1035,7 +1035,8 @@ func normalizeEmailOrUsername(emailOrUsername string, check emailOrUsernameCheck
 
 	mapped, errE := normalizeUsernameCaseMapped(preserved)
 	if errE != nil {
-		return "", "", newValidationError("invalid email or username", ErrorCodeInvalidEmailOrUsername)
+		// preserved should already be normalized (but not mapped) so this should not error.
+		return "", "", toValidationError(errE, ErrorCodeInvalidEmailOrUsername)
 	}
 
 	return preserved, mapped, nil

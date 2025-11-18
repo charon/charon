@@ -35,6 +35,9 @@ type AuthFlowResponse struct {
 	Error ErrorCode `json:"error,omitempty"`
 }
 
+// ErrorCode represents the type of the error.
+type ErrorCode string
+
 // ErrorCode values.
 const (
 	ErrorCodeWrongPassword          ErrorCode = "wrongPassword"

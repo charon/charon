@@ -310,7 +310,6 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 		if errors.As(errE, &ve) {
 			s.flowError(w, req, flow, ve.Code, errE)
 		} else {
-			// preservedEmailOrUsername should already be normalized (but not mapped) so this should not error.
 			s.InternalServerErrorWithError(w, req, errE)
 		}
 		return
