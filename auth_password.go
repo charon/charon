@@ -199,10 +199,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 		return
 	}
 	plainPassword, errE := decryptEncryptedPassword(
-		flowPassword.PrivateKey,
-		passwordComplete.PublicKey,
-		flowPassword.Nonce,
-		passwordComplete.Password,
+		flowPassword.PrivateKey, passwordComplete.PublicKey, flowPassword.Nonce, passwordComplete.Password,
 	)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)

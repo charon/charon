@@ -914,7 +914,8 @@ func generatePasswordEncryptionKeys() ([]byte, []byte, []byte, int, errors.E) {
 	return privateKey.Bytes(), privateKey.PublicKey().Bytes(), nonce, aesgcm.Overhead(), nil
 }
 
-func decryptEncryptedPassword(privateKeyBytes []byte, publicKeyBytes []byte, nonce []byte, encryptedPassword []byte,
+func decryptEncryptedPassword(
+	privateKeyBytes []byte, publicKeyBytes []byte, nonce []byte, encryptedPassword []byte,
 ) ([]byte, errors.E) {
 	privateKey, err := ecdh.P256().NewPrivateKey(privateKeyBytes)
 	if err != nil {
@@ -967,7 +968,8 @@ func newPasswordEncryptionResponse(publicKeyBytes, nonce []byte, overhead int) *
 	}
 }
 
-func beginPasskeyRegistration(provider *webauthn.WebAuthn, userID identifier.Identifier, label string,
+func beginPasskeyRegistration(
+	provider *webauthn.WebAuthn, userID identifier.Identifier, label string,
 ) (*protocol.CredentialCreation, *webauthn.SessionData, errors.E) {
 	options, session, err := provider.BeginRegistration(
 		passkeyCredential{
@@ -1019,16 +1021,14 @@ func normalizeEmailOrUsername(emailOrUsername string, check emailOrUsernameCheck
 		return "", "", newValidationError("email or username too short", ErrorCodeShortEmailOrUsername)
 	}
 
-	containsAt := strings.Contains(preserved, "@")
-
 	switch check {
 	case emailOrUsernameCheckAny:
 	case emailOrUsernameCheckEmail:
-		if !containsAt {
+		if !strings.Contains(preserved, "@") {
 			return "", "", newValidationError("email does not contain @", ErrorCodeInvalidEmailOrUsername)
 		}
 	case emailOrUsernameCheckUsername:
-		if containsAt {
+		if strings.Contains(preserved, "@") {
 			return "", "", newValidationError("username contains @", ErrorCodeInvalidEmailOrUsername)
 		}
 	}
@@ -1043,9 +1043,7 @@ func normalizeEmailOrUsername(emailOrUsername string, check emailOrUsernameCheck
 }
 
 func (s *Service) completePasskeyRegistration(
-	createResponse protocol.CredentialCreationResponse,
-	label string,
-	sessionData *webauthn.SessionData,
+	createResponse protocol.CredentialCreationResponse, label string, sessionData *webauthn.SessionData,
 ) (*passkeyCredential, string, errors.E) {
 	parsedResponse, err := createResponse.Parse()
 	if err != nil {

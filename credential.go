@@ -539,8 +539,8 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	plainPassword, errE := decryptEncryptedPassword(cas.Password.PrivateKey, request.PublicKey, cas.Password.Nonce,
-		request.Password,
+	plainPassword, errE := decryptEncryptedPassword(
+		cas.Password.PrivateKey, request.PublicKey, cas.Password.Nonce, request.Password,
 	)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
