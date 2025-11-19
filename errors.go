@@ -9,6 +9,7 @@ import (
 	"gitlab.com/tozd/go/x"
 )
 
+// TODO: This was copied from gitlab.com/tozd/go/errors. Maybe it should be made public there?
 func callers(extraSkip int) []uintptr {
 	const depth = 32
 	var pcs [depth]uintptr
