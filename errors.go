@@ -87,6 +87,9 @@ func toValidationError(err error, code ErrorCode) errors.E {
 		StackTrace() []uintptr
 	}
 	if st, ok := err.(stackTracer); ok {
+		// If err is errors.E, we just copy its stack trace.
+		// Otherwise, even if errors.E is wrapped somewhere inside,
+		// we record a new stack trace.
 		ve.stack = st.StackTrace()
 	} else {
 		ve.stack = callers(0)
