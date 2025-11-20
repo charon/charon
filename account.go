@@ -17,10 +17,17 @@ type Provider string
 
 // Credential represents a credential issued by a credential provider.
 type Credential struct {
-	ID         identifier.Identifier `json:"id"`
-	ProviderID string                `json:"providerId,omitempty"`
-	Provider   Provider              `json:"provider"`
-	Data       json.RawMessage       `json:"data"`
+	// ID is a public-facing ID used to identify the credential in public API.
+	ID identifier.Identifier `json:"id"`
+
+	// ProviderID is the ID bound tothe credential provider.
+	ProviderID string `json:"providerId,omitempty"`
+
+	// Provider is the internal provider type name or the name of the third party provider.
+	Provider Provider `json:"provider"`
+
+	// Data is the raw credential data.
+	Data json.RawMessage `json:"data"`
 }
 
 // Equal returns true if the two credentials are equal.

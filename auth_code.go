@@ -123,12 +123,14 @@ func (f *flowCode) updateCredentials(newCredentials []Credential) errors.E {
 		return errE
 	}
 
-	// E-mail credential is copied over.
 	var updatedCredentials []Credential
 
 	if newEmailCredential == nil {
+		// This should not be possible.
 		return errors.New("missing e-mail credential")
 	}
+
+	// E-mail credential is copied over.
 	// It does not matter if we use newEmailCredential or existingEmailCredential
 	// because they are equal at this point.
 	updatedCredentials = append(updatedCredentials, *newEmailCredential)
