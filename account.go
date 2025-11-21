@@ -59,11 +59,20 @@ func (a *Account) HasCredential(provider Provider, providerID string) bool {
 }
 
 // UpdateCredentials updates the credentials for the account.
-func (a *Account) UpdateCredentials(credentials []Credential) {
+//
+// Password credentials can only be updated but not added using this method.
+func (a *Account) UpdateCredentials(credentials []Credential) errors.E {
 	for _, credential := range credentials {
 		updated := false
 		for i, c := range a.Credentials[credential.Provider] {
-			if c.ProviderID == credential.ProviderID {
+			if credential.Provider == ProviderPassword {
+				// Password credentials do not use provider ID.
+				if c.ID == credential.ID {
+					a.Credentials[credential.Provider][i] = credential
+					updated = true
+					break
+				}
+			} else if c.ProviderID == credential.ProviderID {
 				// It is useful to retain the old public ID.
 				credential.ID = c.ID
 				a.Credentials[credential.Provider][i] = credential
@@ -72,13 +81,27 @@ func (a *Account) UpdateCredentials(credentials []Credential) {
 			}
 		}
 		if !updated {
+			if credential.Provider == ProviderPassword {
+				// This is to catch logic errors where UpdateCredentials is used to add the password.
+				// We do not allow adding passwords because they do not have provider ID and we cannot
+				// really compare them for equality (without knowing the password) so it could happen
+				// that same password is added multiple times.
+				return errors.New("password credential can be only updated but not added")
+			}
 			a.Credentials[credential.Provider] = append(a.Credentials[credential.Provider], credential)
 		}
 	}
+
+	return nil
 }
 
 // GetCredential returns the credential for the given provider and provider ID.
 func (a *Account) GetCredential(provider Provider, providerID string) *Credential {
+	// Password credentials do not use provider ID.
+	if provider == ProviderPassword || providerID == "" {
+		return nil
+	}
+
 	for _, credential := range a.Credentials[provider] {
 		if credential.ProviderID == providerID {
 			return &credential
