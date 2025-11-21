@@ -300,13 +300,13 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 		// Account already exist.
 		for _, credential := range account.Credentials[ProviderPassword] {
 			var pc passwordCredential
-			errE := x.Unmarshal(credential.Data, &pc) //nolint:govet
+			errE := x.Unmarshal(credential.Data, &pc)
 			if errE != nil {
 				s.InternalServerErrorWithError(w, req, errE)
 				return
 			}
 
-			match, options, err := argon2id.CheckHash(plainPassword, pc.Hash) //nolint:govet
+			match, options, err := argon2id.CheckHash(plainPassword, pc.Hash)
 			if err != nil {
 				s.InternalServerErrorWithError(w, req, errors.WithStack(err))
 				return
@@ -354,7 +354,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 
 	credentials := []Credential{}
 	if strings.Contains(mappedEmailOrUsername, "@") {
-		jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{ //nolint:govet
+		jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{
 			Email: flow.EmailOrUsername,
 		})
 		if errE != nil {
@@ -367,7 +367,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 			Data:     jsonData,
 		})
 	} else {
-		jsonData, errE := x.MarshalWithoutEscapeHTML(usernameCredential{ //nolint:govet
+		jsonData, errE := x.MarshalWithoutEscapeHTML(usernameCredential{
 			Username: flow.EmailOrUsername,
 		})
 		if errE != nil {

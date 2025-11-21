@@ -1097,7 +1097,7 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 			return
 		}
 
-		organization, errE := s.getOrganizationFromID(ctx, params["id"]) //nolint:govet
+		organization, errE := s.getOrganizationFromID(ctx, params["id"])
 		if errors.Is(errE, ErrOrganizationNotFound) {
 			s.NotFoundWithError(w, req, errE)
 			return

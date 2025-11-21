@@ -74,7 +74,7 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 	resp, err := ts.Client().Get(ts.URL + userinfo) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
 		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
-		out, err := io.ReadAll(resp.Body)                                                   //nolint:govet
+		out, err := io.ReadAll(resp.Body)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
@@ -103,7 +103,7 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 	resp, err = ts.Client().Do(req) //nolint:bodyclose
 	if assert.NoError(t, err) {
 		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
-		out, err := io.ReadAll(resp.Body)                                                   //nolint:govet
+		out, err := io.ReadAll(resp.Body)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
@@ -120,7 +120,7 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 	resp, err = ts.Client().Do(req) //nolint:bodyclose
 	if assert.NoError(t, err) {
 		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
-		out, err := io.ReadAll(resp.Body)                                                   //nolint:govet
+		out, err := io.ReadAll(resp.Body)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
@@ -136,7 +136,7 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
 	if assert.NoError(t, err) {
 		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
-		_, err := io.ReadAll(resp.Body)                                                     //nolint:govet
+		_, err := io.ReadAll(resp.Body)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
@@ -153,7 +153,7 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 	resp, err = ts.Client().Do(req) //nolint:bodyclose
 	if assert.NoError(t, err) {
 		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
-		out, err := io.ReadAll(resp.Body)                                                   //nolint:govet
+		out, err := io.ReadAll(resp.Body)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)

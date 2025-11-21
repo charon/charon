@@ -224,7 +224,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 
 	user, newCredential, err := s.passkeyProvider().ValidatePasskeyLogin(func(rawID, _ []byte) (webauthn.User, error) {
 		id := base64.RawURLEncoding.EncodeToString(rawID)
-		account, errE := s.getAccountByCredential(ctx, ProviderPasskey, id) //nolint:govet
+		account, errE := s.getAccountByCredential(ctx, ProviderPasskey, id)
 		if errE != nil {
 			return nil, errE
 		}
