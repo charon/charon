@@ -189,13 +189,8 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 
 	mappedEmailOrUsername, errE := normalizeUsernameCaseMapped(flow.EmailOrUsername)
 	if errE != nil {
-		var ve *validationError
-		if errors.As(errE, &ve) {
-			s.flowError(w, req, flow, ve.Code, errE)
-		} else {
-			// flowPassword.EmailOrUsername should already be normalized (but not mapped) so this should not error.
-			s.InternalServerErrorWithError(w, req, errE)
-		}
+		// flowPassword.EmailOrUsername should already be normalized (but not mapped) so this should not error.
+		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 	plainPassword, errE := decryptEncryptedPassword(
