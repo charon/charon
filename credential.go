@@ -268,7 +268,7 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	preservedEmail, mappedEmail, errE := normalizeEmailOrUsername(request.Email, emailOrUsernameCheckEmail)
+	preservedEmail, mappedEmail, errE := validateEmailOrUsername(request.Email, emailOrUsernameCheckEmail)
 	if errE != nil {
 		var ve *validationError
 		if errors.As(errE, &ve) {
@@ -345,7 +345,7 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	preservedUsername, mappedUsername, errE := normalizeEmailOrUsername(request.Username, emailOrUsernameCheckUsername)
+	preservedUsername, mappedUsername, errE := validateEmailOrUsername(request.Username, emailOrUsernameCheckUsername)
 	if errE != nil {
 		var ve *validationError
 		if errors.As(errE, &ve) {

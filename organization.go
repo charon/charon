@@ -1265,7 +1265,7 @@ func (s *Service) OrganizationUpdatePost(w http.ResponseWriter, req *http.Reques
 }
 
 // OrganizationCreatePost is the API handler for creating the organization, POST request.
-func (s *Service) OrganizationCreatePost(w http.ResponseWriter, req *http.Request, _ waf.Params) { //nolint:dupl
+func (s *Service) OrganizationCreatePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 

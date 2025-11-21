@@ -103,7 +103,7 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	preservedEmailOrUsername, _, errE := normalizeEmailOrUsername(passwordStart.EmailOrUsername, emailOrUsernameCheckAny)
+	preservedEmailOrUsername, _, errE := validateEmailOrUsername(passwordStart.EmailOrUsername, emailOrUsernameCheckAny)
 	if preservedEmailOrUsername == "" {
 		var ve *validationError
 		if errors.As(errE, &ve) {
@@ -187,7 +187,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 		return
 	}
 
-	_, mappedEmailOrUsername, errE := normalizeEmailOrUsername(flow.EmailOrUsername, emailOrUsernameCheckAny)
+	mappedEmailOrUsername, errE := normalizeUsernameCaseMapped(flow.EmailOrUsername)
 	if errE != nil {
 		var ve *validationError
 		if errors.As(errE, &ve) {

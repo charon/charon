@@ -64,6 +64,7 @@ func (a *Account) UpdateCredentials(credentials []Credential) {
 		updated := false
 		for i, c := range a.Credentials[credential.Provider] {
 			if c.ProviderID == credential.ProviderID {
+				// It is useful to retain the old public ID.
 				credential.ID = c.ID
 				a.Credentials[credential.Provider][i] = credential
 				updated = true
@@ -86,7 +87,7 @@ func (a *Account) GetCredential(provider Provider, providerID string) *Credentia
 	return nil
 }
 
-// HasCredentialLabel returns true if existing label was already found for provider in account.
+// HasCredentialLabel returns true if the label is already in use by a credential for the provider in the account.
 func (a *Account) HasCredentialLabel(provider Provider, label string) (bool, errors.E) {
 	credentials, ok := a.Credentials[provider]
 	if !ok {
@@ -166,15 +167,11 @@ func (s *Service) getAccountByCredential(ctx context.Context, provider Provider,
 			return nil, errE
 		}
 
-		if !account.HasCredential(provider, providerID) {
+		credential := account.GetCredential(provider, providerID)
+		if credential == nil {
 			continue
 		}
 		if provider == ProviderEmail {
-			credential := account.GetCredential(provider, providerID)
-			if credential == nil {
-				// This should not happen, account.HasCredential returned true.
-				return nil, errors.WithDetails(ErrAccountNotFound, "provider", provider, "providerID", providerID)
-			}
 			var ec emailCredential
 			errE := x.Unmarshal(credential.Data, &ec)
 			if errE != nil {
@@ -240,14 +237,18 @@ func (c *Credential) DisplayName() (string, errors.E) {
 	default:
 		var token map[string]interface{}
 		errE := x.Unmarshal(c.Data, &token)
-		if errE == nil {
-			return findFirstString(token, "username", "preferred_username", "email", "eMailAddress", "emailAddress", "email_address"), nil
+		if errE != nil {
+			return "", errE
+		}
+		displayName := findFirstString(token, "username", "preferred_username", "email", "eMailAddress", "emailAddress", "email_address")
+		if displayName != "" {
+			return displayName, nil
 		}
 	}
-	return "", errors.New("displayName provider not found")
+	return "", errors.New("display name for the provider not available")
 }
 
-// ToCredentialInfo converts the credential to a CredentialInfo used for display.
+// ToCredentialInfo converts the credential to a CredentialInfo used for public API.
 func (c *Credential) ToCredentialInfo() (CredentialInfo, errors.E) {
 	credentialInfo := CredentialInfo{
 		ID:          c.ID,
@@ -256,11 +257,11 @@ func (c *Credential) ToCredentialInfo() (CredentialInfo, errors.E) {
 		Verified:    false,
 	}
 
-	displayName, errE := c.DisplayName()
+	var errE errors.E
+	credentialInfo.DisplayName, errE = c.DisplayName()
 	if errE != nil {
 		return CredentialInfo{}, errE
 	}
-	credentialInfo.DisplayName = displayName
 
 	if c.Provider == ProviderEmail {
 		var ec emailCredential

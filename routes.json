@@ -341,61 +341,61 @@
     },
     {
       "name": "CredentialList",
-      "path": "/credential",
+      "path": "/authentication",
       "api": {},
       "get": {}
     },
     {
       "name": "CredentialAdd",
-      "path": "/credential/add",
+      "path": "/authentication/add",
       "api": null,
       "get": {}
     },
     {
       "name": "CredentialAddEmail",
-      "path": "/credential/emailAdd",
+      "path": "/authentication/emailAdd",
       "api": {},
       "get": null
     },
     {
       "name": "CredentialAddUsername",
-      "path": "/credential/usernameAdd",
+      "path": "/authentication/usernameAdd",
       "api": {},
       "get": null
     },
     {
       "name": "CredentialAddPasswordStart",
-      "path": "/credential/passwordAddStart",
+      "path": "/authentication/passwordAddStart",
       "api": {},
       "get": null
     },
     {
       "name": "CredentialAddPasswordComplete",
-      "path": "/credential/passwordAddComplete",
+      "path": "/authentication/passwordAddComplete",
       "api": {},
       "get": null
     },
     {
       "name": "CredentialAddPasskeyStart",
-      "path": "/credential/passkeyAddStart",
+      "path": "/authentication/passkeyAddStart",
       "api": {},
       "get": null
     },
     {
       "name": "CredentialAddPasskeyComplete",
-      "path": "/credential/passkeyAddComplete",
+      "path": "/authentication/passkeyAddComplete",
       "api": {},
       "get": null
     },
     {
       "name": "CredentialRemove",
-      "path": "/credential/remove/:id",
+      "path": "/authentication/remove/:id",
       "api": {},
       "get": null
     },
     {
       "name": "CredentialGet",
-      "path": "/credential/:id",
+      "path": "/authentication/:id",
       "api": {},
       "get": null
     }

@@ -317,17 +317,17 @@ func TestNormalizeEmailOrUsername(t *testing.T) {
 
 			preserved, mapped, errE := charon.TestingNormalizeEmailOrUsername(tt.input, tt.check)
 
-			assert.Equal(t, tt.wantPreserved, preserved, "preserved value mismatch")
-			assert.Equal(t, tt.wantMapped, mapped, "mapped value mismatch")
+			assert.Equal(t, tt.wantPreserved, preserved)
+			assert.Equal(t, tt.wantMapped, mapped)
 
 			if tt.wantErrorCode != "" {
-				require.Error(t, errE, "expected an error but got nil", errE)
+				require.Error(t, errE)
 
 				var ve *charon.TestingValidationError
-				require.ErrorAs(t, errE, &ve, "expected validationError but got different error type")
-				assert.Equal(t, tt.wantErrorCode, ve.Code, "error code mismatch")
+				require.ErrorAs(t, errE, &ve)
+				assert.Equal(t, tt.wantErrorCode, ve.Code)
 			} else {
-				assert.NoError(t, errE, "unexpected error", errE)
+				assert.NoError(t, errE, "% -+#.1v", errE)
 			}
 		})
 	}

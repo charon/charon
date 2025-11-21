@@ -86,6 +86,18 @@ var (
 
 type emptyRequest struct{}
 
+// EmailOrUsernameCheck specifies validation requirements for email or username input.
+type emailOrUsernameCheck int
+
+const (
+	// emailOrUsernameCheckAny does not check for "@".
+	emailOrUsernameCheckAny emailOrUsernameCheck = iota
+	// emailOrUsernameCheckEmail requires "@" (email format).
+	emailOrUsernameCheckEmail
+	// emailOrUsernameCheckUsername requires NO "@" (username format).
+	emailOrUsernameCheckUsername
+)
+
 func getBearerToken(req *http.Request) string {
 	const prefix = "Bearer "
 	auth := req.Header.Get("Authorization")
@@ -999,19 +1011,8 @@ func beginPasskeyRegistration(
 	return options, session, nil
 }
 
-// EmailOrUsernameCheck specifies validation requirements for email or username input.
-type emailOrUsernameCheck int
-
-const (
-	// emailOrUsernameCheckAny does not check for "@".
-	emailOrUsernameCheckAny emailOrUsernameCheck = iota
-	// emailOrUsernameCheckEmail requires "@" (email format).
-	emailOrUsernameCheckEmail
-	// emailOrUsernameCheckUsername requires NO "@" (username format).
-	emailOrUsernameCheckUsername
-)
-
-func normalizeEmailOrUsername(emailOrUsername string, check emailOrUsernameCheck) (string, string, errors.E) {
+// validateEmailOrUsername validates emailOrUsername, returns it preserved and mapped or validationError.
+func validateEmailOrUsername(emailOrUsername string, check emailOrUsernameCheck) (string, string, errors.E) {
 	preserved, errE := normalizeUsernameCasePreserved(emailOrUsername)
 	if errE != nil {
 		return "", "", toValidationError(errE, ErrorCodeInvalidEmailOrUsername)
@@ -1036,7 +1037,7 @@ func normalizeEmailOrUsername(emailOrUsername string, check emailOrUsernameCheck
 	mapped, errE := normalizeUsernameCaseMapped(preserved)
 	if errE != nil {
 		// preserved should already be normalized (but not mapped) so this should not error.
-		return "", "", toValidationError(errE, ErrorCodeInvalidEmailOrUsername)
+		return "", "", errE
 	}
 
 	return preserved, mapped, nil

@@ -162,7 +162,7 @@ func (i *IdentityPublic) Validate(ctx context.Context, existing *IdentityPublic)
 	}
 
 	if i.Username != "" {
-		username, _, errE := normalizeEmailOrUsername(i.Username, emailOrUsernameCheckUsername)
+		username, _, errE := validateEmailOrUsername(i.Username, emailOrUsernameCheckUsername)
 		if errE != nil {
 			errors.Details(errE)["username"] = i.Username
 			return errE
@@ -173,7 +173,7 @@ func (i *IdentityPublic) Validate(ctx context.Context, existing *IdentityPublic)
 
 	// TODO: E-mails should be possible to be only those which have been validated.
 	if i.Email != "" {
-		email, _, errE := normalizeEmailOrUsername(i.Email, emailOrUsernameCheckEmail)
+		email, _, errE := validateEmailOrUsername(i.Email, emailOrUsernameCheckEmail)
 		if errE != nil {
 			errors.Details(errE)["email"] = i.Email
 			return errE
@@ -749,10 +749,6 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 
 	errE = identity.Validate(ctx, &existingIdentity, s)
 	if errE != nil {
-		var ve *validationError
-		if errors.As(errE, &ve) {
-			return errE
-		}
 		return errors.WrapWith(errE, ErrIdentityValidationFailed)
 	}
 
@@ -1175,7 +1171,7 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 }
 
 // IdentityUpdatePost is the API handler for updating the identity, POST request.
-func (s *Service) IdentityUpdatePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+func (s *Service) IdentityUpdatePost(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -1202,11 +1198,7 @@ func (s *Service) IdentityUpdatePost(w http.ResponseWriter, req *http.Request, p
 	}
 
 	errE = s.updateIdentity(ctx, &identity)
-	var ve *validationError
-	if errors.As(errE, &ve) {
-		s.BadRequestWithError(w, req, errE)
-		return
-	} else if errors.Is(errE, ErrIdentityUnauthorized) {
+	if errors.Is(errE, ErrIdentityUnauthorized) {
 		waf.Error(w, req, http.StatusUnauthorized)
 		return
 	} else if errors.Is(errE, ErrIdentityNotFound) {
@@ -1224,7 +1216,7 @@ func (s *Service) IdentityUpdatePost(w http.ResponseWriter, req *http.Request, p
 }
 
 // IdentityCreatePost is the API handler for creating the identity, POST request.
-func (s *Service) IdentityCreatePost(w http.ResponseWriter, req *http.Request, _ waf.Params) { //nolint:dupl
+func (s *Service) IdentityCreatePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 

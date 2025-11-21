@@ -130,7 +130,7 @@ const (
 )
 
 func TestingNormalizeEmailOrUsername(emailOrUsername string, check emailOrUsernameCheck) (string, string, errors.E) {
-	return normalizeEmailOrUsername(emailOrUsername, check)
+	return validateEmailOrUsername(emailOrUsername, check)
 }
 
 type TestingValidationError = validationError
