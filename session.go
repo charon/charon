@@ -85,7 +85,7 @@ func (s *Service) getSessionBySecretID(_ context.Context, secretID [32]byte) (*s
 		}
 		if ses.SecretID == secretID {
 			if ses.Expired() {
-				return nil, errors.WithDetails(errSessionNotFound)
+				return nil, errors.WithStack(errSessionNotFound)
 			}
 			return &ses, nil
 		}
