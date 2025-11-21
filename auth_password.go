@@ -285,7 +285,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 	// Account does not exist (by username or by verified email).
 	credentials := []Credential{}
 	if strings.Contains(mappedEmailOrUsername, "@") {
-		jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{ //nolint:govet
+		jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{
 			Email: flow.EmailOrUsername,
 			// We set verified to true because this credential is stored with
 			// the account only after the e-mail gets verified.
