@@ -1011,7 +1011,7 @@ func beginPasskeyRegistration(
 	return options, session, nil
 }
 
-// validateEmailOrUsername validates emailOrUsername, returns it preserved and mapped or validationError.
+// validateEmailOrUsername validates emailOrUsername, returns it preserved and mapped.
 func validateEmailOrUsername(emailOrUsername string, check emailOrUsernameCheck) (string, string, errors.E) {
 	preserved, errE := normalizeUsernameCasePreserved(emailOrUsername)
 	if errE != nil {
