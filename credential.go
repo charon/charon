@@ -173,7 +173,6 @@ func (s *Service) CredentialListGet(w http.ResponseWriter, req *http.Request, _ 
 	}
 
 	accountID := mustGetAccountID(ctx)
-
 	account, errE := s.getAccount(ctx, accountID)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -259,8 +258,6 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	accountID := mustGetAccountID(ctx)
-
 	var request emailCredential
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &request)
 	if errE != nil {
@@ -285,6 +282,7 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
+	accountID := mustGetAccountID(ctx)
 	account, errE := s.getAccount(ctx, accountID)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -336,8 +334,6 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	accountID := mustGetAccountID(ctx)
-
 	request := usernameCredential{}
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &request)
 	if errE != nil {
@@ -362,6 +358,7 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
+	accountID := mustGetAccountID(ctx)
 	account, errE := s.getAccount(ctx, accountID)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -515,8 +512,6 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	accountID := mustGetAccountID(ctx)
-
 	var request CredentialAddPasswordCompleteRequest
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &request)
 	if errE != nil {
@@ -576,6 +571,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
+	accountID := mustGetAccountID(ctx)
 	account, errE := s.getAccount(ctx, accountID)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -749,8 +745,6 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 		return
 	}
 
-	accountID := mustGetAccountID(ctx)
-
 	var request CredentialAddPasskeyCompleteRequest
 	errE := x.DecodeJSON(req.Body, &request)
 	if errE != nil {
@@ -785,6 +779,7 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 		return
 	}
 
+	accountID := mustGetAccountID(ctx)
 	account, errE := s.getAccount(ctx, accountID)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
