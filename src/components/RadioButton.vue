@@ -11,11 +11,9 @@ import { computed } from "vue"
 
 const props = withDefaults(
   defineProps<{
-    id: string
     progress?: number
     disabled?: boolean
     modelValue?: T
-    value: T
   }>(),
   {
     progress: 0,
@@ -23,6 +21,11 @@ const props = withDefaults(
     modelValue: undefined,
   },
 )
+
+// We want all fallthrough attributes to be passed to the input element.
+defineOptions({
+  inheritAttrs: false,
+})
 
 const $emit = defineEmits<{
   "update:modelValue": [value: T]
@@ -44,9 +47,8 @@ const v = computed({
   <!-- We wrap input in div to align radio button correctly vertically inside the grid. -->
   <div>
     <input
-      :id="id"
       v-model="v"
-      :value="value"
+      v-bind="$attrs"
       :disabled="progress > 0 || disabled"
       type="radio"
       class="-mt-0.5 align-middle"
