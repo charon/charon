@@ -20,7 +20,7 @@ type Credential struct {
 	// ID is a public-facing ID used to identify the credential in public API.
 	ID identifier.Identifier `json:"id"`
 
-	// ProviderID is the ID bound tothe credential provider.
+	// ProviderID is the ID bound to the credential provider.
 	ProviderID string `json:"providerId,omitempty"`
 
 	// Provider is the internal provider type name or the name of the third party provider.
