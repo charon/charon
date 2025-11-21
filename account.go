@@ -60,6 +60,9 @@ func (a *Account) HasCredential(provider Provider, providerID string) bool {
 
 // UpdateCredentials updates the credentials for the account.
 //
+// It matches existing credentials based on provider ID, except for password
+// credentials which are matched based on public ID.
+//
 // Password credentials can only be updated but not added using this method.
 func (a *Account) UpdateCredentials(credentials []Credential) errors.E {
 	for _, credential := range credentials {
@@ -74,6 +77,7 @@ func (a *Account) UpdateCredentials(credentials []Credential) errors.E {
 				}
 			} else if c.ProviderID == credential.ProviderID {
 				// It is useful to retain the old public ID.
+				// TODO: We should make sure that any other credential does not have the same public ID.
 				credential.ID = c.ID
 				a.Credentials[credential.Provider][i] = credential
 				updated = true
