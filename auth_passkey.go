@@ -141,7 +141,8 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 	flow.Providers = []Provider{ProviderPasskey}
 	flow.Passkey = &flowPasskey{
 		SessionData: session,
-		Label:       "",
+		// We mark the request as sign-in.
+		Label: "",
 	}
 	errE = s.setFlow(ctx, flow)
 	if errE != nil {
@@ -204,6 +205,11 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 
 	flowPasskey := s.getFlowPasskey(w, req, flow)
 	if flowPasskey == nil {
+		return
+	}
+
+	if flowPasskey.Label != "" {
+		s.BadRequestWithError(w, req, errors.New("not a sign-in request"))
 		return
 	}
 
@@ -302,7 +308,8 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 	flow.Providers = []Provider{ProviderPasskey}
 	flow.Passkey = &flowPasskey{
 		SessionData: session,
-		Label:       label,
+		// We mark the request as sign-up.
+		Label: label,
 	}
 	errE = s.setFlow(ctx, flow)
 	if errE != nil {
@@ -345,6 +352,11 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 
 	flowPasskey := s.getFlowPasskey(w, req, flow)
 	if flowPasskey == nil {
+		return
+	}
+
+	if flowPasskey.Label == "" {
+		s.BadRequestWithError(w, req, errors.New("not a sign-up request"))
 		return
 	}
 

@@ -52,7 +52,9 @@ type flowPassword struct {
 
 type flowPasskey struct {
 	SessionData *webauthn.SessionData
-	Label       string
+
+	// Label is also used to mark the request as sign-in (empty) or sign-up (non-empty).
+	Label string
 }
 
 type flowCode struct {
