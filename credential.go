@@ -94,8 +94,8 @@ func (s CredentialAddSession) Expired() bool {
 
 // This function does not check for duplicates. Duplicate checking
 // should be done by the caller before calling this function.
-func (s *Service) addCredentialToAccount(ctx context.Context, account *Account, providerKey Provider,
-	providerID string, jsonData json.RawMessage,
+func (s *Service) addCredentialToAccount(
+	ctx context.Context, account *Account, providerKey Provider, providerID string, jsonData json.RawMessage,
 ) (identifier.Identifier, errors.E) {
 	newCredential := Credential{
 		ID:         identifier.New(),
