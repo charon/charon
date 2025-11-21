@@ -284,11 +284,11 @@ func (c *Credential) ToCredentialInfo() (CredentialInfo, errors.E) {
 		Verified:    false,
 	}
 
-	var errE errors.E
-	credentialInfo.DisplayName, errE = c.DisplayName()
+	displayName, errE := c.DisplayName()
 	if errE != nil {
 		return CredentialInfo{}, errE
 	}
+	credentialInfo.DisplayName = displayName
 
 	if c.Provider == ProviderEmail {
 		var ec emailCredential
