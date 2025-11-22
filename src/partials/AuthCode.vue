@@ -29,6 +29,15 @@ const codeError = ref("")
 const unexpectedError = ref("")
 const codeFromHash = ref(false)
 
+function getErrorMessage(errorCode: string) {
+  switch (errorCode) {
+    case "invalidCode":
+      return t("common.errors.invalidCode")
+    default:
+      throw new Error(`unexpected error code: ${errorCode}`)
+  }
+}
+
 function resetOnInteraction() {
   // We reset errors on interaction.
   codeError.value = ""
@@ -133,7 +142,9 @@ async function onNext() {
     if (processResponse(router, response, props.flow, progress, abortController)) {
       return
     }
-    if ("error" in response && ["invalidCode"].includes(response.error)) {
+    if ("error" in response) {
+      // We check if it is an expected error code by trying to get the error message.
+      getErrorMessage(response.error)
       codeError.value = response.error
       return
     }
@@ -267,7 +278,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
         }}</Button>
       </form>
     </div>
-    <div v-if="codeError === 'invalidCode'" class="mt-4 text-error-600">{{ t("common.errors.invalidCode") }}</div>
+    <div v-if="codeError" class="mt-4 text-error-600">{{ getErrorMessage(codeError) }}</div>
     <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div v-else-if="codeFromHash" class="mt-4">{{ t("partials.AuthCode.confirmCode") }}</div>
     <div v-else class="mt-4">{{ t("partials.AuthCode.waitForCode") }}</div>

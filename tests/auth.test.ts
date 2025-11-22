@@ -99,7 +99,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     await nextButton2.click()
 
     // Wait for error message to appear.
-    const errorMessage = page.locator("#authpassword-error-wrongpassword")
+    const errorMessage = page.locator("#authpassword-error")
     await errorMessage.waitFor({ state: "visible" })
     await expect(errorMessage).toBeVisible()
 

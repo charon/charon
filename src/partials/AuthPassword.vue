@@ -30,6 +30,30 @@ const codeErrorOnce = ref(false)
 const unexpectedPasswordError = ref("")
 const unexpectedCodeError = ref("")
 
+function getPasswordErrorMessage(errorCode: string) {
+  switch (errorCode) {
+    case "wrongPassword":
+      return t("common.errors.wrongPassword")
+    case "invalidPassword":
+      return t("common.errors.invalidPassword")
+    case "shortPassword":
+      return t("common.errors.shortPassword")
+    default:
+      throw new Error(`unexpected error code: ${errorCode}`)
+  }
+}
+
+function getCodeErrorMessage(errorCode: string) {
+  switch (errorCode) {
+    case "noAccount":
+      return t("common.errors.noAccount")
+    case "noEmails":
+      return t("common.errors.noEmails")
+    default:
+      throw new Error(`unexpected error code: ${errorCode}`)
+  }
+}
+
 function resetOnInteraction() {
   // We reset flags and errors on interaction.
   passwordError.value = ""
@@ -216,7 +240,9 @@ async function onNext() {
       removeSteps(props.flow, ["code"])
       return
     }
-    if ("error" in response && ["wrongPassword", "invalidPassword", "shortPassword"].includes(response.error)) {
+    if ("error" in response) {
+      // We check if it is an expected error code by trying to get the error message.
+      getPasswordErrorMessage(response.error)
       passwordError.value = response.error
       if (response.error === "wrongPassword" && !codeError.value) {
         // If password error was returned and account recovery was not automatically
@@ -284,7 +310,9 @@ async function onCode() {
     if (processResponse(router, response, props.flow, progress, abortController)) {
       return
     }
-    if ("error" in response && ["noAccount", "noEmails"].includes(response.error)) {
+    if ("error" in response) {
+      // We check if it is an expected error code by trying to get the error message.
+      getCodeErrorMessage(response.error)
       codeError.value = response.error
       codeErrorOnce.value = true
       // Code step is not possible.
@@ -371,11 +399,7 @@ async function onCode() {
       </form>
     </div>
     <template v-if="passwordError">
-      <div v-if="passwordError === 'wrongPassword'" id="authpassword-error-wrongpassword" class="mt-4 text-error-600">{{ t("common.errors.wrongPassword") }}</div>
-      <div v-else-if="passwordError === 'invalidPassword'" id="authpassword-error-invalidpassword" class="mt-4 text-error-600">
-        {{ t("common.errors.invalidPassword") }}
-      </div>
-      <div v-else-if="passwordError === 'shortPassword'" id="authpassword-error-shortpassword" class="mt-4 text-error-600">{{ t("common.errors.shortPassword") }}</div>
+      <div v-if="passwordError" id="authpassword-error" class="mt-4 text-error-600">{{ getPasswordErrorMessage(passwordError) }}</div>
       <div v-if="passwordError === 'wrongPassword'" class="mt-4">
         <i18n-t keypath="partials.AuthPassword.troublePassword" scope="global">
           <template #linkDifferentSigninMethod>
@@ -388,11 +412,8 @@ async function onCode() {
     <div v-else class="mt-4">
       {{ isEmail(flow.getEmailOrUsername()) ? t("partials.AuthPassword.emailAccount") : t("partials.AuthPassword.usernameAccount") }}
     </div>
-    <div v-if="codeError === 'noAccount'" class="mt-4" :class="codeErrorOnce ? 'text-error-600' : ''">
-      {{ t("common.errors.noAccount") }}
-    </div>
-    <div v-else-if="codeError === 'noEmails'" class="mt-4" :class="codeErrorOnce ? 'text-error-600' : ''">
-      {{ t("common.errors.noEmails") }}
+    <div v-if="codeError" class="mt-4" :class="codeErrorOnce ? 'text-error-600' : ''">
+      {{ getCodeErrorMessage(codeError) }}
     </div>
     <div v-else-if="unexpectedCodeError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div v-else class="mt-4">{{ t("partials.AuthPassword.skipPassword") }}</div>

@@ -148,10 +148,13 @@ export async function startPassword(
     if (processResponse(router, response, flow, progress, abortController)) {
       return null
     }
-    if ("error" in response && ["invalidEmailOrUsername", "shortEmailOrUsername"].includes(response.error)) {
-      return {
-        error: response.error,
+    if ("error" in response) {
+      if (["invalidEmailOrUsername", "shortEmailOrUsername"].includes(response.error)) {
+        return {
+          error: response.error,
+        }
       }
+      throw new Error(`unexpected error code: ${response.error}`)
     }
     if ("password" in response) {
       return {

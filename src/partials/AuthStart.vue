@@ -26,6 +26,25 @@ const abortController = new AbortController()
 const passwordError = ref("")
 const unexpectedError = ref("")
 
+function getErrorMessage(errorCode: string) {
+  switch (errorCode) {
+    case "invalidEmailOrUsername":
+      if (isEmail(props.flow.getEmailOrUsername())) {
+        return t("common.errors.invalidEmailOrUsername.email")
+      } else {
+        return t("common.errors.invalidEmailOrUsername.username")
+      }
+    case "shortEmailOrUsername":
+      if (isEmail(props.flow.getEmailOrUsername())) {
+        return t("common.errors.shortEmailOrUsername.email")
+      } else {
+        return t("common.errors.shortEmailOrUsername.username")
+      }
+    default:
+      throw new Error(`unexpected error code: ${errorCode}`)
+  }
+}
+
 function resetOnInteraction() {
   // We reset errors on interaction.
   passwordError.value = ""
@@ -88,6 +107,8 @@ async function onNext() {
       return
     }
     if ("error" in response) {
+      // We check if it is an expected error code by trying to get the error message.
+      getErrorMessage(response.error)
       passwordError.value = response.error
       return
     }
@@ -167,12 +188,7 @@ function onThirdPartyProvider(provider: string) {
           t("common.buttons.next")
         }}</Button>
       </form>
-      <div v-if="passwordError === 'invalidEmailOrUsername'" class="mt-4 text-error-600">
-        {{ isEmail(flow.getEmailOrUsername()) ? t("common.errors.invalidEmailOrUsername.email") : t("common.errors.invalidEmailOrUsername.username") }}
-      </div>
-      <div v-else-if="passwordError === 'shortEmailOrUsername'" class="mt-4 text-error-600">
-        {{ isEmail(flow.getEmailOrUsername()) ? t("common.errors.shortEmailOrUsername.email") : t("common.errors.shortEmailOrUsername.username") }}
-      </div>
+      <div v-if="passwordError" class="mt-4 text-error-600">{{ getErrorMessage(passwordError) }}</div>
       <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     </div>
     <h2 class="m-4 text-center text-xl font-bold uppercase">{{ t("partials.AuthStart.orUse") }}</h2>
