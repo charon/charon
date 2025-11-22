@@ -133,4 +133,7 @@ func TestingNormalizeEmailOrUsername(emailOrUsername string, check emailOrUserna
 	return validateEmailOrUsername(emailOrUsername, check)
 }
 
-type TestingValidationError = validationError
+type (
+	TestingValidationError      = validationError
+	TestingCredentialAddSession = credentialAddSession
+)

@@ -68,7 +68,6 @@ type CredentialAddPasswordCompleteRequest struct {
 	AuthFlowPasswordCompleteRequest
 
 	SessionID identifier.Identifier `json:"sessionId"`
-	Label     string                `json:"label"`
 }
 
 // CredentialAddPasskeyCompleteRequest represents the request body for the CredentialAddPasskeyCompletePost handler.
@@ -78,8 +77,7 @@ type CredentialAddPasskeyCompleteRequest struct {
 	SessionID identifier.Identifier `json:"sessionId"`
 }
 
-// CredentialAddSession represents session data for adding credential.
-type CredentialAddSession struct {
+type credentialAddSession struct {
 	ID        identifier.Identifier
 	CreatedAt time.Time
 	Passkey   *webauthn.SessionData
@@ -88,7 +86,7 @@ type CredentialAddSession struct {
 }
 
 // Expired returns true if the credential add session has expired.
-func (s CredentialAddSession) Expired() bool {
+func (s credentialAddSession) Expired() bool {
 	return time.Now().After(s.CreatedAt.Add(credentialAddSessionExpiration))
 }
 
@@ -118,7 +116,7 @@ func (s *Service) addCredentialToAccount(
 	return newCredential.ID, nil
 }
 
-func storeCredentialSession(session CredentialAddSession) errors.E {
+func storeCredentialSession(session credentialAddSession) errors.E {
 	sessionData, errE := x.MarshalWithoutEscapeHTML(session)
 	if errE != nil {
 		return errE
@@ -131,7 +129,7 @@ func storeCredentialSession(session CredentialAddSession) errors.E {
 	return nil
 }
 
-func getAndDeleteCredentialSession(sessionID identifier.Identifier) (*CredentialAddSession, errors.E) {
+func getAndDeleteCredentialSession(sessionID identifier.Identifier) (*credentialAddSession, errors.E) {
 	credentialSessionsMu.Lock()
 	defer credentialSessionsMu.Unlock()
 
@@ -139,18 +137,18 @@ func getAndDeleteCredentialSession(sessionID identifier.Identifier) (*Credential
 	delete(credentialSessions, sessionID)
 
 	if !ok {
-		return nil, errors.WithDetails(errSessionNotFound, "sessionID", sessionID)
+		return nil, errors.WithDetails(errSessionNotFound, "id", sessionID)
 	}
 
-	var cas CredentialAddSession
+	var cas credentialAddSession
 	errE := x.UnmarshalWithoutUnknownFields(sessionData, &cas)
 	if errE != nil {
-		errors.Details(errE)["sessionID"] = sessionID
+		errors.Details(errE)["id"] = sessionID
 		return nil, errE
 	}
 
 	if cas.Expired() {
-		return nil, errors.WithDetails(errSessionNotFound, "expired sessionID", sessionID)
+		return nil, errors.WithDetails(errSessionNotFound, "id", sessionID)
 	}
 
 	return &cas, nil
@@ -290,17 +288,15 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 	}
 
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	for _, credential := range account.Credentials[ProviderEmail] {
-		if credential.ProviderID == mappedEmail {
-			s.WriteJSON(w, req, CredentialAddResponse{
-				SessionID:    nil,
-				CredentialID: nil,
-				Passkey:      nil,
-				Password:     nil,
-				Error:        ErrorCodeAlreadyPresent,
-			}, nil)
-			return
-		}
+	if account.HasCredential(ProviderEmail, mappedEmail) {
+		s.WriteJSON(w, req, CredentialAddResponse{
+			SessionID:    nil,
+			CredentialID: nil,
+			Passkey:      nil,
+			Password:     nil,
+			Error:        ErrorCodeAlreadyPresent,
+		}, nil)
+		return
 	}
 
 	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{Email: preservedEmail, Verified: false})
@@ -365,17 +361,15 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	for _, credential := range account.Credentials[ProviderUsername] {
-		if credential.ProviderID == mappedUsername {
-			s.WriteJSON(w, req, CredentialAddResponse{
-				SessionID:    nil,
-				CredentialID: nil,
-				Passkey:      nil,
-				Password:     nil,
-				Error:        ErrorCodeAlreadyPresent,
-			}, nil)
-			return
-		}
+	if account.HasCredential(ProviderUsername, mappedUsername) {
+		s.WriteJSON(w, req, CredentialAddResponse{
+			SessionID:    nil,
+			CredentialID: nil,
+			Passkey:      nil,
+			Password:     nil,
+			Error:        ErrorCodeAlreadyPresent,
+		}, nil)
+		return
 	}
 
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
@@ -394,7 +388,7 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	jsonData, errE := x.MarshalWithoutEscapeHTML(usernameCredential{preservedUsername})
+	jsonData, errE := x.MarshalWithoutEscapeHTML(usernameCredential{Username: preservedUsername})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -474,7 +468,7 @@ func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *htt
 		return
 	}
 
-	session := CredentialAddSession{
+	session := credentialAddSession{
 		ID: identifier.New(),
 		Password: &flowPassword{
 			PrivateKey: privateKeyBytes,
@@ -709,7 +703,7 @@ func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http
 		return
 	}
 
-	session := CredentialAddSession{
+	session := credentialAddSession{
 		ID:        identifier.New(),
 		Password:  nil,
 		Passkey:   sessionData,

@@ -198,6 +198,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 	)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
+		return
 	}
 
 	plainPassword, errE = normalizePassword(plainPassword)
