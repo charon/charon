@@ -79,7 +79,7 @@ onBeforeUnmount(onBeforeLeave)
 
 function onAfterEnter() {
   if (codeFromHash.value) {
-    document.getElementById("submit-code")?.focus()
+    document.getElementById("authcode-button-submitcode")?.focus()
   } else {
     document.getElementById("code")?.focus()
   }
@@ -273,7 +273,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
           is not enabled.
           Button is on purpose not disabled on unexpectedError so that user can retry.
         -->
-        <Button id="submit-code" primary type="submit" tabindex="2" :disabled="!code.replaceAll(/\s/g, '') || !!codeError" :progress="progress">{{
+        <Button id="authcode-button-submitcode" primary type="submit" tabindex="2" :disabled="!code.replaceAll(/\s/g, '') || !!codeError" :progress="progress">{{
           t("common.buttons.next")
         }}</Button>
       </form>
@@ -303,7 +303,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
     </div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="4" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
-      <Button type="button" tabindex="3" :progress="progress" @click.prevent="onResend">{{ t("partials.AuthCode.resendButton") }}</Button>
+      <Button id="authcode-button-resendcode" type="button" tabindex="3" :progress="progress" @click.prevent="onResend">{{ t("partials.AuthCode.resendButton") }}</Button>
     </div>
   </div>
 </template>

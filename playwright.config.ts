@@ -17,6 +17,8 @@ export default defineConfig({
     trace: "on-first-retry",
     viewport: { width: 1280, height: 720 },
     headless: true,
+    // Assertions are generally used when the element should be present. This timeout only accounts for asynchronicity.
+    actionTimeout: 10000,
   },
   snapshotPathTemplate: "playwright-screenshots/{testFilePath}/{arg}{ext}",
   expect: {

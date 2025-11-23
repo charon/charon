@@ -5,56 +5,53 @@ test.describe.serial("Charon Sign-in Flows", () => {
     const page = await context.newPage()
 
     await page.goto(CHARON_URL)
-    await checkpoint(page, "main-page-before-signin")
 
     // Find and click the "SIGN-IN OR SIGN-UP" button.
     const signInButton = page.locator("#navbar-button-signin")
     await expect(signInButton).toBeVisible()
+    await checkpoint(page, "main-page-before-signin")
     await signInButton.click()
-
-    await checkpoint(page, "main-page-after-clicking-signin")
-
-    // Wait for navigation to sign-in page.
-    await page.waitForLoadState("networkidle")
 
     // Find the email input field and enter 'tester'.
     const emailField = page.locator("input#authstart-input-email")
-    await emailField.waitFor({ state: "visible" })
+    await expect(emailField).toBeVisible()
+    await checkpoint(page, "main-page-after-clicking-signin")
     await emailField.fill("tester")
 
     // Find and click the NEXT button.
     const nextButton = page.locator("button#authstart-button-next")
-    await nextButton.waitFor({ state: "visible" })
+    await expect(nextButton).toBeVisible()
+    await checkpoint(page, "auth-page-after-entering-username")
     await nextButton.click()
-
-    await page.waitForLoadState("networkidle")
 
     // Find the password input field and enter 'tester123'.
     const passwordField = page.locator("input#authpassword-input-currentpassword")
-    await passwordField.waitFor({ state: "visible" })
+    await expect(passwordField).toBeVisible()
+    await checkpoint(page, "auth-page-after-entering-username-and-clicking-next")
     await passwordField.fill("tester123")
 
     // Find and click the enabled NEXT button (not disabled).
     const nextButton2 = page.locator("button#authpassword-button-next")
-    await nextButton2.waitFor({ state: "visible" })
+    await expect(nextButton2).toBeVisible()
+    await checkpoint(page, "auth-page-after-entering-password")
     await nextButton2.click()
-
-    await page.waitForLoadState("networkidle")
 
     // Find the li element that contains "tester" and click its SELECT button.
     const testerIdentity = page.locator('li:has-text("tester")')
     const selectButton = testerIdentity.locator("button.authidentity-selector-identity")
-    await selectButton.waitFor({ state: "visible" })
+    await expect(selectButton).toBeVisible()
+    await checkpoint(page, "successful-signin-previous-identities-page-from-password")
     await selectButton.click()
 
-    await page.waitForLoadState("networkidle")
+    // Verify success message.
+    await expect(page.getByText("Everything is ready to sign you in")).toBeVisible()
+    await checkpoint(page, "auth-page-after-selecting-username-identity")
 
     // Waiting for the automatic 3 seconds redirect.
-    await page.waitForTimeout(5000)
+    await page.waitForTimeout(3500)
 
     // Check that the Identities link is visible.
     const identitiesLink = page.locator("#menu-list-identities")
-    await identitiesLink.waitFor({ state: "visible" })
     await expect(identitiesLink).toBeVisible()
 
     await checkpoint(page, "successful-signin-identities-page")
@@ -67,43 +64,41 @@ test.describe.serial("Charon Sign-in Flows", () => {
 
     await page.goto(CHARON_URL)
 
-    await checkpoint(page, "main-page-before-signin")
-
     // Find and click the "SIGN-IN OR SIGN-UP" button.
     const signInButton = page.locator("#navbar-button-signin")
     await expect(signInButton).toBeVisible()
+    await checkpoint(page, "main-page-before-signin")
     await signInButton.click()
-
-    await checkpoint(page, "main-page-after-clicking-signin")
 
     // Find the email input field and enter 'tester'.
     const emailField = page.locator("input#authstart-input-email")
-    await emailField.waitFor({ state: "visible" })
+    await expect(emailField).toBeVisible()
+    await checkpoint(page, "main-page-after-clicking-signin")
     await emailField.fill("tester")
 
     // Find and click the NEXT button.
     const nextButton = page.locator("button#authstart-button-next")
-    await nextButton.waitFor({ state: "visible" })
+    await expect(nextButton).toBeVisible()
+    await checkpoint(page, "auth-page-after-entering-username")
     await nextButton.click()
-
-    await page.waitForLoadState("networkidle")
 
     // Find the password input field and enter 'tester1234' (wrong password).
     const passwordField = page.locator("input#authpassword-input-currentpassword")
-    await passwordField.waitFor({ state: "visible" })
+    await expect(passwordField).toBeVisible()
+    await checkpoint(page, "auth-page-after-entering-username-and-clicking-next")
     await passwordField.fill("tester1234")
 
     // Find and click the enabled NEXT button (not disabled).
     const nextButton2 = page.locator("button#authpassword-button-next")
-    await nextButton2.waitFor({ state: "visible" })
+    await expect(nextButton2).toBeVisible()
+    await checkpoint(page, "auth-page-after-entering-wrong-password")
     await nextButton2.click()
 
     // Wait for error message to appear.
-    const errorMessage = page.locator("#authpassword-error")
-    await errorMessage.waitFor({ state: "visible" })
+    const errorMessage = page.locator("#authpassword-error-wrongpassword")
     await expect(errorMessage).toBeVisible()
 
-    await checkpoint(page, "wrong-password-error-message")
+    await checkpoint(page, "auth-page-wrong-password-error-message")
 
     console.log("Successfully tested wrong password flow: entered wrong password and verified error message appeared")
   })

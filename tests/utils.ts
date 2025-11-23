@@ -1,6 +1,6 @@
 /// <reference types="node" />
 
-import type { BrowserContext, Page } from "@playwright/test"
+import type { BrowserContext, Locator, Page } from "@playwright/test"
 import type { Result } from "axe-core"
 
 import AxeBuilder from "@axe-core/playwright"
@@ -14,6 +14,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 const CONSOLE_ALLOWLIST = [/^Failed to load resource: the server responded with a status of 400 \(\)$/]
 
 export const CHARON_URL = process.env.CHARON_URL || "https://localhost:8080"
+export const MAILPIT_URL = process.env.MAILPIT_URL || "http://localhost:8025"
 
 export const test = baseTest.extend({
   context: async ({ browser }, use) => {
@@ -39,6 +40,11 @@ export const test = baseTest.extend({
     )
 
     context.on("page", (page) => {
+      // Hide carets in all input elements once the page loads.
+      page.on("load", async () => {
+        await page.addStyleTag({ content: "input,textarea,[contenteditable] { caret-color: transparent !important; }" })
+      })
+
       page.on("console", async (msg) => {
         const text = msg.text()
         const args = await Promise.all(msg.args().map((arg) => arg.jsonValue()))
@@ -79,16 +85,29 @@ test.afterAll(() => {
   })
 })
 
-export async function checkpoint(page: Page, name: string) {
+export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+interface CheckpointOptions {
+  mask?: Array<Locator>
+}
+
+export async function checkpoint(page: Page, name: string, options: CheckpointOptions = { mask: [] }) {
   await page.waitForLoadState("networkidle")
+
+  // Check that images have loaded.
+  // See: https://github.com/microsoft/playwright/issues/6046#issuecomment-1803609118
+  for (const img of await page.getByRole("img").all()) {
+    await expect(img).toHaveJSProperty("complete", true)
+    await expect(img).not.toHaveJSProperty("naturalWidth", 0)
+  }
 
   // TODO: Remove when supported by Playwright.
   //       See: https://github.com/microsoft/playwright/issues/23502
   const screenshotPath = test.info().snapshotPath(`${name}.png`, { kind: "screenshot" })
   if (existsSync(screenshotPath)) {
-    await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: true })
+    await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: true, mask: options?.mask })
   } else {
-    await page.screenshot({ path: screenshotPath, fullPage: true })
+    await page.screenshot({ path: screenshotPath, fullPage: true, mask: options?.mask })
   }
 
   // Check for duplicate IDs.
