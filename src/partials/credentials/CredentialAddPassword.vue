@@ -3,7 +3,7 @@ import { CredentialAddCredentialWithLabelStartRequest, CredentialAddPasswordComp
 
 import { onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
-import { Router, useRouter } from "vue-router"
+import { useRouter } from "vue-router"
 
 import { postJSON } from "@/api.ts"
 import Button from "@/components/Button.vue"
@@ -21,20 +21,6 @@ const passwordLabel = ref("")
 const passwordError = ref("")
 const unexpectedError = ref("")
 
-async function startAddPasswordCredential(router: Router, label: string, abortController: AbortController): Promise<CredentialAddResponse> {
-  const url = router.apiResolve({ name: "CredentialAddPasswordStart" }).href
-  return await postJSON<CredentialAddResponse>(url, { label: label } as CredentialAddCredentialWithLabelStartRequest, abortController.signal, progress)
-}
-
-async function completeAddPasswordCredential(
-  router: Router,
-  request: CredentialAddPasswordCompleteRequest,
-  abortController: AbortController,
-): Promise<CredentialAddResponse> {
-  const url = router.apiResolve({ name: "CredentialAddPasswordComplete" }).href
-  return await postJSON<CredentialAddResponse>(url, request, abortController.signal, progress)
-}
-
 function getErrorMessage(errorCode: string) {
   switch (errorCode) {
     case "shortPassword":
@@ -48,8 +34,18 @@ function getErrorMessage(errorCode: string) {
     case "credentialLabelMissing":
       return t("common.errors.credentialLabelMissing.password")
     default:
-      return t("common.errors.unexpected")
+      throw new Error(`unexpected error code: ${errorCode}`)
   }
+}
+
+async function startAddPasswordCredential(request: CredentialAddCredentialWithLabelStartRequest): Promise<CredentialAddResponse> {
+  const url = router.apiResolve({ name: "CredentialAddPasswordStart" }).href
+  return await postJSON<CredentialAddResponse>(url, request, abortController.signal, progress)
+}
+
+async function completeAddPasswordCredential(request: CredentialAddPasswordCompleteRequest): Promise<CredentialAddResponse> {
+  const url = router.apiResolve({ name: "CredentialAddPasswordComplete" }).href
+  return await postJSON<CredentialAddResponse>(url, request, abortController.signal, progress)
 }
 
 function resetOnInteraction() {
@@ -69,7 +65,8 @@ onMounted(() => {
 })
 
 function canSubmit(): boolean {
-  return password.value.trim().length > 0 && passwordLabel.value.trim().length > 0
+  // Required fields.
+  return !!password.value && !!passwordLabel.value
 }
 
 async function onSubmit() {
@@ -81,17 +78,20 @@ async function onSubmit() {
 
   progress.value += 1
   try {
-    const startResponse = await startAddPasswordCredential(router, passwordLabel.value.trim(), abortController)
-    if (abortController.signal.aborted || !startResponse) {
+    const startResponse = await startAddPasswordCredential({
+      label: passwordLabel.value,
+    })
+    if (abortController.signal.aborted) {
       return
     }
-
     if (startResponse.error) {
+      // We check if it is an expected error code by trying to get the error message.
+      getErrorMessage(startResponse.error)
       passwordError.value = startResponse.error
       return
     }
     if (!startResponse.password) {
-      throw new Error("missing password parameters")
+      throw new Error("unexpected response")
     }
 
     const publicKey = Uint8Array.from(atob(startResponse.password?.publicKey), (c) => c.charCodeAt(0))
@@ -110,22 +110,18 @@ async function onSubmit() {
 
     const encrypted = await encryptPasswordECDHAESGCM(password.value, publicKey, deriveOptions, encryptOptions, abortController)
 
-    const result = await completeAddPasswordCredential(
-      router,
-      {
-        sessionId: startResponse.sessionId,
-        publicKey: Array.from(new Uint8Array(encrypted.publicKeyBytes)),
-        password: Array.from(new Uint8Array(encrypted.ciphertext)),
-      } as CredentialAddPasswordCompleteRequest,
-      abortController,
-    )
-
+    const completeResponse = await completeAddPasswordCredential({
+      sessionId: startResponse.sessionId,
+      publicKey: Array.from(new Uint8Array(encrypted.publicKeyBytes)),
+      password: Array.from(new Uint8Array(encrypted.ciphertext)),
+    })
     if (abortController.signal.aborted) {
       return
     }
-
-    if (result.error) {
-      passwordError.value = result.error
+    if (completeResponse.error) {
+      // We check if it is an expected error code by trying to get the error message.
+      getErrorMessage(completeResponse.error)
+      passwordError.value = completeResponse.error
       return
     }
 
@@ -135,7 +131,8 @@ async function onSubmit() {
       return
     }
     console.error("CredentialAddPassword.onSubmit", error)
-    unexpectedError.value = t("common.errors.unexpected")
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1
   }
@@ -143,38 +140,31 @@ async function onSubmit() {
 </script>
 
 <template>
+  <!--
+    We set novalidate because we do not UA to show hints.
+    We show them ourselves when we want them.
+  -->
   <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
-    <label for="password" class="mb-1">{{ t("common.providers.passwordTitle") }}</label>
+    <label for="credentialaddpassword-input-password" class="mb-1">{{ t("partials.CredentialAddPassword.passwordLabel") }}</label>
     <InputText
       id="credentialaddpassword-input-password"
       v-model="password"
-      name="password"
       type="password"
       minlength="8"
-      tabindex="0"
-      :invalid="!!unexpectedError"
+      :invalid="!!passwordError"
       class="min-w-0 flex-auto grow"
       :progress="progress"
-      autocomplete="password"
+      autocomplete="off"
       autocorrect="off"
       autocapitalize="none"
       spellcheck="false"
       required
     />
-    <label for="password-label" class="mt-4 mb-1"> {{ t("partials.CredentialAddPassword.label") }}</label>
-    <InputText
-      id="credentialaddpassword-input-passwordlabel"
-      v-model="passwordLabel"
-      name="password-label"
-      tabindex="0"
-      class="mt-2 flex flex-row gap-4"
-      :progress="progress"
-      autocomplete="label"
-      required
-    />
-    <div v-if="unexpectedError" class="mt-4 text-error-600">{{ unexpectedError }}</div>
-    <div v-else-if="passwordError" class="mt-4 text-error-600">{{ getErrorMessage(passwordError) }}</div>
-    <div class="mt-4 flex flex-row justify-end gap-4">
+    <label for="credentialaddpassword-input-label" class="mt-4 mb-1"> {{ t("partials.CredentialAddPassword.label") }}</label>
+    <InputText id="credentialaddpassword-input-label" v-model="passwordLabel" class="min-w-0 flex-auto grow" :progress="progress" required />
+    <div v-if="passwordError" class="mt-4 text-error-600">{{ getErrorMessage(passwordError) }}</div>
+    <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
+    <div class="mt-4 flex flex-row justify-end">
       <Button type="submit" primary :disabled="!canSubmit()" :progress="progress">{{ t("common.buttons.add") }}</Button>
     </div>
   </form>

@@ -479,14 +479,17 @@ export type CredentialAddUsernameRequest = {
 export type CredentialAddResponse = {
   sessionId: string
   credentialId?: string
-  passkey?: {
-    createOptions: {
-      publicKey: PublicKeyCredentialCreationOptionsJSON
-    }
-    getOptions: {
-      publicKey: PublicKeyCredentialRequestOptionsJSON
-    }
-  }
+  passkey?:
+    | {
+        createOptions: {
+          publicKey: PublicKeyCredentialCreationOptionsJSON
+        }
+      }
+    | {
+        getOptions: {
+          publicKey: PublicKeyCredentialRequestOptionsJSON
+        }
+      }
   password?: {
     publicKey: string
     deriveOptions: DeriveOptions

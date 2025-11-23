@@ -21,12 +21,16 @@ export function getThirdPartyProvider(providers: string[]): SiteProvider | null 
 
 export function getProviderName(t: (key: string) => string, provider: string): string {
   switch (provider) {
-    case "code":
-      return t("common.providers.code")
-    case "passkey":
-      return t("common.providers.passkey")
+    case "username":
+      return t("common.providers.username")
+    case "email":
+      return t("common.providers.email")
     case "password":
       return t("common.providers.password")
+    case "passkey":
+      return t("common.providers.passkey")
+    case "code":
+      return t("common.providers.code")
   }
   const siteProvider = getThirdPartyProvider([provider])
   if (siteProvider) {
@@ -35,16 +39,22 @@ export function getProviderName(t: (key: string) => string, provider: string): s
   throw new Error(`unknown provider: ${provider}`)
 }
 
-export function getBuiltInProviderTitleName(t: (key: string) => string, provider: string): string {
+export function getProviderNameTitle(t: (key: string) => string, provider: string): string {
   switch (provider) {
-    case "email":
-      return t("common.providers.emailTitle")
     case "username":
       return t("common.providers.usernameTitle")
+    case "email":
+      return t("common.providers.emailTitle")
     case "password":
       return t("common.providers.passwordTitle")
     case "passkey":
       return t("common.providers.passkeyTitle")
+    case "code":
+      return t("common.providers.codeTitle")
+  }
+  const siteProvider = getThirdPartyProvider([provider])
+  if (siteProvider) {
+    return siteProvider.name
   }
   throw new Error(`unknown provider: ${provider}`)
 }

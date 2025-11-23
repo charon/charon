@@ -3,7 +3,7 @@ import { CredentialAddCredentialWithLabelStartRequest, CredentialAddPasskeyCompl
 
 import { onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
-import { Router, useRouter } from "vue-router"
+import { useRouter } from "vue-router"
 
 import { postJSON } from "@/api.ts"
 import Button from "@/components/Button.vue"
@@ -31,20 +31,16 @@ function getErrorMessage(errorCode: string) {
     case "credentialLabelMissing":
       return t("common.errors.credentialLabelMissing.passkey")
     default:
-      return t("common.errors.unexpected")
+      throw new Error(`unexpected error code: ${errorCode}`)
   }
 }
 
-async function startAddPasskeyCredential(router: Router, label: string, abortController: AbortController): Promise<CredentialAddResponse> {
+async function startAddPasskeyCredential(request: CredentialAddCredentialWithLabelStartRequest): Promise<CredentialAddResponse> {
   const url = router.apiResolve({ name: "CredentialAddPasskeyStart" }).href
-  return await postJSON<CredentialAddResponse>(url, { label: label } as CredentialAddCredentialWithLabelStartRequest, abortController.signal, progress)
+  return await postJSON<CredentialAddResponse>(url, request, abortController.signal, progress)
 }
 
-async function completeAddPasskeyCredential(
-  router: Router,
-  request: CredentialAddPasskeyCompleteRequest,
-  abortController: AbortController,
-): Promise<CredentialAddResponse> {
+async function completeAddPasskeyCredential(request: CredentialAddPasskeyCompleteRequest): Promise<CredentialAddResponse> {
   const url = router.apiResolve({ name: "CredentialAddPasskeyComplete" }).href
   return await postJSON<CredentialAddResponse>(url, request, abortController.signal, progress)
 }
@@ -66,7 +62,8 @@ onMounted(() => {
 })
 
 function canSubmit(): boolean {
-  return passkeyLabel.value.trim().length > 0
+  // Required fields.
+  return !!passkeyLabel.value
 }
 
 async function onSubmit() {
@@ -78,18 +75,20 @@ async function onSubmit() {
 
   progress.value += 1
   try {
-    const startResponse = await startAddPasskeyCredential(router, passkeyLabel.value.trim(), abortController)
-    if (abortController.signal.aborted || !startResponse) {
+    const startResponse = await startAddPasskeyCredential({
+      label: passkeyLabel.value,
+    })
+    if (abortController.signal.aborted) {
       return
     }
-
     if (startResponse.error) {
+      // We check if it is an expected error code by trying to get the error message.
+      getErrorMessage(startResponse.error)
       passkeyError.value = startResponse.error
       return
     }
-
-    if (!startResponse.passkey) {
-      throw new Error("missing passkey parameters")
+    if (!(startResponse.passkey && "createOptions" in startResponse.passkey)) {
+      throw new Error("unexpected response")
     }
 
     const regResponse = await startRegistration({ optionsJSON: startResponse.passkey.createOptions.publicKey })
@@ -97,21 +96,17 @@ async function onSubmit() {
       return
     }
 
-    const result = await completeAddPasskeyCredential(
-      router,
-      {
-        sessionId: startResponse.sessionId,
-        createResponse: regResponse,
-      } as CredentialAddPasskeyCompleteRequest,
-      abortController,
-    )
-
+    const completeResponse = await completeAddPasskeyCredential({
+      sessionId: startResponse.sessionId,
+      createResponse: regResponse,
+    })
     if (abortController.signal.aborted) {
       return
     }
-
-    if (result.error) {
-      passkeyError.value = result.error
+    if (completeResponse.error) {
+      // We check if it is an expected error code by trying to get the error message.
+      getErrorMessage(completeResponse.error)
+      passkeyError.value = completeResponse.error
       return
     }
 
@@ -121,7 +116,8 @@ async function onSubmit() {
       return
     }
     console.error("CredentialAddPasskey.onSubmit", error)
-    unexpectedError.value = t("common.errors.unexpected")
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1
   }
@@ -129,21 +125,17 @@ async function onSubmit() {
 </script>
 
 <template>
+  <!--
+    We set novalidate because we do not UA to show hints.
+    We show them ourselves when we want them.
+  -->
   <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
     <label for="credentialaddpasskey-input-label" class="mb-1"> {{ t("partials.CredentialAddPasskey.label") }}</label>
-    <InputText
-      id="credentialaddpasskey-input-label"
-      v-model="passkeyLabel"
-      name="passkey-label"
-      class="min-w-0 flex-auto grow"
-      :progress="progress"
-      autocomplete="off"
-      required
-    />
-    <p class="mt-2 text-sm text-slate-600">{{ t("partials.CredentialAddPasskey.passkeyInstructions") }}</p>
-    <div v-if="unexpectedError" class="mt-4 text-error-600">{{ unexpectedError }}</div>
-    <div v-else-if="passkeyError" class="mt-4 text-error-600">{{ getErrorMessage(passkeyError) }}</div>
-    <div class="mt-4 flex flex-row justify-end gap-4">
+    <InputText id="credentialaddpasskey-input-label" v-model="passkeyLabel" class="min-w-0 flex-auto grow" :progress="progress" required />
+    <div class="mt-4">{{ t("partials.CredentialAddPasskey.passkeyInstructions") }}</div>
+    <div v-if="passkeyError" class="mt-4 text-error-600">{{ getErrorMessage(passkeyError) }}</div>
+    <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
+    <div class="mt-4 flex flex-row justify-end">
       <Button type="submit" primary :disabled="!canSubmit()" :progress="progress">{{ t("common.buttons.add") }}</Button>
     </div>
   </form>

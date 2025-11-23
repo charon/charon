@@ -82,7 +82,6 @@ declare module "vue-i18n" {
         shared: string
         individual: string
         verified: string
-        notVerified: string
       }
       data: {
         dataLoading: string
@@ -123,13 +122,16 @@ declare module "vue-i18n" {
         picture: string
       }
       providers: {
+        username: string
         usernameTitle: string
+        email: string
         emailTitle: string
         password: string
         passwordTitle: string
         passkey: string
         passkeyTitle: string
         code: string
+        codeTitle: string
       }
     }
     partials: {
@@ -254,12 +256,12 @@ declare module "vue-i18n" {
         }
         entityLinks: string
       }
-      CredentialFull: {
-        thirdPartyProviders: string
-        passwordSignUp: string
-      }
       CredentialAddPassword: {
+        passwordLabel: string
         label: string
+      }
+      CredentialAddEmail: {
+        emailAddressLabel: string
       }
       CredentialAddPasskey: {
         label: string
@@ -370,7 +372,6 @@ declare module "vue-i18n" {
       CredentialAdd: {
         addCredential: string
         availableOptions: string
-        credentialTypes: string
       }
       CredentialList: {
         noCredentialsCreate: string

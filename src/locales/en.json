@@ -70,8 +70,7 @@
       "blocked": "blocked",
       "shared": "shared",
       "individual": "individual",
-      "verified": "verified",
-      "notVerified": "unverified"
+      "verified": "verified"
     },
     "data": {
       "dataLoading": "Loading...",
@@ -112,13 +111,16 @@
       "picture": "picture"
     },
     "providers": {
+      "username": "username",
       "usernameTitle": "Username",
+      "email": "e-mail address",
       "emailTitle": "E-mail Address",
       "password": "password",
       "passwordTitle": "Password",
       "passkey": "passkey",
       "passkeyTitle": "Passkey",
-      "code": "code"
+      "code": "code",
+      "codeTitle": "Code"
     }
   },
   "partials": {
@@ -243,12 +245,12 @@
       },
       "entityLinks": "{entity}: {links}"
     },
-    "CredentialFull": {
-      "thirdPartyProviders": "Third-Party Providers",
-      "passwordSignUp": "Password used during sign-up"
-    },
     "CredentialAddPassword": {
+      "passwordLabel": "@:partials.AuthPassword.passwordLabel",
       "label": "Label"
+    },
+    "CredentialAddEmail": {
+      "emailAddressLabel": "@:partials.AuthPassword.emailAddressLabel"
     },
     "CredentialAddPasskey": {
       "label": "@:partials.CredentialAddPassword.label",
@@ -358,8 +360,7 @@
     },
     "CredentialAdd": {
       "addCredential": "Add authentication method",
-      "availableOptions": "Available authentication methods",
-      "credentialTypes": "Authentication methods"
+      "availableOptions": "Available authentication methods"
     },
     "CredentialList": {
       "noCredentialsCreate": "No authentication methods configured. Create the first one.",

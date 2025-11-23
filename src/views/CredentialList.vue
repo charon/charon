@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { CredentialInfo, Credentials } from "@/types"
 
-import { onBeforeMount, onBeforeUnmount, Ref, ref } from "vue"
+import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useI18n } from "vue-i18n"
-import { Router, useRouter } from "vue-router"
+import { useRouter } from "vue-router"
 
 import { getCredentials, postJSON } from "@/api"
 import { isSignedIn } from "@/auth"
@@ -17,7 +17,6 @@ import { injectProgress } from "@/progress"
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-
 const progress = injectProgress()
 
 const abortController = new AbortController()
@@ -31,6 +30,7 @@ onBeforeUnmount(() => {
 })
 
 // TODO: If user is not signed-in, this will show "unexpected error".
+
 onBeforeMount(async () => {
   progress.value += 1
   try {
@@ -58,36 +58,25 @@ function resetOnInteraction() {
   unexpectedError.value = ""
 }
 
-async function removeCredential(router: Router, id: string, abortController: AbortController, progress: Ref<number>): Promise<boolean> {
-  progress.value += 1
-  try {
-    const url = router.apiResolve({
-      name: "CredentialRemove",
-      params: { id },
-    }).href
-
-    await postJSON(url, {}, abortController.signal, progress)
-    return !abortController.signal.aborted
-  } finally {
-    progress.value -= 1
-  }
-}
-
 async function onRemove(credentialId: string) {
   if (abortController.signal.aborted) {
     return
   }
-  resetOnInteraction()
-  progress.value += 1
 
+  resetOnInteraction()
+
+  progress.value += 1
   try {
-    const success = await removeCredential(router, credentialId, abortController, progress)
+    const url = router.apiResolve({
+      name: "CredentialRemove",
+      params: { id: credentialId },
+    }).href
+
+    await postJSON(url, {}, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }
-    if (!success) {
-      throw new Error("failed to remove credential")
-    }
+
     credentials.value = credentials.value.filter((c) => c.id !== credentialId)
   } catch (error) {
     if (abortController.signal.aborted) {
@@ -113,9 +102,7 @@ const WithCredentialDocument = WithDocument<CredentialInfo>
       <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <div class="flex flex-row items-center justify-between gap-4">
           <h1 class="text-2xl font-bold">{{ t("common.entities.credentials") }}</h1>
-          <ButtonLink v-if="isSignedIn()" :to="{ name: 'CredentialAdd' }" :progress="progress" primary>
-            {{ t("common.buttons.add") }}
-          </ButtonLink>
+          <ButtonLink v-if="isSignedIn()" :to="{ name: 'CredentialAdd' }" :progress="progress" primary>{{ t("common.buttons.add") }}</ButtonLink>
         </div>
       </div>
       <div v-if="dataLoading" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">{{ t("common.data.dataLoading") }}</div>
@@ -128,12 +115,14 @@ const WithCredentialDocument = WithDocument<CredentialInfo>
           <WithCredentialDocument :params="{ id: credential.id }" name="CredentialGet">
             <template #default="{ doc, url }">
               <CredentialFull :credential="doc" :url="url">
-                <Button v-if="doc.provider === 'email'" :id="`credentiallist-button-verify-${doc.id}`" type="button" secondary disabled>
-                  {{ t("views.CredentialList.verify") }}
-                </Button>
-                <Button :id="`credentiallist-button-remove-${doc.id}`" type="button" :progress="progress" @click="onRemove(doc.id)">
-                  {{ t("common.buttons.remove") }}
-                </Button>
+                <div class="flew-row flex gap-4">
+                  <Button v-if="doc.provider === 'email' && !doc.verified" :id="`credentiallist-button-verify-${doc.id}`" type="button" secondary disabled>{{
+                    t("views.CredentialList.verify")
+                  }}</Button>
+                  <Button :id="`credentiallist-button-remove-${doc.id}`" type="button" :progress="progress" @click="onRemove(doc.id)">{{
+                    t("common.buttons.remove")
+                  }}</Button>
+                </div>
               </CredentialFull>
             </template>
           </WithCredentialDocument>

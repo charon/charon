@@ -30,7 +30,7 @@ function getErrorMessage(errorCode: string) {
     case "alreadyPresent":
       return t("common.errors.alreadyPresent.username")
     default:
-      return t("common.errors.unexpected")
+      throw new Error(`unexpected error code: ${errorCode}`)
   }
 }
 
@@ -51,7 +51,8 @@ onMounted(() => {
 })
 
 function canSubmit(): boolean {
-  return username.value.trim().length > 0
+  // Required fields.
+  return !!username.value
 }
 
 async function onSubmit() {
@@ -78,8 +79,9 @@ async function onSubmit() {
     if (abortController.signal.aborted) {
       return
     }
-
     if (response.error) {
+      // We check if it is an expected error code by trying to get the error message.
+      getErrorMessage(response.error)
       usernameError.value = response.error
       return
     }
@@ -90,7 +92,8 @@ async function onSubmit() {
       return
     }
     console.error("CredentialAddUsername.onSubmit", error)
-    unexpectedError.value = t("common.errors.unexpected")
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1
   }
@@ -98,23 +101,27 @@ async function onSubmit() {
 </script>
 
 <template>
+  <!--
+    We set novalidate because we do not UA to show hints.
+    We show them ourselves when we want them.
+  -->
   <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
-    <label for="username" class="mb-1">{{ t("common.fields.username") }}</label>
+    <label for="credentialaddusername-input-username" class="mb-1">{{ t("common.fields.username") }}</label>
     <InputText
       id="credentialaddusername-input-username"
       v-model="username"
-      name="username"
-      tabindex="0"
       class="min-w-0 flex-auto grow"
       :progress="progress"
+      autocomplete="off"
       autocorrect="off"
       autocapitalize="none"
       spellcheck="false"
+      minlength="3"
       required
     />
-    <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
-    <div v-else-if="usernameError" class="mt-4 text-error-600">{{ getErrorMessage(usernameError) }}</div>
-    <div class="mt-4 flex flex-row justify-end gap-4">
+    <div v-if="usernameError" class="mt-4 text-error-600">{{ getErrorMessage(usernameError) }}</div>
+    <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
+    <div class="mt-4 flex flex-row justify-end">
       <Button type="submit" primary :disabled="!canSubmit()" :progress="progress">{{ t("common.buttons.add") }}</Button>
     </div>
   </form>

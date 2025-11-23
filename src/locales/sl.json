@@ -70,8 +70,7 @@
       "blocked": "blokirana",
       "shared": "skupna",
       "individual": "individualna",
-      "verified": "potrjen",
-      "notVerified": "nepotrjen"
+      "verified": "potrjen"
     },
     "data": {
       "dataLoading": "Nalaganje...",
@@ -112,13 +111,16 @@
       "picture": "slika"
     },
     "providers": {
+      "username": "uporabniško ime",
       "usernameTitle": "Uporabniško ime",
+      "email": "e-poštni naslov",
       "emailTitle": "E-poštni naslov",
-      "code": "koda",
       "password": "geslo",
       "passwordTitle": "Geslo",
       "passkey": "passkey",
-      "passkeyTitle": "Passkey"
+      "passkeyTitle": "Passkey",
+      "code": "koda",
+      "codeTitle": "Koda"
     }
   },
   "partials": {
@@ -243,12 +245,12 @@
       },
       "entityLinks": "{entity}: {links}"
     },
-    "CredentialFull": {
-      "thirdPartyProviders": "Ponudniki tretjih storitev",
-      "passwordSignUp": "Geslo uporabljeno pri registraciji"
-    },
     "CredentialAddPassword": {
+      "passwordLabel": "@:partials.AuthPassword.passwordLabel",
       "label": "Oznaka"
+    },
+    "CredentialAddEmail": {
+      "emailAddressLabel": "@:partials.AuthPassword.emailAddressLabel"
     },
     "CredentialAddPasskey": {
       "label": "Oznaka",
@@ -358,8 +360,7 @@
     },
     "CredentialAdd": {
       "addCredential": "Dodajte metodo avtentikacije",
-      "availableOptions": "Metode avtentikacije, ki so na voljo",
-      "credentialTypes": "Metode avtentikacije"
+      "availableOptions": "Metode avtentikacije, ki so na voljo"
     },
     "CredentialList": {
       "noCredentialsCreate": "Ni metod za avtentikacijo. Ustvarite prvo.",
