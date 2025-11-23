@@ -1,6 +1,7 @@
 #!/bin/sh
 
 set -e
+set -o pipefail
 
 # Run locally with:
 #docker run --privileged --rm \
@@ -17,6 +18,7 @@ set -e
 echo "=== E2E Test Script ==="
 
 cleanup_charon_container=0
+cleanup_mailpit_container=0
 cleanup_charon_image=0
 cleanup_playwright_image=0
 cleanup_network=0
@@ -32,6 +34,15 @@ cleanup() {
     echo "Stopping charon Docker container (if still running)"
     docker stop charon-container
     docker rm -f charon-container
+  fi
+
+  if [ "$cleanup_mailpit_container" -ne 0 ]; then
+    echo "Logs mailpit"
+    docker logs mailpit
+
+    echo "Stopping mailpit Docker container (if still running)"
+    docker stop mailpit
+    docker rm -f mailpit
   fi
 
   if [ "$cleanup_charon_image" -ne 0 ]; then
@@ -74,11 +85,13 @@ mkcert -install
 
 # Generate certificates
 mkcert charon-container 127.0.0.1 ::1
+mkcert mailpit 127.0.0.1 ::1
 echo "chs-$(head -c 32 /dev/urandom | base64 | tr '+/' '-_' | tr -d '=')" > .hmac.secret
 openssl genpkey -algorithm RSA -out rsa-key.pem -pkeyopt rsa_keygen_bits:2048
 jwker rsa-key.pem .rsa-key.jwk
 rm rsa-key.pem
 chmod 644 .rsa-key.jwk charon-container+2.pem charon-container+2-key.pem .hmac.secret
+chmod 644 mailpit+2.pem mailpit+2-key.pem
 
 # Copy mkcert CA certificate for Docker build.
 cp "$(mkcert -CAROOT)/rootCA.pem" test-e2e-rootCA.pem
@@ -94,7 +107,20 @@ cleanup_charon_image=1
 docker build -f playwright.dockerfile -t charon-playwright-image .
 cleanup_playwright_image=1
 
-echo "3. Starting Charon container..."
+echo "3. Starting Mailpit container..."
+
+# Start mailpit for e-mail auth testing.
+docker run -d \
+    --name mailpit \
+    --network charon-e2e-network \
+    -v "$(pwd)/mailpit+2.pem:/certs/mailpit+2.pem" \
+    -v "$(pwd)/mailpit+2-key.pem:/certs/mailpit+2-key.pem" \
+    axllent/mailpit:v1.27 \
+    --smtp-tls-cert /certs/mailpit+2.pem \
+    --smtp-tls-key /certs/mailpit+2-key.pem
+cleanup_mailpit_container=1
+
+echo "4. Starting Charon container..."
 
 mkdir -p coverage
 # We chown to the user Charon runs inside the Docker container so that it can write coverage.
@@ -106,18 +132,24 @@ docker run -d \
   --network charon-e2e-network \
   -v "$(pwd):/data" \
   -e GOCOVERDIR=/data/coverage \
+  -e SSL_CERT_FILE=/data/test-e2e-rootCA.pem \
+  -e SSL_CERT_DIR=/etc/ssl/certs \
   charon-image \
   -k /data/charon-container+2.pem \
   -K /data/charon-container+2-key.pem \
   --secret=/data/.hmac.secret \
-  --oidc.key=/data/.rsa-key.jwk
+  --oidc.key=/data/.rsa-key.jwk \
+  --mail.host=mailpit \
+  --mail.port=1025 \
+  --mail.auth=none \
+  --mail.from=test@charon.local
 cleanup_charon_container=1
 
-echo "4. Waiting for Charon service to be ready..."
+echo "5. Waiting for Charon service to be ready..."
 
 sleep 5
 
-echo "5. Running Playwright tests..."
+echo "6. Running Playwright tests..."
 
 # Set environment variables for Playwright.
 export LINK_PUBLISH_JOB_ID="${CI_JOB_ID}"
@@ -132,12 +164,13 @@ docker run --rm \
   -v "$(pwd)/coverage-frontend:/src/charon/coverage-frontend" \
   -v "$(pwd)/a11y-report:/src/charon/a11y-report" \
   -e CHARON_URL="https://charon-container:8080" \
+  -e MAILPIT_URL="http://mailpit:8025" \
   -e LINK_PUBLISH_JOB_ID \
   -e UPDATE_SCREENSHOTS \
   charon-playwright-image
 
 # Stop the Charon container and check its exit code.
-echo "6. Stopping Charon container..."
+echo "7. Stopping Charon container..."
 docker stop charon-container
 CHARON_EXIT_CODE=$(docker wait charon-container)
 

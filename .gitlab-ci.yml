@@ -150,22 +150,13 @@ test_e2e:
         - "containerd-snapshotter=true"
 
   before_script:
-    - apk --update add docker-cli docker-cli-buildx make bash gcc musl-dev
+    - apk --update add docker-cli docker-cli-buildx make bash gcc musl-dev jq
     - (cd /go; go install github.com/boumenot/gocover-cobertura@v1.4.0)
     - docker info
     - echo "$CI_REGISTRY_PASSWORD" | docker login --username "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
     - echo "LINK_PUBLISH_JOB_ID=${CI_JOB_ID}" > link_publish.env
-    - |
-      mkdir playwright-screenshots
-      if [ -n "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" ]; then
-        echo "Download screenshots from $CI_MERGE_REQUEST_TARGET_BRANCH_NAME."
-        apk --update add curl
-        curl --location --output artifacts.zip "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/jobs/artifacts/${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}/download?job=test_e2e"
-        unzip -o artifacts.zip -x playwright-report/\* -x test-results/\*
-      else
-        echo "Not a merge request pipeline, update screenshots."
-        export UPDATE_SCREENSHOTS=changed
-      fi
+    - mkdir playwright-screenshots
+    - ./prepare-e2e.sh
 
   # TODO: Use go tool covdata percent to obtain total coverage instead of the workaround with go tool cover -func.
   #       See: https://github.com/golang/go/issues/66506

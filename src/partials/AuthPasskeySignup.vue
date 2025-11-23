@@ -40,7 +40,7 @@ defineExpose({
 onBeforeUnmount(onBeforeLeave)
 
 function onAfterEnter() {
-  document.getElementById("passkey-signup")?.focus()
+  document.getElementById("authpasskeysignup-button-signup")?.focus()
 }
 
 function onBeforeLeave() {
@@ -103,7 +103,7 @@ async function onPasskeySignup() {
       signupFailedAtLeastOnce.value = true
       await nextTick(() => {
         // We refocus button to retry.
-        document.getElementById("passkey-signup")?.focus()
+        document.getElementById("authpasskeysignup-button-signup")?.focus()
       })
       return
     }
@@ -168,8 +168,10 @@ async function onPasskeySignup() {
     <div class="mt-4">{{ t("partials.AuthPasskeySignup.signupInfo") }}</div>
     <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" tabindex="2" @click.prevent="onBack">{{ t("partials.AuthPasskeySignup.retrySigninButton") }}</Button>
-      <Button id="passkey-signup" primary type="button" tabindex="1" :progress="progress" @click.prevent="onPasskeySignup">{{
+      <Button id="authpasskeysignup-button-retrysignin" type="button" tabindex="2" @click.prevent="onBack">{{
+        t("partials.AuthPasskeySignup.retrySigninButton")
+      }}</Button>
+      <Button id="authpasskeysignup-button-signup" primary type="button" tabindex="1" :progress="progress" @click.prevent="onPasskeySignup">{{
         signupFailedAtLeastOnce ? t("partials.AuthPasskeySignup.retrySignupButton") : t("partials.AuthPasskeySignup.passkeySignupButton")
       }}</Button>
     </div>

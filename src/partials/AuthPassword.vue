@@ -399,7 +399,7 @@ async function onCode() {
       </form>
     </div>
     <template v-if="passwordError">
-      <div v-if="passwordError" id="authpassword-error" class="mt-4 text-error-600">{{ getPasswordErrorMessage(passwordError) }}</div>
+      <div v-if="passwordError" id="authpassword-error-wrongpassword" class="mt-4 text-error-600">{{ getPasswordErrorMessage(passwordError) }}</div>
       <div v-if="passwordError === 'wrongPassword'" class="mt-4">
         <i18n-t keypath="partials.AuthPassword.troublePassword" scope="global">
           <template #linkDifferentSigninMethod>
@@ -422,7 +422,7 @@ async function onCode() {
       <!--
         Button is on purpose not disabled on unexpectedCodeError so that user can retry.
       -->
-      <Button type="button" primary tabindex="3" :disabled="!!codeError" :progress="progress" @click.prevent="onCode">{{
+      <Button id="authpassword-button-sendcode" type="button" primary tabindex="3" :disabled="!!codeError" :progress="progress" @click.prevent="onCode">{{
         t("partials.AuthPassword.sendCodeButton")
       }}</Button>
     </div>

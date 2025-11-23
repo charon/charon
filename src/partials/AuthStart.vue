@@ -192,9 +192,17 @@ function onThirdPartyProvider(provider: string) {
       <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     </div>
     <h2 class="m-4 text-center text-xl font-bold uppercase">{{ t("partials.AuthStart.orUse") }}</h2>
-    <Button primary type="button" :disabled="!browserSupportsWebAuthn()" :progress="progress" @click.prevent="onPasskey">Passkey</Button>
-    <Button v-for="p in siteContext.providers" :key="p.key" primary type="button" class="mt-4" :progress="progress" @click.prevent="onThirdPartyProvider(p.key)">{{
-      p.name
-    }}</Button>
+    <Button id="authstart-button-passkey" primary type="button" :disabled="!browserSupportsWebAuthn()" :progress="progress" @click.prevent="onPasskey">Passkey</Button>
+    <Button
+      v-for="p in siteContext.providers"
+      :id="`authstart-button-${p.key}`"
+      :key="p.key"
+      primary
+      type="button"
+      class="mt-4"
+      :progress="progress"
+      @click.prevent="onThirdPartyProvider(p.key)"
+      >{{ p.name }}</Button
+    >
   </div>
 </template>

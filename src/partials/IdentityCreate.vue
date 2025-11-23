@@ -125,7 +125,7 @@ async function onSubmit() {
         Button is on purpose not disabled on unexpectedError so that user can retry.
       -->
       <!-- At least something is required. -->
-      <Button type="submit" primary :disabled="!username && !email && !givenName && !fullName && !pictureUrl" :progress="progress">{{
+      <Button id="identitycreate-button-create" type="submit" primary :disabled="!username && !email && !givenName && !fullName && !pictureUrl" :progress="progress">{{
         t("common.buttons.create")
       }}</Button>
     </div>

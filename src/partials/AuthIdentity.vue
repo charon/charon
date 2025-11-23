@@ -470,7 +470,9 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
         </template>
       </template>
       <div v-if="!createShown" class="mb-4 flex flex-row justify-start gap-4">
-        <Button type="button" tabindex="3" :progress="progress" @click.prevent="onCreateShow">{{ t("partials.AuthIdentity.newIdentityButton") }}</Button>
+        <Button id="authidentity-button-newidentity" type="button" tabindex="3" :progress="progress" @click.prevent="onCreateShow">{{
+          t("partials.AuthIdentity.newIdentityButton")
+        }}</Button>
       </div>
       <template v-if="createShown">
         <h3 class="text-l mb-4 font-bold">{{ t("partials.AuthIdentity.createNewIdentity") }}</h3>
