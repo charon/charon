@@ -82,13 +82,10 @@ const { t } = useI18n({ useScope: "global" })
           <li v-if="canUpdate" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.admin") }}</li>
         </ul>
       </div>
-      <div v-if="identity.givenName && (identity.username || identity.email)" class="mt-1">
-        {{ identity.givenName }}
+      <div v-if="identity.givenName && (identity.username || identity.email)" class="mt-1">{{ identity.givenName }}
         <span v-if="identity.fullName"> ({{ identity.fullName }})</span>
       </div>
-      <div v-else-if="identity.fullName && (identity.username || identity.email)" class="mt-1">
-        {{ identity.fullName }}
-      </div>
+      <div v-else-if="identity.fullName && (identity.username || identity.email)" class="mt-1">{{ identity.fullName }}</div>
       <div v-if="identity.description" class="mt-1 whitespace-pre-line">{{ identity.description }}</div>
     </div>
     <slot :identity="identity" :is-current="isCurrent" :can-update="canUpdate" :is-shared="isShared"></slot>

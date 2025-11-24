@@ -66,9 +66,7 @@ onBeforeMount(async () => {
       <div v-if="dataLoading" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">{{ t("common.data.dataLoading") }}</div>
       <div v-else-if="dataLoadingError" class="w-full rounded-sm border border-gray-200 bg-white p-4 text-error-600 shadow-sm">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
-        <div v-if="!activities.length" class="w-full rounded-sm border border-gray-200 bg-white p-4 italic shadow-sm">
-          {{ t("views.ActivityList.noActivities") }}
-        </div>
+        <div v-if="!activities.length" class="w-full rounded-sm border border-gray-200 bg-white p-4 italic shadow-sm">{{ t("views.ActivityList.noActivities") }}</div>
         <div v-for="activity in activities" :key="activity.id" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
           <ActivityListItem :item="activity" />
         </div>

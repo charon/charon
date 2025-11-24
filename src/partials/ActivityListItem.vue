@@ -213,9 +213,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
           </div>
           <div class="grow">
             <div class="flex flex-col gap-1">
-              <h3 class="font-medium">
-                {{ getActivityDescription(doc.type) }}
-              </h3>
+              <h3 class="font-medium">{{ getActivityDescription(doc.type) }}</h3>
               <div v-if="doc.changes?.length" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm">
                 <template v-for="change in doc.changes" :key="change">
                   <span
@@ -245,9 +243,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                       <template v-if="i > 0">, </template>
                       <WithIdentityPublicDocument v-if="organization" :params="{ id: organization.id, identityId: identity.id }" name="OrganizationIdentity">
                         <template #default="{ doc: identityDoc, url: identityUrl }">
-                          <span :data-url="identityUrl">
-                            {{ getIdentityDisplayName(identityDoc) }}
-                          </span>
+                          <span :data-url="identityUrl">{{ getIdentityDisplayName(identityDoc) }}</span>
                         </template>
                         <template #error="{ url: identityErrorUrl }">
                           <span :data-url="identityErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
@@ -255,9 +251,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                       </WithIdentityPublicDocument>
                       <WithIdentityDocument v-else :params="{ id: identity.id }" name="IdentityGet">
                         <template #default="{ doc: identityDoc, url: identityUrl }">
-                          <router-link :to="{ name: 'IdentityGet', params: { id: identity.id } }" :data-url="identityUrl" class="link">
-                            {{ getIdentityDisplayName(identityDoc) }}
-                          </router-link>
+                          <router-link :to="{ name: 'IdentityGet', params: { id: identity.id } }" :data-url="identityUrl" class="link">{{ getIdentityDisplayName(identityDoc) }}</router-link>
                         </template>
                         <template #error="{ url: identityErrorUrl }">
                           <span :data-url="identityErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
@@ -275,9 +269,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                       <template v-if="i > 0">, </template>
                       <WithOrganizationDocument :params="{ id: org.id }" name="OrganizationGet">
                         <template #default="{ doc: orgDoc, url: orgUrl }">
-                          <router-link :to="{ name: 'OrganizationGet', params: { id: org.id } }" :data-url="orgUrl" class="link">
-                            {{ orgDoc.name }}
-                          </router-link>
+                          <router-link :to="{ name: 'OrganizationGet', params: { id: org.id } }" :data-url="orgUrl" class="link">{{ orgDoc.name }}</router-link>
                         </template>
                         <template #error="{ url: orgErrorUrl }">
                           <span :data-url="orgErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
@@ -295,9 +287,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                       <template v-if="i > 0">, </template>
                       <WithApplicationTemplateDocument :params="{ id: applicationTemplate.id }" name="ApplicationTemplateGet">
                         <template #default="{ doc: appDoc, url: appUrl }">
-                          <router-link :to="{ name: 'ApplicationTemplateGet', params: { id: applicationTemplate.id } }" :data-url="appUrl" class="link">
-                            {{ appDoc.name }}
-                          </router-link>
+                          <router-link :to="{ name: 'ApplicationTemplateGet', params: { id: applicationTemplate.id } }" :data-url="appUrl" class="link">{{ appDoc.name }}</router-link>
                         </template>
                         <template #error="{ url: appErrorUrl }">
                           <span :data-url="appErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
@@ -325,9 +315,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                   </template>
                 </i18n-t>
               </div>
-              <div class="text-xs text-neutral-500">
-                {{ getFormattedTimestamp(doc.timestamp) }}
-              </div>
+              <div class="text-xs text-neutral-500">{{ getFormattedTimestamp(doc.timestamp) }}</div>
               <div class="text-xs text-neutral-500">Session: {{ doc.sessionId }}</div>
             </div>
           </div>

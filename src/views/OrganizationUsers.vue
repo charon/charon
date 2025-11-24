@@ -133,9 +133,7 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
                     v-if="!organizationBlockedStatus || organizationBlockedStatus.blocked === 'onlyIdentity' || organizationBlockedStatus.blocked === 'notBlocked'"
                     class="flex flex-col items-start"
                   >
-                    <Button type="button" :progress="progress" @click.prevent="onBlock(user.id)">
-                      {{ !organizationBlockedStatus || organizationBlockedStatus.blocked === "notBlocked" ? t("common.buttons.block") : t("common.buttons.unblock") }}
-                    </Button>
+                    <Button type="button" :progress="progress" @click.prevent="onBlock(user.id)">{{ !organizationBlockedStatus || organizationBlockedStatus.blocked === "notBlocked" ? t("common.buttons.block") : t("common.buttons.unblock") }}</Button>
                   </div>
                 </template>
               </IdentityOrganization>

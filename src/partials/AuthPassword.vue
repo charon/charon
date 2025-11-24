@@ -343,9 +343,7 @@ async function onCode() {
       <label for="email-or-username" class="mb-1">{{
         isEmail(flow.getEmailOrUsername()) ? t("partials.AuthPassword.emailAddressLabel") : t("partials.AuthPassword.usernameLabel")
       }}</label>
-      <InputTextButton id="email-or-username" class="grow" tabindex="5" @click.prevent="onBack">
-        {{ flow.getEmailOrUsername() }}
-      </InputTextButton>
+      <InputTextButton id="email-or-username" class="grow" tabindex="5" @click.prevent="onBack">{{ flow.getEmailOrUsername() }}</InputTextButton>
     </div>
     <div class="mt-4 flex flex-col">
       <label for="authpassword-input-currentpassword" class="mb-1">{{ t("partials.AuthPassword.passwordLabel") }}</label>
@@ -409,12 +407,8 @@ async function onCode() {
       </div>
     </template>
     <div v-else-if="unexpectedPasswordError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
-    <div v-else class="mt-4">
-      {{ isEmail(flow.getEmailOrUsername()) ? t("partials.AuthPassword.emailAccount") : t("partials.AuthPassword.usernameAccount") }}
-    </div>
-    <div v-if="codeError" class="mt-4" :class="codeErrorOnce ? 'text-error-600' : ''">
-      {{ getCodeErrorMessage(codeError) }}
-    </div>
+    <div v-else class="mt-4">{{ isEmail(flow.getEmailOrUsername()) ? t("partials.AuthPassword.emailAccount") : t("partials.AuthPassword.usernameAccount") }}</div>
+    <div v-if="codeError" class="mt-4" :class="codeErrorOnce ? 'text-error-600' : ''">{{ getCodeErrorMessage(codeError) }}</div>
     <div v-else-if="unexpectedCodeError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div v-else class="mt-4">{{ t("partials.AuthPassword.skipPassword") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">

@@ -181,15 +181,13 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
             >
           </i18n-t>
         </div>
-        <div>
-          {{
-            t("partials.AuthAutoRedirect.redirectMessage", {
-              appName: doc.applicationTemplate.name,
-              time: t("common.time.seconds", seconds),
-              pausedText: paused ? t("common.time.paused") : "",
-            })
-          }}
-        </div>
+        <div>{{
+          t("partials.AuthAutoRedirect.redirectMessage", {
+            appName: doc.applicationTemplate.name,
+            time: t("common.time.seconds", seconds),
+            pausedText: paused ? t("common.time.paused") : "",
+          })
+        }}</div>
       </template>
     </WithOrganizationApplicationDocument>
     <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>

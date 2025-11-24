@@ -41,9 +41,7 @@ const { t } = useI18n({ useScope: "global" })
           <li v-for="label in labels || []" :key="label" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{ label }}</li>
           <li v-if="isCurrent" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.current") }}</li>
           <li v-if="isShared" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.shared") }}</li>
-          <li v-else-if="isShared !== undefined" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">
-            {{ t("common.labels.individual") }}
-          </li>
+          <li v-else-if="isShared !== undefined" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.individual") }}</li>
           <li v-if="canUpdate" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.admin") }}</li>
         </ul>
         {{ identity.username }}
@@ -54,9 +52,7 @@ const { t } = useI18n({ useScope: "global" })
           <li v-for="label in labels || []" :key="label" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{ label }}</li>
           <li v-if="isCurrent" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.current") }}</li>
           <li v-if="isShared" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.shared") }}</li>
-          <li v-else-if="isShared !== undefined" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">
-            {{ t("common.labels.individual") }}
-          </li>
+          <li v-else-if="isShared !== undefined" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.individual") }}</li>
           <li v-if="canUpdate" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.admin") }}</li>
         </ul>
         {{ identity.email }}
@@ -66,9 +62,7 @@ const { t } = useI18n({ useScope: "global" })
           <li v-for="label in labels || []" :key="label" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{ label }}</li>
           <li v-if="isCurrent" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.current") }}</li>
           <li v-if="isShared" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.shared") }}</li>
-          <li v-else-if="isShared !== undefined" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">
-            {{ t("common.labels.individual") }}
-          </li>
+          <li v-else-if="isShared !== undefined" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.individual") }}</li>
           <li v-if="canUpdate" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.admin") }}</li>
         </ul>
         {{ identity.givenName }}
@@ -79,9 +73,7 @@ const { t } = useI18n({ useScope: "global" })
           <li v-for="label in labels || []" :key="label" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{ label }}</li>
           <li v-if="isCurrent" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.current") }}</li>
           <li v-if="isShared" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.shared") }}</li>
-          <li v-else-if="isShared !== undefined" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">
-            {{ t("common.labels.individual") }}
-          </li>
+          <li v-else-if="isShared !== undefined" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.individual") }}</li>
           <li v-if="canUpdate" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.admin") }}</li>
         </ul>
         {{ identity.fullName }}
@@ -91,19 +83,14 @@ const { t } = useI18n({ useScope: "global" })
           <li v-for="label in labels || []" :key="label" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{ label }}</li>
           <li v-if="isCurrent" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.current") }}</li>
           <li v-if="isShared" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.shared") }}</li>
-          <li v-else-if="isShared !== undefined" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">
-            {{ t("common.labels.individual") }}
-          </li>
+          <li v-else-if="isShared !== undefined" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.individual") }}</li>
           <li v-if="canUpdate" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.admin") }}</li>
         </ul>
       </div>
-      <div v-if="identity.givenName && (identity.username || identity.email)" class="mt-1">
-        {{ identity.givenName }}
+      <div v-if="identity.givenName && (identity.username || identity.email)" class="mt-1">{{ identity.givenName }}
         <span v-if="identity.fullName"> ({{ identity.fullName }})</span>
       </div>
-      <div v-else-if="identity.fullName && (identity.username || identity.email)" class="mt-1">
-        {{ identity.fullName }}
-      </div>
+      <div v-else-if="identity.fullName && (identity.username || identity.email)" class="mt-1">{{ identity.fullName }}</div>
     </div>
     <slot :identity="identity" :is-current="isCurrent" :can-update="canUpdate" :is-shared="isShared"></slot>
   </div>

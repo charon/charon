@@ -195,9 +195,7 @@ onBeforeUnmount(() => {
       </i18n-t>
     </div>
     <div class="mt-4">{{ t("partials.AuthThirdPartyProvider.instructions") }}</div>
-    <div class="mt-4">
-      {{ t("partials.AuthThirdPartyProvider.additionalInfo", { provider: flow.getThirdPartyProvider()!.name }) }}
-    </div>
+    <div class="mt-4">{{ t("partials.AuthThirdPartyProvider.additionalInfo", { provider: flow.getThirdPartyProvider()!.name }) }}</div>
     <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="3" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
