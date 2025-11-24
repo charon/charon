@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DeepReadonly, FunctionalComponent } from "vue"
+import type { DeepReadonly, Component } from "vue"
 
 import type { Activity, ActivityRef, ApplicationTemplate, Identity, IdentityPublic, Organization, OrganizationApplicationPublic, OrganizationRef } from "@/types"
 
@@ -21,7 +21,7 @@ const props = defineProps<{
 
 const { t } = useI18n({ useScope: "global" })
 
-function getActivityIcon(activityType: string): FunctionalComponent {
+function getActivityIcon(activityType: string): Component {
   switch (activityType) {
     case "signIn":
       return LockOpenIcon
