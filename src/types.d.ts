@@ -462,8 +462,8 @@ export type CredentialInfoRef = {
 export type CredentialInfo = {
   id: string
   provider: string
-  displayName: string
-  verified: boolean // TODO: When verifying emails.
+  displayName?: string
+  verified?: boolean // TODO: When verifying emails.
 }
 
 export type Credentials = CredentialInfoRef[]
@@ -477,43 +477,26 @@ export type CredentialAddUsernameRequest = {
 }
 
 export type CredentialAddResponse = {
-  sessionId: string
-  credentialId?: string
-  passkey?:
-    | {
-        createOptions: {
-          publicKey: PublicKeyCredentialCreationOptionsJSON
-        }
-      }
-    | {
-        getOptions: {
-          publicKey: PublicKeyCredentialRequestOptionsJSON
-        }
-      }
-  password?: {
-    publicKey: string
-    deriveOptions: DeriveOptions
-    encryptOptions: EncryptOptionsJSON
-  }
-  error?: string
+    credentialId: string
+} | {
+    sessionId: string
+    passkey: AuthFlowResponsePasskey
+} | {
+    sessionId: string
+    password: AuthFlowResponsePasswordJSON
+} | {
+    error: string
 }
 
-export type EncryptedPasswordData = {
-  ciphertext: ArrayBuffer
-  publicKeyBytes: ArrayBuffer
-}
 
 export type CredentialAddCredentialWithLabelStartRequest = {
   label: string
 }
 
-export type CredentialAddPasswordCompleteRequest = {
+export type CredentialAddPasswordCompleteRequest = AuthFlowPasswordCompleteRequest & {
   sessionId: string
-  publicKey: number[]
-  password: number[]
 }
 
-export type CredentialAddPasskeyCompleteRequest = {
+export type CredentialAddPasskeyCompleteRequest = AuthFlowPasskeyCreateCompleteRequest & {
   sessionId: string
-  createResponse: RegistrationResponseJSON
 }

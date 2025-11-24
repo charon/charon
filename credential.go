@@ -50,7 +50,7 @@ type CredentialInfoRef struct {
 
 // CredentialAddResponse represents the response for credential addition operations.
 type CredentialAddResponse struct {
-	SessionID    *identifier.Identifier    `json:"sessionId"`
+	SessionID    *identifier.Identifier    `json:"sessionId,omitempty"`
 	CredentialID *identifier.Identifier    `json:"credentialId,omitempty"`
 	Passkey      *AuthFlowResponsePasskey  `json:"passkey,omitempty"`
 	Password     *AuthFlowResponsePassword `json:"password,omitempty"`

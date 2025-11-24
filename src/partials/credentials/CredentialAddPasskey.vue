@@ -81,13 +81,13 @@ async function onSubmit() {
     if (abortController.signal.aborted) {
       return
     }
-    if (startResponse.error) {
+    if ("error" in startResponse) {
       // We check if it is an expected error code by trying to get the error message.
       getErrorMessage(startResponse.error)
       passkeyError.value = startResponse.error
       return
     }
-    if (!(startResponse.passkey && "createOptions" in startResponse.passkey)) {
+    if (!("passkey" in startResponse && "createOptions" in startResponse.passkey)) {
       throw new Error("unexpected response")
     }
 
@@ -103,7 +103,7 @@ async function onSubmit() {
     if (abortController.signal.aborted) {
       return
     }
-    if (completeResponse.error) {
+    if ("error" in completeResponse) {
       // We check if it is an expected error code by trying to get the error message.
       getErrorMessage(completeResponse.error)
       passkeyError.value = completeResponse.error

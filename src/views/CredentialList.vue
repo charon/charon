@@ -1,11 +1,14 @@
 <script setup lang="ts">
+import type { Ref } from "vue"
+import type { Router } from "vue-router"
+
 import type { CredentialInfo, Credentials } from "@/types"
 
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
-import { getCredentials, postJSON } from "@/api"
+import { getURL, postJSON } from "@/api"
 import { isSignedIn } from "@/auth"
 import Button from "@/components/Button.vue"
 import ButtonLink from "@/components/ButtonLink.vue"
@@ -24,6 +27,24 @@ const unexpectedError = ref("")
 const dataLoading = ref(true)
 const dataLoadingError = ref("")
 const credentials = ref<Credentials>([])
+
+async function getCredentials(router: Router, abortController: AbortController, progress: Ref<number>): Promise<Credentials | null> {
+  progress.value += 1
+  try {
+    const url = router.apiResolve({
+      name: "CredentialList",
+    }).href
+
+    const response = await getURL<Credentials>(url, null, abortController.signal, progress)
+    if (abortController.signal.aborted) {
+      return null
+    }
+
+    return response.doc
+  } finally {
+    progress.value -= 1
+  }
+}
 
 onBeforeUnmount(() => {
   abortController.abort()

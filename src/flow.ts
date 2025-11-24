@@ -1,4 +1,4 @@
-import { Ref } from "vue"
+import type { Ref } from "vue"
 import type { Router } from "vue-router"
 
 import type { AuthFlowResponse, Completed, Flow, SiteProvider } from "@/types"

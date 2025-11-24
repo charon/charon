@@ -77,7 +77,7 @@ async function onSubmit() {
     if (abortController.signal.aborted) {
       return
     }
-    if (response.error) {
+    if ("error" in response) {
       // We check if it is an expected error code by trying to get the error message.
       getErrorMessage(response.error)
       emailError.value = response.error

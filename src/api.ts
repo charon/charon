@@ -6,7 +6,6 @@ import type {
   AuthFlowPasswordStartRequest,
   AuthFlowResponse,
   AuthFlowResponsePassword,
-  Credentials,
   Flow,
   Identities,
   Identity,
@@ -298,24 +297,6 @@ export async function getAllIdentities(
     }
 
     return allIdentities
-  } finally {
-    progress.value -= 1
-  }
-}
-
-export async function getCredentials(router: Router, abortController: AbortController, progress: Ref<number>): Promise<Credentials | null> {
-  progress.value += 1
-  try {
-    const url = router.apiResolve({
-      name: "CredentialList",
-    }).href
-
-    const response = await getURL<Credentials>(url, null, abortController.signal, progress)
-    if (abortController.signal.aborted) {
-      return null
-    }
-
-    return response.doc
   } finally {
     progress.value -= 1
   }

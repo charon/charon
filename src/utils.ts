@@ -2,7 +2,6 @@ import type { DeepReadonly, Ref } from "vue"
 
 import type {
   DeriveOptions,
-  EncryptedPasswordData,
   EncryptOptions,
   Identity,
   IdentityOrganization,
@@ -223,22 +222,22 @@ export function getIdentityDisplayName(identity: IdentityPublic | DeepReadonly<I
   return identity.username || identity.email || identity.givenName || identity.fullName || identity.id
 }
 
-export async function encryptPasswordECDHAESGCM(
+export async function encryptPassword(
   password: string,
   publicKey: Uint8Array<ArrayBuffer>,
   deriveOptions: DeriveOptions,
   encryptOptions: EncryptOptions,
   abortController: AbortController,
-): Promise<EncryptedPasswordData> {
+): Promise<{ciphertext: ArrayBuffer, publicKeyBytes: ArrayBuffer} | null> {
   const encoder = new TextEncoder()
   const keyPair = await crypto.subtle.generateKey(deriveOptions, false, ["deriveKey"])
   if (abortController.signal.aborted) {
-    throw new Error("Aborted")
+    return null
   }
 
   const remotePublicKey = await crypto.subtle.importKey("raw", publicKey, deriveOptions, false, [])
   if (abortController.signal.aborted) {
-    throw new Error("Aborted")
+    return null
   }
 
   const secret = await crypto.subtle.deriveKey(
@@ -252,17 +251,17 @@ export async function encryptPasswordECDHAESGCM(
     ["encrypt"],
   )
   if (abortController.signal.aborted) {
-    throw new Error("Aborted")
+      return null
   }
 
   const ciphertext = await crypto.subtle.encrypt(encryptOptions, secret, encoder.encode(password))
   if (abortController.signal.aborted) {
-    throw new Error("Aborted")
+      return null
   }
 
   const publicKeyBytes = await crypto.subtle.exportKey("raw", keyPair.publicKey)
   if (abortController.signal.aborted) {
-    throw new Error("Aborted")
+      return null
   }
 
   return {

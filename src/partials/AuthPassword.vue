@@ -11,7 +11,7 @@ import InputText from "@/components/InputText.vue"
 import InputTextButton from "@/components/InputTextButton.vue"
 import { processResponse, removeSteps } from "@/flow"
 import { injectProgress } from "@/progress"
-import { encryptPasswordECDHAESGCM, isEmail, toBase64 } from "@/utils"
+import { encryptPassword, isEmail, toBase64 } from "@/utils"
 
 const props = defineProps<{
   flow: Flow
@@ -192,7 +192,10 @@ async function onNext() {
     props.flow.setDeriveOptions()
     props.flow.setEncryptOptions()
 
-    const encrypted = await encryptPasswordECDHAESGCM(password.value, publicKey, deriveOptions, encryptOptions, abortController)
+    const encrypted = await encryptPassword(password.value, publicKey, deriveOptions, encryptOptions, abortController)
+    if (!encrypted) {
+      return
+    }
 
     const response = await postJSON<AuthFlowResponse>(
       url,

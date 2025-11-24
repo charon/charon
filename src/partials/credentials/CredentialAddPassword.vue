@@ -9,7 +9,7 @@ import { postJSON } from "@/api.ts"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import { injectProgress } from "@/progress.ts"
-import { encryptPasswordECDHAESGCM } from "@/utils.ts"
+import {encryptPassword, toBase64} from "@/utils.ts"
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
@@ -84,18 +84,18 @@ async function onSubmit() {
     if (abortController.signal.aborted) {
       return
     }
-    if (startResponse.error) {
+    if ("error" in startResponse) {
       // We check if it is an expected error code by trying to get the error message.
       getErrorMessage(startResponse.error)
       passwordError.value = startResponse.error
       return
     }
-    if (!startResponse.password) {
+    if (!("password" in startResponse)) {
       throw new Error("unexpected response")
     }
 
-    const publicKey = Uint8Array.from(atob(startResponse.password?.publicKey), (c) => c.charCodeAt(0))
-    const deriveOptions = startResponse.password?.deriveOptions
+    const publicKey = Uint8Array.from(atob(startResponse.password.publicKey), (c) => c.charCodeAt(0))
+    const deriveOptions = startResponse.password.deriveOptions
     const encryptOptions: EncryptOptions = {
       name: startResponse.password.encryptOptions.name,
       iv: Uint8Array.from(atob(startResponse.password.encryptOptions.iv), (c) => c.charCodeAt(0)),
@@ -108,17 +108,20 @@ async function onSubmit() {
       throw new Error("missing public key or options")
     }
 
-    const encrypted = await encryptPasswordECDHAESGCM(password.value, publicKey, deriveOptions, encryptOptions, abortController)
+    const encrypted = await encryptPassword(password.value, publicKey, deriveOptions, encryptOptions, abortController)
+    if (!encrypted) {
+      return
+    }
 
     const completeResponse = await completeAddPasswordCredential({
       sessionId: startResponse.sessionId,
-      publicKey: Array.from(new Uint8Array(encrypted.publicKeyBytes)),
-      password: Array.from(new Uint8Array(encrypted.ciphertext)),
+      publicKey: toBase64(new Uint8Array(encrypted.publicKeyBytes)),
+      password: toBase64(new Uint8Array(encrypted.ciphertext)),
     })
     if (abortController.signal.aborted) {
       return
     }
-    if (completeResponse.error) {
+    if ("error" in completeResponse) {
       // We check if it is an expected error code by trying to get the error message.
       getErrorMessage(completeResponse.error)
       passwordError.value = completeResponse.error

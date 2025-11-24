@@ -46,7 +46,7 @@
         "username": "Username is already in use by another account."
       },
       "alreadyPresent": {
-        "email": "This email is already present on this account.",
+        "email": "This e-mail address is already present on this account.",
         "username": "This username is already present on this account.",
         "password": "This password or passphrase is already present on this account."
       },
@@ -254,7 +254,7 @@
     },
     "CredentialAddPasskey": {
       "label": "@:partials.CredentialAddPassword.label",
-      "passkeyInstructions": "Your device will prompt you to create a passkey. This allows you to sign in without a password."
+      "passkeyInstructions": "Please follow instructions by your browser and/or device to add a passkey."
     }
   },
   "views": {
