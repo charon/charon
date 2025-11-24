@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { DeepReadonly } from "vue"
 
-import { useI18n } from "vue-i18n"
-
 import type { CredentialInfo } from "@/types"
+
+import { useI18n } from "vue-i18n"
 
 import { getProviderNameTitle } from "@/flow.ts"
 

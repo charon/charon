@@ -1,6 +1,7 @@
 package charon
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -46,6 +47,10 @@ type CredentialInfo struct {
 // CredentialInfoRef represents a reference to a credential.
 type CredentialInfoRef struct {
 	ID identifier.Identifier `json:"id"`
+}
+
+func credentialInfoRefCmp(a CredentialInfoRef, b CredentialInfoRef) int {
+	return bytes.Compare(a.ID[:], b.ID[:])
 }
 
 // CredentialAddResponse represents the response for credential addition operations.
@@ -188,6 +193,7 @@ func (s *Service) CredentialListGet(w http.ResponseWriter, req *http.Request, _ 
 		}
 	}
 
+	slices.SortFunc(result, credentialInfoRefCmp)
 	s.WriteJSON(w, req, result, nil)
 }
 
