@@ -10,7 +10,7 @@ import type {
   Metadata,
   Organization,
   OrganizationApplication,
-  OrganizationIdentity,
+  IdentityForOrganization,
 } from "@/types"
 
 import { Identifier } from "@tozd/identifier"
@@ -69,8 +69,8 @@ const admins = ref<IdentityRef[]>([])
 
 const organizationIdentitiesUnexpectedError = ref("")
 const organizationIdentitiesUpdated = ref(false)
-let organizationIdentitiesInitial: OrganizationIdentity[] = []
-const organizationIdentities = ref<OrganizationIdentity[]>([])
+let identitiesForOrganizationInitial: IdentityForOrganization[] = []
+const identitiesForOrganization = ref<IdentityForOrganization[]>([])
 
 const allIdentities = ref<AllIdentity[]>([])
 const availableIdentities = computed(() => {
@@ -95,18 +95,18 @@ function isApplicationAdded(applicationTemplate: ApplicationTemplateRef): boolea
 }
 
 function isIdentityAdded(identity: IdentityRef): boolean {
-  for (const organizationIdentity of organizationIdentities.value) {
-    if (organizationIdentity.identity.id === identity.id) {
+  for (const identityForOrganization of identitiesForOrganization.value) {
+    if (identityForOrganization.identity.id === identity.id) {
       return true
     }
   }
   return false
 }
 
-function getInitialOrganizationIdentity(identity: IdentityRef): OrganizationIdentity | null {
-  for (const organizationIdentity of organizationIdentitiesInitial) {
-    if (organizationIdentity.identity.id === identity.id) {
-      return organizationIdentity
+function getInitialIdentityForOrganization(identity: IdentityRef): IdentityForOrganization | null {
+  for (const identityForOrganization of identitiesForOrganizationInitial) {
+    if (identityForOrganization.identity.id === identity.id) {
+      return identityForOrganization
     }
   }
   return null
@@ -132,7 +132,7 @@ function initWatchInteraction() {
     return
   }
 
-  const stop = watch([name, description, applications, admins, organizationIdentities], resetOnInteraction, { deep: true })
+  const stop = watch([name, description, applications, admins, identitiesForOrganization], resetOnInteraction, { deep: true })
   if (watchInteractionStop !== null) {
     throw new Error("watchInteractionStop already set")
   }
@@ -199,7 +199,7 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
     }
 
     if (update === "init" || update === "identities") {
-      const updatedOrganizationIdentities: OrganizationIdentity[] = []
+      const updatedIdentitiesForOrganization: IdentityForOrganization[] = []
       let updatedAllIdentities: AllIdentity[] = []
 
       if (isSignedIn()) {
@@ -212,7 +212,7 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
         for (const allIdentity of updatedAllIdentities) {
           for (const identityOrganization of allIdentity.identity.organizations) {
             if (identityOrganization.organization.id === props.id) {
-              updatedOrganizationIdentities.push({
+              updatedIdentitiesForOrganization.push({
                 id: identityOrganization.id,
                 active: identityOrganization.active,
                 // We clone so that object is not shared with updatedAllIdentities.
@@ -230,8 +230,8 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
         }
       }
 
-      organizationIdentitiesInitial = clone(updatedOrganizationIdentities)
-      organizationIdentities.value = updatedOrganizationIdentities
+      identitiesForOrganizationInitial = clone(updatedIdentitiesForOrganization)
+      identitiesForOrganization.value = updatedIdentitiesForOrganization
       allIdentities.value = updatedAllIdentities
     }
   } catch (error) {
@@ -491,7 +491,7 @@ async function onAddAdmin() {
 
 function canIdentitiesSubmit(): boolean {
   // Anything changed?
-  if (!equals(organizationIdentitiesInitial, organizationIdentities.value)) {
+  if (!equals(identitiesForOrganizationInitial, identitiesForOrganization.value)) {
     return true
   }
 
@@ -503,7 +503,7 @@ async function onAddIdentity(allIdentity: AllIdentity | DeepReadonly<AllIdentity
     return
   }
 
-  organizationIdentities.value.push({
+  identitiesForOrganization.value.push({
     active: false,
     identity: allIdentity.identity,
     applications: [],
@@ -516,7 +516,7 @@ async function onAddIdentity(allIdentity: AllIdentity | DeepReadonly<AllIdentity
   // that after updating the list and retrieving the result from the backend, the list changes with identities changing the
   // order. So we prefer to sort the list before sending it to the backend, in the same way the backend does. Ideally, we
   // would have the order in which identities were added to the organization, but we do not have that information.
-  organizationIdentities.value.sort((a, b) => a.identity.id.localeCompare(b.identity.id))
+  identitiesForOrganization.value.sort((a, b) => a.identity.id.localeCompare(b.identity.id))
 
   await nextTick(() => {
     document.getElementById("identities-update")?.focus()
@@ -533,35 +533,35 @@ async function onIdentitiesSubmit() {
   progress.value += 1
   try {
     try {
-      for (const organizationIdentity of organizationIdentities.value) {
+      for (const identityForOrganization of identitiesForOrganization.value) {
         // Anything changed?
-        const initialOrganizationIdentity = getInitialOrganizationIdentity(organizationIdentity.identity)
-        if (initialOrganizationIdentity !== null && equals(initialOrganizationIdentity, organizationIdentity)) {
+        const initialIdentityForOrganization = getInitialIdentityForOrganization(identityForOrganization.identity)
+        if (initialIdentityForOrganization !== null && equals(initialIdentityForOrganization, identityForOrganization)) {
           continue
         }
 
-        const payload = clone(organizationIdentity.identity)
+        const payload = clone(identityForOrganization.identity)
         // Does there exist an entry with this ID? ID might be undefined which is fine.
-        let identityOrganization = getIdentityOrganization(payload, organizationIdentity.id)
+        let identityOrganization = getIdentityOrganization(payload, identityForOrganization.id)
         if (identityOrganization === null) {
           // Is there any other entry for this organization?
           identityOrganization = getOrganization(payload, props.id)
           if (identityOrganization === null) {
             payload.organizations.push({
               // ID can be undefined and this is OK, the backend will assign it.
-              id: organizationIdentity.id,
-              active: organizationIdentity.active,
+              id: identityForOrganization.id,
+              active: identityForOrganization.active,
               organization: { id: props.id },
               applications: [],
             })
           } else {
             // We could not find it by ID but we found it by organization's ID,
             // which probably means the ID was reset to undefined.
-            identityOrganization.id = organizationIdentity.id
-            identityOrganization.active = organizationIdentity.active
+            identityOrganization.id = identityForOrganization.id
+            identityOrganization.active = identityForOrganization.active
           }
         } else {
-          identityOrganization.active = organizationIdentity.active
+          identityOrganization.active = identityForOrganization.active
         }
 
         const url = router.apiResolve({
@@ -578,13 +578,13 @@ async function onIdentitiesSubmit() {
       }
 
       // Some identities might have been removed.
-      for (const organizationIdentity of organizationIdentitiesInitial) {
-        if (isIdentityAdded(organizationIdentity.identity)) {
+      for (const identityForOrganization of identitiesForOrganizationInitial) {
+        if (isIdentityAdded(identityForOrganization.identity)) {
           // Not removed.
           continue
         }
 
-        const payload = clone(organizationIdentity.identity)
+        const payload = clone(identityForOrganization.identity)
         payload.organizations = payload.organizations.filter((idOrg) => idOrg.organization.id !== props.id)
 
         const url = router.apiResolve({
@@ -619,12 +619,12 @@ async function onIdentitiesSubmit() {
   }
 }
 
-function organizationIdentityLabels(organizationIdentity: OrganizationIdentity): string[] {
+function identityForOrganizationLabels(identityForOrganization: IdentityForOrganization): string[] {
   const labels: string[] = []
-  if (!organizationIdentity.active) {
+  if (!identityForOrganization.active) {
     labels.push(t("common.labels.disabled"))
   }
-  if (organizationIdentity.blocked !== "notBlocked") {
+  if (identityForOrganization.blocked !== "notBlocked") {
     labels.push(t("common.labels.blocked"))
   }
   return labels
@@ -835,41 +835,41 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
               </div>
             </form>
           </template>
-          <template v-if="organizationIdentities.length || canIdentitiesSubmit() || organizationIdentitiesUnexpectedError || organizationIdentitiesUpdated">
+          <template v-if="identitiesForOrganization.length || canIdentitiesSubmit() || organizationIdentitiesUnexpectedError || organizationIdentitiesUpdated">
             <h2 class="text-xl font-bold">{{ t("views.OrganizationGet.addedIdentities") }}</h2>
             <div v-if="organizationIdentitiesUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="organizationIdentitiesUpdated" class="text-success-600">{{ t("views.OrganizationGet.identitiesUpdated") }}</div>
-            <form v-if="organizationIdentities.length || canIdentitiesSubmit()" class="flex flex-col" novalidate @submit.prevent="onIdentitiesSubmit">
+            <form v-if="identitiesForOrganization.length || canIdentitiesSubmit()" class="flex flex-col" novalidate @submit.prevent="onIdentitiesSubmit">
               <ul class="flex flex-col gap-y-4">
-                <li v-for="(organizationIdentity, i) in organizationIdentities" :key="organizationIdentity.id || i" class="flex flex-col">
+                <li v-for="(identityForOrganization, i) in identitiesForOrganization" :key="identityForOrganization.id || i" class="flex flex-col">
                   <IdentityFull
-                    :identity="organizationIdentity.identity"
-                    :url="organizationIdentity.url"
-                    :is-current="organizationIdentity.isCurrent"
-                    :can-update="organizationIdentity.canUpdate"
-                    :labels="organizationIdentityLabels(organizationIdentity)"
+                    :identity="identityForOrganization.identity"
+                    :url="identityForOrganization.url"
+                    :is-current="identityForOrganization.isCurrent"
+                    :can-update="identityForOrganization.canUpdate"
+                    :labels="identityForOrganizationLabels(identityForOrganization)"
                   />
                   <IdentityOrganization
                     :identity-organization="{
-                      id: organizationIdentity.id,
-                      active: organizationIdentity.active,
+                      id: identityForOrganization.id,
+                      active: identityForOrganization.active,
                       organization: { id },
-                      applications: organizationIdentity.applications,
+                      applications: identityForOrganization.applications,
                     }"
                   >
-                    <div v-if="organizationIdentity.canUpdate" class="flex flex-row gap-4">
-                      <Button type="button" :progress="progress" @click.prevent="organizationIdentity.active = !organizationIdentity.active">
-                        {{ organizationIdentity.active ? t("common.buttons.disable") : t("common.buttons.activate") }}
+                    <div v-if="identityForOrganization.canUpdate" class="flex flex-row gap-4">
+                      <Button type="button" :progress="progress" @click.prevent="identityForOrganization.active = !identityForOrganization.active">
+                        {{ identityForOrganization.active ? t("common.buttons.disable") : t("common.buttons.activate") }}
                       </Button>
-                      <Button type="button" :progress="progress" @click.prevent="organizationIdentities.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
+                      <Button type="button" :progress="progress" @click.prevent="identitiesForOrganization.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                     </div>
                   </IdentityOrganization>
                 </li>
               </ul>
               <div
-                v-if="organizationIdentities.filter((oi) => oi.canUpdate).length || canIdentitiesSubmit()"
+                v-if="identitiesForOrganization.filter((oi) => oi.canUpdate).length || canIdentitiesSubmit()"
                 class="flex flex-row justify-end"
-                :class="organizationIdentities.length ? 'mt-4' : ''"
+                :class="identitiesForOrganization.length ? 'mt-4' : ''"
               >
                 <!--
                   Button is on purpose not disabled on organizationIdentitiesUnexpectedError so that user can retry.

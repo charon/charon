@@ -312,7 +312,7 @@ export type OrganizationApplication = OrganizationApplicationPublic & {
 }
 
 // This is used only on the frontend.
-export type OrganizationIdentity = {
+export type IdentityForOrganization = {
   id?: string
   active: boolean
   identity: Identity | DeepReadonly<Identity>
