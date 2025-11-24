@@ -51,7 +51,7 @@
         "password": "To geslo ali geslovni stavek je že prisotno na tem računu."
       },
       "credentialLabelInUse": {
-        "password": "Oznaka gesla al igeslovnega stavka je že v uporabi.",
+        "password": "Oznaka gesla je že v uporabi.",
         "passkey": "Oznaka za passkey je že v uporabi."
       },
       "credentialLabelMissing": {
@@ -254,7 +254,7 @@
     },
     "CredentialAddPasskey": {
       "label": "Oznaka",
-      "passkeyInstructions": "Dodajte {strongPasskey}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave."
+      "passkeyInstructions": "Prosimo, sledite navodilom vašega brskalnika in/ali naprave, da dodate passkey."
     }
   },
   "views": {
@@ -365,7 +365,7 @@
     "CredentialList": {
       "noCredentialsCreate": "Ni metod za avtentikacijo. Ustvarite prvo.",
       "noCredentialsSignIn": "Ni metod za avtentikacijo. Prijavite se ali registrirajte, da ustvarite prvo.",
-      "verify": "Preveri"
+      "verify": "Potrdi"
     }
   }
 }
