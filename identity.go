@@ -273,6 +273,23 @@ func (i *Identity) HasAdminAccess(identities mapset.Set[IdentityRef], isCreator 
 	return false
 }
 
+// Ref returns a reference to the identity.
+func (i *IdentityPublic) Ref() IdentityRef {
+	return IdentityRef{ID: *i.ID}
+}
+
+// OrganizationIdentityRef returns a reference to the organization identity.
+func (i *Identity) OrganizationIdentityRef(organization OrganizationRef) *OrganizationIdentityRef {
+	idOrg := i.GetOrganization(&organization.ID)
+	if idOrg == nil {
+		return nil
+	}
+	return &OrganizationIdentityRef{
+		Identity:     IdentityRef{ID: *idOrg.ID},
+		Organization: organization,
+	}
+}
+
 // IdentityRef is a reference to an identity.
 type IdentityRef struct {
 	ID identifier.Identifier `json:"id"`
@@ -280,6 +297,13 @@ type IdentityRef struct {
 
 func identityRefCmp(a IdentityRef, b IdentityRef) int {
 	return bytes.Compare(a.ID[:], b.ID[:])
+}
+
+// OrganizationIdentityRef represents a reference to the organization
+// and an identity added to that organization.
+type OrganizationIdentityRef struct {
+	Organization OrganizationRef `json:"organization"`
+	Identity     IdentityRef     `json:"identity"`
 }
 
 // Validate validates the Identity struct.
@@ -551,6 +575,20 @@ func (s *Service) getIdentityWithoutAccessCheck(_ context.Context, id identifier
 	return &identity, nil
 }
 
+func (s *Service) setIdentity(id identifier.Identifier, data []byte) {
+	s.identitiesMu.Lock()
+	defer s.identitiesMu.Unlock()
+
+	s.identities[id] = data
+}
+
+func (s *Service) setIdentityCreator(i IdentityRef, account identifier.Identifier) {
+	s.identitiesAccessMu.Lock()
+	defer s.identitiesAccessMu.Unlock()
+
+	s.identityCreators[i] = account
+}
+
 func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*Identity, bool, errors.E) {
 	currentAccountID := mustGetAccountID(ctx)
 
@@ -573,7 +611,7 @@ func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*I
 		return nil, false, errE
 	}
 
-	ids, isCreator, errE := s.getIdentitiesForAccount(ctx, currentAccountID, IdentityRef{ID: *identity.ID})
+	ids, isCreator, errE := s.getIdentitiesForAccount(ctx, currentAccountID, identity.Ref())
 	if errE != nil {
 		return nil, false, errE
 	}
@@ -594,6 +632,8 @@ func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*I
 // (but which has an account). Only in such case, the identityIDContextKey does not have to
 // be set and the identity itself will be used instead.
 func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors.E {
+	co := s.charonOrganization()
+
 	currentAccountID := mustGetAccountID(ctx)
 
 	errE := identity.Validate(ctx, nil, s)
@@ -606,6 +646,44 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 		return errE
 	}
 
+	i := identity.Ref()
+
+	var accounts []AccountRef
+
+	if _, ok := getIdentityID(ctx); !ok {
+		// When identity is created using only an account ID without identity ID in the context, identity itself
+		// is added to admins in Validate. Here, we record the identity creator, establishing the link
+		// between the identity and the account, bootstrapping correct propagation of which accounts have
+		// access based on identities.
+		// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
+		s.setIdentityCreator(i, currentAccountID)
+
+		// We set here current identity ID in the context, which is used by logActivity.
+		ctx = s.withIdentityID(ctx, *identity.ID)
+
+		// We want this activity to be visible for all identities of this account, otherwise
+		// user might miss it if they do not use this identity to sign-in into Charon Dashboard.
+		accounts = []AccountRef{{ID: currentAccountID}}
+	}
+
+	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
+	s.setIdentity(*identity.ID, data)
+
+	identities := mapset.NewThreadUnsafeSet(identity.Users...)
+	identities.Append(identity.Admins...)
+
+	errE = s.updateAccountsWithLock(i, mapset.NewThreadUnsafeSet[IdentityRef](), identities)
+	if errE != nil {
+		return errE
+	}
+
+	return s.logActivity(ctx, ActivityIdentityCreate, []OrganizationIdentityRef{{
+		Organization: OrganizationRef{ID: co.ID},
+		Identity:     i,
+	}}, nil, nil, nil, accounts, nil, nil, OrganizationRef{ID: co.ID})
+}
+
+func (s *Service) updateAccountsWithLock(identity IdentityRef, identitiesBefore, identitiesAfter mapset.Set[IdentityRef]) errors.E {
 	s.identitiesMu.Lock()
 	defer s.identitiesMu.Unlock()
 
@@ -614,30 +692,7 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 	s.identitiesAccessMu.Lock()
 	defer s.identitiesAccessMu.Unlock()
 
-	i := IdentityRef{ID: *identity.ID}
-
-	if _, ok := getIdentityID(ctx); !ok {
-		// When identity is created using only an account ID without identity ID in the context, identity itself
-		// is added to admins in Validate. Here, we record the identity creator, establishing the link
-		// between the identity and the account, bootstrapping correct propagation of which accounts have
-		// access based on identities.
-		s.identityCreators[i] = currentAccountID
-
-		// We set here current identity ID in the context, which is used by logActivity.
-		ctx = s.withIdentityID(ctx, *identity.ID)
-	}
-
-	errE = s.logActivity(ctx, ActivityIdentityCreate, []IdentityRef{{ID: *identity.ID}}, nil, nil, nil, nil, nil, nil)
-	if errE != nil {
-		return errE
-	}
-
-	s.identities[*identity.ID] = data
-
-	identities := mapset.NewThreadUnsafeSet(identity.Users...)
-	identities.Append(identity.Admins...)
-
-	return s.updateAccounts(i, mapset.NewThreadUnsafeSet[IdentityRef](), identities)
+	return s.updateAccounts(identity, identitiesBefore, identitiesAfter)
 }
 
 // setAccountForIdentity adds the identity to the set of identities the account has
@@ -711,43 +766,24 @@ func (s *Service) getAccountsForIdentity(identity IdentityRef) map[identifier.Id
 }
 
 func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors.E {
-	currentAccountID := mustGetAccountID(ctx)
-
-	s.identitiesMu.Lock()
-	defer s.identitiesMu.Unlock()
-
-	// We lock s.identitiesAccessMu inside s.identitiesMu lock to have
-	// consistent view of identities and accounts.
-	s.identitiesAccessMu.Lock()
-	defer s.identitiesAccessMu.Unlock()
+	co := s.charonOrganization()
 
 	if identity.ID == nil {
 		return errors.WithMessage(ErrIdentityValidationFailed, "ID is missing")
 	}
 
-	existingData, ok := s.identities[*identity.ID]
-	if !ok {
-		return errors.WithDetails(ErrIdentityNotFound, "id", *identity.ID)
-	}
-
-	var existingIdentity Identity
-	errE := x.UnmarshalWithoutUnknownFields(existingData, &existingIdentity)
-	if errE != nil {
-		errors.Details(errE)["id"] = *identity.ID
-		return errE
-	}
-
-	i := IdentityRef{ID: *identity.ID}
-
-	ids, isCreator, errE := s.getIdentitiesForAccount(ctx, currentAccountID, i)
+	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
+	existingIdentity, isAdmin, errE := s.getIdentity(ctx, *identity.ID)
 	if errE != nil {
 		return errE
 	}
-	if !existingIdentity.HasAdminAccess(ids, isCreator) {
+	if !isAdmin {
 		return errors.WithDetails(ErrIdentityUnauthorized, "id", *identity.ID)
 	}
 
-	errE = identity.Validate(ctx, &existingIdentity, s)
+	i := identity.Ref()
+
+	errE = identity.Validate(ctx, existingIdentity, s)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrIdentityValidationFailed)
 	}
@@ -772,24 +808,15 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 		ctx = s.withIdentityID(ctx, *identity.ID)
 	}
 
-	changes, identities, organizations, applications := identity.Changes(&existingIdentity)
+	changes, identities, organizations, applications := identity.Changes(existingIdentity)
 
 	if len(changes) == 0 {
 		// No changes, do not continue.
 		return nil
 	}
 
-	// We make sure identity reference i is always the first element in identities. This might leave identities
-	// with the duplicate identity i, but that is better than removing duplicates because it is deterministic
-	// and the frontend can always then take the first element to be the identity that was updated.
-	identities = append([]IdentityRef{i}, identities...)
-
-	errE = s.logActivity(ctx, ActivityIdentityUpdate, identities, organizations, nil, applications, nil, changes, nil)
-	if errE != nil {
-		return errE
-	}
-
-	s.identities[*identity.ID] = data
+	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
+	s.setIdentity(*identity.ID, data)
 
 	identitiesBefore := mapset.NewThreadUnsafeSet(existingIdentity.Users...)
 	identitiesBefore.Append(existingIdentity.Admins...)
@@ -797,7 +824,25 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 	identitiesAfter := mapset.NewThreadUnsafeSet(identity.Users...)
 	identitiesAfter.Append(identity.Admins...)
 
-	return s.updateAccounts(i, identitiesBefore, identitiesAfter)
+	errE = s.updateAccountsWithLock(i, identitiesBefore, identitiesAfter)
+	if errE != nil {
+		return errE
+	}
+
+	// We make sure identity reference i is always the first element in identities. This might leave identities
+	// with the duplicate identity i, but that is better than removing duplicates because it is deterministic
+	// and the frontend can always then take the first element to be the identity that was updated.
+	identities = append([]IdentityRef{i}, identities...)
+
+	scopedIdentities := []OrganizationIdentityRef{}
+	for _, identity := range identities {
+		scopedIdentities = append(scopedIdentities, OrganizationIdentityRef{
+			Organization: OrganizationRef{ID: co.ID},
+			Identity:     identity,
+		})
+	}
+
+	return s.logActivity(ctx, ActivityIdentityUpdate, scopedIdentities, organizations, nil, applications, nil, changes, nil, OrganizationRef{ID: co.ID})
 }
 
 // updateAccounts updates accounts which have access to the identity after the set
@@ -895,7 +940,7 @@ func (s *Service) propagateAccountsUpdate(identity IdentityRef, identityBeforeAc
 				continue
 			}
 
-			o := IdentityRef{ID: *otherIdentity.ID}
+			o := otherIdentity.Ref()
 
 			beforeAccounts := s.getAccountsForIdentity(o)
 
@@ -1050,7 +1095,7 @@ func (s *Service) getIdentityFromID(ctx context.Context, value string) (*Identit
 }
 
 func (s *Service) returnIdentityRef(_ context.Context, w http.ResponseWriter, req *http.Request, identity *Identity) {
-	s.WriteJSON(w, req, IdentityRef{ID: *identity.ID}, nil)
+	s.WriteJSON(w, req, identity.Ref(), nil)
 }
 
 // IdentityGetGet is the API handler for getting the identity, GET request.
@@ -1132,7 +1177,7 @@ func (s *Service) identityList(ctx context.Context) ([]IdentityRef, errors.E) {
 			return nil, errE
 		}
 
-		i := IdentityRef{ID: id}
+		i := identity.Ref()
 
 		ids, isCreator, errE := s.getIdentitiesForAccount(ctx, currentAccountID, i)
 		if errE != nil {

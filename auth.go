@@ -87,7 +87,7 @@ func (s *Service) AuthSignoutPost(w http.ResponseWriter, req *http.Request, _ wa
 			c := s.withAccountID(ctx, accountID)
 			c = s.withIdentityID(c, identityID)
 			c = s.withSessionID(c, sessionID)
-			errE = s.logActivity(c, ActivitySignOut, nil, nil, nil, nil, nil, nil, nil)
+			errE = s.logActivity(c, ActivitySignOut, nil, nil, nil, nil, nil, nil, nil, OrganizationRef{ID: co.ID})
 			if errE != nil {
 				s.InternalServerErrorWithError(w, req, errE)
 				return
