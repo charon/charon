@@ -51,11 +51,11 @@
         "password": "This password or passphrase is already present on this account."
       },
       "credentialLabelInUse": {
-        "password": "Password label is already in use.",
+        "password": "Password or passphrase label is already in use.",
         "passkey": "Passkey label is already in use."
       },
       "credentialLabelMissing": {
-        "password": "Password label is missing.",
+        "password": "Password or passphrase label is missing.",
         "passkey": "Passkey label is missing."
       }
     },

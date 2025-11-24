@@ -51,11 +51,11 @@
         "password": "To geslo ali geslovni stavek je že prisotno na tem računu."
       },
       "credentialLabelInUse": {
-        "password": "Oznaka gesla je že v uporabi.",
+        "password": "Oznaka gesla ali geslovnega stavka je že v uporabi.",
         "passkey": "Oznaka za passkey je že v uporabi."
       },
       "credentialLabelMissing": {
-        "password": "Geslu manjka oznaka.",
+        "password": "Geslu ali geslovnemu stavku manjka oznaka.",
         "passkey": "Passkey-u manjka oznaka."
       }
     },
