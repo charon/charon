@@ -40,7 +40,7 @@ var (
 type CredentialInfo struct {
 	ID          identifier.Identifier `json:"id"`
 	Provider    Provider              `json:"provider"`
-	DisplayName string                `json:"displayName,omitempty"`
+	DisplayName string                `json:"displayName"`
 	Verified    bool                  `json:"verified,omitempty"`
 }
 

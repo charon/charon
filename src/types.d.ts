@@ -462,7 +462,7 @@ export type CredentialInfoRef = {
 export type CredentialInfo = {
   id: string
   provider: string
-  displayName?: string
+  displayName: string
   verified?: boolean // TODO: When verifying emails.
 }
 
