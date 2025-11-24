@@ -55,7 +55,7 @@
         "passkey": "Oznaka za passkey je že v uporabi."
       },
       "credentialLabelMissing": {
-        "password": "Geslu ali geslovnemu stavku manjka oznaka.",
+        "password": "Geslu manjka oznaka.",
         "passkey": "Passkey-u manjka oznaka."
       }
     },
