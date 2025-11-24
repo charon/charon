@@ -73,7 +73,9 @@ const WithIdentityDocument = WithDocument<Identity>
       <div v-if="dataLoading" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">{{ t("common.data.dataLoading") }}</div>
       <div v-else-if="dataLoadingError" class="w-full rounded-sm border border-gray-200 bg-white p-4 text-error-600 shadow-sm">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
-        <div v-if="!identities.length" class="w-full rounded-sm border border-gray-200 bg-white p-4 italic shadow-sm">{{ isSignedIn() ? t("views.IdentityList.noIdentitiesCreate") : t("views.IdentityList.noIdentitiesSignIn") }}</div>
+        <div v-if="!identities.length" class="w-full rounded-sm border border-gray-200 bg-white p-4 italic shadow-sm">{{
+          isSignedIn() ? t("views.IdentityList.noIdentitiesCreate") : t("views.IdentityList.noIdentitiesSignIn")
+        }}</div>
         <div v-for="identity in identities" :key="identity.id" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
           <WithIdentityDocument :params="{ id: identity.id }" name="IdentityGet">
             <template #default="{ doc, metadata, url }">

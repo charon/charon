@@ -41,7 +41,9 @@ const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
         </component>
         <slot :doc="doc" :metadata="metadata"></slot>
       </div>
-      <div v-if="publicDoc ? publicDoc.description : doc.description" class="mt-4 ml-4 whitespace-pre-line">{{ publicDoc ? publicDoc.description : doc.description }}</div>
+      <div v-if="publicDoc ? publicDoc.description : doc.description" class="mt-4 ml-4 whitespace-pre-line">{{
+        publicDoc ? publicDoc.description : doc.description
+      }}</div>
     </template>
     <template #error="{ url }">
       <div class="flex flex-row gap-4" :data-url="url">

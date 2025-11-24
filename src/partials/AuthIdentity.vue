@@ -343,7 +343,9 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
       <div v-else-if="allIdentitiesLoadingError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
         <h3 class="text-l mb-4 font-bold">{{ t("partials.AuthIdentity.previouslyUsedIdentities") }}</h3>
-        <div v-if="usedIdentities.length + addedIdentities.length + disabledIdentities.length === 0" class="mb-4 italic">{{ t("partials.AuthIdentity.noIdentityUsed") }}</div>
+        <div v-if="usedIdentities.length + addedIdentities.length + disabledIdentities.length === 0" class="mb-4 italic">{{
+          t("partials.AuthIdentity.noIdentityUsed")
+        }}</div>
         <div v-else-if="usedIdentities.length + disabledIdentities.length === 0" class="mb-4 italic">{{ t("partials.AuthIdentity.noIdentityUsedWithApp") }}</div>
         <div v-else-if="usedIdentities.length + addedIdentities.length === 0" class="mb-4 italic">{{ t("partials.AuthIdentity.allPreviousDisabled") }}</div>
         <div v-else-if="usedIdentities.length === 0" class="mb-4 italic">{{ t("partials.AuthIdentity.previouslyUsedDisabled") }}</div>
@@ -397,7 +399,9 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
           </ul>
         </template>
         <h3 class="text-l mb-4 font-bold">{{ t("partials.AuthIdentity.otherAvailableIdentities") }}</h3>
-        <div v-if="usedIdentities.length + addedIdentities.length + otherIdentities.length + disabledIdentities.length === 0" class="mb-4 italic">{{ t("partials.AuthIdentity.noIdentitiesCreateFirst") }}</div>
+        <div v-if="usedIdentities.length + addedIdentities.length + otherIdentities.length + disabledIdentities.length === 0" class="mb-4 italic">{{
+          t("partials.AuthIdentity.noIdentitiesCreateFirst")
+        }}</div>
         <div v-else-if="otherIdentities.length === 0" class="mb-4 italic">{{ t("partials.AuthIdentity.noOtherIdentitiesCreateOne") }}</div>
         <ul v-else>
           <li v-for="allIdentity in otherIdentities" :key="allIdentity.identity.id" class="mb-4">

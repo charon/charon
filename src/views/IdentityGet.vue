@@ -551,7 +551,9 @@ function organizationLabels(identityOrganization: IdentityOrganizationType | Dee
                     :identity-organization="identityOrganization"
                   >
                     <div v-if="metadata.can_update" class="flew-row flex gap-4">
-                      <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = !identityOrganization.active">{{ identityOrganization.active ? t("common.buttons.disable") : t("common.buttons.activate") }}</Button>
+                      <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = !identityOrganization.active">{{
+                        identityOrganization.active ? t("common.buttons.disable") : t("common.buttons.activate")
+                      }}</Button>
                       <Button type="button" :progress="progress" @click.prevent="identityOrganizations.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                     </div>
                   </IdentityOrganization>

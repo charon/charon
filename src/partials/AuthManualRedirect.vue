@@ -110,7 +110,9 @@ const withOrganizationApplicationDocument = ref<ComponentExposed<typeof WithOrga
           </div>
           <div class="mb-4">{{ t("partials.AuthManualRedirect.tryAgain", { appName: doc.applicationTemplate.name }) }}</div>
         </template>
-        <div v-else-if="flow.getCompleted().includes('finished')" class="mb-4">{{ t("partials.AuthManualRedirect.completed", { appName: doc.applicationTemplate.name }) }}</div>
+        <div v-else-if="flow.getCompleted().includes('finished')" class="mb-4">{{
+          t("partials.AuthManualRedirect.completed", { appName: doc.applicationTemplate.name })
+        }}</div>
         <div v-if="unexpectedError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
         <div class="flex flex-row justify-end gap-4">
           <Button id="redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">{{

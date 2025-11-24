@@ -251,7 +251,9 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                       </WithIdentityPublicDocument>
                       <WithIdentityDocument v-else :params="{ id: identity.id }" name="IdentityGet">
                         <template #default="{ doc: identityDoc, url: identityUrl }">
-                          <router-link :to="{ name: 'IdentityGet', params: { id: identity.id } }" :data-url="identityUrl" class="link">{{ getIdentityDisplayName(identityDoc) }}</router-link>
+                          <router-link :to="{ name: 'IdentityGet', params: { id: identity.id } }" :data-url="identityUrl" class="link">{{
+                            getIdentityDisplayName(identityDoc)
+                          }}</router-link>
                         </template>
                         <template #error="{ url: identityErrorUrl }">
                           <span :data-url="identityErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
@@ -287,7 +289,9 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                       <template v-if="i > 0">, </template>
                       <WithApplicationTemplateDocument :params="{ id: applicationTemplate.id }" name="ApplicationTemplateGet">
                         <template #default="{ doc: appDoc, url: appUrl }">
-                          <router-link :to="{ name: 'ApplicationTemplateGet', params: { id: applicationTemplate.id } }" :data-url="appUrl" class="link">{{ appDoc.name }}</router-link>
+                          <router-link :to="{ name: 'ApplicationTemplateGet', params: { id: applicationTemplate.id } }" :data-url="appUrl" class="link">{{
+                            appDoc.name
+                          }}</router-link>
                         </template>
                         <template #error="{ url: appErrorUrl }">
                           <span :data-url="appErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>

@@ -774,7 +774,9 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
                         </i18n-t>
                       </div>
                       <div class="flex flex-row gap-4">
-                        <Button type="button" :progress="progress" @click.prevent="application.active = !application.active">{{ application.active ? t("common.buttons.disable") : t("common.buttons.activate") }}</Button>
+                        <Button type="button" :progress="progress" @click.prevent="application.active = !application.active">{{
+                          application.active ? t("common.buttons.disable") : t("common.buttons.activate")
+                        }}</Button>
                         <Button type="button" :progress="progress" @click.prevent="applications.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                       </div>
                     </div>
@@ -856,7 +858,9 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
                     }"
                   >
                     <div v-if="identityForOrganization.canUpdate" class="flex flex-row gap-4">
-                      <Button type="button" :progress="progress" @click.prevent="identityForOrganization.active = !identityForOrganization.active">{{ identityForOrganization.active ? t("common.buttons.disable") : t("common.buttons.activate") }}</Button>
+                      <Button type="button" :progress="progress" @click.prevent="identityForOrganization.active = !identityForOrganization.active">{{
+                        identityForOrganization.active ? t("common.buttons.disable") : t("common.buttons.activate")
+                      }}</Button>
                       <Button type="button" :progress="progress" @click.prevent="identitiesForOrganization.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                     </div>
                   </IdentityOrganization>
