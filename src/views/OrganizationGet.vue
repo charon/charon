@@ -6,11 +6,11 @@ import type {
   ApplicationTemplate,
   ApplicationTemplateRef,
   ApplicationTemplates,
+  IdentityForOrganization,
   IdentityRef,
   Metadata,
   Organization,
   OrganizationApplication,
-  IdentityForOrganization,
 } from "@/types"
 
 import { Identifier } from "@tozd/identifier"

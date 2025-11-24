@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DeepReadonly, Component } from "vue"
+import type { Component, DeepReadonly } from "vue"
 
 import type { Activity, ActivityRef, ApplicationTemplate, Identity, IdentityPublic, Organization, OrganizationApplicationPublic, OrganizationRef } from "@/types"
 
