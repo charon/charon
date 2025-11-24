@@ -8,7 +8,7 @@ import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
 import { postJSON } from "@/api"
-import { accessToken, isSignedIn, signIn } from "@/auth"
+import { accessToken, currentIdentityId, isSignedIn, signIn } from "@/auth"
 import Button from "@/components/Button.vue"
 import { useNavbar } from "@/navbar"
 import { injectProgress } from "@/progress"
@@ -50,6 +50,7 @@ async function onSignOut() {
       }
 
       accessToken.value = ""
+      currentIdentityId.value = ""
 
       redirectServerSide(response.location, true, progress)
 

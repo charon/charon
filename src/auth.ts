@@ -19,6 +19,8 @@ type State = {
 // TODO: Instead of providing access token directly, provide a wrapper around fetch which adds the token and fetches a new one if it expires.
 export const accessToken = ref("")
 
+export const currentIdentityId = ref("")
+
 export async function signIn(progress: Ref<number>) {
   const codeVerifier = client.randomPKCECodeVerifier()
   const codeChallenge = await client.calculatePKCECodeChallenge(codeVerifier)
@@ -69,8 +71,14 @@ export async function processOIDCRedirect() {
     expectedNonce: state.nonce,
   })
 
+  const claims = tokens.claims()
+  if (!claims) {
+    throw new Error("missing ID token")
+  }
+
   // TODO: Inspect the access token and figure out when it will expire and remove the access token then.
   accessToken.value = tokens.access_token
+  currentIdentityId.value = claims.sub
 }
 
 export function isSignedIn(): boolean {
