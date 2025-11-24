@@ -16,7 +16,7 @@ import type {
 import { accessToken } from "@/auth"
 import { processResponse } from "@/flow"
 import { decodeMetadata } from "@/metadata"
-import { encodeQuery, fromBase64, getOrganization } from "@/utils"
+import { decodePasswordEncryptionResponse, encodeQuery, getOrganization } from "@/utils"
 
 export class FetchError extends Error {
   cause?: Error
@@ -157,14 +157,7 @@ export async function startPassword(
       throw new Error(`unexpected error code: ${response.error}`)
     }
     if ("password" in response) {
-      return {
-        publicKey: fromBase64(response.password.publicKey),
-        deriveOptions: response.password.deriveOptions,
-        encryptOptions: {
-          ...response.password.encryptOptions,
-          iv: fromBase64(response.password.encryptOptions.iv),
-        },
-      }
+        return decodePasswordEncryptionResponse(response.password)
     }
     throw new Error("unexpected response")
   } finally {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CredentialAddCredentialWithLabelStartRequest, CredentialAddPasswordCompleteRequest, CredentialAddResponse, EncryptOptions } from "@/types"
+import type { CredentialAddCredentialWithLabelStartRequest, CredentialAddPasswordCompleteRequest, CredentialAddResponse } from "@/types"
 
 import { onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
@@ -9,7 +9,7 @@ import { postJSON } from "@/api.ts"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import { injectProgress } from "@/progress.ts"
-import {encryptPassword, toBase64} from "@/utils.ts"
+import { decodePasswordEncryptionResponse, encryptPassword, toBase64 } from "@/utils.ts"
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
@@ -94,14 +94,8 @@ async function onSubmit() {
       throw new Error("unexpected response")
     }
 
-    const publicKey = Uint8Array.from(atob(startResponse.password.publicKey), (c) => c.charCodeAt(0))
-    const deriveOptions = startResponse.password.deriveOptions
-    const encryptOptions: EncryptOptions = {
-      name: startResponse.password.encryptOptions.name,
-      iv: Uint8Array.from(atob(startResponse.password.encryptOptions.iv), (c) => c.charCodeAt(0)),
-      tagLength: startResponse.password.encryptOptions.tagLength,
-      length: startResponse.password.encryptOptions.length,
-    }
+    const { publicKey, deriveOptions, encryptOptions } =
+        decodePasswordEncryptionResponse(startResponse.password)
 
     if (!publicKey || !deriveOptions || !encryptOptions) {
       // This should not happen.

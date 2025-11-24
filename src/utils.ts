@@ -1,15 +1,17 @@
 import type { DeepReadonly, Ref } from "vue"
 
 import type {
-  DeriveOptions,
-  EncryptOptions,
-  Identity,
-  IdentityOrganization,
-  IdentityPublic,
-  Mutable,
-  OrganizationApplicationPublic,
-  QueryValues,
-  QueryValuesWithOptional,
+    AuthFlowResponsePassword,
+    AuthFlowResponsePasswordJSON,
+    DeriveOptions,
+    EncryptOptions,
+    Identity,
+    IdentityOrganization,
+    IdentityPublic,
+    Mutable,
+    OrganizationApplicationPublic,
+    QueryValues,
+    QueryValuesWithOptional,
 } from "@/types"
 
 import { cloneDeep, isEqual } from "lodash-es"
@@ -268,4 +270,17 @@ export async function encryptPassword(
     ciphertext,
     publicKeyBytes,
   }
+}
+
+export function decodePasswordEncryptionResponse(
+    response: AuthFlowResponsePasswordJSON
+): AuthFlowResponsePassword {
+    return {
+        publicKey: fromBase64(response.publicKey),
+        deriveOptions: response.deriveOptions,
+        encryptOptions: {
+            ...response.encryptOptions,
+            iv: fromBase64(response.encryptOptions.iv),
+        },
+    }
 }
