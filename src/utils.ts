@@ -1,17 +1,17 @@
 import type { DeepReadonly, Ref } from "vue"
 
 import type {
-    AuthFlowResponsePassword,
-    AuthFlowResponsePasswordJSON,
-    DeriveOptions,
-    EncryptOptions,
-    Identity,
-    IdentityOrganization,
-    IdentityPublic,
-    Mutable,
-    OrganizationApplicationPublic,
-    QueryValues,
-    QueryValuesWithOptional,
+  AuthFlowResponsePassword,
+  AuthFlowResponsePasswordJSON,
+  DeriveOptions,
+  EncryptOptions,
+  Identity,
+  IdentityOrganization,
+  IdentityPublic,
+  Mutable,
+  OrganizationApplicationPublic,
+  QueryValues,
+  QueryValuesWithOptional,
 } from "@/types"
 
 import { cloneDeep, isEqual } from "lodash-es"
@@ -230,7 +230,7 @@ export async function encryptPassword(
   deriveOptions: DeriveOptions,
   encryptOptions: EncryptOptions,
   abortController: AbortController,
-): Promise<{ciphertext: ArrayBuffer, publicKeyBytes: ArrayBuffer} | null> {
+): Promise<{ ciphertext: ArrayBuffer; publicKeyBytes: ArrayBuffer } | null> {
   const encoder = new TextEncoder()
   const keyPair = await crypto.subtle.generateKey(deriveOptions, false, ["deriveKey"])
   if (abortController.signal.aborted) {
@@ -253,17 +253,17 @@ export async function encryptPassword(
     ["encrypt"],
   )
   if (abortController.signal.aborted) {
-      return null
+    return null
   }
 
   const ciphertext = await crypto.subtle.encrypt(encryptOptions, secret, encoder.encode(password))
   if (abortController.signal.aborted) {
-      return null
+    return null
   }
 
   const publicKeyBytes = await crypto.subtle.exportKey("raw", keyPair.publicKey)
   if (abortController.signal.aborted) {
-      return null
+    return null
   }
 
   return {
@@ -272,15 +272,13 @@ export async function encryptPassword(
   }
 }
 
-export function decodePasswordEncryptionResponse(
-    response: AuthFlowResponsePasswordJSON
-): AuthFlowResponsePassword {
-    return {
-        publicKey: fromBase64(response.publicKey),
-        deriveOptions: response.deriveOptions,
-        encryptOptions: {
-            ...response.encryptOptions,
-            iv: fromBase64(response.encryptOptions.iv),
-        },
-    }
+export function decodePasswordEncryptionResponse(response: AuthFlowResponsePasswordJSON): AuthFlowResponsePassword {
+  return {
+    publicKey: fromBase64(response.publicKey),
+    deriveOptions: response.deriveOptions,
+    encryptOptions: {
+      ...response.encryptOptions,
+      iv: fromBase64(response.encryptOptions.iv),
+    },
+  }
 }

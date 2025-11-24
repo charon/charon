@@ -94,8 +94,7 @@ async function onSubmit() {
       throw new Error("unexpected response")
     }
 
-    const { publicKey, deriveOptions, encryptOptions } =
-        decodePasswordEncryptionResponse(startResponse.password)
+    const { publicKey, deriveOptions, encryptOptions } = decodePasswordEncryptionResponse(startResponse.password)
 
     if (!publicKey || !deriveOptions || !encryptOptions) {
       // This should not happen.

@@ -157,7 +157,7 @@ export async function startPassword(
       throw new Error(`unexpected error code: ${response.error}`)
     }
     if ("password" in response) {
-        return decodePasswordEncryptionResponse(response.password)
+      return decodePasswordEncryptionResponse(response.password)
     }
     throw new Error("unexpected response")
   } finally {

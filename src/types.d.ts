@@ -476,18 +476,21 @@ export type CredentialAddUsernameRequest = {
   username: string
 }
 
-export type CredentialAddResponse = {
-    credentialId: string
-} | {
-    sessionId: string
-    passkey: AuthFlowResponsePasskey
-} | {
-    sessionId: string
-    password: AuthFlowResponsePasswordJSON
-} | {
-    error: string
-}
-
+export type CredentialAddResponse =
+  | {
+      credentialId: string
+    }
+  | {
+      sessionId: string
+      passkey: AuthFlowResponsePasskey
+    }
+  | {
+      sessionId: string
+      password: AuthFlowResponsePasswordJSON
+    }
+  | {
+      error: string
+    }
 
 export type CredentialAddCredentialWithLabelStartRequest = {
   label: string
