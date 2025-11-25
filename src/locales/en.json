@@ -367,8 +367,7 @@
       "noCredentialsSignIn": "There are no authentication methods. Sign-in or sign-up to create the first one.",
       "verify": "Verify"
     },
-    "CredentialUpdateDisplayName":
-    {
+    "CredentialUpdateDisplayName": {
       "updateDisplayName": "Update display name"
     }
   }

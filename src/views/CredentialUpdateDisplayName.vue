@@ -11,10 +11,10 @@ import { useRouter } from "vue-router"
 import { getURL, postJSON } from "@/api.ts"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
+import { getProviderNameTitle } from "@/flow.ts"
 import Footer from "@/partials/Footer.vue"
 import NavBar from "@/partials/NavBar.vue"
 import { injectProgress } from "@/progress.ts"
-import { getProviderNameTitle } from "@/flow.ts";
 
 const { t } = useI18n({ useScope: "global" })
 const progress = injectProgress()
@@ -157,15 +157,15 @@ function canSubmit(): boolean {
         <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
           <label for="credentialupdatedisplayname-input" class="mb-1">{{ getProviderNameTitle(t, credential.provider) }}</label>
           <InputText
-              id="credentialupdatedisplayname-input"
-              v-model="displayName"
-              class="min-w-0 flex-auto grow"
-              :progress="progress"
-              autocomplete="off"
-              autocorrect="off"
-              autocapitalize="none"
-              spellcheck="false"
-              required
+            id="credentialupdatedisplayname-input"
+            v-model="displayName"
+            class="min-w-0 flex-auto grow"
+            :progress="progress"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="none"
+            spellcheck="false"
+            required
           />
           <div v-if="updateError" class="mt-4 text-error-600">{{ getErrorMessage(updateError) }}</div>
           <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ unexpectedError }}</div>
