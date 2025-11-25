@@ -369,7 +369,7 @@
     },
     "CredentialUpdateDisplayName":
     {
-      "updateCredential": "update credential"
+      "updateDisplayName": "Update display name"
     }
   }
 }

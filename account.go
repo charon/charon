@@ -248,7 +248,7 @@ func (c *Credential) DisplayName() (string, errors.E) {
 		if errE != nil {
 			return "", errE
 		}
-		return ec.Email, nil
+		return ec.DisplayName, nil
 	case ProviderUsername:
 		var uc usernameCredential
 		errE := x.Unmarshal(c.Data, &uc)
@@ -278,6 +278,9 @@ func (c *Credential) DisplayName() (string, errors.E) {
 		if errE != nil {
 			return "", errE
 		}
+		if displayName, ok := token["displayName"].(string); ok && displayName != "" {
+			return displayName, nil
+		}
 		displayName := findFirstString(token, "username", "preferred_username", "email", "eMailAddress", "emailAddress", "email_address")
 		if displayName != "" {
 			return displayName, nil
@@ -295,21 +298,11 @@ func (c *Credential) ToCredentialInfo() (CredentialInfo, errors.E) {
 		Verified:    false,
 	}
 
-	switch c.Provider {
-	case ProviderUsername:
-		var uc usernameCredential
-		errE := x.Unmarshal(c.Data, &uc)
-		if errE != nil {
-			return CredentialInfo{}, errE
-		}
-		credentialInfo.DisplayName = uc.DisplayName
-	default:
-		displayName, errE := c.DisplayName()
-		if errE != nil {
-			return CredentialInfo{}, errE
-		}
-		credentialInfo.DisplayName = displayName
+	displayName, errE := c.DisplayName()
+	if errE != nil {
+		return CredentialInfo{}, errE
 	}
+	credentialInfo.DisplayName = displayName
 
 	if c.Provider == ProviderEmail {
 		var ec emailCredential

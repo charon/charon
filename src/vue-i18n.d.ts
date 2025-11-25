@@ -378,6 +378,9 @@ declare module "vue-i18n" {
         noCredentialsSignIn: string
         verify: string
       }
+      CredentialUpdateDisplayName: {
+        updateDisplayName: string
+      }
     }
   }
 }

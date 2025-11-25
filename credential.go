@@ -68,6 +68,11 @@ type CredentialAddCredentialWithDisplayNameStartRequest struct {
 	DisplayName string `json:"displayname"`
 }
 
+// CredentialUpdateDisplayNameRequest represents the request body for CredentialUpdateDisplayName handler.
+type CredentialUpdateDisplayNameRequest struct {
+	CredentialAddCredentialWithDisplayNameStartRequest
+}
+
 // CredentialAddPasswordCompleteRequest represents the request body for the CredentialAddPasswordCompletePost handler.
 type CredentialAddPasswordCompleteRequest struct {
 	AuthFlowPasswordCompleteRequest
@@ -80,11 +85,6 @@ type CredentialAddPasskeyCompleteRequest struct {
 	AuthFlowPasskeyCreateCompleteRequest
 
 	SessionID identifier.Identifier `json:"sessionId"`
-}
-
-// CredentialUpdateDisplayNameRequest represents the request body for CredentialUpdateDisplayName handler.
-type CredentialUpdateDisplayNameRequest struct {
-	DisplayName string `json:"displayName"`
 }
 
 type credentialAddSession struct {
@@ -934,7 +934,6 @@ func (s *Service) CredentialUpdateDisplayNamePost(w http.ResponseWriter, req *ht
 
 	var foundProvider Provider
 	foundIndex := -1
-	var foundCredential *Credential
 
 FoundCredential:
 	for provider, credentials := range account.Credentials {
@@ -942,7 +941,6 @@ FoundCredential:
 			if credential.ID == credentialID {
 				foundProvider = provider
 				foundIndex = i
-				foundCredential = &credential
 				break FoundCredential
 			}
 		}
@@ -953,23 +951,81 @@ FoundCredential:
 		return
 	}
 
-	var uc usernameCredential
-	errE = x.Unmarshal(foundCredential.Data, &uc)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
+	foundCredential := account.Credentials[foundProvider][foundIndex]
+	var updatedData json.RawMessage
+
+	switch foundProvider {
+	case ProviderEmail:
+		var ec emailCredential
+		errE = x.Unmarshal(foundCredential.Data, &ec)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+		ec.DisplayName = requestDisplayName
+		updatedData, errE = x.MarshalWithoutEscapeHTML(ec)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+	case ProviderUsername:
+		var uc usernameCredential
+		errE = x.Unmarshal(foundCredential.Data, &uc)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+		uc.DisplayName = requestDisplayName
+		updatedData, errE = x.MarshalWithoutEscapeHTML(uc)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+	case ProviderPassword:
+		var pc passwordCredential
+		errE = x.Unmarshal(foundCredential.Data, &pc)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+		pc.DisplayName = requestDisplayName
+		updatedData, errE = x.MarshalWithoutEscapeHTML(pc)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+	case ProviderPasskey:
+		var pkc passkeyCredential
+		errE = x.Unmarshal(foundCredential.Data, &pkc)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+		pkc.DisplayName = requestDisplayName
+		updatedData, errE = x.MarshalWithoutEscapeHTML(pkc)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+	case ProviderCode:
+		s.BadRequestWithError(w, req, errors.New("code provider does not support displayName"))
 		return
+	default:
+		var token map[string]interface{}
+		errE = x.Unmarshal(foundCredential.Data, &token)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+		token["displayName"] = requestDisplayName
+		updatedData, errE = x.MarshalWithoutEscapeHTML(token)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
 	}
 
-	uc.DisplayName = requestDisplayName
-
-	updatedData, errE := x.MarshalWithoutEscapeHTML(uc)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	foundCredential.Data = updatedData
-	account.Credentials[foundProvider][foundIndex] = *foundCredential
+	account.Credentials[foundProvider][foundIndex].Data = updatedData
 
 	errE = s.setAccount(ctx, account)
 	if errE != nil {

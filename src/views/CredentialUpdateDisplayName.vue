@@ -1,18 +1,20 @@
 <script setup lang="ts">
 import type { Ref } from "vue"
+import type { Router } from "vue-router"
 
 import type { CredentialInfo } from "@/types"
 
 import { onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
-import {type Router, useRouter} from "vue-router"
+import { useRouter } from "vue-router"
 
-import { getURL, postJSON } from "@/api"
+import { getURL, postJSON } from "@/api.ts"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import Footer from "@/partials/Footer.vue"
 import NavBar from "@/partials/NavBar.vue"
-import { injectProgress } from "@/progress"
+import { injectProgress } from "@/progress.ts"
+import { getProviderNameTitle } from "@/flow.ts";
 
 const { t } = useI18n({ useScope: "global" })
 const progress = injectProgress()
@@ -86,7 +88,6 @@ onBeforeUnmount(() => {
   abortController.abort()
 })
 
-// Watch displayName for changes to reset errors.
 watch(displayName, () => {
   resetOnInteraction()
 })
@@ -110,7 +111,6 @@ async function onSubmit() {
       return
     }
 
-    // Redirect back to credential list on success.
     await router.push({ name: "CredentialList" })
   } catch (error) {
     if (abortController.signal.aborted) {
@@ -155,7 +155,7 @@ function canSubmit(): boolean {
       </div>
       <div v-else-if="credential" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
-          <label for="credentialupdatedisplayname-input" class="mb-1">{{ t("views.CredentialUpdateDisplayName.displayNameLabel") }}</label>
+          <label for="credentialupdatedisplayname-input" class="mb-1">{{ getProviderNameTitle(t, credential.provider) }}</label>
           <InputText
               id="credentialupdatedisplayname-input"
               v-model="displayName"
