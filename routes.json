@@ -338,6 +338,66 @@
       "path": "/samlMetadata/:provider",
       "api": {},
       "get": null
+    },
+    {
+      "name": "CredentialList",
+      "path": "/authentication",
+      "api": {},
+      "get": {}
+    },
+    {
+      "name": "CredentialAdd",
+      "path": "/authentication/add",
+      "api": null,
+      "get": {}
+    },
+    {
+      "name": "CredentialAddEmail",
+      "path": "/authentication/emailAdd",
+      "api": {},
+      "get": null
+    },
+    {
+      "name": "CredentialAddUsername",
+      "path": "/authentication/usernameAdd",
+      "api": {},
+      "get": null
+    },
+    {
+      "name": "CredentialAddPasswordStart",
+      "path": "/authentication/passwordAddStart",
+      "api": {},
+      "get": null
+    },
+    {
+      "name": "CredentialAddPasswordComplete",
+      "path": "/authentication/passwordAddComplete",
+      "api": {},
+      "get": null
+    },
+    {
+      "name": "CredentialAddPasskeyStart",
+      "path": "/authentication/passkeyAddStart",
+      "api": {},
+      "get": null
+    },
+    {
+      "name": "CredentialAddPasskeyComplete",
+      "path": "/authentication/passkeyAddComplete",
+      "api": {},
+      "get": null
+    },
+    {
+      "name": "CredentialRemove",
+      "path": "/authentication/remove/:id",
+      "api": {},
+      "get": null
+    },
+    {
+      "name": "CredentialGet",
+      "path": "/authentication/:id",
+      "api": {},
+      "get": null
     }
   ]
 }

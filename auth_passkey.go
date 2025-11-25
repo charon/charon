@@ -139,7 +139,11 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 	flow.ClearAuthStep("")
 	// Currently we support only one factor.
 	flow.Providers = []Provider{ProviderPasskey}
-	flow.Passkey = session
+	flow.Passkey = &flowPasskey{
+		SessionData: session,
+		// We mark the request as sign-in.
+		Label: "",
+	}
 	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -162,7 +166,7 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 	}, nil)
 }
 
-func (s *Service) getFlowPasskey(w http.ResponseWriter, req *http.Request, flow *flow) *webauthn.SessionData {
+func (s *Service) getFlowPasskey(w http.ResponseWriter, req *http.Request, flow *flow) *flowPasskey {
 	if flow.Passkey == nil {
 		s.BadRequestWithError(w, req, errors.New("passkey not started"))
 		return nil
@@ -204,6 +208,11 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		return
 	}
 
+	if flowPasskey.Label != "" {
+		s.BadRequestWithError(w, req, errors.New("not a sign-in request"))
+		return
+	}
+
 	// We do not use DecodeJSONWithoutUnknownFields here because browsers
 	// (might and do) send extra fields.
 	// See: https://github.com/go-webauthn/webauthn/issues/221
@@ -234,7 +243,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 			return nil, errE
 		}
 		return credential, nil
-	}, *flowPasskey, parsedResponse)
+	}, *flowPasskey.SessionData, parsedResponse)
 	if err != nil {
 		s.BadRequestWithError(w, req, withWebauthnError(err))
 		return
@@ -246,10 +255,10 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 	// is called to update its sign count) so we set it back here.
 	credential.Credential = newCredential
 
-	credentialID := base64.RawURLEncoding.EncodeToString(credential.Credential.ID)
+	providerID := base64.RawURLEncoding.EncodeToString(credential.Credential.ID)
 
 	if credential.Credential.Authenticator.CloneWarning {
-		zerolog.Ctx(ctx).Warn().Str("credential", credentialID).Msg("authenticator may be cloned")
+		zerolog.Ctx(ctx).Warn().Str("credential", providerID).Msg("authenticator may be cloned")
 	}
 
 	jsonData, errE := x.MarshalWithoutEscapeHTML(credential)
@@ -258,13 +267,13 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		return
 	}
 
-	account, errE := s.getAccountByCredential(ctx, ProviderPasskey, credentialID)
+	account, errE := s.getAccountByCredential(ctx, ProviderPasskey, providerID)
 	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: credentialID, Provider: ProviderPasskey, Data: jsonData}})
+	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: credential.ID, ProviderID: providerID, Provider: ProviderPasskey, Data: jsonData}})
 }
 
 // AuthFlowPasskeyCreateStartPost is the API handler to start the passkey provider step (sign-up), POST request.
@@ -287,38 +296,21 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 	}
 
 	userID := identifier.New()
-
-	options, session, err := s.passkeyProvider().BeginRegistration(
-		passkeyCredential{
-			ID:         userID,
-			Label:      userID.String(),
-			Credential: nil,
-		},
-		webauthn.WithExtensions(protocol.AuthenticationExtensions{
-			"credentialProtectionPolicy":        "userVerificationRequired",
-			"enforceCredentialProtectionPolicy": false,
-		}),
-		webauthn.WithAuthenticatorSelection(protocol.AuthenticatorSelection{
-			AuthenticatorAttachment: "",
-			RequireResidentKey:      protocol.ResidentKeyRequired(),
-			ResidentKey:             protocol.ResidentKeyRequirementRequired,
-			UserVerification:        protocol.VerificationRequired,
-		}),
-		withPreferredCredentialAlgorithms([]webauthncose.COSEAlgorithmIdentifier{
-			webauthncose.AlgEdDSA,
-			webauthncose.AlgES256,
-			webauthncose.AlgRS256,
-		}),
-	)
-	if err != nil {
-		s.InternalServerErrorWithError(w, req, withWebauthnError(err))
+	label := userID.String()
+	options, session, errE := beginPasskeyRegistration(s.passkeyProvider(), userID, label)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
 	flow.ClearAuthStep("")
 	// Currently we support only one factor.
 	flow.Providers = []Provider{ProviderPasskey}
-	flow.Passkey = session
+	flow.Passkey = &flowPasskey{
+		SessionData: session,
+		// We mark the request as sign-up.
+		Label: label,
+	}
 	errE = s.setFlow(ctx, flow)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -363,6 +355,11 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
+	if flowPasskey.Label == "" {
+		s.BadRequestWithError(w, req, errors.New("not a sign-up request"))
+		return
+	}
+
 	// We do not use DecodeJSONWithoutUnknownFields here because browsers
 	// (might and do) send extra fields.
 	// See: https://github.com/go-webauthn/webauthn/issues/221
@@ -375,27 +372,11 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 
 	createResponse := passkeyCreateComplete.CreateResponse
 
-	parsedResponse, err := createResponse.Parse()
-	if err != nil {
-		s.BadRequestWithError(w, req, errors.WithStack(err))
+	credential, providerID, errE := s.completePasskeyRegistration(createResponse, flowPasskey.Label, flowPasskey.SessionData)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
 		return
 	}
-
-	userID := identifier.Data([16]byte(flowPasskey.UserID))
-
-	credential := passkeyCredential{
-		ID:         userID,
-		Label:      userID.String(),
-		Credential: nil,
-	}
-
-	credential.Credential, err = s.passkeyProvider().CreateCredential(credential, *flowPasskey, parsedResponse)
-	if err != nil {
-		s.BadRequestWithError(w, req, withWebauthnError(err))
-		return
-	}
-
-	credentialID := base64.RawURLEncoding.EncodeToString(credential.Credential.ID)
 
 	jsonData, errE := x.MarshalWithoutEscapeHTML(credential)
 	if errE != nil {
@@ -403,11 +384,14 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	account, errE := s.getAccountByCredential(ctx, ProviderPasskey, credentialID)
+	account, errE := s.getAccountByCredential(ctx, ProviderPasskey, providerID)
 	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: credentialID, Provider: ProviderPasskey, Data: jsonData}})
+	s.completeAuthStep(w, req, true, flow, account, []Credential{{
+		ID: credential.ID, ProviderID: providerID,
+		Provider: ProviderPasskey, Data: jsonData,
+	}})
 }

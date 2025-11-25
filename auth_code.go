@@ -88,48 +88,52 @@ func emailCredentialsEqual(credentialsA, credentialsB []Credential) bool {
 	return emailCredentialA.Equal(emailCredentialB)
 }
 
-func updateCredentialsByProvider(existingCredentials, newCredentials []Credential) ([]Credential, errors.E) {
-	existingEmailCredential, errE := getCredentialByProvider(existingCredentials, ProviderEmail)
+func (f *flowCode) updateCredentials(newCredentials []Credential) errors.E {
+	existingEmailCredential, errE := getCredentialByProvider(f.Credentials, ProviderEmail)
 	if errE != nil {
 		// More than one e-mail credential, there should be at most one.
-		return nil, errE
+		return errE
 	}
 
 	newEmailCredential, errE := getCredentialByProvider(newCredentials, ProviderEmail)
 	if errE != nil {
 		// More than one e-mail credential, there should be at most one.
-		return nil, errE
+		return errE
 	}
 
 	if !existingEmailCredential.Equal(newEmailCredential) {
 		// This should have already been checked.
-		return nil, errors.New("e-mail credentials not equal, but they should be")
+		return errors.New("e-mail credentials not equal, but they should be")
 	}
 
-	if len(existingCredentials) > 2 || len(newCredentials) > 2 {
+	if len(f.Credentials) > 2 || len(newCredentials) > 2 {
 		// There should be at most two credentials (e-mail and password).
-		return nil, errors.New("more than two credentials")
+		return errors.New("more than two credentials")
 	}
 
-	existingPasswordCredential, errE := getCredentialByProvider(existingCredentials, ProviderPassword)
+	existingPasswordCredential, errE := getCredentialByProvider(f.Credentials, ProviderPassword)
 	if errE != nil {
 		// More than one password credential, there should be at most one.
-		return nil, errE
+		return errE
 	}
 
 	newPasswordCredential, errE := getCredentialByProvider(newCredentials, ProviderPassword)
 	if errE != nil {
 		// More than one password credential, there should be at most one.
-		return nil, errE
+		return errE
 	}
 
 	var updatedCredentials []Credential
-	// E-mail credential is copied over.
-	if newEmailCredential != nil {
-		// It does not matter if we use newEmailCredential or existingEmailCredential
-		// because they are equal at this point.
-		updatedCredentials = append(updatedCredentials, *newEmailCredential)
+
+	if newEmailCredential == nil {
+		// This should not be possible.
+		return errors.New("missing e-mail credential")
 	}
+
+	// E-mail credential is copied over.
+	// It does not matter if we use newEmailCredential or existingEmailCredential
+	// because they are equal at this point.
+	updatedCredentials = append(updatedCredentials, *newEmailCredential)
 
 	// New password credential is preferred over the existing one (which might not exist).
 	if newPasswordCredential != nil {
@@ -138,7 +142,8 @@ func updateCredentialsByProvider(existingCredentials, newCredentials []Credentia
 		updatedCredentials = append(updatedCredentials, *existingPasswordCredential)
 	}
 
-	return updatedCredentials, nil
+	f.Credentials = updatedCredentials
+	return nil
 }
 
 func (s *Service) sendCodeForExistingAccount(
@@ -147,8 +152,8 @@ func (s *Service) sendCodeForExistingAccount(
 ) {
 	var emails []string
 	if strings.Contains(mappedEmailOrUsername, "@") {
-		// We know that such credential must exist on this account because
-		// we found this account using mappedEmailOrUsername.
+		// We know that such credential must exist and is verified on this account
+		// because we found this account using getAccountByCredential with mappedEmailOrUsername.
 		credential := account.GetCredential(ProviderEmail, mappedEmailOrUsername)
 		var ec emailCredential
 		errE := x.Unmarshal(credential.Data, &ec)
@@ -235,7 +240,7 @@ func (s *Service) sendCode(
 	} else if credentials != nil {
 		// It could happen that the user first initiated the code provider by not providing a password but then decided to go back and add a password
 		// which then (for non-existent accounts) continue into the code provider, so we want to update credentials with the password.
-		flow.Code.Credentials, errE = updateCredentialsByProvider(flow.Code.Credentials, credentials)
+		errE = flow.Code.updateCredentials(credentials)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
@@ -299,14 +304,16 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	preservedEmailOrUsername := s.normalizeEmailOrUsername(w, req, flow, codeStart.EmailOrUsername)
-	if preservedEmailOrUsername == "" {
-		return
-	}
-	mappedEmailOrUsername, errE := normalizeUsernameCaseMapped(preservedEmailOrUsername)
+	preservedEmailOrUsername, mappedEmailOrUsername, errE := validateEmailOrUsername(
+		codeStart.EmailOrUsername, emailOrUsernameCheckAny,
+	)
 	if errE != nil {
-		// preservedEmailOrUsername should already be normalized (but not mapped) so this should not error.
-		s.InternalServerErrorWithError(w, req, errE)
+		var ve *validationError
+		if errors.As(errE, &ve) {
+			s.flowError(w, req, flow, ve.Code, errE)
+		} else {
+			s.InternalServerErrorWithError(w, req, errE)
+		}
 		return
 	}
 
@@ -326,8 +333,7 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	// Account does not exist.
-
+	// Account does not exist (by username or by verified email).
 	// We can send a code only if we have an e-mail address.
 	if !strings.Contains(mappedEmailOrUsername, "@") {
 		s.flowError(w, req, flow, ErrorCodeNoAccount, nil)
@@ -336,15 +342,19 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 
 	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{
 		Email: preservedEmailOrUsername,
+		// We set verified to true because this credential is stored with
+		// the account only after the e-mail gets verified.
+		Verified: true,
 	})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 	credentials := []Credential{{
-		ID:       mappedEmailOrUsername,
-		Provider: ProviderEmail,
-		Data:     jsonData,
+		ID:         identifier.New(),
+		ProviderID: mappedEmailOrUsername,
+		Provider:   ProviderEmail,
+		Data:       jsonData,
 	}}
 
 	// Account does not exist but we have an e-mail address.

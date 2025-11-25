@@ -1,6 +1,18 @@
 import type { DeepReadonly, Ref } from "vue"
 
-import type { Identity, IdentityOrganization, IdentityPublic, Mutable, OrganizationApplicationPublic, QueryValues, QueryValuesWithOptional } from "@/types"
+import type {
+  AuthFlowResponsePassword,
+  AuthFlowResponsePasswordJSON,
+  DeriveOptions,
+  EncryptOptions,
+  Identity,
+  IdentityOrganization,
+  IdentityPublic,
+  Mutable,
+  OrganizationApplicationPublic,
+  QueryValues,
+  QueryValuesWithOptional,
+} from "@/types"
 
 import { cloneDeep, isEqual } from "lodash-es"
 import { toRaw } from "vue"
@@ -210,4 +222,63 @@ export function getFormattedTimestamp(timestamp: string): string {
 // IdentityPublic and IdentityFull components.
 export function getIdentityDisplayName(identity: IdentityPublic | DeepReadonly<IdentityPublic>): string {
   return identity.username || identity.email || identity.givenName || identity.fullName || identity.id
+}
+
+export async function encryptPassword(
+  password: string,
+  publicKey: Uint8Array<ArrayBuffer>,
+  deriveOptions: DeriveOptions,
+  encryptOptions: EncryptOptions,
+  abortController: AbortController,
+): Promise<{ ciphertext: ArrayBuffer; publicKeyBytes: ArrayBuffer } | null> {
+  const encoder = new TextEncoder()
+  const keyPair = await crypto.subtle.generateKey(deriveOptions, false, ["deriveKey"])
+  if (abortController.signal.aborted) {
+    return null
+  }
+
+  const remotePublicKey = await crypto.subtle.importKey("raw", publicKey, deriveOptions, false, [])
+  if (abortController.signal.aborted) {
+    return null
+  }
+
+  const secret = await crypto.subtle.deriveKey(
+    {
+      ...deriveOptions,
+      public: remotePublicKey,
+    },
+    keyPair.privateKey,
+    encryptOptions,
+    false,
+    ["encrypt"],
+  )
+  if (abortController.signal.aborted) {
+    return null
+  }
+
+  const ciphertext = await crypto.subtle.encrypt(encryptOptions, secret, encoder.encode(password))
+  if (abortController.signal.aborted) {
+    return null
+  }
+
+  const publicKeyBytes = await crypto.subtle.exportKey("raw", keyPair.publicKey)
+  if (abortController.signal.aborted) {
+    return null
+  }
+
+  return {
+    ciphertext,
+    publicKeyBytes,
+  }
+}
+
+export function decodePasswordEncryptionResponse(response: AuthFlowResponsePasswordJSON): AuthFlowResponsePassword {
+  return {
+    publicKey: fromBase64(response.publicKey),
+    deriveOptions: response.deriveOptions,
+    encryptOptions: {
+      ...response.encryptOptions,
+      iv: fromBase64(response.encryptOptions.iv),
+    },
+  }
 }

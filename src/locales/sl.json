@@ -41,6 +41,22 @@
       "shortEmailOrUsername": {
         "email": "E-naslov mora biti dolg vsaj 3 znake.",
         "username": "Uporabniško ime mora biti dolgo vsaj 3 znake."
+      },
+      "credentialInUse": {
+        "username": "Uporabniško ime je že v uporabi na drugem računu."
+      },
+      "alreadyPresent": {
+        "email": "Ta e-poštni naslov je že prisoten na tem računu.",
+        "username": "To uporabniško ime je že prisotno na tem računu.",
+        "password": "To geslo ali geslovni stavek je že prisotno na tem računu."
+      },
+      "credentialLabelInUse": {
+        "password": "Oznaka gesla ali geslovnega stavka je že v uporabi.",
+        "passkey": "Oznaka za passkey je že v uporabi."
+      },
+      "credentialLabelMissing": {
+        "password": "Geslu ali geslovnemu stavku manjka oznaka.",
+        "passkey": "Passkey-u manjka oznaka."
       }
     },
     "labels": {
@@ -53,7 +69,8 @@
       "creator": "ustvarjalec",
       "blocked": "blokirana",
       "shared": "skupna",
-      "individual": "individualna"
+      "individual": "individualna",
+      "verified": "potrjen"
     },
     "data": {
       "dataLoading": "Nalaganje...",
@@ -79,7 +96,8 @@
       "applicationTemplate": "Predloga aplikacije | Predlogi aplikacij | Predloge aplikacij | Predlog aplikacij",
       "applicationTemplates": "Predloge aplikacij",
       "activity": "Aktivnost",
-      "app": "Aplikacija | Aplikaciji | Aplikacije | Aplikacij"
+      "app": "Aplikacija | Aplikaciji | Aplikacije | Aplikacij",
+      "credentials": "Metode avtentikacije"
     },
     "messages": {
       "congratulations": "Čestitamo.",
@@ -93,9 +111,16 @@
       "picture": "slika"
     },
     "providers": {
-      "code": "koda",
+      "username": "uporabniško ime",
+      "usernameTitle": "Uporabniško ime",
+      "email": "e-poštni naslov",
+      "emailTitle": "E-poštni naslov",
       "password": "geslo",
-      "passkey": "passkey"
+      "passwordTitle": "Geslo",
+      "passkey": "passkey",
+      "passkeyTitle": "Passkey",
+      "code": "koda",
+      "codeTitle": "Koda"
     }
   },
   "partials": {
@@ -219,6 +244,17 @@
         "identitiesRemoved": "odstranjene identitete"
       },
       "entityLinks": "{entity}: {links}"
+    },
+    "CredentialAddPassword": {
+      "passwordLabel": "@:partials.AuthPassword.passwordLabel",
+      "label": "Oznaka"
+    },
+    "CredentialAddEmail": {
+      "emailAddressLabel": "@:partials.AuthPassword.emailAddressLabel"
+    },
+    "CredentialAddPasskey": {
+      "label": "Oznaka",
+      "passkeyInstructions": "Prosimo, sledite navodilom vašega brskalnika in/ali naprave, da dodate passkey."
     }
   },
   "views": {
@@ -321,6 +357,15 @@
       "organizationNote": "Opomba samo za administratorje organizacije",
       "userNote": "Opomba za blokiranega uporabnika oziroma uporabnike",
       "blockingSuccess": "Uporabnik je bil uspešno blokiran."
+    },
+    "CredentialAdd": {
+      "addCredential": "Dodajte metodo avtentikacije",
+      "availableOptions": "Metode avtentikacije, ki so na voljo"
+    },
+    "CredentialList": {
+      "noCredentialsCreate": "Ni metod za avtentikacijo. Ustvarite prvo.",
+      "noCredentialsSignIn": "Ni metod za avtentikacijo. Prijavite se ali registrirajte, da ustvarite prvo.",
+      "verify": "Potrdi"
     }
   }
 }

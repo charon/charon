@@ -1,10 +1,6 @@
 package charon
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/ecdh"
-	"crypto/rand"
 	"io"
 	"net/http"
 	"strings"
@@ -70,30 +66,17 @@ type AuthFlowResponsePassword struct {
 }
 
 type passwordCredential struct {
-	Hash string `json:"hash"`
+	Hash  string `json:"hash"`
+	Label string `json:"label"`
 }
 
 type emailCredential struct {
-	Email string `json:"email"`
+	Email    string `json:"email"`
+	Verified bool   `json:"verified"`
 }
 
 type usernameCredential struct {
 	Username string `json:"username"`
-}
-
-func (s *Service) normalizeEmailOrUsername(w http.ResponseWriter, req *http.Request, flow *flow, emailOrUsername string) string {
-	preservedEmailOrUsername, errE := normalizeUsernameCasePreserved(emailOrUsername)
-	if errE != nil {
-		s.flowError(w, req, flow, ErrorCodeInvalidEmailOrUsername, errE)
-		return ""
-	}
-
-	if len(preservedEmailOrUsername) < emailOrUsernameMinLength {
-		s.flowError(w, req, flow, ErrorCodeShortEmailOrUsername, nil)
-		return ""
-	}
-
-	return preservedEmailOrUsername
 }
 
 // AuthFlowPasswordStartRequest represents the request body for the AuthFlowPasswordStartPost handler.
@@ -120,34 +103,20 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	preservedEmailOrUsername := s.normalizeEmailOrUsername(w, req, flow, passwordStart.EmailOrUsername)
+	preservedEmailOrUsername, _, errE := validateEmailOrUsername(passwordStart.EmailOrUsername, emailOrUsernameCheckAny)
 	if preservedEmailOrUsername == "" {
+		var ve *validationError
+		if errors.As(errE, &ve) {
+			s.flowError(w, req, flow, ve.Code, errE)
+		} else {
+			s.InternalServerErrorWithError(w, req, errE)
+		}
 		return
 	}
 
-	privateKey, err := ecdh.P256().GenerateKey(rand.Reader)
-	if err != nil {
-		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
-		return
-	}
-
-	// We create a dummy cipher so that we can obtain nonce size later on.
-	block, err := aes.NewCipher(make([]byte, secretSize))
-	if err != nil {
-		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
-		return
-	}
-
-	aesgcm, err := cipher.NewGCM(block)
-	if err != nil {
-		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
-		return
-	}
-
-	nonce := make([]byte, aesgcm.NonceSize())
-	_, err = rand.Read(nonce)
-	if err != nil {
-		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
+	privateKeyBytes, publicKeyBytes, nonce, overhead, errE := generatePasswordEncryptionKeys()
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
@@ -155,7 +124,7 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 	// Currently we support only one factor.
 	flow.Providers = []Provider{ProviderPassword}
 	flow.Password = &flowPassword{
-		PrivateKey: privateKey.Bytes(),
+		PrivateKey: privateKeyBytes,
 		Nonce:      nonce,
 	}
 	errE = s.setFlow(ctx, flow)
@@ -172,20 +141,8 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 		EmailOrUsername:    flow.EmailOrUsername,
 		ThirdPartyProvider: nil,
 		Passkey:            nil,
-		Password: &AuthFlowResponsePassword{
-			PublicKey: privateKey.PublicKey().Bytes(),
-			DeriveOptions: AuthFlowResponsePasswordDeriveOptions{
-				Name:       "ECDH",
-				NamedCurve: "P-256",
-			},
-			EncryptOptions: AuthFlowResponsePasswordEncryptOptions{
-				Name:      "AES-GCM",
-				Nonce:     nonce,
-				Length:    8 * secretSize,        //nolint:mnd
-				TagLength: 8 * aesgcm.Overhead(), //nolint:mnd
-			},
-		},
-		Error: "",
+		Password:           newPasswordEncryptionResponse(publicKeyBytes, nonce, overhead),
+		Error:              "",
 	}, nil)
 }
 
@@ -196,7 +153,7 @@ type AuthFlowPasswordCompleteRequest struct {
 }
 
 // AuthFlowPasswordCompletePost is the API handler to complete the password provider step, POST request.
-func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:maintidx
+func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -236,42 +193,11 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-
-	privateKey, err := ecdh.P256().NewPrivateKey(flowPassword.PrivateKey)
-	if err != nil {
-		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
-		return
-	}
-
-	remotePublicKey, err := ecdh.P256().NewPublicKey(passwordComplete.PublicKey)
-	if err != nil {
-		s.BadRequestWithError(w, req, errors.WithStack(err))
-		return
-	}
-
-	secret, err := privateKey.ECDH(remotePublicKey)
-	if err != nil {
-		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
-		return
-	}
-
-	block, err := aes.NewCipher(secret)
-	if err != nil {
-		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
-		return
-	}
-
-	aesgcm, err := cipher.NewGCM(block)
-	if err != nil {
-		s.InternalServerErrorWithError(w, req, errors.WithStack(err))
-		return
-	}
-
-	// TODO: Use memguard to protect plain password in memory.
-	//       See: https://github.com/awnumar/memguard
-	plainPassword, err := aesgcm.Open(nil, flowPassword.Nonce, passwordComplete.Password, nil)
-	if err != nil {
-		s.BadRequestWithError(w, req, errors.WithStack(err))
+	plainPassword, errE := decryptEncryptedPassword(
+		flowPassword.PrivateKey, passwordComplete.PublicKey, flowPassword.Nonce, passwordComplete.Password,
+	)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
@@ -323,7 +249,8 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 						return
 					}
 					jsonData, errE = x.MarshalWithoutEscapeHTML(passwordCredential{
-						Hash: hashedPassword,
+						Hash:  hashedPassword,
+						Label: pc.Label,
 					})
 					if errE != nil {
 						s.InternalServerErrorWithError(w, req, errE)
@@ -331,9 +258,10 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 					}
 				}
 				s.completeAuthStep(w, req, true, flow, account, []Credential{{
-					ID:       credential.ID,
-					Provider: ProviderPassword,
-					Data:     jsonData,
+					ID:         credential.ID,
+					ProviderID: "",
+					Provider:   ProviderPassword,
+					Data:       jsonData,
 				}})
 				return
 			}
@@ -350,21 +278,24 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 		return
 	}
 
-	// Account does not exist.
-
+	// Account does not exist (by username or by verified email).
 	credentials := []Credential{}
 	if strings.Contains(mappedEmailOrUsername, "@") {
 		jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{
 			Email: flow.EmailOrUsername,
+			// We set verified to true because this credential is stored with
+			// the account only after the e-mail gets verified.
+			Verified: true,
 		})
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
 		credentials = append(credentials, Credential{
-			ID:       mappedEmailOrUsername,
-			Provider: ProviderEmail,
-			Data:     jsonData,
+			ID:         identifier.New(),
+			ProviderID: mappedEmailOrUsername,
+			Provider:   ProviderEmail,
+			Data:       jsonData,
 		})
 	} else {
 		jsonData, errE := x.MarshalWithoutEscapeHTML(usernameCredential{
@@ -375,9 +306,10 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 			return
 		}
 		credentials = append(credentials, Credential{
-			ID:       mappedEmailOrUsername,
-			Provider: ProviderUsername,
-			Data:     jsonData,
+			ID:         identifier.New(),
+			ProviderID: mappedEmailOrUsername,
+			Provider:   ProviderUsername,
+			Data:       jsonData,
 		})
 	}
 
@@ -389,6 +321,8 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 
 	jsonData, errE := x.MarshalWithoutEscapeHTML(passwordCredential{
 		Hash: hashedPassword,
+		// TODO: Translate this to user's language.
+		Label: "default password",
 	})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -396,9 +330,10 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 	}
 
 	credentials = append(credentials, Credential{
-		ID:       identifier.New().String(),
-		Provider: ProviderPassword,
-		Data:     jsonData,
+		ID:         identifier.New(),
+		ProviderID: "",
+		Provider:   ProviderPassword,
+		Data:       jsonData,
 	})
 
 	if strings.Contains(mappedEmailOrUsername, "@") {

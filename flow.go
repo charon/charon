@@ -50,6 +50,13 @@ type flowPassword struct {
 	Nonce      []byte
 }
 
+type flowPasskey struct {
+	SessionData *webauthn.SessionData
+
+	// Label is also used to mark the request as sign-in (empty) or sign-up (non-empty).
+	Label string
+}
+
 type flowCode struct {
 	Codes       []string
 	AccountID   *identifier.Identifier
@@ -81,7 +88,7 @@ type flow struct {
 	EmailOrUsername string
 	OIDCProvider    *flowOIDCProvider
 	SAMLProvider    *flowSAMLProvider
-	Passkey         *webauthn.SessionData
+	Passkey         *flowPasskey
 	Password        *flowPassword
 	Code            *flowCode
 }

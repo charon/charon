@@ -22,6 +22,11 @@ const props = withDefaults(
   },
 )
 
+// We want all fallthrough attributes to be passed to the input element.
+defineOptions({
+  inheritAttrs: false,
+})
+
 const $emit = defineEmits<{
   "update:modelValue": [value: T]
 }>()
@@ -43,6 +48,7 @@ const v = computed({
   <div>
     <input
       v-model="v"
+      v-bind="$attrs"
       :disabled="progress > 0 || disabled"
       type="radio"
       class="-mt-0.5 align-middle"

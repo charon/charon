@@ -162,15 +162,8 @@ func (i *IdentityPublic) Validate(ctx context.Context, existing *IdentityPublic)
 	}
 
 	if i.Username != "" {
-		username, errE := normalizeUsernameCasePreserved(i.Username)
+		username, _, errE := validateEmailOrUsername(i.Username, emailOrUsernameCheckUsername)
 		if errE != nil {
-			errE = errors.WithMessage(errE, "username")
-			errors.Details(errE)["username"] = i.Username
-			return errE
-		}
-
-		if len(username) < emailOrUsernameMinLength {
-			errE := errors.New("username too short")
 			errors.Details(errE)["username"] = i.Username
 			return errE
 		}
@@ -179,17 +172,9 @@ func (i *IdentityPublic) Validate(ctx context.Context, existing *IdentityPublic)
 	}
 
 	// TODO: E-mails should be possible to be only those which have been validated.
-
 	if i.Email != "" {
-		email, errE := normalizeUsernameCasePreserved(i.Email)
+		email, _, errE := validateEmailOrUsername(i.Email, emailOrUsernameCheckEmail)
 		if errE != nil {
-			errE = errors.WithMessage(errE, "e-mail")
-			errors.Details(errE)["email"] = i.Email
-			return errE
-		}
-
-		if len(email) < emailOrUsernameMinLength {
-			errE := errors.New("e-mail too short")
 			errors.Details(errE)["email"] = i.Email
 			return errE
 		}

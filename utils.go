@@ -3,6 +3,9 @@ package charon
 import (
 	"context"
 	"crypto"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/ecdh"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -25,6 +28,8 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/go-jose/go-jose/v3"
 	"github.com/go-webauthn/webauthn/protocol"
+	"github.com/go-webauthn/webauthn/protocol/webauthncose"
+	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/ory/fosite"
 	saml2 "github.com/russellhaering/gosaml2"
 	"gitlab.com/tozd/go/errors"
@@ -80,6 +85,18 @@ var (
 )
 
 type emptyRequest struct{}
+
+// EmailOrUsernameCheck specifies validation requirements for email or username input.
+type emailOrUsernameCheck int
+
+const (
+	// emailOrUsernameCheckAny does not check for "@".
+	emailOrUsernameCheckAny emailOrUsernameCheck = iota
+	// emailOrUsernameCheckEmail requires "@" (email format).
+	emailOrUsernameCheckEmail
+	// emailOrUsernameCheckUsername requires NO "@" (username format).
+	emailOrUsernameCheckUsername
+)
 
 func getBearerToken(req *http.Request) string {
 	const prefix = "Bearer "
@@ -881,4 +898,173 @@ func findFirstString(m map[string]interface{}, keyNames ...string) string {
 		}
 	}
 	return ""
+}
+
+func generatePasswordEncryptionKeys() ([]byte, []byte, []byte, int, errors.E) {
+	privateKey, err := ecdh.P256().GenerateKey(rand.Reader)
+	if err != nil {
+		return nil, nil, nil, 0, errors.WithStack(err)
+	}
+
+	// We create a dummy cipher so that we can obtain nonce size later on.
+	block, err := aes.NewCipher(make([]byte, secretSize))
+	if err != nil {
+		return nil, nil, nil, 0, errors.WithStack(err)
+	}
+
+	aesgcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, nil, nil, 0, errors.WithStack(err)
+	}
+
+	nonce := make([]byte, aesgcm.NonceSize())
+	_, err = rand.Read(nonce)
+	if err != nil {
+		return nil, nil, nil, 0, errors.WithStack(err)
+	}
+
+	return privateKey.Bytes(), privateKey.PublicKey().Bytes(), nonce, aesgcm.Overhead(), nil
+}
+
+func decryptEncryptedPassword(
+	privateKeyBytes []byte, publicKeyBytes []byte, nonce []byte, encryptedPassword []byte,
+) ([]byte, errors.E) {
+	privateKey, err := ecdh.P256().NewPrivateKey(privateKeyBytes)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	remotePublicKey, err := ecdh.P256().NewPublicKey(publicKeyBytes)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	secret, err := privateKey.ECDH(remotePublicKey)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	block, err := aes.NewCipher(secret)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	aesgcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	// TODO: Use memguard to protect plain password in memory.
+	//       See: https://github.com/awnumar/memguard
+	plainPassword, err := aesgcm.Open(nil, nonce, encryptedPassword, nil)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return plainPassword, nil
+}
+
+func newPasswordEncryptionResponse(publicKeyBytes, nonce []byte, overhead int) *AuthFlowResponsePassword {
+	return &AuthFlowResponsePassword{
+		PublicKey: publicKeyBytes,
+		DeriveOptions: AuthFlowResponsePasswordDeriveOptions{
+			Name:       "ECDH",
+			NamedCurve: "P-256",
+		},
+		EncryptOptions: AuthFlowResponsePasswordEncryptOptions{
+			Name:      "AES-GCM",
+			Nonce:     nonce,
+			TagLength: 8 * overhead,   //nolint:mnd
+			Length:    8 * secretSize, //nolint:mnd
+		},
+	}
+}
+
+func beginPasskeyRegistration(
+	provider *webauthn.WebAuthn, userID identifier.Identifier, label string,
+) (*protocol.CredentialCreation, *webauthn.SessionData, errors.E) {
+	options, session, err := provider.BeginRegistration(
+		passkeyCredential{
+			ID:         userID,
+			Label:      label,
+			Credential: nil,
+		},
+		webauthn.WithExtensions(protocol.AuthenticationExtensions{
+			"credentialProtectionPolicy":        "userVerificationRequired",
+			"enforceCredentialProtectionPolicy": false,
+		}),
+		webauthn.WithAuthenticatorSelection(protocol.AuthenticatorSelection{
+			AuthenticatorAttachment: "",
+			RequireResidentKey:      protocol.ResidentKeyRequired(),
+			ResidentKey:             protocol.ResidentKeyRequirementRequired,
+			UserVerification:        protocol.VerificationRequired,
+		}),
+		withPreferredCredentialAlgorithms([]webauthncose.COSEAlgorithmIdentifier{
+			webauthncose.AlgEdDSA,
+			webauthncose.AlgES256,
+			webauthncose.AlgRS256,
+		}),
+	)
+	if err != nil {
+		return nil, nil, withWebauthnError(err)
+	}
+	return options, session, nil
+}
+
+// validateEmailOrUsername validates emailOrUsername, returns it preserved and mapped.
+func validateEmailOrUsername(emailOrUsername string, check emailOrUsernameCheck) (string, string, errors.E) {
+	preserved, errE := normalizeUsernameCasePreserved(emailOrUsername)
+	if errE != nil {
+		return "", "", toValidationError(errE, ErrorCodeInvalidEmailOrUsername)
+	}
+
+	if len(preserved) < emailOrUsernameMinLength {
+		return "", "", newValidationError("email or username too short", ErrorCodeShortEmailOrUsername)
+	}
+
+	switch check {
+	case emailOrUsernameCheckAny:
+	case emailOrUsernameCheckEmail:
+		if !strings.Contains(preserved, "@") {
+			return "", "", newValidationError("email does not contain @", ErrorCodeInvalidEmailOrUsername)
+		}
+	case emailOrUsernameCheckUsername:
+		if strings.Contains(preserved, "@") {
+			return "", "", newValidationError("username contains @", ErrorCodeInvalidEmailOrUsername)
+		}
+	}
+
+	mapped, errE := normalizeUsernameCaseMapped(preserved)
+	if errE != nil {
+		// preserved should already be normalized (but not mapped) so this should not error.
+		return "", "", errE
+	}
+
+	return preserved, mapped, nil
+}
+
+func (s *Service) completePasskeyRegistration(
+	createResponse protocol.CredentialCreationResponse, label string, sessionData *webauthn.SessionData,
+) (*passkeyCredential, string, errors.E) {
+	parsedResponse, err := createResponse.Parse()
+	if err != nil {
+		return nil, "", errors.WithStack(err)
+	}
+
+	userID := identifier.Data([16]byte(sessionData.UserID))
+
+	pkCredential := passkeyCredential{
+		ID:         userID,
+		Label:      label,
+		Credential: nil,
+	}
+
+	pkCredential.Credential, err = s.passkeyProvider().CreateCredential(pkCredential, *sessionData, parsedResponse)
+	if err != nil {
+		return nil, "", withWebauthnError(err)
+	}
+
+	providerID := base64.RawURLEncoding.EncodeToString(pkCredential.Credential.ID)
+
+	return &pkCredential, providerID, nil
 }

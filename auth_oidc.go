@@ -236,5 +236,5 @@ func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	s.completeAuthStep(w, req, false, flow, account, []Credential{{ID: idToken.Subject, Provider: providerKey, Data: jsonData}})
+	s.completeAuthStep(w, req, false, flow, account, []Credential{{ID: identifier.New(), ProviderID: idToken.Subject, Provider: providerKey, Data: jsonData}})
 }

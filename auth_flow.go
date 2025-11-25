@@ -286,7 +286,11 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 
 		// TODO: Updating only if credentials (meaningfully) changed.
 		// TODO: Update in a way which does not preserve history.
-		account.UpdateCredentials(credentials)
+		errE = account.UpdateCredentials(credentials)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
 		errE = s.setAccount(ctx, account)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)

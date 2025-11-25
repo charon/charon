@@ -17,20 +17,28 @@ type Provider string
 
 // Credential represents a credential issued by a credential provider.
 type Credential struct {
-	ID       string
-	Provider Provider
-	Data     json.RawMessage
+	// ID is a public-facing ID used to identify the credential in public API.
+	ID identifier.Identifier `json:"id"`
+
+	// ProviderID is the ID bound to the credential provider.
+	ProviderID string `json:"providerId,omitempty"`
+
+	// Provider is the internal provider type name or the name of the third party provider.
+	Provider Provider `json:"provider"`
+
+	// Data is the raw credential data.
+	Data json.RawMessage `json:"data"`
 }
 
 // Equal returns true if the two credentials are equal.
-func (c1 *Credential) Equal(c2 *Credential) bool {
-	if c1 == nil && c2 == nil {
+func (c *Credential) Equal(c2 *Credential) bool {
+	if c == nil && c2 == nil {
 		return true
 	}
-	if c1 == nil || c2 == nil {
+	if c == nil || c2 == nil {
 		return false
 	}
-	return c1.ID == c2.ID && c1.Provider == c2.Provider && bytes.Equal(c1.Data, c2.Data)
+	return c.ProviderID == c2.ProviderID && c.Provider == c2.Provider && bytes.Equal(c.Data, c2.Data)
 }
 
 // AccountRef is a reference to an account.
@@ -45,36 +53,104 @@ type Account struct {
 	Credentials map[Provider][]Credential
 }
 
-// HasCredential returns true if the account has a credential for the given provider and credential ID.
-func (a *Account) HasCredential(provider Provider, credentialID string) bool {
-	return a.GetCredential(provider, credentialID) != nil
+// HasCredential returns true if the account has a credential for the given provider and provider ID.
+func (a *Account) HasCredential(provider Provider, providerID string) bool {
+	return a.GetCredential(provider, providerID) != nil
 }
 
 // UpdateCredentials updates the credentials for the account.
-func (a *Account) UpdateCredentials(credentials []Credential) {
+//
+// It matches existing credentials based on provider ID, except for password
+// credentials which are matched based on public ID.
+//
+// Password credentials can only be updated but not added using this method.
+func (a *Account) UpdateCredentials(credentials []Credential) errors.E {
 	for _, credential := range credentials {
 		updated := false
 		for i, c := range a.Credentials[credential.Provider] {
-			if c.ID == credential.ID {
+			if credential.Provider == ProviderPassword {
+				// Password credentials do not use provider ID.
+				if c.ID == credential.ID {
+					a.Credentials[credential.Provider][i] = credential
+					updated = true
+					break
+				}
+			} else if c.ProviderID == credential.ProviderID {
+				// It is useful to retain the old public ID.
+				// TODO: We should make sure that any other credential does not have the same public ID.
+				credential.ID = c.ID
 				a.Credentials[credential.Provider][i] = credential
 				updated = true
 				break
 			}
 		}
 		if !updated {
+			if credential.Provider == ProviderPassword {
+				// This is to catch logic errors where UpdateCredentials is used to add the password.
+				// We do not allow adding passwords because they do not have provider ID and we cannot
+				// really compare them for equality (without knowing the password) so it could happen
+				// that same password is added multiple times.
+				return errors.New("password credential can be only updated but not added")
+			}
 			a.Credentials[credential.Provider] = append(a.Credentials[credential.Provider], credential)
 		}
 	}
+
+	return nil
 }
 
-// GetCredential returns the credential for the given provider and credential ID.
-func (a *Account) GetCredential(provider Provider, credentialID string) *Credential {
+// GetCredential returns the credential for the given provider and provider ID.
+func (a *Account) GetCredential(provider Provider, providerID string) *Credential {
+	// Password credentials do not use provider ID.
+	if provider == ProviderPassword || providerID == "" {
+		return nil
+	}
+
 	for _, credential := range a.Credentials[provider] {
-		if credential.ID == credentialID {
+		if credential.ProviderID == providerID {
 			return &credential
 		}
 	}
 	return nil
+}
+
+// HasCredentialLabel returns true if the label is already in use by a credential for the provider in the account.
+func (a *Account) HasCredentialLabel(provider Provider, label string) (bool, errors.E) {
+	credentials, ok := a.Credentials[provider]
+	if !ok {
+		return false, nil
+	}
+
+	switch provider {
+	case ProviderEmail, ProviderUsername, ProviderCode:
+		return false, errors.New("provider does not support labels")
+	case ProviderPassword:
+		for _, credential := range credentials {
+			var pc passwordCredential
+			errE := x.Unmarshal(credential.Data, &pc)
+			if errE != nil {
+				return false, errE
+			}
+			if pc.Label == label {
+				return true, nil
+			}
+		}
+	case ProviderPasskey:
+		for _, credential := range credentials {
+			var pk passkeyCredential
+			errE := x.Unmarshal(credential.Data, &pk)
+			if errE != nil {
+				return false, errE
+			}
+			if pk.Label == label {
+				return true, nil
+			}
+		}
+	default:
+		return false, errors.New("third party provider does not support labels")
+	}
+
+	return false, nil
 }
 
 // GetEmailAddresses returns the email addresses of the account.
@@ -108,7 +184,7 @@ func (s *Service) getAccount(_ context.Context, id identifier.Identifier) (*Acco
 	return &account, nil
 }
 
-func (s *Service) getAccountByCredential(ctx context.Context, provider Provider, credentialID string) (*Account, errors.E) {
+func (s *Service) getAccountByCredential(ctx context.Context, provider Provider, providerID string) (*Account, errors.E) {
 	s.accountsMu.RLock()
 	defer s.accountsMu.RUnlock()
 
@@ -118,12 +194,24 @@ func (s *Service) getAccountByCredential(ctx context.Context, provider Provider,
 			return nil, errE
 		}
 
-		if account.HasCredential(provider, credentialID) {
-			return account, nil
+		credential := account.GetCredential(provider, providerID)
+		if credential == nil {
+			continue
 		}
+		if provider == ProviderEmail {
+			var ec emailCredential
+			errE := x.Unmarshal(credential.Data, &ec)
+			if errE != nil {
+				return nil, errE
+			}
+			if !ec.Verified {
+				continue
+			}
+		}
+		return account, nil
 	}
 
-	return nil, errors.WithDetails(ErrAccountNotFound, "provider", provider, "credentialID", credentialID)
+	return nil, errors.WithDetails(ErrAccountNotFound, "provider", provider, "providerID", providerID)
 }
 
 func (s *Service) setAccount(_ context.Context, account *Account) errors.E {
@@ -138,4 +226,78 @@ func (s *Service) setAccount(_ context.Context, account *Account) errors.E {
 
 	s.accounts[account.ID] = data
 	return nil
+}
+
+// DisplayName contains logic for determining DisplayName of credential.
+func (c *Credential) DisplayName() (string, errors.E) {
+	switch c.Provider {
+	case ProviderEmail:
+		var ec emailCredential
+		errE := x.Unmarshal(c.Data, &ec)
+		if errE != nil {
+			return "", errE
+		}
+		return ec.Email, nil
+	case ProviderUsername:
+		var uc usernameCredential
+		errE := x.Unmarshal(c.Data, &uc)
+		if errE != nil {
+			return "", errE
+		}
+		return uc.Username, nil
+	case ProviderCode:
+		return "", errors.New("not allowed")
+	case ProviderPassword:
+		var pc passwordCredential
+		errE := x.Unmarshal(c.Data, &pc)
+		if errE != nil {
+			return "", errE
+		}
+		return pc.Label, nil
+	case ProviderPasskey:
+		var pkc passkeyCredential
+		errE := x.Unmarshal(c.Data, &pkc)
+		if errE != nil {
+			return "", errE
+		}
+		return pkc.Label, nil
+	default:
+		var token map[string]interface{}
+		errE := x.Unmarshal(c.Data, &token)
+		if errE != nil {
+			return "", errE
+		}
+		displayName := findFirstString(token, "username", "preferred_username", "email", "eMailAddress", "emailAddress", "email_address")
+		if displayName != "" {
+			return displayName, nil
+		}
+	}
+	return "", errors.New("display name for the provider not available")
+}
+
+// ToCredentialInfo converts the credential to a CredentialInfo used for public API.
+func (c *Credential) ToCredentialInfo() (CredentialInfo, errors.E) {
+	credentialInfo := CredentialInfo{
+		ID:          c.ID,
+		Provider:    c.Provider,
+		DisplayName: "",
+		Verified:    false,
+	}
+
+	displayName, errE := c.DisplayName()
+	if errE != nil {
+		return CredentialInfo{}, errE
+	}
+	credentialInfo.DisplayName = displayName
+
+	if c.Provider == ProviderEmail {
+		var ec emailCredential
+		errE := x.Unmarshal(c.Data, &ec)
+		if errE != nil {
+			return CredentialInfo{}, errE
+		}
+		credentialInfo.Verified = ec.Verified
+	}
+
+	return credentialInfo, nil
 }

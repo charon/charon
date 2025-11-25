@@ -53,6 +53,22 @@ declare module "vue-i18n" {
           email: string
           username: string
         }
+        credentialInUse: {
+          username: string
+        }
+        alreadyPresent: {
+          email: string
+          username: string
+          password: string
+        }
+        credentialLabelInUse: {
+          password: string
+          passkey: string
+        }
+        credentialLabelMissing: {
+          password: string
+          passkey: string
+        }
       }
       labels: {
         optional: string
@@ -65,6 +81,7 @@ declare module "vue-i18n" {
         blocked: string
         shared: string
         individual: string
+        verified: string
       }
       data: {
         dataLoading: string
@@ -91,6 +108,7 @@ declare module "vue-i18n" {
         applicationTemplates: string
         activity: string
         app: string
+        credentials: string
       }
       messages: {
         congratulations: string
@@ -104,9 +122,16 @@ declare module "vue-i18n" {
         picture: string
       }
       providers: {
-        code: string
+        username: string
+        usernameTitle: string
+        email: string
+        emailTitle: string
         password: string
+        passwordTitle: string
         passkey: string
+        passkeyTitle: string
+        code: string
+        codeTitle: string
       }
     }
     partials: {
@@ -231,6 +256,17 @@ declare module "vue-i18n" {
         }
         entityLinks: string
       }
+      CredentialAddPassword: {
+        passwordLabel: string
+        label: string
+      }
+      CredentialAddEmail: {
+        emailAddressLabel: string
+      }
+      CredentialAddPasskey: {
+        label: string
+        passkeyInstructions: string
+      }
     }
     views: {
       ApplicationTemplateCreate: {
@@ -332,6 +368,15 @@ declare module "vue-i18n" {
       OrganizationActivity: {
         organizationActivity: string
         noActivities: string
+      }
+      CredentialAdd: {
+        addCredential: string
+        availableOptions: string
+      }
+      CredentialList: {
+        noCredentialsCreate: string
+        noCredentialsSignIn: string
+        verify: string
       }
     }
   }

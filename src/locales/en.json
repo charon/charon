@@ -41,6 +41,22 @@
       "shortEmailOrUsername": {
         "email": "E-mail address should be at least 3 characters.",
         "username": "Username should be at least 3 characters."
+      },
+      "credentialInUse": {
+        "username": "Username is already in use by another account."
+      },
+      "alreadyPresent": {
+        "email": "This e-mail address is already present on this account.",
+        "username": "This username is already present on this account.",
+        "password": "This password or passphrase is already present on this account."
+      },
+      "credentialLabelInUse": {
+        "password": "Password or passphrase label is already in use.",
+        "passkey": "Passkey label is already in use."
+      },
+      "credentialLabelMissing": {
+        "password": "Password or passphrase label is missing.",
+        "passkey": "Passkey label is missing."
       }
     },
     "labels": {
@@ -53,7 +69,8 @@
       "creator": "creator",
       "blocked": "blocked",
       "shared": "shared",
-      "individual": "individual"
+      "individual": "individual",
+      "verified": "verified"
     },
     "data": {
       "dataLoading": "Loading...",
@@ -79,7 +96,8 @@
       "applicationTemplate": "Application template | Application templates",
       "applicationTemplates": "Application templates",
       "activity": "Activity",
-      "app": "App | Apps"
+      "app": "App | Apps",
+      "credentials": "Authentication methods"
     },
     "messages": {
       "congratulations": "Congratulations.",
@@ -93,9 +111,16 @@
       "picture": "picture"
     },
     "providers": {
-      "code": "code",
+      "username": "username",
+      "usernameTitle": "Username",
+      "email": "e-mail address",
+      "emailTitle": "E-mail Address",
       "password": "password",
-      "passkey": "passkey"
+      "passwordTitle": "Password",
+      "passkey": "passkey",
+      "passkeyTitle": "Passkey",
+      "code": "code",
+      "codeTitle": "Code"
     }
   },
   "partials": {
@@ -219,6 +244,17 @@
         "identitiesRemoved": "removed identities"
       },
       "entityLinks": "{entity}: {links}"
+    },
+    "CredentialAddPassword": {
+      "passwordLabel": "@:partials.AuthPassword.passwordLabel",
+      "label": "Label"
+    },
+    "CredentialAddEmail": {
+      "emailAddressLabel": "@:partials.AuthPassword.emailAddressLabel"
+    },
+    "CredentialAddPasskey": {
+      "label": "@:partials.CredentialAddPassword.label",
+      "passkeyInstructions": "Please follow instructions by your browser and/or device to add a passkey."
     }
   },
   "views": {
@@ -321,6 +357,15 @@
     "OrganizationActivity": {
       "organizationActivity": "Activity for organization",
       "noActivities": "There is no activity."
+    },
+    "CredentialAdd": {
+      "addCredential": "Add authentication method",
+      "availableOptions": "Available authentication methods"
+    },
+    "CredentialList": {
+      "noCredentialsCreate": "No authentication methods configured. Create the first one.",
+      "noCredentialsSignIn": "There are no authentication methods. Sign-in or sign-up to create the first one.",
+      "verify": "Verify"
     }
   }
 }

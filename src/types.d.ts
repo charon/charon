@@ -454,3 +454,52 @@ export type OrganizationBlockRequest = {
 export type Mutable<T> = {
   -readonly [k in keyof T]: Mutable<T[k]>
 }
+
+export type CredentialInfoRef = {
+  id: string
+}
+
+export type CredentialInfo = {
+  id: string
+  provider: string
+  displayName: string
+  verified?: boolean // TODO: When verifying emails.
+}
+
+export type Credentials = CredentialInfoRef[]
+
+export type CredentialAddEmailRequest = {
+  email: string
+}
+
+export type CredentialAddUsernameRequest = {
+  username: string
+}
+
+export type CredentialAddResponse =
+  | {
+      credentialId: string
+    }
+  | {
+      sessionId: string
+      passkey: AuthFlowResponsePasskey
+    }
+  | {
+      sessionId: string
+      password: AuthFlowResponsePasswordJSON
+    }
+  | {
+      error: string
+    }
+
+export type CredentialAddCredentialWithLabelStartRequest = {
+  label: string
+}
+
+export type CredentialAddPasswordCompleteRequest = AuthFlowPasswordCompleteRequest & {
+  sessionId: string
+}
+
+export type CredentialAddPasskeyCompleteRequest = AuthFlowPasskeyCreateCompleteRequest & {
+  sessionId: string
+}

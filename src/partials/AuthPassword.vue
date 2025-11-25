@@ -11,7 +11,7 @@ import InputText from "@/components/InputText.vue"
 import InputTextButton from "@/components/InputTextButton.vue"
 import { processResponse, removeSteps } from "@/flow"
 import { injectProgress } from "@/progress"
-import { isEmail, toBase64 } from "@/utils"
+import { encryptPassword, isEmail, toBase64 } from "@/utils"
 
 const props = defineProps<{
   flow: Flow
@@ -192,41 +192,16 @@ async function onNext() {
     props.flow.setDeriveOptions()
     props.flow.setEncryptOptions()
 
-    const encoder = new TextEncoder()
-    const keyPair = await crypto.subtle.generateKey(deriveOptions, false, ["deriveKey"])
-    if (abortController.signal.aborted) {
+    const encrypted = await encryptPassword(password.value, publicKey, deriveOptions, encryptOptions, abortController)
+    if (!encrypted) {
       return
     }
-    const remotePublicKey = await crypto.subtle.importKey("raw", publicKey, deriveOptions, false, [])
-    if (abortController.signal.aborted) {
-      return
-    }
-    const secret = await crypto.subtle.deriveKey(
-      {
-        ...deriveOptions,
-        public: remotePublicKey,
-      },
-      keyPair.privateKey,
-      encryptOptions,
-      false,
-      ["encrypt"],
-    )
-    if (abortController.signal.aborted) {
-      return
-    }
-    const ciphertext = await crypto.subtle.encrypt(encryptOptions, secret, encoder.encode(password.value))
-    if (abortController.signal.aborted) {
-      return
-    }
-    const publicKeyBytes = await crypto.subtle.exportKey("raw", keyPair.publicKey)
-    if (abortController.signal.aborted) {
-      return
-    }
+
     const response = await postJSON<AuthFlowResponse>(
       url,
       {
-        publicKey: toBase64(new Uint8Array(publicKeyBytes)),
-        password: toBase64(new Uint8Array(ciphertext)),
+        publicKey: toBase64(new Uint8Array(encrypted.publicKeyBytes)),
+        password: toBase64(new Uint8Array(encrypted.ciphertext)),
       } as AuthFlowPasswordCompleteRequest,
       abortController.signal,
       progress,
