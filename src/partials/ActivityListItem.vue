@@ -6,13 +6,14 @@ import type { Activity, ActivityRef, ApplicationTemplate, Identity, IdentityPubl
 import { LocalScope } from "@allindevelopers/vue-local-scope"
 import { CalculatorIcon, IdentificationIcon, LockClosedIcon, LockOpenIcon, ShieldCheckIcon, ShieldExclamationIcon, UserGroupIcon } from "@heroicons/vue/24/outline"
 import { CalculatorIcon as CalculatorSolidIcon, IdentificationIcon as IdentificationSolidIcon, UserGroupIcon as UserGroupSolidIcon } from "@heroicons/vue/24/solid"
-import { uniqBy } from "lodash-es"
+import { uniqWith } from "lodash-es"
 import { readonly } from "vue"
 import { useI18n } from "vue-i18n"
 
 import WithDocument from "@/components/WithDocument.vue"
 import { getProviderName } from "@/flow"
-import { clone, getFormattedTimestamp, getHomepage, getIdentityDisplayName } from "@/utils"
+import { clone, equals, getFormattedTimestamp, getHomepage, getIdentityDisplayName } from "@/utils"
+import { currentIdentityId } from "@/auth"
 
 const props = defineProps<{
   item: ActivityRef
@@ -170,23 +171,23 @@ function getChangeDescription(
 function transformActivity(activity: DeepReadonly<Activity>): DeepReadonly<Activity> {
   const a = clone(activity)
   if (props.organization) {
-    // To be general, we just remove the organization prop from organizations so that it is not
-    // shown multiple times. But because we provide organization prop in organization's activity
-    // which shows only activity items where doc.organizations contains only the organization,
-    // this in practice makes organizations an empty array when the organization prop is provided.
+    // We remove the organization prop from organizations so that it is not shown multiple times.
     a.organizations = (a.organizations || []).filter((o) => o.id !== props.organization!.id)
+  }
 
-    if (a.actor) {
-      // When organization prop is provided, we want to show the actor among identities.
-      a.identities = [a.actor].concat(...(a.identities || []))
-    }
+  // When organization prop is provided, we always show the actor among identities.
+  // We also add the actor if it is different from the current identity.
+  if (a.actor && (props.organization || a.actor.identity.id !== currentIdentityId.value)) {
+    // When organization prop is provided, we always show the actor among identities.
+    a.identities = [a.actor].concat(...(a.identities || []))
+    delete a.actor
   }
 
   if (a.identities) {
     // We remove duplicates because we want identities to be shown only once to the user.
     // Duplicates can happen when we prepend actor to identities. For identity updates,
     // they can happen because backend always prepends the identity that was updated.
-    a.identities = uniqBy(a.identities, (i) => i.id)
+    a.identities = uniqWith(a.identities, equals)
   }
 
   return import.meta.env.DEV ? readonly(a) : a
