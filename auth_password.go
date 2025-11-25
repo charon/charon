@@ -66,17 +66,19 @@ type AuthFlowResponsePassword struct {
 }
 
 type passwordCredential struct {
-	Hash  string `json:"hash"`
-	Label string `json:"label"`
+	Hash        string `json:"hash"`
+	DisplayName string `json:"displayName"`
 }
 
 type emailCredential struct {
-	Email    string `json:"email"`
-	Verified bool   `json:"verified"`
+	Email       string `json:"email"`
+	Verified    bool   `json:"verified"`
+	DisplayName string `json:"displayName"`
 }
 
 type usernameCredential struct {
-	Username string `json:"username"`
+	Username    string `json:"username"`
+	DisplayName string `json:"displayName"`
 }
 
 // AuthFlowPasswordStartRequest represents the request body for the AuthFlowPasswordStartPost handler.
@@ -249,8 +251,8 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 						return
 					}
 					jsonData, errE = x.MarshalWithoutEscapeHTML(passwordCredential{
-						Hash:  hashedPassword,
-						Label: pc.Label,
+						Hash:        hashedPassword,
+						DisplayName: pc.DisplayName,
 					})
 					if errE != nil {
 						s.InternalServerErrorWithError(w, req, errE)
@@ -285,7 +287,8 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 			Email: flow.EmailOrUsername,
 			// We set verified to true because this credential is stored with
 			// the account only after the e-mail gets verified.
-			Verified: true,
+			Verified:    true,
+			DisplayName: flow.EmailOrUsername,
 		})
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
@@ -299,7 +302,8 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 		})
 	} else {
 		jsonData, errE := x.MarshalWithoutEscapeHTML(usernameCredential{
-			Username: flow.EmailOrUsername,
+			Username:    flow.EmailOrUsername,
+			DisplayName: flow.EmailOrUsername,
 		})
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
@@ -322,7 +326,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 	jsonData, errE := x.MarshalWithoutEscapeHTML(passwordCredential{
 		Hash: hashedPassword,
 		// TODO: Translate this to user's language.
-		Label: "default password",
+		DisplayName: "default password",
 	})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)

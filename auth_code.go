@@ -344,7 +344,8 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 		Email: preservedEmailOrUsername,
 		// We set verified to true because this credential is stored with
 		// the account only after the e-mail gets verified.
-		Verified: true,
+		Verified:    true,
+		DisplayName: preservedEmailOrUsername,
 	})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)

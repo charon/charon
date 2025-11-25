@@ -30,9 +30,9 @@ type AuthFlowResponsePasskey struct {
 const defaultPasskeyTimeout = 60 * time.Second
 
 type passkeyCredential struct {
-	ID         identifier.Identifier `json:"id"`
-	Label      string                `json:"label"`
-	Credential *webauthn.Credential  `json:"credential"`
+	ID          identifier.Identifier `json:"id"`
+	DisplayName string                `json:"displayName"`
+	Credential  *webauthn.Credential  `json:"credential"`
 }
 
 func (c passkeyCredential) WebAuthnID() []byte {
@@ -44,7 +44,7 @@ func (c passkeyCredential) WebAuthnName() string {
 }
 
 func (c passkeyCredential) WebAuthnDisplayName() string {
-	return fmt.Sprintf("Charon (%s)", c.Label)
+	return fmt.Sprintf("Charon (%s)", c.DisplayName)
 }
 
 func (passkeyCredential) WebAuthnIcon() string {
@@ -142,7 +142,7 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 	flow.Passkey = &flowPasskey{
 		SessionData: session,
 		// We mark the request as sign-in.
-		Label: "",
+		displayName: "",
 	}
 	errE = s.setFlow(ctx, flow)
 	if errE != nil {
@@ -208,7 +208,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		return
 	}
 
-	if flowPasskey.Label != "" {
+	if flowPasskey.displayName != "" {
 		s.BadRequestWithError(w, req, errors.New("not a sign-in request"))
 		return
 	}
@@ -309,7 +309,7 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 	flow.Passkey = &flowPasskey{
 		SessionData: session,
 		// We mark the request as sign-up.
-		Label: label,
+		displayName: label,
 	}
 	errE = s.setFlow(ctx, flow)
 	if errE != nil {
@@ -355,7 +355,7 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	if flowPasskey.Label == "" {
+	if flowPasskey.displayName == "" {
 		s.BadRequestWithError(w, req, errors.New("not a sign-up request"))
 		return
 	}
@@ -372,7 +372,7 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 
 	createResponse := passkeyCreateComplete.CreateResponse
 
-	credential, providerID, errE := s.completePasskeyRegistration(createResponse, flowPasskey.Label, flowPasskey.SessionData)
+	credential, providerID, errE := s.completePasskeyRegistration(createResponse, flowPasskey.displayName, flowPasskey.SessionData)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return

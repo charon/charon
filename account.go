@@ -114,16 +114,27 @@ func (a *Account) GetCredential(provider Provider, providerID string) *Credentia
 	return nil
 }
 
-// HasCredentialLabel returns true if the label is already in use by a credential for the provider in the account.
-func (a *Account) HasCredentialLabel(provider Provider, label string) (bool, errors.E) {
+// HasCredentialDisplayName returns true if displayName is already in use by a credential for the provider in the account.
+func (a *Account) HasCredentialDisplayName(provider Provider, displayName string) (bool, errors.E) {
 	credentials, ok := a.Credentials[provider]
 	if !ok {
 		return false, nil
 	}
 
 	switch provider {
-	case ProviderEmail, ProviderUsername, ProviderCode:
+	case ProviderEmail, ProviderCode:
 		return false, errors.New("provider does not support labels")
+	case ProviderUsername:
+		for _, credential := range credentials {
+			var uc usernameCredential
+			errE := x.Unmarshal(credential.Data, &uc)
+			if errE != nil {
+				return false, errE
+			}
+			if uc.Username == displayName {
+				return true, nil
+			}
+		}
 	case ProviderPassword:
 		for _, credential := range credentials {
 			var pc passwordCredential
@@ -131,7 +142,7 @@ func (a *Account) HasCredentialLabel(provider Provider, label string) (bool, err
 			if errE != nil {
 				return false, errE
 			}
-			if pc.Label == label {
+			if pc.DisplayName == displayName {
 				return true, nil
 			}
 		}
@@ -142,7 +153,7 @@ func (a *Account) HasCredentialLabel(provider Provider, label string) (bool, err
 			if errE != nil {
 				return false, errE
 			}
-			if pk.Label == label {
+			if pk.DisplayName == displayName {
 				return true, nil
 			}
 		}
@@ -244,7 +255,7 @@ func (c *Credential) DisplayName() (string, errors.E) {
 		if errE != nil {
 			return "", errE
 		}
-		return uc.Username, nil
+		return uc.DisplayName, nil
 	case ProviderCode:
 		return "", errors.New("not allowed")
 	case ProviderPassword:
@@ -253,14 +264,14 @@ func (c *Credential) DisplayName() (string, errors.E) {
 		if errE != nil {
 			return "", errE
 		}
-		return pc.Label, nil
+		return pc.DisplayName, nil
 	case ProviderPasskey:
 		var pkc passkeyCredential
 		errE := x.Unmarshal(c.Data, &pkc)
 		if errE != nil {
 			return "", errE
 		}
-		return pkc.Label, nil
+		return pkc.DisplayName, nil
 	default:
 		var token map[string]interface{}
 		errE := x.Unmarshal(c.Data, &token)
@@ -271,8 +282,8 @@ func (c *Credential) DisplayName() (string, errors.E) {
 		if displayName != "" {
 			return displayName, nil
 		}
+		return identifier.New().String(), nil
 	}
-	return "", errors.New("display name for the provider not available")
 }
 
 // ToCredentialInfo converts the credential to a CredentialInfo used for public API.
@@ -284,11 +295,21 @@ func (c *Credential) ToCredentialInfo() (CredentialInfo, errors.E) {
 		Verified:    false,
 	}
 
-	displayName, errE := c.DisplayName()
-	if errE != nil {
-		return CredentialInfo{}, errE
+	switch c.Provider {
+	case ProviderUsername:
+		var uc usernameCredential
+		errE := x.Unmarshal(c.Data, &uc)
+		if errE != nil {
+			return CredentialInfo{}, errE
+		}
+		credentialInfo.DisplayName = uc.DisplayName
+	default:
+		displayName, errE := c.DisplayName()
+		if errE != nil {
+			return CredentialInfo{}, errE
+		}
+		credentialInfo.DisplayName = displayName
 	}
-	credentialInfo.DisplayName = displayName
 
 	if c.Provider == ProviderEmail {
 		var ec emailCredential

@@ -981,13 +981,13 @@ func newPasswordEncryptionResponse(publicKeyBytes, nonce []byte, overhead int) *
 }
 
 func beginPasskeyRegistration(
-	provider *webauthn.WebAuthn, userID identifier.Identifier, label string,
+	provider *webauthn.WebAuthn, userID identifier.Identifier, displayName string,
 ) (*protocol.CredentialCreation, *webauthn.SessionData, errors.E) {
 	options, session, err := provider.BeginRegistration(
 		passkeyCredential{
-			ID:         userID,
-			Label:      label,
-			Credential: nil,
+			ID:          userID,
+			DisplayName: displayName,
+			Credential:  nil,
 		},
 		webauthn.WithExtensions(protocol.AuthenticationExtensions{
 			"credentialProtectionPolicy":        "userVerificationRequired",
@@ -1044,7 +1044,7 @@ func validateEmailOrUsername(emailOrUsername string, check emailOrUsernameCheck)
 }
 
 func (s *Service) completePasskeyRegistration(
-	createResponse protocol.CredentialCreationResponse, label string, sessionData *webauthn.SessionData,
+	createResponse protocol.CredentialCreationResponse, displayName string, sessionData *webauthn.SessionData,
 ) (*passkeyCredential, string, errors.E) {
 	parsedResponse, err := createResponse.Parse()
 	if err != nil {
@@ -1054,9 +1054,9 @@ func (s *Service) completePasskeyRegistration(
 	userID := identifier.Data([16]byte(sessionData.UserID))
 
 	pkCredential := passkeyCredential{
-		ID:         userID,
-		Label:      label,
-		Credential: nil,
+		ID:          userID,
+		DisplayName: displayName,
+		Credential:  nil,
 	}
 
 	pkCredential.Credential, err = s.passkeyProvider().CreateCredential(pkCredential, *sessionData, parsedResponse)

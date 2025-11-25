@@ -497,8 +497,8 @@ export type CredentialAddResponse =
       error: string
     }
 
-export type CredentialAddCredentialWithLabelStartRequest = {
-  label: string
+export type CredentialAddCredentialWithDisplayNameStartRequest = {
+  displayName: string
 }
 
 export type CredentialAddPasswordCompleteRequest = AuthFlowPasswordCompleteRequest & {
@@ -508,3 +508,5 @@ export type CredentialAddPasswordCompleteRequest = AuthFlowPasswordCompleteReque
 export type CredentialAddPasskeyCompleteRequest = AuthFlowPasskeyCreateCompleteRequest & {
   sessionId: string
 }
+
+export type CredentialUpdateDisplayNameRequest = CredentialAddCredentialWithDisplayNameStartRequest & {}

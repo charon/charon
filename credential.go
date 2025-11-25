@@ -62,10 +62,10 @@ type CredentialAddResponse struct {
 	Error        ErrorCode                 `json:"error,omitempty"`
 }
 
-// CredentialAddCredentialWithLabelStartRequest represents the request body for the CredentialAddPasswordStartPost and
+// CredentialAddCredentialWithDisplayNameStartRequest represents the request body for the CredentialAddPasswordStartPost and
 // CredentialAddPasskeyStartPost.
-type CredentialAddCredentialWithLabelStartRequest struct {
-	Label string `json:"label"`
+type CredentialAddCredentialWithDisplayNameStartRequest struct {
+	DisplayName string `json:"displayname"`
 }
 
 // CredentialAddPasswordCompleteRequest represents the request body for the CredentialAddPasswordCompletePost handler.
@@ -82,12 +82,17 @@ type CredentialAddPasskeyCompleteRequest struct {
 	SessionID identifier.Identifier `json:"sessionId"`
 }
 
+// CredentialUpdateDisplayNameRequest represents the request body for CredentialUpdateDisplayName handler.
+type CredentialUpdateDisplayNameRequest struct {
+	DisplayName string `json:"displayName"`
+}
+
 type credentialAddSession struct {
-	ID        identifier.Identifier
-	CreatedAt time.Time
-	Passkey   *webauthn.SessionData
-	Password  *flowPassword
-	Label     string
+	ID          identifier.Identifier
+	CreatedAt   time.Time
+	Passkey     *webauthn.SessionData
+	Password    *flowPassword
+	DisplayName string
 }
 
 // Expired returns true if the credential add session has expired.
@@ -305,7 +310,7 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{Email: preservedEmail, Verified: false})
+	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{Email: preservedEmail, Verified: false, DisplayName: preservedEmail})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -394,7 +399,7 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	jsonData, errE := x.MarshalWithoutEscapeHTML(usernameCredential{Username: preservedUsername})
+	jsonData, errE := x.MarshalWithoutEscapeHTML(usernameCredential{Username: preservedUsername, DisplayName: preservedUsername})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -424,14 +429,14 @@ func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *htt
 		return
 	}
 
-	var request CredentialAddCredentialWithLabelStartRequest
+	var request CredentialAddCredentialWithDisplayNameStartRequest
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &request)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
-	requestLabel := strings.TrimSpace(request.Label)
+	requestLabel := strings.TrimSpace(request.DisplayName)
 	if requestLabel == "" {
 		s.WriteJSON(w, req, CredentialAddResponse{
 			SessionID:    nil,
@@ -452,7 +457,7 @@ func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *htt
 
 	// Check if password label is already in use on this account.
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	hasLabel, errE := account.HasCredentialLabel(ProviderPassword, requestLabel)
+	hasLabel, errE := account.HasCredentialDisplayName(ProviderPassword, requestLabel)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -480,9 +485,9 @@ func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *htt
 			PrivateKey: privateKeyBytes,
 			Nonce:      nonce,
 		},
-		Passkey:   nil,
-		CreatedAt: time.Now(),
-		Label:     requestLabel,
+		Passkey:     nil,
+		CreatedAt:   time.Now(),
+		DisplayName: requestLabel,
 	}
 
 	errE = storeCredentialSession(session)
@@ -579,7 +584,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 	}
 
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	hasLabel, errE := account.HasCredentialLabel(ProviderPassword, cas.Label)
+	hasLabel, errE := account.HasCredentialDisplayName(ProviderPassword, cas.DisplayName)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -624,8 +629,8 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 	}
 
 	jsonData, errE := x.MarshalWithoutEscapeHTML(passwordCredential{
-		Hash:  hashedPassword,
-		Label: cas.Label,
+		Hash:        hashedPassword,
+		DisplayName: cas.DisplayName,
 	})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -658,14 +663,14 @@ func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http
 		return
 	}
 
-	var request CredentialAddCredentialWithLabelStartRequest
+	var request CredentialAddCredentialWithDisplayNameStartRequest
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &request)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
-	requestLabel := strings.TrimSpace(request.Label)
+	requestLabel := strings.TrimSpace(request.DisplayName)
 	if requestLabel == "" {
 		s.WriteJSON(w, req, CredentialAddResponse{
 			SessionID:    nil,
@@ -686,7 +691,7 @@ func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http
 
 	// Check if passkey label is already in use on this account.
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	hasLabel, errE := account.HasCredentialLabel(ProviderPasskey, requestLabel)
+	hasLabel, errE := account.HasCredentialDisplayName(ProviderPasskey, requestLabel)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -710,11 +715,11 @@ func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http
 	}
 
 	session := credentialAddSession{
-		ID:        identifier.New(),
-		Password:  nil,
-		Passkey:   sessionData,
-		CreatedAt: time.Now(),
-		Label:     requestLabel,
+		ID:          identifier.New(),
+		Password:    nil,
+		Passkey:     sessionData,
+		CreatedAt:   time.Now(),
+		DisplayName: requestLabel,
 	}
 
 	errE = storeCredentialSession(session)
@@ -767,7 +772,7 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 		return
 	}
 
-	credential, providerID, errE := s.completePasskeyRegistration(request.CreateResponse, cas.Label, cas.Passkey)
+	credential, providerID, errE := s.completePasskeyRegistration(request.CreateResponse, cas.DisplayName, cas.Passkey)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
@@ -787,7 +792,7 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 	}
 
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	hasLabel, errE := account.HasCredentialLabel(ProviderPasskey, cas.Label)
+	hasLabel, errE := account.HasCredentialDisplayName(ProviderPasskey, cas.DisplayName)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -872,6 +877,99 @@ FoundCredential:
 	if len(account.Credentials[foundProvider]) == 0 {
 		delete(account.Credentials, foundProvider)
 	}
+
+	errE = s.setAccount(ctx, account)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	s.WriteJSON(w, req, []byte(`{"success":true}`), nil)
+}
+
+// CredentialUpdateDisplayName is the frontend handler for updating credentials displayNames.
+func (s *Service) CredentialUpdateDisplayName(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	if s.ProxyStaticTo != "" {
+		s.Proxy(w, req)
+	} else {
+		s.ServeStaticFile(w, req, "/index.html")
+	}
+}
+
+// CredentialUpdateDisplayNamePost is the API handler for updating credentials displayName, POST request.
+func (s *Service) CredentialUpdateDisplayNamePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	defer req.Body.Close()              //nolint:errcheck
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	ctx := s.RequireAuthenticated(w, req)
+	if ctx == nil {
+		return
+	}
+
+	var request CredentialUpdateDisplayNameRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &request)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	requestDisplayName := strings.TrimSpace(request.DisplayName)
+	if requestDisplayName == "" {
+		s.BadRequestWithError(w, req, errors.New("displayName cannot be empty"))
+		return
+	}
+
+	accountID := mustGetAccountID(ctx)
+	account, errE := s.getAccount(ctx, accountID)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	credentialID, errE := identifier.MaybeString(params["id"])
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	var foundProvider Provider
+	foundIndex := -1
+	var foundCredential *Credential
+
+FoundCredential:
+	for provider, credentials := range account.Credentials {
+		for i, credential := range credentials {
+			if credential.ID == credentialID {
+				foundProvider = provider
+				foundIndex = i
+				foundCredential = &credential
+				break FoundCredential
+			}
+		}
+	}
+
+	if foundIndex == -1 {
+		s.NotFound(w, req)
+		return
+	}
+
+	var uc usernameCredential
+	errE = x.Unmarshal(foundCredential.Data, &uc)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	uc.DisplayName = requestDisplayName
+
+	updatedData, errE := x.MarshalWithoutEscapeHTML(uc)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	foundCredential.Data = updatedData
+	account.Credentials[foundProvider][foundIndex] = *foundCredential
 
 	errE = s.setAccount(ctx, account)
 	if errE != nil {

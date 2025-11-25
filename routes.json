@@ -394,6 +394,12 @@
       "get": null
     },
     {
+      "name": "CredentialUpdateDisplayName",
+      "path": "/authentication/updateDisplayName/:id",
+      "api": {},
+      "get": {}
+    },
+    {
       "name": "CredentialGet",
       "path": "/authentication/:id",
       "api": {},
