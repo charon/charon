@@ -929,9 +929,6 @@ func (s *Service) createOrganization(ctx context.Context, organization *Organiza
 func (s *Service) updateOrganization(ctx context.Context, organization *Organization) errors.E {
 	co := s.charonOrganization()
 
-	s.organizationsMu.Lock()
-	defer s.organizationsMu.Unlock()
-
 	if organization.ID == nil {
 		return errors.WithMessage(ErrOrganizationValidationFailed, "ID is missing")
 	}
