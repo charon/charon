@@ -10,10 +10,10 @@ import { uniqWith } from "lodash-es"
 import { readonly } from "vue"
 import { useI18n } from "vue-i18n"
 
+import { currentIdentityId } from "@/auth"
 import WithDocument from "@/components/WithDocument.vue"
 import { getProviderName } from "@/flow"
 import { clone, equals, getFormattedTimestamp, getHomepage, getIdentityDisplayName } from "@/utils"
-import { currentIdentityId } from "@/auth"
 
 const props = defineProps<{
   item: ActivityRef
