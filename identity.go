@@ -1184,9 +1184,7 @@ func (s *Service) identityList(ctx context.Context) ([]IdentityRef, errors.E) {
 			return nil, errE
 		}
 
-		hasUserAccess := identity.HasUserAccess(ids)
-		hasAdminAccess := identity.HasAdminAccess(ids, isCreator)
-		if !hasUserAccess && !hasAdminAccess {
+		if !identity.HasUserAccess(ids) && !identity.HasAdminAccess(ids, isCreator) {
 			continue
 		}
 
