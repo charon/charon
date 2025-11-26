@@ -1135,6 +1135,15 @@ func (s *Service) getIdentityFromOrganization(_ context.Context, organizationID,
 	return nil, nil, errors.WithDetails(ErrIdentityNotFound, "id", identityID)
 }
 
+// OrganizationIdentity is the frontend handler for getting the organization's identity.
+func (s *Service) OrganizationIdentity(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	if s.ProxyStaticTo != "" {
+		s.Proxy(w, req)
+	} else {
+		s.ServeStaticFile(w, req, "/index.html")
+	}
+}
+
 // OrganizationIdentityGet is the API handler for getting the organization's identity, GET request.
 //
 // Anyone with valid access token for the organization can access public data about any
