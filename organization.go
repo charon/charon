@@ -1146,9 +1146,12 @@ func (s *Service) OrganizationIdentity(w http.ResponseWriter, req *http.Request,
 // Anyone with valid access token for the organization can access public data about any
 // identity in the organization given the organization-scoped identity ID.
 //
-// A special case is for admins of the organization, which can also authenticate using
-// valid Charon organization access token. In that case, also Organizations field is returned
-// with IdentityOrganization struct for just this organization.
+// The first special case is for users which authenticate using a valid Charon organization
+// access token. They can access public data about any identity they have access to.
+//
+// The second special case is for admins of the organization, which can also authenticate using
+// valid Charon organization access token. They can access public data of any identity in the organization.
+// In this case also Organizations field is returned with IdentityOrganization struct for just this organization.
 func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 	co := s.charonOrganization()
@@ -1166,12 +1169,21 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 	}
 
 	hasOrganizationAccessToken := true
+	hasOrganizationAdminAccess := false
 
 	// We do not use RequireAuthenticated here, because we want to use a (possibly) non-Charon organization ID.
 	currentIdentityID, accountID, _, errE := s.getIdentityFromRequest(w, req, organizationID.String())
 	if errors.Is(errE, ErrIdentityNotPresent) {
 		// User is not authenticated for this organization.
-		// Maybe they are authenticated using Charon organization and are admin of the organization.
+		// Maybe they are authenticated using Charon organization and are an user with access
+		// to the identity or they are an admin of the organization.
+
+		// Maybe we already check for Charon organization above.
+		if co.ID == organizationID {
+			s.WithError(ctx, errE)
+			waf.Error(w, req, http.StatusUnauthorized)
+			return
+		}
 
 		hasOrganizationAccessToken = false
 
@@ -1194,10 +1206,7 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 			return
 		}
 
-		if !organization.HasAdminAccess(IdentityRef{ID: currentIdentityID}) {
-			waf.Error(w, req, http.StatusUnauthorized)
-			return
-		}
+		hasOrganizationAdminAccess = organization.HasAdminAccess(IdentityRef{ID: currentIdentityID})
 	} else if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -1231,7 +1240,22 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 			return
 		}
 
+		// This can potentially return nil if the identity is not in the Charon organization,
+		// but we want to support this case and this is why we have this special case in
+		// the first place (otherwise we could just always use getIdentityFromOrganization).
 		idOrg = identity.GetOrganization(&organizationID)
+
+		// Handle the case when user is an admin of the Charon organization and is authenticated for it, too.
+		if hasOrganizationAccessToken {
+			organization, errE := s.getOrganization(ctx, organizationID)
+			if errE != nil {
+				// Charon organization should always be found.
+				s.InternalServerErrorWithError(w, req, errE)
+				return
+			}
+
+			hasOrganizationAdminAccess = organization.HasAdminAccess(IdentityRef{ID: currentIdentityID})
+		}
 	} else {
 		identity, idOrg, errE = s.getIdentityFromOrganization(ctx, organizationID, identityID)
 		if errors.Is(errE, ErrIdentityNotFound) {
@@ -1239,11 +1263,6 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 			return
 		} else if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-
-		if !idOrg.Active {
-			s.NotFound(w, req)
 			return
 		}
 
@@ -1266,7 +1285,25 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	if hasOrganizationAccessToken {
+	hasUserAccess := identity.HasUserAccess(ids)
+	hasAdminAccess := identity.HasAdminAccess(ids, isCreator)
+
+	if hasOrganizationAdminAccess {
+		// We allow access to admins of the organization.
+	} else if hasUserAccess || hasAdminAccess {
+		// We allow access to users with access to the identity.
+	} else if hasOrganizationAccessToken {
+		// We allow access to users from the same organization, but only if they have not been disabled.
+		if idOrg != nil && !idOrg.Active {
+			s.NotFound(w, req)
+			return
+		}
+	} else {
+		waf.Error(w, req, http.StatusUnauthorized)
+		return
+	}
+
+	if !hasOrganizationAdminAccess {
 		// Only when organization admin is requesting identity information,
 		// we return additional field Organizations.
 		idOrg = nil
@@ -1274,6 +1311,8 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 
 	organizations := []IdentityOrganization{}
 	if idOrg != nil {
+		// idOrg can be nil not just when hasOrganizationAdminAccess is false,
+		// but also when the identity has not been added to the Charon organization.
 		organizations = append(organizations, *idOrg)
 	}
 
@@ -1281,8 +1320,8 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 		IdentityPublic: identity.IdentityPublic,
 		Organizations:  organizations,
 	}, map[string]interface{}{
-		"can_use":    identity.HasUserAccess(ids),
-		"can_update": identity.HasAdminAccess(ids, isCreator),
+		"can_use":    hasUserAccess,
+		"can_update": hasAdminAccess,
 		// identity.ID is organization-scoped (we make it so above) and it makes sense to
 		// compare it with currentIdentityID only if currentIdentityID belongs to the same
 		// organization and not to Charon organization from the special case.
