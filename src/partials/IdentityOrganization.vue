@@ -26,7 +26,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="flew-row mt-4 ml-4 flex items-start justify-between gap-4">
+  <div class="flex-row mt-4 ml-4 flex items-start justify-between gap-4">
     <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
       <div>{{ t("partials.IdentityOrganization.id") }}</div>
       <div v-if="identityOrganization.id">

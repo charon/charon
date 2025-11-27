@@ -550,7 +550,7 @@ function organizationLabels(identityOrganization: IdentityOrganizationType | Dee
                     :ref="(el) => updateOrganizationBlockedStatuses(identityOrganization.organization.id, el as IdentityOrganizationComponent)"
                     :identity-organization="identityOrganization"
                   >
-                    <div v-if="metadata.can_update" class="flew-row flex gap-4">
+                    <div v-if="metadata.can_update" class="flex-row flex gap-4">
                       <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = !identityOrganization.active">{{
                         identityOrganization.active ? t("common.buttons.disable") : t("common.buttons.activate")
                       }}</Button>
