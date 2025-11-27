@@ -136,7 +136,7 @@ const WithCredentialDocument = WithDocument<CredentialInfo>
           <WithCredentialDocument :params="{ id: credential.id }" name="CredentialGet">
             <template #default="{ doc, url }">
               <CredentialFull :credential="doc" :url="url">
-                <div class="flex-row flex gap-4">
+                <div class="flex flex-row gap-4">
                   <Button v-if="doc.provider === 'email' && !doc.verified" :id="`credentiallist-button-verify-${doc.id}`" type="button" secondary disabled>{{
                     t("views.CredentialList.verify")
                   }}</Button>

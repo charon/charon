@@ -765,7 +765,7 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
                         </div>
                       </li>
                     </ol>
-                    <div class="flex-row mt-4 flex items-center justify-between gap-4">
+                    <div class="mt-4 flex flex-row items-center justify-between gap-4">
                       <div>
                         <i18n-t keypath="views.OrganizationGet.status" scope="global">
                           <template #strongStatus>
