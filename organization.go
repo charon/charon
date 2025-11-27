@@ -1288,9 +1288,9 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 	hasUserAccess := identity.HasUserAccess(ids)
 	hasAdminAccess := identity.HasAdminAccess(ids, isCreator)
 
-	if hasOrganizationAdminAccess {
+	if hasOrganizationAdminAccess { //nolint:revive
 		// We allow access to admins of the organization.
-	} else if hasUserAccess || hasAdminAccess {
+	} else if hasUserAccess || hasAdminAccess { //nolint:revive
 		// We allow access to users with access to the identity.
 	} else if hasOrganizationAccessToken {
 		// We allow access to users from the same organization, but only if they have not been disabled.
