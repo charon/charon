@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Component, DeepReadonly } from "vue"
 
-import type { Activity, ActivityRef, ApplicationTemplate, Identity, IdentityPublic, Organization, OrganizationApplicationPublic, OrganizationRef } from "@/types"
+import type { Activity, ActivityRef, ApplicationTemplate, IdentityPublic, Organization, OrganizationApplicationPublic, OrganizationRef } from "@/types"
 
 import { LocalScope } from "@allindevelopers/vue-local-scope"
 import { CalculatorIcon, IdentificationIcon, LockClosedIcon, LockOpenIcon, ShieldCheckIcon, ShieldExclamationIcon, UserGroupIcon } from "@heroicons/vue/24/outline"
@@ -194,7 +194,6 @@ function transformActivity(activity: DeepReadonly<Activity>): DeepReadonly<Activ
 }
 
 const WithActivityDocument = WithDocument<Activity>
-const WithIdentityDocument = WithDocument<Identity>
 const WithIdentityPublicDocument = WithDocument<IdentityPublic>
 const WithOrganizationDocument = WithDocument<Organization>
 const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
@@ -240,26 +239,24 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                 <i18n-t keypath="partials.ActivityListItem.entityLinks" scope="global">
                   <template #entity>{{ t("common.entities.identity", doc.identities.length) }}</template>
                   <template #links>
-                    <template v-for="(identity, i) in doc.identities" :key="identity.id">
+                    <template v-for="(organizationIdentity, i) in doc.identities" :key="`${organizationIdentity.organization.id}/${organizationIdentity.identity.id}`">
                       <template v-if="i > 0">, </template>
-                      <WithIdentityPublicDocument v-if="organization" :params="{ id: organization.id, identityId: identity.id }" name="OrganizationIdentity">
+                      <WithIdentityPublicDocument
+                        :params="{ id: organizationIdentity.organization.id, identityId: organizationIdentity.identity.id }"
+                        name="OrganizationIdentity"
+                      >
                         <template #default="{ doc: identityDoc, url: identityUrl }">
-                          <span :data-url="identityUrl">{{ getIdentityDisplayName(identityDoc) }}</span>
+                          <router-link
+                            :to="{ name: 'OrganizationIdentity', params: { id: organizationIdentity.organization.id, identityId: organizationIdentity.identity.id } }"
+                            :data-url="identityUrl"
+                            class="link"
+                            >{{ getIdentityDisplayName(identityDoc) }}</router-link
+                          >
                         </template>
                         <template #error="{ url: identityErrorUrl }">
                           <span :data-url="identityErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
                         </template>
                       </WithIdentityPublicDocument>
-                      <WithIdentityDocument v-else :params="{ id: identity.id }" name="IdentityGet">
-                        <template #default="{ doc: identityDoc, url: identityUrl }">
-                          <router-link :to="{ name: 'IdentityGet', params: { id: identity.id } }" :data-url="identityUrl" class="link">{{
-                            getIdentityDisplayName(identityDoc)
-                          }}</router-link>
-                        </template>
-                        <template #error="{ url: identityErrorUrl }">
-                          <span :data-url="identityErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
-                        </template>
-                      </WithIdentityDocument>
                     </template>
                   </template>
                 </i18n-t>
