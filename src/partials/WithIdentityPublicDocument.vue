@@ -20,7 +20,9 @@ const WithIdentityPublicDocument = WithDocument<IdentityPublicType>
 <template>
   <WithIdentityPublicDocument :params="{ id: organizationId, identityId: item.id }" name="OrganizationIdentity">
     <template #default="{ doc, metadata, url }">
-      <IdentityPublic :identity="doc" :url="url" :is-current="metadata.is_current" :can-update="metadata.can_update" :labels="labels" />
+      <IdentityPublic :identity="doc" :url="url" :is-current="metadata.is_current" :can-update="metadata.can_update" :labels="labels">
+        <slot :identity="doc" :is-current="metadata.is_current" :can-update="metadata.can_update"></slot>
+      </IdentityPublic>
     </template>
     <template #error="{ url }">
       <div class="flex flex-row gap-4" :data-url="url">

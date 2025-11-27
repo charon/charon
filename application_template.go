@@ -528,6 +528,11 @@ func (a *ApplicationTemplatePublic) GetClientService(id *identifier.Identifier) 
 	return nil
 }
 
+// Ref returns the application template reference.
+func (a *ApplicationTemplatePublic) Ref() ApplicationTemplateRef {
+	return ApplicationTemplateRef{ID: *a.ID}
+}
+
 // ApplicationTemplateRef represents a reference to an application template.
 type ApplicationTemplateRef struct {
 	ID identifier.Identifier `json:"id"`
@@ -816,7 +821,16 @@ func (s *Service) getApplicationTemplate(_ context.Context, id identifier.Identi
 	return &applicationTemplate, nil
 }
 
+func (s *Service) setApplicationTemplate(id identifier.Identifier, data []byte) {
+	s.applicationTemplatesMu.Lock()
+	defer s.applicationTemplatesMu.Unlock()
+
+	s.applicationTemplates[id] = data
+}
+
 func (s *Service) createApplicationTemplate(ctx context.Context, applicationTemplate *ApplicationTemplate) errors.E {
+	co := s.charonOrganization()
+
 	errE := applicationTemplate.Validate(ctx, nil, s)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrApplicationTemplateValidationFailed)
@@ -827,36 +841,24 @@ func (s *Service) createApplicationTemplate(ctx context.Context, applicationTemp
 		return errE
 	}
 
-	s.applicationTemplatesMu.Lock()
-	defer s.applicationTemplatesMu.Unlock()
+	s.setApplicationTemplate(*applicationTemplate.ID, data)
 
-	s.applicationTemplates[*applicationTemplate.ID] = data
-
-	errE = s.logActivity(ctx, ActivityApplicationTemplateCreate, nil, nil, []ApplicationTemplateRef{{ID: *applicationTemplate.ID}}, nil, nil, nil, nil)
-	if errE != nil {
-		return errE
-	}
-
-	return nil
+	return s.logActivity(
+		ctx, ActivityApplicationTemplateCreate, nil, nil, []ApplicationTemplateRef{{ID: *applicationTemplate.ID}},
+		nil, nil, nil, nil, OrganizationRef{ID: co.ID},
+	)
 }
 
 func (s *Service) updateApplicationTemplate(ctx context.Context, applicationTemplate *ApplicationTemplate) errors.E {
-	s.applicationTemplatesMu.Lock()
-	defer s.applicationTemplatesMu.Unlock()
+	co := s.charonOrganization()
 
 	if applicationTemplate.ID == nil {
 		return errors.WithMessage(ErrApplicationTemplateValidationFailed, "ID is missing")
 	}
 
-	existingData, ok := s.applicationTemplates[*applicationTemplate.ID]
-	if !ok {
-		return errors.WithDetails(ErrApplicationTemplateNotFound, "id", *applicationTemplate.ID)
-	}
-
-	var existingApplicationTemplate ApplicationTemplate
-	errE := x.UnmarshalWithoutUnknownFields(existingData, &existingApplicationTemplate)
+	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
+	existingApplicationTemplate, errE := s.getApplicationTemplate(ctx, *applicationTemplate.ID)
 	if errE != nil {
-		errors.Details(errE)["id"] = *applicationTemplate.ID
 		return errE
 	}
 
@@ -864,7 +866,7 @@ func (s *Service) updateApplicationTemplate(ctx context.Context, applicationTemp
 		return errors.WithDetails(ErrApplicationTemplateUnauthorized, "id", *applicationTemplate.ID)
 	}
 
-	errE = applicationTemplate.Validate(ctx, &existingApplicationTemplate, s)
+	errE = applicationTemplate.Validate(ctx, existingApplicationTemplate, s)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrApplicationTemplateValidationFailed)
 	}
@@ -875,24 +877,28 @@ func (s *Service) updateApplicationTemplate(ctx context.Context, applicationTemp
 		return errE
 	}
 
-	changes, identities := applicationTemplate.Changes(&existingApplicationTemplate)
+	changes, identities := applicationTemplate.Changes(existingApplicationTemplate)
 
 	if len(changes) == 0 {
 		// No changes, do not continue.
 		return nil
 	}
 
-	s.applicationTemplates[*applicationTemplate.ID] = data
+	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
+	s.setApplicationTemplate(*applicationTemplate.ID, data)
 
-	errE = s.logActivity(
-		ctx, ActivityApplicationTemplateUpdate, identities, nil, []ApplicationTemplateRef{{ID: *applicationTemplate.ID}},
-		nil, nil, changes, nil,
-	)
-	if errE != nil {
-		return errE
+	scopedIdentities := []OrganizationIdentityRef{}
+	for _, identity := range identities {
+		scopedIdentities = append(scopedIdentities, OrganizationIdentityRef{
+			Organization: OrganizationRef{ID: co.ID},
+			Identity:     identity,
+		})
 	}
 
-	return nil
+	return s.logActivity(
+		ctx, ActivityApplicationTemplateUpdate, scopedIdentities, nil, []ApplicationTemplateRef{{ID: *applicationTemplate.ID}},
+		nil, nil, changes, nil, OrganizationRef{ID: co.ID},
+	)
 }
 
 // ApplicationTemplateGet is the frontend handler for getting the application template.
@@ -934,7 +940,7 @@ func (s *Service) getApplicationTemplateFromID(ctx context.Context, value string
 }
 
 func (s *Service) returnApplicationTemplateRef(_ context.Context, w http.ResponseWriter, req *http.Request, applicationTemplate *ApplicationTemplate) {
-	s.WriteJSON(w, req, ApplicationTemplateRef{ID: *applicationTemplate.ID}, nil)
+	s.WriteJSON(w, req, applicationTemplate.Ref(), nil)
 }
 
 // ApplicationTemplateGetGet is the API handler for getting the application template, GET request.

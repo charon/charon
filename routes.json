@@ -265,7 +265,7 @@
       "name": "OrganizationIdentity",
       "path": "/o/identity/:id/:identityId",
       "api": {},
-      "get": null
+      "get": {}
     },
     {
       "name": "OrganizationUsers",

@@ -15,7 +15,7 @@ withDefaults(
     labels?: string[]
   }>(),
   {
-    // Optional booleans are false by default, but we want them to be undefined.
+    // Optional booleans are false by default, but we want isShared to be undefined.
     isShared: undefined,
     // Other optional props we set to undefined, which is also default.
     url: undefined,

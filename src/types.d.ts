@@ -339,6 +339,11 @@ export type IdentityOrganization = {
   applications: OrganizationApplicationApplicationRef[]
 }
 
+export type OrganizationIdentityRef = {
+  organization: OrganizationRef
+  identity: IdentityRef
+}
+
 export type OrganizationPublic = OrganizationCreate & {
   id: string
   description: string
@@ -414,8 +419,8 @@ export type Activity = {
   id: string
   timestamp: string
   type: ActivityType
-  actor?: IdentityRef
-  identities?: IdentityRef[]
+  actor?: OrganizationIdentityRef
+  identities?: OrganizationIdentityRef[]
   organizations?: OrganizationRef[]
   applicationTemplates?: ApplicationTemplateRef[]
   organizationApplications?: OrganizationApplicationRef[]

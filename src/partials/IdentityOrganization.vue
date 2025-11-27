@@ -30,7 +30,9 @@ defineExpose({
     <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
       <div>{{ t("partials.IdentityOrganization.id") }}</div>
       <div v-if="identityOrganization.id">
-        <code>{{ identityOrganization.id }}</code>
+        <router-link :to="{ name: 'OrganizationIdentity', params: { id: identityOrganization.organization.id, identityId: identityOrganization.id } }" class="link"
+          ><code>{{ identityOrganization.id }}</code></router-link
+        >
       </div>
       <div v-else>
         <span class="italic">{{ t("common.data.confirmUpdateToAllocate") }}</span>

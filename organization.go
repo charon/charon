@@ -618,6 +618,11 @@ func (o *OrganizationPublic) Validate(_ context.Context, existing *OrganizationP
 	return nil
 }
 
+// Ref returns the organization reference.
+func (o *OrganizationPublic) Ref() OrganizationRef {
+	return OrganizationRef{ID: *o.ID}
+}
+
 // OrganizationRef represents a reference to an organization.
 type OrganizationRef struct {
 	ID identifier.Identifier `json:"id"`
@@ -739,7 +744,7 @@ func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []
 	existingAppMap := make(map[OrganizationApplicationRef]OrganizationApplication)
 	for _, app := range existing.Applications {
 		existingAppMap[OrganizationApplicationRef{
-			Organization: OrganizationRef{ID: *o.ID},
+			Organization: o.Ref(),
 			Application: OrganizationApplicationApplicationRef{
 				ID: *app.ID,
 			},
@@ -748,7 +753,7 @@ func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []
 	newAppMap := make(map[OrganizationApplicationRef]OrganizationApplication)
 	for _, app := range o.Applications {
 		newAppMap[OrganizationApplicationRef{
-			Organization: OrganizationRef{ID: *o.ID},
+			Organization: o.Ref(),
 			Application: OrganizationApplicationApplicationRef{
 				ID: *app.ID,
 			},
@@ -823,7 +828,89 @@ func (s *Service) getOrganization(_ context.Context, id identifier.Identifier) (
 	return &organization, nil
 }
 
+func (s *Service) setOrganization(id identifier.Identifier, data []byte) {
+	s.organizationsMu.Lock()
+	defer s.organizationsMu.Unlock()
+
+	s.organizations[id] = data
+}
+
+func (s *Service) deleteBlock(organizationID, orgIdentityID identifier.Identifier) bool {
+	s.identitiesBlockedMu.Lock()
+	defer s.identitiesBlockedMu.Unlock()
+
+	if s.identitiesBlocked[organizationID] == nil {
+		return false
+	}
+
+	_, ok := s.identitiesBlocked[organizationID][orgIdentityID]
+
+	delete(s.identitiesBlocked[organizationID], orgIdentityID)
+
+	if len(s.identitiesBlocked[organizationID]) == 0 {
+		delete(s.identitiesBlocked, organizationID)
+	}
+
+	return ok
+}
+
+func (s *Service) setBlock(organizationID, orgIdentityID identifier.Identifier, organizationNote, userNote string) bool {
+	s.identitiesBlockedMu.Lock()
+	defer s.identitiesBlockedMu.Unlock()
+
+	if s.identitiesBlocked[organizationID] == nil {
+		s.identitiesBlocked[organizationID] = map[identifier.Identifier]blockedNotes{}
+	}
+
+	_, ok := s.identitiesBlocked[organizationID][orgIdentityID]
+
+	// It is OK to overwrite the note because we do not allow multiple notes for the same identity.
+	s.identitiesBlocked[organizationID][orgIdentityID] = blockedNotes{
+		OrganizationNote: organizationNote,
+		UserNote:         userNote,
+	}
+
+	return !ok
+}
+
+func (s *Service) setAccountsBlock(
+	organizationID, orgIdentityID identifier.Identifier, accountIDs map[identifier.Identifier][][]IdentityRef,
+	organizationNote, userNote string,
+) []AccountRef {
+	s.identitiesBlockedMu.Lock()
+	defer s.identitiesBlockedMu.Unlock()
+
+	if s.accountsBlocked[organizationID] == nil {
+		s.accountsBlocked[organizationID] = map[identifier.Identifier]map[identifier.Identifier]blockedNotes{}
+	}
+
+	blockedAccountIDs := []AccountRef{}
+
+	for accountID := range accountIDs {
+		if s.accountsBlocked[organizationID][accountID] == nil {
+			s.accountsBlocked[organizationID][accountID] = map[identifier.Identifier]blockedNotes{}
+		}
+
+		_, ok := s.accountsBlocked[organizationID][accountID][orgIdentityID]
+
+		// It is OK to overwrite the note because we do not allow multiple notes for the same account & identity pair.
+		s.accountsBlocked[organizationID][accountID][orgIdentityID] = blockedNotes{
+			OrganizationNote: organizationNote,
+			UserNote:         userNote,
+		}
+
+		// We log only the first time the identity is blocked.
+		if !ok {
+			blockedAccountIDs = append(blockedAccountIDs, AccountRef{ID: accountID})
+		}
+	}
+
+	return blockedAccountIDs
+}
+
 func (s *Service) createOrganization(ctx context.Context, organization *Organization) errors.E {
+	co := s.charonOrganization()
+
 	errE := organization.Validate(ctx, nil, s)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrOrganizationValidationFailed)
@@ -834,36 +921,21 @@ func (s *Service) createOrganization(ctx context.Context, organization *Organiza
 		return errE
 	}
 
-	s.organizationsMu.Lock()
-	defer s.organizationsMu.Unlock()
+	s.setOrganization(*organization.ID, data)
 
-	s.organizations[*organization.ID] = data
-
-	errE = s.logActivity(ctx, ActivityOrganizationCreate, nil, []OrganizationRef{{ID: *organization.ID}}, nil, nil, nil, nil, nil)
-	if errE != nil {
-		return errE
-	}
-
-	return nil
+	return s.logActivity(ctx, ActivityOrganizationCreate, nil, []OrganizationRef{{ID: *organization.ID}}, nil, nil, nil, nil, nil, OrganizationRef{ID: co.ID})
 }
 
 func (s *Service) updateOrganization(ctx context.Context, organization *Organization) errors.E {
-	s.organizationsMu.Lock()
-	defer s.organizationsMu.Unlock()
+	co := s.charonOrganization()
 
 	if organization.ID == nil {
 		return errors.WithMessage(ErrOrganizationValidationFailed, "ID is missing")
 	}
 
-	existingData, ok := s.organizations[*organization.ID]
-	if !ok {
-		return errors.WithDetails(ErrOrganizationNotFound, "id", *organization.ID)
-	}
-
-	var existingOrganization Organization
-	errE := x.UnmarshalWithoutUnknownFields(existingData, &existingOrganization)
+	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
+	existingOrganization, errE := s.getOrganization(ctx, *organization.ID)
 	if errE != nil {
-		errors.Details(errE)["id"] = *organization.ID
 		return errE
 	}
 
@@ -872,7 +944,7 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 		return errors.WithDetails(ErrOrganizationUnauthorized, "id", organization.ID)
 	}
 
-	errE = organization.Validate(ctx, &existingOrganization, s)
+	errE = organization.Validate(ctx, existingOrganization, s)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrOrganizationValidationFailed)
 	}
@@ -883,21 +955,28 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 		return errE
 	}
 
-	changes, identities, organizationApplications := organization.Changes(&existingOrganization)
+	changes, identities, organizationApplications := organization.Changes(existingOrganization)
 
 	if len(changes) == 0 {
 		// No changes, do not continue.
 		return nil
 	}
 
-	s.organizations[*organization.ID] = data
+	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
+	s.setOrganization(*organization.ID, data)
 
-	errE = s.logActivity(ctx, ActivityOrganizationUpdate, identities, []OrganizationRef{{ID: *organization.ID}}, nil, organizationApplications, nil, changes, nil)
-	if errE != nil {
-		return errE
+	scopedIdentities := []OrganizationIdentityRef{}
+	for _, identity := range identities {
+		scopedIdentities = append(scopedIdentities, OrganizationIdentityRef{
+			Organization: OrganizationRef{ID: co.ID},
+			Identity:     identity,
+		})
 	}
 
-	return nil
+	return s.logActivity(
+		ctx, ActivityOrganizationUpdate, scopedIdentities, []OrganizationRef{{ID: *organization.ID}},
+		nil, organizationApplications, nil, changes, nil, OrganizationRef{ID: co.ID},
+	)
 }
 
 // OrganizationGet is the frontend handler for getting the organization.
@@ -948,7 +1027,7 @@ func (s *Service) getOrganizationFromID(ctx context.Context, value string) (*Org
 }
 
 func (s *Service) returnOrganizationRef(_ context.Context, w http.ResponseWriter, req *http.Request, organization *Organization) {
-	s.WriteJSON(w, req, OrganizationRef{ID: *organization.ID}, nil)
+	s.WriteJSON(w, req, organization.Ref(), nil)
 }
 
 // OrganizationGetGet is the API handler for getting the organization, GET request.
@@ -1053,14 +1132,26 @@ func (s *Service) getIdentityFromOrganization(_ context.Context, organizationID,
 	return nil, nil, errors.WithDetails(ErrIdentityNotFound, "id", identityID)
 }
 
+// OrganizationIdentity is the frontend handler for getting the organization's identity.
+func (s *Service) OrganizationIdentity(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	if s.ProxyStaticTo != "" {
+		s.Proxy(w, req)
+	} else {
+		s.ServeStaticFile(w, req, "/index.html")
+	}
+}
+
 // OrganizationIdentityGet is the API handler for getting the organization's identity, GET request.
 //
 // Anyone with valid access token for the organization can access public data about any
 // identity in the organization given the organization-scoped identity ID.
 //
-// A special case is for admins of the organization, which can also authenticate using
-// valid Charon organization access token. In that case, also Organizations field is returned
-// with IdentityOrganization struct for just this organization.
+// The first special case is for users which authenticate using a valid Charon organization
+// access token. They can access public data about any identity they have access to.
+//
+// The second special case is for admins of the organization, which can also authenticate using
+// valid Charon organization access token. They can access public data of any identity in the organization.
+// In this case also Organizations field is returned with IdentityOrganization struct for just this organization.
 func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 	co := s.charonOrganization()
@@ -1078,12 +1169,21 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 	}
 
 	hasOrganizationAccessToken := true
+	hasOrganizationAdminAccess := false
 
 	// We do not use RequireAuthenticated here, because we want to use a (possibly) non-Charon organization ID.
 	currentIdentityID, accountID, _, errE := s.getIdentityFromRequest(w, req, organizationID.String())
 	if errors.Is(errE, ErrIdentityNotPresent) {
 		// User is not authenticated for this organization.
-		// Maybe they are authenticated using Charon organization and are admin of the organization.
+		// Maybe they are authenticated using Charon organization and are an user with access
+		// to the identity or they are an admin of the organization.
+
+		// Maybe we already check for Charon organization above.
+		if co.ID == organizationID {
+			s.WithError(ctx, errE)
+			waf.Error(w, req, http.StatusUnauthorized)
+			return
+		}
 
 		hasOrganizationAccessToken = false
 
@@ -1106,10 +1206,7 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 			return
 		}
 
-		if !organization.HasAdminAccess(IdentityRef{ID: currentIdentityID}) {
-			waf.Error(w, req, http.StatusUnauthorized)
-			return
-		}
+		hasOrganizationAdminAccess = organization.HasAdminAccess(IdentityRef{ID: currentIdentityID})
 	} else if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -1143,7 +1240,22 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 			return
 		}
 
+		// This can potentially return nil if the identity is not in the Charon organization,
+		// but we want to support this case and this is why we have this special case in
+		// the first place (otherwise we could just always use getIdentityFromOrganization).
 		idOrg = identity.GetOrganization(&organizationID)
+
+		// Handle the case when user is an admin of the Charon organization and is authenticated for it, too.
+		if hasOrganizationAccessToken {
+			organization, errE := s.getOrganization(ctx, organizationID)
+			if errE != nil {
+				// Charon organization should always be found.
+				s.InternalServerErrorWithError(w, req, errE)
+				return
+			}
+
+			hasOrganizationAdminAccess = organization.HasAdminAccess(IdentityRef{ID: currentIdentityID})
+		}
 	} else {
 		identity, idOrg, errE = s.getIdentityFromOrganization(ctx, organizationID, identityID)
 		if errors.Is(errE, ErrIdentityNotFound) {
@@ -1151,11 +1263,6 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 			return
 		} else if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-
-		if !idOrg.Active {
-			s.NotFound(w, req)
 			return
 		}
 
@@ -1172,13 +1279,31 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 	//       their ID and presumably they learned those IDs by having access to something which referenced those IDs. So unless we enable identity enumeration,
 	//       how it is might be enough (and even then we would probably enable enumeration only to identities to which user needs access).
 
-	ids, isCreator, errE := s.getIdentitiesForAccount(ctx, accountID, IdentityRef{ID: *identity.ID})
+	ids, isCreator, errE := s.getIdentitiesForAccount(ctx, accountID, identity.Ref())
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	if hasOrganizationAccessToken {
+	hasUserAccess := identity.HasUserAccess(ids)
+	hasAdminAccess := identity.HasAdminAccess(ids, isCreator)
+
+	if hasOrganizationAdminAccess { //nolint:revive
+		// We allow access to admins of the organization.
+	} else if hasUserAccess || hasAdminAccess { //nolint:revive
+		// We allow access to users with access to the identity.
+	} else if hasOrganizationAccessToken {
+		// We allow access to users from the same organization, but only if they have not been disabled.
+		if idOrg != nil && !idOrg.Active {
+			s.NotFound(w, req)
+			return
+		}
+	} else {
+		waf.Error(w, req, http.StatusUnauthorized)
+		return
+	}
+
+	if !hasOrganizationAdminAccess {
 		// Only when organization admin is requesting identity information,
 		// we return additional field Organizations.
 		idOrg = nil
@@ -1186,6 +1311,8 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 
 	organizations := []IdentityOrganization{}
 	if idOrg != nil {
+		// idOrg can be nil not just when hasOrganizationAdminAccess is false,
+		// but also when the identity has not been added to the Charon organization.
 		organizations = append(organizations, *idOrg)
 	}
 
@@ -1193,8 +1320,8 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 		IdentityPublic: identity.IdentityPublic,
 		Organizations:  organizations,
 	}, map[string]interface{}{
-		"can_use":    identity.HasUserAccess(ids),
-		"can_update": identity.HasAdminAccess(ids, isCreator),
+		"can_use":    hasUserAccess,
+		"can_update": hasAdminAccess,
 		// identity.ID is organization-scoped (we make it so above) and it makes sense to
 		// compare it with currentIdentityID only if currentIdentityID belongs to the same
 		// organization and not to Charon organization from the special case.
@@ -1369,98 +1496,61 @@ func (s *Service) isIdentityOrAccountBlockedInOrganization(_ context.Context, id
 	return false, nil
 }
 
-func (s *Service) unblockIdentity(ctx context.Context, identity *Identity, orgIdentityID, organizationID identifier.Identifier) errors.E {
-	s.identitiesBlockedMu.Lock()
-	defer s.identitiesBlockedMu.Unlock()
+func (s *Service) unblockIdentity(ctx context.Context, organizationID, orgIdentityID identifier.Identifier) errors.E {
+	ok := s.deleteBlock(organizationID, orgIdentityID)
 
-	if s.identitiesBlocked[organizationID] == nil {
+	// We log only the first time the identity is unblocked.
+	if !ok {
 		return nil
 	}
 
-	_, ok := s.identitiesBlocked[organizationID][orgIdentityID]
+	organizationRef := OrganizationRef{ID: organizationID}
 
-	delete(s.identitiesBlocked[organizationID], orgIdentityID)
-
-	if len(s.identitiesBlocked[organizationID]) == 0 {
-		delete(s.identitiesBlocked, organizationID)
-	}
-
-	// We log only the first time the identity is unblocked.
-	if ok {
-		return s.logActivity(ctx, ActivityIdentityUnblocked, []IdentityRef{{ID: *identity.ID}}, []OrganizationRef{{ID: organizationID}}, nil, nil, nil, nil, nil)
-	}
-
-	return nil
+	return s.logActivity(ctx, ActivityIdentityUnblocked, []OrganizationIdentityRef{{
+		Identity:     IdentityRef{ID: orgIdentityID},
+		Organization: organizationRef,
+	}}, []OrganizationRef{organizationRef}, nil, nil, nil, nil, nil, organizationRef)
 }
 
 func (s *Service) blockIdentity(
-	ctx context.Context, identity *Identity, orgIdentityID, organizationID identifier.Identifier,
+	ctx context.Context, organizationID, orgIdentityID identifier.Identifier,
 	organizationNote, userNote string,
 ) errors.E {
-	s.identitiesBlockedMu.Lock()
-	defer s.identitiesBlockedMu.Unlock()
-
-	if s.identitiesBlocked[organizationID] == nil {
-		s.identitiesBlocked[organizationID] = map[identifier.Identifier]blockedNotes{}
-	}
-
-	_, ok := s.identitiesBlocked[organizationID][orgIdentityID]
-
-	// It is OK to overwrite the note because we do not allow multiple notes for the same identity.
-	s.identitiesBlocked[organizationID][orgIdentityID] = blockedNotes{
-		OrganizationNote: organizationNote,
-		UserNote:         userNote,
-	}
+	ok := s.setBlock(organizationID, orgIdentityID, organizationNote, userNote)
 
 	// We log only the first time the identity is blocked.
 	if !ok {
-		return s.logActivity(ctx, ActivityIdentityBlocked, []IdentityRef{{ID: *identity.ID}}, []OrganizationRef{{ID: organizationID}}, nil, nil, nil, nil, nil)
+		return nil
 	}
 
-	return nil
+	organizationRef := OrganizationRef{ID: organizationID}
+
+	return s.logActivity(ctx, ActivityIdentityBlocked, []OrganizationIdentityRef{{
+		Identity:     IdentityRef{ID: orgIdentityID},
+		Organization: organizationRef,
+	}}, []OrganizationRef{organizationRef}, nil, nil, nil, nil, nil, organizationRef)
 }
 
 func (s *Service) blockAccounts(
-	ctx context.Context, identity *Identity, orgIdentityID, organizationID identifier.Identifier,
+	ctx context.Context, identity *Identity, organizationID, orgIdentityID identifier.Identifier,
 	organizationNote, userNote string,
 ) errors.E {
-	accountIDs := s.getAccountsForIdentityWithLock(IdentityRef{ID: *identity.ID})
+	accountIDs := s.getAccountsForIdentityWithLock(identity.Ref())
 
-	s.identitiesBlockedMu.Lock()
-	defer s.identitiesBlockedMu.Unlock()
+	blockedAccountIDs := s.setAccountsBlock(organizationID, orgIdentityID, accountIDs, organizationNote, userNote)
 
-	if s.accountsBlocked[organizationID] == nil {
-		s.accountsBlocked[organizationID] = map[identifier.Identifier]map[identifier.Identifier]blockedNotes{}
+	if len(blockedAccountIDs) == 0 {
+		return nil
 	}
 
-	blockedAccountIDs := []AccountRef{}
+	organizationRef := OrganizationRef{ID: organizationID}
 
-	for accountID := range accountIDs {
-		if s.accountsBlocked[organizationID][accountID] == nil {
-			s.accountsBlocked[organizationID][accountID] = map[identifier.Identifier]blockedNotes{}
-		}
-
-		_, ok := s.accountsBlocked[organizationID][accountID][orgIdentityID]
-
-		// It is OK to overwrite the note because we do not allow multiple notes for the same account & identity pair.
-		s.accountsBlocked[organizationID][accountID][orgIdentityID] = blockedNotes{
-			OrganizationNote: organizationNote,
-			UserNote:         userNote,
-		}
-
-		// We log only the first time the identity is blocked.
-		if !ok {
-			blockedAccountIDs = append(blockedAccountIDs, AccountRef{ID: accountID})
-		}
-	}
-
-	if len(blockedAccountIDs) > 0 {
-		// All accounts have access to the identity, so it is OK to have the identity itself logged and exposed.
-		// We do never expose accounts, so we can log for all of them all together once.
-		return s.logActivity(ctx, ActivityAccountBlocked, []IdentityRef{{ID: *identity.ID}}, []OrganizationRef{{ID: organizationID}}, nil, nil, blockedAccountIDs, nil, nil)
-	}
-
-	return nil
+	// All accounts have access to the identity, so it is OK to have the identity itself logged and exposed.
+	// We do never expose accounts, so we can log for all of them all together once.
+	return s.logActivity(ctx, ActivityAccountBlocked, []OrganizationIdentityRef{{
+		Identity:     IdentityRef{ID: orgIdentityID},
+		Organization: organizationRef,
+	}}, []OrganizationRef{organizationRef}, nil, nil, blockedAccountIDs, nil, nil, organizationRef)
 }
 
 // OrganizationBlockUser is the frontend handler for blocking organization's user.
@@ -1531,20 +1621,20 @@ func (s *Service) OrganizationBlockUserPost(w http.ResponseWriter, req *http.Req
 
 	switch blockRequest.Type {
 	case BlockedUserNotBlocked:
-		errE := s.unblockIdentity(ctx, identity, *idOrg.ID, *organization.ID)
+		errE := s.unblockIdentity(ctx, *organization.ID, *idOrg.ID)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
 	case BlockedUserAndAccounts:
-		errE := s.blockAccounts(ctx, identity, *idOrg.ID, *organization.ID, blockRequest.OrganizationNote, blockRequest.USerNote)
+		errE := s.blockAccounts(ctx, identity, *organization.ID, *idOrg.ID, blockRequest.OrganizationNote, blockRequest.USerNote)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
 		fallthrough
 	case BlockedUserOnly:
-		errE := s.blockIdentity(ctx, identity, *idOrg.ID, *organization.ID, blockRequest.OrganizationNote, blockRequest.USerNote)
+		errE := s.blockIdentity(ctx, *organization.ID, *idOrg.ID, blockRequest.OrganizationNote, blockRequest.USerNote)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
@@ -1607,7 +1697,7 @@ func (s *Service) OrganizationBlockedStatusGet(w http.ResponseWriter, req *http.
 	}
 
 	currentAccountID := mustGetAccountID(ctx)
-	ids, isCreator, errE := s.getIdentitiesForAccount(ctx, currentAccountID, IdentityRef{ID: *identity.ID})
+	ids, isCreator, errE := s.getIdentitiesForAccount(ctx, currentAccountID, identity.Ref())
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
