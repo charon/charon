@@ -252,6 +252,13 @@ func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, p
 
 	displayName = ensureUniqueDisplayName(account, providerKey, displayName)
 
+	if account != nil {
+		existingCredential := account.GetCredential(providerKey, idToken.Subject)
+		if existingCredential != nil {
+			displayName = existingCredential.DisplayName
+		}
+	}
+
 	s.completeAuthStep(w, req, false, flow, account,
 		[]Credential{{
 			CredentialPublic: CredentialPublic{

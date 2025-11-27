@@ -513,6 +513,13 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 
 	displayName = ensureUniqueDisplayName(account, providerKey, displayName)
 
+	if account != nil {
+		existingCredential := account.GetCredential(providerKey, credentialID)
+		if existingCredential != nil {
+			displayName = existingCredential.DisplayName
+		}
+	}
+
 	s.completeAuthStep(w, req, false, flow, account,
 		[]Credential{{
 			CredentialPublic: CredentialPublic{

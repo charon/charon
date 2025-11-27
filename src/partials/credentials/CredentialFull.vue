@@ -3,7 +3,7 @@ import type { DeepReadonly } from "vue"
 
 import type { CredentialPublic } from "@/types"
 
-import { computed, ref } from "vue"
+import { computed, nextTick, ref } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
@@ -41,10 +41,14 @@ const canSubmitUpdate = computed(() => {
   return trimmed !== "" && trimmed !== props.credential.displayName
 })
 
-function startEdit() {
+async function startEdit() {
   editedDisplayName.value = props.credential.displayName
   isEditing.value = true
   updateError.value = ""
+
+  await nextTick(() => {
+    document.getElementById(`credentialedit-input-${props.credential.id}`)?.focus()
+  })
 }
 
 function cancelEdit() {
@@ -89,48 +93,55 @@ async function submitUpdate() {
 </script>
 
 <template>
-  <div class="flex flex-row items-center justify-between gap-4" :data-url="url">
-    <div class="grow">
-      <h2 :id="`credentialfull-provider-${credential.id}`" class="text-xl">
-        {{ getProviderNameTitle(t, credential.provider) }}
-      </h2>
-      <div v-if="isEditing" class="mt-1 flex flex-row items-center gap-2">
-        <InputText
-          :id="`credentialedit-input-${credential.id}`"
-          v-model="editedDisplayName"
-          class="min-w-0 flex-auto grow"
-          :progress="updateProgress"
-          autocomplete="off"
-          autocorrect="off"
-          autocapitalize="none"
-          spellcheck="false"
-          minlength="1"
-          required
-        />
+  <div class="flex flex-col gap-2" :data-url="url">
+    <!-- Non-editing mode -->
+    <div v-if="!isEditing" class="flex flex-row items-start justify-between gap-4">
+      <div class="grow">
+        <h2 :id="`credentialfull-provider-${credential.id}`" class="text-xl">
+          {{ getProviderNameTitle(t, credential.provider) }}
+        </h2>
+        <div class="mt-1 flex flex-row items-center gap-1">
+          <span>{{ credential.displayName }}</span>
+          <span v-if="credential.verified" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">
+            {{ t("common.labels.verified") }}
+          </span>
+        </div>
       </div>
-      <div v-else class="mt-1 flex flex-row items-center gap-2">
-        <span>{{ credential.displayName }}</span>
-        <span v-if="credential.verified" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">
-          {{ t("common.labels.verified") }}
-        </span>
-      </div>
-      <div v-if="updateError" class="mt-2 text-error-600">{{ updateError }}</div>
-    </div>
-    <div class="flex flex-row gap-4">
-      <template v-if="isEditing">
-        <Button :id="`credentialfull-button-update-${credential.id}`" type="button" :disabled="!canSubmitUpdate" :progress="updateProgress" @click="submitUpdate">
-          {{ t("common.buttons.rename") }}
-        </Button>
-        <Button :id="`credentialfull-button-cancel-${credential.id}`" type="button" :progress="updateProgress" @click="cancelEdit">
-          {{ t("common.buttons.cancel") }}
-        </Button>
-      </template>
-      <template v-else>
+      <div class="flex shrink-0 flex-row gap-4">
         <Button v-if="canEdit" :id="`credentialfull-button-rename-${credential.id}`" type="button" :progress="progress" @click="startEdit">
           {{ t("common.buttons.rename") }}
         </Button>
         <slot :credential="credential" />
-      </template>
+      </div>
     </div>
+    <!-- Editing mode -->
+    <div v-else class="flex flex-col gap-2">
+      <h2 class="text-xl">
+        {{ getProviderNameTitle(t, credential.provider) }}
+      </h2>
+      <div class="flex flex-row items-center gap-4">
+        <InputText
+            :id="`credentialedit-input-${credential.id}`"
+            v-model="editedDisplayName"
+            class="min-w-0 flex-auto grow"
+            :progress="updateProgress"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="none"
+            spellcheck="false"
+            minlength="1"
+            required
+        />
+        <div class="flex shrink-0 flex-row gap-4">
+          <Button :id="`credentialfull-button-update-${credential.id}`" type="button" :disabled="!canSubmitUpdate" :progress="updateProgress" @click="submitUpdate">
+            {{ t("common.buttons.rename") }}
+          </Button>
+          <Button :id="`credentialfull-button-cancel-${credential.id}`" type="button" :progress="updateProgress" @click="cancelEdit">
+            {{ t("common.buttons.cancel") }}
+          </Button>
+        </div>
+      </div>
+    </div>
+    <div v-if="updateError" class="text-error-600">{{ updateError }}</div>
   </div>
 </template>

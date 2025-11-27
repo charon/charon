@@ -948,6 +948,16 @@ FoundCredential:
 		return
 	}
 
+	for i, credential := range account.Credentials[foundProvider] {
+		if i == foundIndex {
+			continue
+		}
+		if credential.DisplayName == requestDisplayName {
+			s.BadRequestWithError(w, req, errors.New("displayName already in use"))
+			return
+		}
+	}
+
 	foundCredential := account.Credentials[foundProvider][foundIndex]
 	foundCredential.DisplayName = requestDisplayName
 	account.Credentials[foundProvider][foundIndex] = foundCredential
