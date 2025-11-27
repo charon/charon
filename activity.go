@@ -253,6 +253,7 @@ func (s *Service) logActivity(
 		// Now we should be able to find the organization identity.
 		actor = currentIdentity.OrganizationIdentityRef(currentOrganization)
 		if actor == nil {
+			// This should not happen.
 			return errors.New("unable to find organization identity")
 		}
 	}
