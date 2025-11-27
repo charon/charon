@@ -2,7 +2,7 @@
 import type { Ref } from "vue"
 import type { Router } from "vue-router"
 
-import type { CredentialInfo, Credentials } from "@/types"
+import type { CredentialPublic, Credentials } from "@/types"
 
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useI18n } from "vue-i18n"
@@ -28,6 +28,7 @@ const currentActionCredentialId = ref<string | null>(null)
 const dataLoading = ref(true)
 const dataLoadingError = ref("")
 const credentials = ref<Credentials>([])
+const refreshKey = ref(0)
 
 async function getCredentials(router: Router, abortController: AbortController, progress: Ref<number>): Promise<Credentials | null> {
   progress.value += 1
@@ -42,6 +43,38 @@ async function getCredentials(router: Router, abortController: AbortController, 
     }
 
     return response.doc
+  } finally {
+    progress.value -= 1
+  }
+}
+
+async function onCredentialUpdated(credentialId: string) {
+  if (abortController.signal.aborted) {
+    return
+  }
+  refreshKey.value++
+
+  progress.value += 1
+  try {
+    const url = router.apiResolve({
+      name: "CredentialGet",
+      params: { id: credentialId },
+    }).href
+
+    const response = await getURL<CredentialPublic>(url, null, abortController.signal, progress)
+    if (abortController.signal.aborted) {
+      return
+    }
+
+    const index = credentials.value.findIndex((c) => c.id === credentialId)
+    if (index !== -1) {
+      credentials.value[index] = response.doc
+    }
+  } catch (error) {
+    if (abortController.signal.aborted) {
+      return
+    }
+    console.error("CredentialList.onCredentialUpdated", error)
   } finally {
     progress.value -= 1
   }
@@ -116,7 +149,7 @@ async function onRemove(credentialId: string) {
   }
 }
 
-const WithCredentialDocument = WithDocument<CredentialInfo>
+const WithCredentialDocument = WithDocument<CredentialPublic>
 </script>
 
 <template>
@@ -138,9 +171,9 @@ const WithCredentialDocument = WithDocument<CredentialInfo>
           {{ isSignedIn() ? t("views.CredentialList.noCredentialsCreate") : t("views.CredentialList.noCredentialsSignIn") }}
         </div>
         <div v-for="credential in credentials" :key="credential.id" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
-          <WithCredentialDocument :params="{ id: credential.id }" name="CredentialGet">
+          <WithCredentialDocument :key="`${credential.id}-${refreshKey}`" :params="{ id: credential.id }" name="CredentialGet">
             <template #default="{ doc, url }">
-              <CredentialFull :credential="doc" :url="url">
+              <CredentialFull :credential="doc" :url="url" :progress="progress" @updated="onCredentialUpdated(doc.id)">
                 <div class="flex flex-row gap-4">
                   <Button v-if="doc.provider === 'email' && !doc.verified" :id="`credentiallist-button-verify-${doc.id}`" type="button" secondary disabled>{{
                     t("views.CredentialList.verify")

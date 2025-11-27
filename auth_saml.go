@@ -491,6 +491,19 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
+	var token map[string]interface{}
+	errE = x.Unmarshal(jsonData, &token)
+	if errE != nil {
+		errors.Details(errE)["provider"] = providerKey
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	displayName := findFirstString(token, "username", "preferred_username", "email", "eMailAddress", "emailAddress", "email_address")
+	if displayName == "" {
+		displayName = credentialID
+	}
+
 	account, errE := s.getAccountByCredential(ctx, providerKey, credentialID)
 	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
 		errors.Details(errE)["provider"] = providerKey
@@ -498,7 +511,19 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	s.completeAuthStep(w, req, false, flow, account, []Credential{{ID: identifier.New(), ProviderID: credentialID, Provider: providerKey, Data: jsonData}})
+	displayName = ensureUniqueDisplayName(account, providerKey, displayName)
+
+	s.completeAuthStep(w, req, false, flow, account,
+		[]Credential{{
+			CredentialPublic: CredentialPublic{
+				ID:          identifier.New(),
+				Provider:    providerKey,
+				DisplayName: displayName,
+				Verified:    false,
+			},
+			ProviderID: credentialID,
+			Data:       jsonData,
+		}})
 }
 
 // SAMLMetadataGet is the API handler for getting the SAML metadata for a third-party SAML provider, GET request.

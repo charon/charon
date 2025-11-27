@@ -36,6 +36,7 @@ declare module "vue-i18n" {
         redirect: string
         block: string
         unblock: string
+        rename: string
       }
       errors: {
         unexpected: string
@@ -377,9 +378,6 @@ declare module "vue-i18n" {
         noCredentialsCreate: string
         noCredentialsSignIn: string
         verify: string
-      }
-      CredentialUpdateDisplayName: {
-        updateDisplayName: string
       }
     }
   }

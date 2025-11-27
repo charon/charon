@@ -52,9 +52,8 @@ type flowPassword struct {
 
 type flowPasskey struct {
 	SessionData *webauthn.SessionData
-
-	// displayName is also used to mark the request as sign-in (empty) or sign-up (non-empty).
-	displayName string
+	// DisplayName is also used to mark the request as sign-in (empty) or sign-up (non-empty).
+	DisplayName string
 }
 
 type flowCode struct {

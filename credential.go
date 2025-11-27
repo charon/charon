@@ -36,20 +36,24 @@ var (
 	credentialSessionsMu sync.RWMutex                                      //nolint:gochecknoglobals
 )
 
-// CredentialInfo represents public information about a credential.
-type CredentialInfo struct {
-	ID          identifier.Identifier `json:"id"`
-	Provider    Provider              `json:"provider"`
-	DisplayName string                `json:"displayName"`
-	Verified    bool                  `json:"verified,omitempty"`
+// CredentialPublic represents public information about a credential.
+type CredentialPublic struct {
+	// ID is a public-facing ID used to identify the credential in public API.
+	ID identifier.Identifier `json:"id"`
+	// Provider is the internal provider type name or the name of the third party provider.
+	Provider Provider `json:"provider"`
+	// DisplayName is initially automatically set, user can update it. Unique per user per provider.
+	DisplayName string `json:"displayName"`
+	// Verified is used for e-mail address only.
+	Verified bool `json:"verified,omitempty"`
 }
 
-// CredentialInfoRef represents a reference to a credential.
-type CredentialInfoRef struct {
+// CredentialPublicRef represents a reference to a credential.
+type CredentialPublicRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
-func credentialInfoRefCmp(a CredentialInfoRef, b CredentialInfoRef) int {
+func credentialPublicRefCmp(a CredentialPublicRef, b CredentialPublicRef) int {
 	return bytes.Compare(a.ID[:], b.ID[:])
 }
 
@@ -65,7 +69,7 @@ type CredentialAddResponse struct {
 // CredentialAddCredentialWithDisplayNameStartRequest represents the request body for the CredentialAddPasswordStartPost and
 // CredentialAddPasskeyStartPost.
 type CredentialAddCredentialWithDisplayNameStartRequest struct {
-	DisplayName string `json:"displayname"`
+	DisplayName string `json:"displayName"`
 }
 
 // CredentialUpdateDisplayNameRequest represents the request body for CredentialUpdateDisplayName handler.
@@ -103,12 +107,16 @@ func (s credentialAddSession) Expired() bool {
 // This function does not check for duplicates. Duplicate checking
 // should be done by the caller before calling this function.
 func (s *Service) addCredentialToAccount(
-	ctx context.Context, account *Account, providerKey Provider, providerID string, jsonData json.RawMessage,
+	ctx context.Context, account *Account, providerKey Provider, providerID string, jsonData json.RawMessage, displayName string,
 ) (identifier.Identifier, errors.E) {
 	newCredential := Credential{
-		ID:         identifier.New(),
+		CredentialPublic: CredentialPublic{
+			ID:          identifier.New(),
+			Provider:    providerKey,
+			DisplayName: displayName,
+			Verified:    false,
+		},
 		ProviderID: providerID,
-		Provider:   providerKey,
 		Data:       jsonData,
 	}
 
@@ -187,18 +195,14 @@ func (s *Service) CredentialListGet(w http.ResponseWriter, req *http.Request, _ 
 		return
 	}
 
-	var result []CredentialInfoRef
+	var result []CredentialPublicRef
 	for _, credentials := range account.Credentials {
 		for _, credential := range credentials {
-			credentialInfo, errE := credential.ToCredentialInfo()
-			if errE != nil {
-				continue
-			}
-			result = append(result, CredentialInfoRef{ID: credentialInfo.ID})
+			result = append(result, CredentialPublicRef{ID: credential.ID})
 		}
 	}
 
-	slices.SortFunc(result, credentialInfoRefCmp)
+	slices.SortFunc(result, credentialPublicRefCmp)
 	s.WriteJSON(w, req, result, nil)
 }
 
@@ -234,12 +238,7 @@ func (s *Service) CredentialGetGet(w http.ResponseWriter, req *http.Request, par
 	for _, credentials := range account.Credentials {
 		for _, c := range credentials {
 			if c.ID == credentialID {
-				info, errE := c.ToCredentialInfo()
-				if errE != nil {
-					s.InternalServerErrorWithError(w, req, errE)
-					return
-				}
-				s.WriteJSON(w, req, info, nil)
+				s.WriteJSON(w, req, c.CredentialPublic, nil)
 				return
 			}
 		}
@@ -310,13 +309,13 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{Email: preservedEmail, Verified: false, DisplayName: preservedEmail})
+	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{Email: preservedEmail})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderEmail, mappedEmail, jsonData)
+	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderEmail, mappedEmail, jsonData, preservedEmail)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -399,13 +398,13 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	jsonData, errE := x.MarshalWithoutEscapeHTML(usernameCredential{Username: preservedUsername, DisplayName: preservedUsername})
+	jsonData, errE := x.MarshalWithoutEscapeHTML(usernameCredential{Username: preservedUsername})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderUsername, mappedUsername, jsonData)
+	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderUsername, mappedUsername, jsonData, preservedUsername)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -629,16 +628,14 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 	}
 
 	jsonData, errE := x.MarshalWithoutEscapeHTML(passwordCredential{
-		Hash:        hashedPassword,
-		DisplayName: cas.DisplayName,
+		Hash: hashedPassword,
 	})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	providerID := ""
-	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderPassword, providerID, jsonData)
+	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderPassword, cas.DisplayName, jsonData, cas.DisplayName)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -808,7 +805,7 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 		return
 	}
 
-	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderPasskey, providerID, jsonData)
+	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderPasskey, providerID, jsonData, cas.DisplayName)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -952,80 +949,8 @@ FoundCredential:
 	}
 
 	foundCredential := account.Credentials[foundProvider][foundIndex]
-	var updatedData json.RawMessage
-
-	switch foundProvider {
-	case ProviderEmail:
-		var ec emailCredential
-		errE = x.Unmarshal(foundCredential.Data, &ec)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-		ec.DisplayName = requestDisplayName
-		updatedData, errE = x.MarshalWithoutEscapeHTML(ec)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-	case ProviderUsername:
-		var uc usernameCredential
-		errE = x.Unmarshal(foundCredential.Data, &uc)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-		uc.DisplayName = requestDisplayName
-		updatedData, errE = x.MarshalWithoutEscapeHTML(uc)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-	case ProviderPassword:
-		var pc passwordCredential
-		errE = x.Unmarshal(foundCredential.Data, &pc)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-		pc.DisplayName = requestDisplayName
-		updatedData, errE = x.MarshalWithoutEscapeHTML(pc)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-	case ProviderPasskey:
-		var pkc passkeyCredential
-		errE = x.Unmarshal(foundCredential.Data, &pkc)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-		pkc.DisplayName = requestDisplayName
-		updatedData, errE = x.MarshalWithoutEscapeHTML(pkc)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-	case ProviderCode:
-		s.BadRequestWithError(w, req, errors.New("code provider does not support displayName"))
-		return
-	default:
-		var token map[string]interface{}
-		errE = x.Unmarshal(foundCredential.Data, &token)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-		token["displayName"] = requestDisplayName
-		updatedData, errE = x.MarshalWithoutEscapeHTML(token)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-	}
-
-	account.Credentials[foundProvider][foundIndex].Data = updatedData
+	foundCredential.DisplayName = requestDisplayName
+	account.Credentials[foundProvider][foundIndex] = foundCredential
 
 	errE = s.setAccount(ctx, account)
 	if errE != nil {

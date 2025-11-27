@@ -24,7 +24,8 @@
       "pause": "Pause",
       "redirect": "Redirect",
       "block": "Block",
-      "unblock": "Unblock"
+      "unblock": "Unblock",
+      "rename": "Rename"
     },
     "errors": {
       "unexpected": "Unexpected error. Please try again.",
@@ -366,9 +367,6 @@
       "noCredentialsCreate": "No authentication methods configured. Create the first one.",
       "noCredentialsSignIn": "There are no authentication methods. Sign-in or sign-up to create the first one.",
       "verify": "Verify"
-    },
-    "CredentialUpdateDisplayName": {
-      "updateDisplayName": "Update display name"
     }
   }
 }

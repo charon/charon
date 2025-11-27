@@ -1068,3 +1068,22 @@ func (s *Service) completePasskeyRegistration(
 
 	return &pkCredential, providerID, nil
 }
+
+// ensureUniqueDisplayName ensures the display name is unique per provider in the account.
+// Otherwise, it appends a counter (e.g. "username2").
+func ensureUniqueDisplayName(account *Account, provider Provider, desiredDisplayName string) string {
+	if account == nil {
+		return desiredDisplayName
+	}
+	counter := 2
+	displayName := desiredDisplayName
+
+	for {
+		hasName, _ := account.HasCredentialDisplayName(provider, displayName)
+		if !hasName {
+			return displayName
+		}
+		displayName = fmt.Sprintf("%s%d", desiredDisplayName, counter)
+		counter++
+	}
+}

@@ -17,14 +17,10 @@ type Provider string
 
 // Credential represents a credential issued by a credential provider.
 type Credential struct {
-	// ID is a public-facing ID used to identify the credential in public API.
-	ID identifier.Identifier `json:"id"`
+	CredentialPublic
 
 	// ProviderID is the ID bound to the credential provider.
 	ProviderID string `json:"providerId,omitempty"`
-
-	// Provider is the internal provider type name or the name of the third party provider.
-	Provider Provider `json:"provider"`
 
 	// Data is the raw credential data.
 	Data json.RawMessage `json:"data"`
@@ -121,44 +117,10 @@ func (a *Account) HasCredentialDisplayName(provider Provider, displayName string
 		return false, nil
 	}
 
-	switch provider {
-	case ProviderEmail, ProviderCode:
-		return false, errors.New("provider does not support labels")
-	case ProviderUsername:
-		for _, credential := range credentials {
-			var uc usernameCredential
-			errE := x.Unmarshal(credential.Data, &uc)
-			if errE != nil {
-				return false, errE
-			}
-			if uc.Username == displayName {
-				return true, nil
-			}
+	for _, credential := range credentials {
+		if credential.DisplayName == displayName {
+			return true, nil
 		}
-	case ProviderPassword:
-		for _, credential := range credentials {
-			var pc passwordCredential
-			errE := x.Unmarshal(credential.Data, &pc)
-			if errE != nil {
-				return false, errE
-			}
-			if pc.DisplayName == displayName {
-				return true, nil
-			}
-		}
-	case ProviderPasskey:
-		for _, credential := range credentials {
-			var pk passkeyCredential
-			errE := x.Unmarshal(credential.Data, &pk)
-			if errE != nil {
-				return false, errE
-			}
-			if pk.DisplayName == displayName {
-				return true, nil
-			}
-		}
-	default:
-		return false, errors.New("third party provider does not support labels")
 	}
 
 	return false, nil
@@ -210,12 +172,7 @@ func (s *Service) getAccountByCredential(ctx context.Context, provider Provider,
 			continue
 		}
 		if provider == ProviderEmail {
-			var ec emailCredential
-			errE := x.Unmarshal(credential.Data, &ec)
-			if errE != nil {
-				return nil, errE
-			}
-			if !ec.Verified {
+			if !credential.Verified {
 				continue
 			}
 		}
@@ -237,81 +194,4 @@ func (s *Service) setAccount(_ context.Context, account *Account) errors.E {
 
 	s.accounts[account.ID] = data
 	return nil
-}
-
-// DisplayName contains logic for determining DisplayName of credential.
-func (c *Credential) DisplayName() (string, errors.E) {
-	switch c.Provider {
-	case ProviderEmail:
-		var ec emailCredential
-		errE := x.Unmarshal(c.Data, &ec)
-		if errE != nil {
-			return "", errE
-		}
-		return ec.DisplayName, nil
-	case ProviderUsername:
-		var uc usernameCredential
-		errE := x.Unmarshal(c.Data, &uc)
-		if errE != nil {
-			return "", errE
-		}
-		return uc.DisplayName, nil
-	case ProviderCode:
-		return "", errors.New("not allowed")
-	case ProviderPassword:
-		var pc passwordCredential
-		errE := x.Unmarshal(c.Data, &pc)
-		if errE != nil {
-			return "", errE
-		}
-		return pc.DisplayName, nil
-	case ProviderPasskey:
-		var pkc passkeyCredential
-		errE := x.Unmarshal(c.Data, &pkc)
-		if errE != nil {
-			return "", errE
-		}
-		return pkc.DisplayName, nil
-	default:
-		var token map[string]interface{}
-		errE := x.Unmarshal(c.Data, &token)
-		if errE != nil {
-			return "", errE
-		}
-		if displayName, ok := token["displayName"].(string); ok && displayName != "" {
-			return displayName, nil
-		}
-		displayName := findFirstString(token, "username", "preferred_username", "email", "eMailAddress", "emailAddress", "email_address")
-		if displayName != "" {
-			return displayName, nil
-		}
-		return identifier.New().String(), nil
-	}
-}
-
-// ToCredentialInfo converts the credential to a CredentialInfo used for public API.
-func (c *Credential) ToCredentialInfo() (CredentialInfo, errors.E) {
-	credentialInfo := CredentialInfo{
-		ID:          c.ID,
-		Provider:    c.Provider,
-		DisplayName: "",
-		Verified:    false,
-	}
-
-	displayName, errE := c.DisplayName()
-	if errE != nil {
-		return CredentialInfo{}, errE
-	}
-	credentialInfo.DisplayName = displayName
-
-	if c.Provider == ProviderEmail {
-		var ec emailCredential
-		errE := x.Unmarshal(c.Data, &ec)
-		if errE != nil {
-			return CredentialInfo{}, errE
-		}
-		credentialInfo.Verified = ec.Verified
-	}
-
-	return credentialInfo, nil
 }

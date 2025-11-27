@@ -342,19 +342,19 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 
 	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{
 		Email: preservedEmailOrUsername,
-		// We set verified to true because this credential is stored with
-		// the account only after the e-mail gets verified.
-		Verified:    true,
-		DisplayName: preservedEmailOrUsername,
 	})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 	credentials := []Credential{{
-		ID:         identifier.New(),
+		CredentialPublic: CredentialPublic{
+			ID:          identifier.New(),
+			Provider:    ProviderEmail,
+			DisplayName: preservedEmailOrUsername,
+			Verified:    true,
+		},
 		ProviderID: mappedEmailOrUsername,
-		Provider:   ProviderEmail,
 		Data:       jsonData,
 	}}
 

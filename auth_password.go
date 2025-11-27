@@ -66,19 +66,15 @@ type AuthFlowResponsePassword struct {
 }
 
 type passwordCredential struct {
-	Hash        string `json:"hash"`
-	DisplayName string `json:"displayName"`
+	Hash string `json:"hash"`
 }
 
 type emailCredential struct {
-	Email       string `json:"email"`
-	Verified    bool   `json:"verified"`
-	DisplayName string `json:"displayName"`
+	Email string `json:"email"`
 }
 
 type usernameCredential struct {
-	Username    string `json:"username"`
-	DisplayName string `json:"displayName"`
+	Username string `json:"username"`
 }
 
 // AuthFlowPasswordStartRequest represents the request body for the AuthFlowPasswordStartPost handler.
@@ -251,8 +247,7 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 						return
 					}
 					jsonData, errE = x.MarshalWithoutEscapeHTML(passwordCredential{
-						Hash:        hashedPassword,
-						DisplayName: pc.DisplayName,
+						Hash: hashedPassword,
 					})
 					if errE != nil {
 						s.InternalServerErrorWithError(w, req, errE)
@@ -260,9 +255,13 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 					}
 				}
 				s.completeAuthStep(w, req, true, flow, account, []Credential{{
-					ID:         credential.ID,
+					CredentialPublic: CredentialPublic{
+						ID:          credential.ID,
+						Provider:    ProviderPassword,
+						DisplayName: credential.DisplayName,
+						Verified:    false,
+					},
 					ProviderID: "",
-					Provider:   ProviderPassword,
 					Data:       jsonData,
 				}})
 				return
@@ -285,35 +284,41 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 	if strings.Contains(mappedEmailOrUsername, "@") {
 		jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{
 			Email: flow.EmailOrUsername,
-			// We set verified to true because this credential is stored with
-			// the account only after the e-mail gets verified.
-			Verified:    true,
-			DisplayName: flow.EmailOrUsername,
 		})
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
 		credentials = append(credentials, Credential{
-			ID:         identifier.New(),
+			CredentialPublic: CredentialPublic{
+				ID:          identifier.New(),
+				Provider:    ProviderEmail,
+				DisplayName: flow.EmailOrUsername,
+				// TODO: is this correct?
+				Verified: true,
+			},
 			ProviderID: mappedEmailOrUsername,
-			Provider:   ProviderEmail,
 			Data:       jsonData,
 		})
 	} else {
 		jsonData, errE := x.MarshalWithoutEscapeHTML(usernameCredential{
-			Username:    flow.EmailOrUsername,
-			DisplayName: flow.EmailOrUsername,
+			Username: flow.EmailOrUsername,
 		})
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
 		credentials = append(credentials, Credential{
-			ID:         identifier.New(),
+			CredentialPublic: CredentialPublic{
+				ID:          identifier.New(),
+				Provider:    ProviderUsername,
+				DisplayName: flow.EmailOrUsername,
+				Verified:    false,
+			},
+
 			ProviderID: mappedEmailOrUsername,
-			Provider:   ProviderUsername,
-			Data:       jsonData,
+
+			Data: jsonData,
 		})
 	}
 
@@ -325,8 +330,6 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 
 	jsonData, errE := x.MarshalWithoutEscapeHTML(passwordCredential{
 		Hash: hashedPassword,
-		// TODO: Translate this to user's language.
-		DisplayName: "default password",
 	})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -334,9 +337,14 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 	}
 
 	credentials = append(credentials, Credential{
-		ID:         identifier.New(),
+		CredentialPublic: CredentialPublic{
+			ID:       identifier.New(),
+			Provider: ProviderPassword,
+			// TODO: Translate this to user's language.
+			DisplayName: "default password",
+			Verified:    false,
+		},
 		ProviderID: "",
-		Provider:   ProviderPassword,
 		Data:       jsonData,
 	})
 

@@ -460,18 +460,18 @@ export type Mutable<T> = {
   -readonly [k in keyof T]: Mutable<T[k]>
 }
 
-export type CredentialInfoRef = {
+export type CredentialPublicRef = {
   id: string
 }
 
-export type CredentialInfo = {
+export type CredentialPublic = {
   id: string
   provider: string
   displayName: string
   verified?: boolean // TODO: When verifying emails.
 }
 
-export type Credentials = CredentialInfoRef[]
+export type Credentials = CredentialPublicRef[]
 
 export type CredentialAddEmailRequest = {
   email: string

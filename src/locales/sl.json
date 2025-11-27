@@ -24,7 +24,8 @@
       "pause": "Ustavi",
       "redirect": "Preusmeri",
       "block": "Blokiraj",
-      "unblock": "Odblokiraj"
+      "unblock": "Odblokiraj",
+      "rename": "Preimenuj"
     },
     "errors": {
       "unexpected": "Nepričakovana napaka. Prosimo, poskusite znova.",

@@ -2,7 +2,6 @@ package charon
 
 import (
 	"encoding/base64"
-	"fmt"
 	"io"
 	"net/http"
 	"slices"
@@ -44,7 +43,7 @@ func (c passkeyCredential) WebAuthnName() string {
 }
 
 func (c passkeyCredential) WebAuthnDisplayName() string {
-	return fmt.Sprintf("Charon (%s)", c.DisplayName)
+	return c.DisplayName
 }
 
 func (passkeyCredential) WebAuthnIcon() string {
@@ -142,7 +141,7 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 	flow.Passkey = &flowPasskey{
 		SessionData: session,
 		// We mark the request as sign-in.
-		displayName: "",
+		DisplayName: "",
 	}
 	errE = s.setFlow(ctx, flow)
 	if errE != nil {
@@ -208,7 +207,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		return
 	}
 
-	if flowPasskey.displayName != "" {
+	if flowPasskey.DisplayName != "" {
 		s.BadRequestWithError(w, req, errors.New("not a sign-in request"))
 		return
 	}
@@ -273,7 +272,26 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		return
 	}
 
-	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: credential.ID, ProviderID: providerID, Provider: ProviderPasskey, Data: jsonData}})
+	displayName := identifier.New().String()
+	if account != nil {
+		existingCredential := account.GetCredential(ProviderPasskey, providerID)
+		if existingCredential != nil {
+			displayName = existingCredential.DisplayName
+		}
+	}
+
+	s.completeAuthStep(w, req, true, flow, account,
+		[]Credential{{
+			CredentialPublic: CredentialPublic{
+				ID:          credential.ID,
+				Provider:    ProviderPasskey,
+				DisplayName: displayName,
+				Verified:    false,
+			},
+			ProviderID: providerID,
+			Data:       jsonData,
+		}},
+	)
 }
 
 // AuthFlowPasskeyCreateStartPost is the API handler to start the passkey provider step (sign-up), POST request.
@@ -296,8 +314,8 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 	}
 
 	userID := identifier.New()
-	label := userID.String()
-	options, session, errE := beginPasskeyRegistration(s.passkeyProvider(), userID, label)
+	displayName := userID.String()
+	options, session, errE := beginPasskeyRegistration(s.passkeyProvider(), userID, displayName)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -309,7 +327,7 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 	flow.Passkey = &flowPasskey{
 		SessionData: session,
 		// We mark the request as sign-up.
-		displayName: label,
+		DisplayName: displayName,
 	}
 	errE = s.setFlow(ctx, flow)
 	if errE != nil {
@@ -355,7 +373,7 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	if flowPasskey.displayName == "" {
+	if flowPasskey.DisplayName == "" {
 		s.BadRequestWithError(w, req, errors.New("not a sign-up request"))
 		return
 	}
@@ -372,7 +390,7 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 
 	createResponse := passkeyCreateComplete.CreateResponse
 
-	credential, providerID, errE := s.completePasskeyRegistration(createResponse, flowPasskey.displayName, flowPasskey.SessionData)
+	credential, providerID, errE := s.completePasskeyRegistration(createResponse, flowPasskey.DisplayName, flowPasskey.SessionData)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
@@ -390,8 +408,15 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	s.completeAuthStep(w, req, true, flow, account, []Credential{{
-		ID: credential.ID, ProviderID: providerID,
-		Provider: ProviderPasskey, Data: jsonData,
-	}})
+	s.completeAuthStep(w, req, true, flow, account,
+		[]Credential{{
+			CredentialPublic: CredentialPublic{
+				ID:          credential.ID,
+				Provider:    ProviderPasskey,
+				DisplayName: flowPasskey.DisplayName,
+				Verified:    false,
+			},
+			ProviderID: providerID,
+			Data:       jsonData,
+		}})
 }
