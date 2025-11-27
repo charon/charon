@@ -218,6 +218,8 @@ func (s *Service) logActivity(
 	applicationTemplates []ApplicationTemplateRef, organizationApplications []OrganizationApplicationRef,
 	accounts []AccountRef, changes []ActivityChangeType, providers []Provider, currentOrganization OrganizationRef,
 ) errors.E {
+	co := s.charonOrganization()
+
 	currentIdentityID := mustGetIdentityID(ctx)
 	sessionID := mustGetSessionID(ctx)
 
@@ -235,26 +237,34 @@ func (s *Service) logActivity(
 	}
 	actor := currentIdentity.OrganizationIdentityRef(currentOrganization)
 	if actor == nil {
-		// User has made an activity without being added to the organization. This can
-		// happen if user is an admin of the organization but has not yet signed in
-		// into the organization. In this case we add the user now (as active).
-		currentIdentity.Organizations = append(currentIdentity.Organizations, IdentityOrganization{
-			ID:           nil,
-			Active:       true,
-			Organization: currentOrganization,
-			Applications: []OrganizationApplicationApplicationRef{},
-		})
+		if activityType == ActivityIdentityCreate && len(accounts) > 0 && co.ID == currentOrganization.ID {
+			// The identity has been created during the sign-up flow. We record the identity itself as the actor.
+			actor = &OrganizationIdentityRef{
+				Organization: currentOrganization,
+				Identity:     IdentityRef{ID: currentIdentityID},
+			}
+		} else {
+			// User has made an activity without being added to the organization. This can
+			// happen if user is an admin of the organization but has not yet signed in
+			// into the organization. In this case we add the user now (as active).
+			currentIdentity.Organizations = append(currentIdentity.Organizations, IdentityOrganization{
+				ID:           nil,
+				Active:       true,
+				Organization: currentOrganization,
+				Applications: []OrganizationApplicationApplicationRef{},
+			})
 
-		errE := s.updateIdentity(ctx, currentIdentity)
-		if errE != nil {
-			return errE
-		}
+			errE := s.updateIdentity(ctx, currentIdentity)
+			if errE != nil {
+				return errE
+			}
 
-		// Now we should be able to find the organization identity.
-		actor = currentIdentity.OrganizationIdentityRef(currentOrganization)
-		if actor == nil {
-			// This should not happen.
-			return errors.New("unable to find organization identity")
+			// Now we should be able to find the organization identity.
+			actor = currentIdentity.OrganizationIdentityRef(currentOrganization)
+			if actor == nil {
+				// This should not happen.
+				return errors.New("unable to find organization identity")
+			}
 		}
 	}
 
