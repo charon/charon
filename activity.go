@@ -430,6 +430,7 @@ func (s *Service) ActivityGetGet(w http.ResponseWriter, req *http.Request, param
 		// We do not limit identities because activity is for the user.
 	} else {
 		// We limit only to the current identity.
+		// TODO: We should limit only to those the current identity has access to.
 		identities, errE := s.limitIdentitiesForUser(ctx, activity.Identities, currentIdentityID)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
