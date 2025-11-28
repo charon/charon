@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { DeepReadonly, watch } from "vue"
+import {DeepReadonly, nextTick, watch} from "vue"
 
 import type { CredentialPublic, CredentialUpdateResponse } from "@/types"
 
-import { nextTick, ref } from "vue"
+import { ref } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
@@ -21,7 +21,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   updated: []
-  startEdit: []
   cancelEdit: []
 }>()
 
@@ -60,21 +59,9 @@ function getErrorMessage(errorCode: string) {
   }
 }
 
-const canEdit = props.credential.provider !== "email" && props.credential.provider !== "username"
-
 function canSubmitUpdate(): boolean {
   // Required field.
   return editedDisplayName.value !== props.credential.displayName
-}
-
-async function startEdit() {
-  editedDisplayName.value = props.credential.displayName
-  updateError.value = ""
-  emit("startEdit")
-
-  await nextTick(() => {
-    document.getElementById(`credentialedit-input-${props.credential.id}`)?.focus()
-  })
 }
 
 function cancelEdit() {
@@ -130,10 +117,21 @@ function resetOnInteraction() {
 
 watch([editedDisplayName], resetOnInteraction)
 
-if (!props.isEditing) {
-  editedDisplayName.value = ""
-  updateError.value = ""
-}
+watch(
+    () => props.isEditing,
+    async (isEditing) => {
+      if (isEditing) {
+        editedDisplayName.value = props.credential.displayName
+        resetOnInteraction()
+        await nextTick(() => {
+          document.getElementById(`credentialedit-input-${props.credential.id}`)?.focus()
+        })
+      } else {
+        editedDisplayName.value = ""
+        resetOnInteraction()
+      }
+    },
+)
 </script>
 
 <template>
@@ -148,9 +146,6 @@ if (!props.isEditing) {
           }}</span>
         </div>
       </div>
-      <Button v-if="canEdit" :id="`credentialfull-button-rename-${credential.id}`" type="button" :progress="progress" @click="startEdit">
-        {{ t("common.buttons.rename") }}
-      </Button>
       <slot :credential="credential" />
     </div>
     <div v-else class="flex flex-row items-start justify-between gap-4">

@@ -50,6 +50,10 @@ async function getCredentials(router: Router, abortController: AbortController, 
   }
 }
 
+function canEditDisplayName(provider: string) {
+  return provider !== "email" && provider !== "username"
+}
+
 function setEditCredential(credentialId: string | null) {
   editingCredentialId.value = credentialId
 }
@@ -73,9 +77,10 @@ async function onCredentialUpdated(credentialId: string) {
     if (abortController.signal.aborted) {
       return
     }
-
+    console.log("printing index")
     const index = credentials.value.findIndex((c) => c.id === credentialId)
     if (index !== -1) {
+      console.log(index)
       credentials.value[index] = response.doc
     }
   } catch (error) {
@@ -193,6 +198,14 @@ const WithCredentialDocument = WithDocument<CredentialPublic>
                   <Button v-if="doc.provider === 'email' && !doc.verified" :id="`credentiallist-button-verify-${doc.id}`" type="button" secondary disabled>{{
                     t("views.CredentialList.verify")
                   }}</Button>
+                  <Button
+                    v-if="canEditDisplayName(doc.provider)"
+                    :id="`credentiallist-button-rename-${doc.id}`"
+                    type="button"
+                    :progress="progress"
+                    @click="setEditCredential(credential.id)"
+                    >{{ t("common.buttons.rename") }}</Button
+                  >
                   <Button :id="`credentiallist-button-remove-${doc.id}`" type="button" :progress="progress" @click="onRemove(doc.id)">{{
                     t("common.buttons.remove")
                   }}</Button>
