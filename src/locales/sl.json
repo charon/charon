@@ -51,13 +51,13 @@
         "username": "To uporabniško ime je že prisotno na tem računu.",
         "password": "To geslo ali geslovni stavek je že prisotno na tem računu."
       },
-      "credentialLabelInUse": {
-        "password": "Oznaka gesla ali geslovnega stavka je že v uporabi.",
-        "passkey": "Oznaka za passkey je že v uporabi."
+      "credentialDisplayNameInUse": {
+        "password": "Prikazno ime gesla ali geslovnega stavka je že v uporabi.",
+        "passkey": "Prikazno ime za passkey je že v uporabi."
       },
-      "credentialLabelMissing": {
-        "password": "Geslu ali geslovnemu stavku manjka oznaka.",
-        "passkey": "Passkey-u manjka oznaka."
+      "credentialDisplayNameMissing": {
+        "password": "Geslu ali geslovnemu stavku manjka prikazno ime.",
+        "passkey": "Passkey-u manjka prikazno ime."
       }
     },
     "labels": {

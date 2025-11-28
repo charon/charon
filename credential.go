@@ -24,9 +24,9 @@ const (
 	// ErrorCodeCredentialInUse means credential (username) is in use by another account.
 	ErrorCodeCredentialInUse ErrorCode = "credentialInUse" //nolint:gosec
 	// ErrorCodeAlreadyPresent AlreadyPresent means credential (email, username, password) is already on this account.
-	ErrorCodeAlreadyPresent         ErrorCode = "alreadyPresent"
-	ErrorCodeCredentialLabelInUse   ErrorCode = "credentialLabelInUse"
-	ErrorCodeCredentialLabelMissing ErrorCode = "credentialLabelMissing" //nolint:gosec
+	ErrorCodeAlreadyPresent               ErrorCode = "alreadyPresent"
+	ErrorCodeCredentialDisplayNameInUse   ErrorCode = "credentialDisplayNameInUse"
+	ErrorCodeCredentialDisplayNameMissing ErrorCode = "credentialDisplayNameMissing" //nolint:gosec
 )
 
 const credentialAddSessionExpiration = time.Hour * 24
@@ -44,7 +44,7 @@ type CredentialPublic struct {
 	Provider Provider `json:"provider"`
 	// DisplayName is initially automatically set, user can update it. Unique per user per provider.
 	DisplayName string `json:"displayName"`
-	// Verified is used for e-mail address only.
+	// Verified bool is relevant for e-mail addresses, otherwise false.
 	Verified bool `json:"verified,omitempty"`
 }
 
@@ -72,7 +72,7 @@ type CredentialAddCredentialWithDisplayNameStartRequest struct {
 	DisplayName string `json:"displayName"`
 }
 
-// CredentialUpdateDisplayNameRequest represents the request body for CredentialUpdateDisplayName handler.
+// CredentialUpdateDisplayNameRequest represents the request body for the CredentialUpdateDisplayName handler.
 type CredentialUpdateDisplayNameRequest struct {
 	CredentialAddCredentialWithDisplayNameStartRequest
 }
@@ -104,6 +104,11 @@ func (s credentialAddSession) Expired() bool {
 	return time.Now().After(s.CreatedAt.Add(credentialAddSessionExpiration))
 }
 
+// CredentialUpdateResponse represents the request body for credential update operations.
+type CredentialUpdateResponse struct {
+	Error ErrorCode `json:"error,omitempty"`
+}
+
 // This function does not check for duplicates. Duplicate checking
 // should be done by the caller before calling this function.
 func (s *Service) addCredentialToAccount(
@@ -114,7 +119,8 @@ func (s *Service) addCredentialToAccount(
 			ID:          identifier.New(),
 			Provider:    providerKey,
 			DisplayName: displayName,
-			Verified:    false,
+			// Verified is set to false for all providers, including e-mail. E-mail verification is a separate procedure.
+			Verified: false,
 		},
 		ProviderID: providerID,
 		Data:       jsonData,
@@ -442,7 +448,7 @@ func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *htt
 			CredentialID: nil,
 			Passkey:      nil,
 			Password:     nil,
-			Error:        ErrorCodeCredentialLabelMissing,
+			Error:        ErrorCodeCredentialDisplayNameMissing,
 		}, nil)
 		return
 	}
@@ -467,7 +473,7 @@ func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *htt
 			CredentialID: nil,
 			Passkey:      nil,
 			Password:     nil,
-			Error:        ErrorCodeCredentialLabelInUse,
+			Error:        ErrorCodeCredentialDisplayNameInUse,
 		}, nil)
 		return
 	}
@@ -594,7 +600,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 			CredentialID: nil,
 			Passkey:      nil,
 			Password:     nil,
-			Error:        ErrorCodeCredentialLabelInUse,
+			Error:        ErrorCodeCredentialDisplayNameInUse,
 		}, nil)
 		return
 	}
@@ -635,7 +641,8 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderPassword, cas.DisplayName, jsonData, cas.DisplayName)
+	providerID := ""
+	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderPassword, providerID, jsonData, cas.DisplayName)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -674,7 +681,7 @@ func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http
 			CredentialID: nil,
 			Passkey:      nil,
 			Password:     nil,
-			Error:        ErrorCodeCredentialLabelMissing,
+			Error:        ErrorCodeCredentialDisplayNameMissing,
 		}, nil)
 		return
 	}
@@ -699,7 +706,7 @@ func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http
 			CredentialID: nil,
 			Passkey:      nil,
 			Password:     nil,
-			Error:        ErrorCodeCredentialLabelInUse,
+			Error:        ErrorCodeCredentialDisplayNameInUse,
 		}, nil)
 		return
 	}
@@ -800,7 +807,7 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 			CredentialID: nil,
 			Passkey:      nil,
 			Password:     nil,
-			Error:        ErrorCodeCredentialLabelInUse,
+			Error:        ErrorCodeCredentialDisplayNameInUse,
 		}, nil)
 		return
 	}
@@ -884,15 +891,6 @@ FoundCredential:
 	s.WriteJSON(w, req, []byte(`{"success":true}`), nil)
 }
 
-// CredentialUpdateDisplayName is the frontend handler for updating credentials displayNames.
-func (s *Service) CredentialUpdateDisplayName(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	if s.ProxyStaticTo != "" {
-		s.Proxy(w, req)
-	} else {
-		s.ServeStaticFile(w, req, "/index.html")
-	}
-}
-
 // CredentialUpdateDisplayNamePost is the API handler for updating credentials displayName, POST request.
 func (s *Service) CredentialUpdateDisplayNamePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
@@ -912,7 +910,9 @@ func (s *Service) CredentialUpdateDisplayNamePost(w http.ResponseWriter, req *ht
 
 	requestDisplayName := strings.TrimSpace(request.DisplayName)
 	if requestDisplayName == "" {
-		s.BadRequestWithError(w, req, errors.New("displayName cannot be empty"))
+		s.WriteJSON(w, req, CredentialUpdateResponse{
+			Error: ErrorCodeCredentialDisplayNameMissing,
+		}, nil)
 		return
 	}
 
@@ -953,7 +953,9 @@ FoundCredential:
 			continue
 		}
 		if credential.DisplayName == requestDisplayName {
-			s.BadRequestWithError(w, req, errors.New("displayName already in use"))
+			s.WriteJSON(w, req, CredentialUpdateResponse{
+				Error: ErrorCodeCredentialDisplayNameInUse,
+			}, nil)
 			return
 		}
 	}
@@ -968,5 +970,7 @@ FoundCredential:
 		return
 	}
 
-	s.WriteJSON(w, req, []byte(`{"success":true}`), nil)
+	s.WriteJSON(w, req, CredentialUpdateResponse{
+		Error: "",
+	}, nil)
 }

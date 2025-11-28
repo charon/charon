@@ -26,10 +26,10 @@ if (!browserSupportsWebAuthn()) {
 
 function getErrorMessage(errorCode: string) {
   switch (errorCode) {
-    case "credentialLabelInUse":
-      return t("common.errors.credentialLabelInUse.passkey")
-    case "credentialLabelMissing":
-      return t("common.errors.credentialLabelMissing.passkey")
+    case "credentialDisplayNameInUse":
+      return t("common.errors.credentialDisplayNameInUse.passkey")
+    case "credentialDisplayNameMissing":
+      return t("common.errors.credentialDisplayNameMissing.passkey")
     default:
       throw new Error(`unexpected error code: ${errorCode}`)
   }

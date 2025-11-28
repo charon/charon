@@ -397,7 +397,7 @@
       "name": "CredentialUpdateDisplayName",
       "path": "/authentication/updateDisplayName/:id",
       "api": {},
-      "get": {}
+      "get": null
     },
     {
       "name": "CredentialGet",

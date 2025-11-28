@@ -509,4 +509,6 @@ export type CredentialAddPasskeyCompleteRequest = AuthFlowPasskeyCreateCompleteR
   sessionId: string
 }
 
-export type CredentialUpdateDisplayNameRequest = CredentialAddCredentialWithDisplayNameStartRequest & {}
+export type CredentialUpdateResponse = {
+  error?: string
+}

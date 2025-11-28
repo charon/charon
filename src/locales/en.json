@@ -51,13 +51,15 @@
         "username": "This username is already present on this account.",
         "password": "This password or passphrase is already present on this account."
       },
-      "credentialLabelInUse": {
-        "password": "Password or passphrase label is already in use.",
-        "passkey": "Passkey label is already in use."
+      "credentialDisplayNameInUse": {
+        "password": "Password's or passphrase's display name is already in use.",
+        "passkey": "Passkey's display name is already in use.",
+        "generic": " Display name is already in use for this provider."
       },
-      "credentialLabelMissing": {
-        "password": "Password or passphrase label is missing.",
-        "passkey": "Passkey label is missing."
+      "credentialDisplayNameMissing": {
+        "password": "Password's or passphrase's display name is missing.",
+        "passkey": "Passkey's display name is missing.",
+        "generic": " Display name is missing."
       }
     },
     "labels": {

@@ -28,7 +28,9 @@ const currentActionCredentialId = ref<string | null>(null)
 const dataLoading = ref(true)
 const dataLoadingError = ref("")
 const credentials = ref<Credentials>([])
+
 const refreshKey = ref(0)
+const editingCredentialId = ref<string | null>(null)
 
 async function getCredentials(router: Router, abortController: AbortController, progress: Ref<number>): Promise<Credentials | null> {
   progress.value += 1
@@ -48,10 +50,16 @@ async function getCredentials(router: Router, abortController: AbortController, 
   }
 }
 
+function setEditCredential(credentialId: string | null) {
+  editingCredentialId.value = credentialId
+}
+
 async function onCredentialUpdated(credentialId: string) {
   if (abortController.signal.aborted) {
     return
   }
+
+  editingCredentialId.value = null
   refreshKey.value++
 
   progress.value += 1
@@ -173,7 +181,14 @@ const WithCredentialDocument = WithDocument<CredentialPublic>
         <div v-for="credential in credentials" :key="credential.id" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
           <WithCredentialDocument :key="`${credential.id}-${refreshKey}`" :params="{ id: credential.id }" name="CredentialGet">
             <template #default="{ doc, url }">
-              <CredentialFull :credential="doc" :url="url" :progress="progress" @updated="onCredentialUpdated(doc.id)">
+              <CredentialFull
+                :credential="doc"
+                :url="url"
+                :is-editing="editingCredentialId === credential.id"
+                @updated="onCredentialUpdated(doc.id)"
+                @start-edit="setEditCredential(credential.id)"
+                @cancel-edit="setEditCredential(null)"
+              >
                 <div class="flex flex-row gap-4">
                   <Button v-if="doc.provider === 'email' && !doc.verified" :id="`credentiallist-button-verify-${doc.id}`" type="button" secondary disabled>{{
                     t("views.CredentialList.verify")
