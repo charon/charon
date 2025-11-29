@@ -53,11 +53,13 @@
       },
       "credentialDisplayNameInUse": {
         "password": "Prikazno ime gesla ali geslovnega stavka je že v uporabi.",
-        "passkey": "Prikazno ime za passkey je že v uporabi."
+        "passkey": "Prikazno ime za passkey je že v uporabi.",
+        "generic": "Prikazno ime je že v uporabi."
       },
       "credentialDisplayNameMissing": {
         "password": "Geslu ali geslovnemu stavku manjka prikazno ime.",
-        "passkey": "Passkey-u manjka prikazno ime."
+        "passkey": "Passkey-u manjka prikazno ime.",
+        "generic": "Manjka prikazno ime."
       }
     },
     "labels": {
