@@ -25,7 +25,7 @@ const (
 	ErrorCodeCredentialInUse ErrorCode = "credentialInUse" //nolint:gosec
 	// ErrorCodeAlreadyPresent AlreadyPresent means credential (email, username, password) is already on this account.
 	ErrorCodeAlreadyPresent               ErrorCode = "alreadyPresent"
-	ErrorCodeCredentialDisplayNameInUse   ErrorCode = "credentialDisplayNameInUse"
+	ErrorCodeCredentialDisplayNameInUse   ErrorCode = "credentialDisplayNameInUse"   //nolint:gosec
 	ErrorCodeCredentialDisplayNameMissing ErrorCode = "credentialDisplayNameMissing" //nolint:gosec
 )
 

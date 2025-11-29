@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import {DeepReadonly, nextTick, watch} from "vue"
+import type { DeepReadonly } from "vue"
 
 import type { CredentialPublic, CredentialUpdateResponse } from "@/types"
 
-import { ref } from "vue"
+import { nextTick, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
@@ -21,7 +21,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   updated: []
-  cancelEdit: []
+  canceled: []
 }>()
 
 const { t } = useI18n({ useScope: "global" })
@@ -55,7 +55,7 @@ function getErrorMessage(errorCode: string) {
         return t("common.errors.credentialDisplayNameInUse.generic")
       }
     default:
-      return t("common.errors.unexpected")
+      throw new Error(`unexpected error code: ${errorCode}`)
   }
 }
 
@@ -67,11 +67,11 @@ function canSubmitUpdate(): boolean {
 function cancelEdit() {
   editedDisplayName.value = ""
   updateError.value = ""
-  emit("cancelEdit")
+  emit("canceled")
 }
 
 async function submitUpdate() {
-  if (!canSubmitUpdate || abortController.signal.aborted) {
+  if (!canSubmitUpdate() || abortController.signal.aborted) {
     return
   }
 
@@ -118,24 +118,24 @@ function resetOnInteraction() {
 watch([editedDisplayName], resetOnInteraction)
 
 watch(
-    () => props.isEditing,
-    async (isEditing) => {
-      if (isEditing) {
-        editedDisplayName.value = props.credential.displayName
-        resetOnInteraction()
-        await nextTick(() => {
-          document.getElementById(`credentialedit-input-${props.credential.id}`)?.focus()
-        })
-      } else {
-        editedDisplayName.value = ""
-        resetOnInteraction()
-      }
-    },
+  () => props.isEditing,
+  async (isEditing) => {
+    if (isEditing) {
+      editedDisplayName.value = props.credential.displayName
+      resetOnInteraction()
+      await nextTick(() => {
+        document.getElementById(`credentialedit-input-${props.credential.id}`)?.focus()
+      })
+    } else {
+      editedDisplayName.value = ""
+      resetOnInteraction()
+    }
+  },
 )
 </script>
 
 <template>
-  <div class="flex-col" :data-url="url">
+  <div class="flex flex-col" :data-url="url">
     <div v-if="!isEditing" class="flex flex-row items-start justify-between gap-4">
       <div class="grow">
         <h2 :id="`credentialfull-provider-${credential.id}`" class="text-xl">{{ getProviderNameTitle(t, credential.provider) }}</h2>

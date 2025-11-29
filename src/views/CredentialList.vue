@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import type { Ref } from "vue"
-import type { Router } from "vue-router"
-
 import type { CredentialPublic, Credentials } from "@/types"
 
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
@@ -32,24 +29,6 @@ const credentials = ref<Credentials>([])
 const refreshKey = ref(0)
 const editingCredentialId = ref<string | null>(null)
 
-async function getCredentials(router: Router, abortController: AbortController, progress: Ref<number>): Promise<Credentials | null> {
-  progress.value += 1
-  try {
-    const url = router.apiResolve({
-      name: "CredentialList",
-    }).href
-
-    const response = await getURL<Credentials>(url, null, abortController.signal, progress)
-    if (abortController.signal.aborted) {
-      return null
-    }
-
-    return response.doc
-  } finally {
-    progress.value -= 1
-  }
-}
-
 function canEditDisplayName(provider: string) {
   return provider !== "email" && provider !== "username"
 }
@@ -63,10 +42,10 @@ async function onCredentialUpdated(credentialId: string) {
     return
   }
 
+  progress.value += 1
   editingCredentialId.value = null
   refreshKey.value++
 
-  progress.value += 1
   try {
     const url = router.apiResolve({
       name: "CredentialGet",
@@ -77,17 +56,19 @@ async function onCredentialUpdated(credentialId: string) {
     if (abortController.signal.aborted) {
       return
     }
-    console.log("printing index")
     const index = credentials.value.findIndex((c) => c.id === credentialId)
     if (index !== -1) {
-      console.log(index)
       credentials.value[index] = response.doc
+    } else {
+      throw new Error("unexpected response")
     }
   } catch (error) {
     if (abortController.signal.aborted) {
       return
     }
     console.error("CredentialList.onCredentialUpdated", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1
   }
@@ -102,12 +83,16 @@ onBeforeUnmount(() => {
 onBeforeMount(async () => {
   progress.value += 1
   try {
-    const result = await getCredentials(router, abortController, progress)
-    if (abortController.signal.aborted || !result) {
+    const url = router.apiResolve({
+      name: "CredentialList",
+    }).href
+
+    const result = await getURL<Credentials>(url, null, abortController.signal, progress)
+    if (abortController.signal.aborted) {
       return
     }
 
-    credentials.value = result
+    credentials.value = result.doc
   } catch (error) {
     if (abortController.signal.aborted) {
       return
@@ -191,8 +176,7 @@ const WithCredentialDocument = WithDocument<CredentialPublic>
                 :url="url"
                 :is-editing="editingCredentialId === credential.id"
                 @updated="onCredentialUpdated(doc.id)"
-                @start-edit="setEditCredential(credential.id)"
-                @cancel-edit="setEditCredential(null)"
+                @canceled="setEditCredential(null)"
               >
                 <div class="flex flex-row gap-4">
                   <Button v-if="doc.provider === 'email' && !doc.verified" :id="`credentiallist-button-verify-${doc.id}`" type="button" secondary disabled>{{
@@ -203,7 +187,7 @@ const WithCredentialDocument = WithDocument<CredentialPublic>
                     :id="`credentiallist-button-rename-${doc.id}`"
                     type="button"
                     :progress="progress"
-                    @click="setEditCredential(credential.id)"
+                    @click="setEditCredential(doc.id)"
                     >{{ t("common.buttons.rename") }}</Button
                   >
                   <Button :id="`credentiallist-button-remove-${doc.id}`" type="button" :progress="progress" @click="onRemove(doc.id)">{{
@@ -216,6 +200,7 @@ const WithCredentialDocument = WithDocument<CredentialPublic>
           </WithCredentialDocument>
         </div>
       </template>
+      <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     </div>
   </div>
   <Teleport to="footer">

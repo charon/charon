@@ -1073,17 +1073,24 @@ func (s *Service) completePasskeyRegistration(
 // Otherwise, it appends a counter (e.g. "username2").
 func ensureUniqueDisplayName(account *Account, provider Provider, desiredDisplayName string) string {
 	if account == nil {
-		return desiredDisplayName
+		// This should never happen, unique displayName per user per provider
+		// should only be checked, if account already exists.
+		panic(errors.New("ensureUniqueDisplayName called with non-existing account"))
 	}
-	counter := 2
-	displayName := desiredDisplayName
 
-	for {
-		hasName, _ := account.HasCredentialDisplayName(provider, displayName)
+	displayName := desiredDisplayName
+	const maxAttempts = 100
+
+	for counter := 2; counter < maxAttempts; counter++ {
+		hasName, errE := account.HasCredentialDisplayName(provider, displayName)
+		if errE != nil {
+			return identifier.New().String()
+		}
 		if !hasName {
 			return displayName
 		}
+
 		displayName = fmt.Sprintf("%s%d", desiredDisplayName, counter)
-		counter++
 	}
+	return identifier.New().String()
 }

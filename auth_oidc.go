@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/hashicorp/go-cleanhttp"
@@ -230,6 +231,13 @@ func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
+	account, errE := s.getAccountByCredential(ctx, providerKey, idToken.Subject)
+	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
+		errors.Details(errE)["provider"] = providerKey
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
 	var token map[string]interface{}
 	errE = x.Unmarshal(jsonData, &token)
 	if errE != nil {
@@ -238,24 +246,22 @@ func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	displayName := findFirstString(token, "username", "preferred_username", "email", "eMailAddress", "emailAddress", "email_address")
-	if displayName == "" {
-		displayName = idToken.Subject
-	}
-
-	account, errE := s.getAccountByCredential(ctx, providerKey, idToken.Subject)
-	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
-		errors.Details(errE)["provider"] = providerKey
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	displayName = ensureUniqueDisplayName(account, providerKey, displayName)
-
-	if account != nil {
+	var displayName string
+	if account == nil {
+		displayName = findFirstString(token, "username", "preferred_username", "email", "eMailAddress", "emailAddress", "email_address")
+		if displayName == "" {
+			displayName = identifier.New().String()
+		}
+	} else {
 		existingCredential := account.GetCredential(providerKey, idToken.Subject)
 		if existingCredential != nil {
 			displayName = existingCredential.DisplayName
+		} else {
+			displayName = findFirstString(token, "username", "preferred_username", "email", "eMailAddress", "emailAddress", "email_address")
+			if displayName == "" {
+				displayName = identifier.New().String()
+			}
+			displayName = ensureUniqueDisplayName(account, providerKey, displayName)
 		}
 	}
 
@@ -264,7 +270,7 @@ func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, p
 			CredentialPublic: CredentialPublic{
 				ID:          identifier.New(),
 				Provider:    providerKey,
-				DisplayName: displayName,
+				DisplayName: strings.TrimSpace(displayName),
 				Verified:    false,
 			},
 			ProviderID: idToken.Subject,
