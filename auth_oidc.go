@@ -254,15 +254,15 @@ func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, p
 		}
 	} else {
 		existingCredential := account.GetCredential(providerKey, idToken.Subject)
-		if existingCredential != nil {
-			displayName = existingCredential.DisplayName
-		} else {
-			displayName = findFirstString(token, "username", "preferred_username", "email", "eMailAddress", "emailAddress", "email_address")
-			if displayName == "" {
-				displayName = identifier.New().String()
-			}
-			displayName = ensureUniqueDisplayName(account, providerKey, displayName)
+		if existingCredential == nil {
+			// This should not happen, we found account by IDToken.
+			errE = errors.New("credential not found on account")
+			errors.Details(errE)["provider"] = providerKey
+			errors.Details(errE)["subject"] = idToken.Subject
+			s.InternalServerErrorWithError(w, req, errE)
+			return
 		}
+		displayName = existingCredential.DisplayName
 	}
 
 	s.completeAuthStep(w, req, false, flow, account,

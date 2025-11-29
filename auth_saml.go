@@ -508,25 +508,21 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 
 	var displayName string
 	if account == nil {
-		// Non-existing account (sign-up).
 		displayName = findFirstString(token, "username", "preferred_username", "email", "eMailAddress", "emailAddress", "email_address")
 		if displayName == "" {
 			displayName = identifier.New().String()
 		}
 	} else {
-		// Existing account (sign-in or credential addition).
 		existingCredential := account.GetCredential(providerKey, credentialID)
-		if existingCredential != nil {
-			// Existing credential (sign-in).
-			displayName = existingCredential.DisplayName
-		} else {
-			// New credential (addition) - ensure uniqueness.
-			displayName = findFirstString(token, "username", "preferred_username", "email", "eMailAddress", "emailAddress", "email_address")
-			if displayName == "" {
-				displayName = identifier.New().String()
-			}
-			displayName = ensureUniqueDisplayName(account, providerKey, displayName)
+		if existingCredential == nil {
+			// This should not happen, we found account by credentialID.
+			errE = errors.New("credential not found on account")
+			errors.Details(errE)["provider"] = providerKey
+			errors.Details(errE)["credentialID"] = credentialID
+			s.InternalServerErrorWithError(w, req, errE)
+			return
 		}
+		displayName = existingCredential.DisplayName
 	}
 
 	s.completeAuthStep(w, req, false, flow, account,
