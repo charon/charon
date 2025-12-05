@@ -48,12 +48,12 @@ type CredentialPublic struct {
 	Verified bool `json:"verified,omitempty"`
 }
 
-// CredentialPublicRef represents a reference to a credential.
-type CredentialPublicRef struct {
+// CredentialRef represents a reference to a credential.
+type CredentialRef struct {
 	ID identifier.Identifier `json:"id"`
 }
 
-func credentialPublicRefCmp(a CredentialPublicRef, b CredentialPublicRef) int {
+func credentialRefCmp(a CredentialRef, b CredentialRef) int {
 	return bytes.Compare(a.ID[:], b.ID[:])
 }
 
@@ -66,15 +66,15 @@ type CredentialAddResponse struct {
 	Error        ErrorCode                 `json:"error,omitempty"`
 }
 
-// CredentialAddCredentialWithDisplayNameStartRequest represents the request body for the CredentialAddPasswordStartPost and
+// CredentialAddCredentialStartRequest represents the request body for the CredentialAddPasswordStartPost and
 // CredentialAddPasskeyStartPost.
-type CredentialAddCredentialWithDisplayNameStartRequest struct {
+type CredentialAddCredentialStartRequest struct {
 	DisplayName string `json:"displayName"`
 }
 
 // CredentialUpdateDisplayNameRequest represents the request body for the CredentialUpdateDisplayName handler.
 type CredentialUpdateDisplayNameRequest struct {
-	CredentialAddCredentialWithDisplayNameStartRequest
+	CredentialAddCredentialStartRequest
 }
 
 // CredentialAddPasswordCompleteRequest represents the request body for the CredentialAddPasswordCompletePost handler.
@@ -201,14 +201,14 @@ func (s *Service) CredentialListGet(w http.ResponseWriter, req *http.Request, _ 
 		return
 	}
 
-	var result []CredentialPublicRef
+	var result []CredentialRef
 	for _, credentials := range account.Credentials {
 		for _, credential := range credentials {
-			result = append(result, CredentialPublicRef{ID: credential.ID})
+			result = append(result, CredentialRef{ID: credential.ID})
 		}
 	}
 
-	slices.SortFunc(result, credentialPublicRefCmp)
+	slices.SortFunc(result, credentialRefCmp)
 	s.WriteJSON(w, req, result, nil)
 }
 
@@ -434,7 +434,7 @@ func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *htt
 		return
 	}
 
-	var request CredentialAddCredentialWithDisplayNameStartRequest
+	var request CredentialAddCredentialStartRequest
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &request)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
@@ -667,7 +667,7 @@ func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http
 		return
 	}
 
-	var request CredentialAddCredentialWithDisplayNameStartRequest
+	var request CredentialAddCredentialStartRequest
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &request)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)

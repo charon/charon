@@ -16,7 +16,7 @@ const router = useRouter()
 const progress = useProgress()
 
 const abortController = new AbortController()
-const passkeyLabel = ref("")
+const passkeyDisplayName = ref("")
 const passkeyError = ref("")
 const unexpectedError = ref("")
 
@@ -51,7 +51,7 @@ function resetOnInteraction() {
   unexpectedError.value = ""
 }
 
-watch([passkeyLabel], resetOnInteraction)
+watch([passkeyDisplayName], resetOnInteraction)
 
 onBeforeUnmount(() => {
   abortController.abort()
@@ -63,7 +63,7 @@ onMounted(() => {
 
 function canSubmit(): boolean {
   // Required fields.
-  return !!passkeyLabel.value
+  return !!passkeyDisplayName.value
 }
 
 async function onSubmit() {
@@ -76,7 +76,7 @@ async function onSubmit() {
   progress.value += 1
   try {
     const startResponse = await startAddPasskeyCredential({
-      displayName: passkeyLabel.value,
+      displayName: passkeyDisplayName.value,
     })
     if (abortController.signal.aborted) {
       return
@@ -131,7 +131,7 @@ async function onSubmit() {
   -->
   <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
     <label for="credentialaddpasskey-input-label" class="mb-1"> {{ t("partials.CredentialAddPasskey.label") }}</label>
-    <InputText id="credentialaddpasskey-input-label" v-model="passkeyLabel" class="min-w-0 flex-auto grow" :progress="progress" required />
+    <InputText id="credentialaddpasskey-input-label" v-model="passkeyDisplayName" class="min-w-0 flex-auto grow" :progress="progress" required />
     <div class="mt-4">{{ t("partials.CredentialAddPasskey.passkeyInstructions") }}</div>
     <div v-if="passkeyError" class="mt-4 text-error-600">{{ getErrorMessage(passkeyError) }}</div>
     <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>

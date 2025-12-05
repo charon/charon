@@ -54,12 +54,12 @@
       "credentialDisplayNameInUse": {
         "password": "Password's or passphrase's display name is already in use.",
         "passkey": "Passkey's display name is already in use.",
-        "generic": " Display name is already in use for this provider."
+        "generic": "Display name is already in use for this provider."
       },
       "credentialDisplayNameMissing": {
         "password": "Password's or passphrase's display name is missing.",
         "passkey": "Passkey's display name is missing.",
-        "generic": " Display name is missing."
+        "generic": "Display name is missing."
       }
     },
     "labels": {
