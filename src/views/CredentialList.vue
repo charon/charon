@@ -24,6 +24,7 @@ const progress = injectProgress()
 
 const abortController = new AbortController()
 const unexpectedError = ref("")
+const currentActionCredentialId = ref<string | null>(null)
 const dataLoading = ref(true)
 const dataLoadingError = ref("")
 const credentials = ref<Credentials>([])
@@ -77,6 +78,7 @@ onBeforeMount(async () => {
 function resetOnInteraction() {
   // We reset the error on interaction.
   unexpectedError.value = ""
+  currentActionCredentialId.value = null
 }
 
 async function onRemove(credentialId: string) {
@@ -88,6 +90,8 @@ async function onRemove(credentialId: string) {
 
   progress.value += 1
   try {
+    currentActionCredentialId.value = credentialId
+
     const url = router.apiResolve({
       name: "CredentialRemove",
       params: { id: credentialId },
@@ -99,6 +103,7 @@ async function onRemove(credentialId: string) {
     }
 
     credentials.value = credentials.value.filter((c) => c.id !== credentialId)
+    currentActionCredentialId.value = null
   } catch (error) {
     if (abortController.signal.aborted) {
       return
@@ -145,6 +150,7 @@ const WithCredentialDocument = WithDocument<CredentialInfo>
                   }}</Button>
                 </div>
               </CredentialFull>
+              <div v-if="currentActionCredentialId === doc.id && unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
             </template>
           </WithCredentialDocument>
         </div>
