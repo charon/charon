@@ -948,11 +948,16 @@ FoundCredential:
 		return
 	}
 
+	// Checking that the display name is not already in use by another credential for this provider.
 	for i, credential := range account.Credentials[foundProvider] {
-		if i == foundIndex {
-			continue
-		}
 		if credential.DisplayName == requestDisplayName {
+			if i == foundIndex {
+				// The display name is already in use by this credential.
+				// Nothing to do.
+				s.WriteJSON(w, req, CredentialUpdateResponse{
+					Error: "",
+				}, nil)
+			}
 			s.WriteJSON(w, req, CredentialUpdateResponse{
 				Error: ErrorCodeCredentialDisplayNameInUse,
 			}, nil)
@@ -962,7 +967,7 @@ FoundCredential:
 
 	foundCredential := account.Credentials[foundProvider][foundIndex]
 	foundCredential.DisplayName = requestDisplayName
-	account.Credentials[foundProvider][foundIndex] = foundCredential
+	account.Credentials[foundProvider][foundIndex].DisplayName = requestDisplayName
 
 	errE = s.setAccount(ctx, account)
 	if errE != nil {

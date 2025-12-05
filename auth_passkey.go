@@ -230,6 +230,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		return
 	}
 
+	var storedCredential Credential
 	user, newCredential, err := s.passkeyProvider().ValidatePasskeyLogin(func(rawID, _ []byte) (webauthn.User, error) {
 		id := base64.RawURLEncoding.EncodeToString(rawID)
 		account, errE := s.getAccountByCredential(ctx, ProviderPasskey, id)
@@ -237,7 +238,8 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 			return nil, errE
 		}
 		var credential passkeyCredential
-		errE = x.Unmarshal(account.GetCredential(ProviderPasskey, id).Data, &credential)
+		storedCredential = account.GetCredential(ProviderPasskey, id)
+		errE = x.Unmarshal(storedCredential.Data, &credential)
 		if errE != nil {
 			return nil, errE
 		}
