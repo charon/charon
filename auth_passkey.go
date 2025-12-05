@@ -2,6 +2,7 @@ package charon
 
 import (
 	"encoding/base64"
+	"fmt"
 	"io"
 	"net/http"
 	"slices"
@@ -43,7 +44,7 @@ func (c passkeyCredential) WebAuthnName() string {
 }
 
 func (c passkeyCredential) WebAuthnDisplayName() string {
-	return c.DisplayName
+	return fmt.Sprintf("Charon (%s)", c.DisplayName)
 }
 
 func (passkeyCredential) WebAuthnIcon() string {
@@ -230,7 +231,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		return
 	}
 
-	var storedCredential Credential
+	var storedCredential *Credential
 	user, newCredential, err := s.passkeyProvider().ValidatePasskeyLogin(func(rawID, _ []byte) (webauthn.User, error) {
 		id := base64.RawURLEncoding.EncodeToString(rawID)
 		account, errE := s.getAccountByCredential(ctx, ProviderPasskey, id)

@@ -352,7 +352,9 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 			ID:          identifier.New(),
 			Provider:    ProviderEmail,
 			DisplayName: preservedEmailOrUsername,
-			Verified:    true,
+			// We set verified to true because this credential is stored with
+			// the account only after the e-mail gets verified.
+			Verified: true,
 		},
 		ProviderID: mappedEmailOrUsername,
 		Data:       jsonData,

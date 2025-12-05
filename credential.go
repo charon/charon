@@ -106,7 +106,8 @@ func (s credentialAddSession) Expired() bool {
 
 // CredentialUpdateResponse represents the request body for credential update operations.
 type CredentialUpdateResponse struct {
-	Error ErrorCode `json:"error,omitempty"`
+	Error   ErrorCode `json:"error,omitempty"`
+	Success bool      `json:"success,omitempty"`
 }
 
 // This function does not check for duplicates. Duplicate checking
@@ -441,8 +442,8 @@ func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *htt
 		return
 	}
 
-	requestLabel := strings.TrimSpace(request.DisplayName)
-	if requestLabel == "" {
+	displayName := strings.TrimSpace(request.DisplayName)
+	if displayName == "" {
 		s.WriteJSON(w, req, CredentialAddResponse{
 			SessionID:    nil,
 			CredentialID: nil,
@@ -460,14 +461,14 @@ func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *htt
 		return
 	}
 
-	// Check if password label is already in use on this account.
+	// Check if passwords display name is already in use on this account.
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	hasLabel, errE := account.HasCredentialDisplayName(ProviderPassword, requestLabel)
+	hasDisplayName, errE := account.HasCredentialDisplayName(ProviderPassword, displayName)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-	if hasLabel {
+	if hasDisplayName {
 		s.WriteJSON(w, req, CredentialAddResponse{
 			SessionID:    nil,
 			CredentialID: nil,
@@ -492,7 +493,7 @@ func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *htt
 		},
 		Passkey:     nil,
 		CreatedAt:   time.Now(),
-		DisplayName: requestLabel,
+		DisplayName: displayName,
 	}
 
 	errE = storeCredentialSession(session)
@@ -589,12 +590,12 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 	}
 
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	hasLabel, errE := account.HasCredentialDisplayName(ProviderPassword, cas.DisplayName)
+	hasDisplayName, errE := account.HasCredentialDisplayName(ProviderPassword, cas.DisplayName)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-	if hasLabel {
+	if hasDisplayName {
 		s.WriteJSON(w, req, CredentialAddResponse{
 			SessionID:    nil,
 			CredentialID: nil,
@@ -674,8 +675,8 @@ func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http
 		return
 	}
 
-	requestLabel := strings.TrimSpace(request.DisplayName)
-	if requestLabel == "" {
+	displayName := strings.TrimSpace(request.DisplayName)
+	if displayName == "" {
 		s.WriteJSON(w, req, CredentialAddResponse{
 			SessionID:    nil,
 			CredentialID: nil,
@@ -693,14 +694,14 @@ func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http
 		return
 	}
 
-	// Check if passkey label is already in use on this account.
+	// Check if passkeys display name is already in use on this account.
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	hasLabel, errE := account.HasCredentialDisplayName(ProviderPasskey, requestLabel)
+	hasDisplayName, errE := account.HasCredentialDisplayName(ProviderPasskey, displayName)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-	if hasLabel {
+	if hasDisplayName {
 		s.WriteJSON(w, req, CredentialAddResponse{
 			SessionID:    nil,
 			CredentialID: nil,
@@ -712,7 +713,7 @@ func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http
 	}
 
 	userID := identifier.New()
-	options, sessionData, errE := beginPasskeyRegistration(s.passkeyProvider(), userID, requestLabel)
+	options, sessionData, errE := beginPasskeyRegistration(s.passkeyProvider(), userID, displayName)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -723,7 +724,7 @@ func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http
 		Password:    nil,
 		Passkey:     sessionData,
 		CreatedAt:   time.Now(),
-		DisplayName: requestLabel,
+		DisplayName: displayName,
 	}
 
 	errE = storeCredentialSession(session)
@@ -796,12 +797,12 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 	}
 
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	hasLabel, errE := account.HasCredentialDisplayName(ProviderPasskey, cas.DisplayName)
+	hasDisplayName, errE := account.HasCredentialDisplayName(ProviderPasskey, cas.DisplayName)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-	if hasLabel {
+	if hasDisplayName {
 		s.WriteJSON(w, req, CredentialAddResponse{
 			SessionID:    nil,
 			CredentialID: nil,
@@ -888,7 +889,9 @@ FoundCredential:
 		return
 	}
 
-	s.WriteJSON(w, req, []byte(`{"success":true}`), nil)
+	s.WriteJSON(w, req, CredentialUpdateResponse{
+		Success: true,
+	}, nil)
 }
 
 // CredentialUpdateDisplayNamePost is the API handler for updating credentials displayName, POST request.
@@ -976,6 +979,6 @@ FoundCredential:
 	}
 
 	s.WriteJSON(w, req, CredentialUpdateResponse{
-		Error: "",
+		Success: true,
 	}, nil)
 }
