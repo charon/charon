@@ -1,10 +1,13 @@
-import { defineConfig, configDefaults } from "vitest/config"
-import vue from "@vitejs/plugin-vue"
-import istanbul from "vite-plugin-istanbul"
-import license from "rollup-plugin-license"
 import VueI18n from "@intlify/unplugin-vue-i18n/vite"
-import tailwindcss from "@tailwindcss/vite";
+import tailwindcss from "@tailwindcss/vite"
+import vue from "@vitejs/plugin-vue"
 import path from "path"
+import license from "rollup-plugin-license"
+import url from "url"
+import istanbul from "vite-plugin-istanbul"
+import { configDefaults, defineConfig } from "vitest/config"
+
+const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
 // https://vite.dev/config/
 // https://vitest.dev/config/
