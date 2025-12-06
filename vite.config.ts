@@ -9,6 +9,9 @@ import path from "path"
 // https://vite.dev/config/
 // https://vitest.dev/config/
 export default defineConfig({
+  define: {
+    __VUE_OPTIONS_API__: false,
+  },
   plugins: [
     vue(),
     VueI18n({
