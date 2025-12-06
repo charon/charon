@@ -1,21 +1,21 @@
-import { includeIgnoreFile } from "@eslint/compat";
-import eslint from "@eslint/js";
-import tseslint from "typescript-eslint";
-import eslintConfigPrettier from "eslint-config-prettier";
-import eslintPluginVue from 'eslint-plugin-vue';
-import vueParser from 'vue-eslint-parser'
-import globals from "globals";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { includeIgnoreFile } from "@eslint/compat"
+import eslint from "@eslint/js"
+import eslintConfigPrettier from "eslint-config-prettier"
+import eslintPluginVue from "eslint-plugin-vue"
+import globals from "globals"
+import path from "node:path"
+import { fileURLToPath } from "node:url"
+import tseslint from "typescript-eslint"
+import vueParser from "vue-eslint-parser"
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const gitignorePath = path.resolve(__dirname, ".gitignore");
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const gitignorePath = path.resolve(__dirname, ".gitignore")
 
 export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
-  ...eslintPluginVue.configs['flat/recommended'],
+  ...eslintPluginVue.configs["flat/recommended"],
   includeIgnoreFile(gitignorePath),
   {
     files: ["**/*.{js,vue,ts,html}"],

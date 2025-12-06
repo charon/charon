@@ -124,4 +124,4 @@ function main() {
 // Run the script if executed directly.
 main()
 
-export { main, jsonToTypeScript, generateTypeScriptDefinitions }
+export { generateTypeScriptDefinitions, jsonToTypeScript, main }

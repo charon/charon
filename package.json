@@ -24,7 +24,7 @@
     "lint-style": "stylelint --fix src/**/*.{css,scss,vue.html}",
     "lint-style-ci": "stylelint --fix --custom-formatter=@studiometa/stylelint-formatter-gitlab src/**/*.{css,scss,vue.html}",
     "lint-vue": "vue-tsc --noEmit",
-    "fmt": "prettier src tests --write",
+    "fmt": "prettier src tests *.ts *.js *.json .*.json --write",
     "test": "vitest",
     "coverage": "vitest --coverage",
     "test-ci": "vitest run --reporter junit --reporter default --outputFile tests.xml --coverage",
