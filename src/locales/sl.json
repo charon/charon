@@ -51,16 +51,8 @@
         "username": "To uporabniško ime je že prisotno na tem računu.",
         "password": "To geslo ali geslovni stavek je že prisotno na tem računu."
       },
-      "credentialDisplayNameInUse": {
-        "password": "Prikazno ime gesla ali geslovnega stavka je že v uporabi.",
-        "passkey": "Prikazno ime za passkey je že v uporabi.",
-        "generic": "Prikazno ime je že v uporabi."
-      },
-      "credentialDisplayNameMissing": {
-        "password": "Geslu ali geslovnemu stavku manjka prikazno ime.",
-        "passkey": "Passkey-u manjka prikazno ime.",
-        "generic": "Manjka prikazno ime."
-      }
+      "credentialDisplayNameInUse": "Prikazno ime je že v uporabi.",
+      "credentialDisplayNameMissing": "Manjka prikazno ime."
     },
     "labels": {
       "optional": "(neobvezno)",

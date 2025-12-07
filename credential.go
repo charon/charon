@@ -890,6 +890,7 @@ FoundCredential:
 	}
 
 	s.WriteJSON(w, req, CredentialUpdateResponse{
+		Error:   "",
 		Success: true,
 	}, nil)
 }
@@ -914,7 +915,8 @@ func (s *Service) CredentialUpdateDisplayNamePost(w http.ResponseWriter, req *ht
 	requestDisplayName := strings.TrimSpace(request.DisplayName)
 	if requestDisplayName == "" {
 		s.WriteJSON(w, req, CredentialUpdateResponse{
-			Error: ErrorCodeCredentialDisplayNameMissing,
+			Error:   ErrorCodeCredentialDisplayNameMissing,
+			Success: false,
 		}, nil)
 		return
 	}
@@ -958,11 +960,13 @@ FoundCredential:
 				// The display name is already in use by this credential.
 				// Nothing to do.
 				s.WriteJSON(w, req, CredentialUpdateResponse{
-					Error: "",
+					Error:   "",
+					Success: true,
 				}, nil)
 			}
 			s.WriteJSON(w, req, CredentialUpdateResponse{
-				Error: ErrorCodeCredentialDisplayNameInUse,
+				Error:   ErrorCodeCredentialDisplayNameInUse,
+				Success: false,
 			}, nil)
 			return
 		}
@@ -979,6 +983,7 @@ FoundCredential:
 	}
 
 	s.WriteJSON(w, req, CredentialUpdateResponse{
+		Error:   "",
 		Success: true,
 	}, nil)
 }

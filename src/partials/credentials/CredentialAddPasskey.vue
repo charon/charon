@@ -27,9 +27,7 @@ if (!browserSupportsWebAuthn()) {
 function getErrorMessage(errorCode: string) {
   switch (errorCode) {
     case "credentialDisplayNameInUse":
-      return t("common.errors.credentialDisplayNameInUse.passkey")
-    case "credentialDisplayNameMissing":
-      return t("common.errors.credentialDisplayNameMissing.passkey")
+      return t("common.errors.credentialDisplayNameInUse")
     default:
       throw new Error(`unexpected error code: ${errorCode}`)
   }

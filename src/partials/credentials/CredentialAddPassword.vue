@@ -30,9 +30,9 @@ function getErrorMessage(errorCode: string) {
     case "alreadyPresent":
       return t("common.errors.alreadyPresent.password")
     case "credentialDisplayNameInUse":
-      return t("common.errors.credentialDisplayNameInUse.password")
+      return t("common.errors.credentialDisplayNameInUse")
     case "credentialDisplayNameMissing":
-      return t("common.errors.credentialDisplayNameMissing.password")
+      return t("common.errors.credentialDisplayNameMissing")
     default:
       throw new Error(`unexpected error code: ${errorCode}`)
   }

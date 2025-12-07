@@ -35,25 +35,11 @@ const updateError = ref("")
 const unexpectedError = ref("")
 
 function getErrorMessage(errorCode: string) {
-  const provider = props.credential.provider
-
   switch (errorCode) {
     case "credentialDisplayNameMissing":
-      if (provider === "password") {
-        return t("common.errors.credentialDisplayNameMissing.password")
-      } else if (provider === "passkey") {
-        return t("common.errors.credentialDisplayNameMissing.passkey")
-      } else {
-        return t("common.errors.credentialDisplayNameMissing.generic")
-      }
+      return t("common.errors.credentialDisplayNameMissing")
     case "credentialDisplayNameInUse":
-      if (provider === "password") {
-        return t("common.errors.credentialDisplayNameInUse.password")
-      } else if (provider === "passkey") {
-        return t("common.errors.credentialDisplayNameInUse.passkey")
-      } else {
-        return t("common.errors.credentialDisplayNameInUse.generic")
-      }
+      return t("common.errors.credentialDisplayNameInUse")
     default:
       throw new Error(`unexpected error code: ${errorCode}`)
   }
