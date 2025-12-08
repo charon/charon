@@ -33,6 +33,7 @@ import (
 	"github.com/ory/fosite"
 	saml2 "github.com/russellhaering/gosaml2"
 	"gitlab.com/tozd/go/errors"
+	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 	"golang.org/x/text/secure/precis"
@@ -1067,4 +1068,34 @@ func (s *Service) completePasskeyRegistration(
 	providerID := base64.RawURLEncoding.EncodeToString(pkCredential.Credential.ID)
 
 	return &pkCredential, providerID, nil
+}
+
+func getThirdPartyDisplayName(account *Account, jsonData json.RawMessage, providerKey Provider, credentialID string) (string, errors.E) {
+	var errE errors.E
+	var token map[string]interface{}
+	errE = x.Unmarshal(jsonData, &token)
+	if errE != nil {
+		errors.Details(errE)["provider"] = providerKey
+		return "", errE
+	}
+
+	var displayName string
+	if account == nil {
+		displayName = findFirstString(token, "username", "preferred_username", "email", "eMailAddress", "emailAddress", "email_address")
+		if displayName == "" {
+			displayName = identifier.New().String()
+		}
+	} else {
+		existingCredential := account.GetCredential(providerKey, credentialID)
+		if existingCredential == nil {
+			// This should not happen, we found account by credentialID.
+			errE = errors.New("credential not found on account")
+			errors.Details(errE)["provider"] = providerKey
+			errors.Details(errE)["credentialID"] = credentialID
+			return "", errE
+		}
+		displayName = existingCredential.DisplayName
+	}
+
+	return displayName, nil
 }

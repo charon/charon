@@ -498,37 +498,16 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	var token map[string]interface{}
-	errE = x.Unmarshal(jsonData, &token)
+	displayName, errE := getThirdPartyDisplayName(account, jsonData, providerKey, credentialID)
 	if errE != nil {
-		errors.Details(errE)["provider"] = providerKey
 		s.InternalServerErrorWithError(w, req, errE)
-		return
 	}
 
-	var displayName string
-	if account == nil {
-		displayName = findFirstString(token, "username", "preferred_username", "email", "eMailAddress", "emailAddress", "email_address")
-		if displayName == "" {
-			displayName = identifier.New().String()
-		}
-	} else {
-		existingCredential := account.GetCredential(providerKey, credentialID)
-		if existingCredential == nil {
-			// This should not happen, we found account by credentialID.
-			errE = errors.New("credential not found on account")
-			errors.Details(errE)["provider"] = providerKey
-			errors.Details(errE)["credentialID"] = credentialID
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-		displayName = existingCredential.DisplayName
-	}
-
+	id := identifier.New()
 	s.completeAuthStep(w, req, false, flow, account,
 		[]Credential{{
 			CredentialPublic: CredentialPublic{
-				ID:          identifier.New(),
+				ID:          &id,
 				Provider:    providerKey,
 				DisplayName: strings.TrimSpace(displayName),
 				Verified:    false,

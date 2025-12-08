@@ -260,13 +260,12 @@ func (s *Service) CredentialGetGet(w http.ResponseWriter, req *http.Request, par
 
 	for _, credentials := range account.Credentials {
 		for _, c := range credentials {
-			if c.ID == &credentialID {
+			if *c.ID == credentialID {
 				s.WriteJSON(w, req, c.CredentialPublic, nil)
 				return
 			}
 		}
 	}
-
 	s.NotFound(w, req)
 }
 
