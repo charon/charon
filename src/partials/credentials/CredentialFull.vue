@@ -16,11 +16,11 @@ import { injectProgress } from "@/progress"
 const props = defineProps<{
   credential: CredentialPublic | DeepReadonly<CredentialPublic>
   url?: string
-  isEditing: boolean
+  isRenaming: boolean
 }>()
 
 const emit = defineEmits<{
-  updated: []
+  renamed: []
   canceled: []
 }>()
 
@@ -30,8 +30,8 @@ const router = useRouter()
 const abortController = new AbortController()
 const progress = injectProgress()
 
-const editedDisplayName = ref("")
-const updateError = ref("")
+const displayName = ref("")
+const renameError = ref("")
 const unexpectedError = ref("")
 
 function getErrorMessage(errorCode: string) {
@@ -50,13 +50,13 @@ function canSubmitUpdate(): boolean {
   return editedDisplayName.value !== props.credential.displayName
 }
 
-function cancelEdit() {
+function onCancel() {
   editedDisplayName.value = ""
   updateError.value = ""
   emit("canceled")
 }
 
-async function submitUpdate() {
+async function onSubmit() {
   if (!canSubmitUpdate() || abortController.signal.aborted) {
     return
   }
