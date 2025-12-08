@@ -57,6 +57,16 @@ func credentialRefCmp(a CredentialRef, b CredentialRef) int {
 	return bytes.Compare(a.ID[:], b.ID[:])
 }
 
+// CredentialAddEmailRequest represents the request body for the CredentialAddEmail handler.
+type CredentialAddEmailRequest struct {
+	Email string `json:"email"`
+}
+
+// CredentialAddUsernameRequest represents the request body for the CredentialAddUsername handler.
+type CredentialAddUsernameRequest struct {
+	Username string `json:"username"`
+}
+
 // CredentialAddResponse represents the response for credential addition operations.
 type CredentialAddResponse struct {
 	SessionID    *identifier.Identifier    `json:"sessionId,omitempty"`
@@ -273,7 +283,7 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	var request emailCredential
+	var request CredentialAddEmailRequest
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &request)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
@@ -316,7 +326,7 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{Email: preservedEmail})
+	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -347,7 +357,7 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	var request usernameCredential
+	var request CredentialAddUsernameRequest
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &request)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
@@ -405,7 +415,7 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	jsonData, errE := x.MarshalWithoutEscapeHTML(usernameCredential{Username: preservedUsername})
+	jsonData, errE := x.MarshalWithoutEscapeHTML(usernameCredential{})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -463,11 +473,7 @@ func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *htt
 
 	// Check if passwords display name is already in use on this account.
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	hasDisplayName, errE := account.HasCredentialDisplayName(ProviderPassword, displayName)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
+	hasDisplayName := account.HasCredentialDisplayName(ProviderPassword, displayName)
 	if hasDisplayName {
 		s.WriteJSON(w, req, CredentialAddResponse{
 			SessionID:    nil,
@@ -590,11 +596,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 	}
 
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	hasDisplayName, errE := account.HasCredentialDisplayName(ProviderPassword, cas.DisplayName)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
+	hasDisplayName := account.HasCredentialDisplayName(ProviderPassword, cas.DisplayName)
 	if hasDisplayName {
 		s.WriteJSON(w, req, CredentialAddResponse{
 			SessionID:    nil,
@@ -696,11 +698,7 @@ func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http
 
 	// Check if passkeys display name is already in use on this account.
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	hasDisplayName, errE := account.HasCredentialDisplayName(ProviderPasskey, displayName)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
+	hasDisplayName := account.HasCredentialDisplayName(ProviderPasskey, displayName)
 	if hasDisplayName {
 		s.WriteJSON(w, req, CredentialAddResponse{
 			SessionID:    nil,
@@ -797,11 +795,7 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 	}
 
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	hasDisplayName, errE := account.HasCredentialDisplayName(ProviderPasskey, cas.DisplayName)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
+	hasDisplayName := account.HasCredentialDisplayName(ProviderPasskey, cas.DisplayName)
 	if hasDisplayName {
 		s.WriteJSON(w, req, CredentialAddResponse{
 			SessionID:    nil,
@@ -953,6 +947,14 @@ FoundCredential:
 		return
 	}
 
+	if foundProvider == ProviderEmail || foundProvider == ProviderUsername || foundProvider == ProviderCode {
+		// We do not allow changing display names of e-mail or username credentials, this is the actual e-mail or username itself.
+		errE = errors.New("invalid credential type")
+		errors.Details(errE)["provider"] = foundProvider
+		errors.Details(errE)["id"] = credentialID
+		s.BadRequestWithError(w, req, errE)
+	}
+
 	// Checking that the display name is not already in use by another credential for this provider.
 	for i, credential := range account.Credentials[foundProvider] {
 		if credential.DisplayName == requestDisplayName {
@@ -972,8 +974,6 @@ FoundCredential:
 		}
 	}
 
-	foundCredential := account.Credentials[foundProvider][foundIndex]
-	foundCredential.DisplayName = requestDisplayName
 	account.Credentials[foundProvider][foundIndex].DisplayName = requestDisplayName
 
 	errE = s.setAccount(ctx, account)

@@ -69,13 +69,9 @@ type passwordCredential struct {
 	Hash string `json:"hash"`
 }
 
-type emailCredential struct {
-	Email string `json:"email"`
-}
+type emailCredential struct{}
 
-type usernameCredential struct {
-	Username string `json:"username"`
-}
+type usernameCredential struct{}
 
 // AuthFlowPasswordStartRequest represents the request body for the AuthFlowPasswordStartPost handler.
 type AuthFlowPasswordStartRequest struct {
@@ -282,9 +278,8 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 	// Account does not exist (by username or by verified email).
 	credentials := []Credential{}
 	if strings.Contains(mappedEmailOrUsername, "@") {
-		jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{
-			Email: flow.EmailOrUsername,
-		})
+		jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{})
+
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
@@ -294,16 +289,15 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 				ID:          identifier.New(),
 				Provider:    ProviderEmail,
 				DisplayName: flow.EmailOrUsername,
-				// TODO: is this correct?
+				// We set verified to true because this credential is stored with
+				// the account only after the e-mail gets verified.
 				Verified: true,
 			},
 			ProviderID: mappedEmailOrUsername,
 			Data:       jsonData,
 		})
 	} else {
-		jsonData, errE := x.MarshalWithoutEscapeHTML(usernameCredential{
-			Username: flow.EmailOrUsername,
-		})
+		jsonData, errE := x.MarshalWithoutEscapeHTML(usernameCredential{})
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
@@ -315,10 +309,8 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 				DisplayName: flow.EmailOrUsername,
 				Verified:    false,
 			},
-
 			ProviderID: mappedEmailOrUsername,
-
-			Data: jsonData,
+			Data:       jsonData,
 		})
 	}
 

@@ -985,8 +985,8 @@ func beginPasskeyRegistration(
 ) (*protocol.CredentialCreation, *webauthn.SessionData, errors.E) {
 	options, session, err := provider.BeginRegistration(
 		passkeyCredential{
-			ID:          userID,
-			DisplayName: displayName,
+			id:          userID,
+			displayName: displayName,
 			Credential:  nil,
 		},
 		webauthn.WithExtensions(protocol.AuthenticationExtensions{
@@ -1054,8 +1054,8 @@ func (s *Service) completePasskeyRegistration(
 	userID := identifier.Data([16]byte(sessionData.UserID))
 
 	pkCredential := passkeyCredential{
-		ID:          userID,
-		DisplayName: displayName,
+		id:          userID,
+		displayName: displayName,
 		Credential:  nil,
 	}
 

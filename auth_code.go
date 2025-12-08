@@ -155,22 +155,16 @@ func (s *Service) sendCodeForExistingAccount(
 		// We know that such credential must exist and is verified on this account
 		// because we found this account using getAccountByCredential with mappedEmailOrUsername.
 		credential := account.GetCredential(ProviderEmail, mappedEmailOrUsername)
-		var ec emailCredential
-		errE := x.Unmarshal(credential.Data, &ec)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
+		if credential == nil {
+			// This should not happen.
+			s.InternalServerErrorWithError(w, req, errors.New("email not found on account"))
 			return
 		}
-		emails = []string{ec.Email}
+		emails = []string{credential.DisplayName}
 	} else {
 		// mappedEmailOrUsername is an username. Let's see if there are any
 		// e-mails associated with the account.
-		var errE errors.E
-		emails, errE = account.GetEmailAddresses()
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
+		emails = account.GetEmailAddresses()
 
 		if len(emails) == 0 {
 			var code ErrorCode
@@ -340,9 +334,7 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{
-		Email: preservedEmailOrUsername,
-	})
+	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return

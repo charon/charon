@@ -497,7 +497,7 @@ export type CredentialAddResponse =
       error: string
     }
 
-export type CredentialAddCredentialWithDisplayNameStartRequest = {
+export type CredentialAddCredentialStartRequest = {
   displayName: string
 }
 

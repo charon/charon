@@ -30,13 +30,14 @@ type AuthFlowResponsePasskey struct {
 const defaultPasskeyTimeout = 60 * time.Second
 
 type passkeyCredential struct {
-	ID          identifier.Identifier `json:"id"`
-	DisplayName string                `json:"displayName"`
-	Credential  *webauthn.Credential  `json:"credential"`
+	id          identifier.Identifier
+	displayName string
+
+	Credential *webauthn.Credential `json:"credential"`
 }
 
 func (c passkeyCredential) WebAuthnID() []byte {
-	return c.ID[:]
+	return c.id[:]
 }
 
 func (c passkeyCredential) WebAuthnName() string {
@@ -44,7 +45,7 @@ func (c passkeyCredential) WebAuthnName() string {
 }
 
 func (c passkeyCredential) WebAuthnDisplayName() string {
-	return fmt.Sprintf("Charon (%s)", c.DisplayName)
+	return fmt.Sprintf("Charon (%s)", c.displayName)
 }
 
 func (passkeyCredential) WebAuthnIcon() string {
@@ -275,20 +276,12 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		return
 	}
 
-	displayName := identifier.New().String()
-	if account != nil {
-		existingCredential := account.GetCredential(ProviderPasskey, providerID)
-		if existingCredential != nil {
-			displayName = existingCredential.DisplayName
-		}
-	}
-
 	s.completeAuthStep(w, req, true, flow, account,
 		[]Credential{{
 			CredentialPublic: CredentialPublic{
-				ID:          credential.ID,
+				ID:          credential.id,
 				Provider:    ProviderPasskey,
-				DisplayName: displayName,
+				DisplayName: storedCredential.DisplayName,
 				Verified:    false,
 			},
 			ProviderID: providerID,
@@ -414,7 +407,7 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 	s.completeAuthStep(w, req, true, flow, account,
 		[]Credential{{
 			CredentialPublic: CredentialPublic{
-				ID:          credential.ID,
+				ID:          credential.id,
 				Provider:    ProviderPasskey,
 				DisplayName: flowPasskey.DisplayName,
 				Verified:    false,

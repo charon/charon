@@ -111,33 +111,28 @@ func (a *Account) GetCredential(provider Provider, providerID string) *Credentia
 }
 
 // HasCredentialDisplayName returns true if displayName is already in use by a credential for the provider in the account.
-func (a *Account) HasCredentialDisplayName(provider Provider, displayName string) (bool, errors.E) {
+func (a *Account) HasCredentialDisplayName(provider Provider, displayName string) bool {
 	credentials, ok := a.Credentials[provider]
 	if !ok {
-		return false, nil
+		return false
 	}
 
 	for _, credential := range credentials {
 		if credential.DisplayName == displayName {
-			return true, nil
+			return true
 		}
 	}
 
-	return false, nil
+	return false
 }
 
 // GetEmailAddresses returns the email addresses of the account.
-func (a *Account) GetEmailAddresses() ([]string, errors.E) {
+func (a *Account) GetEmailAddresses() []string {
 	emails := []string{}
 	for _, credential := range a.Credentials[ProviderEmail] {
-		var c emailCredential
-		errE := x.Unmarshal(credential.Data, &c)
-		if errE != nil {
-			return nil, errE
-		}
-		emails = append(emails, c.Email)
+		emails = append(emails, credential.DisplayName)
 	}
-	return emails, nil
+	return emails
 }
 
 func (s *Service) getAccount(_ context.Context, id identifier.Identifier) (*Account, errors.E) {

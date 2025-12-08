@@ -152,25 +152,15 @@ func (s *Service) makeIdentityFromCredentials(credentials []Credential) (*Identi
 		case ProviderPassword:
 			// Nothing available.
 		case ProviderEmail:
-			var c emailCredential
-			errE := x.UnmarshalWithoutUnknownFields(credential.Data, &c)
-			if errE != nil {
-				return nil, errE
-			}
 			if identity == nil {
 				identity = new(Identity)
 			}
-			identity.Email = c.Email
+			identity.Email = credential.DisplayName
 		case ProviderUsername:
-			var c usernameCredential
-			errE := x.UnmarshalWithoutUnknownFields(credential.Data, &c)
-			if errE != nil {
-				return nil, errE
-			}
 			if identity == nil {
 				identity = new(Identity)
 			}
-			identity.Username = c.Username
+			identity.Username = credential.DisplayName
 		default:
 			var token map[string]interface{}
 			errE := x.UnmarshalWithoutUnknownFields(credential.Data, &token)
