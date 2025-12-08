@@ -339,9 +339,10 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
+	id := identifier.New()
 	credentials := []Credential{{
 		CredentialPublic: CredentialPublic{
-			ID:          identifier.New(),
+			ID:          &id,
 			Provider:    ProviderEmail,
 			DisplayName: preservedEmailOrUsername,
 			// We set verified to true because this credential is stored with

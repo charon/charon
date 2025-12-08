@@ -39,13 +39,18 @@ var (
 // CredentialPublic represents public information about a credential.
 type CredentialPublic struct {
 	// ID is a public-facing ID used to identify the credential in public API.
-	ID identifier.Identifier `json:"id"`
+	ID *identifier.Identifier `json:"id"`
 	// Provider is the internal provider type name or the name of the third party provider.
 	Provider Provider `json:"provider"`
 	// DisplayName is initially automatically set, user can update it. Unique per user per provider.
 	DisplayName string `json:"displayName"`
 	// Verified bool is relevant for e-mail addresses, otherwise false.
 	Verified bool `json:"verified,omitempty"`
+}
+
+// Ref returns the credential reference.
+func (c *CredentialPublic) Ref() CredentialRef {
+	return CredentialRef{ID: *c.ID}
 }
 
 // CredentialRef represents a reference to a credential.
@@ -125,9 +130,10 @@ type CredentialUpdateResponse struct {
 func (s *Service) addCredentialToAccount(
 	ctx context.Context, account *Account, providerKey Provider, providerID string, jsonData json.RawMessage, displayName string,
 ) (identifier.Identifier, errors.E) {
+	id := identifier.New()
 	newCredential := Credential{
 		CredentialPublic: CredentialPublic{
-			ID:          identifier.New(),
+			ID:          &id,
 			Provider:    providerKey,
 			DisplayName: displayName,
 			// Verified is set to false for all providers, including e-mail. E-mail verification is a separate procedure.
@@ -148,7 +154,7 @@ func (s *Service) addCredentialToAccount(
 		return identifier.Identifier{}, errE
 	}
 
-	return newCredential.ID, nil
+	return *newCredential.ID, nil
 }
 
 func storeCredentialSession(session credentialAddSession) errors.E {
@@ -215,7 +221,7 @@ func (s *Service) CredentialListGet(w http.ResponseWriter, req *http.Request, _ 
 	var result []CredentialRef
 	for _, credentials := range account.Credentials {
 		for _, credential := range credentials {
-			result = append(result, CredentialRef{ID: credential.ID})
+			result = append(result, credential.Ref())
 		}
 	}
 
@@ -254,7 +260,7 @@ func (s *Service) CredentialGetGet(w http.ResponseWriter, req *http.Request, par
 
 	for _, credentials := range account.Credentials {
 		for _, c := range credentials {
-			if c.ID == credentialID {
+			if c.ID == &credentialID {
 				s.WriteJSON(w, req, c.CredentialPublic, nil)
 				return
 			}
@@ -858,7 +864,7 @@ func (s *Service) CredentialRemovePost(w http.ResponseWriter, req *http.Request,
 FoundCredential:
 	for provider, credentials := range account.Credentials {
 		for i, credential := range credentials {
-			if credential.ID == credentialID {
+			if *credential.ID == credentialID {
 				foundProvider = provider
 				foundIndex = i
 				break FoundCredential
@@ -934,7 +940,7 @@ func (s *Service) CredentialUpdateDisplayNamePost(w http.ResponseWriter, req *ht
 FoundCredential:
 	for provider, credentials := range account.Credentials {
 		for i, credential := range credentials {
-			if credential.ID == credentialID {
+			if *credential.ID == credentialID {
 				foundProvider = provider
 				foundIndex = i
 				break FoundCredential
