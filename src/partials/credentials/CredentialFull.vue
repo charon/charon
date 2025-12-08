@@ -46,24 +46,25 @@ function getErrorMessage(errorCode: string) {
 }
 
 function canSubmitUpdate(): boolean {
-  // Required field.
-  return editedDisplayName.value !== props.credential.displayName
+  // Required fields.
+  return !!editedDisplayName
 }
 
 function onCancel() {
   editedDisplayName.value = ""
-  updateError.value = ""
+  resetOnInteraction()
   emit("canceled")
 }
 
 async function onSubmit() {
-  if (!canSubmitUpdate() || abortController.signal.aborted) {
+  if (abortController.signal.aborted) {
     return
   }
 
-  updateError.value = ""
+  resetOnInteraction()
   progress.value += 1
 
+  progress.value += 1
   try {
     const url = router.apiResolve({
       name: "CredentialUpdateDisplayName",
@@ -71,7 +72,6 @@ async function onSubmit() {
     }).href
 
     const response = await postJSON<CredentialUpdateResponse>(url, { displayName: editedDisplayName.value }, abortController.signal, progress)
-
     if (abortController.signal.aborted) {
       return
     }
@@ -138,7 +138,7 @@ watch(
       <div class="grow">
         <h2 :id="`credentialfull-provider-${credential.id}`" class="text-xl">{{ getProviderNameTitle(t, credential.provider) }}</h2>
         <div class="mt-1 flex flex-row items-center gap-4">
-          <InputText :id="`credentialedit-input-${credential.id}`" v-model="editedDisplayName" class="min-w-0 flex-auto grow" :progress="progress" required />
+          <InputText :id="`credentialfull-input-${credential.id}`" v-model="editedDisplayName" class="min-w-0 flex-auto grow" :progress="progress" required />
           <Button :id="`credentialfull-button-update-${credential.id}`" type="button" :disabled="!canSubmitUpdate()" :progress="progress" @click="submitUpdate">{{
             t("common.buttons.rename")
           }}</Button>
