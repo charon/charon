@@ -394,7 +394,7 @@
       "get": null
     },
     {
-      "name": "CredentialUpdateDisplayName",
+      "name": "CredentialRename",
       "path": "/authentication/updateDisplayName/:id",
       "api": {},
       "get": null

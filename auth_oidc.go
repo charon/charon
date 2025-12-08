@@ -240,6 +240,7 @@ func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, p
 	displayName, errE := getThirdPartyDisplayName(account, jsonData, providerKey, idToken.Subject)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
+		return
 	}
 
 	id := identifier.New()

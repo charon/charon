@@ -87,8 +87,8 @@ type CredentialAddCredentialStartRequest struct {
 	DisplayName string `json:"displayName"`
 }
 
-// CredentialUpdateDisplayNameRequest represents the request body for the CredentialUpdateDisplayName handler.
-type CredentialUpdateDisplayNameRequest struct {
+// CredentialRenameRequest represents the request body for the CredentialRename handler.
+type CredentialRenameRequest struct {
 	CredentialAddCredentialStartRequest
 }
 
@@ -119,8 +119,8 @@ func (s credentialAddSession) Expired() bool {
 	return time.Now().After(s.CreatedAt.Add(credentialAddSessionExpiration))
 }
 
-// CredentialUpdateResponse represents the request body for credential update operations.
-type CredentialUpdateResponse struct {
+// CredentialResponse represents the response body for credential update operations.
+type CredentialResponse struct {
 	Error   ErrorCode `json:"error,omitempty"`
 	Success bool      `json:"success,omitempty"`
 }
@@ -888,14 +888,14 @@ FoundCredential:
 		return
 	}
 
-	s.WriteJSON(w, req, CredentialUpdateResponse{
+	s.WriteJSON(w, req, CredentialResponse{
 		Error:   "",
 		Success: true,
 	}, nil)
 }
 
-// CredentialUpdateDisplayNamePost is the API handler for updating credentials displayName, POST request.
-func (s *Service) CredentialUpdateDisplayNamePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// CredentialRenamePost is the API handler for updating credentials displayName, POST request.
+func (s *Service) CredentialRenamePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -904,7 +904,7 @@ func (s *Service) CredentialUpdateDisplayNamePost(w http.ResponseWriter, req *ht
 		return
 	}
 
-	var request CredentialUpdateDisplayNameRequest
+	var request CredentialRenameRequest
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &request)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
@@ -913,7 +913,7 @@ func (s *Service) CredentialUpdateDisplayNamePost(w http.ResponseWriter, req *ht
 
 	requestDisplayName := strings.TrimSpace(request.DisplayName)
 	if requestDisplayName == "" {
-		s.WriteJSON(w, req, CredentialUpdateResponse{
+		s.WriteJSON(w, req, CredentialResponse{
 			Error:   ErrorCodeCredentialDisplayNameMissing,
 			Success: false,
 		}, nil)
@@ -958,6 +958,7 @@ FoundCredential:
 		errors.Details(errE)["provider"] = foundProvider
 		errors.Details(errE)["id"] = credentialID
 		s.BadRequestWithError(w, req, errE)
+		return
 	}
 
 	// Checking that the display name is not already in use by another credential for this provider.
@@ -966,12 +967,13 @@ FoundCredential:
 			if i == foundIndex {
 				// The display name is already in use by this credential.
 				// Nothing to do.
-				s.WriteJSON(w, req, CredentialUpdateResponse{
+				s.WriteJSON(w, req, CredentialResponse{
 					Error:   "",
 					Success: true,
 				}, nil)
+				return
 			}
-			s.WriteJSON(w, req, CredentialUpdateResponse{
+			s.WriteJSON(w, req, CredentialResponse{
 				Error:   ErrorCodeCredentialDisplayNameInUse,
 				Success: false,
 			}, nil)
@@ -987,7 +989,7 @@ FoundCredential:
 		return
 	}
 
-	s.WriteJSON(w, req, CredentialUpdateResponse{
+	s.WriteJSON(w, req, CredentialResponse{
 		Error:   "",
 		Success: true,
 	}, nil)

@@ -501,6 +501,7 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 	displayName, errE := getThirdPartyDisplayName(account, jsonData, providerKey, credentialID)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
+		return
 	}
 
 	id := identifier.New()

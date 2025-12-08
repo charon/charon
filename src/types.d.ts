@@ -509,6 +509,7 @@ export type CredentialAddPasskeyCompleteRequest = AuthFlowPasskeyCreateCompleteR
   sessionId: string
 }
 
-export type CredentialUpdateResponse = {
+export type CredentialResponse = {
   error?: string
+  success?: boolean
 }

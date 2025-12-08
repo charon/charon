@@ -37,41 +37,9 @@ function setEditCredential(credentialId: string | null) {
   editingCredentialId.value = credentialId
 }
 
-async function onCredentialUpdated(credentialId: string) {
-  if (abortController.signal.aborted) {
-    return
-  }
-
-  progress.value += 1
+function onCredentialUpdated() {
   editingCredentialId.value = null
   refreshKey.value++
-
-  try {
-    const url = router.apiResolve({
-      name: "CredentialGet",
-      params: { id: credentialId },
-    }).href
-
-    const response = await getURL<CredentialPublic>(url, null, abortController.signal, progress)
-    if (abortController.signal.aborted) {
-      return
-    }
-    const index = credentials.value.findIndex((c) => c.id === credentialId)
-    if (index !== -1) {
-      credentials.value[index] = response.doc
-    } else {
-      throw new Error("unexpected response")
-    }
-  } catch (error) {
-    if (abortController.signal.aborted) {
-      return
-    }
-    console.error("CredentialList.onCredentialUpdated", error)
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-    unexpectedError.value = `${error}`
-  } finally {
-    progress.value -= 1
-  }
 }
 
 onBeforeUnmount(() => {
@@ -174,8 +142,8 @@ const WithCredentialDocument = WithDocument<CredentialPublic>
               <CredentialFull
                 :credential="doc"
                 :url="url"
-                :is-editing="editingCredentialId === credential.id"
-                @updated="onCredentialUpdated(doc.id)"
+                :is-renaming="editingCredentialId === credential.id"
+                @renamed="onCredentialUpdated()"
                 @canceled="setEditCredential(null)"
               >
                 <div class="flex flex-row gap-4">

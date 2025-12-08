@@ -245,6 +245,8 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		if errE != nil {
 			return nil, errE
 		}
+		credential.id = *storedCredential.ID
+		credential.displayName = storedCredential.DisplayName
 		return credential, nil
 	}, *flowPasskey.SessionData, parsedResponse)
 	if err != nil {
