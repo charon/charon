@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CredentialAddCredentialWithDisplayNameStartRequest, CredentialAddPasskeyCompleteRequest, CredentialAddResponse } from "@/types"
+import { CredentialAddCredentialStartRequest, CredentialAddPasskeyCompleteRequest, CredentialAddResponse } from "@/types"
 
 import { onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
@@ -33,7 +33,7 @@ function getErrorMessage(errorCode: string) {
   }
 }
 
-async function startAddPasskeyCredential(request: CredentialAddCredentialWithDisplayNameStartRequest): Promise<CredentialAddResponse> {
+async function startAddPasskeyCredential(request: CredentialAddCredentialStartRequest): Promise<CredentialAddResponse> {
   const url = router.apiResolve({ name: "CredentialAddPasskeyStart" }).href
   return await postJSON<CredentialAddResponse>(url, request, abortController.signal, progress)
 }

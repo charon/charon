@@ -361,9 +361,6 @@
       "noCredentialsCreate": "Ni metod za avtentikacijo. Ustvarite prvo.",
       "noCredentialsSignIn": "Ni metod za avtentikacijo. Prijavite se ali registrirajte, da ustvarite prvo.",
       "verify": "Potrdi"
-    },
-    "CredentialUpdateDisplayName": {
-      "updateDisplayName": "Posodobite prikazno ime"
     }
   }
 }
