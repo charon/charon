@@ -220,6 +220,10 @@ func (s *Service) CredentialListGet(w http.ResponseWriter, req *http.Request, _ 
 	var result []CredentialRef
 	for _, credentials := range account.Credentials {
 		for _, credential := range credentials {
+			// Code provider credentials are never exposed over the API.
+			if credential.Provider == ProviderCode {
+				continue
+			}
 			result = append(result, credential.Ref())
 		}
 	}
@@ -258,13 +262,18 @@ func (s *Service) CredentialGetGet(w http.ResponseWriter, req *http.Request, par
 	}
 
 	for _, credentials := range account.Credentials {
-		for _, c := range credentials {
-			if c.ID == credentialID {
-				s.WriteJSON(w, req, c.CredentialPublic, nil)
+		for _, credential := range credentials {
+			// Code provider credentials are never exposed over the API.
+			if credential.Provider == ProviderCode {
+				continue
+			}
+			if credential.ID == credentialID {
+				s.WriteJSON(w, req, credential.CredentialPublic, nil)
 				return
 			}
 		}
 	}
+
 	s.NotFound(w, req)
 }
 
