@@ -144,7 +144,7 @@ watch(
       <h2 :id="`credentialfull-provider-${credential.id}`" class="text-xl">{{ getProviderNameTitle(t, credential.provider) }}</h2>
       <form class="mt-1 flex flex-row items-center gap-4" novalidate @submit.prevent="onSubmit" @keyup.esc="onCancel">
         <InputText :id="`credentialfull-input-${credential.id}`" v-model="displayName" class="min-w-0 flex-auto grow" :progress="progress" required />
-        <Button :id="`credentialfull-button-update-${credential.id}`" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{
+        <Button :id="`credentialfull-button-rename-${credential.id}`" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{
           t("common.buttons.rename")
         }}</Button>
         <Button :id="`credentialfull-button-cancel-${credential.id}`" type="button" :progress="progress" @click="onCancel">{{ t("common.buttons.cancel") }}</Button>

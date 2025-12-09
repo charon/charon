@@ -27,18 +27,22 @@ const dataLoadingError = ref("")
 const credentials = ref<Credentials>([])
 
 const refreshKey = ref(0)
-const editingCredentialId = ref<string | null>(null)
+const renamingCredentialId = ref<string | null>(null)
 
-function canEditDisplayName(provider: string) {
+function canRename(provider: string) {
   return provider !== "email" && provider !== "username"
 }
 
-function setEditCredential(credentialId: string | null) {
-  editingCredentialId.value = credentialId
+function setRenameCredential(credentialId: string) {
+  renamingCredentialId.value = credentialId
 }
 
-function onCredentialUpdated() {
-  editingCredentialId.value = null
+function onRenameCancelled() {
+  renamingCredentialId.value = null
+}
+
+function onCredentialRenamed() {
+  renamingCredentialId.value = null
   refreshKey.value++
 }
 
@@ -142,20 +146,20 @@ const WithCredentialDocument = WithDocument<CredentialPublic>
               <CredentialFull
                 :credential="doc"
                 :url="url"
-                :is-renaming="editingCredentialId === credential.id"
-                @renamed="onCredentialUpdated()"
-                @canceled="setEditCredential(null)"
+                :is-renaming="renamingCredentialId === credential.id"
+                @renamed="onCredentialRenamed()"
+                @canceled="onRenameCancelled()"
               >
                 <div class="flex flex-row gap-4">
                   <Button v-if="doc.provider === 'email' && !doc.verified" :id="`credentiallist-button-verify-${doc.id}`" type="button" secondary disabled>{{
                     t("views.CredentialList.verify")
                   }}</Button>
                   <Button
-                    v-if="canEditDisplayName(doc.provider)"
+                    v-if="canRename(doc.provider)"
                     :id="`credentiallist-button-rename-${doc.id}`"
                     type="button"
                     :progress="progress"
-                    @click="setEditCredential(doc.id)"
+                    @click="setRenameCredential(doc.id)"
                     >{{ t("common.buttons.rename") }}</Button
                   >
                   <Button :id="`credentiallist-button-remove-${doc.id}`" type="button" :progress="progress" @click="onRemove(doc.id)">{{
