@@ -89,7 +89,7 @@ type CredentialAddCredentialStartRequest struct {
 
 // CredentialRenameRequest represents the request body for the CredentialRename handler.
 type CredentialRenameRequest struct {
-	CredentialAddCredentialStartRequest
+	DisplayName string `json:"displayName"`
 }
 
 // CredentialAddPasswordCompleteRequest represents the request body for the CredentialAddPasswordCompletePost handler.
@@ -337,6 +337,7 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
+	// We store not mapped e-mail address as a display name.
 	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderEmail, mappedEmail, jsonData, preservedEmail)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -426,6 +427,7 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
+	// We store not mapped username as a display name.
 	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderUsername, mappedUsername, jsonData, preservedUsername)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -953,7 +955,9 @@ FoundCredential:
 	}
 
 	if foundProvider == ProviderEmail || foundProvider == ProviderUsername || foundProvider == ProviderCode {
-		// We do not allow changing display names of e-mail or username credentials, this is the actual e-mail or username itself.
+		// We do not allow changing display names of e-mail or username credentials.
+		// We store not mapped e-mail address or username as a display name.
+		// Code provider credentials are never exposed over the API.
 		errE = errors.New("invalid credential type")
 		errors.Details(errE)["provider"] = foundProvider
 		errors.Details(errE)["id"] = credentialID

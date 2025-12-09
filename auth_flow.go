@@ -155,11 +155,13 @@ func (s *Service) makeIdentityFromCredentials(credentials []Credential) (*Identi
 			if identity == nil {
 				identity = new(Identity)
 			}
+			# Not mapped e-mail address is stored in the display name.
 			identity.Email = credential.DisplayName
 		case ProviderUsername:
 			if identity == nil {
 				identity = new(Identity)
 			}
+			# Not mapped username is stored in the display name.
 			identity.Username = credential.DisplayName
 		default:
 			var token map[string]interface{}

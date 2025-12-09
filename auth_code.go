@@ -160,6 +160,7 @@ func (s *Service) sendCodeForExistingAccount(
 			s.InternalServerErrorWithError(w, req, errors.New("email not found on account"))
 			return
 		}
+		# Not mapped e-mail address is stored in the display name.
 		emails = []string{credential.DisplayName}
 	} else {
 		// mappedEmailOrUsername is an username. Let's see if there are any
