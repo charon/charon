@@ -248,7 +248,7 @@
       "emailAddressLabel": "@:partials.AuthPassword.emailAddressLabel"
     },
     "CredentialAddPasskey": {
-      "displayName": "Oznaka",
+      "displayName": "@:partials.CredentialAddPassword.displayName",
       "passkeyInstructions": "Prosimo, sledite navodilom vašega brskalnika in/ali naprave, da dodate passkey."
     }
   },
