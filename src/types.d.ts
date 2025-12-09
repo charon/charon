@@ -501,6 +501,10 @@ export type CredentialAddCredentialStartRequest = {
   displayName: string
 }
 
+export type CredentialRenameRequest = {
+    displayName: string
+}
+
 export type CredentialAddPasswordCompleteRequest = AuthFlowPasswordCompleteRequest & {
   sessionId: string
 }

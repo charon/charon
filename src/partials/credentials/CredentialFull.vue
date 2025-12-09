@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DeepReadonly } from "vue"
 
-import type { CredentialPublic, CredentialResponse } from "@/types"
+import type {CredentialPublic, CredentialRenameRequest, CredentialResponse} from "@/types"
 
 import { nextTick, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
@@ -70,8 +70,14 @@ async function onSubmit() {
       params: { id: props.credential.id },
     }).href
 
-    const response = await postJSON<CredentialResponse>(url, { displayName: displayName.value }, abortController.signal, progress)
-
+    const response = await postJSON<CredentialResponse>(
+        url,
+        {
+          displayName: displayName.value
+        } as CredentialRenameRequest,
+        abortController.signal,
+        progress
+    )
     if (abortController.signal.aborted) {
       return
     }
