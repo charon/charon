@@ -28,6 +28,8 @@ function getErrorMessage(errorCode: string) {
   switch (errorCode) {
     case "credentialDisplayNameInUse":
       return t("common.errors.credentialDisplayNameInUse")
+    case "credentialDisplayNameMissing":
+      return t("common.errors.credentialDisplayNameMissing")
     default:
       throw new Error(`unexpected error code: ${errorCode}`)
   }
