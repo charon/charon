@@ -41,7 +41,7 @@ function onRenameCancelled() {
   renamingCredentialId.value = null
 }
 
-function onCredentialRenamed() {
+function onRenamed() {
   renamingCredentialId.value = null
   refreshKey.value++
 }
@@ -147,7 +147,7 @@ const WithCredentialDocument = WithDocument<CredentialPublic>
                 :credential="doc"
                 :url="url"
                 :is-renaming="renamingCredentialId === credential.id"
-                @renamed="onCredentialRenamed()"
+                @renamed="onRenamed()"
                 @canceled="onRenameCancelled()"
               >
                 <div class="flex flex-row gap-4">
