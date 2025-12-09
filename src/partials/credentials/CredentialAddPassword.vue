@@ -156,7 +156,7 @@ async function onSubmit() {
       spellcheck="false"
       required
     />
-    <label for="credentialaddpassword-input-label" class="mt-4 mb-1"> {{ t("partials.CredentialAddPassword.label") }}</label>
+    <label for="credentialaddpassword-input-label" class="mt-4 mb-1"> {{ t("partials.CredentialAddPassword.displayName") }}</label>
     <InputText id="credentialaddpassword-input-label" v-model="passwordDisplayName" class="min-w-0 flex-auto grow" :progress="progress" required />
     <div v-if="passwordError" class="mt-4 text-error-600">{{ getErrorMessage(passwordError) }}</div>
     <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>

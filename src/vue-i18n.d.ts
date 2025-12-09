@@ -253,13 +253,13 @@ declare module "vue-i18n" {
       }
       CredentialAddPassword: {
         passwordLabel: string
-        label: string
+        displayName: string
       }
       CredentialAddEmail: {
         emailAddressLabel: string
       }
       CredentialAddPasskey: {
-        label: string
+        displayName: string
         passkeyInstructions: string
       }
     }

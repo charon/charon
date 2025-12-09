@@ -242,13 +242,13 @@
     },
     "CredentialAddPassword": {
       "passwordLabel": "@:partials.AuthPassword.passwordLabel",
-      "label": "Label"
+      "displayName": "Display name"
     },
     "CredentialAddEmail": {
       "emailAddressLabel": "@:partials.AuthPassword.emailAddressLabel"
     },
     "CredentialAddPasskey": {
-      "label": "@:partials.CredentialAddPassword.label",
+      "displayName": "@:partials.CredentialAddPassword.displayName",
       "passkeyInstructions": "Please follow instructions by your browser and/or device to add a passkey."
     }
   },

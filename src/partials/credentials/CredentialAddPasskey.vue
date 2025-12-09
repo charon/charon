@@ -128,7 +128,7 @@ async function onSubmit() {
     We show them ourselves when we want them.
   -->
   <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
-    <label for="credentialaddpasskey-input-label" class="mb-1"> {{ t("partials.CredentialAddPasskey.label") }}</label>
+    <label for="credentialaddpasskey-input-label" class="mb-1"> {{ t("partials.CredentialAddPasskey.displayName") }}</label>
     <InputText id="credentialaddpasskey-input-label" v-model="passkeyDisplayName" class="min-w-0 flex-auto grow" :progress="progress" required />
     <div class="mt-4">{{ t("partials.CredentialAddPasskey.passkeyInstructions") }}</div>
     <div v-if="passkeyError" class="mt-4 text-error-600">{{ getErrorMessage(passkeyError) }}</div>
