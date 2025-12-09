@@ -168,7 +168,6 @@ const WithCredentialDocument = WithDocument<CredentialPublic>
           </WithCredentialDocument>
         </div>
       </template>
-      <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     </div>
   </div>
   <Teleport to="footer">

@@ -502,7 +502,7 @@ export type CredentialAddCredentialStartRequest = {
 }
 
 export type CredentialRenameRequest = {
-    displayName: string
+  displayName: string
 }
 
 export type CredentialAddPasswordCompleteRequest = AuthFlowPasswordCompleteRequest & {
