@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
-	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/hashicorp/go-cleanhttp"
@@ -243,13 +242,12 @@ func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	id := identifier.New()
 	s.completeAuthStep(w, req, false, flow, account,
 		[]Credential{{
 			CredentialPublic: CredentialPublic{
-				ID:          &id,
+				ID:          identifier.New(),
 				Provider:    providerKey,
-				DisplayName: strings.TrimSpace(displayName),
+				DisplayName: displayName,
 				Verified:    false,
 			},
 			ProviderID: idToken.Subject,

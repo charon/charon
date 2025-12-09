@@ -285,10 +285,9 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 			return
 		}
 
-		id := identifier.New()
 		credentials = append(credentials, Credential{
 			CredentialPublic: CredentialPublic{
-				ID:          &id,
+				ID:          identifier.New(),
 				Provider:    ProviderEmail,
 				DisplayName: flow.EmailOrUsername,
 				// We set verified to true because this credential is stored with
@@ -305,10 +304,9 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 			return
 		}
 
-		id := identifier.New()
 		credentials = append(credentials, Credential{
 			CredentialPublic: CredentialPublic{
-				ID:          &id,
+				ID:          identifier.New(),
 				Provider:    ProviderUsername,
 				DisplayName: flow.EmailOrUsername,
 				Verified:    false,
@@ -332,10 +330,9 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 		return
 	}
 
-	id := identifier.New()
 	credentials = append(credentials, Credential{
 		CredentialPublic: CredentialPublic{
-			ID:       &id,
+			ID:       identifier.New(),
 			Provider: ProviderPassword,
 			// TODO: Translate this to user's language.
 			DisplayName: "default password",

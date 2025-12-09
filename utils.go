@@ -1097,5 +1097,5 @@ func getThirdPartyDisplayName(account *Account, jsonData json.RawMessage, provid
 		displayName = existingCredential.DisplayName
 	}
 
-	return displayName, nil
+	return strings.TrimSpace(displayName), nil
 }

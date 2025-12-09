@@ -245,7 +245,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		if errE != nil {
 			return nil, errE
 		}
-		credential.id = *storedCredential.ID
+		credential.id = storedCredential.ID
 		credential.displayName = storedCredential.DisplayName
 		return credential, nil
 	}, *flowPasskey.SessionData, parsedResponse)
@@ -281,7 +281,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 	s.completeAuthStep(w, req, true, flow, account,
 		[]Credential{{
 			CredentialPublic: CredentialPublic{
-				ID:          &credential.id,
+				ID:          credential.id,
 				Provider:    ProviderPasskey,
 				DisplayName: storedCredential.DisplayName,
 				Verified:    false,
@@ -409,7 +409,7 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 	s.completeAuthStep(w, req, true, flow, account,
 		[]Credential{{
 			CredentialPublic: CredentialPublic{
-				ID:          &credential.id,
+				ID:          credential.id,
 				Provider:    ProviderPasskey,
 				DisplayName: flowPasskey.DisplayName,
 				Verified:    false,

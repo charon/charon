@@ -157,7 +157,9 @@ func (s *Service) sendCodeForExistingAccount(
 		credential := account.GetCredential(ProviderEmail, mappedEmailOrUsername)
 		if credential == nil {
 			// This should not happen.
-			s.InternalServerErrorWithError(w, req, errors.New("email not found on account"))
+			errE := errors.New("email address not found on account")
+			errors.Details(errE)["email"] = mappedEmailOrUsername
+			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
 		# Not mapped e-mail address is stored in the display name.
@@ -340,10 +342,10 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-	id := identifier.New()
+
 	credentials := []Credential{{
 		CredentialPublic: CredentialPublic{
-			ID:          &id,
+			ID:          identifier.New(),
 			Provider:    ProviderEmail,
 			DisplayName: preservedEmailOrUsername,
 			// We set verified to true because this credential is stored with

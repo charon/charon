@@ -66,7 +66,7 @@ func (a *Account) UpdateCredentials(credentials []Credential) errors.E {
 		for i, c := range a.Credentials[credential.Provider] {
 			if credential.Provider == ProviderPassword {
 				// Password credentials do not use provider ID.
-				if *c.ID == *credential.ID {
+				if c.ID == credential.ID {
 					a.Credentials[credential.Provider][i] = credential
 					updated = true
 					break

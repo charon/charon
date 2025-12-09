@@ -504,13 +504,12 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	id := identifier.New()
 	s.completeAuthStep(w, req, false, flow, account,
 		[]Credential{{
 			CredentialPublic: CredentialPublic{
-				ID:          &id,
+				ID:          identifier.New(),
 				Provider:    providerKey,
-				DisplayName: strings.TrimSpace(displayName),
+				DisplayName: displayName,
 				Verified:    false,
 			},
 			ProviderID: credentialID,
