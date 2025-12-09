@@ -143,13 +143,7 @@ const WithCredentialDocument = WithDocument<CredentialPublic>
         <div v-for="credential in credentials" :key="credential.id" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
           <WithCredentialDocument :key="`${credential.id}-${refreshKey}`" :params="{ id: credential.id }" name="CredentialGet">
             <template #default="{ doc, url }">
-              <CredentialFull
-                :credential="doc"
-                :url="url"
-                :is-renaming="renamingCredentialId === credential.id"
-                @renamed="onRenamed()"
-                @canceled="onRenameCancelled()"
-              >
+              <CredentialFull :credential="doc" :url="url" :is-renaming="renamingCredentialId === credential.id" @renamed="onRenamed()" @canceled="onRenameCancelled()">
                 <div class="flex flex-row gap-4">
                   <Button v-if="doc.provider === 'email' && !doc.verified" :id="`credentiallist-button-verify-${doc.id}`" type="button" secondary disabled>{{
                     t("views.CredentialList.verify")
