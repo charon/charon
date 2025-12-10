@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DeepReadonly } from "vue"
 
-import type { CredentialPublic, CredentialRenameRequest, CredentialResponse } from "@/types"
+import type { CredentialPublic, CredentialRenameRequest, CredentialResponse, CredentialSignalData } from "@/types"
 
 import { nextTick, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
@@ -81,11 +81,19 @@ async function onSubmit() {
     if (abortController.signal.aborted) {
       return
     }
-    if (response.error) {
+    if ("error" in response) {
       // We check if it is an expected error code by trying to get the error message.
       getErrorMessage(response.error)
       renameError.value = response.error
       return
+    }
+
+    if (!("success" in response)) {
+      throw new Error("unexpected response")
+    }
+
+    if ("signal" in response) {
+      await signalPasskeyUpdate(response.signal)
     }
 
     displayName.value = ""
@@ -98,6 +106,18 @@ async function onSubmit() {
     unexpectedError.value = t("common.errors.unexpected")
   } finally {
     progress.value -= 1
+  }
+}
+async function signalPasskeyUpdate(signal: CredentialSignalData) {
+  try {
+    await PublicKeyCredential.signalCurrentUserDetails({
+      rpId: signal.rpId,
+      userId: signal.userId,
+      name: signal.name,
+      displayName: signal.displayName,
+    })
+  } catch {
+    // Intentionally silent, SignalAPI provides no feedback whether update was processed by any authenticator to prevent information leakage.
   }
 }
 

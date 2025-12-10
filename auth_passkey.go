@@ -418,3 +418,22 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 			Data:       jsonData,
 		}})
 }
+
+func (s *Service) getPasskeySignalData(credential Credential, updatedDisplayName string) (*CredentialSignalData, errors.E) {
+	var pk passkeyCredential
+	errE := x.UnmarshalWithoutUnknownFields(credential.Data, &pk)
+	if errE != nil {
+		errors.Details(errE)["id"] = credential.ID
+		return nil, errE
+	}
+
+	pk.id = credential.ID
+	pk.displayName = updatedDisplayName
+
+	return &CredentialSignalData{
+		RPId:        s.passkeyProvider().Config.RPID,
+		UserID:      base64.RawURLEncoding.EncodeToString(pk.id[:]),
+		Name:        pk.WebAuthnName(),
+		DisplayName: pk.WebAuthnDisplayName(),
+	}, nil
+}

@@ -513,7 +513,21 @@ export type CredentialAddPasskeyCompleteRequest = AuthFlowPasskeyCreateCompleteR
   sessionId: string
 }
 
-export type CredentialResponse = {
-  error?: string
-  success?: boolean
+export type CredentialResponse =
+  | {
+      error: string
+    }
+  | {
+      success: boolean
+    }
+  | {
+      success: boolean
+      signal: CredentialSignalData
+    }
+
+export type CredentialSignalData = {
+  rpId: string
+  userId: string
+  name: string
+  displayName: string
 }

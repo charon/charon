@@ -13,6 +13,7 @@ import (
 
 	"github.com/alexedwards/argon2id"
 	"github.com/go-webauthn/webauthn/webauthn"
+	"github.com/rs/zerolog"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
@@ -121,18 +122,34 @@ func (s credentialAddSession) Expired() bool {
 
 // CredentialResponse represents the response body for credential update operations.
 type CredentialResponse struct {
-	Error   ErrorCode `json:"error,omitempty"`
-	Success bool      `json:"success,omitempty"`
+	Error   ErrorCode             `json:"error,omitempty"`
+	Success bool                  `json:"success,omitempty"`
+	Signal  *CredentialSignalData `json:"signal,omitempty"`
+}
+
+// CredentialSignalData represents the response body for webauthn credential signalCurrentUserDetails - clientside renaming.
+type CredentialSignalData struct {
+	RPId        string `json:"rpId"`
+	UserID      string `json:"userId"`
+	Name        string `json:"name"`
+	DisplayName string `json:"displayName"`
 }
 
 // This function does not check for duplicates. Duplicate checking
 // should be done by the caller before calling this function.
 func (s *Service) addCredentialToAccount(
-	ctx context.Context, account *Account, providerKey Provider, providerID string, jsonData json.RawMessage, displayName string,
+	ctx context.Context, account *Account, providerKey Provider, providerID string, jsonData json.RawMessage, displayName string, credentialID *identifier.Identifier,
 ) (identifier.Identifier, errors.E) {
+	var id identifier.Identifier
+	if credentialID != nil {
+		id = *credentialID
+	} else {
+		id = identifier.New()
+	}
+
 	newCredential := Credential{
 		CredentialPublic: CredentialPublic{
-			ID:          identifier.New(),
+			ID:          id,
 			Provider:    providerKey,
 			DisplayName: displayName,
 			// Verified is set to false for all providers, including e-mail. E-mail verification is a separate procedure.
@@ -346,7 +363,7 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 	}
 
 	// We store not mapped e-mail address as a display name.
-	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderEmail, mappedEmail, jsonData, preservedEmail)
+	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderEmail, mappedEmail, jsonData, preservedEmail, nil)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -436,7 +453,7 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 	}
 
 	// We store not mapped username as a display name.
-	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderUsername, mappedUsername, jsonData, preservedUsername)
+	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderUsername, mappedUsername, jsonData, preservedUsername, nil)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -660,7 +677,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 	}
 
 	providerID := ""
-	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderPassword, providerID, jsonData, cas.DisplayName)
+	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderPassword, providerID, jsonData, cas.DisplayName, nil)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -822,7 +839,7 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 		return
 	}
 
-	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderPasskey, providerID, jsonData, cas.DisplayName)
+	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderPasskey, providerID, jsonData, cas.DisplayName, &credential.id)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -901,6 +918,7 @@ FoundCredential:
 	s.WriteJSON(w, req, CredentialResponse{
 		Error:   "",
 		Success: true,
+		Signal:  nil,
 	}, nil)
 }
 
@@ -926,6 +944,7 @@ func (s *Service) CredentialRenamePost(w http.ResponseWriter, req *http.Request,
 		s.WriteJSON(w, req, CredentialResponse{
 			Error:   ErrorCodeCredentialDisplayNameMissing,
 			Success: false,
+			Signal:  nil,
 		}, nil)
 		return
 	}
@@ -982,12 +1001,14 @@ FoundCredential:
 				s.WriteJSON(w, req, CredentialResponse{
 					Error:   "",
 					Success: true,
+					Signal:  nil,
 				}, nil)
 				return
 			}
 			s.WriteJSON(w, req, CredentialResponse{
 				Error:   ErrorCodeCredentialDisplayNameInUse,
 				Success: false,
+				Signal:  nil,
 			}, nil)
 			return
 		}
@@ -1001,8 +1022,19 @@ FoundCredential:
 		return
 	}
 
+	var signalData *CredentialSignalData
+	if foundProvider == ProviderPasskey {
+		signalData, errE = s.getPasskeySignalData(account.Credentials[foundProvider][foundIndex], requestDisplayName)
+		// This is an internal server error, but dashboard rename was successful, so we log and continue.
+		if errE != nil {
+			zerolog.Ctx(ctx).Warn().Err(errE).Msg("failed to prepare passkey signal data")
+		}
+	}
+
 	s.WriteJSON(w, req, CredentialResponse{
 		Error:   "",
 		Success: true,
+		// nil for non-passkey providers or on error and omitted.
+		Signal: signalData,
 	}, nil)
 }
