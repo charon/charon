@@ -351,4 +351,66 @@ test.describe.serial("Charon Sign-in Flows", () => {
       "Successfully completed wrong email code sign-in flow: entered email, navigated through flow, selected tester email, attempted signin via incorrect code.",
     )
   })
+
+  test("Email sign-in code width test", async ({ context }) => {
+    const page = await context.newPage()
+
+    await page.goto(CHARON_URL)
+
+    // Find and click the "SIGN-IN OR SIGN-UP" button.
+    const signInButton = page.locator("#navbar-button-signin")
+    await expect(signInButton).toBeVisible()
+    await checkpoint(page, "main-page-before-signin")
+    await signInButton.click()
+
+    // Find the email input field and enter 'tester@email.com'.
+    const emailField = page.locator("input#authstart-input-email")
+    await expect(emailField).toBeVisible()
+    await checkpoint(page, "main-page-after-clicking-signin")
+    await emailField.fill("tester@email.com")
+
+    // Find and click the NEXT button.
+    const nextButton = page.locator("button#authstart-button-next")
+    await expect(nextButton).toBeVisible()
+    await checkpoint(page, "auth-page-after-entering-tester-email")
+    await nextButton.click()
+
+    // Find and click the SEND CODE button.
+    const sendCodeButton = page.locator("button#authpassword-button-sendcode")
+    await expect(sendCodeButton).toBeVisible()
+    await checkpoint(page, "auth-page-after-entering-email-and-clicking-next")
+    await sendCodeButton.click()
+
+    // Get email code from mailpit to delete all emails.
+    await extractCodeFromEmail(EMAIL_CODE_REGEX_MATCHER)
+    await expect(page.locator("button#authcode-button-resendcode")).toBeVisible()
+    await checkpoint(page, "auth-page-after-entering-email-before-code")
+
+    // Find the code input field and enter it.
+    const codeField = page.locator("input#code")
+    await expect(codeField).toBeVisible()
+    await checkpoint(page, "auth-page-after-clicking-send-code")
+    // 15 characters can still fit into the input field with all vertical lines visible.
+    for (let i = 1; i < 15; i++) {
+      await codeField.pressSequentially(String.fromCharCode(96 + i))
+    }
+
+    for (let i = 1; i < 10; i++) {
+      await codeField.pressSequentially(String.fromCharCode(96 + i))
+      // Vertical lines should disappear one by one until they are all gone.
+      await checkpoint(page, `auth-page-after-entering-char-for-code-${i}`)
+    }
+
+    // Now go back by pressing left arrow key.
+    for (let i = 1; i < 15; i++) {
+      await codeField.press("ArrowLeft")
+    }
+    for (let i = 1; i < 10; i++) {
+      // Vertical lines should reappear one by one as cursor moves left.
+      await codeField.press("ArrowLeft")
+      await checkpoint(page, `auth-page-after-pressing-left-${i}`)
+    }
+
+    console.log("Successfully entered an email code so long that vertical lines disappear.")
+  })
 })
