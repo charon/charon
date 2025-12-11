@@ -95,11 +95,10 @@ export async function checkpoint(page: Page, name: string, options: CheckpointOp
   await page.waitForLoadState("networkidle")
 
   // Check that images have loaded.
-  // See: https://github.com/microsoft/playwright/issues/6046#issuecomment-1803609118
-  for (const img of await page.getByRole("img").all()) {
-    await expect(img).toHaveJSProperty("complete", true)
-    await expect(img).not.toHaveJSProperty("naturalWidth", 0)
-  }
+  // See: https://github.com/microsoft/playwright/issues/6046#issuecomment-3641164427
+  await page.waitForFunction(() => {
+    return Array.from(document.querySelectorAll("img")).every((img) => img.complete && img.naturalWidth > 0)
+  })
 
   // TODO: Remove when supported by Playwright.
   //       See: https://github.com/microsoft/playwright/issues/23502
