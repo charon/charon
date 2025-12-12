@@ -252,6 +252,8 @@ async function addRedirectUriTemplate(client: { redirectUriTemplates: string[] }
 }
 
 function canBasicSubmit(): boolean {
+  // Submission is on purpose not disabled on basicUnexpectedError so that user can retry.
+
   // Required fields.
   if (!name.value) {
     return false
@@ -292,6 +294,8 @@ async function onBasicSubmit() {
 }
 
 function canVariablesSubmit(): boolean {
+  // Submission is on purpose not disabled on variablesUnexpectedError so that user can retry.
+
   // Required fields.
   for (const variable of variables.value) {
     if (!variable.name) {
@@ -344,6 +348,8 @@ async function onAddVariable() {
 }
 
 function canClientsPublicSubmit(): boolean {
+  // Submission is on purpose not disabled on clientsPublicUnexpectedError so that user can retry.
+
   // Required fields.
   for (const client of clientsPublic.value) {
     if (!client.redirectUriTemplates.length) {
@@ -439,6 +445,8 @@ async function onAddClientPublic() {
 }
 
 function canClientsBackendSubmit(): boolean {
+  // Submission is on purpose not disabled on clientsBackendUnexpectedError so that user can retry.
+
   // Required fields.
   for (const client of clientsBackend.value) {
     if (!client.redirectUriTemplates.length) {
@@ -537,6 +545,8 @@ async function onAddClientBackend() {
 }
 
 function canClientsServiceSubmit(): boolean {
+  // Submission is on purpose not disabled on clientsServiceUnexpectedError so that user can retry.
+
   // Required fields.
   for (const client of clientsService.value) {
     if (!client.accessTokenLifespan) {
@@ -603,6 +613,8 @@ async function onAddClientService() {
 }
 
 function canAdminsSubmit(): boolean {
+  // Button is on purpose not disabled on adminsUnexpectedError so that user can retry.
+
   // Anything changed?
   if (!equals(applicationTemplate.value!.admins || [], admins.value)) {
     return true
@@ -659,6 +671,10 @@ async function onAddAdmin() {
         <div v-if="dataLoading">{{ t("common.data.dataLoading") }}</div>
         <div v-else-if="dataLoadingError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
         <template v-else>
+          <!--
+            We set novalidate because we do not want UA to show hints.
+            We show them ourselves when we want them.
+          -->
           <form class="flex flex-col" novalidate @submit.prevent="onBasicSubmit">
             <label for="name" class="mb-1">{{ t("views.ApplicationTemplateGet.applicationTemplateName") }}</label>
             <InputText id="name" v-model="name" class="min-w-0 flex-auto grow" :readonly="!metadata.can_update" :progress="progress" required />
@@ -684,9 +700,6 @@ async function onAddAdmin() {
             <div v-if="basicUnexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="basicUpdated" class="mt-4 text-success-600">{{ t("views.ApplicationTemplateGet.applicationsUpdated") }}</div>
             <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
-              <!--
-                Button is on purpose not disabled on basicUnexpectedError so that user can retry.
-              -->
               <Button type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
             </div>
           </form>
@@ -694,6 +707,10 @@ async function onAddAdmin() {
             <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.variables") }}</h2>
             <div v-if="variablesUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="variablesUpdated" class="text-success-600">{{ t("views.ApplicationTemplateGet.variablesUpdated") }}</div>
+            <!--
+              We set novalidate because we do not want UA to show hints.
+              We show them ourselves when we want them.
+            -->
             <form v-if="metadata.can_update || variables.length || canVariablesSubmit()" class="flex flex-col" novalidate @submit.prevent="onVariablesSubmit">
               <ol>
                 <li v-for="(variable, i) in variables" :key="i" class="mb-4 grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
@@ -727,9 +744,6 @@ async function onAddAdmin() {
               </ol>
               <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
                 <Button type="button" @click.prevent="onAddVariable">{{ t("views.ApplicationTemplateGet.addVariable") }}</Button>
-                <!--
-                  Button is on purpose not disabled on variablesUnexpectedError so that user can retry.
-                -->
                 <Button type="submit" primary :disabled="!canVariablesSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
               </div>
             </form>
@@ -738,6 +752,10 @@ async function onAddAdmin() {
             <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.publicClients") }}</h2>
             <div v-if="clientsPublicUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="clientsPublicUpdated" class="text-success-600">{{ t("views.ApplicationTemplateGet.publicClientsUpdated") }}</div>
+            <!--
+              We set novalidate because we do not want UA to show hints.
+              We show them ourselves when we want them.
+            -->
             <form v-if="metadata.can_update || clientsPublic.length || canClientsPublicSubmit()" class="flex flex-col" novalidate @submit.prevent="onClientsPublicSubmit">
               <ol>
                 <li v-for="(client, i) in clientsPublic" :key="i" class="mb-4 grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
@@ -862,9 +880,6 @@ async function onAddAdmin() {
               </ol>
               <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
                 <Button type="button" @click.prevent="onAddClientPublic">{{ t("views.ApplicationTemplateGet.addClient") }}</Button>
-                <!--
-                  Button is on purpose not disabled on clientsPublicUnexpectedError so that user can retry.
-                -->
                 <Button type="submit" primary :disabled="!canClientsPublicSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
               </div>
             </form>
@@ -873,6 +888,10 @@ async function onAddAdmin() {
             <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.backendClients") }}</h2>
             <div v-if="clientsBackendUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="clientsBackendUpdated" class="text-success-600">{{ t("views.ApplicationTemplateGet.backendClientsUpdated") }}</div>
+            <!--
+              We set novalidate because we do not want UA to show hints.
+              We show them ourselves when we want them.
+            -->
             <form
               v-if="metadata.can_update || clientsBackend.length || canClientsBackendSubmit()"
               class="flex flex-col"
@@ -1033,9 +1052,6 @@ async function onAddAdmin() {
               </ol>
               <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
                 <Button type="button" @click.prevent="onAddClientBackend">{{ t("views.ApplicationTemplateGet.addClient") }}</Button>
-                <!--
-                  Button is on purpose not disabled on clientsBackendUnexpectedError so that user can retry.
-                -->
                 <Button type="submit" primary :disabled="!canClientsBackendSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
               </div>
             </form>
@@ -1044,6 +1060,10 @@ async function onAddAdmin() {
             <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.serviceClients") }}</h2>
             <div v-if="clientsServiceUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="clientsServiceUpdated" class="text-success-600">{{ t("views.ApplicationTemplateGet.serviceClientsUpdated") }}</div>
+            <!--
+              We set novalidate because we do not want UA to show hints.
+              We show them ourselves when we want them.
+            -->
             <form
               v-if="metadata.can_update || clientsService.length || canClientsServiceSubmit()"
               class="flex flex-col"
@@ -1174,9 +1194,6 @@ async function onAddAdmin() {
               </ol>
               <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
                 <Button type="button" @click.prevent="onAddClientService">{{ t("views.ApplicationTemplateGet.addClient") }}</Button>
-                <!--
-                  Button is on purpose not disabled on clientsServiceUnexpectedError so that user can retry.
-                -->
                 <Button type="submit" primary :disabled="!canClientsServiceSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
               </div>
             </form>
@@ -1185,6 +1202,10 @@ async function onAddAdmin() {
             <h2 class="text-xl font-bold">{{ t("common.entities.admins") }}</h2>
             <div v-if="adminsUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="adminsUpdated" class="text-success-600">{{ t("common.data.adminsUpdated") }}</div>
+            <!--
+              We set novalidate because we do not want UA to show hints.
+              We show them ourselves when we want them.
+            -->
             <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
               <ol class="flex flex-col gap-y-4">
                 <li v-for="(admin, i) in admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
@@ -1208,9 +1229,6 @@ async function onAddAdmin() {
               </ol>
               <div class="flex flex-row justify-between gap-4" :class="admins.length ? 'mt-4' : ''">
                 <Button type="button" @click.prevent="onAddAdmin">{{ t("common.buttons.addAdmin") }}</Button>
-                <!--
-                  Button is on purpose not disabled on adminsUnexpectedError so that user can retry.
-                -->
                 <Button type="submit" primary :disabled="!canAdminsSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
               </div>
             </form>

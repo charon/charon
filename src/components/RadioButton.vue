@@ -7,39 +7,22 @@ its DOM attributes without flickering how the component looks.
 -->
 
 <script setup lang="ts" generic="T">
-import { computed } from "vue"
-
-const props = withDefaults(
+withDefaults(
   defineProps<{
     progress?: number
     disabled?: boolean
-    modelValue?: T
   }>(),
   {
     progress: 0,
     disabled: false,
-    modelValue: undefined,
   },
 )
+
+const model = defineModel<T>()
 
 // We want all fallthrough attributes to be passed to the input element.
 defineOptions({
   inheritAttrs: false,
-})
-
-const $emit = defineEmits<{
-  "update:modelValue": [value: T]
-}>()
-
-const v = computed({
-  get() {
-    // We use ! operator here to satisfy type constraints and assert that modelValue cannot be undefined,
-    // but in fact modelValue can be undefined, but that is handled correctly by Vue's v-model on <input>.
-    return props.modelValue!
-  },
-  set(value: T) {
-    $emit("update:modelValue", value)
-  },
 })
 </script>
 
@@ -47,7 +30,7 @@ const v = computed({
   <!-- We wrap input in div to align radio button correctly vertically inside the grid. -->
   <div>
     <input
-      v-model="v"
+      v-model="model"
       v-bind="$attrs"
       :disabled="progress > 0 || disabled"
       type="radio"

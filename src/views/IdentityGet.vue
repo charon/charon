@@ -224,6 +224,8 @@ async function onSubmit(payload: Identity, update: "basic" | "users" | "admins" 
 }
 
 function canBasicSubmit(): boolean {
+  // Submission is on purpose not disabled on basicUnexpectedError so that user can retry.
+
   // At least something is required.
   if (!username.value && !email.value && !givenName.value && !fullName.value && !pictureUrl.value) {
     return false
@@ -270,6 +272,8 @@ async function onBasicSubmit() {
 }
 
 function canUsersSubmit(): boolean {
+  // Submission is on purpose not disabled on usersUnexpectedError so that user can retry.
+
   // Anything changed?
   if (!equals(identity.value!.users || [], users.value)) {
     return true
@@ -313,6 +317,8 @@ async function onAddUser() {
 }
 
 function canAdminsSubmit(): boolean {
+  // Submission is on purpose not disabled on adminsUnexpectedError so that user can retry.
+
   // Anything changed?
   if (!equals(identity.value!.admins || [], admins.value)) {
     return true
@@ -356,6 +362,8 @@ async function onAddAdmin() {
 }
 
 function canOrganizationsSubmit(): boolean {
+  // Submission is on purpose not disabled on identityOrganizationsUnexpectedError so that user can retry.
+
   // Anything changed?
   if (!equals(identity.value!.organizations || [], identityOrganizations.value)) {
     return true
@@ -436,6 +444,10 @@ function organizationLabels(identityOrganization: IdentityOrganizationType | Dee
         <div v-if="dataLoading">{{ t("common.data.dataLoading") }}</div>
         <div v-else-if="dataLoadingError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
         <template v-else>
+          <!--
+            We set novalidate because we do not want UA to show hints.
+            We show them ourselves when we want them.
+          -->
           <form class="flex flex-col" novalidate @submit.prevent="onBasicSubmit">
             <label for="username" class="mb-1"
               >{{ t("common.fields.username") }} <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
@@ -466,15 +478,16 @@ function organizationLabels(identityOrganization: IdentityOrganizationType | Dee
             <div v-if="basicUnexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="basicUpdated" class="mt-4 text-success-600">{{ t("views.IdentityGet.identityUpdated") }}</div>
             <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
-              <!--
-                Button is on purpose not disabled on basicUnexpectedError so that user can retry.
-              -->
               <Button type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
             </div>
           </form>
           <h2 class="text-xl font-bold">{{ t("common.entities.users") }}</h2>
           <div v-if="usersUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
           <div v-else-if="usersUpdated" class="text-success-600">{{ t("views.IdentityGet.usersUpdated") }}</div>
+          <!--
+            We set novalidate because we do not want UA to show hints.
+            We show them ourselves when we want them.
+          -->
           <form class="flex flex-col" novalidate @submit.prevent="onUsersSubmit">
             <ol class="flex flex-col gap-y-4">
               <li v-for="(user, i) in users" :key="i" class="grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
@@ -499,15 +512,16 @@ function organizationLabels(identityOrganization: IdentityOrganizationType | Dee
             </ol>
             <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4" :class="users.length ? 'mt-4' : ''">
               <Button type="button" @click.prevent="onAddUser">{{ t("common.buttons.addUser") }}</Button>
-              <!--
-                Button is on purpose not disabled on usersUnexpectedError so that user can retry.
-              -->
               <Button type="submit" primary :disabled="!canUsersSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
             </div>
           </form>
           <h2 class="text-xl font-bold">{{ t("common.entities.admins") }}</h2>
           <div v-if="adminsUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
           <div v-else-if="adminsUpdated" class="text-success-600">{{ t("common.data.adminsUpdated") }}</div>
+          <!--
+            We set novalidate because we do not want UA to show hints.
+            We show them ourselves when we want them.
+          -->
           <form class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
             <ol class="flex flex-col gap-y-4">
               <li v-for="(admin, i) in admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
@@ -532,9 +546,6 @@ function organizationLabels(identityOrganization: IdentityOrganizationType | Dee
             </ol>
             <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4" :class="admins.length ? 'mt-4' : ''">
               <Button type="button" @click.prevent="onAddAdmin">{{ t("common.buttons.addAdmin") }}</Button>
-              <!--
-                Button is on purpose not disabled on adminsUnexpectedError so that user can retry.
-              -->
               <Button type="submit" primary :disabled="!canAdminsSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
             </div>
           </form>
@@ -542,6 +553,10 @@ function organizationLabels(identityOrganization: IdentityOrganizationType | Dee
             <h2 class="text-xl font-bold">{{ t("views.IdentityGet.addedOrganizations") }}</h2>
             <div v-if="identityOrganizationsUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="identityOrganizationsUpdated" class="text-success-600">{{ t("views.IdentityGet.organizationsUpdated") }}</div>
+            <!--
+              We set novalidate because we do not want UA to show hints.
+              We show them ourselves when we want them.
+            -->
             <form v-if="identityOrganizations.length || canOrganizationsSubmit()" class="flex flex-col" novalidate @submit.prevent="onOrganizationsSubmit">
               <ul>
                 <li v-for="(identityOrganization, i) in identityOrganizations" :key="identityOrganization.organization.id" class="mb-4 flex flex-col">
@@ -560,9 +575,6 @@ function organizationLabels(identityOrganization: IdentityOrganizationType | Dee
                 </li>
               </ul>
               <div v-if="metadata.can_update" class="flex flex-row justify-end">
-                <!--
-                  Button is on purpose not disabled on identityOrganizationsUnexpectedError so that user can retry.
-                -->
                 <Button id="organizations-update" type="submit" primary :disabled="!canOrganizationsSubmit()" :progress="progress">{{
                   t("common.buttons.update")
                 }}</Button>

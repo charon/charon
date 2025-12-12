@@ -69,6 +69,10 @@ async function onSignOut() {
 }
 
 async function onSignIn() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   await signIn(progress)
 }
 </script>

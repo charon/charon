@@ -35,6 +35,13 @@ onMounted(() => {
   document.getElementById("name")?.focus()
 })
 
+function canSubmit(): boolean {
+  // Submission is on purpose not disabled on unexpectedError so that user can retry.
+
+  // Required fields.
+  return !!name.value
+}
+
 async function onSubmit() {
   if (abortController.signal.aborted) {
     return
@@ -80,16 +87,17 @@ async function onSubmit() {
         <div class="flex flex-row items-center">
           <h1 class="text-2xl font-bold">{{ t("views.OrganizationCreate.createOrganization") }}</h1>
         </div>
+        <!--
+          We set novalidate because we do not want UA to show hints.
+          We show them ourselves when we want them.
+        -->
         <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
           <label for="name" class="mb-1">{{ t("views.OrganizationCreate.organizationName") }}</label>
           <InputText id="name" v-model="name" class="min-w-0 flex-auto grow" :progress="progress" required />
           <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
           <div v-else class="mt-4">{{ t("views.OrganizationCreate.chooseOrganizationName") }}</div>
           <div class="mt-4 flex flex-row justify-end">
-            <!--
-              Button is on purpose not disabled on unexpectedError so that user can retry.
-            -->
-            <Button type="submit" primary :disabled="!name" :progress="progress">{{ t("common.buttons.create") }}</Button>
+            <Button type="submit" primary :disabled="!canSubmit()" :progress="progress">{{ t("common.buttons.create") }}</Button>
           </div>
         </form>
       </div>

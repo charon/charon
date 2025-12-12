@@ -7,26 +7,22 @@ its DOM attributes without flickering how the component looks.
 -->
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, onUpdated, useTemplateRef } from "vue"
+import { onBeforeUnmount, onMounted, onUpdated, useTemplateRef } from "vue"
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     progress?: number
     readonly?: boolean
-    modelValue?: string
     invalid?: boolean
   }>(),
   {
     progress: 0,
     readonly: false,
-    modelValue: "",
     invalid: false,
   },
 )
 
-const $emit = defineEmits<{
-  "update:modelValue": [value: string]
-}>()
+const model = defineModel<string>({ default: "" })
 
 const el = useTemplateRef<HTMLFormElement>("el")
 
@@ -63,22 +59,12 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener("resize", resize)
 })
-
-const v = computed({
-  get() {
-    return props.modelValue
-  },
-  set(value: string) {
-    $emit("update:modelValue", value)
-    resize()
-  },
-})
 </script>
 
 <template>
   <textarea
     ref="el"
-    v-model="v"
+    v-model="model"
     :readonly="progress > 0 || readonly"
     class="h-10 resize-none rounded-sm border-0 shadow-sm ring-2 ring-neutral-300 focus:ring-2"
     :class="{

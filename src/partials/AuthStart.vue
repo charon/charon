@@ -93,6 +93,20 @@ function onBeforeLeave() {
   abortController.abort()
 }
 
+function canNext(): boolean {
+  // Submission is on purpose not disabled on unexpectedError so that user can retry.
+  if (passwordError.value) {
+    return false
+  }
+
+  // We enable submission when emailOrUsername is not empty because we do not tell users what is
+  // expected upfront. If they try a too short emailOrUsername we will tell them after submission.
+  // We prefer this so that they do not wonder why the button is not enabled. We also prefer this
+  // because we do not want to do full emailOrUsername normalization on the client side so we might
+  // be counting characters differently here, leading to confusion.
+  return !!props.flow.getEmailOrUsername().trim()
+}
+
 async function onNext() {
   if (abortController.signal.aborted) {
     return
@@ -157,7 +171,7 @@ function onThirdPartyProvider(provider: string) {
     <div class="flex flex-col">
       <label for="authstart-input-email" class="mb-1">{{ t("partials.AuthStart.emailOrUsernameLabel") }}</label>
       <!--
-        We set novalidate because we do not UA to show hints.
+        We set novalidate because we do not want UA to show hints.
         We show them ourselves when we want them.
       -->
       <form class="flex flex-row gap-4" novalidate @submit.prevent="onNext">
@@ -176,17 +190,7 @@ function onThirdPartyProvider(provider: string) {
           minlength="3"
           required
         />
-        <!--
-          Here we enable button when emailOrUsername is not empty because we do not tell users
-          what is expected upfront. If they try a too short emailOrUsername we will tell them.
-          We prefer this so that they do not wonder why the button is not enabled.
-          We also prefer this because we do not want to do full emailOrUsername normalization on the
-          client side so we might be counting characters differently here, leading to confusion.
-          Button is on purpose not disabled on unexpectedError so that user can retry.
-        -->
-        <Button id="authstart-button-next" primary type="submit" :disabled="!flow.getEmailOrUsername().trim() || !!passwordError" :progress="progress">{{
-          t("common.buttons.next")
-        }}</Button>
+        <Button id="authstart-button-next" primary type="submit" :disabled="!canNext()" :progress="progress">{{ t("common.buttons.next") }}</Button>
       </form>
       <div v-if="passwordError" class="mt-4 text-error-600">{{ getErrorMessage(passwordError) }}</div>
       <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
