@@ -245,6 +245,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 			return nil, errE
 		}
 		var credential passkeyCredential
+		// This cannot return nil because we just got the account by matching the provider ID.
 		storedCredential = account.GetCredential(ProviderPasskey, providerID)
 		errE = x.Unmarshal(storedCredential.Data, &credential)
 		if errE != nil {
