@@ -138,7 +138,8 @@ async function onSubmit() {
       return
     }
     console.error("CredentialFull.onSubmit", error)
-    unexpectedError.value = t("common.errors.unexpected")
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1
   }
