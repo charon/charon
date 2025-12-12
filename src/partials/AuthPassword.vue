@@ -386,9 +386,7 @@ async function onCode() {
           spellcheck="false"
           required
         />
-        <Button id="authpassword-button-next" primary type="submit" tabindex="2" :disabled="!canNext()" :progress="progress">{{
-          t("common.buttons.next")
-        }}</Button>
+        <Button id="authpassword-button-next" primary type="submit" tabindex="2" :disabled="!canNext()" :progress="progress">{{ t("common.buttons.next") }}</Button>
       </form>
     </div>
     <template v-if="passwordError">

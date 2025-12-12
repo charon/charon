@@ -664,6 +664,10 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
         <div v-if="dataLoading">{{ t("common.data.dataLoading") }}</div>
         <div v-else-if="dataLoadingError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
         <template v-else>
+          <!--
+            We set novalidate because we do not want UA to show hints.
+            We show them ourselves when we want them.
+          -->
           <form class="flex flex-col" novalidate @submit.prevent="onBasicSubmit">
             <label for="name" class="mb-1">{{ t("views.OrganizationGet.organizationName") }}</label>
             <InputText id="name" v-model="name" class="min-w-0 flex-auto grow" :readonly="!metadata.can_update" :progress="progress" required />
@@ -689,6 +693,10 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
             <h2 class="text-xl font-bold">{{ t("views.OrganizationGet.addedApplications") }}</h2>
             <div v-if="applicationsUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="applicationsUpdated" class="text-success-600">{{ t("views.OrganizationGet.addedApplicationsUpdated") }}</div>
+            <!--
+              We set novalidate because we do not want UA to show hints.
+              We show them ourselves when we want them.
+            -->
             <form v-if="metadata.can_update && (applications.length || canApplicationsSubmit())" class="flex flex-col" novalidate @submit.prevent="onApplicationsSubmit">
               <ul>
                 <li v-for="(application, i) in applications" :key="application.id || i" class="mb-4 flex flex-col">
@@ -811,6 +819,10 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
             <h2 class="text-xl font-bold">{{ t("common.entities.admins") }}</h2>
             <div v-if="adminsUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="adminsUpdated" class="text-success-600">{{ t("common.data.adminsUpdated") }}</div>
+            <!--
+              We set novalidate because we do not want UA to show hints.
+              We show them ourselves when we want them.
+            -->
             <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
               <ol class="flex flex-col gap-y-4">
                 <li v-for="(admin, i) in admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
@@ -838,6 +850,10 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
             <h2 class="text-xl font-bold">{{ t("views.OrganizationGet.addedIdentities") }}</h2>
             <div v-if="organizationIdentitiesUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="organizationIdentitiesUpdated" class="text-success-600">{{ t("views.OrganizationGet.identitiesUpdated") }}</div>
+            <!--
+              We set novalidate because we do not want UA to show hints.
+              We show them ourselves when we want them.
+            -->
             <form v-if="identitiesForOrganization.length || canIdentitiesSubmit()" class="flex flex-col" novalidate @submit.prevent="onIdentitiesSubmit">
               <ul class="flex flex-col gap-y-4">
                 <li v-for="(identityForOrganization, i) in identitiesForOrganization" :key="identityForOrganization.id || i" class="flex flex-col">

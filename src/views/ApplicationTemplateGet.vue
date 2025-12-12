@@ -671,6 +671,10 @@ async function onAddAdmin() {
         <div v-if="dataLoading">{{ t("common.data.dataLoading") }}</div>
         <div v-else-if="dataLoadingError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
         <template v-else>
+          <!--
+            We set novalidate because we do not want UA to show hints.
+            We show them ourselves when we want them.
+          -->
           <form class="flex flex-col" novalidate @submit.prevent="onBasicSubmit">
             <label for="name" class="mb-1">{{ t("views.ApplicationTemplateGet.applicationTemplateName") }}</label>
             <InputText id="name" v-model="name" class="min-w-0 flex-auto grow" :readonly="!metadata.can_update" :progress="progress" required />
@@ -703,6 +707,10 @@ async function onAddAdmin() {
             <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.variables") }}</h2>
             <div v-if="variablesUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="variablesUpdated" class="text-success-600">{{ t("views.ApplicationTemplateGet.variablesUpdated") }}</div>
+            <!--
+              We set novalidate because we do not want UA to show hints.
+              We show them ourselves when we want them.
+            -->
             <form v-if="metadata.can_update || variables.length || canVariablesSubmit()" class="flex flex-col" novalidate @submit.prevent="onVariablesSubmit">
               <ol>
                 <li v-for="(variable, i) in variables" :key="i" class="mb-4 grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
@@ -744,6 +752,10 @@ async function onAddAdmin() {
             <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.publicClients") }}</h2>
             <div v-if="clientsPublicUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="clientsPublicUpdated" class="text-success-600">{{ t("views.ApplicationTemplateGet.publicClientsUpdated") }}</div>
+            <!--
+              We set novalidate because we do not want UA to show hints.
+              We show them ourselves when we want them.
+            -->
             <form v-if="metadata.can_update || clientsPublic.length || canClientsPublicSubmit()" class="flex flex-col" novalidate @submit.prevent="onClientsPublicSubmit">
               <ol>
                 <li v-for="(client, i) in clientsPublic" :key="i" class="mb-4 grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
@@ -876,6 +888,10 @@ async function onAddAdmin() {
             <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.backendClients") }}</h2>
             <div v-if="clientsBackendUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="clientsBackendUpdated" class="text-success-600">{{ t("views.ApplicationTemplateGet.backendClientsUpdated") }}</div>
+            <!--
+              We set novalidate because we do not want UA to show hints.
+              We show them ourselves when we want them.
+            -->
             <form
               v-if="metadata.can_update || clientsBackend.length || canClientsBackendSubmit()"
               class="flex flex-col"
@@ -1044,6 +1060,10 @@ async function onAddAdmin() {
             <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.serviceClients") }}</h2>
             <div v-if="clientsServiceUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="clientsServiceUpdated" class="text-success-600">{{ t("views.ApplicationTemplateGet.serviceClientsUpdated") }}</div>
+            <!--
+              We set novalidate because we do not want UA to show hints.
+              We show them ourselves when we want them.
+            -->
             <form
               v-if="metadata.can_update || clientsService.length || canClientsServiceSubmit()"
               class="flex flex-col"
@@ -1182,6 +1202,10 @@ async function onAddAdmin() {
             <h2 class="text-xl font-bold">{{ t("common.entities.admins") }}</h2>
             <div v-if="adminsUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="adminsUpdated" class="text-success-600">{{ t("common.data.adminsUpdated") }}</div>
+            <!--
+              We set novalidate because we do not want UA to show hints.
+              We show them ourselves when we want them.
+            -->
             <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
               <ol class="flex flex-col gap-y-4">
                 <li v-for="(admin, i) in admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">

@@ -88,6 +88,10 @@ async function onSubmit() {
         <div class="flex flex-row items-center">
           <h1 class="text-2xl font-bold">{{ t("views.ApplicationTemplateCreate.createApplicationTemplate") }}</h1>
         </div>
+        <!--
+          We set novalidate because we do not want UA to show hints.
+          We show them ourselves when we want them.
+        -->
         <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
           <label for="name" class="mb-1">{{ t("views.ApplicationTemplateCreate.applicationTemplateName") }}</label>
           <InputText id="name" v-model="name" class="min-w-0 flex-auto grow" :progress="progress" required />

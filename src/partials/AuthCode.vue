@@ -120,7 +120,7 @@ function canNext(): boolean {
   // We enable submission when non-whitespace content is not empty even if we tell users what is
   // expected upfront. If they try a too short or too long code we will tell them after submission.
   // We prefer this so that they do not wonder why the button is not enabled.
-  return !!code.value.replaceAll(/\s/g, '')
+  return !!code.value.replaceAll(/\s/g, "")
 }
 
 async function onNext() {
@@ -279,9 +279,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
           :code-length="6"
           required
         />
-        <Button id="authcode-button-submitcode" primary type="submit" tabindex="2" :disabled="!canNext()" :progress="progress">{{
-          t("common.buttons.next")
-        }}</Button>
+        <Button id="authcode-button-submitcode" primary type="submit" tabindex="2" :disabled="!canNext()" :progress="progress">{{ t("common.buttons.next") }}</Button>
       </form>
     </div>
     <div v-if="codeError" class="mt-4 text-error-600">{{ getErrorMessage(codeError) }}</div>

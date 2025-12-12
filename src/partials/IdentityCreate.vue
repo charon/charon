@@ -105,6 +105,10 @@ async function onSubmit() {
 </script>
 
 <template>
+  <!--
+    We set novalidate because we do not want UA to show hints.
+    We show them ourselves when we want them.
+  -->
   <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
     <label for="username" class="mb-1"
       >{{ t("common.fields.username") }} <span class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
@@ -132,9 +136,7 @@ async function onSubmit() {
     <TextArea id="description" v-model="description" class="min-w-0 flex-auto grow" :progress="progress" />
     <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-end">
-      <Button id="identitycreate-button-create" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{
-        t("common.buttons.create")
-      }}</Button>
+      <Button id="identitycreate-button-create" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{ t("common.buttons.create") }}</Button>
     </div>
   </form>
 </template>

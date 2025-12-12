@@ -112,6 +112,10 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
         <div class="text-success-600">{{ t("views.OrganizationBlockUser.blockingSuccess") }}</div>
       </div>
       <div v-else class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
+        <!--
+          We set novalidate because we do not want UA to show hints.
+          We show them ourselves when we want them.
+        -->
         <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
           <p>{{ t("views.OrganizationBlockUser.blockConfirmation") }}</p>
           <fieldset class="mt-4">

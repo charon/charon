@@ -171,6 +171,10 @@ async function signalPasskeyUpdate(signal: CredentialSignalData) {
   <div v-else class="flex flex-row items-center justify-between gap-4">
     <div class="grow">
       <h2 :id="`credentialfull-provider-${credential.id}`" class="text-xl">{{ getProviderNameTitle(t, credential.provider) }}</h2>
+      <!--
+        We set novalidate because we do not want UA to show hints.
+        We show them ourselves when we want them.
+      -->
       <form class="mt-1 flex flex-row items-center gap-4" novalidate @submit.prevent="onSubmit" @keydown.esc="onCancel">
         <InputText :id="`credentialfull-input-${credential.id}`" v-model="displayName" class="min-w-0 flex-auto grow" :progress="progress" required />
         <Button :id="`credentialfull-button-rename-${credential.id}`" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{
