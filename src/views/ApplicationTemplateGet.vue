@@ -252,6 +252,8 @@ async function addRedirectUriTemplate(client: { redirectUriTemplates: string[] }
 }
 
 function canBasicSubmit(): boolean {
+  // Submission is on purpose not disabled on basicUnexpectedError so that user can retry.
+
   // Required fields.
   if (!name.value) {
     return false
@@ -292,6 +294,8 @@ async function onBasicSubmit() {
 }
 
 function canVariablesSubmit(): boolean {
+  // Submission is on purpose not disabled on variablesUnexpectedError so that user can retry.
+
   // Required fields.
   for (const variable of variables.value) {
     if (!variable.name) {
@@ -344,6 +348,8 @@ async function onAddVariable() {
 }
 
 function canClientsPublicSubmit(): boolean {
+  // Submission is on purpose not disabled on clientsPublicUnexpectedError so that user can retry.
+
   // Required fields.
   for (const client of clientsPublic.value) {
     if (!client.redirectUriTemplates.length) {
@@ -439,6 +445,8 @@ async function onAddClientPublic() {
 }
 
 function canClientsBackendSubmit(): boolean {
+  // Submission is on purpose not disabled on clientsBackendUnexpectedError so that user can retry.
+
   // Required fields.
   for (const client of clientsBackend.value) {
     if (!client.redirectUriTemplates.length) {
@@ -537,6 +545,8 @@ async function onAddClientBackend() {
 }
 
 function canClientsServiceSubmit(): boolean {
+  // Submission is on purpose not disabled on clientsServiceUnexpectedError so that user can retry.
+
   // Required fields.
   for (const client of clientsService.value) {
     if (!client.accessTokenLifespan) {
@@ -603,6 +613,8 @@ async function onAddClientService() {
 }
 
 function canAdminsSubmit(): boolean {
+  // Button is on purpose not disabled on adminsUnexpectedError so that user can retry.
+
   // Anything changed?
   if (!equals(applicationTemplate.value!.admins || [], admins.value)) {
     return true
@@ -684,9 +696,6 @@ async function onAddAdmin() {
             <div v-if="basicUnexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="basicUpdated" class="mt-4 text-success-600">{{ t("views.ApplicationTemplateGet.applicationsUpdated") }}</div>
             <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
-              <!--
-                Button is on purpose not disabled on basicUnexpectedError so that user can retry.
-              -->
               <Button type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
             </div>
           </form>
@@ -727,9 +736,6 @@ async function onAddAdmin() {
               </ol>
               <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
                 <Button type="button" @click.prevent="onAddVariable">{{ t("views.ApplicationTemplateGet.addVariable") }}</Button>
-                <!--
-                  Button is on purpose not disabled on variablesUnexpectedError so that user can retry.
-                -->
                 <Button type="submit" primary :disabled="!canVariablesSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
               </div>
             </form>
@@ -862,9 +868,6 @@ async function onAddAdmin() {
               </ol>
               <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
                 <Button type="button" @click.prevent="onAddClientPublic">{{ t("views.ApplicationTemplateGet.addClient") }}</Button>
-                <!--
-                  Button is on purpose not disabled on clientsPublicUnexpectedError so that user can retry.
-                -->
                 <Button type="submit" primary :disabled="!canClientsPublicSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
               </div>
             </form>
@@ -1033,9 +1036,6 @@ async function onAddAdmin() {
               </ol>
               <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
                 <Button type="button" @click.prevent="onAddClientBackend">{{ t("views.ApplicationTemplateGet.addClient") }}</Button>
-                <!--
-                  Button is on purpose not disabled on clientsBackendUnexpectedError so that user can retry.
-                -->
                 <Button type="submit" primary :disabled="!canClientsBackendSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
               </div>
             </form>
@@ -1174,9 +1174,6 @@ async function onAddAdmin() {
               </ol>
               <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
                 <Button type="button" @click.prevent="onAddClientService">{{ t("views.ApplicationTemplateGet.addClient") }}</Button>
-                <!--
-                  Button is on purpose not disabled on clientsServiceUnexpectedError so that user can retry.
-                -->
                 <Button type="submit" primary :disabled="!canClientsServiceSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
               </div>
             </form>
@@ -1208,9 +1205,6 @@ async function onAddAdmin() {
               </ol>
               <div class="flex flex-row justify-between gap-4" :class="admins.length ? 'mt-4' : ''">
                 <Button type="button" @click.prevent="onAddAdmin">{{ t("common.buttons.addAdmin") }}</Button>
-                <!--
-                  Button is on purpose not disabled on adminsUnexpectedError so that user can retry.
-                -->
                 <Button type="submit" primary :disabled="!canAdminsSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
               </div>
             </form>

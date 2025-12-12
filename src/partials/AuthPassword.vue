@@ -155,6 +155,25 @@ function onRedo() {
   props.flow.backward("start")
 }
 
+function canNext(): boolean {
+  // Submission is on purpose not disabled on unexpectedPasswordError so that user can retry.
+  if (passwordError.value) {
+    return false
+  }
+
+  // If key is not available, we cannot submit.
+  if (keyProgress.value > 0) {
+    return false
+  }
+
+  // We enable submission when password is not empty (even if it is too short) because we do
+  // not tell users what is expected upfront. If they try a too short password we will tell
+  // them after submission. We prefer this so that they do not wonder why the button is not enabled.
+  // We also prefer this because we do not want to do full password normalization on the
+  // client side so we might be counting characters differently here, leading to confusion.
+  return !!password.value
+}
+
 async function onNext() {
   if (abortController.signal.aborted) {
     return
@@ -248,6 +267,15 @@ async function onNext() {
   }
 }
 
+function canCode(): boolean {
+  // Submission is on purpose not disabled on unexpectedCodeError so that user can retry.
+  if (codeError.value) {
+    return false
+  }
+
+  return true
+}
+
 async function onCode() {
   if (abortController.signal.aborted) {
     return
@@ -323,7 +351,7 @@ async function onCode() {
     <div class="mt-4 flex flex-col">
       <label for="authpassword-input-currentpassword" class="mb-1">{{ t("partials.AuthPassword.passwordLabel") }}</label>
       <!--
-        We set novalidate because we do not UA to show hints.
+        We set novalidate because we do not want UA to show hints.
         We show them ourselves when we want them.
       -->
       <form class="flex flex-row gap-4" novalidate @submit.prevent="onNext">
@@ -358,15 +386,7 @@ async function onCode() {
           spellcheck="false"
           required
         />
-        <!--
-          Here we enable button when password is not empty because we do not tell users
-          what is expected upfront. If they try a too short password we will tell them.
-          We prefer this so that they do not wonder why the button is not enabled.
-          We also prefer this because we do not want to do full password normalization on the
-          client side so we might be counting characters differently here, leading to confusion.
-          Button is on purpose not disabled on unexpectedPasswordError so that user can retry.
-        -->
-        <Button id="authpassword-button-next" primary type="submit" tabindex="2" :disabled="!password || keyProgress > 0 || !!passwordError" :progress="progress">{{
+        <Button id="authpassword-button-next" primary type="submit" tabindex="2" :disabled="!canNext()" :progress="progress">{{
           t("common.buttons.next")
         }}</Button>
       </form>
@@ -388,10 +408,7 @@ async function onCode() {
     <div v-else class="mt-4">{{ t("partials.AuthPassword.skipPassword") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="4" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
-      <!--
-        Button is on purpose not disabled on unexpectedCodeError so that user can retry.
-      -->
-      <Button id="authpassword-button-sendcode" type="button" primary tabindex="3" :disabled="!!codeError" :progress="progress" @click.prevent="onCode">{{
+      <Button id="authpassword-button-sendcode" type="button" primary tabindex="3" :disabled="!canCode()" :progress="progress" @click.prevent="onCode">{{
         t("partials.AuthPassword.sendCodeButton")
       }}</Button>
     </div>

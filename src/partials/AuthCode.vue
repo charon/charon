@@ -111,6 +111,18 @@ function onRedo() {
   props.flow.backward("start")
 }
 
+function canNext(): boolean {
+  // Submission is on purpose not disabled on unexpectedError so that user can retry.
+  if (codeError.value) {
+    return false
+  }
+
+  // We enable submission when non-whitespace content is not empty even if we tell users what is
+  // expected upfront. If they try a too short or too long code we will tell them after submission.
+  // We prefer this so that they do not wonder why the button is not enabled.
+  return !!code.value.replaceAll(/\s/g, '')
+}
+
 async function onNext() {
   if (abortController.signal.aborted) {
     return
@@ -251,7 +263,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
         </i18n-t>
       </label>
       <!--
-        We set novalidate because we do not UA to show hints.
+        We set novalidate because we do not want UA to show hints.
         We show them ourselves when we want them.
       -->
       <form class="flex flex-row gap-4" novalidate @submit.prevent="onNext">
@@ -267,13 +279,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
           :code-length="6"
           required
         />
-        <!--
-          Here we enable button when non-whitespace content is not empty even if we tell users
-          what is expected upfront. We prefer this so that they do not wonder why the button
-          is not enabled.
-          Button is on purpose not disabled on unexpectedError so that user can retry.
-        -->
-        <Button id="authcode-button-submitcode" primary type="submit" tabindex="2" :disabled="!code.replaceAll(/\s/g, '') || !!codeError" :progress="progress">{{
+        <Button id="authcode-button-submitcode" primary type="submit" tabindex="2" :disabled="!canNext()" :progress="progress">{{
           t("common.buttons.next")
         }}</Button>
       </form>

@@ -35,6 +35,13 @@ onMounted(() => {
   document.getElementById("name")?.focus()
 })
 
+function canSubmit(): boolean {
+  // Submission is on purpose not disabled on unexpectedError so that user can retry.
+
+  // Required fields.
+  return !!name.value
+}
+
 async function onSubmit() {
   if (abortController.signal.aborted) {
     return
@@ -87,10 +94,7 @@ async function onSubmit() {
           <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
           <div v-else class="mt-4">{{ t("views.ApplicationTemplateCreate.chooseApplicationTemplateName") }}</div>
           <div class="mt-4 flex flex-row justify-end">
-            <!--
-              Button is on purpose not disabled on unexpectedError so that user can retry.
-            -->
-            <Button type="submit" primary :disabled="!name" :progress="progress">{{ t("common.buttons.create") }}</Button>
+            <Button type="submit" primary :disabled="!canSubmit()" :progress="progress">{{ t("common.buttons.create") }}</Button>
           </div>
         </form>
       </div>

@@ -224,6 +224,8 @@ async function onSubmit(payload: Identity, update: "basic" | "users" | "admins" 
 }
 
 function canBasicSubmit(): boolean {
+  // Submission is on purpose not disabled on basicUnexpectedError so that user can retry.
+
   // At least something is required.
   if (!username.value && !email.value && !givenName.value && !fullName.value && !pictureUrl.value) {
     return false
@@ -270,6 +272,8 @@ async function onBasicSubmit() {
 }
 
 function canUsersSubmit(): boolean {
+  // Submission is on purpose not disabled on usersUnexpectedError so that user can retry.
+
   // Anything changed?
   if (!equals(identity.value!.users || [], users.value)) {
     return true
@@ -313,6 +317,8 @@ async function onAddUser() {
 }
 
 function canAdminsSubmit(): boolean {
+  // Submission is on purpose not disabled on adminsUnexpectedError so that user can retry.
+
   // Anything changed?
   if (!equals(identity.value!.admins || [], admins.value)) {
     return true
@@ -356,6 +362,8 @@ async function onAddAdmin() {
 }
 
 function canOrganizationsSubmit(): boolean {
+  // Submission is on purpose not disabled on identityOrganizationsUnexpectedError so that user can retry.
+
   // Anything changed?
   if (!equals(identity.value!.organizations || [], identityOrganizations.value)) {
     return true
@@ -466,9 +474,6 @@ function organizationLabels(identityOrganization: IdentityOrganizationType | Dee
             <div v-if="basicUnexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="basicUpdated" class="mt-4 text-success-600">{{ t("views.IdentityGet.identityUpdated") }}</div>
             <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
-              <!--
-                Button is on purpose not disabled on basicUnexpectedError so that user can retry.
-              -->
               <Button type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
             </div>
           </form>
@@ -499,9 +504,6 @@ function organizationLabels(identityOrganization: IdentityOrganizationType | Dee
             </ol>
             <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4" :class="users.length ? 'mt-4' : ''">
               <Button type="button" @click.prevent="onAddUser">{{ t("common.buttons.addUser") }}</Button>
-              <!--
-                Button is on purpose not disabled on usersUnexpectedError so that user can retry.
-              -->
               <Button type="submit" primary :disabled="!canUsersSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
             </div>
           </form>
@@ -532,9 +534,6 @@ function organizationLabels(identityOrganization: IdentityOrganizationType | Dee
             </ol>
             <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4" :class="admins.length ? 'mt-4' : ''">
               <Button type="button" @click.prevent="onAddAdmin">{{ t("common.buttons.addAdmin") }}</Button>
-              <!--
-                Button is on purpose not disabled on adminsUnexpectedError so that user can retry.
-              -->
               <Button type="submit" primary :disabled="!canAdminsSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
             </div>
           </form>
@@ -560,9 +559,6 @@ function organizationLabels(identityOrganization: IdentityOrganizationType | Dee
                 </li>
               </ul>
               <div v-if="metadata.can_update" class="flex flex-row justify-end">
-                <!--
-                  Button is on purpose not disabled on identityOrganizationsUnexpectedError so that user can retry.
-                -->
                 <Button id="organizations-update" type="submit" primary :disabled="!canOrganizationsSubmit()" :progress="progress">{{
                   t("common.buttons.update")
                 }}</Button>

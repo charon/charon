@@ -65,6 +65,8 @@ onMounted(() => {
 })
 
 function canSubmit(): boolean {
+  // Submission is on purpose not disabled on unexpectedError so that user can retry.
+
   // Required fields.
   return !!password.value && !!passwordDisplayName.value
 }
@@ -137,7 +139,7 @@ async function onSubmit() {
 
 <template>
   <!--
-    We set novalidate because we do not UA to show hints.
+    We set novalidate because we do not want UA to show hints.
     We show them ourselves when we want them.
   -->
   <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
