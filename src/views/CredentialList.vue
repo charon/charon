@@ -30,6 +30,7 @@ const refreshKey = ref(0)
 const renamingCredentialId = ref<string | null>(null)
 
 function canRename(provider: string) {
+  // Code provider is not exposed to the frontend so we do not check for it here.
   return provider !== "email" && provider !== "username"
 }
 
