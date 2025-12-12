@@ -986,7 +986,7 @@ func beginPasskeyRegistration(
 ) (*protocol.CredentialCreation, *webauthn.SessionData, errors.E) {
 	options, session, err := provider.BeginRegistration(
 		passkeyCredential{
-			id:          userID,
+			userID:      userID,
 			displayName: displayName,
 			Credential:  nil,
 		},
@@ -1055,7 +1055,7 @@ func (s *Service) completePasskeyRegistration(
 	userID := identifier.Data([16]byte(sessionData.UserID))
 
 	pkCredential := passkeyCredential{
-		id:          userID,
+		userID:      userID,
 		displayName: displayName,
 		Credential:  nil,
 	}
@@ -1070,7 +1070,7 @@ func (s *Service) completePasskeyRegistration(
 	return &pkCredential, providerID, nil
 }
 
-func getThirdPartyDisplayName(account *Account, jsonData json.RawMessage, providerKey Provider, credentialID string) (string, errors.E) {
+func getThirdPartyDisplayName(account *Account, jsonData json.RawMessage, providerKey Provider, providerID string) (string, errors.E) {
 	var errE errors.E
 	var token map[string]interface{}
 	errE = x.Unmarshal(jsonData, &token)
@@ -1086,12 +1086,12 @@ func getThirdPartyDisplayName(account *Account, jsonData json.RawMessage, provid
 			displayName = identifier.New().String()
 		}
 	} else {
-		existingCredential := account.GetCredential(providerKey, credentialID)
+		existingCredential := account.GetCredential(providerKey, providerID)
 		if existingCredential == nil {
 			// This should not happen, we found account by credentialID.
 			errE = errors.New("credential not found on account")
 			errors.Details(errE)["provider"] = providerKey
-			errors.Details(errE)["credentialID"] = credentialID
+			errors.Details(errE)["providerID"] = providerID
 			return "", errE
 		}
 		displayName = existingCredential.DisplayName

@@ -131,10 +131,10 @@ type CredentialResponse struct {
 	Signal *CredentialSignalData `json:"signal,omitempty"`
 }
 
-// CredentialSignalData represents the response body for webauthn credential signalCurrentUserDetails - clientside renaming.
+// CredentialSignalData represents the payload for WebAuthn credential signalCurrentUserDetails - client-side renaming.
 type CredentialSignalData struct {
-	RPId        string `json:"rpId"`
-	UserID      string `json:"userId"`
+	RPID        string `json:"rpId"`
+	UserID      []byte `json:"userId"`
 	Name        string `json:"name"`
 	DisplayName string `json:"displayName"`
 }
@@ -462,6 +462,7 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
+
 	s.WriteJSON(w, req, CredentialAddResponse{
 		SessionID:    nil,
 		CredentialID: &credentialID,
@@ -680,8 +681,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	providerID := ""
-	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderPassword, providerID, jsonData, cas.DisplayName, nil)
+	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderPassword, "", jsonData, cas.DisplayName, nil)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -843,7 +843,8 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 		return
 	}
 
-	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderPasskey, providerID, jsonData, cas.DisplayName, &credential.id)
+	// We store user ID as credential ID for passkey provider.
+	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderPasskey, providerID, jsonData, cas.DisplayName, &credential.userID)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
