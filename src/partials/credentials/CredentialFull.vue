@@ -54,18 +54,18 @@ function resetOnInteraction() {
 watch([displayName], resetOnInteraction)
 
 watch(
-    () => props.isRenaming,
-    async (isRenaming) => {
-      if (isRenaming) {
-        displayName.value = props.credential.displayName
-        resetOnInteraction()
-        await nextTick(() => {
-          document.getElementById(`credentialfull-input-${props.credential.id}`)?.focus()
-        })
-      } else {
-        resetOnInteraction()
-      }
-    },
+  () => props.isRenaming,
+  async (isRenaming) => {
+    if (isRenaming) {
+      displayName.value = props.credential.displayName
+      resetOnInteraction()
+      await nextTick(() => {
+        document.getElementById(`credentialfull-input-${props.credential.id}`)?.focus()
+      })
+    } else {
+      resetOnInteraction()
+    }
+  },
 )
 
 onBeforeUnmount(() => {
@@ -145,7 +145,12 @@ async function onSubmit() {
 }
 
 async function signalPasskeyUpdate(signal: CredentialSignalData) {
-  await PublicKeyCredential.signalCurrentUserDetails(signal)
+  if ("getClientCapabilities" in PublicKeyCredential) {
+    const capabilities = await PublicKeyCredential.getClientCapabilities()
+    if (capabilities.signalCurrentUserDetails) {
+      await PublicKeyCredential.signalCurrentUserDetails(signal)
+    }
+  }
 }
 </script>
 
@@ -173,7 +178,9 @@ async function signalPasskeyUpdate(signal: CredentialSignalData) {
         <Button :id="`credentialfull-button-rename-${credential.id}`" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{
           t("common.buttons.rename")
         }}</Button>
-        <Button :id="`credentialfull-button-cancel-${credential.id}`" type="button" :progress="progress" @click.prevent="onCancel">{{ t("common.buttons.cancel") }}</Button>
+        <Button :id="`credentialfull-button-cancel-${credential.id}`" type="button" :progress="progress" @click.prevent="onCancel">{{
+          t("common.buttons.cancel")
+        }}</Button>
       </form>
     </div>
   </div>
