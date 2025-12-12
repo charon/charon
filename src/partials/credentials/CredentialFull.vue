@@ -145,12 +145,8 @@ async function onSubmit() {
 }
 
 async function signalPasskeyUpdate(signal: CredentialSignalData) {
-  if ("getClientCapabilities" in PublicKeyCredential) {
-    const capabilities = await PublicKeyCredential.getClientCapabilities()
-    if (capabilities.signalCurrentUserDetails) {
-      await PublicKeyCredential.signalCurrentUserDetails(signal)
-    }
-  }
+  // PublicKeyCredential.signalCurrentUserDetails might not be available and this is fine.
+  await PublicKeyCredential.signalCurrentUserDetails?.(signal)
 }
 </script>
 
