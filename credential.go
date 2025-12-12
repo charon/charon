@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/alexedwards/argon2id"
+	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/rs/zerolog"
 	"gitlab.com/tozd/go/errors"
@@ -104,10 +105,10 @@ type CredentialResponse struct {
 
 // CredentialSignalData represents the payload for WebAuthn credential signalCurrentUserDetails - client-side renaming.
 type CredentialSignalData struct {
-	RPID        string `json:"rpId"`
-	UserID      []byte `json:"userId"`
-	Name        string `json:"name"`
-	DisplayName string `json:"displayName"`
+	RPID        string                    `json:"rpId"`
+	UserID      protocol.URLEncodedBase64 `json:"userId"`
+	Name        string                    `json:"name"`
+	DisplayName string                    `json:"displayName"`
 }
 
 // This function does not check for duplicates. Duplicate checking
