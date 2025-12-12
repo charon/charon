@@ -164,7 +164,7 @@ watch(
         <Button :id="`credentialfull-button-rename-${credential.id}`" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{
           t("common.buttons.rename")
         }}</Button>
-        <Button :id="`credentialfull-button-cancel-${credential.id}`" type="button" :progress="progress" @click="onCancel">{{ t("common.buttons.cancel") }}</Button>
+        <Button :id="`credentialfull-button-cancel-${credential.id}`" type="button" :progress="progress" @click.prevent="onCancel">{{ t("common.buttons.cancel") }}</Button>
       </form>
     </div>
   </div>

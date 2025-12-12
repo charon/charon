@@ -156,10 +156,10 @@ const WithCredentialDocument = WithDocument<CredentialPublic>
                     :id="`credentiallist-button-rename-${doc.id}`"
                     type="button"
                     :progress="progress"
-                    @click="setRenameCredential(doc.id)"
+                    @click.prevent="setRenameCredential(doc.id)"
                     >{{ t("common.buttons.rename") }}</Button
                   >
-                  <Button :id="`credentiallist-button-remove-${doc.id}`" type="button" :progress="progress" @click="onRemove(doc.id)">{{
+                  <Button :id="`credentiallist-button-remove-${doc.id}`" type="button" :progress="progress" @click.prevent="onRemove(doc.id)">{{
                     t("common.buttons.remove")
                   }}</Button>
                 </div>
