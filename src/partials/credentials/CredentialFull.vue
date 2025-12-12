@@ -11,7 +11,7 @@ import { postJSON } from "@/api"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import { getProviderNameTitle } from "@/flow.ts"
-import { injectProgress } from "@/progress"
+import { useProgress } from "@/progress"
 
 const props = defineProps<{
   credential: CredentialPublic | DeepReadonly<CredentialPublic>
@@ -28,7 +28,7 @@ const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
 
 const abortController = new AbortController()
-const progress = injectProgress()
+const progress = useProgress()
 
 const displayName = ref("")
 const renameError = ref("")
