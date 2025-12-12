@@ -12,7 +12,7 @@ import Button from "@/components/Button.vue"
 import { processResponse } from "@/flow"
 import IdentityCreate from "@/partials/IdentityCreate.vue"
 import IdentityPublic from "@/partials/IdentityPublic.vue"
-import { injectProgress } from "@/progress"
+import { useProgress } from "@/progress"
 import { clone, encodeQuery, getOrganization } from "@/utils"
 
 const props = defineProps<{
@@ -21,7 +21,7 @@ const props = defineProps<{
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-const progress = injectProgress()
+const progress = useProgress()
 
 const abortController = new AbortController()
 const allIdentitiesLoading = ref(true)

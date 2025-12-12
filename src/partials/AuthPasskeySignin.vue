@@ -9,7 +9,7 @@ import { useRouter } from "vue-router"
 import { postJSON } from "@/api"
 import Button from "@/components/Button.vue"
 import { processResponse } from "@/flow"
-import { injectProgress } from "@/progress"
+import { useProgress } from "@/progress"
 
 const props = defineProps<{
   flow: Flow
@@ -17,7 +17,7 @@ const props = defineProps<{
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-const progress = injectProgress()
+const progress = useProgress()
 
 const abortController = new AbortController()
 const unexpectedError = ref("")

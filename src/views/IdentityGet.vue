@@ -18,7 +18,7 @@ import IdentityOrganization from "@/partials/IdentityOrganization.vue"
 import NavBar from "@/partials/NavBar.vue"
 import OrganizationListItem from "@/partials/OrganizationListItem.vue"
 import WithIdentityPublicDocument from "@/partials/WithIdentityPublicDocument.vue"
-import { injectProgress } from "@/progress"
+import { useProgress } from "@/progress"
 import { clone, equals } from "@/utils"
 
 const props = defineProps<{
@@ -27,7 +27,7 @@ const props = defineProps<{
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-const progress = injectProgress()
+const progress = useProgress()
 
 const abortController = new AbortController()
 const dataLoading = ref(true)

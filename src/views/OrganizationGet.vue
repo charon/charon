@@ -32,7 +32,7 @@ import IdentityFull from "@/partials/IdentityFull.vue"
 import IdentityOrganization from "@/partials/IdentityOrganization.vue"
 import NavBar from "@/partials/NavBar.vue"
 import WithIdentityPublicDocument from "@/partials/WithIdentityPublicDocument.vue"
-import { injectProgress } from "@/progress"
+import { useProgress } from "@/progress"
 import { clone, equals, getIdentityOrganization, getOrganization } from "@/utils"
 
 const props = defineProps<{
@@ -44,7 +44,7 @@ const router = useRouter()
 // We could be using separate progress for the organization and identities, because those
 // are really two separate forms (and documents) visually combined into one form, but we are
 // using only one progress to further drive the illusion of only one form.
-const progress = injectProgress()
+const progress = useProgress()
 
 const abortController = new AbortController()
 const dataLoading = ref(true)

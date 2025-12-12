@@ -10,7 +10,7 @@ import ActivityListItem from "@/partials/ActivityListItem.vue"
 import Footer from "@/partials/Footer.vue"
 import NavBar from "@/partials/NavBar.vue"
 import OrganizationListItem from "@/partials/OrganizationListItem.vue"
-import { injectProgress } from "@/progress"
+import { useProgress } from "@/progress"
 
 const props = defineProps<{
   id: string
@@ -18,7 +18,7 @@ const props = defineProps<{
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-const progress = injectProgress()
+const progress = useProgress()
 
 const abortController = new AbortController()
 const dataLoading = ref(true)

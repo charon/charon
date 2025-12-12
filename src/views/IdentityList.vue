@@ -12,11 +12,11 @@ import WithDocument from "@/components/WithDocument.vue"
 import Footer from "@/partials/Footer.vue"
 import IdentityFull from "@/partials/IdentityFull.vue"
 import NavBar from "@/partials/NavBar.vue"
-import { injectProgress } from "@/progress"
+import { useProgress } from "@/progress"
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-const progress = injectProgress()
+const progress = useProgress()
 
 const abortController = new AbortController()
 const dataLoading = ref(true)

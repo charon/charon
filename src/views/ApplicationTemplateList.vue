@@ -11,11 +11,11 @@ import ButtonLink from "@/components/ButtonLink.vue"
 import ApplicationTemplateListItem from "@/partials/ApplicationTemplateListItem.vue"
 import Footer from "@/partials/Footer.vue"
 import NavBar from "@/partials/NavBar.vue"
-import { injectProgress } from "@/progress"
+import { useProgress } from "@/progress"
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-const progress = injectProgress()
+const progress = useProgress()
 
 const abortController = new AbortController()
 const dataLoading = ref(true)

@@ -8,12 +8,12 @@ import { useRouter } from "vue-router"
 import { postJSON } from "@/api.ts"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
-import { injectProgress } from "@/progress.ts"
+import { useProgress } from "@/progress.ts"
 import { decodePasswordEncryptionResponse, encryptPassword, toBase64 } from "@/utils.ts"
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-const progress = injectProgress()
+const progress = useProgress()
 
 const abortController = new AbortController()
 const password = ref("")

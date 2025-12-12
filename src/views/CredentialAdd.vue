@@ -12,10 +12,10 @@ import CredentialAddPassword from "@/partials/credentials/CredentialAddPassword.
 import CredentialAddUsername from "@/partials/credentials/CredentialAddUsername.vue"
 import Footer from "@/partials/Footer.vue"
 import NavBar from "@/partials/NavBar.vue"
-import { injectProgress } from "@/progress"
+import { useProgress } from "@/progress"
 
 const { t } = useI18n({ useScope: "global" })
-const progress = injectProgress()
+const progress = useProgress()
 
 const credentials = [
   { key: "email", label: t("common.providers.emailTitle"), component: CredentialAddEmail },

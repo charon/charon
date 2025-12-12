@@ -11,7 +11,7 @@ import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import siteContext from "@/context"
 import { getThirdPartyProvider } from "@/flow"
-import { injectProgress } from "@/progress"
+import { useProgress } from "@/progress"
 import { isEmail } from "@/utils"
 
 const props = defineProps<{
@@ -20,7 +20,7 @@ const props = defineProps<{
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-const progress = injectProgress()
+const progress = useProgress()
 
 const abortController = new AbortController()
 const passwordError = ref("")

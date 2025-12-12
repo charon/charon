@@ -10,7 +10,7 @@ import { useRouter } from "vue-router"
 import { redirectThirdPartyProvider } from "@/api"
 import Button from "@/components/Button.vue"
 import WithDocument from "@/components/WithDocument.vue"
-import { injectProgress } from "@/progress"
+import { useProgress } from "@/progress"
 import { getHomepage, redirectServerSide } from "@/utils"
 
 const props = defineProps<{
@@ -19,7 +19,7 @@ const props = defineProps<{
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-const progress = injectProgress()
+const progress = useProgress()
 
 const abortController = new AbortController()
 const unexpectedError = ref("")

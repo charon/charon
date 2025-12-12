@@ -8,7 +8,7 @@ import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
 import { getURL } from "@/api"
-import { injectMainProgress } from "@/progress"
+import { getRootProgress } from "@/progress"
 import { encodeQuery } from "@/utils"
 
 const props = withDefaults(
@@ -27,7 +27,8 @@ const props = withDefaults(
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
 
-const mainProgress = injectMainProgress()
+// We use root progress for loading data.
+const rootProgress = getRootProgress()
 
 const _doc = ref<T | null>(null)
 const _metadata = ref<Metadata>({})
@@ -86,7 +87,7 @@ watch(
     _error.value = null
 
     try {
-      const response = await getURL<T>(newURL, el, abortController.signal, mainProgress)
+      const response = await getURL<T>(newURL, el, abortController.signal, rootProgress)
       if (abortController.signal.aborted) {
         return
       }

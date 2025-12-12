@@ -38,7 +38,7 @@ import AuthPassword from "@/partials/AuthPassword.vue"
 import AuthStart from "@/partials/AuthStart.vue"
 import AuthThirdPartyProvider from "@/partials/AuthThirdPartyProvider.vue"
 import Footer from "@/partials/Footer.vue"
-import { injectProgress } from "@/progress"
+import { useProgress } from "@/progress"
 import { getHomepage } from "@/utils"
 
 const props = defineProps<{
@@ -47,7 +47,7 @@ const props = defineProps<{
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-const progress = injectProgress()
+const progress = useProgress()
 
 const abortController = new AbortController()
 const dataLoading = ref(true)

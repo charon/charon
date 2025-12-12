@@ -9,7 +9,7 @@ import { postJSON } from "@/api"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import TextArea from "@/components/TextArea.vue"
-import { injectProgress } from "@/progress"
+import { useProgress } from "@/progress"
 import { encodeQuery } from "@/utils"
 
 const props = defineProps<{
@@ -22,7 +22,7 @@ const $emit = defineEmits<{
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-const progress = injectProgress()
+const progress = useProgress()
 
 const abortController = new AbortController()
 const unexpectedError = ref("")

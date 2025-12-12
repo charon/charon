@@ -10,7 +10,7 @@ import Button from "@/components/Button.vue"
 import InputCode from "@/components/InputCode.vue"
 import WithDocument from "@/components/WithDocument.vue"
 import { processResponse } from "@/flow"
-import { injectProgress } from "@/progress"
+import { useProgress } from "@/progress"
 import { isEmail } from "@/utils"
 
 const props = defineProps<{
@@ -20,7 +20,7 @@ const props = defineProps<{
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
 const route = useRoute()
-const progress = injectProgress()
+const progress = useProgress()
 
 const abortController = new AbortController()
 const code = ref("")

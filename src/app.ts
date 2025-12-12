@@ -6,7 +6,7 @@ import "@/app.css"
 import App from "@/App.vue"
 import { processOIDCRedirect } from "@/auth"
 import i18n from "@/i18n"
-import { progressKey } from "@/progress"
+import { progressKey, rootProgressKey } from "@/progress"
 import { replaceLocationHash } from "@/utils"
 
 // Facebook Login returns adds a hash on its callback. Here we remove it before
@@ -48,4 +48,5 @@ const apiRouter = createRouter({
 
 router.apiResolve = apiRouter.resolve.bind(apiRouter)
 
-createApp(App).use(router).use(i18n).provide(progressKey, ref(0)).mount("main")
+const rootProgress = ref(0)
+createApp(App).use(router).use(i18n).provide(progressKey, rootProgress).provide(rootProgressKey, rootProgress).mount("main")

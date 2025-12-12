@@ -8,11 +8,11 @@ import { useRouter } from "vue-router"
 import { postJSON } from "@/api.ts"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
-import { injectProgress } from "@/progress.ts"
+import { useProgress } from "@/progress.ts"
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-const progress = injectProgress()
+const progress = useProgress()
 
 const abortController = new AbortController()
 const username = ref("")

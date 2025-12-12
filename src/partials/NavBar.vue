@@ -11,12 +11,12 @@ import { postJSON } from "@/api"
 import { accessToken, currentIdentityId, isSignedIn, signIn } from "@/auth"
 import Button from "@/components/Button.vue"
 import { useNavbar } from "@/navbar"
-import { injectProgress } from "@/progress"
+import { useProgress } from "@/progress"
 import { currentAbsoluteURL, redirectServerSide } from "@/utils"
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-const progress = injectProgress()
+const progress = useProgress()
 const { ref: navbar, attrs: navbarAttrs } = useNavbar()
 
 const abortController = new AbortController()
