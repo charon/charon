@@ -363,7 +363,7 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	// We store not mapped e-mail address as a display name.
+	// We store not-mapped e-mail address as a display name.
 	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderEmail, mappedEmail, jsonData, preservedEmail, nil)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -453,7 +453,7 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	// We store not mapped username as a display name.
+	// We store not-mapped username as a display name.
 	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderUsername, mappedUsername, jsonData, preservedUsername, nil)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -984,7 +984,7 @@ FoundCredential:
 
 	if foundProvider == ProviderEmail || foundProvider == ProviderUsername || foundProvider == ProviderCode {
 		// We do not allow changing display names of e-mail or username credentials.
-		// We store not mapped e-mail address or username as a display name.
+		// We store not-mapped e-mail address or username as a display name.
 		// Code provider credentials are never exposed over the API.
 		errE = errors.New("invalid credential type")
 		errors.Details(errE)["provider"] = foundProvider

@@ -162,7 +162,7 @@ func (s *Service) sendCodeForExistingAccount(
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
-		// Not mapped e-mail address is stored in the display name.
+		// Not-mapped e-mail address is stored in the display name.
 		emails = []string{credential.DisplayName}
 	} else {
 		// mappedEmailOrUsername is an username. Let's see if there are any
