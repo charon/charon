@@ -244,16 +244,16 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		if errE != nil {
 			return nil, errE
 		}
-		var credential passkeyCredential
+		var pkCredential passkeyCredential
 		// This cannot return nil because we just got the account by matching the provider ID.
 		storedCredential = account.GetCredential(ProviderPasskey, providerID)
-		errE = x.Unmarshal(storedCredential.Data, &credential)
+		errE = x.Unmarshal(storedCredential.Data, &pkCredential)
 		if errE != nil {
 			return nil, errE
 		}
-		credential.userID = storedCredential.ID
-		credential.displayName = storedCredential.DisplayName
-		return credential, nil
+		pkCredential.userID = storedCredential.ID
+		pkCredential.displayName = storedCredential.DisplayName
+		return pkCredential, nil
 	}, *flowPasskey.SessionData, parsedResponse)
 	if err != nil {
 		s.BadRequestWithError(w, req, withWebauthnError(err))
