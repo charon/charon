@@ -123,9 +123,11 @@ func (s credentialAddSession) Expired() bool {
 
 // CredentialResponse represents the response body for credential update operations.
 type CredentialResponse struct {
-	Error   ErrorCode             `json:"error,omitempty"`
-	Success bool                  `json:"success,omitempty"`
-	Signal  *CredentialSignalData `json:"signal,omitempty"`
+	Error   ErrorCode `json:"error,omitempty"`
+	Success bool      `json:"success,omitempty"`
+
+	// Signal is omitted for non-passkey providers or on an error.
+	Signal *CredentialSignalData `json:"signal,omitempty"`
 }
 
 // CredentialSignalData represents the response body for webauthn credential signalCurrentUserDetails - clientside renaming.
@@ -1035,7 +1037,6 @@ FoundCredential:
 	s.WriteJSON(w, req, CredentialResponse{
 		Error:   "",
 		Success: true,
-		// nil for non-passkey providers or on error and omitted.
-		Signal: signalData,
+		Signal:  signalData,
 	}, nil)
 }
