@@ -15,6 +15,34 @@ var ErrAccountNotFound = errors.Base("account not found")
 // Provider is the credential provider name.
 type Provider string
 
+// CredentialPublic represents public information about a credential.
+type CredentialPublic struct {
+	// ID is a public-facing ID used to identify the credential in public API.
+	ID identifier.Identifier `json:"id"`
+	// Provider is the internal provider type name or the name of the third party provider.
+	Provider Provider `json:"provider"`
+	// DisplayName is a user facing string, initially set automatically. For username/email it equals
+	// the original (normalized but not mapped) credential value itself. Otherwise, user can rename it.
+	// Unique per account per provider.
+	DisplayName string `json:"displayName"`
+	// Verified bool is relevant for e-mail addresses, otherwise false.
+	Verified bool `json:"verified,omitempty"`
+}
+
+// Ref returns the credential reference.
+func (c *CredentialPublic) Ref() CredentialRef {
+	return CredentialRef{ID: c.ID}
+}
+
+// CredentialRef represents a reference to a credential.
+type CredentialRef struct {
+	ID identifier.Identifier `json:"id"`
+}
+
+func credentialRefCmp(a CredentialRef, b CredentialRef) int {
+	return bytes.Compare(a.ID[:], b.ID[:])
+}
+
 // Credential represents a credential issued by a credential provider.
 type Credential struct {
 	CredentialPublic
