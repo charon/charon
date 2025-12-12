@@ -3,7 +3,7 @@ import type { DeepReadonly } from "vue"
 
 import type { CredentialPublic, CredentialRenameRequest, CredentialResponse, CredentialSignalData } from "@/types"
 
-import { nextTick, ref, watch } from "vue"
+import { nextTick, onBeforeUnmount, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
@@ -45,6 +45,33 @@ function getErrorMessage(errorCode: string) {
   }
 }
 
+function resetOnInteraction() {
+  // We reset the error on interaction.
+  renameError.value = ""
+  unexpectedError.value = ""
+}
+
+watch([displayName], resetOnInteraction)
+
+watch(
+    () => props.isRenaming,
+    async (isRenaming) => {
+      if (isRenaming) {
+        displayName.value = props.credential.displayName
+        resetOnInteraction()
+        await nextTick(() => {
+          document.getElementById(`credentialfull-input-${props.credential.id}`)?.focus()
+        })
+      } else {
+        resetOnInteraction()
+      }
+    },
+)
+
+onBeforeUnmount(() => {
+  abortController.abort()
+})
+
 function canSubmit(): boolean {
   if (renameError.value) {
     return false
@@ -55,6 +82,11 @@ function canSubmit(): boolean {
 }
 
 function onCancel() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  abortController.abort()
   resetOnInteraction()
   emit("canceled")
 }
@@ -115,29 +147,6 @@ async function onSubmit() {
 async function signalPasskeyUpdate(signal: CredentialSignalData) {
   await PublicKeyCredential.signalCurrentUserDetails(signal)
 }
-
-function resetOnInteraction() {
-  // We reset the error on interaction.
-  renameError.value = ""
-  unexpectedError.value = ""
-}
-
-watch([displayName], resetOnInteraction)
-
-watch(
-  () => props.isRenaming,
-  async (isRenaming) => {
-    if (isRenaming) {
-      displayName.value = props.credential.displayName
-      resetOnInteraction()
-      await nextTick(() => {
-        document.getElementById(`credentialfull-input-${props.credential.id}`)?.focus()
-      })
-    } else {
-      resetOnInteraction()
-    }
-  },
-)
 </script>
 
 <template>
