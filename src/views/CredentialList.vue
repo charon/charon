@@ -148,6 +148,10 @@ const WithCredentialDocument = WithDocument<CredentialPublic>
           {{ isSignedIn() ? t("views.CredentialList.noCredentialsCreate") : t("views.CredentialList.noCredentialsSignIn") }}
         </div>
         <div v-for="credential in credentials" :key="credential.id" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
+          <!--
+            We use key to force reloading of the credential after we know the credential has been updated (e.g., renamed).
+            TODO: Remove this once we will subscribe reactively to updates to the credential document.
+          -->
           <WithCredentialDocument :key="`${credential.id}-${refreshKey}`" :params="{ id: credential.id }" name="CredentialGet">
             <template #default="{ doc, url }">
               <CredentialFull :credential="doc" :url="url" :is-renaming="renamingCredentialId === credential.id" @renamed="onRenamed()" @canceled="onRenameCancelled()">
