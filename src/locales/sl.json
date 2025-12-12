@@ -242,13 +242,13 @@
     },
     "CredentialAddPassword": {
       "passwordLabel": "@:partials.AuthPassword.passwordLabel",
-      "displayName": "Prikazno ime"
+      "displayNameLabel": "Prikazno ime"
     },
     "CredentialAddEmail": {
       "emailAddressLabel": "@:partials.AuthPassword.emailAddressLabel"
     },
     "CredentialAddPasskey": {
-      "displayName": "@:partials.CredentialAddPassword.displayName",
+      "displayNameLabel": "@:partials.CredentialAddPassword.displayNameLabel",
       "passkeyInstructions": "Prosimo, sledite navodilom vašega brskalnika in/ali naprave, da dodate passkey."
     }
   },
