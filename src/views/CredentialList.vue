@@ -34,7 +34,13 @@ function canRename(provider: string) {
   return provider !== "email" && provider !== "username"
 }
 
-function setRenameCredential(credentialId: string) {
+function onRename(credentialId: string) {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  resetOnInteraction()
+
   renamingCredentialId.value = credentialId
 }
 
@@ -157,7 +163,7 @@ const WithCredentialDocument = WithDocument<CredentialPublic>
                     :id="`credentiallist-button-rename-${doc.id}`"
                     type="button"
                     :progress="progress"
-                    @click.prevent="setRenameCredential(doc.id)"
+                    @click.prevent="onRename(doc.id)"
                     >{{ t("common.buttons.rename") }}</Button
                   >
                   <Button :id="`credentiallist-button-remove-${doc.id}`" type="button" :progress="progress" @click.prevent="onRemove(doc.id)">{{
