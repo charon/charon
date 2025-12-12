@@ -43,7 +43,8 @@ type CredentialPublic struct {
 	ID identifier.Identifier `json:"id"`
 	// Provider is the internal provider type name or the name of the third party provider.
 	Provider Provider `json:"provider"`
-	// DisplayName is initially automatically set, user can update it. Unique per user per provider.
+	// DisplayName is a user facing string, initially set automatically. For username/email it equals the credential value itself.
+	// Otherwise, user can update it. Unique per user per provider.
 	DisplayName string `json:"displayName"`
 	// Verified bool is relevant for e-mail addresses, otherwise false.
 	Verified bool `json:"verified,omitempty"`
