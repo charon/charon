@@ -261,10 +261,18 @@ async function onDecline() {
 }
 
 function onCreateShow() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   createShown.value = true
 }
 
 async function onIdentityCreated(identity: IdentityRef) {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   createShown.value = false
 
   // TODO: Fetch only the new identity instead of re-fetching all.
