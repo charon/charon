@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CredentialAddCredentialWithLabelStartRequest, CredentialAddPasskeyCompleteRequest, CredentialAddResponse } from "@/types"
+import { CredentialAddCredentialStartRequest, CredentialAddPasskeyCompleteRequest, CredentialAddResponse } from "@/types"
 
 import { onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
@@ -16,7 +16,7 @@ const router = useRouter()
 const progress = useProgress()
 
 const abortController = new AbortController()
-const passkeyLabel = ref("")
+const passkeyDisplayName = ref("")
 const passkeyError = ref("")
 const unexpectedError = ref("")
 
@@ -26,16 +26,16 @@ if (!browserSupportsWebAuthn()) {
 
 function getErrorMessage(errorCode: string) {
   switch (errorCode) {
-    case "credentialLabelInUse":
-      return t("common.errors.credentialLabelInUse.passkey")
-    case "credentialLabelMissing":
-      return t("common.errors.credentialLabelMissing.passkey")
+    case "credentialDisplayNameInUse":
+      return t("common.errors.credentialDisplayNameInUse")
+    case "credentialDisplayNameMissing":
+      return t("common.errors.credentialDisplayNameMissing")
     default:
       throw new Error(`unexpected error code: ${errorCode}`)
   }
 }
 
-async function startAddPasskeyCredential(request: CredentialAddCredentialWithLabelStartRequest): Promise<CredentialAddResponse> {
+async function startAddPasskeyCredential(request: CredentialAddCredentialStartRequest): Promise<CredentialAddResponse> {
   const url = router.apiResolve({ name: "CredentialAddPasskeyStart" }).href
   return await postJSON<CredentialAddResponse>(url, request, abortController.signal, progress)
 }
@@ -51,19 +51,19 @@ function resetOnInteraction() {
   unexpectedError.value = ""
 }
 
-watch([passkeyLabel], resetOnInteraction)
+watch([passkeyDisplayName], resetOnInteraction)
 
 onBeforeUnmount(() => {
   abortController.abort()
 })
 
 onMounted(() => {
-  document.getElementById("credentialaddpasskey-input-label")?.focus()
+  document.getElementById("credentialaddpasskey-input-displayname")?.focus()
 })
 
 function canSubmit(): boolean {
   // Required fields.
-  return !!passkeyLabel.value
+  return !!passkeyDisplayName.value
 }
 
 async function onSubmit() {
@@ -76,7 +76,7 @@ async function onSubmit() {
   progress.value += 1
   try {
     const startResponse = await startAddPasskeyCredential({
-      label: passkeyLabel.value,
+      displayName: passkeyDisplayName.value,
     })
     if (abortController.signal.aborted) {
       return
@@ -130,8 +130,8 @@ async function onSubmit() {
     We show them ourselves when we want them.
   -->
   <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
-    <label for="credentialaddpasskey-input-label" class="mb-1"> {{ t("partials.CredentialAddPasskey.label") }}</label>
-    <InputText id="credentialaddpasskey-input-label" v-model="passkeyLabel" class="min-w-0 flex-auto grow" :progress="progress" required />
+    <label for="credentialaddpasskey-input-displayname" class="mb-1"> {{ t("partials.CredentialAddPasskey.displayNameLabel") }}</label>
+    <InputText id="credentialaddpasskey-input-displayname" v-model="passkeyDisplayName" class="min-w-0 flex-auto grow" :progress="progress" required />
     <div class="mt-4">{{ t("partials.CredentialAddPasskey.passkeyInstructions") }}</div>
     <div v-if="passkeyError" class="mt-4 text-error-600">{{ getErrorMessage(passkeyError) }}</div>
     <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>

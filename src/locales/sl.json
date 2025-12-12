@@ -24,7 +24,8 @@
       "pause": "Ustavi",
       "redirect": "Preusmeri",
       "block": "Blokiraj",
-      "unblock": "Odblokiraj"
+      "unblock": "Odblokiraj",
+      "rename": "Preimenuj"
     },
     "errors": {
       "unexpected": "Nepričakovana napaka. Prosimo, poskusite znova.",
@@ -50,14 +51,8 @@
         "username": "To uporabniško ime je že prisotno na tem računu.",
         "password": "To geslo ali geslovni stavek je že prisotno na tem računu."
       },
-      "credentialLabelInUse": {
-        "password": "Oznaka gesla ali geslovnega stavka je že v uporabi.",
-        "passkey": "Oznaka za passkey je že v uporabi."
-      },
-      "credentialLabelMissing": {
-        "password": "Geslu ali geslovnemu stavku manjka oznaka.",
-        "passkey": "Passkey-u manjka oznaka."
-      }
+      "credentialDisplayNameInUse": "Prikazno ime je že v uporabi.",
+      "credentialDisplayNameMissing": "Manjka prikazno ime."
     },
     "labels": {
       "optional": "(neobvezno)",
@@ -247,13 +242,13 @@
     },
     "CredentialAddPassword": {
       "passwordLabel": "@:partials.AuthPassword.passwordLabel",
-      "label": "Oznaka"
+      "displayNameLabel": "Prikazno ime"
     },
     "CredentialAddEmail": {
       "emailAddressLabel": "@:partials.AuthPassword.emailAddressLabel"
     },
     "CredentialAddPasskey": {
-      "label": "Oznaka",
+      "displayNameLabel": "@:partials.CredentialAddPassword.displayNameLabel",
       "passkeyInstructions": "Prosimo, sledite navodilom vašega brskalnika in/ali naprave, da dodate passkey."
     }
   },

@@ -394,6 +394,12 @@
       "get": null
     },
     {
+      "name": "CredentialRename",
+      "path": "/authentication/rename/:id",
+      "api": {},
+      "get": null
+    },
+    {
       "name": "CredentialGet",
       "path": "/authentication/:id",
       "api": {},

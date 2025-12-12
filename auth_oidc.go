@@ -236,5 +236,21 @@ func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	s.completeAuthStep(w, req, false, flow, account, []Credential{{ID: identifier.New(), ProviderID: idToken.Subject, Provider: providerKey, Data: jsonData}})
+	displayName, errE := getThirdPartyDisplayName(account, jsonData, providerKey, idToken.Subject)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	s.completeAuthStep(w, req, false, flow, account,
+		[]Credential{{
+			CredentialPublic: CredentialPublic{
+				ID:          identifier.New(),
+				Provider:    providerKey,
+				DisplayName: displayName,
+				Verified:    false,
+			},
+			ProviderID: idToken.Subject,
+			Data:       jsonData,
+		}})
 }

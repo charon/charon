@@ -33,6 +33,7 @@ import (
 	"github.com/ory/fosite"
 	saml2 "github.com/russellhaering/gosaml2"
 	"gitlab.com/tozd/go/errors"
+	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 	"golang.org/x/text/secure/precis"
@@ -981,13 +982,13 @@ func newPasswordEncryptionResponse(publicKeyBytes, nonce []byte, overhead int) *
 }
 
 func beginPasskeyRegistration(
-	provider *webauthn.WebAuthn, userID identifier.Identifier, label string,
+	provider *webauthn.WebAuthn, userID identifier.Identifier, displayName string,
 ) (*protocol.CredentialCreation, *webauthn.SessionData, errors.E) {
 	options, session, err := provider.BeginRegistration(
 		passkeyCredential{
-			ID:         userID,
-			Label:      label,
-			Credential: nil,
+			userID:      userID,
+			displayName: displayName,
+			Credential:  nil,
 		},
 		webauthn.WithExtensions(protocol.AuthenticationExtensions{
 			"credentialProtectionPolicy":        "userVerificationRequired",
@@ -1044,7 +1045,7 @@ func validateEmailOrUsername(emailOrUsername string, check emailOrUsernameCheck)
 }
 
 func (s *Service) completePasskeyRegistration(
-	createResponse protocol.CredentialCreationResponse, label string, sessionData *webauthn.SessionData,
+	createResponse protocol.CredentialCreationResponse, displayName string, sessionData *webauthn.SessionData,
 ) (*passkeyCredential, string, errors.E) {
 	parsedResponse, err := createResponse.Parse()
 	if err != nil {
@@ -1054,9 +1055,9 @@ func (s *Service) completePasskeyRegistration(
 	userID := identifier.Data([16]byte(sessionData.UserID))
 
 	pkCredential := passkeyCredential{
-		ID:         userID,
-		Label:      label,
-		Credential: nil,
+		userID:      userID,
+		displayName: displayName,
+		Credential:  nil,
 	}
 
 	pkCredential.Credential, err = s.passkeyProvider().CreateCredential(pkCredential, *sessionData, parsedResponse)
@@ -1067,4 +1068,34 @@ func (s *Service) completePasskeyRegistration(
 	providerID := base64.RawURLEncoding.EncodeToString(pkCredential.Credential.ID)
 
 	return &pkCredential, providerID, nil
+}
+
+func getThirdPartyDisplayName(account *Account, jsonData json.RawMessage, providerKey Provider, providerID string) (string, errors.E) {
+	var errE errors.E
+	var token map[string]interface{}
+	errE = x.Unmarshal(jsonData, &token)
+	if errE != nil {
+		errors.Details(errE)["provider"] = providerKey
+		return "", errE
+	}
+
+	var displayName string
+	if account == nil {
+		displayName = findFirstString(token, "username", "preferred_username", "email", "eMailAddress", "emailAddress", "email_address")
+		if displayName == "" {
+			displayName = identifier.New().String()
+		}
+	} else {
+		existingCredential := account.GetCredential(providerKey, providerID)
+		if existingCredential == nil {
+			// This should not happen, we found account by credentialID.
+			errE = errors.New("credential not found on account")
+			errors.Details(errE)["provider"] = providerKey
+			errors.Details(errE)["providerID"] = providerID
+			return "", errE
+		}
+		displayName = existingCredential.DisplayName
+	}
+
+	return strings.TrimSpace(displayName), nil
 }

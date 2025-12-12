@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import type { Ref } from "vue"
-import type { Router } from "vue-router"
-
-import type { CredentialInfo, Credentials } from "@/types"
+import type { CredentialPublic, Credentials } from "@/types"
 
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useI18n } from "vue-i18n"
@@ -29,22 +26,39 @@ const dataLoading = ref(true)
 const dataLoadingError = ref("")
 const credentials = ref<Credentials>([])
 
-async function getCredentials(router: Router, abortController: AbortController, progress: Ref<number>): Promise<Credentials | null> {
-  progress.value += 1
-  try {
-    const url = router.apiResolve({
-      name: "CredentialList",
-    }).href
+const refreshKey = ref(0)
+const renamingCredentialId = ref<string | null>(null)
 
-    const response = await getURL<Credentials>(url, null, abortController.signal, progress)
-    if (abortController.signal.aborted) {
-      return null
-    }
+function canRename(provider: string) {
+  // Code provider is not exposed to the frontend so we do not check for it here.
+  return provider !== "email" && provider !== "username"
+}
 
-    return response.doc
-  } finally {
-    progress.value -= 1
+function onRename(credentialId: string) {
+  if (abortController.signal.aborted) {
+    return
   }
+
+  resetOnInteraction()
+
+  renamingCredentialId.value = credentialId
+}
+
+function onRenameCancelled() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  renamingCredentialId.value = null
+}
+
+function onRenamed() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  renamingCredentialId.value = null
+  refreshKey.value++
 }
 
 onBeforeUnmount(() => {
@@ -56,12 +70,16 @@ onBeforeUnmount(() => {
 onBeforeMount(async () => {
   progress.value += 1
   try {
-    const result = await getCredentials(router, abortController, progress)
-    if (abortController.signal.aborted || !result) {
+    const url = router.apiResolve({
+      name: "CredentialList",
+    }).href
+
+    const result = await getURL<Credentials>(url, null, abortController.signal, progress)
+    if (abortController.signal.aborted) {
       return
     }
 
-    credentials.value = result
+    credentials.value = result.doc
   } catch (error) {
     if (abortController.signal.aborted) {
       return
@@ -116,7 +134,7 @@ async function onRemove(credentialId: string) {
   }
 }
 
-const WithCredentialDocument = WithDocument<CredentialInfo>
+const WithCredentialDocument = WithDocument<CredentialPublic>
 </script>
 
 <template>
@@ -138,14 +156,29 @@ const WithCredentialDocument = WithDocument<CredentialInfo>
           {{ isSignedIn() ? t("views.CredentialList.noCredentialsCreate") : t("views.CredentialList.noCredentialsSignIn") }}
         </div>
         <div v-for="credential in credentials" :key="credential.id" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
-          <WithCredentialDocument :params="{ id: credential.id }" name="CredentialGet">
+          <!--
+            We use key to force reloading of the credential after we know the credential has been updated (e.g., renamed).
+            TODO: Remove this once we will subscribe reactively to updates to the credential document.
+          -->
+          <WithCredentialDocument :key="`${credential.id}-${refreshKey}`" :params="{ id: credential.id }" name="CredentialGet">
             <template #default="{ doc, url }">
-              <CredentialFull :credential="doc" :url="url">
+              <CredentialFull :credential="doc" :url="url" :is-renaming="renamingCredentialId === credential.id" @renamed="onRenamed" @canceled="onRenameCancelled">
                 <div class="flex flex-row gap-4">
                   <Button v-if="doc.provider === 'email' && !doc.verified" :id="`credentiallist-button-verify-${doc.id}`" type="button" secondary disabled>{{
                     t("views.CredentialList.verify")
                   }}</Button>
-                  <Button :id="`credentiallist-button-remove-${doc.id}`" type="button" :progress="progress" @click="onRemove(doc.id)">{{
+                  <!--
+                    Button is on purpose not disabled on unexpectedError so that user can retry.
+                  -->
+                  <Button
+                    v-if="canRename(doc.provider)"
+                    :id="`credentiallist-button-rename-${doc.id}`"
+                    type="button"
+                    :progress="progress"
+                    @click.prevent="onRename(doc.id)"
+                    >{{ t("common.buttons.rename") }}</Button
+                  >
+                  <Button :id="`credentiallist-button-remove-${doc.id}`" type="button" :progress="progress" @click.prevent="onRemove(doc.id)">{{
                     t("common.buttons.remove")
                   }}</Button>
                 </div>

@@ -30,13 +30,17 @@ type AuthFlowResponsePasskey struct {
 const defaultPasskeyTimeout = 60 * time.Second
 
 type passkeyCredential struct {
-	ID         identifier.Identifier `json:"id"`
-	Label      string                `json:"label"`
-	Credential *webauthn.Credential  `json:"credential"`
+	// userID is the same as the public credential ID so we do not need to store it.
+	userID identifier.Identifier
+
+	// displayName is the same as the display name of the credential so we do not need to store it.
+	displayName string
+
+	Credential *webauthn.Credential `json:"credential"`
 }
 
 func (c passkeyCredential) WebAuthnID() []byte {
-	return c.ID[:]
+	return c.userID[:]
 }
 
 func (c passkeyCredential) WebAuthnName() string {
@@ -44,7 +48,7 @@ func (c passkeyCredential) WebAuthnName() string {
 }
 
 func (c passkeyCredential) WebAuthnDisplayName() string {
-	return fmt.Sprintf("Charon (%s)", c.Label)
+	return fmt.Sprintf("Charon (%s)", c.displayName)
 }
 
 func (passkeyCredential) WebAuthnIcon() string {
@@ -142,7 +146,7 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 	flow.Passkey = &flowPasskey{
 		SessionData: session,
 		// We mark the request as sign-in.
-		Label: "",
+		DisplayName: "",
 	}
 	errE = s.setFlow(ctx, flow)
 	if errE != nil {
@@ -208,7 +212,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		return
 	}
 
-	if flowPasskey.Label != "" {
+	if flowPasskey.DisplayName != "" {
 		s.BadRequestWithError(w, req, errors.New("not a sign-in request"))
 		return
 	}
@@ -231,18 +235,25 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		return
 	}
 
-	user, newCredential, err := s.passkeyProvider().ValidatePasskeyLogin(func(rawID, _ []byte) (webauthn.User, error) {
-		id := base64.RawURLEncoding.EncodeToString(rawID)
-		account, errE := s.getAccountByCredential(ctx, ProviderPasskey, id)
+	var storedCredential *Credential
+	var account *Account
+	user, newWebAuthnCredential, err := s.passkeyProvider().ValidatePasskeyLogin(func(rawCredentialID, _ []byte) (webauthn.User, error) {
+		// We use credential ID as provider ID.
+		providerID := base64.RawURLEncoding.EncodeToString(rawCredentialID)
+		account, errE = s.getAccountByCredential(ctx, ProviderPasskey, providerID)
 		if errE != nil {
 			return nil, errE
 		}
-		var credential passkeyCredential
-		errE = x.Unmarshal(account.GetCredential(ProviderPasskey, id).Data, &credential)
+		var pkCredential passkeyCredential
+		// This cannot return nil because we just got the account by matching the provider ID.
+		storedCredential = account.GetCredential(ProviderPasskey, providerID)
+		errE = x.Unmarshal(storedCredential.Data, &pkCredential)
 		if errE != nil {
 			return nil, errE
 		}
-		return credential, nil
+		pkCredential.userID = storedCredential.ID
+		pkCredential.displayName = storedCredential.DisplayName
+		return pkCredential, nil
 	}, *flowPasskey.SessionData, parsedResponse)
 	if err != nil {
 		s.BadRequestWithError(w, req, withWebauthnError(err))
@@ -250,30 +261,42 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 	}
 
 	// We know the user is passkeyCredential because we just created it above.
-	credential := user.(passkeyCredential) //nolint:errcheck,forcetypeassert
+	pkCredential := user.(passkeyCredential) //nolint:errcheck,forcetypeassert
 	// Credential is changed by ValidatePasskeyLogin (e.g., its Authenticator.UpdateCounter
 	// is called to update its sign count) so we set it back here.
-	credential.Credential = newCredential
+	pkCredential.Credential = newWebAuthnCredential
 
-	providerID := base64.RawURLEncoding.EncodeToString(credential.Credential.ID)
-
-	if credential.Credential.Authenticator.CloneWarning {
-		zerolog.Ctx(ctx).Warn().Str("credential", providerID).Msg("authenticator may be cloned")
+	newProviderID := base64.RawURLEncoding.EncodeToString(pkCredential.Credential.ID)
+	if storedCredential.ProviderID != newProviderID {
+		errE := errors.New("provider ID changed")
+		errors.Details(errE)["existing"] = storedCredential.ProviderID
+		errors.Details(errE)["new"] = newProviderID
+		s.InternalServerErrorWithError(w, req, errE)
+		return
 	}
 
-	jsonData, errE := x.MarshalWithoutEscapeHTML(credential)
+	if pkCredential.Credential.Authenticator.CloneWarning {
+		zerolog.Ctx(ctx).Warn().Str("providerID", storedCredential.ProviderID).Msg("authenticator may be cloned")
+	}
+
+	jsonData, errE := x.MarshalWithoutEscapeHTML(pkCredential)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	account, errE := s.getAccountByCredential(ctx, ProviderPasskey, providerID)
-	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	s.completeAuthStep(w, req, true, flow, account, []Credential{{ID: credential.ID, ProviderID: providerID, Provider: ProviderPasskey, Data: jsonData}})
+	s.completeAuthStep(w, req, true, flow, account,
+		[]Credential{{
+			CredentialPublic: CredentialPublic{
+				ID:          storedCredential.ID,
+				Provider:    ProviderPasskey,
+				DisplayName: storedCredential.DisplayName,
+				Verified:    false,
+			},
+			ProviderID: storedCredential.ProviderID,
+			Data:       jsonData,
+		}},
+	)
 }
 
 // AuthFlowPasskeyCreateStartPost is the API handler to start the passkey provider step (sign-up), POST request.
@@ -295,9 +318,10 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 		return
 	}
 
+	// User ID also serves as public credential ID once stored in the database.
 	userID := identifier.New()
-	label := userID.String()
-	options, session, errE := beginPasskeyRegistration(s.passkeyProvider(), userID, label)
+	displayName := userID.String()
+	options, session, errE := beginPasskeyRegistration(s.passkeyProvider(), userID, displayName)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -309,7 +333,7 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 	flow.Passkey = &flowPasskey{
 		SessionData: session,
 		// We mark the request as sign-up.
-		Label: label,
+		DisplayName: displayName,
 	}
 	errE = s.setFlow(ctx, flow)
 	if errE != nil {
@@ -355,7 +379,7 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	if flowPasskey.Label == "" {
+	if flowPasskey.DisplayName == "" {
 		s.BadRequestWithError(w, req, errors.New("not a sign-up request"))
 		return
 	}
@@ -372,7 +396,7 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 
 	createResponse := passkeyCreateComplete.CreateResponse
 
-	credential, providerID, errE := s.completePasskeyRegistration(createResponse, flowPasskey.Label, flowPasskey.SessionData)
+	credential, providerID, errE := s.completePasskeyRegistration(createResponse, flowPasskey.DisplayName, flowPasskey.SessionData)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
@@ -390,8 +414,35 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	s.completeAuthStep(w, req, true, flow, account, []Credential{{
-		ID: credential.ID, ProviderID: providerID,
-		Provider: ProviderPasskey, Data: jsonData,
-	}})
+	s.completeAuthStep(w, req, true, flow, account,
+		[]Credential{{
+			CredentialPublic: CredentialPublic{
+				// User ID also serves as public credential ID.
+				ID:          credential.userID,
+				Provider:    ProviderPasskey,
+				DisplayName: flowPasskey.DisplayName,
+				Verified:    false,
+			},
+			ProviderID: providerID,
+			Data:       jsonData,
+		}})
+}
+
+func (s *Service) getPasskeySignalData(credential Credential, updatedDisplayName string) (*CredentialSignalData, errors.E) {
+	var pk passkeyCredential
+	errE := x.UnmarshalWithoutUnknownFields(credential.Data, &pk)
+	if errE != nil {
+		errors.Details(errE)["id"] = credential.ID
+		return nil, errE
+	}
+
+	pk.userID = credential.ID
+	pk.displayName = updatedDisplayName
+
+	return &CredentialSignalData{
+		RPID:        s.passkeyProvider().Config.RPID,
+		UserID:      pk.WebAuthnID(),
+		Name:        pk.WebAuthnName(),
+		DisplayName: pk.WebAuthnDisplayName(),
+	}, nil
 }

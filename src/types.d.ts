@@ -460,18 +460,18 @@ export type Mutable<T> = {
   -readonly [k in keyof T]: Mutable<T[k]>
 }
 
-export type CredentialInfoRef = {
+export type CredentialRef = {
   id: string
 }
 
-export type CredentialInfo = {
+export type CredentialPublic = {
   id: string
   provider: string
   displayName: string
   verified?: boolean // TODO: When verifying emails.
 }
 
-export type Credentials = CredentialInfoRef[]
+export type Credentials = CredentialRef[]
 
 export type CredentialAddEmailRequest = {
   email: string
@@ -497,8 +497,12 @@ export type CredentialAddResponse =
       error: string
     }
 
-export type CredentialAddCredentialWithLabelStartRequest = {
-  label: string
+export type CredentialAddCredentialStartRequest = {
+  displayName: string
+}
+
+export type CredentialRenameRequest = {
+  displayName: string
 }
 
 export type CredentialAddPasswordCompleteRequest = AuthFlowPasswordCompleteRequest & {
@@ -507,4 +511,20 @@ export type CredentialAddPasswordCompleteRequest = AuthFlowPasswordCompleteReque
 
 export type CredentialAddPasskeyCompleteRequest = AuthFlowPasskeyCreateCompleteRequest & {
   sessionId: string
+}
+
+export type CredentialResponse =
+  | {
+      error: string
+    }
+  | {
+      success: true
+      signal?: CredentialSignalData
+    }
+
+export type CredentialSignalData = {
+  rpId: string
+  userId: string
+  name: string
+  displayName: string
 }

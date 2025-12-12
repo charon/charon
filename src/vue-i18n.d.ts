@@ -36,6 +36,7 @@ declare module "vue-i18n" {
         redirect: string
         block: string
         unblock: string
+        rename: string
       }
       errors: {
         unexpected: string
@@ -61,14 +62,8 @@ declare module "vue-i18n" {
           username: string
           password: string
         }
-        credentialLabelInUse: {
-          password: string
-          passkey: string
-        }
-        credentialLabelMissing: {
-          password: string
-          passkey: string
-        }
+        credentialDisplayNameInUse: string
+        credentialDisplayNameMissing: string
       }
       labels: {
         optional: string
@@ -258,13 +253,13 @@ declare module "vue-i18n" {
       }
       CredentialAddPassword: {
         passwordLabel: string
-        label: string
+        displayNameLabel: string
       }
       CredentialAddEmail: {
         emailAddressLabel: string
       }
       CredentialAddPasskey: {
-        label: string
+        displayNameLabel: string
         passkeyInstructions: string
       }
     }

@@ -24,7 +24,8 @@
       "pause": "Pause",
       "redirect": "Redirect",
       "block": "Block",
-      "unblock": "Unblock"
+      "unblock": "Unblock",
+      "rename": "Rename"
     },
     "errors": {
       "unexpected": "Unexpected error. Please try again.",
@@ -50,14 +51,8 @@
         "username": "This username is already present on this account.",
         "password": "This password or passphrase is already present on this account."
       },
-      "credentialLabelInUse": {
-        "password": "Password or passphrase label is already in use.",
-        "passkey": "Passkey label is already in use."
-      },
-      "credentialLabelMissing": {
-        "password": "Password or passphrase label is missing.",
-        "passkey": "Passkey label is missing."
-      }
+      "credentialDisplayNameInUse": "Display name is already in use.",
+      "credentialDisplayNameMissing": "Display name is missing."
     },
     "labels": {
       "optional": "(optional)",
@@ -247,13 +242,13 @@
     },
     "CredentialAddPassword": {
       "passwordLabel": "@:partials.AuthPassword.passwordLabel",
-      "label": "Label"
+      "displayNameLabel": "Display name"
     },
     "CredentialAddEmail": {
       "emailAddressLabel": "@:partials.AuthPassword.emailAddressLabel"
     },
     "CredentialAddPasskey": {
-      "label": "@:partials.CredentialAddPassword.label",
+      "displayNameLabel": "@:partials.CredentialAddPassword.displayNameLabel",
       "passkeyInstructions": "Please follow instructions by your browser and/or device to add a passkey."
     }
   },

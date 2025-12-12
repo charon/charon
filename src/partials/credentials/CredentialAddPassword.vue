@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CredentialAddCredentialWithLabelStartRequest, CredentialAddPasswordCompleteRequest, CredentialAddResponse } from "@/types"
+import type { CredentialAddCredentialStartRequest, CredentialAddPasswordCompleteRequest, CredentialAddResponse } from "@/types"
 
 import { onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
@@ -17,7 +17,7 @@ const progress = useProgress()
 
 const abortController = new AbortController()
 const password = ref("")
-const passwordLabel = ref("")
+const passwordDisplayName = ref("")
 const passwordError = ref("")
 const unexpectedError = ref("")
 
@@ -29,16 +29,16 @@ function getErrorMessage(errorCode: string) {
       return t("common.errors.invalidPassword")
     case "alreadyPresent":
       return t("common.errors.alreadyPresent.password")
-    case "credentialLabelInUse":
-      return t("common.errors.credentialLabelInUse.password")
-    case "credentialLabelMissing":
-      return t("common.errors.credentialLabelMissing.password")
+    case "credentialDisplayNameInUse":
+      return t("common.errors.credentialDisplayNameInUse")
+    case "credentialDisplayNameMissing":
+      return t("common.errors.credentialDisplayNameMissing")
     default:
       throw new Error(`unexpected error code: ${errorCode}`)
   }
 }
 
-async function startAddPasswordCredential(request: CredentialAddCredentialWithLabelStartRequest): Promise<CredentialAddResponse> {
+async function startAddPasswordCredential(request: CredentialAddCredentialStartRequest): Promise<CredentialAddResponse> {
   const url = router.apiResolve({ name: "CredentialAddPasswordStart" }).href
   return await postJSON<CredentialAddResponse>(url, request, abortController.signal, progress)
 }
@@ -54,7 +54,7 @@ function resetOnInteraction() {
   unexpectedError.value = ""
 }
 
-watch([password, passwordLabel], resetOnInteraction)
+watch([password, passwordDisplayName], resetOnInteraction)
 
 onBeforeUnmount(() => {
   abortController.abort()
@@ -66,7 +66,7 @@ onMounted(() => {
 
 function canSubmit(): boolean {
   // Required fields.
-  return !!password.value && !!passwordLabel.value
+  return !!password.value && !!passwordDisplayName.value
 }
 
 async function onSubmit() {
@@ -79,7 +79,7 @@ async function onSubmit() {
   progress.value += 1
   try {
     const startResponse = await startAddPasswordCredential({
-      label: passwordLabel.value,
+      displayName: passwordDisplayName.value,
     })
     if (abortController.signal.aborted) {
       return
@@ -156,8 +156,8 @@ async function onSubmit() {
       spellcheck="false"
       required
     />
-    <label for="credentialaddpassword-input-label" class="mt-4 mb-1"> {{ t("partials.CredentialAddPassword.label") }}</label>
-    <InputText id="credentialaddpassword-input-label" v-model="passwordLabel" class="min-w-0 flex-auto grow" :progress="progress" required />
+    <label for="credentialaddpassword-input-displayname" class="mt-4 mb-1"> {{ t("partials.CredentialAddPassword.displayNameLabel") }}</label>
+    <InputText id="credentialaddpassword-input-displayname" v-model="passwordDisplayName" class="min-w-0 flex-auto grow" :progress="progress" required />
     <div v-if="passwordError" class="mt-4 text-error-600">{{ getErrorMessage(passwordError) }}</div>
     <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-end">
