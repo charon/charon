@@ -148,6 +148,9 @@ const WithCredentialDocument = WithDocument<CredentialPublic>
                   <Button v-if="doc.provider === 'email' && !doc.verified" :id="`credentiallist-button-verify-${doc.id}`" type="button" secondary disabled>{{
                     t("views.CredentialList.verify")
                   }}</Button>
+                  <!--
+                    Button is on purpose not disabled on unexpectedError so that user can retry.
+                  -->
                   <Button
                     v-if="canRename(doc.provider)"
                     :id="`credentiallist-button-rename-${doc.id}`"

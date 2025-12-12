@@ -46,7 +46,11 @@ function getErrorMessage(errorCode: string) {
 }
 
 function canSubmit(): boolean {
-  // Required field.
+  if (renameError.value) {
+    return false
+  }
+
+  // Required fields.
   return !!displayName.value
 }
 
@@ -164,6 +168,9 @@ watch(
       <h2 :id="`credentialfull-provider-${credential.id}`" class="text-xl">{{ getProviderNameTitle(t, credential.provider) }}</h2>
       <form class="mt-1 flex flex-row items-center gap-4" novalidate @submit.prevent="onSubmit" @keydown.esc="onCancel">
         <InputText :id="`credentialfull-input-${credential.id}`" v-model="displayName" class="min-w-0 flex-auto grow" :progress="progress" required />
+        <!--
+          Button is on purpose not disabled on unexpectedError so that user can retry.
+        -->
         <Button :id="`credentialfull-button-rename-${credential.id}`" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{
           t("common.buttons.rename")
         }}</Button>
