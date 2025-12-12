@@ -55,7 +55,6 @@ function canSubmit(): boolean {
 }
 
 function onCancel() {
-  displayName.value = ""
   resetOnInteraction()
   emit("canceled")
 }
@@ -92,15 +91,15 @@ async function onSubmit() {
       return
     }
 
-    if (!("success" in response)) {
+    if (!response.success) {
       throw new Error("unexpected response")
     }
 
-    if ("signal" in response) {
+    // When renaming a passkey, we try signaling to the authenticator about the updated user credential.
+    if (response.signal) {
       await signalPasskeyUpdate(response.signal)
     }
 
-    displayName.value = ""
     emit("renamed")
   } catch (error) {
     if (abortController.signal.aborted) {
@@ -112,17 +111,9 @@ async function onSubmit() {
     progress.value -= 1
   }
 }
+
 async function signalPasskeyUpdate(signal: CredentialSignalData) {
-  try {
-    await PublicKeyCredential.signalCurrentUserDetails({
-      rpId: signal.rpId,
-      userId: signal.userId,
-      name: signal.name,
-      displayName: signal.displayName,
-    })
-  } catch {
-    // Intentionally silent, SignalAPI provides no feedback whether update was processed by any authenticator to prevent information leakage.
-  }
+  await PublicKeyCredential.signalCurrentUserDetails(signal)
 }
 
 function resetOnInteraction() {
@@ -143,7 +134,6 @@ watch(
         document.getElementById(`credentialfull-input-${props.credential.id}`)?.focus()
       })
     } else {
-      displayName.value = ""
       resetOnInteraction()
     }
   },

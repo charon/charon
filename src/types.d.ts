@@ -460,7 +460,7 @@ export type Mutable<T> = {
   -readonly [k in keyof T]: Mutable<T[k]>
 }
 
-export type CredentialPublicRef = {
+export type CredentialRef = {
   id: string
 }
 
@@ -471,7 +471,7 @@ export type CredentialPublic = {
   verified?: boolean // TODO: When verifying emails.
 }
 
-export type Credentials = CredentialPublicRef[]
+export type Credentials = CredentialRef[]
 
 export type CredentialAddEmailRequest = {
   email: string
@@ -518,11 +518,8 @@ export type CredentialResponse =
       error: string
     }
   | {
-      success: boolean
-    }
-  | {
-      success: boolean
-      signal: CredentialSignalData
+      success: true
+      signal?: CredentialSignalData
     }
 
 export type CredentialSignalData = {

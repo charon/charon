@@ -13,7 +13,6 @@ import (
 	"github.com/alexedwards/argon2id"
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
-	"github.com/rs/zerolog"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
@@ -969,6 +968,15 @@ FoundCredential:
 		return
 	}
 
+	var signalData *CredentialSignalData
+	if foundProvider == ProviderPasskey {
+		signalData, errE = s.getPasskeySignalData(account.Credentials[foundProvider][foundIndex], requestDisplayName)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+	}
+
 	// Checking that the display name is not already in use by another credential for this provider.
 	for i, credential := range account.Credentials[foundProvider] {
 		if credential.DisplayName == requestDisplayName {
@@ -978,7 +986,7 @@ FoundCredential:
 				s.WriteJSON(w, req, CredentialResponse{
 					Error:   "",
 					Success: true,
-					Signal:  nil,
+					Signal:  signalData,
 				}, nil)
 				return
 			}
@@ -997,15 +1005,6 @@ FoundCredential:
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
-	}
-
-	var signalData *CredentialSignalData
-	if foundProvider == ProviderPasskey {
-		signalData, errE = s.getPasskeySignalData(account.Credentials[foundProvider][foundIndex], requestDisplayName)
-		// This is an internal server error, but dashboard rename was successful, so we log and continue.
-		if errE != nil {
-			zerolog.Ctx(ctx).Warn().Err(errE).Msg("failed to prepare passkey signal data")
-		}
 	}
 
 	s.WriteJSON(w, req, CredentialResponse{
