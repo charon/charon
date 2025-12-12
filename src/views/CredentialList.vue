@@ -45,10 +45,18 @@ function onRename(credentialId: string) {
 }
 
 function onRenameCancelled() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   renamingCredentialId.value = null
 }
 
 function onRenamed() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
   renamingCredentialId.value = null
   refreshKey.value++
 }
