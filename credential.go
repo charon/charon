@@ -481,8 +481,7 @@ func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *htt
 
 	// Check if passwords display name is already in use on this account.
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	hasDisplayName := account.HasCredentialDisplayName(ProviderPassword, displayName)
-	if hasDisplayName {
+	if account.HasCredentialDisplayName(ProviderPassword, displayName) {
 		s.WriteJSON(w, req, CredentialAddResponse{
 			SessionID:    nil,
 			CredentialID: nil,
@@ -604,8 +603,7 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 	}
 
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	hasDisplayName := account.HasCredentialDisplayName(ProviderPassword, cas.DisplayName)
-	if hasDisplayName {
+	if account.HasCredentialDisplayName(ProviderPassword, cas.DisplayName) {
 		s.WriteJSON(w, req, CredentialAddResponse{
 			SessionID:    nil,
 			CredentialID: nil,
@@ -705,8 +703,7 @@ func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http
 
 	// Check if passkeys display name is already in use on this account.
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	hasDisplayName := account.HasCredentialDisplayName(ProviderPasskey, displayName)
-	if hasDisplayName {
+	if account.HasCredentialDisplayName(ProviderPasskey, displayName) {
 		s.WriteJSON(w, req, CredentialAddResponse{
 			SessionID:    nil,
 			CredentialID: nil,
@@ -802,8 +799,7 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 	}
 
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	hasDisplayName := account.HasCredentialDisplayName(ProviderPasskey, cas.DisplayName)
-	if hasDisplayName {
+	if account.HasCredentialDisplayName(ProviderPasskey, cas.DisplayName) {
 		s.WriteJSON(w, req, CredentialAddResponse{
 			SessionID:    nil,
 			CredentialID: nil,
