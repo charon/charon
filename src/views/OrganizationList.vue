@@ -58,11 +58,13 @@ onBeforeMount(async () => {
     <NavBar></NavBar>
   </Teleport>
   <div class="mt-12 flex w-full flex-col items-center border-t border-transparent sm:mt-[4.5rem]">
-    <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,65ch)] gap-1 sm:m-4 sm:gap-4">
+    <div id="organizationlist-content-list" class="m-1 grid auto-rows-auto grid-cols-[minmax(0,65ch)] gap-1 sm:m-4 sm:gap-4">
       <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <div class="flex flex-row items-center justify-between gap-4">
           <h1 class="text-2xl font-bold">{{ t("common.entities.organizations") }}</h1>
-          <ButtonLink v-if="isSignedIn()" :to="{ name: 'OrganizationCreate' }" :progress="progress" primary>{{ t("common.buttons.create") }}</ButtonLink>
+          <ButtonLink v-if="isSignedIn()" id="organizationlist-button-create" :to="{ name: 'OrganizationCreate' }" :progress="progress" primary>{{
+            t("common.buttons.create")
+          }}</ButtonLink>
         </div>
       </div>
       <div v-if="dataLoading" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">{{ t("common.data.dataLoading") }}</div>

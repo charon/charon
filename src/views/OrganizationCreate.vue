@@ -32,7 +32,7 @@ onBeforeUnmount(() => {
 })
 
 onMounted(() => {
-  document.getElementById("name")?.focus()
+  document.getElementById("organizationcreate-input-name")?.focus()
 })
 
 function canSubmit(): boolean {
@@ -92,12 +92,12 @@ async function onSubmit() {
           We show them ourselves when we want them.
         -->
         <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
-          <label for="name" class="mb-1">{{ t("views.OrganizationCreate.organizationName") }}</label>
-          <InputText id="name" v-model="name" class="min-w-0 flex-auto grow" :progress="progress" required />
+          <label for="organizationcreate-input-name" class="mb-1">{{ t("views.OrganizationCreate.organizationName") }}</label>
+          <InputText id="organizationcreate-input-name" v-model="name" class="min-w-0 flex-auto grow" :progress="progress" required />
           <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
           <div v-else class="mt-4">{{ t("views.OrganizationCreate.chooseOrganizationName") }}</div>
           <div class="mt-4 flex flex-row justify-end">
-            <Button type="submit" primary :disabled="!canSubmit()" :progress="progress">{{ t("common.buttons.create") }}</Button>
+            <Button id="organizationcreate-button-create" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{ t("common.buttons.create") }}</Button>
           </div>
         </form>
       </div>

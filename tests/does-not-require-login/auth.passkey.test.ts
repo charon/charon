@@ -1,6 +1,6 @@
 import type { CDPSession } from "@playwright/test"
 
-import { CHARON_URL, checkpoint, expect, test } from "./utils.ts"
+import { CHARON_URL, checkpoint, expect, test } from "../utils.ts"
 
 // Add a simple WebAuthnCredential interface since playwright does not export the Protocol type.
 interface WebAuthnCredential {

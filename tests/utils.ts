@@ -87,11 +87,69 @@ test.afterAll(() => {
 
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-interface CheckpointOptions {
-  mask?: Array<Locator>
+// Meant for tests where the user needs to be authenticated.
+export async function signInWithPassword(page: Page, expectSignup: boolean) {
+  await page.goto(CHARON_URL)
+
+  // Find and click the "SIGN-IN OR SIGN-UP" button.
+  const signInButton = page.locator("#navbar-button-signin")
+  await expect(signInButton).toBeVisible()
+  await checkpoint(page, "main-page-before-signin")
+  await signInButton.click()
+
+  // Find the email input field and enter 'tester'.
+  const emailField = page.locator("input#authstart-input-email")
+  await expect(emailField).toBeVisible()
+  await checkpoint(page, "main-page-after-clicking-signin")
+  await emailField.fill("tester")
+
+  // Find and click the NEXT button.
+  const nextButton = page.locator("button#authstart-button-next")
+  await expect(nextButton).toBeVisible()
+  await checkpoint(page, "auth-page-after-entering-username")
+  await nextButton.click()
+
+  // Find the password input field and enter 'tester123'.
+  const passwordField = page.locator("input#authpassword-input-currentpassword")
+  await expect(passwordField).toBeVisible()
+  await checkpoint(page, "auth-page-after-entering-username-and-clicking-next")
+  await passwordField.fill("tester123")
+
+  // Find and click the enabled NEXT button (not disabled).
+  const nextButton2 = page.locator("button#authpassword-button-next")
+  await expect(nextButton2).toBeVisible()
+  await checkpoint(page, "auth-page-after-entering-password")
+  await nextButton2.click()
+
+  // Find the li element that contains "tester" and click its SELECT button.
+  const testerIdentity = page.locator('li:has-text("tester")')
+  const selectButton = testerIdentity.locator("button.authidentity-selector-identity")
+  await expect(selectButton).toBeVisible()
+  // This screenshot differs based on whether you signed up or signed in.
+  await checkpoint(page, `${expectSignup ? "signup" : "signin"}-successful-signin-previous-identities-page-from-password`)
+  await selectButton.click()
+
+  // Verify success message.
+  await expect(page.getByText("Everything is ready to sign you in")).toBeVisible()
+  await checkpoint(page, "auth-page-after-selecting-username-identity")
+
+  // Waiting for the automatic 3 seconds redirect.
+  await page.waitForTimeout(3500)
+
+  // Check that the Identities link is visible.
+  const identitiesLink = page.locator("#menu-list-identities")
+  await expect(identitiesLink).toBeVisible()
+
+  await checkpoint(page, "successful-signin-identities-page")
 }
 
-export async function checkpoint(page: Page, name: string, options: CheckpointOptions = { mask: [] }) {
+interface CheckpointOptions {
+  mask?: Array<Locator>
+  fullPage?: boolean
+}
+
+export async function checkpoint(page: Page, name: string, options: CheckpointOptions = { mask: [], fullPage: true }) {
+  // Wait for the page to stabilize.
   await page.waitForLoadState("networkidle")
 
   // Check that images have loaded.
@@ -103,10 +161,21 @@ export async function checkpoint(page: Page, name: string, options: CheckpointOp
   // TODO: Remove when supported by Playwright.
   //       See: https://github.com/microsoft/playwright/issues/23502
   const screenshotPath = test.info().snapshotPath(`${name}.png`, { kind: "screenshot" })
-  if (existsSync(screenshotPath)) {
-    await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: true, mask: options?.mask })
+  const screenshotOptions = {
+    fullPage: options?.fullPage,
+    mask: options?.mask,
+    ...(existsSync(screenshotPath) ? {} : { path: screenshotPath }),
+  }
+
+  if (!screenshotOptions.path) {
+    await expect(page).toHaveScreenshot(`${name}.png`, screenshotOptions)
   } else {
-    await page.screenshot({ path: screenshotPath, fullPage: true, mask: options?.mask })
+    // Only attach new screenshots to the report.
+    await page.screenshot(screenshotOptions)
+    await test.info().attach(name, {
+      contentType: "image/png",
+      path: screenshotPath,
+    })
   }
 
   // Check for duplicate IDs.

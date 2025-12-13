@@ -685,8 +685,12 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
           <template v-if="metadata.can_update">
             <h2 class="text-xl font-bold">{{ t("common.entities.users") }}</h2>
             <div class="flex flex-row gap-4">
-              <ButtonLink :to="{ name: 'OrganizationUsers', params: { id } }" primary>{{ t("common.buttons.manage") }}</ButtonLink>
-              <ButtonLink :to="{ name: 'OrganizationActivity', params: { id } }" primary>{{ t("common.buttons.activity") }}</ButtonLink>
+              <ButtonLink id="organizationget-button-manageusers" :to="{ name: 'OrganizationUsers', params: { id } }" primary>{{
+                t("common.buttons.manage")
+              }}</ButtonLink>
+              <ButtonLink id="organizationget-button-getactivity" :to="{ name: 'OrganizationActivity', params: { id } }" primary>{{
+                t("common.buttons.activity")
+              }}</ButtonLink>
             </div>
           </template>
           <template v-if="(metadata.can_update && (applications.length || canApplicationsSubmit())) || applicationsUnexpectedError || applicationsUpdated">
