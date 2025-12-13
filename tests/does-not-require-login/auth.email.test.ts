@@ -1,4 +1,4 @@
-import { CHARON_URL, checkpoint, expect, MAILPIT_URL, test } from "./utils.ts"
+import { CHARON_URL, checkpoint, expect, MAILPIT_URL, test } from "../utils.ts"
 
 const EMAIL_CODE_REGEX_MATCHER: RegExp = /code to complete your Charon sign-in or sign-up:\s+(\d{6})\s+You can also open:/s
 const EMAIL_LINK_REGEX_MATCHER: RegExp = /You can also open:\s+(https:\/\/[^\s]+)/s
