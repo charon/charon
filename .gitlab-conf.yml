@@ -311,8 +311,35 @@ variables:
     protected: true
     raw: true
     # sops:enc
-    value: ENC[AES256_GCM,data:rjCbTIBQods6CEeJ7i7bX66Qc9X96P/wa6zYaK6CcO0S2xycgmhdSPmBkntgoFFWNgtLUXvthYKi,iv:XWnFMCZ9OOqAk5XADJsG3LjAqBcMUR4Rs3TtHYtEkMw=,tag:2+u8n+8Vmx3G/WAc8v6XHw==,type:str]
+    value: ENC[AES256_GCM,data:DU9OclFLpny0U9btDB0qKlFLFdI1SQvuyGEqS9TKoS9NzWBvh8AICYk13+/8gBcQq1RNGsEtrd9t,iv:LkuW0bK3Tli8MikH9aNDha+R+0M6p/E8nAvCMQnGgL0=,tag:fpSelSyqPfDVWASGsSiM/A==,type:str]
     variable_type: env_var
+  - description: null
+    environment_scope: '*'
+    key: SIPASS_KEY
+    masked: true
+    protected: false
+    raw: true
+    # sops:enc
+    value: ENC[AES256_GCM,data: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,iv:B+DBmUe310StFU4YZ6kq5FtYbyJDEP8Z8R0heZKC9wc=,tag:Qfl/CuBW183Y4EWCBZOvJw==,type:str]
+    variable_type: file
+  - description: null
+    environment_scope: '*'
+    key: SIPASS_KNOWN_HOSTS
+    masked: false
+    protected: false
+    raw: true
+    # sops:enc
+    value: ENC[AES256_GCM,data:wNuKsTFdb8RIkdm9QCmmfGJnPdlDwAb+x/4fPpzxjjvJtarLsfl49jL+OiYe1ZL+fPOrZZKgE0bikHwFVBDa5Gm+ZXhTSlPNh7Z9Td4qmDzz4Uh+w0npsnoGkEGPOjI=,iv:02Bv44mkFkOscG75IqNxDaGJHgpP0hF99Qn1E70sNAU=,tag:iUaS9oh+/mhUdfmXs4Cn8w==,type:str]
+    variable_type: file
+  - description: null
+    environment_scope: '*'
+    key: SIPASS_SSH_KEY
+    masked: true
+    protected: false
+    raw: true
+    # sops:enc
+    value: ENC[AES256_GCM,data:2T63fmeXv//2Cxob5zOL6a87SDdm4MT+jEEYkmy+YIkfdF7RdYFhve87+BxenrdO1Va6HuhMIO9xuFDmGL2uW0VmMqs/z9ZoWXYGRrAA7I2ZKquqLmUNeLjDQDh6ua7CCdDs31FzTfgHcfu7VLjkXw==,iv:6vAoNQ9CfTFj7cM66wBYM2GMKfJr5vM9eJl8DW9oeNU=,tag:anGrtkiyORT3l5j4eAvCtQ==,type:str]
+    variable_type: file
   - description: null
     environment_scope: '*'
     key: SOPS_AGE_KEY_FILE
@@ -320,7 +347,7 @@ variables:
     protected: true
     raw: true
     # sops:enc
-    value: ENC[AES256_GCM,data:Tp7sjKpC1Awn1z5sdiuwO4CLOPsg7WwLejQywX4DfFSJBVIkiWftM02rv94T0x5kgjei4KGu/WbaaCq0rWCWR62gxpYkAAf91YudNm4ePAbcXTQRf6Xs6XCov6edCgYKLAFEIPrrxI85aMcbhM5Wrwop6FTYp5PmFoMmlWFhysQxc5UzyxtQBRoh2RJdC20lOpOqFwhOJAGd3tyz8SOM3Q5TqoTnteip52jjNobcAd2wpVCMIeP1pWGooa0=,iv:3PV38hI1cE2a0q8iMdfRqhMyWV+JQfNDsFict5xCty4=,tag:yZRwUqcwefCDsVyatZSR6w==,type:str]
+    value: ENC[AES256_GCM,data:V+l6p9eLoCS3a8Xz+VvwJAOu0p0WgLpCQJRePYxc9HOcZlkQmtmLX+Xc5zVsPFrpjGCV4oqDGwU8mhDa1X3gNUakCJMBwC6BkxXtiEIknNRG+0RI3g13PH6BqTz/nWR8yU2sTUKeYavo5fOSeOp/siMoDYv8AvTmxhda3tLKA4XP/Ts7mzXsnA+XgNWNUsZNHgg0Fry8mfossj/cijKNGvHkZy5M/z/U6nEL9WU+OqYzwmhH5LLl+dC+/zY=,iv:y1nZCHf0tPSsRmjGa0pNQj3hRnvEfDvBSG34gmiKQE4=,tag:TMAVvNnnLQyYXfbri66vyQ==,type:str]
     variable_type: file
 # active: The activation of pipeline schedule. If false is set, the pipeline
 # schedule is initially deactivated. Type: boolean
@@ -343,14 +370,14 @@ sops:
     - recipient: age1llyzf24usmx40ck9dxphq5kq3kzkdls3kuzdscrtgq30nm45pceqk6nxd3
       enc: |
         -----BEGIN AGE ENCRYPTED FILE-----
-        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSByUUhHTDlJMkU0b29QdGtE
-        ZU0yMnVySFdZcnRNbHU3ZHN4SUkydUplQVV3CmU4VFQ1TkcyWjZJbFg1VUtHdEdN
-        WW1hbTBPZ0N2NEtZMTdxQzVxRWtpQTgKLS0tIDlMblBIclFRRHB0SDZHaXowKzYy
-        MEVXeWM0N3AzbmtLMGRYcFE4a2xwelkKMiDGlse+9xBgaPfh2yD6HUfMxrjyQ04l
-        KsU0rsuIeJbhCFHJMGhz48Rn1RKWJuurVDMN1et41LXTCD6fsPaHVQ==
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSAwVXhQa2lXNHVZMVFhSkMy
+        WFlia05IcmZNTzJlWWE3S1poT0FOdVgrMlhzCkRhY08wcHRiMkpiZ0FvZWRtbEsw
+        S2h4d1ZLZUgxSUwvaCs3Q1lka3Nha28KLS0tIE4wM08wNDEwRjdUcGd3cmRKSVBI
+        SmFKcDk5MEVybkd0VEpIR2MycHQxcFEKHSATx7kNX6oSoDK1ZhpUCMJ6LfwdxAjb
+        rxwmJb30r/wq3LwwcO6bxQnvna97zKO9kuCJ6TTWhtbKX8JNTc8NDg==
         -----END AGE ENCRYPTED FILE-----
-  lastmodified: "2025-12-11T19:58:30Z"
-  mac: ENC[AES256_GCM,data:TrTXQR5LhKbsACXR5OCDOsk9uJ0PbKObqA8Mxj2xhJJrPoORczVVFuL3htRUsA5CfgukaKVCDF7L6J2s3v53bsGVWjfoO0iCt6kHMoaUn5kcuOVD4fFnwWH+UHOAAAKFBUO1b/cW2RqYELR7HQxxjdtaiOf73vQnOAMgQNiBQuk=,iv:T9sVYgqnmPsjVBtPXLMj2eT7WFN3eSm7ZkRwSQMv6lw=,tag:s8YPOlTXb1boRkNB1/GfAw==,type:str]
+  lastmodified: "2025-12-14T11:29:00Z"
+  mac: ENC[AES256_GCM,data:cltUgvjMmIkvtHsB+0bU+lX0HcveGCKd7ghSxZyLVGdI7aD512m8QpS6p9CRUY8h0VXZb/F7FZRMCWdOQYzfC/IzvUtJh/Y26Z5PlNWtsCJEFq2rvLnPh+Uk1Ni50zGYCYV00a4Tr3fiX98hHW298AMlDCGbsq+6jFW6PdA5gu4=,iv:ShZ10ezx0f4/I4sqXuU/AqRhyaGCELPqnWISejnKo2Y=,tag:qYiQwPuoHD9+x6rtlPHgvQ==,type:str]
   pgp: []
   encrypted_comment_regex: sops:enc
   mac_only_encrypted: true
