@@ -100,7 +100,7 @@ type GenericOIDCProvider struct {
 type SAMLProvider struct {
 	MetadataURL string               `default:"${defaultMetadataURL}" env:"METADATA_URL" help:"${provider}'s metadata URL."                                                                                              placeholder:"URL"  yaml:"metadataUrl"`
 	EntityID    string               `                                env:"ENTITY_ID"    help:"${provider}'s entity ID."                                                                                                                    yaml:"entityId"`
-	Key         kong.FileContentFlag `                                env:"KEY"          help:"File with RSA private key for this provider. In JWK format. Only the key from the JWK is used, other fields are ignored." placeholder:"PATH" yaml:"key"`
+	Key         kong.FileContentFlag `                                env:"KEY_PATH"     help:"File with RSA private key for this provider. In JWK format. Only the key from the JWK is used, other fields are ignored." placeholder:"PATH" yaml:"key"`
 }
 
 // Validate validates the SAMLProvider struct.
@@ -180,7 +180,7 @@ type Mail struct {
 //
 //nolint:lll
 type OIDC struct {
-	Keys []kong.NamedFileContentFlag `env:"KEY" help:"File(s) with RSA, P-256, P-384, or P-521 private key(s) for signing tokens. In JWK format. Only the key from the JWK is used, other fields are ignored." name:"key" placeholder:"PATH" yaml:"keys"`
+	Keys []kong.NamedFileContentFlag `env:"KEY_PATH" help:"File(s) with RSA, P-256, P-384, or P-521 private key(s) for signing tokens. In JWK format. Only the key from the JWK is used, other fields are ignored." name:"key" placeholder:"PATH" yaml:"keys"`
 
 	keys []*jose.JSONWebKey
 }
