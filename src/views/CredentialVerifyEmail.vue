@@ -86,12 +86,11 @@ onMounted(async () => {
   }
 })
 
-function canResend(): boolean {
-  return !codeError.value || codeError.value === "invalidCode"
-}
-
 function canSubmit(): boolean {
-  return canResend() && !!code.value.replaceAll(/\s/g, "")
+  if (codeError.value) {
+    return false
+  }
+  return !!code.value.replaceAll(/\s/g, "")
 }
 
 async function fetchCredential() {
@@ -279,7 +278,7 @@ async function onResend() {
             <template v-else>
               <i18n-t keypath="views.CredentialVerifyEmail.verificationFailed" scope="global">
                 <template #strongSorry
-                ><strong>{{ t("common.messages.sorry") }}</strong></template
+                  ><strong>{{ t("common.messages.sorry") }}</strong></template
                 >
               </i18n-t>
             </template>
@@ -290,55 +289,45 @@ async function onResend() {
           </div>
         </template>
         <template v-else>
-        <div class="flex flex-col">
-          <label v-if="codeFromHash" for="code" class="mb-1">
-            <i18n-t keypath="views.CredentialVerifyEmail.codeFromHashEmail" scope="global">
-              <template #strongEmail
-                ><strong>{{ email }}</strong></template
-              >
-            </i18n-t>
-          </label>
-          <label v-else-if="email" for="code" class="mb-1">
-            <i18n-t keypath="views.CredentialVerifyEmail.codeSentEmail" scope="global">
-              <template #sentCount>{{ t("views.CredentialVerifyEmail.sentCount", sendCounter) }}</template>
-              <template #strongEmail
-                ><strong>{{ email }}</strong></template
-              >
-            </i18n-t>
-          </label>
-          <!--
+          <div class="flex flex-col">
+            <label v-if="codeFromHash" for="code" class="mb-1">
+              <i18n-t keypath="views.CredentialVerifyEmail.codeFromHashEmail" scope="global">
+                <template #strongEmail
+                  ><strong>{{ email }}</strong></template
+                >
+              </i18n-t>
+            </label>
+            <label v-else-if="email" for="code" class="mb-1">
+              <i18n-t keypath="views.CredentialVerifyEmail.codeSentEmail" scope="global">
+                <template #sentCount>{{ t("views.CredentialVerifyEmail.sentCount", sendCounter) }}</template>
+                <template #strongEmail
+                  ><strong>{{ email }}</strong></template
+                >
+              </i18n-t>
+            </label>
+            <!--
             We set novalidate because we do not want UA to show hints.
             We show them ourselves when we want them.
           -->
-          <form class="flex flex-row gap-4" novalidate @submit.prevent="onSubmit">
-            <!-- We do not set maxlength so that users can paste too long text and clean it up. -->
-            <InputCode
-              id="code"
-              v-model="code"
-              class="min-w-0 flex-auto grow"
-              :progress="progress"
-              :disabled="!!codeError && codeError !== 'invalidCode'"
-              inputmode="numeric"
-              pattern="[0-9]*"
-              :code-length="6"
-              required
-            />
-            <!--Button is on purpose not disabled on unexpectedError so that user can retry.-->
-            <Button id="credentialverifyemail-button-submitcode" primary type="submit" :disabled="!canSubmit()" :progress="progress">
-              {{ t("common.buttons.verify") }}
-            </Button>
-          </form>
-        </div>
-        <div v-if="codeError" class="mt-4 text-error-600">{{ getErrorMessage(codeError) }}</div>
-        <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
-        <div v-else-if="codeFromHash" class="mt-4">{{ t("views.CredentialVerifyEmail.confirmCode") }}</div>
-        <div v-else class="mt-4">{{ t("views.CredentialVerifyEmail.waitForCode") }}</div>
-        <div class="mt-4 flex flex-row justify-between gap-4">
-          <Button type="button" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
-          <Button id="credentialverifyemail-button-resendcode" type="button" :disabled="!canResend()" :progress="progress" @click.prevent="onResend">{{
-            t("views.CredentialVerifyEmail.resendButton")
-          }}</Button>
-        </div>
+            <form class="flex flex-row gap-4" novalidate @submit.prevent="onSubmit">
+              <!-- We do not set maxlength so that users can paste too long text and clean it up. -->
+              <InputCode id="code" v-model="code" class="min-w-0 flex-auto grow" :progress="progress" inputmode="numeric" pattern="[0-9]*" :code-length="6" required />
+              <!--Button is on purpose not disabled on unexpectedError so that user can retry.-->
+              <Button id="credentialverifyemail-button-submitcode" primary type="submit" :disabled="!canSubmit()" :progress="progress">
+                {{ t("common.buttons.verify") }}
+              </Button>
+            </form>
+          </div>
+          <div v-if="codeError" class="mt-4 text-error-600">{{ getErrorMessage(codeError) }}</div>
+          <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
+          <div v-else-if="codeFromHash" class="mt-4">{{ t("views.CredentialVerifyEmail.confirmCode") }}</div>
+          <div v-else class="mt-4">{{ t("views.CredentialVerifyEmail.waitForCode") }}</div>
+          <div class="mt-4 flex flex-row justify-between gap-4">
+            <Button type="button" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
+            <Button id="credentialverifyemail-button-resendcode" type="button" :progress="progress" @click.prevent="onResend">{{
+              t("views.CredentialVerifyEmail.resendButton")
+            }}</Button>
+          </div>
         </template>
       </div>
     </div>
