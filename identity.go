@@ -191,7 +191,7 @@ func (i *IdentityPublic) Validate(ctx context.Context, existing *IdentityPublic)
 	}
 
 	// E-mails can only be set from verified email credentials. This is enforced during identity creation
-	// in makeIdentityFromCredentials().
+	// in makeIdentityFromCredentials() and validating identity in Identity.Validate().
 	// Here we just validate the format.
 	if i.Email != "" {
 		email, _, errE := validateEmailOrUsername(i.Email, emailOrUsernameCheckEmail)
@@ -348,6 +348,19 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity, service *Se
 	errE := i.IdentityPublic.Validate(ctx, e)
 	if errE != nil {
 		return errE
+	}
+
+	if i.Email != "" {
+		accountID := mustGetAccountID(ctx)
+		account, errE := service.getAccount(ctx, accountID)
+		if errE != nil {
+			return errE
+		}
+
+		verifiedEmails := account.GetEmailAddresses(true)
+		if !slices.Contains(verifiedEmails, i.Email) {
+			return errors.New("email not verified in account")
+		}
 	}
 
 	// Current user must be among admins if it is changing the identity.
