@@ -154,10 +154,13 @@ func (a *Account) HasCredentialDisplayName(provider Provider, displayName string
 	return false
 }
 
-// GetEmailAddresses returns the email addresses of the account.
-func (a *Account) GetEmailAddresses() []string {
+// GetEmailAddresses returns (verifiedOnly) email addresses of the account.
+func (a *Account) GetEmailAddresses(verifiedOnly bool) []string {
 	emails := make([]string, 0, len(a.Credentials[ProviderEmail]))
 	for _, credential := range a.Credentials[ProviderEmail] {
+		if verifiedOnly && !credential.Verified {
+			continue
+		}
 		// Not-mapped e-mail address is stored in the display name.
 		emails = append(emails, credential.DisplayName)
 	}
@@ -218,4 +221,51 @@ func (s *Service) setAccount(_ context.Context, account *Account) errors.E {
 
 	s.accounts[account.ID] = data
 	return nil
+}
+
+func (s *Service) createEmailCredentialFromTPToken(account *Account, token map[string]interface{}) (*Credential, errors.E) {
+	email := findFirstString(token, "email", "eMailAddress", "emailAddress", "email_address")
+	if email == "" {
+		// No email in token, not an error.
+		return nil, nil //nolint:nilnil
+	}
+	preservedEmail, mappedEmail, errE := validateEmailOrUsername(email, emailOrUsernameCheckEmail)
+	if errE != nil {
+		return nil, errE
+	}
+	shouldAddEmail := false
+	if account == nil {
+		shouldAddEmail = true
+	} else if !account.HasCredential(ProviderEmail, mappedEmail) {
+		shouldAddEmail = true
+	}
+	if !shouldAddEmail {
+		// E-mail already exists, not an error.
+		return nil, nil //nolint:nilnil
+	}
+
+	// email_verified is a standard OIDC claim (https://openid.net/specs/openid-connect-core-1_0.html).
+	emailVerified := false
+	if verified, ok := token["email_verified"].(bool); ok {
+		emailVerified = verified
+	}
+
+	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{})
+	if errE != nil {
+		errors.Details(errE)["email"] = preservedEmail
+		return nil, errE
+	}
+
+	credential := &Credential{
+		CredentialPublic: CredentialPublic{
+			ID:          identifier.New(),
+			Provider:    ProviderEmail,
+			DisplayName: preservedEmail,
+			Verified:    emailVerified,
+		},
+		ProviderID: mappedEmail,
+		Data:       jsonData,
+	}
+
+	return credential, nil
 }

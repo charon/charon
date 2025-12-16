@@ -38,6 +38,7 @@ declare module "vue-i18n" {
         block: string
         unblock: string
         rename: string
+        verify: string
       }
       errors: {
         unexpected: string
@@ -57,6 +58,7 @@ declare module "vue-i18n" {
         }
         credentialInUse: {
           username: string
+          email: string
         }
         alreadyPresent: {
           email: string
@@ -65,6 +67,8 @@ declare module "vue-i18n" {
         }
         credentialDisplayNameInUse: string
         credentialDisplayNameMissing: string
+        verificationSessionExpired: string
+        maxVerifyAttempts: string
       }
       labels: {
         optional: string
@@ -331,6 +335,9 @@ declare module "vue-i18n" {
         organizationsUpdated: string
         addedOrganizations: string
         availableOrganizations: string
+        availableEmails: string
+        noVerifiedEmails: string
+        selectNoEmail: string
       }
       IdentityList: {
         noIdentitiesCreate: string
@@ -400,7 +407,17 @@ declare module "vue-i18n" {
       CredentialList: {
         noCredentialsCreate: string
         noCredentialsSignIn: string
-        verify: string
+      }
+      CredentialVerifyEmail: {
+        verifyEmail: string
+        resendButton: string
+        codeSentEmail: string
+        codeFromHashEmail: string
+        waitForCode: string
+        sentCount: string
+        confirmCode: string
+        verificationFailed: string
+        tryAgain: string
       }
       Footer: {
         terms: string

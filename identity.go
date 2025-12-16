@@ -190,7 +190,9 @@ func (i *IdentityPublic) Validate(ctx context.Context, existing *IdentityPublic)
 		i.Username = username
 	}
 
-	// TODO: E-mails should be possible to be only those which have been validated.
+	// E-mails can only be set from verified email credentials. This is enforced during identity creation
+	// in makeIdentityFromCredentials().
+	// Here we just validate the format.
 	if i.Email != "" {
 		email, _, errE := validateEmailOrUsername(i.Email, emailOrUsernameCheckEmail)
 		if errE != nil {

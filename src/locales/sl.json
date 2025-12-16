@@ -26,7 +26,8 @@
       "roles": "Uporabniške vloge",
       "block": "Blokiraj",
       "unblock": "Odblokiraj",
-      "rename": "Preimenuj"
+      "rename": "Preimenuj",
+      "verify": "Preveri"
     },
     "errors": {
       "unexpected": "Nepričakovana napaka. Prosimo, poskusite znova.",
@@ -45,7 +46,8 @@
         "username": "Uporabniško ime mora biti dolgo vsaj 3 znake."
       },
       "credentialInUse": {
-        "username": "Uporabniško ime je že v uporabi na drugem računu."
+        "username": "Uporabniško ime je že v uporabi na drugem računu.",
+        "email": "E-poštni naslov je že v uporabi na drugem računu."
       },
       "alreadyPresent": {
         "email": "Ta e-poštni naslov je že prisoten na tem računu.",
@@ -53,7 +55,9 @@
         "password": "To geslo ali geslovni stavek je že prisotno na tem računu."
       },
       "credentialDisplayNameInUse": "Prikazno ime je že v uporabi.",
-      "credentialDisplayNameMissing": "Manjka prikazno ime."
+      "credentialDisplayNameMissing": "Manjka prikazno ime.",
+      "verificationSessionExpired": "Seja potrditve e-poštnega naslova je potekla. Prosimo, poskusite znova..",
+      "maxVerifyAttempts": "Dosegli ste največje dovoljeno število poskusov preverjanja."
     },
     "labels": {
       "optional": "(neobvezno)",
@@ -319,7 +323,10 @@
       "usersUpdated": "Uporabniki so bili uspešno posodobljeni.",
       "organizationsUpdated": "Dodane organizacije so bile uspešno posodobljene.",
       "addedOrganizations": "Dodane organizacije",
-      "availableOrganizations": "Razpoložljive organizacije"
+      "availableOrganizations": "Razpoložljive organizacije",
+      "availableEmails": "Potrjeni e-poštni naslovi, ki so na voljo:",
+      "noVerifiedEmails": "Ni potrjenih epoštnih naslovov.",
+      "selectNoEmail": "brez"
     },
     "IdentityList": {
       "noIdentitiesCreate": "Ni identitet. Ustvarite prvo.",
@@ -390,6 +397,17 @@
       "noCredentialsCreate": "Ni metod za avtentikacijo. Ustvarite prvo.",
       "noCredentialsSignIn": "Ni metod za avtentikacijo. Prijavite se ali registrirajte, da ustvarite prvo.",
       "verify": "Potrdi"
+    },
+    "CredentialVerifyEmail": {
+      "verifyEmail": "Preverite e-poštni naslov",
+      "resendButton": "@:partials.AuthCode.resendButton",
+      "codeSentEmail": "@:partials.AuthCode.codeSentEmail",
+      "codeFromHashEmail": "@:partials.AuthCode.codeFromHashEmail",
+      "waitForCode": "@:partials.AuthCode.waitForCode",
+      "sentCount": "@:partials.AuthCode.sentCount",
+      "confirmCode": "@:partials.AuthCode.confirmCode",
+      "verificationFailed": "{strongSorry} Potrditev ni uspela.",
+      "tryAgain": "Lahko se vrnete in poskusite znova."
     },
     "Footer": {
       "terms": "Pogoji",

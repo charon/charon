@@ -279,6 +279,7 @@ func getAccountID(ctx context.Context) (identifier.Identifier, bool) {
 }
 
 func mustGetAccountID(ctx context.Context) identifier.Identifier {
+	// TODO: rename a to i?
 	a, ok := getAccountID(ctx)
 	if !ok {
 		// Internal error: this should never happen.

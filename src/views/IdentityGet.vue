@@ -2,7 +2,16 @@
 import type { DeepReadonly, Ref } from "vue"
 import type { ComponentExposed } from "vue-component-type-helpers"
 
-import type { Identity, IdentityOrganization as IdentityOrganizationType, IdentityRef, Metadata, Organization, OrganizationRef, Organizations } from "@/types"
+import type {
+  AccountVerifiedEmailsResponse,
+  Identity,
+  IdentityOrganization as IdentityOrganizationType,
+  IdentityRef,
+  Metadata,
+  Organization,
+  OrganizationRef,
+  Organizations,
+} from "@/types"
 
 import { computed, nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
@@ -11,6 +20,7 @@ import { useRouter } from "vue-router"
 import { getURL, postJSON } from "@/api"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
+import RadioButton from "@/components/RadioButton.vue"
 import TextArea from "@/components/TextArea.vue"
 import WithDocument from "@/components/WithDocument.vue"
 import siteContext from "@/context"
@@ -42,6 +52,7 @@ const basicUnexpectedError = ref("")
 const basicUpdated = ref(false)
 const username = ref("")
 const email = ref("")
+const verifiedEmails = ref<string[]>([])
 const givenName = ref("")
 const fullName = ref("")
 const pictureUrl = ref("")
@@ -162,6 +173,17 @@ async function loadData(update: "init" | "basic" | "users" | "admins" | "organiz
       }
 
       organizations.value = organizationsResponse.doc
+    }
+
+    if (metadata.value.can_update) {
+      const emailsUrl = router.apiResolve({
+        name: "CredentialVerifiedEmails",
+      }).href
+      const emailsResponse = await getURL<AccountVerifiedEmailsResponse>(emailsUrl, null, abortController.signal, progress)
+      if (abortController.signal.aborted) {
+        return
+      }
+      verifiedEmails.value = emailsResponse.doc.emails || []
     }
   } catch (error) {
     if (abortController.signal.aborted) {
@@ -458,10 +480,38 @@ const WithOrganizationDoc = WithDocument<Organization>
               >{{ t("common.fields.username") }} <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
             >
             <InputText id="username" v-model="username" class="min-w-0 flex-auto grow" :readonly="!metadata.can_update" :progress="progress" />
+
             <label for="email" class="mt-4 mb-1"
               >{{ t("common.fields.email") }} <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
             >
-            <InputText id="email" v-model="email" class="min-w-0 flex-auto grow" :readonly="!metadata.can_update" :progress="progress" />
+            <InputText id="email" v-model="email" class="min-w-0 flex-auto grow" :readonly="true" :progress="progress" />
+
+            <div v-if="metadata.can_update && verifiedEmails.length > 0" class="mt-4 mb-1">
+              <fieldset>
+                <legend class="mb-1">{{ t("views.IdentityGet.availableEmails") }}</legend>
+                <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                  <template v-for="verifiedEmail in verifiedEmails" :key="verifiedEmail">
+                    <RadioButton :id="`identity-email-${verifiedEmail}`" v-model="email" :value="verifiedEmail" :progress="progress" class="mx-2" />
+                    <label :for="`identity-email-${verifiedEmail}`" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
+                      verifiedEmail
+                    }}</label>
+                  </template>
+                  <RadioButton id="identity-email-none" v-model="email" value="" :progress="progress" class="mx-2" />
+                  <label for="identity-email-none" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
+                    t("views.IdentityGet.selectNoEmail")
+                  }}</label>
+                </div>
+              </fieldset>
+            </div>
+
+            <!-- Show "noVerifiedEmails" when user can update but has no verified emails -->
+            <div v-else-if="metadata.can_update" class="text-sm text-gray-500 italic">
+              {{ t("views.IdentityGet.noVerifiedEmails") }}
+            </div>
+            <!-- Show nothing when user cannot update but has verified emails -->
+            <!-- Show nothing when user cannot update and has no verified emails -->
+            <div v-else class="text-sm text-gray-500" />
+
             <label for="givenName" class="mt-4 mb-1"
               >{{ t("common.fields.givenName") }} <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
             >

@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"slices"
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"github.com/alexedwards/argon2id"
 	"github.com/go-webauthn/webauthn/protocol"
@@ -143,7 +145,7 @@ func (s *Service) addCredentialToAccount(
 			Provider:    providerKey,
 			DisplayName: displayName,
 			// Verified is set to false for all providers, including e-mail. E-mail verification is a separate procedure.
-			Verified: false,
+			Confirmed: false,
 		},
 		ProviderID: providerID,
 		Data:       jsonData,
@@ -907,6 +909,10 @@ FoundCredential:
 		}
 		signalUnknown = s.getPasskeySignalUnknownCredentialData(credentialIDBytes)
 	}
+	// On removing e-mail credential, remove verify session if any.
+	if foundProvider == ProviderEmail {
+		deleteCredentialVerifySession(credentialID)
+	}
 
 	errE = s.setAccount(ctx, account)
 	if errE != nil {
@@ -1042,4 +1048,377 @@ func newCredentialSignalResponse(update *SignalCurrentUserDetails, remove *Signa
 		return nil
 	}
 	return &SignalPasskey{Update: update, Remove: remove}
+}
+
+var (
+	credentialVerifySessions   = make(map[identifier.Identifier]json.RawMessage) //nolint:gochecknoglobals
+	credentialVerifySessionsMu sync.RWMutex                                      //nolint:gochecknoglobals
+)
+
+// Credential verification error codes.
+const (
+	ErrorCodeVerificationSessionExpired ErrorCode = "verificationSessionExpired"
+	ErrorCodeMaxVerifyAttempts          ErrorCode = "maxVerifyAttempts"
+)
+
+const (
+	credentialVerifySessionExpiration = 10 * time.Minute
+	maxVerifyAttempts                 = maxAuthAttempts
+)
+
+var errVerificationExpired = errors.Base("verification session expired")
+
+// AccountVerifiedEmailsResponse represents the response for getting verified emails.
+type AccountVerifiedEmailsResponse struct {
+	Emails []string `json:"emails"`
+}
+
+// CredentialVerifyEmailCompleteRequest represents the request to complete email verification.
+type CredentialVerifyEmailCompleteRequest struct {
+	Code string `json:"code"`
+}
+
+type credentialVerifySession struct {
+	CredentialID  identifier.Identifier
+	CreatedAt     time.Time
+	Codes         []string
+	WrongAttempts int
+}
+
+// storeCredentialVerifySession stores a verification session for e-mail credential.
+func storeCredentialVerifySession(session credentialVerifySession) errors.E {
+	sessionData, errE := x.MarshalWithoutEscapeHTML(session)
+	if errE != nil {
+		return errE
+	}
+
+	credentialVerifySessionsMu.Lock()
+	defer credentialVerifySessionsMu.Unlock()
+	credentialVerifySessions[session.CredentialID] = sessionData
+
+	return nil
+}
+
+func getCredentialVerifySession(credentialID identifier.Identifier) (*credentialVerifySession, errors.E) {
+	credentialVerifySessionsMu.RLock()
+	defer credentialVerifySessionsMu.RUnlock()
+
+	sessionData, ok := credentialVerifySessions[credentialID]
+	if !ok {
+		return nil, errors.WithDetails(errSessionNotFound, "credentialID", credentialID)
+	}
+
+	var session credentialVerifySession
+	errE := x.UnmarshalWithoutUnknownFields(sessionData, &session)
+	if errE != nil {
+		errors.Details(errE)["credentialID"] = credentialID
+		return nil, errE
+	}
+
+	if session.Expired() {
+		return nil, errors.WithDetails(errVerificationExpired, "credentialID", credentialID)
+	}
+
+	return &session, nil
+}
+
+func deleteCredentialVerifySession(credentialID identifier.Identifier) {
+	credentialVerifySessionsMu.Lock()
+	defer credentialVerifySessionsMu.Unlock()
+	delete(credentialVerifySessions, credentialID)
+}
+
+func (s credentialVerifySession) Expired() bool {
+	return time.Now().After(s.CreatedAt.Add(credentialVerifySessionExpiration))
+}
+
+// CredentialVerifyEmail is the frontend handler for email verification.
+func (s *Service) CredentialVerifyEmail(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	if s.ProxyStaticTo != "" {
+		s.Proxy(w, req)
+	} else {
+		s.ServeStaticFile(w, req, "/index.html")
+	}
+}
+
+// CredentialVerifyEmailPost is the API handler for starting email verification, POST request.
+func (s *Service) CredentialVerifyEmailPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	defer req.Body.Close()              //nolint:errcheck
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	ctx := s.RequireAuthenticated(w, req)
+	if ctx == nil {
+		return
+	}
+
+	credentialID, errE := identifier.MaybeString(params["id"])
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	accountID := mustGetAccountID(ctx)
+	account, errE := s.getAccount(ctx, accountID)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	var foundCredential Credential
+	foundIndex := -1
+
+FoundCredential:
+	for _, credentials := range account.Credentials {
+		for i, credential := range credentials {
+			if credential.ID == credentialID {
+				foundCredential = credential
+				foundIndex = i
+				break FoundCredential
+			}
+		}
+	}
+
+	if foundIndex == -1 {
+		s.NotFound(w, req)
+		return
+	}
+
+	if foundCredential.Provider != ProviderEmail {
+		s.InternalServerErrorWithError(w, req, errors.New("invalid credential type for verification"))
+		return
+	}
+
+	if foundCredential.Confirmed {
+		// Nothing to do, already verified.
+		s.WriteJSON(w, req, CredentialResponse{
+			Error:   "",
+			Success: true,
+			Signal:  nil,
+		}, nil)
+		return
+	}
+
+	code, errE := getRandomCode()
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	existingSession, errE := getCredentialVerifySession(credentialID)
+	var session credentialVerifySession
+	if errE != nil {
+		if errors.Is(errE, errSessionNotFound) || errors.Is(errE, errVerificationExpired) {
+			// Delete expired session if any (no-op if it doesn't exist) and create a new one.
+			deleteCredentialVerifySession(credentialID)
+			session = credentialVerifySession{
+				CredentialID:  credentialID,
+				CreatedAt:     time.Now(),
+				Codes:         []string{code},
+				WrongAttempts: 0,
+			}
+		} else {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+	} else {
+		session = *existingSession
+		session.Codes = append(session.Codes, code)
+		session.CreatedAt = time.Now()
+	}
+
+	errE = storeCredentialVerifySession(session)
+	if errE != nil {
+		deleteCredentialVerifySession(credentialID)
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	path, errE := s.Reverse("CredentialVerifyEmail", waf.Params{"id": credentialID.String()}, nil)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+	url := fmt.Sprintf("%s%s#code=%s", s.codeProvider().origin, path, code)
+
+	errE = s.sendMail(ctx, credentialID, []string{foundCredential.DisplayName}, codeProviderSubject, codeProviderTemplateCompiled, map[string]string{
+		"code": code,
+		"url":  url,
+	})
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	s.WriteJSON(w, req, CredentialResponse{
+		Error:   "",
+		Success: true,
+		Signal:  nil,
+	}, nil)
+}
+
+// CredentialVerifyEmailCompletePost is the API handler for completing email verification, POST request.
+func (s *Service) CredentialVerifyEmailCompletePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	defer req.Body.Close()              //nolint:errcheck
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	ctx := s.RequireAuthenticated(w, req)
+	if ctx == nil {
+		return
+	}
+
+	credentialID, errE := identifier.MaybeString(params["id"])
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	var request CredentialVerifyEmailCompleteRequest
+	errE = x.DecodeJSONWithoutUnknownFields(req.Body, &request)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	session, errE := getCredentialVerifySession(credentialID)
+	if errE != nil {
+		if errors.Is(errE, errVerificationExpired) {
+			deleteCredentialVerifySession(credentialID)
+			s.WriteJSON(w, req, CredentialResponse{
+				Error:   ErrorCodeVerificationSessionExpired,
+				Success: false,
+				Signal:  nil,
+			}, nil)
+			return
+		}
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	// We clean the provided code of all whitespace (not just at the beginning and end) before we check it.
+	code := strings.Map(func(r rune) rune {
+		if unicode.IsSpace(r) {
+			return -1
+		}
+		return r
+	}, request.Code)
+
+	if !slices.Contains(session.Codes, code) {
+		session.WrongAttempts++
+
+		if session.WrongAttempts >= maxVerifyAttempts {
+			deleteCredentialVerifySession(credentialID)
+			s.WriteJSON(w, req, CredentialResponse{
+				Error:   ErrorCodeMaxVerifyAttempts,
+				Success: false,
+				Signal:  nil,
+			}, nil)
+			return
+		}
+
+		errE = storeCredentialVerifySession(*session)
+		if errE != nil {
+			deleteCredentialVerifySession(credentialID)
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+
+		s.WriteJSON(w, req, CredentialResponse{
+			Error:   ErrorCodeInvalidCode,
+			Success: false,
+			Signal:  nil,
+		}, nil)
+		return
+	}
+
+	deleteCredentialVerifySession(credentialID)
+
+	accountID := mustGetAccountID(ctx)
+	account, errE := s.getAccount(ctx, accountID)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	var foundProvider Provider
+	var foundProviderID string
+	foundIndex := -1
+
+FoundCredential:
+	for provider, credentials := range account.Credentials {
+		for i, credential := range credentials {
+			if credential.ID == credentialID {
+				foundProvider = provider
+				foundProviderID = credential.ProviderID
+				foundIndex = i
+				break FoundCredential
+			}
+		}
+	}
+
+	if foundIndex == -1 {
+		s.NotFound(w, req)
+		return
+	}
+
+	if foundProvider != ProviderEmail {
+		s.InternalServerErrorWithError(w, req, errors.New("invalid credential type for verification"))
+		return
+	}
+
+	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
+	accountWithVerifiedEmail, errE := s.getAccountByCredential(ctx, ProviderEmail, foundProviderID)
+	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	if accountWithVerifiedEmail != nil {
+		if accountWithVerifiedEmail.ID == accountID {
+			s.InternalServerErrorWithError(w, req, errors.New("credential already verified"))
+			return
+		}
+		// Email is verified on a different account.
+		s.WriteJSON(w, req, CredentialResponse{
+			// TODO: Currently this errorCode is only used for username, how do we (safely) signal to user, that email credential is already verified elsewhere?
+			Error:   ErrorCodeCredentialInUse,
+			Success: false,
+			Signal:  nil,
+		}, nil)
+		return
+	}
+
+	account.Credentials[foundProvider][foundIndex].Verified = true
+
+	errE = s.setAccount(ctx, account)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	s.WriteJSON(w, req, CredentialResponse{
+		Error:   "",
+		Success: true,
+		Signal:  nil,
+	}, nil)
+}
+
+// CredentialVerifiedEmailsGet is the API handler for getting verified email addresses of the account, GET request.
+func (s *Service) CredentialVerifiedEmailsGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	ctx := s.RequireAuthenticated(w, req)
+	if ctx == nil {
+		return
+	}
+
+	accountID := mustGetAccountID(ctx)
+	account, errE := s.getAccount(ctx, accountID)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	emails := account.GetEmailAddresses(true)
+
+	s.WriteJSON(w, req, AccountVerifiedEmailsResponse{
+		Emails: emails,
+	}, nil)
 }

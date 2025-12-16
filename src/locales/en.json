@@ -26,7 +26,8 @@
       "roles": "User roles",
       "block": "Block",
       "unblock": "Unblock",
-      "rename": "Rename"
+      "rename": "Rename",
+      "verify": "Verify"
     },
     "errors": {
       "unexpected": "Unexpected error. Please try again.",
@@ -45,7 +46,8 @@
         "username": "Username should be at least 3 characters."
       },
       "credentialInUse": {
-        "username": "Username is already in use by another account."
+        "username": "Username is already in use by another account.",
+        "email": "E-mail address is already in use by another account."
       },
       "alreadyPresent": {
         "email": "This e-mail address is already present on this account.",
@@ -53,7 +55,9 @@
         "password": "This password or passphrase is already present on this account."
       },
       "credentialDisplayNameInUse": "Display name is already in use.",
-      "credentialDisplayNameMissing": "Display name is missing."
+      "credentialDisplayNameMissing": "Display name is missing.",
+      "verificationSessionExpired": "E-mail verification session has expired. Please try again.",
+      "maxVerifyAttempts": "You've reached maximum number of verification attempts."
     },
     "labels": {
       "optional": "(optional)",
@@ -319,7 +323,10 @@
       "usersUpdated": "Users updated successfully.",
       "organizationsUpdated": "Added organizations updated successfully.",
       "addedOrganizations": "Added organizations",
-      "availableOrganizations": "Available organizations"
+      "availableOrganizations": "Available organizations",
+      "availableEmails": "Available verified e-mail addresses:",
+      "noVerifiedEmails": "No verified e-mail addresses available",
+      "selectNoEmail": "none"
     },
     "IdentityList": {
       "noIdentitiesCreate": "There are no identities. Create the first one.",
@@ -390,6 +397,17 @@
       "noCredentialsCreate": "No authentication methods configured. Create the first one.",
       "noCredentialsSignIn": "There are no authentication methods. Sign-in or sign-up to create the first one.",
       "verify": "Verify"
+    },
+    "CredentialVerifyEmail": {
+      "verifyEmail": "Verify email address",
+      "resendButton": "@:partials.AuthCode.resendButton",
+      "codeSentEmail": "@:partials.AuthCode.codeSentEmail",
+      "codeFromHashEmail": "@:partials.AuthCode.codeFromHashEmail",
+      "waitForCode": "@:partials.AuthCode.waitForCode",
+      "sentCount": "@:partials.AuthCode.sentCount",
+      "confirmCode": "@:partials.AuthCode.confirmCode",
+      "verificationFailed": "{strongSorry} Verification failed.",
+      "tryAgain": "You can return and try again later."
     },
     "Footer": {
       "terms": "Terms",

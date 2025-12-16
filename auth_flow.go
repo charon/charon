@@ -159,6 +159,9 @@ func (s *Service) makeIdentityFromCredentials(credentials []Credential) (*Identi
 		case ProviderPassword:
 			// Nothing available.
 		case ProviderEmail:
+			if !credential.Verified {
+				continue
+			}
 			if identity == nil {
 				identity = new(Identity)
 			}
@@ -196,14 +199,15 @@ func (s *Service) makeIdentityFromCredentials(credentials []Credential) (*Identi
 			if picture != "" {
 				identity.PictureURL = picture
 			}
-			email := findFirstString(token, "email", "eMailAddress", "emailAddress", "email_address")
-			if email != "" {
-				// TODO: We should verify the e-mail.
-				identity.Email = email
-			}
 			username := findFirstString(token, "username", "preferred_username")
 			if username != "" {
 				identity.Username = username
+			} else {
+				// E-mail has to be verified first, so we do not add it to identity.Email. But if username is missing, we try to extract it from email.
+				email := findFirstString(token, "email", "eMailAddress", "emailAddress", "email_address")
+				if identity.Username == "" && email != "" {
+					identity.Username, _, _ = strings.Cut(email, "@")
+				}
 			}
 
 			if oidc, oidcFound := s.oidcProviders()[credential.Provider]; oidcFound {

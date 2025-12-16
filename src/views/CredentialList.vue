@@ -179,9 +179,13 @@ const WithCredentialDocument = WithDocument<CredentialPublic>
             <template #default="{ doc, url }">
               <CredentialFull :credential="doc" :url="url" :is-renaming="renamingCredentialId === credential.id" @renamed="onRenamed" @canceled="onRenameCancelled">
                 <div class="flex flex-row gap-4">
-                  <Button v-if="doc.provider === 'email' && !doc.verified" class="credentiallist-button-verify" type="button" secondary disabled>{{
-                    t("views.CredentialList.verify")
-                  }}</Button>
+                  <ButtonLink
+                      v-if="doc.provider === 'email' && !doc.verified"
+                      class="credentiallist-button-verify"
+                      :to="{ name: 'CredentialVerifyEmail', params: { id: doc.id } }"
+                      :progress="progress"
+                      primary
+                  >
                   <!--
                     Button is on purpose not disabled on unexpectedError so that user can retry.
                   -->

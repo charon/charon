@@ -172,7 +172,7 @@ func (s *Service) sendCodeForExistingAccount(
 	} else {
 		// mappedEmailOrUsername is an username. Let's see if there are any
 		// e-mails associated with the account.
-		emails = account.GetEmailAddresses()
+		emails = account.GetEmailAddresses(false)
 
 		if len(emails) == 0 {
 			var code ErrorCode
@@ -194,7 +194,7 @@ func (s *Service) sendCode(
 	preservedEmailOrUsername string, emails []string, accountID *identifier.Identifier, credentials []Credential,
 ) {
 	if len(emails) == 0 {
-		// Internal error: this method should no be called without e-mail addresses.
+		// Internal error: this method should not be called without e-mail addresses.
 		panic(errors.New("no email addresses"))
 	}
 	if accountID == nil && credentials == nil || accountID != nil && credentials != nil {
