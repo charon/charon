@@ -55,9 +55,7 @@
         "password": "To geslo ali geslovni stavek je že prisotno na tem računu."
       },
       "credentialDisplayNameInUse": "Prikazno ime je že v uporabi.",
-      "credentialDisplayNameMissing": "Manjka prikazno ime.",
-      "verificationSessionExpired": "Seja potrditve e-poštnega naslova je potekla. Prosimo, poskusite znova..",
-      "maxVerifyAttempts": "Dosegli ste največje dovoljeno število poskusov preverjanja."
+      "credentialDisplayNameMissing": "Manjka prikazno ime."
     },
     "labels": {
       "optional": "(neobvezno)",

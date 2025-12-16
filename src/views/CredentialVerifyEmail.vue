@@ -33,12 +33,10 @@ function getErrorMessage(errorCode: string) {
   switch (errorCode) {
     case "invalidCode":
       return t("common.errors.invalidCode")
-    case "verificationSessionExpired":
-      return t("common.errors.verificationSessionExpired")
-    case "maxVerifyAttempts":
-      return t("common.errors.maxVerifyAttempts")
     case "credentialInUse":
       return t("common.errors.credentialInUse.email")
+    case "verificationFailed":
+      return ""
     default:
       throw new Error(`unexpected error code: ${errorCode}`)
   }

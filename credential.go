@@ -1055,10 +1055,9 @@ var (
 	credentialVerifySessionsMu sync.RWMutex                                      //nolint:gochecknoglobals
 )
 
-// Credential verification error codes.
+// ErrorCode values.
 const (
-	ErrorCodeVerificationSessionExpired ErrorCode = "verificationSessionExpired"
-	ErrorCodeMaxVerifyAttempts          ErrorCode = "maxVerifyAttempts"
+	ErrorCodeVerificationFailed ErrorCode = "verificationFailed"
 )
 
 const (
@@ -1284,7 +1283,7 @@ func (s *Service) CredentialVerifyEmailCompletePost(w http.ResponseWriter, req *
 		if errors.Is(errE, errVerificationExpired) {
 			deleteCredentialVerifySession(credentialID)
 			s.WriteJSON(w, req, CredentialResponse{
-				Error:   ErrorCodeVerificationSessionExpired,
+				Error:   ErrorCodeVerificationFailed,
 				Success: false,
 				Signal:  nil,
 			}, nil)
@@ -1308,7 +1307,7 @@ func (s *Service) CredentialVerifyEmailCompletePost(w http.ResponseWriter, req *
 		if session.WrongAttempts >= maxVerifyAttempts {
 			deleteCredentialVerifySession(credentialID)
 			s.WriteJSON(w, req, CredentialResponse{
-				Error:   ErrorCodeMaxVerifyAttempts,
+				Error:   ErrorCodeVerificationFailed,
 				Success: false,
 				Signal:  nil,
 			}, nil)

@@ -67,8 +67,6 @@ declare module "vue-i18n" {
         }
         credentialDisplayNameInUse: string
         credentialDisplayNameMissing: string
-        verificationSessionExpired: string
-        maxVerifyAttempts: string
       }
       labels: {
         optional: string
