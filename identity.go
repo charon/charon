@@ -350,19 +350,6 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity, service *Se
 		return errE
 	}
 
-	if i.Email != "" {
-		accountID := mustGetAccountID(ctx)
-		account, errE := service.getAccount(ctx, accountID)
-		if errE != nil {
-			return errE
-		}
-
-		verifiedEmails := account.GetEmailAddresses(true)
-		if !slices.Contains(verifiedEmails, i.Email) {
-			return errors.New("email not verified in account")
-		}
-	}
-
 	// Current user must be among admins if it is changing the identity.
 	// We check this elsewhere, here we make sure the user is stored as an admin.
 	identityID, ok := getIdentityID(ctx)
@@ -1284,6 +1271,23 @@ func (s *Service) IdentityUpdatePostAPI(w http.ResponseWriter, req *http.Request
 		return
 	}
 
+	if identity.Email != "" {
+		accountID := mustGetAccountID(ctx)
+		account, errE := s.getAccount(ctx, accountID)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+
+		verifiedEmails := account.GetEmailAddresses(true)
+		if !slices.Contains(verifiedEmails, identity.Email) {
+			errE := errors.New("email not verified in account")
+			errors.Details(errE)["email"] = identity.Email
+			s.BadRequestWithError(w, req, errE)
+			return
+		}
+	}
+
 	errE = s.updateIdentity(ctx, &identity)
 	if errors.Is(errE, ErrIdentityUnauthorized) {
 		waf.Error(w, req, http.StatusUnauthorized)
@@ -1323,6 +1327,23 @@ func (s *Service) IdentityCreatePostAPI(w http.ResponseWriter, req *http.Request
 	if identity.ID != nil {
 		s.BadRequestWithError(w, req, errors.New("payload contains ID"))
 		return
+	}
+
+	if identity.Email != "" {
+		accountID := mustGetAccountID(ctx)
+		account, errE := s.getAccount(ctx, accountID)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+
+		verifiedEmails := account.GetEmailAddresses(true)
+		if !slices.Contains(verifiedEmails, identity.Email) {
+			errE := errors.New("email not verified in account")
+			errors.Details(errE)["email"] = identity.Email
+			s.BadRequestWithError(w, req, errE)
+			return
+		}
 	}
 
 	errE = s.createIdentity(ctx, &identity)
