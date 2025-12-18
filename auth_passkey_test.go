@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -24,7 +25,7 @@ import (
 	"gitlab.com/charon/charon"
 )
 
-func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
+func TestAuthFlowPasskey(t *testing.T) {
 	t.Parallel()
 
 	ts, service, _, _, _ := startTestServer(t) //nolint:dogsled
@@ -65,82 +66,7 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 	authFlowPasskeyCreateComplete, errE := service.ReverseAPI("AuthFlowPasskeyCreateComplete", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	rsaKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	require.NoError(t, err)
-
-	rsaPublicKeyData := webauthncose.RSAPublicKeyData{
-		PublicKeyData: webauthncose.PublicKeyData{
-			KeyType:   int64(webauthncose.RSAKey),
-			Algorithm: int64(webauthncose.AlgRS256),
-		},
-		Modulus:  rsaKey.N.Bytes(),
-		Exponent: binary.LittleEndian.AppendUint32(nil, uint32(rsaKey.E))[:3], //nolint:gosec
-	}
-
-	publicKeyBytes, err := webauthncbor.Marshal(rsaPublicKeyData)
-	require.NoError(t, err)
-
-	id := identifier.New()
-	credentialID := id[:]
-	publicKeyID := base64.RawURLEncoding.EncodeToString(credentialID)
-
-	clientData := protocol.CollectedClientData{
-		Type:         protocol.CreateCeremony,
-		Challenge:    authFlowResponse.Passkey.CreateOptions.Response.Challenge.String(),
-		Origin:       ts.URL,
-		TokenBinding: nil,
-		Hint:         "",
-	}
-	byteClientDataJSON, errE := x.MarshalWithoutEscapeHTML(clientData)
-	require.NoError(t, errE, "% -+#.1v", errE)
-
-	rpIDHash := sha256.Sum256([]byte(authFlowResponse.Passkey.CreateOptions.Response.RelyingParty.ID))
-
-	rawAuthData := []byte{}
-	// RPIDHash.
-	rawAuthData = append(rawAuthData, rpIDHash[:]...)
-	// Flags.
-	rawAuthData = append(rawAuthData, byte(protocol.FlagUserPresent|protocol.FlagAttestedCredentialData|protocol.FlagUserVerified))
-	// Counter.
-	rawAuthData = binary.BigEndian.AppendUint32(rawAuthData, 0)
-	// AAGUID.
-	rawAuthData = append(rawAuthData, make([]byte, 16)...)
-	// ID length.
-	rawAuthData = binary.BigEndian.AppendUint16(rawAuthData, uint16(len(credentialID))) //nolint:gosec
-	// CredentialID.
-	rawAuthData = append(rawAuthData, credentialID...)
-	// CredentialPublicKey.
-	rawAuthData = append(rawAuthData, publicKeyBytes...)
-
-	attestationObject := protocol.AttestationObject{
-		AuthData:     protocol.AuthenticatorData{},
-		RawAuthData:  rawAuthData,
-		Format:       "none",
-		AttStatement: nil,
-	}
-	byteAttObject, err := webauthncbor.Marshal(attestationObject)
-	require.NoError(t, err)
-
-	authFlowPasskeyCreateCompleteRequest := charon.AuthFlowPasskeyCreateCompleteRequest{
-		CreateResponse: protocol.CredentialCreationResponse{
-			PublicKeyCredential: protocol.PublicKeyCredential{
-				Credential: protocol.Credential{
-					Type: "public-key",
-					ID:   publicKeyID,
-				},
-				RawID:                   credentialID,
-				ClientExtensionResults:  nil,
-				AuthenticatorAttachment: string(protocol.Platform),
-			},
-			AttestationResponse: protocol.AuthenticatorAttestationResponse{
-				AuthenticatorResponse: protocol.AuthenticatorResponse{
-					ClientDataJSON: byteClientDataJSON,
-				},
-				AttestationObject: byteAttObject,
-				Transports:        []string{"fake"},
-			},
-		},
-	}
+	authFlowPasskeyCreateCompleteRequest, rsaKey, publicKeyID, credentialID, rawAuthData := createMockPasskeyCredential(t, ts, authFlowResponse.Passkey)
 
 	data, errE := x.MarshalWithoutEscapeHTML(authFlowPasskeyCreateCompleteRequest)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -198,14 +124,14 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 	authFlowPasskeyGetComplete, errE := service.ReverseAPI("AuthFlowPasskeyGetComplete", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	clientData = protocol.CollectedClientData{
+	clientData := protocol.CollectedClientData{
 		Type:         protocol.AssertCeremony,
 		Challenge:    authFlowResponse.Passkey.GetOptions.Response.Challenge.String(),
 		Origin:       ts.URL,
 		TokenBinding: nil,
 		Hint:         "",
 	}
-	byteClientDataJSON, errE = x.MarshalWithoutEscapeHTML(clientData)
+	byteClientDataJSON, errE := x.MarshalWithoutEscapeHTML(clientData)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	clientDataHash := sha256.Sum256(byteClientDataJSON)
@@ -260,4 +186,87 @@ func TestAuthFlowPasskey(t *testing.T) { //nolint:maintidx
 		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
 		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
 	})
+}
+
+func createMockPasskeyCredential(t *testing.T, ts *httptest.Server, authFlowResponsePasskey *charon.AuthFlowResponsePasskey) (charon.AuthFlowPasskeyCreateCompleteRequest, *rsa.PrivateKey, string, []byte, []byte) {
+	t.Helper()
+
+	rsaKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+
+	rsaPublicKeyData := webauthncose.RSAPublicKeyData{
+		PublicKeyData: webauthncose.PublicKeyData{
+			KeyType:   int64(webauthncose.RSAKey),
+			Algorithm: int64(webauthncose.AlgRS256),
+		},
+		Modulus:  rsaKey.N.Bytes(),
+		Exponent: binary.LittleEndian.AppendUint32(nil, uint32(rsaKey.E))[:3], //nolint:gosec
+	}
+
+	publicKeyBytes, err := webauthncbor.Marshal(rsaPublicKeyData)
+	require.NoError(t, err)
+
+	id := identifier.New()
+	credentialID := id[:]
+	publicKeyID := base64.RawURLEncoding.EncodeToString(credentialID)
+
+	clientData := protocol.CollectedClientData{
+		Type:         protocol.CreateCeremony,
+		Challenge:    authFlowResponsePasskey.CreateOptions.Response.Challenge.String(),
+		Origin:       ts.URL,
+		TokenBinding: nil,
+		Hint:         "",
+	}
+	byteClientDataJSON, errE := x.MarshalWithoutEscapeHTML(clientData)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	rpIDHash := sha256.Sum256([]byte(authFlowResponsePasskey.CreateOptions.Response.RelyingParty.ID))
+
+	rawAuthData := []byte{}
+	// RPIDHash.
+	rawAuthData = append(rawAuthData, rpIDHash[:]...)
+	// Flags.
+	rawAuthData = append(rawAuthData, byte(protocol.FlagUserPresent|protocol.FlagAttestedCredentialData|protocol.FlagUserVerified))
+	// Counter.
+	rawAuthData = binary.BigEndian.AppendUint32(rawAuthData, 0)
+	// AAGUID.
+	rawAuthData = append(rawAuthData, make([]byte, 16)...)
+	// ID length.
+	rawAuthData = binary.BigEndian.AppendUint16(rawAuthData, uint16(len(credentialID))) //nolint:gosec
+	// CredentialID.
+	rawAuthData = append(rawAuthData, credentialID...)
+	// CredentialPublicKey.
+	rawAuthData = append(rawAuthData, publicKeyBytes...)
+
+	attestationObject := protocol.AttestationObject{
+		AuthData:     protocol.AuthenticatorData{},
+		RawAuthData:  rawAuthData,
+		Format:       "none",
+		AttStatement: nil,
+	}
+	byteAttObject, err := webauthncbor.Marshal(attestationObject)
+	require.NoError(t, err)
+
+	authFlowPasskeyCreateCompleteRequest := charon.AuthFlowPasskeyCreateCompleteRequest{
+		CreateResponse: protocol.CredentialCreationResponse{
+			PublicKeyCredential: protocol.PublicKeyCredential{
+				Credential: protocol.Credential{
+					Type: "public-key",
+					ID:   publicKeyID,
+				},
+				RawID:                   credentialID,
+				ClientExtensionResults:  nil,
+				AuthenticatorAttachment: string(protocol.Platform),
+			},
+			AttestationResponse: protocol.AuthenticatorAttestationResponse{
+				AuthenticatorResponse: protocol.AuthenticatorResponse{
+					ClientDataJSON: byteClientDataJSON,
+				},
+				AttestationObject: byteAttObject,
+				Transports:        []string{"fake"},
+			},
+		},
+	}
+
+	return authFlowPasskeyCreateCompleteRequest, rsaKey, publicKeyID, credentialID, rawAuthData
 }

@@ -204,7 +204,6 @@ func getIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, ide
 	resp, err := ts.Client().Get(ts.URL + identityGet + "?flow=" + flowID.String()) //nolint:noctx,bodyclose
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
-	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
@@ -224,7 +223,6 @@ func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	resp, err := ts.Client().Get(ts.URL + identityList + "?flow=" + flowID.String()) //nolint:noctx,bodyclose
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
-	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))

@@ -50,23 +50,13 @@ func startPasswordSignin(t *testing.T, ts *httptest.Server, service *charon.Serv
 		assertFlowResponse(t, ts, service, resp, organizationID, []charon.Completed{}, []charon.Provider{charon.ProviderPassword}, emailOrUsername, assertAppName(t, organization, app))
 	}
 
-	privateKey, err := ecdh.P256().GenerateKey(rand.Reader)
-	require.NoError(t, err)
-	remotePublicKey, err := ecdh.P256().NewPublicKey(authFlowResponse.Password.PublicKey)
-	require.NoError(t, err)
-	secret, err := privateKey.ECDH(remotePublicKey)
-	require.NoError(t, err)
-	block, err := aes.NewCipher(secret)
-	require.NoError(t, err)
-	aesgcm, err := cipher.NewGCM(block)
-	require.NoError(t, err)
-	sealedPassword := aesgcm.Seal(nil, authFlowResponse.Password.EncryptOptions.Nonce, password, nil)
+	publicKey, sealedPassword := encryptPassword(t, password, authFlowResponse.Password.PublicKey, authFlowResponse.Password.EncryptOptions.Nonce)
 
 	authFlowPasswordComplete, errE := service.ReverseAPI("AuthFlowPasswordComplete", waf.Params{"id": flowID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	authFlowPasswordCompleteRequest := charon.AuthFlowPasswordCompleteRequest{
-		PublicKey: privateKey.PublicKey().Bytes(),
+		PublicKey: publicKey,
 		Password:  sealedPassword,
 	}
 
@@ -113,4 +103,23 @@ func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emai
 
 	identityID := chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{charon.ProviderPassword}, 1, emailOrUsername)
 	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{charon.ProviderPassword}), identityID
+}
+
+// encryptPassword mimics client-side encryption as done in browser.
+func encryptPassword(t *testing.T, password []byte, serverPublicKey []byte, nonce []byte) ([]byte, []byte) {
+	t.Helper()
+
+	privateKey, err := ecdh.P256().GenerateKey(rand.Reader)
+	require.NoError(t, err)
+	remotePublicKey, err := ecdh.P256().NewPublicKey(serverPublicKey)
+	require.NoError(t, err)
+	secret, err := privateKey.ECDH(remotePublicKey)
+	require.NoError(t, err)
+	block, err := aes.NewCipher(secret)
+	require.NoError(t, err)
+	aesgcm, err := cipher.NewGCM(block)
+	require.NoError(t, err)
+	sealedPassword := aesgcm.Seal(nil, nonce, password, nil)
+
+	return privateKey.PublicKey().Bytes(), sealedPassword
 }
