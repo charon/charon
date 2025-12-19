@@ -103,19 +103,10 @@ func TestCredentialManagement(t *testing.T) {
 
 	// Identity is auto generated from mockSAML. We add username jackson,
 	// so we can reuse signinUser(), which requires username matching expected identities' username.
-	usernameCredentialID := credentialAddUsername(t, ts, service, accessToken, "jackson")
-	emailCredentialID := credentialAddEmail(t, ts, service, accessToken, "email@example.com")
-	passwordCredentialID := credentialAddPassword(t, ts, service, accessToken, []byte("test1234"), "My default password")
-	passkeyCredentialID := credentialAddPasskey(t, ts, service, accessToken, "My first passkey")
-
-	credentialRename(t, ts, service, accessToken, samlCredentialID, "My SAML Login", false)
-	credentialRename(t, ts, service, accessToken, passwordCredentialID, "My super secret password", false)
-	credentialRename(t, ts, service, accessToken, passkeyCredentialID, "My renamed passkey", true)
-
-	// Sign-out and sign-in with newly added credentials.
-	signoutUser(t, ts, service, accessToken)
-	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
-	accessToken, _ = signinUser(t, ts, service, "jackson", charon.CompletedSignin, flowID, nonce, state, pkceVerifier, config, verifier)
+	usernameCredentialID := credentialAddUsername(t, ts, service, accessToken, " jackson   ")
+	emailCredentialID := credentialAddEmail(t, ts, service, accessToken, "  email@example.com ")
+	passwordCredentialID := credentialAddPassword(t, ts, service, accessToken, []byte("test1234"), " My default password ")
+	passkeyCredentialID := credentialAddPasskey(t, ts, service, accessToken, " My first passkey  ")
 
 	credentialRefs = credentialListGet(t, ts, service, accessToken, 5)
 
@@ -126,9 +117,31 @@ func TestCredentialManagement(t *testing.T) {
 		credentialMap[credentialRef.ID] = credential
 	}
 
+	assert.Equal(t, "jackson@example.com", credentialMap[samlCredentialID].DisplayName)
+	assert.Equal(t, "My default password", credentialMap[passwordCredentialID].DisplayName)
+	assert.Equal(t, "My first passkey", credentialMap[passkeyCredentialID].DisplayName)
+
+	credentialRename(t, ts, service, accessToken, samlCredentialID, " My SAML Login", false)
+	credentialRename(t, ts, service, accessToken, passwordCredentialID, " My super secret password ", false)
+	credentialRename(t, ts, service, accessToken, passkeyCredentialID, " My renamed passkey ", true)
+
+	// Sign-out and sign-in with newly added credentials.
+	signoutUser(t, ts, service, accessToken)
+	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
+	accessToken, _ = signinUser(t, ts, service, "jackson", charon.CompletedSignin, flowID, nonce, state, pkceVerifier, config, verifier)
+
+	// Update credentials after rename.
+	for _, credentialRef := range credentialRefs {
+		credential := credentialGet(t, ts, service, accessToken, credentialRef.ID)
+
+		credentialMap[credentialRef.ID] = credential
+	}
+	assert.Len(t, credentialMap, 5)
+
 	samlCred := credentialMap[samlCredentialID]
 	assert.Equal(t, "mockSAML", string(samlCred.Provider))
 	assert.Equal(t, "My SAML Login", samlCred.DisplayName)
+	assert.False(t, samlCred.Verified)
 
 	usernameCred := credentialMap[usernameCredentialID]
 	assert.Equal(t, charon.ProviderUsername, usernameCred.Provider)
