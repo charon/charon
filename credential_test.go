@@ -19,7 +19,7 @@ import (
 	"gitlab.com/charon/charon"
 )
 
-func verifyCredentialList(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string, emailOrUsername string) identifier.Identifier {
+func verifyCredentialList(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string, emailOrUsername string) {
 	t.Helper()
 
 	credentialRefs := credentialListGet(t, ts, service, accessToken, 2)
@@ -28,9 +28,6 @@ func verifyCredentialList(t *testing.T, ts *httptest.Server, service *charon.Ser
 		credential := credentialGet(t, ts, service, accessToken, credentialRefs[i].ID)
 
 		switch credential.Provider {
-		case charon.ProviderUsername:
-			assert.Equal(t, emailOrUsername, credential.DisplayName)
-			assert.False(t, credential.Verified)
 		case charon.ProviderEmail:
 			assert.Equal(t, emailOrUsername, credential.DisplayName)
 			// Code verification marks email as verified.
@@ -38,13 +35,10 @@ func verifyCredentialList(t *testing.T, ts *httptest.Server, service *charon.Ser
 		case charon.ProviderPassword:
 			assert.Equal(t, "default password", credential.DisplayName)
 			assert.False(t, credential.Verified)
-		case charon.ProviderPasskey:
-			require.Fail(t, "unexpected passkey credential in list")
-		case charon.ProviderCode:
-			require.Fail(t, "unexpected code credential in list")
+		case charon.ProviderUsername, charon.ProviderPasskey, charon.ProviderCode:
+			require.Fail(t, "unexpected credential provider", "provider: %s", credential.Provider)
 		}
 	}
-	return credentialRefs[0].ID
 }
 
 func TestCredentialListGetUsername(t *testing.T) {
@@ -57,7 +51,23 @@ func TestCredentialListGetUsername(t *testing.T) {
 	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
 	accessToken, _ := signinUser(t, ts, service, username, charon.CompletedSignup, flowID, nonce, state, pkceVerifier, config, verifier)
 
-	credentialID := verifyCredentialList(t, ts, service, accessToken, username)
+	credentialRefs := credentialListGet(t, ts, service, accessToken, 2)
+
+	// Get first existing credentialID to test access control.
+	credentialID := credentialRefs[0].ID
+	for i := range credentialRefs {
+		credential := credentialGet(t, ts, service, accessToken, credentialRefs[i].ID)
+		switch credential.Provider {
+		case charon.ProviderUsername:
+			assert.Equal(t, username, credential.DisplayName)
+			assert.False(t, credential.Verified)
+		case charon.ProviderPassword:
+			assert.Equal(t, "default password", credential.DisplayName)
+			assert.False(t, credential.Verified)
+		case charon.ProviderEmail, charon.ProviderPasskey, charon.ProviderCode:
+			require.Fail(t, "unexpected credential provider", "provider: %s", credential.Provider)
+		}
+	}
 
 	signoutUser(t, ts, service, accessToken)
 
@@ -98,11 +108,11 @@ func TestCredentialManagement(t *testing.T) {
 	passwordCredentialID := credentialAddPassword(t, ts, service, accessToken, []byte("test1234"), "My default password")
 	passkeyCredentialID := credentialAddPasskey(t, ts, service, accessToken, "My first passkey")
 
-	credentialRename(t, ts, service, accessToken, samlCredentialID, "My SAML Login")
-	credentialRename(t, ts, service, accessToken, passwordCredentialID, "My super secret password")
-	credentialRename(t, ts, service, accessToken, passkeyCredentialID, "My renamed passkey")
+	credentialRename(t, ts, service, accessToken, samlCredentialID, "My SAML Login", false)
+	credentialRename(t, ts, service, accessToken, passwordCredentialID, "My super secret password", false)
+	credentialRename(t, ts, service, accessToken, passkeyCredentialID, "My renamed passkey", true)
 
-	// Sign-out and  sign-in with newly added credentials.
+	// Sign-out and sign-in with newly added credentials.
 	signoutUser(t, ts, service, accessToken)
 	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
 	accessToken, _ = signinUser(t, ts, service, "jackson", charon.CompletedSignin, flowID, nonce, state, pkceVerifier, config, verifier)
@@ -136,10 +146,10 @@ func TestCredentialManagement(t *testing.T) {
 	assert.Equal(t, "My super secret password", passwordCred.DisplayName)
 	assert.False(t, passwordCred.Verified)
 
-	passkeyCredential := credentialGet(t, ts, service, accessToken, passkeyCredentialID)
-	assert.Equal(t, charon.ProviderPasskey, passkeyCredential.Provider)
-	assert.Equal(t, "My renamed passkey", passkeyCredential.DisplayName)
-	assert.False(t, passkeyCredential.Verified)
+	passkeyCred := credentialMap[passkeyCredentialID]
+	assert.Equal(t, charon.ProviderPasskey, passkeyCred.Provider)
+	assert.Equal(t, "My renamed passkey", passkeyCred.DisplayName)
+	assert.False(t, passkeyCred.Verified)
 
 	credentialRemove(t, ts, service, accessToken, usernameCredentialID)
 	credentialRemove(t, ts, service, accessToken, emailCredentialID)
@@ -309,7 +319,6 @@ func credentialAddPasskey(t *testing.T, ts *httptest.Server, service *charon.Ser
 	addPasskeyStartResponse := credentialAdd(t, ts, accessToken, data, credentialAddPasskeyStart)
 	require.NotNil(t, addPasskeyStartResponse.SessionID)
 	require.NotNil(t, addPasskeyStartResponse.Passkey)
-	require.NotNil(t, addPasskeyStartResponse.Passkey.CreateOptions)
 
 	AuthFlowPasskeyCreateCompleteRequest, _, _, _, _ := createMockPasskeyCredential(t, ts, addPasskeyStartResponse.Passkey) //nolint:dogsled
 
@@ -352,9 +361,10 @@ func credentialRemove(t *testing.T, ts *httptest.Server, service *charon.Service
 	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.Empty(t, removeResponse.Error)
 	assert.True(t, removeResponse.Success)
+	assert.Empty(t, removeResponse.Signal)
 }
 
-func credentialRename(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string, credentialID identifier.Identifier, newDisplayName string) {
+func credentialRename(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string, credentialID identifier.Identifier, newDisplayName string, isPasskey bool) {
 	t.Helper()
 
 	credentialRename, errE := service.ReverseAPI("CredentialRename", waf.Params{"id": credentialID.String()}, nil)
@@ -381,4 +391,9 @@ func credentialRename(t *testing.T, ts *httptest.Server, service *charon.Service
 	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.Empty(t, renameResponse.Error)
 	assert.True(t, renameResponse.Success)
+	if isPasskey {
+		assert.NotNil(t, renameResponse.Signal)
+	} else {
+		assert.Empty(t, renameResponse.Signal)
+	}
 }

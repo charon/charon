@@ -65,7 +65,7 @@ func TestAuthFlowPasswordAndCode(t *testing.T) {
 	// Complete with user code.
 	accessToken := completeUserCode(t, ts, service, smtpServer, resp, email, charon.CompletedSignup, []charon.Provider{charon.ProviderPassword, charon.ProviderCode}, nil, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier)
 
-	// Check that both credentials are listed and email is verified.
+	// Check that verified email and password credentials are listed.
 	verifyCredentialList(t, ts, service, accessToken, email)
 
 	// Verify complete activity sequence for signup.
