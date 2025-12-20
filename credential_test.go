@@ -19,7 +19,7 @@ import (
 	"gitlab.com/charon/charon"
 )
 
-func verifyCredentialList(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string, emailOrUsername string) {
+func verifyEmailAndPasswordCredential(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string, emailOrUsername string) {
 	t.Helper()
 
 	credentialRefs := credentialListGet(t, ts, service, accessToken, 2)
