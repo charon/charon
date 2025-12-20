@@ -41,7 +41,7 @@ func verifyCredentialList(t *testing.T, ts *httptest.Server, service *charon.Ser
 	}
 }
 
-func TestCredentialListGetUsername(t *testing.T) {
+func TestCredentialUsernameAccessControl(t *testing.T) {
 	t.Parallel()
 
 	ts, service, _, _, _ := startTestServer(t) //nolint:dogsled
@@ -121,7 +121,7 @@ func TestCredentialManagement(t *testing.T) {
 	assert.Equal(t, "My default password", credentialMap[passwordCredentialID].DisplayName)
 	assert.Equal(t, "My first passkey", credentialMap[passkeyCredentialID].DisplayName)
 
-	credentialRename(t, ts, service, accessToken, samlCredentialID, " My SAML Login", false)
+	credentialRename(t, ts, service, accessToken, samlCredentialID, " My SAML Login   ", false)
 	credentialRename(t, ts, service, accessToken, passwordCredentialID, " My super secret password ", false)
 	credentialRename(t, ts, service, accessToken, passkeyCredentialID, " My renamed passkey ", true)
 
@@ -130,7 +130,7 @@ func TestCredentialManagement(t *testing.T) {
 	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
 	accessToken, _ = signinUser(t, ts, service, "jackson", charon.CompletedSignin, flowID, nonce, state, pkceVerifier, config, verifier)
 
-	// Update credentials after rename.
+	// Update credentialMap after rename.
 	for _, credentialRef := range credentialRefs {
 		credential := credentialGet(t, ts, service, accessToken, credentialRef.ID)
 
@@ -153,6 +153,7 @@ func TestCredentialManagement(t *testing.T) {
 	assert.Equal(t, "email@example.com", emailCred.DisplayName)
 	// Email credential is initially added as unverified.
 	assert.False(t, emailCred.Verified)
+	// TODO: after adding email verification, verify email and test for verified true.
 
 	passwordCred := credentialMap[passwordCredentialID]
 	assert.Equal(t, charon.ProviderPassword, passwordCred.Provider)
@@ -166,9 +167,34 @@ func TestCredentialManagement(t *testing.T) {
 
 	credentialRemove(t, ts, service, accessToken, usernameCredentialID)
 	credentialRemove(t, ts, service, accessToken, emailCredentialID)
-	credentialRemove(t, ts, service, accessToken, passwordCredentialID)
 	credentialRemove(t, ts, service, accessToken, samlCredentialID)
+
+	// Test no-op w/ passkey rename.
+	resp := credentialRenameStart(t, ts, service, accessToken, passkeyCredentialID, "My renamed passkey") //nolint:bodyclose
+
+	var renameResponsePasskey charon.CredentialResponse
+	errE := x.DecodeJSONWithoutUnknownFields(resp.Body, &renameResponsePasskey)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Empty(t, renameResponsePasskey.Error)
+	assert.True(t, renameResponsePasskey.Success)
+	assert.NotEmpty(t, renameResponsePasskey.Signal)
+
 	credentialRemove(t, ts, service, accessToken, passkeyCredentialID)
+
+	// Test ErrorCodeCredentialDisplayNameInUse.
+	passwordCredentialID2 := credentialAddPassword(t, ts, service, accessToken, []byte("test4321"), " My second password ")
+	resp = credentialRenameStart(t, ts, service, accessToken, passwordCredentialID2, "My super secret password") //nolint:bodyclose
+
+	var renameResponsePassword charon.CredentialResponse
+	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &renameResponsePassword)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.NotEmpty(t, renameResponsePassword.Error)
+	assert.Equal(t, charon.ErrorCodeCredentialDisplayNameInUse, renameResponsePassword.Error)
+	assert.False(t, renameResponsePassword.Success)
+	assert.Empty(t, renameResponsePassword.Signal)
+
+	credentialRemove(t, ts, service, accessToken, passwordCredentialID)
+	credentialRemove(t, ts, service, accessToken, passwordCredentialID2)
 
 	// Verify credential list is empty.
 	credentialRefs = credentialListGet(t, ts, service, accessToken, 0)
@@ -377,7 +403,7 @@ func credentialRemove(t *testing.T, ts *httptest.Server, service *charon.Service
 	assert.Empty(t, removeResponse.Signal)
 }
 
-func credentialRename(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string, credentialID identifier.Identifier, newDisplayName string, isPasskey bool) {
+func credentialRenameStart(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string, credentialID identifier.Identifier, newDisplayName string) *http.Response {
 	t.Helper()
 
 	credentialRename, errE := service.ReverseAPI("CredentialRename", waf.Params{"id": credentialID.String()}, nil)
@@ -394,18 +420,26 @@ func credentialRename(t *testing.T, ts *httptest.Server, service *charon.Service
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := ts.Client().Do(req) //nolint:bodyclose
+	resp, err := ts.Client().Do(req)
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
+	return resp
+}
+
+func credentialRename(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string, credentialID identifier.Identifier, newDisplayName string, isPasskey bool) {
+	t.Helper()
+
+	resp := credentialRenameStart(t, ts, service, accessToken, credentialID, newDisplayName) //nolint:bodyclose
+
 	var renameResponse charon.CredentialResponse
-	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &renameResponse)
+	errE := x.DecodeJSONWithoutUnknownFields(resp.Body, &renameResponse)
 	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.Empty(t, renameResponse.Error)
 	assert.True(t, renameResponse.Success)
 	if isPasskey {
-		assert.NotNil(t, renameResponse.Signal)
+		assert.NotEmpty(t, renameResponse.Signal)
 	} else {
 		assert.Empty(t, renameResponse.Signal)
 	}
