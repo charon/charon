@@ -19,7 +19,7 @@ import (
 	"gitlab.com/charon/charon"
 )
 
-func verifyEmailAndPasswordCredential(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string, emailOrUsername string) {
+func verifyEmailAndPasswordCredential(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string, email string) {
 	t.Helper()
 
 	credentialRefs := credentialListGet(t, ts, service, accessToken, 2)
@@ -29,7 +29,7 @@ func verifyEmailAndPasswordCredential(t *testing.T, ts *httptest.Server, service
 
 		switch credential.Provider {
 		case charon.ProviderEmail:
-			assert.Equal(t, emailOrUsername, credential.DisplayName)
+			assert.Equal(t, email, credential.DisplayName)
 			// Code verification marks email as verified.
 			assert.True(t, credential.Verified)
 		case charon.ProviderPassword:
