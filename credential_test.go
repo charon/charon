@@ -99,7 +99,8 @@ func TestCredentialManagement(t *testing.T) {
 	accessToken := mockSAMLSignin(t, ts, service, charon.CompletedSignup)
 
 	credentialRefs := credentialListGet(t, ts, service, accessToken, 1)
-	samlCredentialID := credentialRefs[0].ID
+	// MockSAML is the only existing credential.
+	mocksamlCredentialID := credentialRefs[0].ID
 
 	// Identity is auto generated from mockSAML. We add username jackson,
 	// so we can reuse signinUser(), which requires username matching expected identities' username.
@@ -117,11 +118,11 @@ func TestCredentialManagement(t *testing.T) {
 		credentialMap[credentialRef.ID] = credential
 	}
 
-	assert.Equal(t, "jackson@example.com", credentialMap[samlCredentialID].DisplayName)
+	assert.Equal(t, "jackson@example.com", credentialMap[mocksamlCredentialID].DisplayName)
 	assert.Equal(t, "My default password", credentialMap[passwordCredentialID].DisplayName)
 	assert.Equal(t, "My first passkey", credentialMap[passkeyCredentialID].DisplayName)
 
-	credentialRename(t, ts, service, accessToken, samlCredentialID, " My SAML Login   ", false)
+	credentialRename(t, ts, service, accessToken, mocksamlCredentialID, " My SAML Login   ", false)
 	credentialRename(t, ts, service, accessToken, passwordCredentialID, " My super secret password ", false)
 	credentialRename(t, ts, service, accessToken, passkeyCredentialID, " My renamed passkey ", true)
 
@@ -138,7 +139,7 @@ func TestCredentialManagement(t *testing.T) {
 	}
 	assert.Len(t, credentialMap, 5)
 
-	samlCred := credentialMap[samlCredentialID]
+	samlCred := credentialMap[mocksamlCredentialID]
 	assert.Equal(t, "mockSAML", string(samlCred.Provider))
 	assert.Equal(t, "My SAML Login", samlCred.DisplayName)
 	assert.False(t, samlCred.Verified)
@@ -167,7 +168,7 @@ func TestCredentialManagement(t *testing.T) {
 
 	credentialRemove(t, ts, service, accessToken, usernameCredentialID)
 	credentialRemove(t, ts, service, accessToken, emailCredentialID)
-	credentialRemove(t, ts, service, accessToken, samlCredentialID)
+	credentialRemove(t, ts, service, accessToken, mocksamlCredentialID)
 
 	// Test no-op w/ passkey rename.
 	resp := credentialRenameStart(t, ts, service, accessToken, passkeyCredentialID, "My renamed passkey") //nolint:bodyclose
@@ -181,7 +182,7 @@ func TestCredentialManagement(t *testing.T) {
 
 	credentialRemove(t, ts, service, accessToken, passkeyCredentialID)
 
-	// Test ErrorCodeCredentialDisplayNameInUse.
+	// Test ErrorCodeCredentialDisplayNameInUse, add second credential that supports renaming.
 	passwordCredentialID2 := credentialAddPassword(t, ts, service, accessToken, []byte("test4321"), " My second password ")
 	resp = credentialRenameStart(t, ts, service, accessToken, passwordCredentialID2, "My super secret password") //nolint:bodyclose
 
