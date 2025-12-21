@@ -244,12 +244,6 @@ func (s *Service) createEmailCredentialFromTPToken(account *Account, token map[s
 		return nil, nil //nolint:nilnil
 	}
 
-	// email_verified is a standard OIDC claim (https://openid.net/specs/openid-connect-core-1_0.html).
-	emailVerified := false
-	if verified, ok := token["email_verified"].(bool); ok {
-		emailVerified = verified
-	}
-
 	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{})
 	if errE != nil {
 		errors.Details(errE)["email"] = preservedEmail
@@ -261,7 +255,8 @@ func (s *Service) createEmailCredentialFromTPToken(account *Account, token map[s
 			ID:          identifier.New(),
 			Provider:    ProviderEmail,
 			DisplayName: preservedEmail,
-			Verified:    emailVerified,
+			// Although email_verified is a standard OIDC claim, we always add email as unverified.
+			Verified: false,
 		},
 		ProviderID: mappedEmail,
 		Data:       jsonData,
