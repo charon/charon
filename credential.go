@@ -1378,7 +1378,7 @@ FoundCredential:
 		}
 		// Email is verified on a different account.
 		s.WriteJSON(w, req, CredentialResponse{
-			// TODO: Currently this errorCode is only used for username, how do we (safely) signal to user, that email credential is already verified elsewhere?
+			// TODO: Offer user to merge accounts.
 			Error:   ErrorCodeCredentialInUse,
 			Success: false,
 			Signal:  nil,
