@@ -279,13 +279,12 @@ func getAccountID(ctx context.Context) (identifier.Identifier, bool) {
 }
 
 func mustGetAccountID(ctx context.Context) identifier.Identifier {
-	// TODO: rename a to i?
-	a, ok := getAccountID(ctx)
+	i, ok := getAccountID(ctx)
 	if !ok {
 		// Internal error: this should never happen.
 		panic(errors.New("account not found in context"))
 	}
-	return a
+	return i
 }
 
 func getIdentityID(ctx context.Context) (identifier.Identifier, bool) {
