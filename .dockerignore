@@ -25,21 +25,26 @@ dist-ssr
 *.sln
 *.sw?
 
-# Other
+# Secrets
+/keys.txt
+*.pem
+*.env
+*.secret
+*.jwk
+
+# Testing
 tests.xml
+tests.json
 coverage.*
 codeclimate.json
 /coverage
-/charon
 /playwright-report
 /playwright-screenshots
 /test-results
 /a11y-report
-*.pem
-/keys.txt
-*.env
-*.secret
-*.jwk
+
+# Binaries
+/charon
 
 # Exception: difference from .gitignore.
 !test-e2e-rootCA.pem
