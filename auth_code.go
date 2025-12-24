@@ -260,7 +260,7 @@ func (s *Service) sendCode(
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-	errE = s.sendMail(req.Context(), flow, emails, codeProviderSubjectCompiled, codeProviderTemplateCompiled, map[string]string{
+	errE = s.sendMail(req.Context(), flow.ID, emails, codeProviderSubjectCompiled, codeProviderTemplateCompiled, map[string]string{
 		"code":  code,
 		"title": s.title,
 		"url":   url,

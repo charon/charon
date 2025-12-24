@@ -24,7 +24,7 @@ import (
 
 // Credential addition error codes.
 const (
-	// ErrorCodeCredentialInUse means credential (username) is in use by another account.
+	// ErrorCodeCredentialInUse means credential (username, verified email) is in use by another account.
 	ErrorCodeCredentialInUse ErrorCode = "credentialInUse" //nolint:gosec
 	// ErrorCodeAlreadyPresent AlreadyPresent means credential (email, username, password) is already on this account.
 	ErrorCodeAlreadyPresent               ErrorCode = "alreadyPresent"
@@ -231,6 +231,16 @@ func (s *Service) CredentialListGetAPI(w http.ResponseWriter, req *http.Request,
 		for _, credential := range credentials {
 			// Code provider credentials are never exposed over the API.
 			if credential.Provider == ProviderCode {
+				fmt.Print("\nHere we are credential\n")
+				fmt.Print(credential)
+				fmt.Print("\nID ")
+				fmt.Print(credential.ID)
+				fmt.Print("\nDisplayName ")
+				fmt.Print(credential.DisplayName)
+				fmt.Print("\nProviderID ")
+				fmt.Print(credential.ProviderID)
+				fmt.Print("\nVerified ")
+				fmt.Print(credential.Verified)
 				continue
 			}
 			result = append(result, credential.Ref())
@@ -867,28 +877,13 @@ func (s *Service) CredentialRemovePostAPI(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	var foundProvider Provider
-	var foundProviderID string
-	foundIndex := -1
-
 	credentialID, errE := identifier.MaybeString(params["id"])
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
-FoundCredential:
-	for provider, credentials := range account.Credentials {
-		for i, credential := range credentials {
-			if credential.ID == credentialID {
-				foundProvider = provider
-				foundProviderID = credential.ProviderID
-				foundIndex = i
-				break FoundCredential
-			}
-		}
-	}
-
+	_, foundProvider, foundIndex := account.getCredentialByID(credentialID)
 	if foundIndex == -1 {
 		s.NotFound(w, req)
 		return
@@ -908,10 +903,6 @@ FoundCredential:
 			return
 		}
 		signalUnknown = s.getPasskeySignalUnknownCredentialData(credentialIDBytes)
-	}
-	// On removing e-mail credential, remove verify session if any.
-	if foundProvider == ProviderEmail {
-		deleteCredentialVerifySession(credentialID)
 	}
 
 	errE = s.setAccount(ctx, account)
@@ -967,19 +958,7 @@ func (s *Service) CredentialRenamePostAPI(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	var foundProvider Provider
-	foundIndex := -1
-
-FoundCredential:
-	for provider, credentials := range account.Credentials {
-		for i, credential := range credentials {
-			if credential.ID == credentialID {
-				foundProvider = provider
-				foundIndex = i
-				break FoundCredential
-			}
-		}
-	}
+	_, foundProvider, foundIndex := account.getCredentialByID(credentialID)
 
 	if foundIndex == -1 {
 		s.NotFound(w, req)
@@ -1050,22 +1029,31 @@ func newCredentialSignalResponse(update *SignalCurrentUserDetails, remove *Signa
 	return &SignalPasskey{Update: update, Remove: remove}
 }
 
-var (
-	credentialVerifySessions   = make(map[identifier.Identifier]json.RawMessage) //nolint:gochecknoglobals
-	credentialVerifySessionsMu sync.RWMutex                                      //nolint:gochecknoglobals
-)
-
 // ErrorCode values.
 const (
 	ErrorCodeVerificationFailed ErrorCode = "verificationFailed"
 )
 
 const (
-	credentialVerifySessionExpiration = 10 * time.Minute
-	maxVerifyAttempts                 = maxAuthAttempts
+	credentialVerifyCodeExpiration = 10 * time.Minute
+	maxVerifyAttempts              = 5
 )
 
-var errVerificationExpired = errors.Base("verification session expired")
+type codeCredential struct {
+	CredentialID  identifier.Identifier `json:"credentialId"`
+	Email         string                `json:"email"`
+	Code          string                `json:"code"`
+	CreatedAt     time.Time             `json:"createdAt"`
+	WrongAttempts int                   `json:"wrongAttempts"`
+}
+
+func (c codeCredential) Expired() bool {
+	return time.Now().After(c.CreatedAt.Add(credentialVerifyCodeExpiration))
+}
+
+func (c codeCredential) MaxAttemptsReached() bool {
+	return c.WrongAttempts >= maxVerifyAttempts
+}
 
 // AccountVerifiedEmailsResponse represents the response for getting verified emails.
 type AccountVerifiedEmailsResponse struct {
@@ -1077,58 +1065,108 @@ type CredentialVerifyEmailCompleteRequest struct {
 	Code string `json:"code"`
 }
 
-type credentialVerifySession struct {
-	CredentialID  identifier.Identifier
-	CreatedAt     time.Time
-	Codes         []string
-	WrongAttempts int
-}
-
-// storeCredentialVerifySession stores a verification session for e-mail credential.
-func storeCredentialVerifySession(session credentialVerifySession) errors.E {
-	sessionData, errE := x.MarshalWithoutEscapeHTML(session)
-	if errE != nil {
-		return errE
+// cleanupCodeCredentials removes expired or max-attempts-reached code credentials.
+// Returns true if any codes remain for that credential.
+func (a *Account) cleanupCodeCredentials(emailCredentialID identifier.Identifier) (bool, errors.E) {
+	if a.Credentials[ProviderCode] == nil {
+		return false, nil
 	}
 
-	credentialVerifySessionsMu.Lock()
-	defer credentialVerifySessionsMu.Unlock()
-	credentialVerifySessions[session.CredentialID] = sessionData
+	hasRemaining := false
+	filtered := a.Credentials[ProviderCode][:0]
+	for _, credential := range a.Credentials[ProviderCode] {
+		var data codeCredential
+		errE := x.UnmarshalWithoutUnknownFields(credential.Data, &data)
+		if errE != nil {
+			errors.Details(errE)["id"] = credential.ID
+			errors.Details(errE)["data"] = credential.Data
+			return false, errE
+		}
+		// Cleanup all codeCredentials, not only for current emailCredentialID.
+		if data.Expired() || data.MaxAttemptsReached() {
+			continue
+		}
+		filtered = append(filtered, credential)
+		if data.CredentialID == emailCredentialID {
+			hasRemaining = true
+		}
+	}
+	a.Credentials[ProviderCode] = filtered
 
+	if len(a.Credentials[ProviderCode]) == 0 {
+		delete(a.Credentials, ProviderCode)
+	}
+
+	return hasRemaining, nil
+}
+
+// removeCodeCredentials removes all code credentials for the given email credential ID.
+func (a *Account) removeCodeCredentials(emailCredentialID identifier.Identifier) errors.E {
+	if a.Credentials[ProviderCode] == nil {
+		return nil
+	}
+
+	filtered := a.Credentials[ProviderCode][:0]
+	for _, credential := range a.Credentials[ProviderCode] {
+		var data codeCredential
+		errE := x.UnmarshalWithoutUnknownFields(credential.Data, &data)
+		if errE != nil {
+			errors.Details(errE)["id"] = credential.ID
+			errors.Details(errE)["data"] = credential.Data
+			return errE
+		}
+		if data.CredentialID != emailCredentialID {
+			filtered = append(filtered, credential)
+		}
+	}
+	a.Credentials[ProviderCode] = filtered
+
+	if len(a.Credentials[ProviderCode]) == 0 {
+		delete(a.Credentials, ProviderCode)
+	}
 	return nil
 }
 
-func getCredentialVerifySession(credentialID identifier.Identifier) (*credentialVerifySession, errors.E) {
-	credentialVerifySessionsMu.RLock()
-	defer credentialVerifySessionsMu.RUnlock()
-
-	sessionData, ok := credentialVerifySessions[credentialID]
-	if !ok {
-		return nil, errors.WithDetails(errSessionNotFound, "credentialID", credentialID)
+// findCodeCredential finds a code credential matching the given email credential ID and code.
+func (a *Account) findCodeCredential(emailCredentialID identifier.Identifier, code string) (*codeCredential, errors.E) {
+	for _, credential := range a.Credentials[ProviderCode] {
+		var data codeCredential
+		errE := x.UnmarshalWithoutUnknownFields(credential.Data, &data)
+		if errE != nil {
+			errors.Details(errE)["id"] = credential.ID
+			errors.Details(errE)["data"] = credential.Data
+			return nil, errE
+		}
+		if data.CredentialID == emailCredentialID && data.Code == code {
+			return &data, nil
+		}
 	}
-
-	var session credentialVerifySession
-	errE := x.UnmarshalWithoutUnknownFields(sessionData, &session)
-	if errE != nil {
-		errors.Details(errE)["credentialID"] = credentialID
-		return nil, errE
-	}
-
-	if session.Expired() {
-		return nil, errors.WithDetails(errVerificationExpired, "credentialID", credentialID)
-	}
-
-	return &session, nil
+	return nil, nil
 }
 
-func deleteCredentialVerifySession(credentialID identifier.Identifier) {
-	credentialVerifySessionsMu.Lock()
-	defer credentialVerifySessionsMu.Unlock()
-	delete(credentialVerifySessions, credentialID)
-}
-
-func (s credentialVerifySession) Expired() bool {
-	return time.Now().After(s.CreatedAt.Add(credentialVerifySessionExpiration))
+// incrementCodeCredentialAttempts increments wrong attempts
+// on all code credentials for the given email credential ID.
+func (a *Account) incrementCodeCredentialAttempts(emailCredentialID identifier.Identifier) errors.E {
+	for i, credential := range a.Credentials[ProviderCode] {
+		var data codeCredential
+		errE := x.UnmarshalWithoutUnknownFields(credential.Data, &data)
+		if errE != nil {
+			errors.Details(errE)["id"] = credential.ID
+			errors.Details(errE)["data"] = credential.Data
+			return errE
+		}
+		if data.CredentialID == emailCredentialID {
+			data.WrongAttempts++
+			jsonData, errE := x.MarshalWithoutEscapeHTML(data)
+			if errE != nil {
+				errors.Details(errE)["id"] = credential.ID
+				errors.Details(errE)["data"] = credential.Data
+				return errE
+			}
+			a.Credentials[ProviderCode][i].Data = jsonData
+		}
+	}
+	return nil
 }
 
 // CredentialVerifyEmail is the frontend handler for email verification.
@@ -1167,23 +1205,17 @@ func (s *Service) CredentialVerifyEmailPost(w http.ResponseWriter, req *http.Req
 	foundIndex := -1
 
 FoundCredential:
-	for _, credentials := range account.Credentials {
-		for i, credential := range credentials {
-			if credential.ID == credentialID {
-				foundCredential = credential
-				foundIndex = i
-				break FoundCredential
-			}
+	for i, credential := range account.Credentials[ProviderEmail] {
+		// ProviderCode has the same credentialID as ProviderEmail.
+		if credential.ID == credentialID {
+			foundCredential = credential
+			foundIndex = i
+			break FoundCredential
 		}
 	}
 
 	if foundIndex == -1 {
 		s.NotFound(w, req)
-		return
-	}
-
-	if foundCredential.Provider != ProviderEmail {
-		s.InternalServerErrorWithError(w, req, errors.New("invalid credential type for verification"))
 		return
 	}
 
@@ -1197,37 +1229,51 @@ FoundCredential:
 		return
 	}
 
-	code, errE := getRandomCode()
+	_, errE = account.cleanupCodeCredentials(credentialID)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	existingSession, errE := getCredentialVerifySession(credentialID)
-	var session credentialVerifySession
+	code, errE := getRandomCode()
+	fmt.Printf("\n getting random code: %s\n", code)
 	if errE != nil {
-		if errors.Is(errE, errSessionNotFound) || errors.Is(errE, errVerificationExpired) {
-			// Delete expired session if any (no-op if it doesn't exist) and create a new one.
-			deleteCredentialVerifySession(credentialID)
-			session = credentialVerifySession{
-				CredentialID:  credentialID,
-				CreatedAt:     time.Now(),
-				Codes:         []string{code},
-				WrongAttempts: 0,
-			}
-		} else {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-	} else {
-		session = *existingSession
-		session.Codes = append(session.Codes, code)
-		session.CreatedAt = time.Now()
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+	codeData := codeCredential{
+		Code:          code,
+		Email:         foundCredential.DisplayName,
+		CredentialID:  credentialID,
+		CreatedAt:     time.Now(),
+		WrongAttempts: 0,
 	}
 
-	errE = storeCredentialVerifySession(session)
+	jsonData, errE := x.MarshalWithoutEscapeHTML(codeData)
 	if errE != nil {
-		deleteCredentialVerifySession(credentialID)
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	newCodeCredential := Credential{
+		CredentialPublic: CredentialPublic{
+			// Store e-mail credentials ID.
+			ID:       foundCredential.ID,
+			Provider: ProviderCode,
+			// Store e-mail value.
+			DisplayName: foundCredential.DisplayName,
+			Verified:    false,
+		},
+		ProviderID: "",
+		Data:       jsonData,
+	}
+
+	if account.Credentials == nil {
+		account.Credentials = make(map[Provider][]Credential)
+	}
+	account.Credentials[ProviderCode] = append(account.Credentials[ProviderCode], newCodeCredential)
+	errE = s.setAccount(ctx, account)
+	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
@@ -1278,18 +1324,30 @@ func (s *Service) CredentialVerifyEmailCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	session, errE := getCredentialVerifySession(credentialID)
+	accountID := mustGetAccountID(ctx)
+	account, errE := s.getAccount(ctx, accountID)
 	if errE != nil {
-		if errors.Is(errE, errVerificationExpired) {
-			deleteCredentialVerifySession(credentialID)
-			s.WriteJSON(w, req, CredentialResponse{
-				Error:   ErrorCodeVerificationFailed,
-				Success: false,
-				Signal:  nil,
-			}, nil)
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	hasRemaining, errE := account.cleanupCodeCredentials(credentialID)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	if !hasRemaining {
+		errE = s.setAccount(ctx, account)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
-		s.InternalServerErrorWithError(w, req, errE)
+		s.WriteJSON(w, req, CredentialResponse{
+			Error:   ErrorCodeVerificationFailed,
+			Success: false,
+			Signal:  nil,
+		}, nil)
 		return
 	}
 
@@ -1301,23 +1359,36 @@ func (s *Service) CredentialVerifyEmailCompletePost(w http.ResponseWriter, req *
 		return r
 	}, request.Code)
 
-	if !slices.Contains(session.Codes, code) {
-		session.WrongAttempts++
+	codeData, errE := account.findCodeCredential(credentialID, code)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+	if codeData == nil {
+		errE = account.incrementCodeCredentialAttempts(credentialID)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
 
-		if session.WrongAttempts >= maxVerifyAttempts {
-			deleteCredentialVerifySession(credentialID)
+		hasRemaining, errE = account.cleanupCodeCredentials(credentialID)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+
+		errE = s.setAccount(ctx, account)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+
+		if !hasRemaining {
 			s.WriteJSON(w, req, CredentialResponse{
 				Error:   ErrorCodeVerificationFailed,
 				Success: false,
 				Signal:  nil,
 			}, nil)
-			return
-		}
-
-		errE = storeCredentialVerifySession(*session)
-		if errE != nil {
-			deleteCredentialVerifySession(credentialID)
-			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
 
@@ -1329,51 +1400,47 @@ func (s *Service) CredentialVerifyEmailCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	deleteCredentialVerifySession(credentialID)
-
-	accountID := mustGetAccountID(ctx)
-	account, errE := s.getAccount(ctx, accountID)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	var foundProvider Provider
-	var foundProviderID string
-	foundIndex := -1
-
-FoundCredential:
-	for provider, credentials := range account.Credentials {
-		for i, credential := range credentials {
-			if credential.ID == credentialID {
-				foundProvider = provider
-				foundProviderID = credential.ProviderID
-				foundIndex = i
-				break FoundCredential
-			}
-		}
-	}
-
+	foundCredential, _, foundIndex := account.getCredentialByID(credentialID)
 	if foundIndex == -1 {
 		s.NotFound(w, req)
 		return
 	}
 
-	if foundProvider != ProviderEmail {
-		s.InternalServerErrorWithError(w, req, errors.New("invalid credential type for verification"))
+	// Verify email in code credential matches the found email credential (defensive check).
+	if account.Credentials[ProviderEmail][foundIndex].DisplayName != codeData.Email {
+		errE := errors.New("email mismatch between code credential and email credential")
+		errors.Details(errE)["codeEmail"] = codeData.Email
+		errors.Details(errE)["credentialEmail"] = account.Credentials[ProviderEmail][foundIndex].DisplayName
+		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	accountWithVerifiedEmail, errE := s.getAccountByCredential(ctx, ProviderEmail, foundProviderID)
+	accountWithVerifiedEmail, errE := s.getAccountByCredential(ctx, ProviderEmail, foundCredential.ProviderID)
 	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
 	if accountWithVerifiedEmail != nil {
+		// e-mail is already verified, remove all codeCredentials.
+		errE = account.removeCodeCredentials(credentialID)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+		errE = s.setAccount(ctx, account)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+		// e-mail is verified on the same account, no-op.
 		if accountWithVerifiedEmail.ID == accountID {
-			s.InternalServerErrorWithError(w, req, errors.New("credential already verified"))
+			s.WriteJSON(w, req, CredentialResponse{
+				Error:   "",
+				Success: true,
+				Signal:  nil,
+			}, nil)
 			return
 		}
 		// Email is verified on a different account.
@@ -1386,7 +1453,12 @@ FoundCredential:
 		return
 	}
 
-	account.Credentials[foundProvider][foundIndex].Verified = true
+	account.Credentials[ProviderEmail][foundIndex].Verified = true
+	errE = account.removeCodeCredentials(credentialID)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
 
 	errE = s.setAccount(ctx, account)
 	if errE != nil {
@@ -1420,4 +1492,21 @@ func (s *Service) CredentialVerifiedEmailsGet(w http.ResponseWriter, req *http.R
 	s.WriteJSON(w, req, AccountVerifiedEmailsResponse{
 		Emails: emails,
 	}, nil)
+}
+
+// getCredentialByID finds a credential by ID across providers, excluding ProviderCode.
+func (a *Account) getCredentialByID(credentialID identifier.Identifier) (*Credential, Provider, int) {
+	for provider, credentials := range a.Credentials {
+		// Skip internal ProviderCode credentials.
+		if provider == ProviderCode {
+			continue
+		}
+		for i, credential := range credentials {
+			if credential.ID == credentialID {
+				return &credentials[i], provider, i
+			}
+		}
+	}
+
+	return nil, "", -1
 }

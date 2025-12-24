@@ -816,6 +816,20 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 
 	i := identity.Ref()
 
+	if identity.Email != "" && identity.Email != existingIdentity.Email {
+		accountID := mustGetAccountID(ctx)
+		account, errE := s.getAccount(ctx, accountID)
+		if errE != nil {
+			return errE
+		}
+
+		verifiedEmails := account.GetEmailAddresses(true)
+		if !slices.Contains(verifiedEmails, identity.Email) {
+			ErrIdentityEmailNotVerified := errors.Base("email not verified in account")
+			return errors.WithDetails(ErrIdentityEmailNotVerified, "id", *identity.ID, "email", identity.Email)
+		}
+	}
+
 	errE = identity.Validate(ctx, existingIdentity, s)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrIdentityValidationFailed)
@@ -1269,23 +1283,6 @@ func (s *Service) IdentityUpdatePostAPI(w http.ResponseWriter, req *http.Request
 		errors.Details(errE)["payload"] = *identity.ID
 		s.BadRequestWithError(w, req, errE)
 		return
-	}
-
-	if identity.Email != "" {
-		accountID := mustGetAccountID(ctx)
-		account, errE := s.getAccount(ctx, accountID)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-
-		verifiedEmails := account.GetEmailAddresses(true)
-		if !slices.Contains(verifiedEmails, identity.Email) {
-			errE := errors.New("email not verified in account")
-			errors.Details(errE)["email"] = identity.Email
-			s.BadRequestWithError(w, req, errE)
-			return
-		}
 	}
 
 	errE = s.updateIdentity(ctx, &identity)
