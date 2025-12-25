@@ -44,6 +44,8 @@ const url = import.meta.env.DEV ? readonly(_url) : _url
 const el = ref<HTMLElement | null>(null)
 
 onMounted(() => {
+  // TODO: Make sure $el is really a HTMLElement and not for example a text node.
+  //       We can search for the first sibling element? Or element with data-url attribute.
   el.value = getCurrentInstance()?.proxy?.$el as HTMLElement
 })
 
@@ -52,6 +54,8 @@ onUnmounted(() => {
 })
 
 onUpdated(() => {
+  // TODO: Make sure $el is really a HTMLElement and not for example a text node.
+  //       We can search for the first sibling element? Or element with data-url attribute.
   const e = getCurrentInstance()?.proxy?.$el as HTMLElement
   if (e !== el.value) {
     el.value = e
