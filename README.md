@@ -1,5 +1,9 @@
 # Charon
 
+[![Go Report Card](https://goreportcard.com/badge/gitlab.com/charon/charon)](https://goreportcard.com/report/gitlab.com/charon/charon)
+[![pipeline status](https://gitlab.com/charon/charon/badges/main/pipeline.svg?ignore_skipped=true)](https://gitlab.com/charon/charon/-/pipelines)
+[![coverage report](https://gitlab.com/charon/charon/badges/main/coverage.svg)](https://gitlab.com/charon/charon/-/graphs/main/charts)
+
 A privacy-enabling account management and SSO solution. For end-users, it allows aggregating multiple existing
 authenticators (Facebook, Google, etc.) in one place and managing different (and potentially multiple) identities
 exposed to apps. Apps do not have to worry about user management nor multi-tenancy. And admins of organizations
