@@ -69,9 +69,10 @@ export default defineConfig({
     target: ["esnext"],
   },
   test: {
-    include: ["src/**/*.{ts,vue}"],
-    exclude: [...configDefaults.exclude, "**/tests/*"],
+    exclude: [...configDefaults.exclude, "**/tests/**"],
     coverage: {
+      include: ["src/**/*.{ts,vue}"],
+      exclude: ["**/tests/**", "**/*.d.ts"],
       provider: "v8",
       reporter: ["text", "cobertura", "html"],
     },
