@@ -18,7 +18,7 @@ const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
 const progress = useProgress()
 
-const { navbar, attrs: navbarAttrs } = useNavbar()
+const { attrs: navbarAttrs } = useNavbar()
 
 const abortController = new AbortController()
 
@@ -79,6 +79,7 @@ async function onSignIn() {
 </script>
 
 <template>
+  <!-- useNavbar uses a template ref named "navbar". -->
   <div
     ref="navbar"
     class="z-30 flex min-h-12 w-full grow gap-x-1 border-b border-slate-400 bg-slate-300 p-1 shadow-md will-change-transform sm:gap-x-4 sm:p-4 sm:pl-0"
