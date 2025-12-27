@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { CredentialPublic, CredentialResponse, CredentialVerifyEmailCompleteRequest } from "@/types"
 
-import { onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRoute, useRouter } from "vue-router"
 
@@ -195,6 +195,11 @@ async function onSubmit() {
       // We check if it is an expected error code by trying to get the error message.
       getErrorMessage(response.error)
       codeError.value = response.error
+      // Focus
+      if (response.error === "verificationFailed") {
+        await nextTick()
+        document.getElementById("credentialverifyemail-button-resend")?.focus()
+      }
       return
     }
 
@@ -292,9 +297,15 @@ async function onResendAfterFailure() {
         <template v-if="codeError === 'credentialInUse' || codeError === 'verificationFailed'">
           <div class="flex flex-row justify-between gap-4">
             <Button type="button" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
-            <Button v-if="codeError === 'verificationFailed'" type="button" primary :progress="progress" @click.prevent="onResendAfterFailure">{{
-              t("views.CredentialVerifyEmail.resendButton")
-            }}</Button>
+            <Button
+              :id="`credentialverifyemail-button-resend`"
+              v-if="codeError === 'verificationFailed'"
+              type="button"
+              primary
+              :progress="progress"
+              @click.prevent="onResendAfterFailure"
+              >{{ t("views.CredentialVerifyEmail.resendButton") }}</Button
+            >
           </div>
         </template>
 
@@ -325,9 +336,9 @@ async function onResendAfterFailure() {
               <!--
               Button is on purpose not disabled on unexpectedError so that user can retry.
               -->
-              <Button id="credentialverifyemail-button-submitcode" type="submit" primary :disabled="!canSubmit()" :progress="progress">
-                {{ t("common.buttons.verify") }}
-              </Button>
+              <Button id="credentialverifyemail-button-submitcode" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{
+                t("common.buttons.verify")
+              }}</Button>
             </form>
           </div>
           <div v-if="codeError" class="mt-4 text-error-600">{{ getErrorMessage(codeError) }}</div>
@@ -336,9 +347,7 @@ async function onResendAfterFailure() {
           <div v-else class="mt-4">{{ t("views.CredentialVerifyEmail.waitForCode") }}</div>
           <div class="mt-4 flex flex-row justify-between gap-4">
             <Button type="button" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
-            <Button id="credentialverifyemail-button-resendcode" type="button" :progress="progress" @click.prevent="onResend">{{
-              t("views.CredentialVerifyEmail.resendButton")
-            }}</Button>
+            <Button type="button" :progress="progress" @click.prevent="onResend">{{ t("views.CredentialVerifyEmail.resendButton") }}</Button>
           </div>
         </template>
       </div>
