@@ -406,7 +406,7 @@
       "waitForCode": "@:partials.AuthCode.waitForCode",
       "sentCount": "@:partials.AuthCode.sentCount",
       "confirmCode": "@:partials.AuthCode.confirmCode",
-      "verificationFailed": "{strongSorry} Potrditev ni uspela.",
+      "verificationFailed": "Potrditev ni uspela. Ponovno pošljite kodo in poskusite ponovno.",
       "tryAgain": "Lahko se vrnete in poskusite znova."
     },
     "Footer": {

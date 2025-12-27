@@ -406,7 +406,7 @@
       "waitForCode": "@:partials.AuthCode.waitForCode",
       "sentCount": "@:partials.AuthCode.sentCount",
       "confirmCode": "@:partials.AuthCode.confirmCode",
-      "verificationFailed": "{strongSorry} Verification failed.",
+      "verificationFailed": "Verification failed. Resend a code to try again.",
       "tryAgain": "You can return and try again later."
     },
     "Footer": {

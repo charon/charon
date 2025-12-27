@@ -36,7 +36,7 @@ function getErrorMessage(errorCode: string) {
     case "credentialInUse":
       return t("common.errors.credentialInUse.email")
     case "verificationFailed":
-      return ""
+      return t("views.CredentialVerifyEmail.verificationFailed")
     default:
       throw new Error(`unexpected error code: ${errorCode}`)
   }
@@ -256,6 +256,22 @@ async function onResend() {
     progress.value -= 1
   }
 }
+
+async function onResendAfterFailure() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  codeError.value = ""
+  unexpectedError.value = ""
+  code.value = ""
+  codeFromHash.value = false
+  sendCounter.value = 1
+
+  await startVerification()
+
+  document.getElementById("code")?.focus()
+}
 </script>
 
 <template>
@@ -265,27 +281,23 @@ async function onResend() {
   <div class="mt-12 flex w-full flex-col items-center border-t border-transparent sm:mt-[4.5rem]">
     <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,65ch)] gap-1 sm:m-4 sm:gap-4">
       <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
-        <h1 class="text-2xl font-bold">{{ t("views.CredentialVerifyEmail.verifyEmail") }}</h1>
+        <div class="flex flex-row items-center justify-between gap-4">
+          <h1 class="text-2xl font-bold">{{ t("views.CredentialVerifyEmail.verifyEmail") }}</h1>
+        </div>
       </div>
-      <div class="flex w-full flex-col rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
-        <template v-if="!!codeError && codeError !== 'invalidCode'">
-          <div class="mb-4 text-error-600">
-            <template v-if="codeError === 'credentialInUse'">
-              {{ t("common.errors.credentialInUse.email") }}
-            </template>
-            <template v-else>
-              <i18n-t keypath="views.CredentialVerifyEmail.verificationFailed" scope="global">
-                <template #strongSorry
-                  ><strong>{{ t("common.messages.sorry") }}</strong></template
-                >
-              </i18n-t>
-            </template>
-          </div>
-          <div class="mb-4">{{ t("views.CredentialVerifyEmail.tryAgain") }}</div>
-          <div class="flex flex-row justify-end">
-            <Button primary type="button" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
+
+      <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
+        <div v-if="codeError === 'credentialInUse'" class="text-error-600">{{ t("common.errors.credentialInUse.email") }}</div>
+        <div v-else-if="codeError === 'verificationFailed'" class="text-error-600">{{ getErrorMessage("verificationFailed") }}</div>
+        <template v-if="codeError === 'credentialInUse' || codeError === 'verificationFailed'">
+          <div class="flex flex-row justify-between gap-4">
+            <Button type="button" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
+            <Button v-if="codeError === 'verificationFailed'" type="button" primary :progress="progress" @click.prevent="onResendAfterFailure">{{
+              t("views.CredentialVerifyEmail.resendButton")
+            }}</Button>
           </div>
         </template>
+
         <template v-else>
           <div class="flex flex-col">
             <label v-if="codeFromHash" for="code" class="mb-1">
@@ -304,14 +316,16 @@ async function onResend() {
               </i18n-t>
             </label>
             <!--
-            We set novalidate because we do not want UA to show hints.
-            We show them ourselves when we want them.
-          -->
+             We set novalidate because we do not want UA to show hints.
+             We show them ourselves when we want them.
+           -->
             <form class="flex flex-row gap-4" novalidate @submit.prevent="onSubmit">
               <!-- We do not set maxlength so that users can paste too long text and clean it up. -->
               <InputCode id="code" v-model="code" class="min-w-0 flex-auto grow" :progress="progress" inputmode="numeric" pattern="[0-9]*" :code-length="6" required />
-              <!--Button is on purpose not disabled on unexpectedError so that user can retry.-->
-              <Button id="credentialverifyemail-button-submitcode" primary type="submit" :disabled="!canSubmit()" :progress="progress">
+              <!--
+              Button is on purpose not disabled on unexpectedError so that user can retry.
+              -->
+              <Button id="credentialverifyemail-button-submitcode" type="submit" primary :disabled="!canSubmit()" :progress="progress">
                 {{ t("common.buttons.verify") }}
               </Button>
             </form>
