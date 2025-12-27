@@ -333,9 +333,11 @@ declare module "vue-i18n" {
         organizationsUpdated: string
         addedOrganizations: string
         availableOrganizations: string
-        availableEmails: string
-        noVerifiedEmails: string
         selectNoEmail: string
+        unverifiedEmailsHint: string
+        verifyEmailsLink: string
+        noEmailsHint: string
+        addAndVerifyLink: string
       }
       IdentityList: {
         noIdentitiesCreate: string
