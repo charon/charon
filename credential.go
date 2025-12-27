@@ -1122,6 +1122,7 @@ func (a *Account) findCodeCredential(emailCredentialID string, code string) (*Cr
 			return &credential, nil
 		}
 	}
+	// Code credential was not found.
 	return nil, nil //nolint:nilnil
 }
 
