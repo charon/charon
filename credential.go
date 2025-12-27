@@ -1122,7 +1122,7 @@ func (a *Account) findCodeCredential(emailCredentialID string, code string) (*Cr
 			return &credential, nil
 		}
 	}
-	return nil, nil
+	return nil, nil //nolint:nilnil
 }
 
 // incrementCodeCredentialAttempts increments wrong attempts
