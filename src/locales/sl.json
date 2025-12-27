@@ -55,7 +55,8 @@
         "password": "To geslo ali geslovni stavek je že prisotno na tem računu."
       },
       "credentialDisplayNameInUse": "Prikazno ime je že v uporabi.",
-      "credentialDisplayNameMissing": "Manjka prikazno ime."
+      "credentialDisplayNameMissing": "Manjka prikazno ime.",
+      "verificationFailed": "Potrditev ni uspela. Ponovno pošljite kodo in poskusite ponovno."
     },
     "labels": {
       "optional": "(neobvezno)",
@@ -406,7 +407,6 @@
       "waitForCode": "@:partials.AuthCode.waitForCode",
       "sentCount": "@:partials.AuthCode.sentCount",
       "confirmCode": "@:partials.AuthCode.confirmCode",
-      "verificationFailed": "Potrditev ni uspela. Ponovno pošljite kodo in poskusite ponovno.",
       "tryAgain": "Lahko se vrnete in poskusite znova."
     },
     "Footer": {

@@ -67,6 +67,7 @@ declare module "vue-i18n" {
         }
         credentialDisplayNameInUse: string
         credentialDisplayNameMissing: string
+        verificationFailed: string
       }
       labels: {
         optional: string
@@ -416,7 +417,6 @@ declare module "vue-i18n" {
         waitForCode: string
         sentCount: string
         confirmCode: string
-        verificationFailed: string
         tryAgain: string
       }
       Footer: {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { CredentialPublic, CredentialResponse, CredentialVerifyEmailCompleteRequest } from "@/types"
 
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRoute, useRouter } from "vue-router"
 
@@ -36,7 +36,7 @@ function getErrorMessage(errorCode: string) {
     case "credentialInUse":
       return t("common.errors.credentialInUse.email")
     case "verificationFailed":
-      return t("views.CredentialVerifyEmail.verificationFailed")
+      return t("common.errors.verificationFailed")
     default:
       throw new Error(`unexpected error code: ${errorCode}`)
   }
@@ -44,9 +44,7 @@ function getErrorMessage(errorCode: string) {
 
 function resetOnInteraction() {
   // We reset errors on interaction.
-  if (codeError.value === "invalidCode") {
-    codeError.value = ""
-  }
+  codeError.value = ""
   unexpectedError.value = ""
 }
 
@@ -77,17 +75,24 @@ onMounted(async () => {
   await fetchCredential()
   await startVerification()
 
-  if (codeFromHash.value) {
-    document.getElementById("credentialverifyemail-button-submitcode")?.focus()
-  } else {
-    document.getElementById("code")?.focus()
+  if (!codeError.value) {
+    if (codeFromHash.value) {
+      document.getElementById("credentialverifyemail-button-submitcode")?.focus()
+    } else {
+      document.getElementById("code")?.focus()
+    }
   }
 })
 
 function canSubmit(): boolean {
+  // Submission is on purpose not disabled on unexpectedError so that user can retry.
   if (codeError.value) {
     return false
   }
+
+  // We enable submission when non-whitespace content is not empty even if we tell users what is
+  // expected upfront. If they try a too short or too long code we will tell them after submission.
+  // We prefer this so that they do not wonder why the button is not enabled.
   return !!code.value.replaceAll(/\s/g, "")
 }
 
@@ -195,11 +200,6 @@ async function onSubmit() {
       // We check if it is an expected error code by trying to get the error message.
       getErrorMessage(response.error)
       codeError.value = response.error
-      // Focus
-      if (response.error === "verificationFailed") {
-        await nextTick()
-        document.getElementById("credentialverifyemail-button-resend")?.focus()
-      }
       return
     }
 
@@ -298,8 +298,8 @@ async function onResendAfterFailure() {
           <div class="flex flex-row justify-between gap-4">
             <Button type="button" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
             <Button
-              :id="`credentialverifyemail-button-resend`"
               v-if="codeError === 'verificationFailed'"
+              id="credentialverifyemail-button-resendonfailed"
               type="button"
               primary
               :progress="progress"

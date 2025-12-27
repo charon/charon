@@ -55,7 +55,8 @@
         "password": "This password or passphrase is already present on this account."
       },
       "credentialDisplayNameInUse": "Display name is already in use.",
-      "credentialDisplayNameMissing": "Display name is missing."
+      "credentialDisplayNameMissing": "Display name is missing.",
+      "verificationFailed": "Verification failed. Resend a code to try again."
     },
     "labels": {
       "optional": "(optional)",
@@ -406,7 +407,6 @@
       "waitForCode": "@:partials.AuthCode.waitForCode",
       "sentCount": "@:partials.AuthCode.sentCount",
       "confirmCode": "@:partials.AuthCode.confirmCode",
-      "verificationFailed": "Verification failed. Resend a code to try again.",
       "tryAgain": "You can return and try again later."
     },
     "Footer": {
