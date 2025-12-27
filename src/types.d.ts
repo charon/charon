@@ -588,6 +588,7 @@ export type SignalUnknownCredential = {
 
 export type AccountVerifiedEmailsResponse = {
   emails: string[]
+  hasUnverified: boolean
 }
 export type CredentialVerifyEmailCompleteRequest = {
   code: string

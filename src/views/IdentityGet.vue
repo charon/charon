@@ -53,6 +53,7 @@ const basicUpdated = ref(false)
 const username = ref("")
 const email = ref("")
 const verifiedEmails = ref<string[]>([])
+const hasUnverified = ref(false)
 const givenName = ref("")
 const fullName = ref("")
 const pictureUrl = ref("")
@@ -184,6 +185,7 @@ async function loadData(update: "init" | "basic" | "users" | "admins" | "organiz
         return
       }
       verifiedEmails.value = emailsResponse.doc.emails || []
+      hasUnverified.value = emailsResponse.doc.hasUnverified || false
     }
   } catch (error) {
     if (abortController.signal.aborted) {
@@ -480,38 +482,52 @@ const WithOrganizationDoc = WithDocument<Organization>
               >{{ t("common.fields.username") }} <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
             >
             <InputText id="username" v-model="username" class="min-w-0 flex-auto grow" :readonly="!metadata.can_update" :progress="progress" />
-
             <label for="email" class="mt-4 mb-1"
               >{{ t("common.fields.email") }} <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
             >
-            <InputText id="email" v-model="email" class="min-w-0 flex-auto grow" :readonly="true" :progress="progress" />
-
-            <div v-if="metadata.can_update && verifiedEmails.length > 0" class="mt-4 mb-1">
-              <fieldset>
-                <legend class="mb-1">{{ t("views.IdentityGet.availableEmails") }}</legend>
-                <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
-                  <template v-for="verifiedEmail in verifiedEmails" :key="verifiedEmail">
-                    <RadioButton :id="`identity-email-${verifiedEmail}`" v-model="email" :value="verifiedEmail" :progress="progress" class="mx-2" />
-                    <label :for="`identity-email-${verifiedEmail}`" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
+            <div v-if="metadata.can_update" class="mt-1">
+              <!-- If identity has an email, show it first (on top). -->
+              <div :key="identity?.email" class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                <template v-if="identity?.email">
+                  <RadioButton id="identityget-radio-email-current" v-model="email" :value="identity.email" :progress="progress" class="mx-2" />
+                  <label for="identityget-radio-email-current" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{ identity.email }}</label>
+                </template>
+                <!-- Show available verifiedEmails, skipping identities email shown above, if found. -->
+                <template v-for="verifiedEmail in verifiedEmails" :key="verifiedEmail">
+                  <template v-if="verifiedEmail !== identity?.email">
+                    <RadioButton :id="`identityget-radio-email-${verifiedEmail}`" v-model="email" :value="verifiedEmail" :progress="progress" class="mx-2" />
+                    <label :for="`identityget-radio-email-${verifiedEmail}`" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
                       verifiedEmail
                     }}</label>
                   </template>
-                  <RadioButton id="identity-email-none" v-model="email" value="" :progress="progress" class="mx-2" />
-                  <label for="identity-email-none" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
-                    t("views.IdentityGet.selectNoEmail")
-                  }}</label>
-                </div>
-              </fieldset>
+                </template>
+                <!-- If metadata.can_update, always show valid option none. -->
+                <RadioButton id="identityget-radio-email-none" v-model="email" value="" :progress="progress" class="mx-2" />
+                <label for="identityget-radio-email-none" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
+                  t("views.IdentityGet.selectNoEmail")
+                }}</label>
+              </div>
+              <div v-if="hasUnverified" class="mt-1 text-sm text-slate-700">
+                <i18n-t keypath="views.IdentityGet.unverifiedEmailsHint" scope="global">
+                  <template #link>
+                    <router-link :to="{ name: 'CredentialList' }" class="link">{{ t("views.IdentityGet.verifyEmailsLink") }}</router-link>
+                  </template>
+                </i18n-t>
+              </div>
+              <div v-else-if="verifiedEmails.length === 0" class="mt-1 text-sm text-slate-700">
+                <i18n-t keypath="views.IdentityGet.noEmailsHint" scope="global">
+                  <template #link>
+                    <router-link :to="{ name: 'CredentialList' }" class="link">{{ t("views.IdentityGet.addAndVerifyLink") }}</router-link>
+                  </template>
+                </i18n-t>
+              </div>
             </div>
-
-            <!-- Show "noVerifiedEmails" when user can update but has no verified emails -->
-            <div v-else-if="metadata.can_update" class="text-sm text-gray-500 italic">
-              {{ t("views.IdentityGet.noVerifiedEmails") }}
+            <div v-else class="mt-1">
+              <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                <RadioButton :model-value="email" :value="email" disabled class="mx-2" />
+                <label class="cursor-not-allowed text-gray-600">{{ email || t("views.IdentityGet.selectNoEmail") }}</label>
+              </div>
             </div>
-            <!-- Show nothing when user cannot update but has verified emails -->
-            <!-- Show nothing when user cannot update and has no verified emails -->
-            <div v-else class="text-sm text-gray-500" />
-
             <label for="givenName" class="mt-4 mb-1"
               >{{ t("common.fields.givenName") }} <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
             >

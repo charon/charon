@@ -322,9 +322,11 @@
       "organizationsUpdated": "Added organizations updated successfully.",
       "addedOrganizations": "Added organizations",
       "availableOrganizations": "Available organizations",
-      "availableEmails": "Available verified e-mail addresses:",
-      "noVerifiedEmails": "No verified e-mail addresses available",
-      "selectNoEmail": "none"
+      "selectNoEmail": "none",
+      "unverifiedEmailsHint": "There are unverified e-mail addresses. You need to {link} before you can use them.",
+      "verifyEmailsLink": "verify them",
+      "noEmailsHint": "There are no verified e-mail addresses available. You need to {link} before you can use it.",
+      "addAndVerifyLink": "add one and verify it"
     },
     "IdentityList": {
       "noIdentitiesCreate": "There are no identities. Create the first one.",

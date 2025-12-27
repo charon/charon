@@ -322,9 +322,11 @@
       "organizationsUpdated": "Dodane organizacije so bile uspešno posodobljene.",
       "addedOrganizations": "Dodane organizacije",
       "availableOrganizations": "Razpoložljive organizacije",
-      "availableEmails": "Potrjeni e-poštni naslovi, ki so na voljo:",
-      "noVerifiedEmails": "Ni potrjenih epoštnih naslovov.",
-      "selectNoEmail": "brez"
+      "selectNoEmail": "brez",
+      "unverifiedEmailsHint": "Imate nepotrjene e-poštne naslove. Preden jih lahko uporabite, jih morate {link}.",
+      "verifyEmailsLink": "potrditi",
+      "noEmailsHint": "Nimate e-poštnih naslovov. {link} e-poštni naslov.",
+      "addAndVerifyLink": "Dodajte in potrdite"
     },
     "IdentityList": {
       "noIdentitiesCreate": "Ni identitet. Ustvarite prvo.",

@@ -1045,7 +1045,8 @@ func (c codeCredential) MaxAttemptsReached() bool {
 
 // AccountVerifiedEmailsResponse represents the response for getting verified emails.
 type AccountVerifiedEmailsResponse struct {
-	Emails []string `json:"emails"`
+	Emails        []string `json:"emails"`
+	HasUnverified bool     `json:"hasUnverified"`
 }
 
 // CredentialVerifyEmailCompleteRequest represents the request to complete email verification.
@@ -1107,7 +1108,7 @@ func (a *Account) removeCodeCredentials(emailCredentialID string) {
 	}
 }
 
-// findCodeCredential finds a code credential matching the given email credential ID and code.
+// findCodeCredential tries to find a code credential matching the given email credential ID and code.
 func (a *Account) findCodeCredential(emailCredentialID string, code string) (*Credential, errors.E) {
 	for _, credential := range a.Credentials[ProviderCode] {
 		var data codeCredential
@@ -1459,10 +1460,13 @@ func (s *Service) CredentialVerifiedEmailsGet(w http.ResponseWriter, req *http.R
 		return
 	}
 
-	emails := account.GetEmailAddresses(true)
+	verifiedEmails := account.GetEmailAddresses(true)
+	allEmails := account.GetEmailAddresses(false)
+	hasUnverified := len(allEmails) > len(verifiedEmails)
 
 	s.WriteJSON(w, req, AccountVerifiedEmailsResponse{
-		Emails: emails,
+		Emails:        verifiedEmails,
+		HasUnverified: hasUnverified,
 	}, nil)
 }
 
