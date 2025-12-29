@@ -530,7 +530,7 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	createdEmailCredential, errE := s.createEmailCredentialFromTPToken(account, token)
+	createdEmailCredential, errE := createEmailCredentialFromTPToken(account, token)
 	if errE != nil {
 		errors.Details(errE)["provider"] = providerKey
 		var ve *validationError

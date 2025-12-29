@@ -26,13 +26,20 @@ import (
 const (
 	// ErrorCodeCredentialInUse means credential (username, verified email) is in use by another account.
 	ErrorCodeCredentialInUse ErrorCode = "credentialInUse" //nolint:gosec
-	// ErrorCodeAlreadyPresent AlreadyPresent means credential (email, username, password) is already on this account.
+	// ErrorCodeAlreadyPresent means credential (email, username, password) is already on this account.
 	ErrorCodeAlreadyPresent               ErrorCode = "alreadyPresent"
 	ErrorCodeCredentialDisplayNameInUse   ErrorCode = "credentialDisplayNameInUse"   //nolint:gosec
 	ErrorCodeCredentialDisplayNameMissing ErrorCode = "credentialDisplayNameMissing" //nolint:gosec
+	// ErrorCodeVerificationFailed means all email verification codes have expired or maximum allowed attempts have been reached.
+	ErrorCodeVerificationFailed ErrorCode = "verificationFailed"
 )
 
-const credentialAddSessionExpiration = flowExpiration
+const (
+	credentialAddSessionExpiration  = flowExpiration
+	emailVerificationCodeExpiration = time.Minute * 10
+	// TODO: How many attempts?
+	maxEmailVerificationAttempts = 2
+)
 
 var (
 	credentialSessions   = map[identifier.Identifier]json.RawMessage{} //nolint:gochecknoglobals
@@ -1019,50 +1026,40 @@ func newCredentialSignalResponse(update *SignalCurrentUserDetails, remove *Signa
 	return &SignalPasskey{Update: update, Remove: remove}
 }
 
-// ErrorCode values.
-const (
-	ErrorCodeVerificationFailed ErrorCode = "verificationFailed"
-)
-
-const (
-	credentialVerifyCodeExpiration = 10 * time.Minute
-	maxVerifyAttempts              = 5
-)
-
 type codeCredential struct {
 	Code          string    `json:"code"`
 	CreatedAt     time.Time `json:"createdAt"`
 	WrongAttempts int       `json:"wrongAttempts"`
 }
 
+// Expired returns true if the email verification code has expired.
 func (c codeCredential) Expired() bool {
-	return time.Now().After(c.CreatedAt.Add(credentialVerifyCodeExpiration))
+	return time.Now().After(c.CreatedAt.Add(emailVerificationCodeExpiration))
 }
 
+// MaxAttemptsReached returns true if maximum wrong attempts have been reached.
 func (c codeCredential) MaxAttemptsReached() bool {
-	return c.WrongAttempts >= maxVerifyAttempts
+	return c.WrongAttempts >= maxEmailVerificationAttempts
 }
 
-// AccountVerifiedEmailsResponse represents the response for getting verified emails.
+// AccountVerifiedEmailsResponse represents the response for getting verified emails
+// that can be assigned to identities and whether any unverified emails exist.
 type AccountVerifiedEmailsResponse struct {
 	Emails        []string `json:"emails"`
 	HasUnverified bool     `json:"hasUnverified"`
 }
 
-// CredentialVerifyEmailCompleteRequest represents the request to complete email verification.
+// CredentialVerifyEmailCompleteRequest represents the request body for the CredentialVerifyEmailCompletePost handler.
 type CredentialVerifyEmailCompleteRequest struct {
 	Code string `json:"code"`
 }
 
-// cleanupCodeCredentials removes expired or max-attempts-reached code credentials.
-// Returns true if any codes remain for that credential.
+// cleanupCodeCredentials removes all expired or max-attempts-reached code credentials.
+// Returns true if any valid verification codes remain for given emailCredentialID.
 func (a *Account) cleanupCodeCredentials(emailCredentialID string) (bool, errors.E) {
-	if a.Credentials[ProviderCode] == nil {
-		return false, nil
-	}
-
 	hasRemaining := false
 	filtered := a.Credentials[ProviderCode][:0]
+
 	for _, credential := range a.Credentials[ProviderCode] {
 		var data codeCredential
 		errE := x.UnmarshalWithoutUnknownFields(credential.Data, &data)
@@ -1089,13 +1086,10 @@ func (a *Account) cleanupCodeCredentials(emailCredentialID string) (bool, errors
 	return hasRemaining, nil
 }
 
-// removeCodeCredentials removes all code credentials for the given email credential ID.
+// removeCodeCredentials removes all code credentials for given emailCredentialID.
 func (a *Account) removeCodeCredentials(emailCredentialID string) {
-	if a.Credentials[ProviderCode] == nil {
-		return
-	}
-
 	filtered := a.Credentials[ProviderCode][:0]
+
 	for _, credential := range a.Credentials[ProviderCode] {
 		if credential.ProviderID != emailCredentialID {
 			filtered = append(filtered, credential)
@@ -1108,7 +1102,7 @@ func (a *Account) removeCodeCredentials(emailCredentialID string) {
 	}
 }
 
-// findCodeCredential tries to find a code credential matching the given email credential ID and code.
+// findCodeCredential tries to find a code credential matching given emailCredentialID and code.
 func (a *Account) findCodeCredential(emailCredentialID string, code string) (*Credential, errors.E) {
 	for _, credential := range a.Credentials[ProviderCode] {
 		var data codeCredential
@@ -1127,7 +1121,7 @@ func (a *Account) findCodeCredential(emailCredentialID string, code string) (*Cr
 }
 
 // incrementCodeCredentialAttempts increments wrong attempts
-// on all code credentials for the given email credential ID.
+// on all code credentials for given email credential ID.
 func (a *Account) incrementCodeCredentialAttempts(emailCredentialID string) errors.E {
 	for i, credential := range a.Credentials[ProviderCode] {
 		if credential.ProviderID != emailCredentialID {
@@ -1185,20 +1179,8 @@ func (s *Service) CredentialVerifyEmailPost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	var foundCredential Credential
-	foundIndex := -1
-
-FoundCredential:
-	for i, credential := range account.Credentials[ProviderEmail] {
-		// ProviderCode has the same credentialID as ProviderEmail.
-		if credential.ID == credentialID {
-			foundCredential = credential
-			foundIndex = i
-			break FoundCredential
-		}
-	}
-
-	if foundIndex == -1 {
+	foundCredential, foundProvider, foundIndex := account.getCredentialByID(credentialID)
+	if foundIndex == -1 || foundProvider != ProviderEmail {
 		s.NotFound(w, req)
 		return
 	}
@@ -1224,6 +1206,7 @@ FoundCredential:
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
+
 	codeData := codeCredential{
 		Code:          code,
 		CreatedAt:     time.Now(),
@@ -1242,7 +1225,7 @@ FoundCredential:
 			Provider: ProviderCode,
 			// Store e-mail value.
 			DisplayName: foundCredential.DisplayName,
-			Verified:    false,
+			Confirmed:    false,
 		},
 		// Store e-mail credentials ID.
 		ProviderID: foundCredential.ID.String(),
@@ -1318,12 +1301,13 @@ func (s *Service) CredentialVerifyEmailCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
+	errE = s.setAccount(ctx, account)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
 	if !hasRemaining {
-		errE = s.setAccount(ctx, account)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
 		s.WriteJSON(w, req, CredentialResponse{
 			Error:   ErrorCodeVerificationFailed,
 			Success: false,
@@ -1381,6 +1365,14 @@ func (s *Service) CredentialVerifyEmailCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
+	// Code is correct, remove all code credentials.
+	account.removeCodeCredentials(credentialID.String())
+	errE = s.setAccount(ctx, account)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
 	foundCredential, _, foundIndex := account.getCredentialByID(credentialID)
 	if foundIndex == -1 {
 		s.NotFound(w, req)
@@ -1405,13 +1397,6 @@ func (s *Service) CredentialVerifyEmailCompletePost(w http.ResponseWriter, req *
 	}
 
 	if accountWithVerifiedEmail != nil {
-		// e-mail is already verified, remove all codeCredentials.
-		account.removeCodeCredentials(credentialID.String())
-		errE = s.setAccount(ctx, account)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
 		// e-mail is verified on the same account, no-op.
 		if accountWithVerifiedEmail.ID == accountID {
 			s.WriteJSON(w, req, CredentialResponse{
@@ -1431,9 +1416,7 @@ func (s *Service) CredentialVerifyEmailCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	account.Credentials[ProviderEmail][foundIndex].Verified = true
-	account.removeCodeCredentials(credentialID.String())
-
+	account.Credentials[ProviderEmail][foundIndex].Confirmed = true
 	errE = s.setAccount(ctx, account)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -1461,9 +1444,15 @@ func (s *Service) CredentialVerifiedEmailsGet(w http.ResponseWriter, req *http.R
 		return
 	}
 
-	verifiedEmails := account.GetEmailAddresses(true)
-	allEmails := account.GetEmailAddresses(false)
-	hasUnverified := len(allEmails) > len(verifiedEmails)
+	var verifiedEmails []string
+	hasUnverified := false
+	for _, credential := range account.Credentials[ProviderEmail] {
+		if credential.Verified {
+			verifiedEmails = append(verifiedEmails, credential.DisplayName)
+		} else {
+			hasUnverified = true
+		}
+	}
 
 	s.WriteJSON(w, req, AccountVerifiedEmailsResponse{
 		Emails:        verifiedEmails,
@@ -1474,7 +1463,7 @@ func (s *Service) CredentialVerifiedEmailsGet(w http.ResponseWriter, req *http.R
 // getCredentialByID finds a credential by ID across providers, excluding ProviderCode.
 func (a *Account) getCredentialByID(credentialID identifier.Identifier) (*Credential, Provider, int) {
 	for provider, credentials := range a.Credentials {
-		// Skip internal ProviderCode credentials.
+		// Code provider credentials are never exposed over the API.
 		if provider == ProviderCode {
 			continue
 		}
@@ -1486,4 +1475,46 @@ func (a *Account) getCredentialByID(credentialID identifier.Identifier) (*Creden
 	}
 
 	return nil, "", -1
+}
+
+func createEmailCredentialFromTPToken(account *Account, token map[string]interface{}) (*Credential, errors.E) {
+	email := findFirstString(token, "email", "eMailAddress", "emailAddress", "email_address")
+	if email == "" {
+		// No email in token, not an error.
+		return nil, nil //nolint:nilnil
+	}
+	preservedEmail, mappedEmail, errE := validateEmailOrUsername(email, emailOrUsernameCheckEmail)
+	if errE != nil {
+		return nil, errE
+	}
+	shouldAddEmail := false
+	if account == nil {
+		shouldAddEmail = true
+	} else if !account.HasCredential(ProviderEmail, mappedEmail) {
+		shouldAddEmail = true
+	}
+	if !shouldAddEmail {
+		// E-mail already exists, not an error.
+		return nil, nil //nolint:nilnil
+	}
+
+	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{})
+	if errE != nil {
+		errors.Details(errE)["email"] = preservedEmail
+		return nil, errE
+	}
+
+	credential := &Credential{
+		CredentialPublic: CredentialPublic{
+			ID:          identifier.New(),
+			Provider:    ProviderEmail,
+			DisplayName: preservedEmail,
+			// Although email_verified is a standard OIDC claim, we always add email as unverified.
+			Verified: false,
+		},
+		ProviderID: mappedEmail,
+		Data:       jsonData,
+	}
+
+	return credential, nil
 }
