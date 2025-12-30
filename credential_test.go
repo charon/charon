@@ -91,6 +91,8 @@ func TestCredentialManagement(t *testing.T) {
 	// Signup with MockSAML.
 	accessToken := mockSAMLSignin(t, ts, service, charon.CompletedSignup)
 
+	accountID := getAccountIDFromToken(t, service, accessToken)
+
 	credentialRefs := credentialListGet(t, ts, service, accessToken, 1)
 	// MockSAML is the only existing credential.
 	mocksamlCredentialID := credentialRefs[0].ID
@@ -123,6 +125,8 @@ func TestCredentialManagement(t *testing.T) {
 	signoutUser(t, ts, service, accessToken)
 	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
 	accessToken, _ = signinUser(t, ts, service, "jackson", charon.CompletedSignin, flowID, nonce, state, pkceVerifier, config, verifier)
+	accountID2 := getAccountIDFromToken(t, service, accessToken)
+	// TODO: After email verification is done, test signin with email and password as well.
 
 	// Update credentialMap after rename.
 	for _, credentialRef := range credentialRefs {
@@ -131,6 +135,7 @@ func TestCredentialManagement(t *testing.T) {
 		credentialMap[credentialRef.ID] = credential
 	}
 	assert.Len(t, credentialMap, 5)
+	assert.Equal(t, accountID, accountID2)
 
 	samlCred := credentialMap[mocksamlCredentialID]
 	assert.Equal(t, "mockSAML", string(samlCred.Provider))
@@ -439,4 +444,14 @@ func credentialRename(t *testing.T, ts *httptest.Server, service *charon.Service
 	} else {
 		assert.Nil(t, renameResponse.Signal)
 	}
+}
+
+func getAccountIDFromToken(t *testing.T, service *charon.Service, accessToken string) identifier.Identifier {
+	t.Helper()
+
+	accountID, errE := service.TestingGetAccountIDFromToken(accessToken)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	require.NotEqual(t, identifier.Identifier{}, accountID, "accountID should not be empty")
+
+	return accountID
 }
