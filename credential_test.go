@@ -19,7 +19,7 @@ import (
 	"gitlab.com/charon/charon"
 )
 
-func assertEmailAndPasswordCredential(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string, email string) {
+func assertEmailAndPasswordCredential(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string, email string) []charon.CredentialRef {
 	t.Helper()
 
 	credentialRefs := credentialListGet(t, ts, service, accessToken, 2)
@@ -39,35 +39,26 @@ func assertEmailAndPasswordCredential(t *testing.T, ts *httptest.Server, service
 			require.Fail(t, "unexpected credential provider", "provider: %s", credential.Provider)
 		}
 	}
+	return credentialRefs
 }
 
-func TestCredentialUsernameAccessControl(t *testing.T) {
+func TestCredentialEmailAccessControl(t *testing.T) {
 	t.Parallel()
 
-	ts, service, _, _, _ := startTestServer(t) //nolint:dogsled
+	user := identifier.New().String()
+	email := user + "@example.com"
 
-	username := "username"
+	ts, service, smtpServer, _, _ := startTestServer(t)
 
 	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
-	accessToken, _ := signinUser(t, ts, service, username, charon.CompletedSignup, flowID, nonce, state, pkceVerifier, config, verifier)
 
-	credentialRefs := credentialListGet(t, ts, service, accessToken, 2)
+	// Start password authentication with e-mail address.
+	resp := startPasswordSignin(t, ts, service, email, []byte("test1234"), nil, flowID, "Charon", "Dashboard") //nolint:bodyclose
 
-	// Get first existing credentialID to test access control.
-	credentialID := credentialRefs[0].ID
-	for i := range credentialRefs {
-		credential := credentialGet(t, ts, service, accessToken, credentialRefs[i].ID)
-		switch credential.Provider {
-		case charon.ProviderUsername:
-			assert.Equal(t, username, credential.DisplayName)
-			assert.False(t, credential.Verified)
-		case charon.ProviderPassword:
-			assert.Equal(t, "default password", credential.DisplayName)
-			assert.False(t, credential.Verified)
-		case charon.ProviderEmail, charon.ProviderPasskey, charon.ProviderCode:
-			require.Fail(t, "unexpected credential provider", "provider: %s", credential.Provider)
-		}
-	}
+	// Complete with user code.
+	accessToken := completeUserCode(t, ts, service, smtpServer, resp, email, charon.CompletedSignup, []charon.Provider{charon.ProviderPassword, charon.ProviderCode}, nil, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier)
+
+	credentialRef := assertEmailAndPasswordCredential(t, ts, service, accessToken, email)
 
 	signoutUser(t, ts, service, accessToken)
 
@@ -75,19 +66,21 @@ func TestCredentialUsernameAccessControl(t *testing.T) {
 	flowID2, nonce2, state2, pkceVerifier2, config2, verifier2 := createAuthFlow(t, ts, service)
 	accessToken2, _ := signinUser(t, ts, service, username2, charon.CompletedSignup, flowID2, nonce2, state2, pkceVerifier2, config2, verifier2)
 
-	// Different user cannot access first user's credentials and HTTP response is 404 NotFound.
-	credentialGet, errE := service.ReverseAPI("CredentialGet", waf.Params{"id": credentialID.String()}, nil)
-	require.NoError(t, errE, "% -+#.1v", errE)
+	for i := range credentialRef {
+		// Different user cannot access first user's credentials and HTTP response is 404 NotFound.
+		credentialGet, errE := service.ReverseAPI("CredentialGet", waf.Params{"id": credentialRef[i].ID.String()}, nil)
+		require.NoError(t, errE, "% -+#.1v", errE)
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+credentialGet, nil)
-	require.NoError(t, err)
-	req.Header.Set("Authorization", "Bearer "+accessToken2)
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+credentialGet, nil)
+		require.NoError(t, err)
+		req.Header.Set("Authorization", "Bearer "+accessToken2)
 
-	resp, err := ts.Client().Do(req) //nolint:bodyclose
-	require.NoError(t, err)
-	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
-	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
-	assert.Equal(t, 2, resp.ProtoMajor)
+		resp, err = ts.Client().Do(req) //nolint:bodyclose
+		require.NoError(t, err)
+		t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+		assert.Equal(t, 2, resp.ProtoMajor)
+	}
 }
 
 func TestCredentialManagement(t *testing.T) {
@@ -197,6 +190,8 @@ func TestCredentialManagement(t *testing.T) {
 	credentialRemove(t, ts, service, accessToken, passwordCredentialID)
 	credentialRemove(t, ts, service, accessToken, passwordCredentialID2)
 
+	// TODO: We should probably not allow user to remove all credentials.
+	//       So this part of the test will probably change in the future.
 	// Verify credential list is empty.
 	credentialRefs = credentialListGet(t, ts, service, accessToken, 0)
 	require.Empty(t, credentialRefs)
@@ -440,8 +435,8 @@ func credentialRename(t *testing.T, ts *httptest.Server, service *charon.Service
 	assert.Empty(t, renameResponse.Error)
 	assert.True(t, renameResponse.Success)
 	if isPasskey {
-		assert.NotEmpty(t, renameResponse.Signal)
+		assert.NotNil(t, renameResponse.Signal)
 	} else {
-		assert.Empty(t, renameResponse.Signal)
+		assert.Nil(t, renameResponse.Signal)
 	}
 }
