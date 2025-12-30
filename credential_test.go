@@ -97,8 +97,8 @@ func TestCredentialManagement(t *testing.T) {
 
 	// Identity is auto generated from mockSAML. We add username jackson,
 	// so we can reuse signinUser(), which requires username matching expected identities' username.
-	usernameCredentialID := credentialAddUsername(t, ts, service, accessToken, " jackson   ")
-	emailCredentialID := credentialAddEmail(t, ts, service, accessToken, "  email@example.com ")
+	usernameCredentialID := credentialAddUsername(t, ts, service, accessToken, " JaCkSoN   ")
+	emailCredentialID := credentialAddEmail(t, ts, service, accessToken, "  Email@example.com ")
 	passwordCredentialID := credentialAddPassword(t, ts, service, accessToken, []byte("test1234"), " My default password ")
 	passkeyCredentialID := credentialAddPasskey(t, ts, service, accessToken, " My first passkey  ")
 
@@ -139,12 +139,12 @@ func TestCredentialManagement(t *testing.T) {
 
 	usernameCred := credentialMap[usernameCredentialID]
 	assert.Equal(t, charon.ProviderUsername, usernameCred.Provider)
-	assert.Equal(t, "jackson", usernameCred.DisplayName)
+	assert.Equal(t, "JaCkSoN", usernameCred.DisplayName)
 	assert.False(t, usernameCred.Verified)
 
 	emailCred := credentialMap[emailCredentialID]
 	assert.Equal(t, charon.ProviderEmail, emailCred.Provider)
-	assert.Equal(t, "email@example.com", emailCred.DisplayName)
+	assert.Equal(t, "Email@example.com", emailCred.DisplayName)
 	// Email credential is initially added as unverified.
 	assert.False(t, emailCred.Verified)
 	// TODO: after adding email verification, verify email and test for verified true.
