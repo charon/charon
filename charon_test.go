@@ -140,9 +140,7 @@ type (
 
 // TestingGetAccountIDFromToken extracts accountID from an access token.
 func (s *Service) TestingGetAccountIDFromToken(accessToken string) (identifier.Identifier, errors.E) {
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, serviceContextKey, s)
-
+	ctx := context.WithValue(context.Background(), serviceContextKey, s)
 	oidc := s.oidc()
 	session := new(OIDCSession)
 
@@ -151,10 +149,5 @@ func (s *Service) TestingGetAccountIDFromToken(accessToken string) (identifier.I
 		return identifier.Identifier{}, errors.WithStack(err)
 	}
 
-	oidcSession, ok := ar.GetSession().(*OIDCSession)
-	if !ok {
-		return identifier.Identifier{}, errors.New("invalid session type")
-	}
-
-	return oidcSession.AccountID, nil
+	return ar.GetSession().(*OIDCSession).AccountID, nil //nolint:errcheck,forcetypeassert
 }

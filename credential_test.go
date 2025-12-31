@@ -3,6 +3,8 @@ package charon_test
 import (
 	"bytes"
 	"context"
+	"crypto/rsa"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -91,18 +93,18 @@ func TestCredentialManagement(t *testing.T) {
 	// Signup with MockSAML.
 	accessToken := mockSAMLSignin(t, ts, service, charon.CompletedSignup)
 
-	accountID := getAccountIDFromToken(t, service, accessToken)
+	accountID := getAccountIDFromAccessToken(t, service, accessToken)
 
 	credentialRefs := credentialListGet(t, ts, service, accessToken, 1)
 	// MockSAML is the only existing credential.
 	mocksamlCredentialID := credentialRefs[0].ID
 
-	// Identity is auto generated from mockSAML. We add username jackson,
+	// Identity is auto-generated from mockSAML. We add username jackson,
 	// so we can reuse signinUser(), which requires username matching expected identities' username.
 	usernameCredentialID := credentialAddUsername(t, ts, service, accessToken, " JaCkSoN   ")
-	emailCredentialID := credentialAddEmail(t, ts, service, accessToken, "  Email@example.com ")
+	emailCredentialID := credentialAddEmail(t, ts, service, accessToken, "  EmAiL@example.com ")
 	passwordCredentialID := credentialAddPassword(t, ts, service, accessToken, []byte("test1234"), " My default password ")
-	passkeyCredentialID := credentialAddPasskey(t, ts, service, accessToken, " My first passkey  ")
+	passkeyCredentialID, rsaKey, publicKeyID, credentialID, rawAuthData, userID := credentialAddPasskey(t, ts, service, accessToken, " My first passkey  ")
 
 	credentialRefs = credentialListGet(t, ts, service, accessToken, 5)
 
@@ -121,12 +123,20 @@ func TestCredentialManagement(t *testing.T) {
 	credentialRename(t, ts, service, accessToken, passwordCredentialID, " My super secret password ", false)
 	credentialRename(t, ts, service, accessToken, passkeyCredentialID, " My renamed passkey ", true)
 
-	// Sign-out and sign-in with newly added credentials.
+	// TODO: After email verification is done, test signin with email and password as well.
+	// Sign-out and sign-in with newly added credentials - username+password.
 	signoutUser(t, ts, service, accessToken)
 	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
+	// We test lowercase "jackson" to verify that username is case-insensitive. Due to auto-generated identity from mockSAML,
+	// other capitalization forms of "jackson" would not work here, because signinUser() compares identities' username.
 	accessToken, _ = signinUser(t, ts, service, "jackson", charon.CompletedSignin, flowID, nonce, state, pkceVerifier, config, verifier)
-	accountID2 := getAccountIDFromToken(t, service, accessToken)
-	// TODO: After email verification is done, test signin with email and password as well.
+	accountID2 := getAccountIDFromAccessToken(t, service, accessToken)
+	assert.Equal(t, accountID, accountID2)
+	// Sign-out and sign-in with newly added credentials - passkey.
+	signoutUser(t, ts, service, accessToken)
+	accessToken = signinMockPasskeyCredential(t, ts, service, "jackson", rsaKey, publicKeyID, credentialID, rawAuthData, userID)
+	accountID3 := getAccountIDFromAccessToken(t, service, accessToken)
+	assert.Equal(t, accountID, accountID3)
 
 	// Update credentialMap after rename.
 	for _, credentialRef := range credentialRefs {
@@ -135,7 +145,6 @@ func TestCredentialManagement(t *testing.T) {
 		credentialMap[credentialRef.ID] = credential
 	}
 	assert.Len(t, credentialMap, 5)
-	assert.Equal(t, accountID, accountID2)
 
 	samlCred := credentialMap[mocksamlCredentialID]
 	assert.Equal(t, "mockSAML", string(samlCred.Provider))
@@ -149,7 +158,7 @@ func TestCredentialManagement(t *testing.T) {
 
 	emailCred := credentialMap[emailCredentialID]
 	assert.Equal(t, charon.ProviderEmail, emailCred.Provider)
-	assert.Equal(t, "Email@example.com", emailCred.DisplayName)
+	assert.Equal(t, "EmAiL@example.com", emailCred.DisplayName)
 	// Email credential is initially added as unverified.
 	assert.False(t, emailCred.Verified)
 	// TODO: after adding email verification, verify email and test for verified true.
@@ -344,7 +353,7 @@ func credentialAddPassword(t *testing.T, ts *httptest.Server, service *charon.Se
 	return *addPasswordCompleteResponse.CredentialID
 }
 
-func credentialAddPasskey(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken, displayName string) identifier.Identifier {
+func credentialAddPasskey(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken, displayName string) (identifier.Identifier, *rsa.PrivateKey, string, []byte, []byte, []byte) {
 	t.Helper()
 
 	credentialAddPasskeyStart, errE := service.ReverseAPI("CredentialAddPasskeyStart", nil, nil)
@@ -360,7 +369,10 @@ func credentialAddPasskey(t *testing.T, ts *httptest.Server, service *charon.Ser
 	require.NotNil(t, addPasskeyStartResponse.SessionID)
 	require.NotNil(t, addPasskeyStartResponse.Passkey)
 
-	AuthFlowPasskeyCreateCompleteRequest, _, _, _, _ := createMockPasskeyCredential(t, ts, addPasskeyStartResponse.Passkey) //nolint:dogsled
+	userID, err := base64.RawURLEncoding.DecodeString(addPasskeyStartResponse.Passkey.CreateOptions.Response.User.ID.(string)) //nolint:errcheck,forcetypeassert
+	require.NoError(t, err)
+
+	AuthFlowPasskeyCreateCompleteRequest, rsaKey, publicKeyID, credentialID, rawAuthData := createMockPasskeyCredential(t, ts, addPasskeyStartResponse.Passkey)
 
 	credentialAddPasskeyComplete, errE := service.ReverseAPI("CredentialAddPasskeyComplete", nil, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -374,8 +386,7 @@ func credentialAddPasskey(t *testing.T, ts *httptest.Server, service *charon.Ser
 
 	addPasskeyCompleteResponse := credentialAdd(t, ts, accessToken, data, credentialAddPasskeyComplete)
 	require.NotNil(t, addPasskeyCompleteResponse.CredentialID)
-
-	return *addPasskeyCompleteResponse.CredentialID
+	return *addPasskeyCompleteResponse.CredentialID, rsaKey, publicKeyID, credentialID, rawAuthData, userID
 }
 
 func credentialRemove(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string, credentialID identifier.Identifier) {
@@ -446,7 +457,7 @@ func credentialRename(t *testing.T, ts *httptest.Server, service *charon.Service
 	}
 }
 
-func getAccountIDFromToken(t *testing.T, service *charon.Service, accessToken string) identifier.Identifier {
+func getAccountIDFromAccessToken(t *testing.T, service *charon.Service, accessToken string) identifier.Identifier {
 	t.Helper()
 
 	accountID, errE := service.TestingGetAccountIDFromToken(accessToken)
