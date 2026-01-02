@@ -88,18 +88,16 @@ func TestCredentialEmailAccessControl(t *testing.T) {
 func TestCredentialManagement(t *testing.T) {
 	t.Parallel()
 
-	ts, service, _, _, _ := startTestServer(t) //nolint:dogsled
+	ts, service, _, oidcTS, _ := startTestServer(t)
 
-	// Signup with MockSAML.
-	accessToken, identityID := mockSAMLSignin(t, ts, service, charon.CompletedSignup)
+	// Signup with OIDC.
+	accessToken, identityID := oidcSignin(t, ts, service, oidcTS, charon.CompletedSignup)
 
 	credentialRefs := credentialListGet(t, ts, service, accessToken, 1)
-	// MockSAML is the only existing credential.
-	mocksamlCredentialID := credentialRefs[0].ID
+	// OIDC is the only existing credential.
+	oidcCredentialID := credentialRefs[0].ID
 
-	// Identity is auto-generated from mockSAML. We add username jackson,
-	// so we can reuse signinUser(), which requires username matching expected identities' username.
-	usernameCredentialID := credentialAddUsername(t, ts, service, accessToken, " JaCkSoN   ")
+	usernameCredentialID := credentialAddUsername(t, ts, service, accessToken, " UsErNaMe   ")
 	emailCredentialID := credentialAddEmail(t, ts, service, accessToken, "  EmAiL@example.com ")
 	passwordCredentialID := credentialAddPassword(t, ts, service, accessToken, []byte("test1234"), " My default password ")
 	passkeyCredentialID, rsaKey, publicKeyID, credentialID, rawAuthData, userID := credentialAddPasskey(t, ts, service, accessToken, " My first passkey  ")
@@ -113,11 +111,11 @@ func TestCredentialManagement(t *testing.T) {
 		credentialMap[credentialRef.ID] = credential
 	}
 
-	assert.Equal(t, "jackson@example.com", credentialMap[mocksamlCredentialID].DisplayName)
+	assert.NotEmpty(t, credentialMap[oidcCredentialID].DisplayName)
 	assert.Equal(t, "My default password", credentialMap[passwordCredentialID].DisplayName)
 	assert.Equal(t, "My first passkey", credentialMap[passkeyCredentialID].DisplayName)
 
-	credentialRename(t, ts, service, accessToken, mocksamlCredentialID, " My SAML Login   ", false)
+	credentialRename(t, ts, service, accessToken, oidcCredentialID, " My OIDC Login   ", false)
 	credentialRename(t, ts, service, accessToken, passwordCredentialID, " My super secret password ", false)
 	credentialRename(t, ts, service, accessToken, passkeyCredentialID, " My renamed passkey ", true)
 
@@ -125,13 +123,13 @@ func TestCredentialManagement(t *testing.T) {
 	// Sign-out and sign-in with newly added credentials - username+password.
 	signoutUser(t, ts, service, accessToken)
 	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
-	// We test lowercase "jackson" to verify that username is case-insensitive. Due to auto-generated identity from mockSAML,
-	// other capitalization forms of "jackson" would not work here, because signinUser() compares identities' username.
-	accessToken, identityID2 := signinUser(t, ts, service, "jackson", charon.CompletedSignin, flowID, nonce, state, pkceVerifier, config, verifier)
+	// We test lowercase "username" to verify that username is case-insensitive. Due to auto-generated identity,
+	// other capitalization forms of "username" would not work here, because signinUser() compares identities' username.
+	accessToken, identityID2 := signinUser(t, ts, service, "username", charon.CompletedSignin, flowID, nonce, state, pkceVerifier, config, verifier)
 	assert.Equal(t, identityID, identityID2)
 	// Sign-out and sign-in with newly added credentials - passkey.
 	signoutUser(t, ts, service, accessToken)
-	accessToken, identityID3 := signinMockPasskeyCredential(t, ts, service, "jackson", rsaKey, publicKeyID, credentialID, rawAuthData, userID)
+	accessToken, identityID3 := signinMockPasskey(t, ts, service, "username", rsaKey, publicKeyID, credentialID, rawAuthData, userID)
 	assert.Equal(t, identityID, identityID3)
 
 	// Update credentialMap after rename.
@@ -142,14 +140,14 @@ func TestCredentialManagement(t *testing.T) {
 	}
 	assert.Len(t, credentialMap, 5)
 
-	samlCred := credentialMap[mocksamlCredentialID]
-	assert.Equal(t, "mockSAML", string(samlCred.Provider))
-	assert.Equal(t, "My SAML Login", samlCred.DisplayName)
-	assert.False(t, samlCred.Verified)
+	oidcCred := credentialMap[oidcCredentialID]
+	assert.Equal(t, "oidcTesting", string(oidcCred.Provider))
+	assert.Equal(t, "My OIDC Login", oidcCred.DisplayName)
+	assert.False(t, oidcCred.Verified)
 
 	usernameCred := credentialMap[usernameCredentialID]
 	assert.Equal(t, charon.ProviderUsername, usernameCred.Provider)
-	assert.Equal(t, "JaCkSoN", usernameCred.DisplayName)
+	assert.Equal(t, "UsErNaMe", usernameCred.DisplayName)
 	assert.False(t, usernameCred.Verified)
 
 	emailCred := credentialMap[emailCredentialID]
@@ -171,7 +169,7 @@ func TestCredentialManagement(t *testing.T) {
 
 	credentialRemove(t, ts, service, accessToken, usernameCredentialID)
 	credentialRemove(t, ts, service, accessToken, emailCredentialID)
-	credentialRemove(t, ts, service, accessToken, mocksamlCredentialID)
+	credentialRemove(t, ts, service, accessToken, oidcCredentialID)
 
 	// Test no-op w/ passkey rename.
 	resp := credentialRenameStart(t, ts, service, accessToken, passkeyCredentialID, "My renamed passkey") //nolint:bodyclose

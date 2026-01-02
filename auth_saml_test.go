@@ -579,7 +579,7 @@ func createMockSAMLClient(t *testing.T) *http.Client {
 	return client
 }
 
-func mockSAMLSignin(t *testing.T, ts *httptest.Server, service *charon.Service, signinOrSignout charon.Completed) (string, identifier.Identifier) {
+func mockSAMLSignin(t *testing.T, ts *httptest.Server, service *charon.Service, signinOrSignout charon.Completed) (string, identifier.Identifier) { //nolint:unparam
 	t.Helper()
 
 	mockSAMLClient := createMockSAMLClient(t)

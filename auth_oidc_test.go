@@ -150,7 +150,7 @@ func startOIDCTestServer(t *testing.T) (*httptest.Server, *storage.MemoryStore) 
 	return ts, store
 }
 
-func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidcTS *httptest.Server, signinOrSignout charon.Completed) (string, identifier.Identifier) { //nolint:unparam
+func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidcTS *httptest.Server, signinOrSignout charon.Completed) (string, identifier.Identifier) {
 	t.Helper()
 
 	oidcClient := oidcTS.Client()
