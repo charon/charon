@@ -150,7 +150,7 @@ func startOIDCTestServer(t *testing.T) (*httptest.Server, *storage.MemoryStore) 
 	return ts, store
 }
 
-func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidcTS *httptest.Server, signinOrSignout charon.Completed) string {
+func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidcTS *httptest.Server, signinOrSignout charon.Completed) (string, identifier.Identifier) { //nolint:unparam
 	t.Helper()
 
 	oidcClient := oidcTS.Client()
@@ -218,8 +218,8 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	require.NoError(t, err)
 	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{signinOrSignout}, []charon.Provider{"oidcTesting"}, "", assertCharonDashboard)
 
-	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{"oidcTesting"}, 1, "username")
-	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{"oidcTesting"})
+	identityID := chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{"oidcTesting"}, 1, "username")
+	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{"oidcTesting"}), identityID
 }
 
 func TestAuthFlowOIDC(t *testing.T) { //nolint:dupl
@@ -228,7 +228,7 @@ func TestAuthFlowOIDC(t *testing.T) { //nolint:dupl
 	ts, service, _, oidcTS, _ := startTestServer(t)
 
 	// Signup with OIDC.
-	accessToken := oidcSignin(t, ts, service, oidcTS, charon.CompletedSignup)
+	accessToken, _ := oidcSignin(t, ts, service, oidcTS, charon.CompletedSignup)
 
 	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
 		{charon.ActivitySignIn, nil, []charon.Provider{"oidcTesting"}, 0, 1, 0, 1},
@@ -239,7 +239,7 @@ func TestAuthFlowOIDC(t *testing.T) { //nolint:dupl
 	signoutUser(t, ts, service, accessToken)
 
 	// Signin with OIDC.
-	accessToken = oidcSignin(t, ts, service, oidcTS, charon.CompletedSignin)
+	accessToken, _ = oidcSignin(t, ts, service, oidcTS, charon.CompletedSignin)
 
 	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
 		{charon.ActivitySignIn, nil, []charon.Provider{"oidcTesting"}, 0, 1, 0, 1}, // Signin.

@@ -90,7 +90,7 @@ func TestAuthFlowPasskey(t *testing.T) {
 		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
 	})
 
-	accessToken = signinMockPasskeyCredential(t, ts, service, "username", rsaKey, publicKeyID, credentialID, rawAuthData, userID)
+	accessToken, _ = signinMockPasskeyCredential(t, ts, service, "username", rsaKey, publicKeyID, credentialID, rawAuthData, userID)
 
 	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
 		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPasskey}, 0, 1, 0, 1}, // Signin.
@@ -183,7 +183,7 @@ func createMockPasskeyCredential(t *testing.T, ts *httptest.Server, authFlowResp
 	return authFlowPasskeyCreateCompleteRequest, rsaKey, publicKeyID, credentialID, rawAuthData
 }
 
-func signinMockPasskeyCredential(t *testing.T, ts *httptest.Server, service *charon.Service, expectedEmailOrUsername string, rsaKey *rsa.PrivateKey, publicKeyID string, credentialID []byte, rawAuthData []byte, userID []byte) string {
+func signinMockPasskeyCredential(t *testing.T, ts *httptest.Server, service *charon.Service, expectedEmailOrUsername string, rsaKey *rsa.PrivateKey, publicKeyID string, credentialID []byte, rawAuthData []byte, userID []byte) (string, identifier.Identifier) {
 	t.Helper()
 
 	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
@@ -272,6 +272,6 @@ func signinMockPasskeyCredential(t *testing.T, ts *httptest.Server, service *cha
 	require.NoError(t, err)
 	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{charon.CompletedSignin}, []charon.Provider{charon.ProviderPasskey}, "", assertCharonDashboard)
 
-	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", charon.CompletedSignin, []charon.Provider{charon.ProviderPasskey}, 1, expectedEmailOrUsername)
-	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, charon.CompletedSignin, []charon.Provider{charon.ProviderPasskey})
+	identityID := chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", charon.CompletedSignin, []charon.Provider{charon.ProviderPasskey}, 1, expectedEmailOrUsername)
+	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, charon.CompletedSignin, []charon.Provider{charon.ProviderPasskey}), identityID
 }

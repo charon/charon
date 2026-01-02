@@ -5,7 +5,6 @@ import (
 
 	"github.com/alexedwards/argon2id"
 	"github.com/go-jose/go-jose/v3"
-	"github.com/ory/fosite"
 	"github.com/russellhaering/gosaml2/types"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/identifier"
@@ -137,17 +136,3 @@ func TestingNormalizeEmailOrUsername(emailOrUsername string, check emailOrUserna
 type (
 	TestingValidationError = validationError
 )
-
-// TestingGetAccountIDFromToken extracts accountID from an access token.
-func (s *Service) TestingGetAccountIDFromToken(accessToken string) (identifier.Identifier, errors.E) {
-	ctx := context.WithValue(context.Background(), serviceContextKey, s)
-	oidc := s.oidc()
-	session := new(OIDCSession)
-
-	_, ar, err := oidc.IntrospectToken(ctx, accessToken, fosite.AccessToken, session)
-	if err != nil {
-		return identifier.Identifier{}, errors.WithStack(err)
-	}
-
-	return ar.GetSession().(*OIDCSession).AccountID, nil //nolint:errcheck,forcetypeassert
-}

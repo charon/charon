@@ -91,9 +91,7 @@ func TestCredentialManagement(t *testing.T) {
 	ts, service, _, _, _ := startTestServer(t) //nolint:dogsled
 
 	// Signup with MockSAML.
-	accessToken := mockSAMLSignin(t, ts, service, charon.CompletedSignup)
-
-	accountID := getAccountIDFromAccessToken(t, service, accessToken)
+	accessToken, identityID := mockSAMLSignin(t, ts, service, charon.CompletedSignup)
 
 	credentialRefs := credentialListGet(t, ts, service, accessToken, 1)
 	// MockSAML is the only existing credential.
@@ -129,14 +127,12 @@ func TestCredentialManagement(t *testing.T) {
 	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
 	// We test lowercase "jackson" to verify that username is case-insensitive. Due to auto-generated identity from mockSAML,
 	// other capitalization forms of "jackson" would not work here, because signinUser() compares identities' username.
-	accessToken, _ = signinUser(t, ts, service, "jackson", charon.CompletedSignin, flowID, nonce, state, pkceVerifier, config, verifier)
-	accountID2 := getAccountIDFromAccessToken(t, service, accessToken)
-	assert.Equal(t, accountID, accountID2)
+	accessToken, identityID2 := signinUser(t, ts, service, "jackson", charon.CompletedSignin, flowID, nonce, state, pkceVerifier, config, verifier)
+	assert.Equal(t, identityID, identityID2)
 	// Sign-out and sign-in with newly added credentials - passkey.
 	signoutUser(t, ts, service, accessToken)
-	accessToken = signinMockPasskeyCredential(t, ts, service, "jackson", rsaKey, publicKeyID, credentialID, rawAuthData, userID)
-	accountID3 := getAccountIDFromAccessToken(t, service, accessToken)
-	assert.Equal(t, accountID, accountID3)
+	accessToken, identityID3 := signinMockPasskeyCredential(t, ts, service, "jackson", rsaKey, publicKeyID, credentialID, rawAuthData, userID)
+	assert.Equal(t, identityID, identityID3)
 
 	// Update credentialMap after rename.
 	for _, credentialRef := range credentialRefs {
@@ -455,14 +451,4 @@ func credentialRename(t *testing.T, ts *httptest.Server, service *charon.Service
 	} else {
 		assert.Nil(t, renameResponse.Signal)
 	}
-}
-
-func getAccountIDFromAccessToken(t *testing.T, service *charon.Service, accessToken string) identifier.Identifier {
-	t.Helper()
-
-	accountID, errE := service.TestingGetAccountIDFromToken(accessToken)
-	require.NoError(t, errE, "% -+#.1v", errE)
-	require.NotEqual(t, identifier.Identifier{}, accountID, "accountID should not be empty")
-
-	return accountID
 }
