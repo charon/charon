@@ -402,7 +402,7 @@ async function onAddApplicationTemplate(applicationTemplate: DeepReadonly<Applic
     if (el) {
       el.focus()
     } else {
-      document.getElementById("applications-update")?.focus()
+      document.getElementById("organizationget-button-applicationsupdate")?.focus()
     }
   })
 }
@@ -725,7 +725,7 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
                           <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
                             <div>{{ t("views.OrganizationGet.clientId") }}</div>
                             <div v-if="client.id">
-                              <code>{{ client.id }}</code>
+                              <code :id="`organizationget-code-clientid-${i}`" >{{ client.id }}</code>
                             </div>
                             <div v-else>
                               <span class="italic">{{ t("common.data.confirmUpdateToAllocate") }}</span>
@@ -791,17 +791,22 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
                         </i18n-t>
                       </div>
                       <div class="flex flex-row gap-4">
-                        <Button type="button" :progress="progress" @click.prevent="application.active = !application.active">{{
+                        <Button :id="`organizationget-button-activateordeactivate-${i}`" type="button"
+                                :progress="progress"
+                                @click.prevent="application.active =
+                        !application.active">{{
                           application.active ? t("common.buttons.disable") : t("common.buttons.activate")
                         }}</Button>
-                        <Button type="button" :progress="progress" @click.prevent="applications.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
+                        <Button :id="`organizationget-button-remove-${i}`" type="button" :progress="progress"
+                                @click.prevent="applications.splice(i, 1)">{{
+                            t("common.buttons.remove") }}</Button>
                       </div>
                     </div>
                   </div>
                 </li>
               </ul>
               <div class="flex flex-row justify-end">
-                <Button id="applications-update" type="submit" primary :disabled="!canApplicationsSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
+                <Button id="organizationget-button-applicationsupdate" type="submit" primary :disabled="!canApplicationsSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
               </div>
             </form>
           </template>
@@ -812,7 +817,8 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
                 <ApplicationTemplateListItem :item="applicationTemplate" :labels="isApplicationAdded(applicationTemplate) ? [t('common.labels.added')] : []" h3>
                   <template #default="{ doc }">
                     <div v-if="doc" class="flex flex-col items-start">
-                      <Button type="button" :progress="progress" primary @click.prevent="onAddApplicationTemplate(doc)">{{ t("common.buttons.add") }}</Button>
+                      <Button class="organizationget-button-add" type="button" :progress="progress" primary
+                               @click.prevent="onAddApplicationTemplate(doc)">{{ t("common.buttons.add") }}</Button>
                     </div>
                   </template>
                 </ApplicationTemplateListItem>

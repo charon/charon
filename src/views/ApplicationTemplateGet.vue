@@ -343,7 +343,7 @@ async function onAddVariable() {
   })
 
   await nextTick(() => {
-    document.getElementById(`variable-${variables.value.length - 1}-name`)?.focus()
+    document.getElementById(`applicationtemplateget-field-${variables.value.length - 1}-name`)?.focus()
   })
 }
 
@@ -700,7 +700,9 @@ async function onAddAdmin() {
             <div v-if="basicUnexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="basicUpdated" class="mt-4 text-success-600">{{ t("views.ApplicationTemplateGet.applicationsUpdated") }}</div>
             <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
-              <Button type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
+              <Button id="applicatiomtemplateget-update-button" type="submit" primary :disabled="!canBasicSubmit()"
+                      :progress="progress">{{
+                  t("common.buttons.update") }}</Button>
             </div>
           </form>
           <template v-if="metadata.can_update || variables.length || canVariablesSubmit() || variablesUnexpectedError || variablesUpdated">
@@ -716,21 +718,21 @@ async function onAddAdmin() {
                 <li v-for="(variable, i) in variables" :key="i" class="mb-4 grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
-                    <label :for="`variable-${i}-name`" class="mb-1">{{ t("views.ApplicationTemplateGet.name") }}</label>
+                    <label :for="`applicationtemplateget-field-${i}-name`" class="mb-1">{{ t("views.ApplicationTemplateGet.name") }}</label>
                     <InputText
-                      :id="`variable-${i}-name`"
+                      :id="`applicationtemplateget-field-${i}-name`"
                       v-model="variable.name"
                       class="min-w-0 flex-auto grow"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                       required
                     />
-                    <label :for="`variable-${i}-description`" class="mt-4 mb-1"
+                    <label :for="`applicationtemplateget-field-${i}-description`" class="mt-4 mb-1"
                       >{{ t("common.fields.description") }}
                       <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
-                      :id="`variable-${i}-description`"
+                      :id="`applicationtemplateget-field-${i}-description`"
                       v-model="variable.description"
                       class="min-w-0 flex-auto grow"
                       :readonly="!metadata.can_update"
@@ -879,8 +881,12 @@ async function onAddAdmin() {
                 </li>
               </ol>
               <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
-                <Button type="button" @click.prevent="onAddClientPublic">{{ t("views.ApplicationTemplateGet.addClient") }}</Button>
-                <Button type="submit" primary :disabled="!canClientsPublicSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
+                <Button id="applicationtemplateget-button-addpublicclient" type="button"
+                        @click.prevent="onAddClientPublic">{{
+                    t("views.ApplicationTemplateGet.addClient") }}</Button>
+                <Button id="applicationtemplateget-button-updatepublicclient" type="submit" primary
+                        :disabled="!canClientsPublicSubmit()" :progress="progress">{{
+                    t("common.buttons.update") }}</Button>
               </div>
             </form>
           </template>
