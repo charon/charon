@@ -88,6 +88,9 @@ func startOIDCTestServer(t *testing.T) (*httptest.Server, *storage.MemoryStore) 
 		session.SetSubject(subject)
 		session.IDTokenClaims().Subject = subject
 		session.IDTokenClaims().AuthTime = time.Now().UTC()
+		session.IDTokenClaims().Extra = map[string]interface{}{
+			"username": "oidcusername",
+		}
 
 		response, err := oauth2Provider.NewAuthorizeResponse(ctx, ar, session)
 		if err != nil {
@@ -218,7 +221,7 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	require.NoError(t, err)
 	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{signinOrSignout}, []charon.Provider{"oidcTesting"}, "", assertCharonDashboard)
 
-	identityID := chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{"oidcTesting"}, 1, "username")
+	identityID := chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{"oidcTesting"}, 1, "oidcusername")
 	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{"oidcTesting"}), identityID
 }
 

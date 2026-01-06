@@ -97,7 +97,7 @@ func TestCredentialManagement(t *testing.T) {
 	// OIDC is the only existing credential.
 	oidcCredentialID := credentialRefs[0].ID
 
-	usernameCredentialID := credentialAddUsername(t, ts, service, accessToken, " UsErNaMe   ")
+	usernameCredentialID := credentialAddUsername(t, ts, service, accessToken, " OIDCusername   ")
 	emailCredentialID := credentialAddEmail(t, ts, service, accessToken, "  EmAiL@example.com ")
 	passwordCredentialID := credentialAddPassword(t, ts, service, accessToken, []byte("test1234"), " My default password ")
 	passkeyCredentialID, rsaKey, publicKeyID, credentialID, rawAuthData, userID := credentialAddPasskey(t, ts, service, accessToken, " My first passkey  ")
@@ -111,7 +111,7 @@ func TestCredentialManagement(t *testing.T) {
 		credentialMap[credentialRef.ID] = credential
 	}
 
-	assert.NotEmpty(t, credentialMap[oidcCredentialID].DisplayName)
+	assert.Equal(t, "oidcusername", credentialMap[oidcCredentialID].DisplayName)
 	assert.Equal(t, "My default password", credentialMap[passwordCredentialID].DisplayName)
 	assert.Equal(t, "My first passkey", credentialMap[passkeyCredentialID].DisplayName)
 
@@ -123,16 +123,16 @@ func TestCredentialManagement(t *testing.T) {
 	// Sign-out and sign-in with newly added credentials - username+password.
 	signoutUser(t, ts, service, accessToken)
 	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
-	// We test lowercase "username" to verify that username is case-insensitive. Due to auto-generated identity,
-	// other capitalization forms of "username" would not work here, because signinUser() compares identities' username.
-	accessToken, identityID2 := signinUser(t, ts, service, "username", charon.CompletedSignin, flowID, nonce, state, pkceVerifier, config, verifier)
+	// We test lowercase "OIDCusername" to verify that username is case-insensitive. Due to auto-generated identity,
+	// other capitalization forms of "oidcusername" would not work here, because signinUser() compares identities' username.
+	accessToken, identityID2 := signinUser(t, ts, service, "oidcusername", charon.CompletedSignin, flowID, nonce, state, pkceVerifier, config, verifier)
 	assert.Equal(t, identityID, identityID2)
 	// Sign-out and sign-in with newly added credentials - passkey.
 	signoutUser(t, ts, service, accessToken)
-	accessToken, identityID3 := signinMockPasskey(t, ts, service, "username", rsaKey, publicKeyID, credentialID, rawAuthData, userID)
+	accessToken, identityID3 := signinMockPasskey(t, ts, service, "oidcusername", rsaKey, publicKeyID, credentialID, rawAuthData, userID)
 	assert.Equal(t, identityID, identityID3)
 
-	// Update credentialMap after rename.
+	// Update credentialPublic in credentialMap after rename.
 	for _, credentialRef := range credentialRefs {
 		credential := credentialGet(t, ts, service, accessToken, credentialRef.ID)
 
@@ -147,7 +147,7 @@ func TestCredentialManagement(t *testing.T) {
 
 	usernameCred := credentialMap[usernameCredentialID]
 	assert.Equal(t, charon.ProviderUsername, usernameCred.Provider)
-	assert.Equal(t, "UsErNaMe", usernameCred.DisplayName)
+	assert.Equal(t, "OIDCusername", usernameCred.DisplayName)
 	assert.False(t, usernameCred.Verified)
 
 	emailCred := credentialMap[emailCredentialID]
