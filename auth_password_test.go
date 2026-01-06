@@ -87,7 +87,7 @@ func assertSignedUser(t *testing.T, signinOrSignout charon.Completed, flowID ide
 	}
 }
 
-func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emailOrUsername string, identityEmailOrUsername string, signinOrSignout charon.Completed, flowID identifier.Identifier, nonce, state, pkceVerifier string, config *oauth2.Config, verifier *oidc.IDTokenVerifier) (string, identifier.Identifier) {
+func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emailOrUsername, identityEmailOrUsername string, signinOrSignout charon.Completed, flowID identifier.Identifier, nonce, state, pkceVerifier string, config *oauth2.Config, verifier *oidc.IDTokenVerifier) (string, identifier.Identifier) {
 	t.Helper()
 
 	resp := startPasswordSignin(t, ts, service, emailOrUsername, []byte("test1234"), nil, flowID, "Charon", "Dashboard") //nolint:bodyclose
