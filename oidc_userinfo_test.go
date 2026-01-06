@@ -84,7 +84,7 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 	}
 
 	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
-	accessToken, identityID := signinUser(t, ts, service, username, charon.CompletedSignup, flowID, nonce, state, pkceVerifier, config, verifier)
+	accessToken, identityID := signinUser(t, ts, service, username, username, charon.CompletedSignup, flowID, nonce, state, pkceVerifier, config, verifier)
 
 	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
 		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPassword}, 0, 1, 0, 1},
@@ -144,7 +144,7 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 	}
 
 	flowID, nonce, state, pkceVerifier, config, verifier = createAuthFlow(t, ts, service)
-	accessToken, identityID = signinUser(t, ts, service, username, charon.CompletedSignin, flowID, nonce, state, pkceVerifier, config, verifier)
+	accessToken, identityID = signinUser(t, ts, service, username, username, charon.CompletedSignin, flowID, nonce, state, pkceVerifier, config, verifier)
 
 	// After sign-in, GET (with new access token) should again return success.
 	req, err = http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+userinfo, nil)

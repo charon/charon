@@ -65,6 +65,9 @@ func TestAuthFlowPasswordAndCode(t *testing.T) {
 	// Complete with user code.
 	accessToken := completeUserCode(t, ts, service, smtpServer, resp, email, charon.CompletedSignup, []charon.Provider{charon.ProviderPassword, charon.ProviderCode}, nil, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier)
 
+	// Check that verified email and password credentials are listed.
+	assertEmailAndPasswordCredential(t, ts, service, accessToken, email)
+
 	// Verify complete activity sequence for signup.
 	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
 		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPassword, charon.ProviderCode}, 0, 1, 0, 1},
@@ -81,7 +84,7 @@ func TestAuthFlowPasswordAndCode(t *testing.T) {
 
 	// Signed-up user can authenticate with password only.
 	flowID, nonce, state, pkceVerifier, config, verifier = createAuthFlow(t, ts, service)
-	accessToken, _ = signinUser(t, ts, service, email, charon.CompletedSignin, flowID, nonce, state, pkceVerifier, config, verifier)
+	accessToken, _ = signinUser(t, ts, service, email, email, charon.CompletedSignin, flowID, nonce, state, pkceVerifier, config, verifier)
 
 	signoutUser(t, ts, service, accessToken)
 
@@ -120,7 +123,7 @@ func signinUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	return completeUserCode(t, ts, service, smtpServer, resp, emailOrUsername, signinOrSignout, []charon.Provider{charon.ProviderCode}, nil, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier)
 }
 
-func completeUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, smtpServer *smtpmock.Server, resp *http.Response, emailOrUsername string, signinOrSignout charon.Completed, providers []charon.Provider, organizationID *identifier.Identifier, flowID identifier.Identifier, organization, app, nonce, state, pkceVerifier string, config *oauth2.Config, verifier *oidc.IDTokenVerifier) string {
+func completeUserCode(t *testing.T, ts *httptest.Server, service *charon.Service, smtpServer *smtpmock.Server, resp *http.Response, emailOrUsername string, signinOrSignout charon.Completed, providers []charon.Provider, organizationID *identifier.Identifier, flowID identifier.Identifier, organization, app, nonce, state, pkceVerifier string, config *oauth2.Config, verifier *oidc.IDTokenVerifier) string { //nolint:unparam
 	t.Helper()
 
 	assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, providers, emailOrUsername, assertAppName(t, organization, app))

@@ -461,7 +461,7 @@ func extractFormValues(t *testing.T, htmlStr string) (url.Values, string, errors
 	return values, action, nil
 }
 
-func samlSignin(t *testing.T, ts *httptest.Server, service *charon.Service, samlTS *httptest.Server, signinOrSignout charon.Completed) string {
+func samlSignin(t *testing.T, ts *httptest.Server, service *charon.Service, samlTS *httptest.Server, signinOrSignout charon.Completed) (string, identifier.Identifier) { //nolint:unparam
 	t.Helper()
 
 	samlClient := samlTS.Client()
@@ -534,8 +534,8 @@ func samlSignin(t *testing.T, ts *httptest.Server, service *charon.Service, saml
 	require.NoError(t, err)
 	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{signinOrSignout}, []charon.Provider{"samlTesting"}, "", assertCharonDashboard)
 
-	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{"samlTesting"}, 1, "username")
-	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{"samlTesting"})
+	identityID := chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{"samlTesting"}, 1, "username")
+	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{"samlTesting"}), identityID
 }
 
 func TestAuthFlowSAML(t *testing.T) { //nolint:dupl
@@ -544,7 +544,7 @@ func TestAuthFlowSAML(t *testing.T) { //nolint:dupl
 	ts, service, _, _, samlTS := startTestServer(t)
 
 	// Signup with SAML.
-	accessToken := samlSignin(t, ts, service, samlTS, charon.CompletedSignup)
+	accessToken, _ := samlSignin(t, ts, service, samlTS, charon.CompletedSignup)
 
 	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
 		{charon.ActivitySignIn, nil, []charon.Provider{"samlTesting"}, 0, 1, 0, 1},
@@ -555,7 +555,7 @@ func TestAuthFlowSAML(t *testing.T) { //nolint:dupl
 	signoutUser(t, ts, service, accessToken)
 
 	// Signin with SAML.
-	accessToken = samlSignin(t, ts, service, samlTS, charon.CompletedSignin)
+	accessToken, _ = samlSignin(t, ts, service, samlTS, charon.CompletedSignin)
 
 	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
 		{charon.ActivitySignIn, nil, []charon.Provider{"samlTesting"}, 0, 1, 0, 1}, // Signin.
@@ -579,7 +579,7 @@ func createMockSAMLClient(t *testing.T) *http.Client {
 	return client
 }
 
-func mockSAMLSignin(t *testing.T, ts *httptest.Server, service *charon.Service, signinOrSignout charon.Completed) string {
+func mockSAMLSignin(t *testing.T, ts *httptest.Server, service *charon.Service, signinOrSignout charon.Completed) (string, identifier.Identifier) { //nolint:unparam
 	t.Helper()
 
 	mockSAMLClient := createMockSAMLClient(t)
@@ -676,8 +676,8 @@ func mockSAMLSignin(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	require.NoError(t, err)
 	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{signinOrSignout}, []charon.Provider{"mockSAML"}, "", assertCharonDashboard)
 
-	chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{"mockSAML"}, 1, "jackson")
-	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{"mockSAML"})
+	identityID := chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{"mockSAML"}, 1, "jackson")
+	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{"mockSAML"}), identityID
 }
 
 func TestAuthFlowMockSAML(t *testing.T) {
@@ -686,7 +686,7 @@ func TestAuthFlowMockSAML(t *testing.T) {
 	ts, service, _, _, _ := startTestServer(t) //nolint:dogsled
 
 	// Signup with MockSAML.
-	accessToken := mockSAMLSignin(t, ts, service, charon.CompletedSignup)
+	accessToken, _ := mockSAMLSignin(t, ts, service, charon.CompletedSignup)
 
 	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
 		{charon.ActivitySignIn, nil, []charon.Provider{"mockSAML"}, 0, 1, 0, 1},
@@ -697,7 +697,7 @@ func TestAuthFlowMockSAML(t *testing.T) {
 	signoutUser(t, ts, service, accessToken)
 
 	// Signin with MockSAML.
-	accessToken = mockSAMLSignin(t, ts, service, charon.CompletedSignin)
+	accessToken, _ = mockSAMLSignin(t, ts, service, charon.CompletedSignin)
 
 	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
 		{charon.ActivitySignIn, nil, []charon.Provider{"mockSAML"}, 0, 1, 0, 1}, // Signin.

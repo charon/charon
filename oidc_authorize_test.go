@@ -69,7 +69,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 			codeChallenge := base64.RawURLEncoding.EncodeToString(challengeHash[:])
 
 			flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
-			accessToken, _ := signinUser(t, ts, service, username, charon.CompletedSignup, flowID, nonce, state, pkceVerifier, config, verifier)
+			accessToken, _ := signinUser(t, ts, service, username, username, charon.CompletedSignup, flowID, nonce, state, pkceVerifier, config, verifier)
 
 			applicationTemplate := createApplicationTemplate(t, ts, service, accessToken, tt.accessTokenType, tt.accessTokenLifespan, tt.idTokenLifespan, tt.refreshTokenLifespan)
 
