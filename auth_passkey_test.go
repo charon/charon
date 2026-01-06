@@ -183,7 +183,7 @@ func createMockPasskeyCredential(t *testing.T, ts *httptest.Server, authFlowResp
 	return authFlowPasskeyCreateCompleteRequest, rsaKey, publicKeyID, credentialID, rawAuthData
 }
 
-func signinMockPasskey(t *testing.T, ts *httptest.Server, service *charon.Service, expectedEmailOrUsername string, rsaKey *rsa.PrivateKey, publicKeyID string, credentialID []byte, rawAuthData []byte, userID []byte) (string, identifier.Identifier) {
+func signinMockPasskey(t *testing.T, ts *httptest.Server, service *charon.Service, identityEmailOrUsername string, rsaKey *rsa.PrivateKey, publicKeyID string, credentialID []byte, rawAuthData []byte, userID []byte) (string, identifier.Identifier) {
 	t.Helper()
 
 	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
@@ -272,6 +272,6 @@ func signinMockPasskey(t *testing.T, ts *httptest.Server, service *charon.Servic
 	require.NoError(t, err)
 	oid := assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{charon.CompletedSignin}, []charon.Provider{charon.ProviderPasskey}, "", assertCharonDashboard)
 
-	identityID := chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", charon.CompletedSignin, []charon.Provider{charon.ProviderPasskey}, 1, expectedEmailOrUsername)
+	identityID := chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", charon.CompletedSignin, []charon.Provider{charon.ProviderPasskey}, 1, identityEmailOrUsername)
 	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, charon.CompletedSignin, []charon.Provider{charon.ProviderPasskey}), identityID
 }
