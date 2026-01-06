@@ -685,12 +685,12 @@ async function onAddAdmin() {
             <TextArea id="description" v-model="description" class="min-w-0 flex-auto grow" :readonly="!metadata.can_update" :progress="progress" />
             <label for="homepageTemplate" class="mt-4 mb-1">{{ t("views.ApplicationTemplateGet.homepageTemplate") }}</label>
             <InputText id="homepageTemplate" v-model="homepageTemplate" class="min-w-0 flex-auto grow" :readonly="!metadata.can_update" :progress="progress" required />
-            <label for="idScopes" class="mt-4 mb-1"
+            <label for="applicationtemplateget-input-idscopes" class="mt-4 mb-1"
               >{{ t("views.ApplicationTemplateGet.spaceSeparatedScopes") }}
               <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
             >
             <TextArea
-              id="idScopes"
+              id="applicationtemplateget-input-idscopes"
               :model-value="idScopes.join(' ')"
               class="min-w-0 flex-auto grow"
               :readonly="!metadata.can_update"
