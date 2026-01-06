@@ -132,7 +132,7 @@ func TestCredentialManagement(t *testing.T) {
 	accessToken, identityID3 := signinMockPasskey(t, ts, service, "oidcusername", rsaKey, publicKeyID, credentialID, rawAuthData, userID)
 	assert.Equal(t, identityID, identityID3)
 
-	// Update credentialPublic in credentialMap after rename.
+	// Update CredentialPublic in credentialMap after rename.
 	for _, credentialRef := range credentialRefs {
 		credential := credentialGet(t, ts, service, accessToken, credentialRef.ID)
 
