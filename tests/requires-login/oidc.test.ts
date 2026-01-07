@@ -85,7 +85,7 @@ test.describe.serial("Charon OIDC Flows", () => {
     // Find the organization name input field and enter organization name.
     const orgNameField = page.locator("input#organizationcreate-input-name")
     await expect(orgNameField).toBeVisible()
-    await orgNameField.fill("Test Organization 1")
+    await orgNameField.fill("Test OIDC Organization 1")
 
     // Find and click the CREATE button.
     const createOrgButton = page.locator("button#organizationcreate-button-create")
@@ -203,8 +203,8 @@ test.describe.serial("Charon OIDC Flows", () => {
     await expect(organizationsLink).toBeVisible()
     await organizationsLink.click()
 
-    // Select organization "Test Organization 1".
-    const organization1Link = page.locator('a.link:has-text("Test Organization 1")')
+    // Select organization "Test OIDC Organization 1".
+    const organization1Link = page.locator('a.link:has-text("Test OIDC Organization 1")')
     await expect(organization1Link).toBeVisible()
     await organization1Link.click()
 
