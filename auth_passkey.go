@@ -446,3 +446,14 @@ func (s *Service) getPasskeySignalData(credential Credential, updatedDisplayName
 		DisplayName: pk.WebAuthnDisplayName(),
 	}, nil
 }
+
+func (s *Service) getPasskeySignalUnknownData(credential *Credential) (*CredentialSignalUnknownData, errors.E) {
+	credentialIDBytes, err := base64.RawURLEncoding.DecodeString(credential.ProviderID)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return &CredentialSignalUnknownData{
+		RPID:         s.passkeyProvider().Config.RPID,
+		CredentialID: credentialIDBytes,
+	}, nil
+}

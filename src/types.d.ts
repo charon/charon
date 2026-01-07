@@ -521,6 +521,10 @@ export type CredentialResponse =
       success: true
       signal?: CredentialSignalData
     }
+  | {
+    success: true
+    signalUnknown?: CredentialSignalUnknownData
+}
 
 export type CredentialSignalData = {
   rpId: string
@@ -528,3 +532,7 @@ export type CredentialSignalData = {
   name: string
   displayName: string
 }
+ export type CredentialSignalUnknownData = {
+  rpId: string
+  credentialId: string
+ }

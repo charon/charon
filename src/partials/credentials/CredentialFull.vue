@@ -130,7 +130,7 @@ async function onSubmit() {
     }
 
     // When renaming a passkey, we try signaling to the authenticator about the updated user credential.
-    if (response.signal) {
+    if ("signal" in response && response.signal) {
       await signalPasskeyUpdate(response.signal)
       if (abortController.signal.aborted) {
         return

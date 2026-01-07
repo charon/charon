@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CredentialPublic, Credentials } from "@/types"
+import type {CredentialPublic, CredentialResponse, Credentials, CredentialSignalUnknownData} from "@/types"
 
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useI18n } from "vue-i18n"
@@ -115,9 +115,16 @@ async function onRemove(credentialId: string) {
       params: { id: credentialId },
     }).href
 
-    await postJSON(url, {}, abortController.signal, progress)
+    const response = await postJSON<CredentialResponse>(url, {}, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
+    }
+  // Signal browser to remove passkey credential if applicable.
+    if ("signalUnknown" in response  && response.signalUnknown) {
+      await signalPasskeyUnknown(response.signalUnknown)
+      if (abortController.signal.aborted) {
+        return
+      }
     }
 
     credentials.value = credentials.value.filter((c) => c.id !== credentialId)
@@ -132,6 +139,11 @@ async function onRemove(credentialId: string) {
   } finally {
     progress.value -= 1
   }
+}
+
+async function signalPasskeyUnknown(signal: CredentialSignalUnknownData) {
+  // PublicKeyCredential.signalUnknownCredential might not be available and this is fine.
+  await PublicKeyCredential.signalUnknownCredential?.(signal)
 }
 
 const WithCredentialDocument = WithDocument<CredentialPublic>

@@ -98,8 +98,10 @@ type CredentialResponse struct {
 	Error   ErrorCode `json:"error,omitempty"`
 	Success bool      `json:"success,omitempty"`
 
-	// Signal is omitted for non-passkey providers or on an error.
+	// Signal is omitted for non-passkey providers or on an error. It is used for passkey renaming.
 	Signal *CredentialSignalData `json:"signal,omitempty"`
+	// SignalUnknown is omitted for non-passkey provider or on an error. It is used for passkey deletion.
+	SignalUnknown *CredentialSignalUnknownData `json:"signalUnknown,omitempty"`
 }
 
 // CredentialSignalData represents the payload for WebAuthn credential signalCurrentUserDetails - client-side renaming.
@@ -108,6 +110,12 @@ type CredentialSignalData struct {
 	UserID      protocol.URLEncodedBase64 `json:"userId"`
 	Name        string                    `json:"name"`
 	DisplayName string                    `json:"displayName"`
+}
+
+// CredentialSignalUnknownData represents the payload for WebAuthn credential signalUnknownCredential - client-side deletion.
+type CredentialSignalUnknownData struct {
+	RPID         string                    `json:"rpId"`
+	CredentialID protocol.URLEncodedBase64 `json:"credentialId"`
 }
 
 // This function does not check for duplicates. Duplicate checking
@@ -850,6 +858,7 @@ func (s *Service) CredentialRemovePost(w http.ResponseWriter, req *http.Request,
 		return
 	}
 
+	var foundCredential *Credential
 	var foundProvider Provider
 	foundIndex := -1
 
@@ -865,6 +874,7 @@ FoundCredential:
 			if credential.ID == credentialID {
 				foundProvider = provider
 				foundIndex = i
+				foundCredential = &credential
 				break FoundCredential
 			}
 		}
@@ -881,6 +891,14 @@ FoundCredential:
 		delete(account.Credentials, foundProvider)
 	}
 
+	var signalUnknown *CredentialSignalUnknownData
+	if foundProvider == ProviderPasskey {
+		signalUnknown, errE = s.getPasskeySignalUnknownData(foundCredential)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+		}
+	}
+
 	errE = s.setAccount(ctx, account)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -888,9 +906,10 @@ FoundCredential:
 	}
 
 	s.WriteJSON(w, req, CredentialResponse{
-		Error:   "",
-		Success: true,
-		Signal:  nil,
+		Error:         "",
+		Success:       true,
+		Signal:        nil,
+		SignalUnknown: signalUnknown,
 	}, nil)
 }
 
