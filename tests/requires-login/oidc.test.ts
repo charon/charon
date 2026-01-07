@@ -40,6 +40,9 @@ test.describe.serial("Charon OIDC Flows", () => {
     await expect(applicationUpdateButton).toBeVisible()
     await applicationUpdateButton.click()
 
+    // Check for the success message.
+    await expect(page.getByText("Application template updated successfully.")).toBeVisible()
+
     await checkpoint(page, "oidc-applications-created-application-with-id-scopes")
 
     // Create a public client.
@@ -56,7 +59,10 @@ test.describe.serial("Charon OIDC Flows", () => {
     await expect(updatePublicClientButton).toBeVisible()
     await updatePublicClientButton.click()
 
-    await checkpoint(page, "oidc-oidc-applications-created-application-with-updated-public-client")
+    // Check for the success message.
+    await expect(page.getByText("Public clients updated successfully.")).toBeVisible()
+
+    await checkpoint(page, "oidc-applications-created-application-with-updated-public-client")
 
     // Click on home.
     const homeButton = page.locator("#navbar-link-home")
@@ -100,96 +106,118 @@ test.describe.serial("Charon OIDC Flows", () => {
     await expect(activateApplicationButton).toBeVisible()
     await activateApplicationButton.click()
 
-    await checkpoint(page, "oidc-organization-with-activated-application")
-
     // Update the added application.
     const updateApplicationButton = page.locator("#organizationget-button-applicationsupdate")
     await expect(updateApplicationButton).toBeVisible()
+    await expect(page.getByText("Status: active")).toBeVisible()
+    await checkpoint(page, "oidc-organization-with-activated-application")
     await updateApplicationButton.click()
 
     // Store client ID.
     const clientIdField = page.locator("#organizationget-code-clientid-0")
     await expect(clientIdField).not.toBeEmpty()
-    const oidcClientId = await clientIdField.textContent() as string
+    const oidcClientId = (await clientIdField.textContent()) as string
     expect(oidcClientId).not.toBeNull()
 
-    await checkpoint(page, "oidc-organization-with-added-application", {mask: [clientIdField]})
+    // Check for the success message.
+    await expect(page.getByText("Added applications updated successfully.")).toBeVisible()
+    await checkpoint(page, "oidc-organization-with-added-application", { mask: [clientIdField] })
 
-    // Now go to oidcdebugger.com, try to sign in.
-    await page.goto("https://oidcdebugger.com/")
-    const oidcDebuggerAuthorizeUriField = page.locator("input#authorizeUri")
-    await expect(oidcDebuggerAuthorizeUriField).toBeVisible()
-    await oidcDebuggerAuthorizeUriField.fill("https://localhost:8080/auth/oidc/authorize")
-    const oidcDebuggerClientIdField = page.locator("input#clientId")
-    await expect(oidcDebuggerClientIdField).toBeVisible()
-    await oidcDebuggerClientIdField.fill(oidcClientId)
-    const oidcDebuggerScopesField = page.locator("input#scopes")
-    await expect(oidcDebuggerScopesField).toBeVisible()
-    await oidcDebuggerScopesField.fill("openid profile email")
+    // Test with all three response modes.
+    const responseModes = [
+      { mode: "query", username: "tester-query" },
+      { mode: "formPost", username: "tester-formPost" },
+      { mode: "fragment", username: "tester-fragment" },
+    ]
 
-    // Enable PKCE.
-    const usePkceCheckbox = page.locator("input#use-pkce")
-    await expect(usePkceCheckbox).toBeVisible()
-    await usePkceCheckbox.click()
-    const oidcDebuggerTokenUriField = page.locator("input#tokenUri")
-    await expect(oidcDebuggerTokenUriField).toBeVisible()
-    await oidcDebuggerTokenUriField.fill("https://localhost:8080/auth/oidc/token")
+    for (const { mode, username } of responseModes) {
+      // Go to oidcdebugger.com.
+      await page.goto("https://oidcdebugger.com/")
+      const oidcDebuggerAuthorizeUriField = page.locator("input#authorizeUri")
+      await expect(oidcDebuggerAuthorizeUriField).toBeVisible()
+      await oidcDebuggerAuthorizeUriField.fill("https://localhost:8080/auth/oidc/authorize")
+      const oidcDebuggerClientIdField = page.locator("input#clientId")
+      await expect(oidcDebuggerClientIdField).toBeVisible()
+      await oidcDebuggerClientIdField.fill(oidcClientId)
+      const oidcDebuggerScopesField = page.locator("input#scopes")
+      await expect(oidcDebuggerScopesField).toBeVisible()
+      await oidcDebuggerScopesField.fill("openid profile email")
 
-    // Click Send Request button.
-    const sendRequestButton = page.locator(".debug__form-submit--button")
-    await expect(sendRequestButton).toBeVisible()
-    await sendRequestButton.click()
+      // Enable PKCE.
+      const usePkceCheckbox = page.locator("input#use-pkce")
+      await expect(usePkceCheckbox).toBeVisible()
+      await usePkceCheckbox.check()
+      const oidcDebuggerTokenUriField = page.locator("input#tokenUri")
+      await expect(oidcDebuggerTokenUriField).toBeVisible()
+      await oidcDebuggerTokenUriField.fill("https://localhost:8080/auth/oidc/token")
 
-    // Now sign in with tester2.
-    // Find the email input field and enter 'tester2'.
-    const emailField = page.locator("input#authstart-input-email")
-    await expect(emailField).toBeVisible()
-    await checkpoint(page, "main-page-after-clicking-signin")
-    await emailField.fill("tester2")
+      // Select response mode.
+      const responseModeRadio = page.locator(`input#responseMode-${mode}`)
+      await expect(responseModeRadio).toBeVisible()
+      await responseModeRadio.click()
 
-    // Find and click the NEXT button.
-    const nextButton = page.locator("button#authstart-button-next")
-    await expect(nextButton).toBeVisible()
-    await checkpoint(page, "auth-page-after-entering-username-tester2")
-    await nextButton.click()
+      // Click Send Request button.
+      const sendRequestButton = page.locator(".debug__form-submit--button")
+      await expect(sendRequestButton).toBeVisible()
+      await sendRequestButton.click()
 
-    // Find the password input field and enter 'tester1234'.
-    const passwordField = page.locator("input#authpassword-input-currentpassword")
-    await expect(passwordField).toBeVisible()
-    await checkpoint(page, "auth-page-after-entering-username-and-clicking-next")
-    await passwordField.fill("tester1234")
+      // Sign in with the username.
+      const emailField = page.locator("input#authstart-input-email")
+      await expect(emailField).toBeVisible()
+      await checkpoint(page, `main-page-after-clicking-signin-${mode}`)
+      await emailField.fill(username)
 
-    // Find and click the enabled NEXT button (not disabled).
-    const nextButton2 = page.locator("button#authpassword-button-next")
-    await expect(nextButton2).toBeVisible()
-    await checkpoint(page, "auth-page-after-entering-username-tester2-password-tester1234")
-    await nextButton2.click()
+      const nextButton = page.locator("button#authstart-button-next")
+      await expect(nextButton).toBeVisible()
+      await checkpoint(page, `auth-page-after-entering-username-${username}`)
+      await nextButton.click()
 
-    // Find the li element that contains "tester2" and click its SELECT button.
-    const tester2Identity = page.locator('li:has-text("tester2")')
-    const selectButton = tester2Identity.locator("button.authidentity-selector-identity")
-    await expect(selectButton).toBeVisible()
-    await checkpoint(page, "signup-successful-signin-username-tester2-previous-identities-page-from-password")
-    await selectButton.click()
+      const passwordField = page.locator("input#authpassword-input-currentpassword")
+      await expect(passwordField).toBeVisible()
+      await checkpoint(page, `auth-page-after-entering-username-and-clicking-next-${mode}`)
+      await passwordField.fill("tester1234")
 
-    // Verify success message.
-    await expect(page.getByText("Everything is ready to sign you in")).toBeVisible()
+      const nextButton2 = page.locator("button#authpassword-button-next")
+      await expect(nextButton2).toBeVisible()
+      await checkpoint(page, `auth-page-after-entering-username-${username}-password-tester1234`)
+      await nextButton2.click()
+
+      const testerIdentity = page.locator(`li:has-text("${username}")`)
+      const selectButton = testerIdentity.locator("button.authidentity-selector-identity")
+      await expect(selectButton).toBeVisible()
+      await checkpoint(page, `signup-successful-signin-username-${username}-previous-identities-page-from-password`)
+      await selectButton.click()
+
+      // Verify success message.
+      await expect(page.getByText("Everything is ready to sign you in")).toBeVisible()
+    }
 
     // Now sign in with tester and check activity logs.
     await signInWithPassword(page, false)
 
-    // Check user activity.
     await expect(organizationsLink).toBeVisible()
     await organizationsLink.click()
-    const getUserActivity = tester2Identity.locator("button#organizationget-button-getactivity")
+
+    // Select organization "Test Organization 1".
+    const organization1Link = page.locator('a.link:has-text("Test Organization 1")')
+    await expect(organization1Link).toBeVisible()
+    await organization1Link.click()
+
+    // Get user activity.
+    const getUserActivity = page.locator("#organizationget-button-getactivity")
     await expect(getUserActivity).toBeVisible()
     await getUserActivity.click()
 
-    // Verify that activity log contains tester2 identity link.
-    const activityLogIdentityLink = page.locator('a.link:has-text("tester2")')
-    await expect(activityLogIdentityLink).toBeVisible()
+    // Check user activity for each tester.
+    for (const { username } of responseModes) {
+      // Verify that activity log contains the identity link.
+      const activityLogIdentityLink = page.locator(`a.link:has-text("${username}")`)
+      await expect(activityLogIdentityLink).toBeVisible()
 
-    await checkpoint(page, "oidc-organization-user-activity-contains-tester2")
+      await checkpoint(page, `oidc-organization-user-activity-contains-${username}`, {
+        mask: [page.locator(".activitylistitem-text-session"), page.locator(".activitylistitem-text-timestamp")],
+      })
+    }
 
     console.log("Successfully created an OIDC application, added it to an organization and signed in.")
   })
