@@ -42,6 +42,7 @@ test.describe.serial("Charon OIDC Flows", () => {
 
     // Check for the success message.
     await expect(page.getByText("Application template updated successfully.")).toBeVisible()
+    await page.waitForTimeout(500)
 
     await checkpoint(page, "oidc-applications-created-application-with-id-scopes")
 
@@ -61,6 +62,7 @@ test.describe.serial("Charon OIDC Flows", () => {
 
     // Check for the success message.
     await expect(page.getByText("Public clients updated successfully.")).toBeVisible()
+    await page.waitForTimeout(500)
 
     await checkpoint(page, "oidc-applications-created-application-with-updated-public-client")
 
@@ -121,6 +123,8 @@ test.describe.serial("Charon OIDC Flows", () => {
 
     // Check for the success message.
     await expect(page.getByText("Added applications updated successfully.")).toBeVisible()
+    // TODO: Without waiting, navbar sometimes appears in the middle of the screenshot.
+    await page.waitForTimeout(500)
     await checkpoint(page, "oidc-organization-with-added-application", { mask: [clientIdField] })
 
     // Test with all three response modes.
