@@ -1,4 +1,4 @@
-import { checkpoint, expect, signInWithPassword, test } from "../utils"
+import { CHARON_URL, checkpoint, expect, signInWithPassword, test } from "../utils"
 
 test.describe.serial("Charon OIDC Flows", () => {
   test("Test OIDC login", async ({ context }) => {
@@ -139,7 +139,7 @@ test.describe.serial("Charon OIDC Flows", () => {
       await page.goto("https://oidcdebugger.com/")
       const oidcDebuggerAuthorizeUriField = page.locator("input#authorizeUri")
       await expect(oidcDebuggerAuthorizeUriField).toBeVisible()
-      await oidcDebuggerAuthorizeUriField.fill("https://localhost:8080/auth/oidc/authorize")
+      await oidcDebuggerAuthorizeUriField.fill(`${CHARON_URL}/auth/oidc/authorize`)
       const oidcDebuggerClientIdField = page.locator("input#clientId")
       await expect(oidcDebuggerClientIdField).toBeVisible()
       await oidcDebuggerClientIdField.fill(oidcClientId)
@@ -153,7 +153,7 @@ test.describe.serial("Charon OIDC Flows", () => {
       await usePkceCheckbox.check()
       const oidcDebuggerTokenUriField = page.locator("input#tokenUri")
       await expect(oidcDebuggerTokenUriField).toBeVisible()
-      await oidcDebuggerTokenUriField.fill("https://localhost:8080/auth/oidc/token")
+      await oidcDebuggerTokenUriField.fill(`${CHARON_URL}/auth/oidc/token`)
 
       // Select response mode.
       const responseModeRadio = page.locator(`input#responseMode-${mode}`)
