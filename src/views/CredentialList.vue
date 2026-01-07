@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type {CredentialPublic, CredentialResponse, Credentials, CredentialSignalUnknownData} from "@/types"
+import type { CredentialPublic, CredentialResponse, Credentials } from "@/types"
 
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useI18n } from "vue-i18n"
@@ -14,6 +14,7 @@ import CredentialFull from "@/partials/credentials/CredentialFull.vue"
 import Footer from "@/partials/Footer.vue"
 import NavBar from "@/partials/NavBar.vue"
 import { useProgress } from "@/progress"
+import { signalPasskeyUnknown } from "@/utils"
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
@@ -119,9 +120,9 @@ async function onRemove(credentialId: string) {
     if (abortController.signal.aborted) {
       return
     }
-  // Signal browser to remove passkey credential if applicable.
-    if ("signalUnknown" in response  && response.signalUnknown) {
-      await signalPasskeyUnknown(response.signalUnknown)
+    // Signal browser to remove passkey credential if applicable.
+    if ("signal" in response && response.signal?.delete) {
+      await signalPasskeyUnknown(response.signal.delete)
       if (abortController.signal.aborted) {
         return
       }
@@ -139,11 +140,6 @@ async function onRemove(credentialId: string) {
   } finally {
     progress.value -= 1
   }
-}
-
-async function signalPasskeyUnknown(signal: CredentialSignalUnknownData) {
-  // PublicKeyCredential.signalUnknownCredential might not be available and this is fine.
-  await PublicKeyCredential.signalUnknownCredential?.(signal)
 }
 
 const WithCredentialDocument = WithDocument<CredentialPublic>

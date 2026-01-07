@@ -12,6 +12,7 @@ import type {
   OrganizationApplicationPublic,
   QueryValues,
   QueryValuesWithOptional,
+  SignalUnknownCredential,
 } from "@/types"
 
 import { cloneDeep, isEqual } from "lodash-es"
@@ -281,4 +282,9 @@ export function decodePasswordEncryptionResponse(response: AuthFlowResponsePassw
       iv: fromBase64(response.encryptOptions.iv),
     },
   }
+}
+
+export async function signalPasskeyUnknown(signalUnknown: SignalUnknownCredential) {
+  // PublicKeyCredential.signalUnknownCredential might not be available and this is fine.
+  await PublicKeyCredential.signalUnknownCredential?.(signalUnknown)
 }

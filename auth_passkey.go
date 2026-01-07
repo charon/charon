@@ -165,8 +165,9 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 			CreateOptions: nil,
 			GetOptions:    options,
 		},
-		Password: nil,
-		Error:    "",
+		Password:      nil,
+		Error:         "",
+		SignalUnknown: nil,
 	}, nil)
 }
 
@@ -256,10 +257,17 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		return pkCredential, nil
 	}, *flowPasskey.SessionData, parsedResponse)
 	if err != nil {
+		if errors.Is(err, ErrAccountNotFound) {
+			if !s.increaseAuthAttempts(w, req, flow) {
+				return
+			}
+			signalUnknown := s.getPasskeySignalUnknownData(parsedResponse.RawID)
+			s.flowError(w, req, flow, ErrorCodeNoAccount, nil, signalUnknown)
+			return
+		}
 		s.BadRequestWithError(w, req, withWebauthnError(err))
 		return
 	}
-
 	// We know the user is passkeyCredential because we just created it above.
 	pkCredential := user.(passkeyCredential) //nolint:errcheck,forcetypeassert
 	// Credential is changed by ValidatePasskeyLogin (e.g., its Authenticator.UpdateCounter
@@ -284,7 +292,6 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-
 	s.completeAuthStep(w, req, true, flow, account,
 		[]Credential{{
 			CredentialPublic: CredentialPublic{
@@ -352,8 +359,9 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 			CreateOptions: options,
 			GetOptions:    nil,
 		},
-		Password: nil,
-		Error:    "",
+		Password:      nil,
+		Error:         "",
+		SignalUnknown: nil,
 	}, nil)
 }
 
@@ -428,7 +436,7 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 		}})
 }
 
-func (s *Service) getPasskeySignalData(credential Credential, updatedDisplayName string) (*CredentialSignalData, errors.E) {
+func (s *Service) getPasskeySignalData(credential Credential, updatedDisplayName string) (*SignalCurrentUserDetails, errors.E) {
 	var pk passkeyCredential
 	errE := x.UnmarshalWithoutUnknownFields(credential.Data, &pk)
 	if errE != nil {
@@ -439,7 +447,7 @@ func (s *Service) getPasskeySignalData(credential Credential, updatedDisplayName
 	pk.userID = credential.ID
 	pk.displayName = updatedDisplayName
 
-	return &CredentialSignalData{
+	return &SignalCurrentUserDetails{
 		RPID:        s.passkeyProvider().Config.RPID,
 		UserID:      pk.WebAuthnID(),
 		Name:        pk.WebAuthnName(),
@@ -447,13 +455,9 @@ func (s *Service) getPasskeySignalData(credential Credential, updatedDisplayName
 	}, nil
 }
 
-func (s *Service) getPasskeySignalUnknownData(credential *Credential) (*CredentialSignalUnknownData, errors.E) {
-	credentialIDBytes, err := base64.RawURLEncoding.DecodeString(credential.ProviderID)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	return &CredentialSignalUnknownData{
+func (s *Service) getPasskeySignalUnknownData(credentialID []byte) *SignalUnknownCredential {
+	return &SignalUnknownCredential{
 		RPID:         s.passkeyProvider().Config.RPID,
-		CredentialID: credentialIDBytes,
-	}, nil
+		CredentialID: credentialID,
+	}
 }

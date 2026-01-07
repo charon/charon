@@ -101,7 +101,7 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 	if preservedEmailOrUsername == "" {
 		var ve *validationError
 		if errors.As(errE, &ve) {
-			s.flowError(w, req, flow, ve.Code, errE)
+			s.flowError(w, req, flow, ve.Code, errE, nil)
 		} else {
 			s.InternalServerErrorWithError(w, req, errE)
 		}
@@ -137,6 +137,7 @@ func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Req
 		Passkey:            nil,
 		Password:           newPasswordEncryptionResponse(publicKeyBytes, nonce, overhead),
 		Error:              "",
+		SignalUnknown:      nil,
 	}, nil)
 }
 
@@ -197,12 +198,12 @@ func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.
 
 	plainPassword, errE = normalizePassword(plainPassword)
 	if errE != nil {
-		s.flowError(w, req, flow, ErrorCodeInvalidPassword, errE)
+		s.flowError(w, req, flow, ErrorCodeInvalidPassword, errE, nil)
 		return
 	}
 
 	if len(plainPassword) < passwordMinLength {
-		s.flowError(w, req, flow, ErrorCodeShortPassword, nil)
+		s.flowError(w, req, flow, ErrorCodeShortPassword, nil, nil)
 		return
 	}
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DeepReadonly } from "vue"
 
-import type { CredentialPublic, CredentialRenameRequest, CredentialResponse, CredentialSignalData } from "@/types"
+import type { CredentialPublic, CredentialRenameRequest, CredentialResponse, SignalCurrentUserDetails } from "@/types"
 
 import { nextTick, onBeforeUnmount, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
@@ -130,8 +130,8 @@ async function onSubmit() {
     }
 
     // When renaming a passkey, we try signaling to the authenticator about the updated user credential.
-    if ("signal" in response && response.signal) {
-      await signalPasskeyUpdate(response.signal)
+    if ("signal" in response && response.signal.update) {
+      await signalPasskeyUpdate(response.signal.update)
       if (abortController.signal.aborted) {
         return
       }
@@ -150,7 +150,7 @@ async function onSubmit() {
   }
 }
 
-async function signalPasskeyUpdate(signal: CredentialSignalData) {
+async function signalPasskeyUpdate(signal: SignalCurrentUserDetails) {
   // PublicKeyCredential.signalCurrentUserDetails might not be available and this is fine.
   await PublicKeyCredential.signalCurrentUserDetails?.(signal)
 }

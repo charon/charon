@@ -10,6 +10,7 @@ import { postJSON } from "@/api"
 import Button from "@/components/Button.vue"
 import { processResponse } from "@/flow"
 import { useProgress } from "@/progress"
+import { signalPasskeyUnknown } from "@/utils.ts"
 
 const props = defineProps<{
   flow: Flow
@@ -106,6 +107,17 @@ async function onAfterEnter() {
       }
       // processResponse should move the flow to the next step.
       if (processResponse(router, complete, props.flow, progress, abortController)) {
+        return
+      }
+      if ("error" in complete && complete.error === "noAccount") {
+        // Signal browser to delete the unknown passkey.
+        if ("signalUnknown" in complete && complete.signalUnknown) {
+          await signalPasskeyUnknown(complete.signalUnknown)
+          if (abortController.signal.aborted) {
+            return
+          }
+        }
+        props.flow.forward("passkeySignup")
         return
       }
       throw new Error("unexpected response")

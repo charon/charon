@@ -32,7 +32,8 @@ type AuthFlowResponse struct {
 	Passkey            *AuthFlowResponsePasskey            `json:"passkey,omitempty"`
 	Password           *AuthFlowResponsePassword           `json:"password,omitempty"`
 
-	Error ErrorCode `json:"error,omitempty"`
+	Error         ErrorCode                `json:"error,omitempty"`
+	SignalUnknown *SignalUnknownCredential `json:"signalUnknown,omitempty"`
 }
 
 // ErrorCode represents the type of the error.
@@ -50,7 +51,7 @@ const (
 	ErrorCodeShortPassword          ErrorCode = "shortPassword"
 )
 
-func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *flow, errorCode ErrorCode, failureErr errors.E) {
+func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *flow, errorCode ErrorCode, failureErr errors.E, signalUnknown *SignalUnknownCredential) {
 	ctx := req.Context()
 
 	if failureErr == nil {
@@ -69,6 +70,7 @@ func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *flow
 		Passkey:            nil,
 		Password:           nil,
 		Error:              errorCode,
+		SignalUnknown:      signalUnknown,
 	}
 
 	encoded := s.PrepareJSON(w, req, response, nil)
@@ -129,6 +131,7 @@ func (s *Service) AuthFlowGetGet(w http.ResponseWriter, req *http.Request, param
 		Passkey:            nil,
 		Password:           nil,
 		Error:              "",
+		SignalUnknown:      nil,
 	}
 
 	// If auth step was successful (session is not nil), then we require that the session matches the one made by the flow.
@@ -351,6 +354,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 			Passkey:            nil,
 			Password:           nil,
 			Error:              "",
+			SignalUnknown:      nil,
 		}
 
 		s.WriteJSON(w, req, response, nil)
@@ -417,6 +421,7 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 			Passkey:            nil,
 			Password:           nil,
 			Error:              "",
+			SignalUnknown:      nil,
 		}
 
 		encoded := s.PrepareJSON(w, req, response, nil)
@@ -509,6 +514,7 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 		Passkey:            nil,
 		Password:           nil,
 		Error:              "",
+		SignalUnknown:      nil,
 	}, nil)
 }
 
@@ -555,6 +561,7 @@ func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, 
 		Passkey:            nil,
 		Password:           nil,
 		Error:              "",
+		SignalUnknown:      nil,
 	}, nil)
 }
 
@@ -616,6 +623,7 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 		Passkey:            nil,
 		Password:           nil,
 		Error:              "",
+		SignalUnknown:      nil,
 	}, nil)
 }
 
@@ -668,5 +676,6 @@ func (s *Service) AuthFlowRedirectPost(w http.ResponseWriter, req *http.Request,
 		Passkey:            nil,
 		Password:           nil,
 		Error:              "",
+		SignalUnknown:      nil,
 	}, nil)
 }
