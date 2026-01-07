@@ -204,7 +204,7 @@ export async function checkpoint(page: Page, name: string, options: CheckpointOp
   //       See: https://github.com/microsoft/playwright/issues/23502
   const screenshotPath = test.info().snapshotPath(`${name}.png`, { kind: "screenshot" })
   const screenshotOptions = {
-    fullPage: options?.fullPage,
+    fullPage: options?.fullPage ?? true,
     mask: options?.mask,
     clip: options?.clip,
     ...(existsSync(screenshotPath) ? {} : { path: screenshotPath }),
