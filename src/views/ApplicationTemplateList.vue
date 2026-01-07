@@ -62,10 +62,9 @@ onBeforeMount(async () => {
       <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <div class="flex flex-row items-center justify-between gap-4">
           <h1 class="text-2xl font-bold">{{ t("common.entities.applicationTemplates") }}</h1>
-          <ButtonLink id="applicationtemplatelist-button-create" v-if="isSignedIn()" :to="{ name:
-          'ApplicationTemplateCreate' }"
-                      :progress="progress"
-                       primary>{{ t("common.buttons.create") }}</ButtonLink>
+          <ButtonLink v-if="isSignedIn()" id="applicationtemplatelist-button-create" :to="{ name: 'ApplicationTemplateCreate' }" :progress="progress" primary>{{
+            t("common.buttons.create")
+          }}</ButtonLink>
         </div>
       </div>
       <div v-if="dataLoading" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">{{ t("common.data.dataLoading") }}</div>

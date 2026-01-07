@@ -700,9 +700,9 @@ async function onAddAdmin() {
             <div v-if="basicUnexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="basicUpdated" class="mt-4 text-success-600">{{ t("views.ApplicationTemplateGet.applicationsUpdated") }}</div>
             <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
-              <Button id="applicatiomtemplateget-update-button" type="submit" primary :disabled="!canBasicSubmit()"
-                      :progress="progress">{{
-                  t("common.buttons.update") }}</Button>
+              <Button id="applicatiomtemplateget-update-button" type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">{{
+                t("common.buttons.update")
+              }}</Button>
             </div>
           </form>
           <template v-if="metadata.can_update || variables.length || canVariablesSubmit() || variablesUnexpectedError || variablesUpdated">
@@ -881,12 +881,12 @@ async function onAddAdmin() {
                 </li>
               </ol>
               <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
-                <Button id="applicationtemplateget-button-addpublicclient" type="button"
-                        @click.prevent="onAddClientPublic">{{
-                    t("views.ApplicationTemplateGet.addClient") }}</Button>
-                <Button id="applicationtemplateget-button-updatepublicclient" type="submit" primary
-                        :disabled="!canClientsPublicSubmit()" :progress="progress">{{
-                    t("common.buttons.update") }}</Button>
+                <Button id="applicationtemplateget-button-addpublicclient" type="button" @click.prevent="onAddClientPublic">{{
+                  t("views.ApplicationTemplateGet.addClient")
+                }}</Button>
+                <Button id="applicationtemplateget-button-updatepublicclient" type="submit" primary :disabled="!canClientsPublicSubmit()" :progress="progress">{{
+                  t("common.buttons.update")
+                }}</Button>
               </div>
             </form>
           </template>

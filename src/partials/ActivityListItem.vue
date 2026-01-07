@@ -317,8 +317,8 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                   </template>
                 </i18n-t>
               </div>
-              <div class="text-xs text-neutral-500">{{ getFormattedTimestamp(doc.timestamp) }}</div>
-              <div class="text-xs text-neutral-500">Session: {{ doc.sessionId }}</div>
+              <div class="activitylistitem-text-timestamp text-xs text-neutral-500">{{ getFormattedTimestamp(doc.timestamp) }}</div>
+              <div class="activitylistitem-text-session text-xs text-neutral-500">Session: {{ doc.sessionId }}</div>
             </div>
           </div>
         </div>
