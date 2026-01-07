@@ -166,9 +166,9 @@ func TestCredentialManagement(t *testing.T) {
 	assert.Equal(t, "My renamed passkey", passkeyCred.DisplayName)
 	assert.False(t, passkeyCred.Verified)
 
-	credentialRemove(t, ts, service, accessToken, usernameCredentialID)
-	credentialRemove(t, ts, service, accessToken, emailCredentialID)
-	credentialRemove(t, ts, service, accessToken, oidcCredentialID)
+	credentialRemove(t, ts, service, accessToken, usernameCredentialID, false)
+	credentialRemove(t, ts, service, accessToken, emailCredentialID, false)
+	credentialRemove(t, ts, service, accessToken, oidcCredentialID, false)
 
 	// Test no-op w/ passkey rename.
 	resp := credentialRenameStart(t, ts, service, accessToken, passkeyCredentialID, "My renamed passkey") //nolint:bodyclose
@@ -180,7 +180,7 @@ func TestCredentialManagement(t *testing.T) {
 	assert.True(t, renameResponsePasskey.Success)
 	assert.NotEmpty(t, renameResponsePasskey.Signal)
 
-	credentialRemove(t, ts, service, accessToken, passkeyCredentialID)
+	credentialRemove(t, ts, service, accessToken, passkeyCredentialID, true)
 
 	// Test ErrorCodeCredentialDisplayNameInUse, add second credential that supports renaming.
 	passwordCredentialID2 := credentialAddPassword(t, ts, service, accessToken, []byte("test4321"), " My second password ")
@@ -194,8 +194,8 @@ func TestCredentialManagement(t *testing.T) {
 	assert.False(t, renameResponsePassword.Success)
 	assert.Empty(t, renameResponsePassword.Signal)
 
-	credentialRemove(t, ts, service, accessToken, passwordCredentialID)
-	credentialRemove(t, ts, service, accessToken, passwordCredentialID2)
+	credentialRemove(t, ts, service, accessToken, passwordCredentialID, false)
+	credentialRemove(t, ts, service, accessToken, passwordCredentialID2, false)
 
 	// TODO: We should probably not allow user to remove all credentials.
 	//       So this part of the test will probably change in the future.
@@ -382,7 +382,7 @@ func credentialAddPasskey(t *testing.T, ts *httptest.Server, service *charon.Ser
 	return *addPasskeyCompleteResponse.CredentialID, rsaKey, publicKeyID, credentialID, rawAuthData, userID
 }
 
-func credentialRemove(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string, credentialID identifier.Identifier) {
+func credentialRemove(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string, credentialID identifier.Identifier, isPasskey bool) {
 	t.Helper()
 
 	credentialRemove, errE := service.ReverseAPI("CredentialRemove", waf.Params{"id": credentialID.String()}, nil)
@@ -405,7 +405,12 @@ func credentialRemove(t *testing.T, ts *httptest.Server, service *charon.Service
 	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.Empty(t, removeResponse.Error)
 	assert.True(t, removeResponse.Success)
-	assert.Empty(t, removeResponse.Signal)
+	if isPasskey {
+		assert.Empty(t, removeResponse.Signal.Update)
+		assert.NotEmpty(t, removeResponse.Signal.Delete)
+	} else {
+		assert.Empty(t, removeResponse.Signal)
+	}
 }
 
 func credentialRenameStart(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string, credentialID identifier.Identifier, newDisplayName string) *http.Response {
@@ -444,8 +449,9 @@ func credentialRename(t *testing.T, ts *httptest.Server, service *charon.Service
 	assert.Empty(t, renameResponse.Error)
 	assert.True(t, renameResponse.Success)
 	if isPasskey {
-		assert.NotNil(t, renameResponse.Signal)
+		assert.NotEmpty(t, renameResponse.Signal.Update)
+		assert.Empty(t, renameResponse.Signal.Delete)
 	} else {
-		assert.Nil(t, renameResponse.Signal)
+		assert.Empty(t, renameResponse.Signal)
 	}
 }
