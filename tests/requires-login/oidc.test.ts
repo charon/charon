@@ -112,6 +112,7 @@ test.describe.serial("Charon OIDC Flows", () => {
     const updateApplicationButton = page.locator("#organizationget-button-applicationsupdate")
     await expect(updateApplicationButton).toBeVisible()
     await expect(page.getByText("Status: active")).toBeVisible()
+    await page.waitForTimeout(500)
     await checkpoint(page, "oidc-organization-with-activated-application")
     await updateApplicationButton.click()
 
