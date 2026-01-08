@@ -61,7 +61,7 @@ async function onAfterEnter() {
       startUrl,
       {},
       abortController.signal,
-      // We do not pass here progress on purpose because we start this automatically
+      // We do not pass here progress on purpose because we start this automatically,
       // and we want the user to be able to interact with buttons (e.g., cancel).
       null,
     )
