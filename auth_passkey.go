@@ -258,9 +258,6 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 	}, *flowPasskey.SessionData, parsedResponse)
 	if err != nil {
 		if errors.Is(err, ErrAccountNotFound) {
-			if !s.increaseAuthAttempts(w, req, flow) {
-				return
-			}
 			signalUnknown := s.getPasskeySignalUnknownData(parsedResponse.RawID)
 			s.flowError(w, req, flow, ErrorCodeNoAccount, nil, signalUnknown)
 			return
