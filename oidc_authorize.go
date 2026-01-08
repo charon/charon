@@ -222,7 +222,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 		case "email":
 			if flow.Identity.Email != "" {
 				idTokenClaims.Add("email", flow.Identity.Email)
-				// TODO: We are not yet making sure only validated addressed can be set in an identity.
+				// TODO: We are not yet making sure only confirmed addresses can be set in an identity.
 				idTokenClaims.Add("email_verified", true)
 			}
 		}
