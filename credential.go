@@ -107,8 +107,8 @@ type CredentialResponse struct {
 type SignalPasskey struct {
 	// Update is used for signalCurrentUserDetails - client-side renaming.
 	Update *SignalCurrentUserDetails `json:"update,omitempty"`
-	// Delete is used for signalUnknownCredential - client-side deletion.
-	Delete *SignalUnknownCredential `json:"delete,omitempty"`
+	// Remove is used for signalUnknownCredential - client-side removal.
+	Remove *SignalUnknownCredential `json:"remove,omitempty"`
 }
 
 // SignalCurrentUserDetails represents the payload for WebAuthn credential signalCurrentUserDetails - client-side renaming.
@@ -991,9 +991,9 @@ FoundCredential:
 		return
 	}
 
-	var signalData *SignalCurrentUserDetails
+	var signalUpdate *SignalCurrentUserDetails
 	if foundProvider == ProviderPasskey {
-		signalData, errE = s.getPasskeySignalData(account.Credentials[foundProvider][foundIndex], requestDisplayName)
+		signalUpdate, errE = s.getPasskeySignalData(account.Credentials[foundProvider][foundIndex], requestDisplayName)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
@@ -1009,7 +1009,7 @@ FoundCredential:
 				s.WriteJSON(w, req, CredentialResponse{
 					Error:   "",
 					Success: true,
-					Signal:  buildCredentialSignalResponse(signalData, nil),
+					Signal:  buildCredentialSignalResponse(signalUpdate, nil),
 				}, nil)
 				return
 			}
@@ -1033,13 +1033,13 @@ FoundCredential:
 	s.WriteJSON(w, req, CredentialResponse{
 		Error:   "",
 		Success: true,
-		Signal:  buildCredentialSignalResponse(signalData, nil),
+		Signal:  buildCredentialSignalResponse(signalUpdate, nil),
 	}, nil)
 }
 
-func buildCredentialSignalResponse(update *SignalCurrentUserDetails, unknown *SignalUnknownCredential) *SignalPasskey {
-	if update == nil && unknown == nil {
+func buildCredentialSignalResponse(update *SignalCurrentUserDetails, remove *SignalUnknownCredential) *SignalPasskey {
+	if update == nil && remove == nil {
 		return nil
 	}
-	return &SignalPasskey{Update: update, Delete: unknown}
+	return &SignalPasskey{Update: update, Remove: remove}
 }

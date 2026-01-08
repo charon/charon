@@ -528,7 +528,7 @@ export type SignalPasskey =
       update: SignalCurrentUserDetails
     }
   | {
-      delete: SignalUnknownCredential
+      remove: SignalUnknownCredential
     }
 
 export type SignalCurrentUserDetails = {

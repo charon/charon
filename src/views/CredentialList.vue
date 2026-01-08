@@ -120,9 +120,10 @@ async function onRemove(credentialId: string) {
     if (abortController.signal.aborted) {
       return
     }
+
     // Signal browser to remove passkey credential if applicable.
-    if ("signal" in response && response.signal?.delete) {
-      await signalPasskeyUnknown(response.signal.delete)
+    if ("signal" in response && response.signal && "remove" in response.signal) {
+      await signalPasskeyUnknown(response.signal.remove)
       if (abortController.signal.aborted) {
         return
       }

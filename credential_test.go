@@ -407,7 +407,7 @@ func credentialRemove(t *testing.T, ts *httptest.Server, service *charon.Service
 	assert.True(t, removeResponse.Success)
 	if isPasskey {
 		assert.Empty(t, removeResponse.Signal.Update)
-		assert.NotEmpty(t, removeResponse.Signal.Delete)
+		assert.NotEmpty(t, removeResponse.Signal.Remove)
 	} else {
 		assert.Empty(t, removeResponse.Signal)
 	}
@@ -450,7 +450,7 @@ func credentialRename(t *testing.T, ts *httptest.Server, service *charon.Service
 	assert.True(t, renameResponse.Success)
 	if isPasskey {
 		assert.NotEmpty(t, renameResponse.Signal.Update)
-		assert.Empty(t, renameResponse.Signal.Delete)
+		assert.Empty(t, renameResponse.Signal.Remove)
 	} else {
 		assert.Empty(t, renameResponse.Signal)
 	}
