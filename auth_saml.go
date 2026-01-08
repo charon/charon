@@ -516,7 +516,7 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 			ID:          identifier.New(),
 			Provider:    providerKey,
 			DisplayName: displayName,
-			Verified:    false,
+			Confirmed:   false,
 		},
 		ProviderID: credentialID,
 		Data:       jsonData,

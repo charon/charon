@@ -22,23 +22,23 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
-// Credential addition error codes.
+// Credential error codes.
 const (
-	// ErrorCodeCredentialInUse means credential (username, verified email) is in use by another account.
+	// ErrorCodeCredentialInUse means credential (username, confirmed email) is in use by another account.
 	ErrorCodeCredentialInUse ErrorCode = "credentialInUse" //nolint:gosec
 	// ErrorCodeAlreadyPresent means credential (email, username, password) is already on this account.
 	ErrorCodeAlreadyPresent               ErrorCode = "alreadyPresent"
 	ErrorCodeCredentialDisplayNameInUse   ErrorCode = "credentialDisplayNameInUse"   //nolint:gosec
 	ErrorCodeCredentialDisplayNameMissing ErrorCode = "credentialDisplayNameMissing" //nolint:gosec
-	// ErrorCodeVerificationFailed means all email verification codes have expired or maximum allowed attempts have been reached.
-	ErrorCodeVerificationFailed ErrorCode = "verificationFailed"
+	// ErrorCodeConfirmationFailed means all email confirmation codes have expired or maximum allowed attempts have been reached.
+	ErrorCodeConfirmationFailed ErrorCode = "confirmationFailed"
 )
 
 const (
-	credentialAddSessionExpiration  = flowExpiration
-	emailVerificationCodeExpiration = time.Minute * 10
+	credentialAddSessionExpiration  = time.Hour * 24
+	emailConfirmationCodeExpiration = time.Minute * 10
 	// TODO: How many attempts?
-	maxEmailVerificationAttempts = 2
+	maxEmailConfirmationAttempts = 2
 )
 
 var (
@@ -151,7 +151,7 @@ func (s *Service) addCredentialToAccount(
 			ID:          id,
 			Provider:    providerKey,
 			DisplayName: displayName,
-			// Verified is set to false for all providers, including e-mail. E-mail verification is a separate procedure.
+			// Confirmed is set to false for all providers, including e-mail. E-mail confirmation is a separate procedure.
 			Confirmed: false,
 		},
 		ProviderID: providerID,
@@ -1032,30 +1032,30 @@ type codeCredential struct {
 	WrongAttempts int       `json:"wrongAttempts"`
 }
 
-// Expired returns true if the email verification code has expired.
+// Expired returns true if the email confirmation code has expired.
 func (c codeCredential) Expired() bool {
-	return time.Now().After(c.CreatedAt.Add(emailVerificationCodeExpiration))
+	return time.Now().After(c.CreatedAt.Add(emailConfirmationCodeExpiration))
 }
 
 // MaxAttemptsReached returns true if maximum wrong attempts have been reached.
 func (c codeCredential) MaxAttemptsReached() bool {
-	return c.WrongAttempts >= maxEmailVerificationAttempts
+	return c.WrongAttempts >= maxEmailConfirmationAttempts
 }
 
-// AccountVerifiedEmailsResponse represents the response for getting verified emails
-// that can be assigned to identities and whether any unverified emails exist.
-type AccountVerifiedEmailsResponse struct {
-	Emails        []string `json:"emails"`
-	HasUnverified bool     `json:"hasUnverified"`
+// AccountConfirmedEmailsResponse represents the response for getting confirmed emails
+// that can be assigned to identities and whether any unconfirmed emails exist.
+type AccountConfirmedEmailsResponse struct {
+	Emails         []string `json:"emails"`
+	HasUnconfirmed bool     `json:"hasUnconfirmed"`
 }
 
-// CredentialVerifyEmailCompleteRequest represents the request body for the CredentialVerifyEmailCompletePost handler.
-type CredentialVerifyEmailCompleteRequest struct {
+// CredentialConfirmEmailCompleteRequest represents the request body for the CredentialConfirmEmailCompletePost handler.
+type CredentialConfirmEmailCompleteRequest struct {
 	Code string `json:"code"`
 }
 
 // cleanupCodeCredentials removes all expired or max-attempts-reached code credentials.
-// Returns true if any valid verification codes remain for given emailCredentialID.
+// Returns true if any valid confirmation codes remain for given emailCredentialID.
 func (a *Account) cleanupCodeCredentials(emailCredentialID string) (bool, errors.E) {
 	hasRemaining := false
 	filtered := a.Credentials[ProviderCode][:0]
@@ -1147,8 +1147,8 @@ func (a *Account) incrementCodeCredentialAttempts(emailCredentialID string) erro
 	return nil
 }
 
-// CredentialVerifyEmail is the frontend handler for email verification.
-func (s *Service) CredentialVerifyEmail(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// CredentialConfirmEmail is the frontend handler for email confirmation.
+func (s *Service) CredentialConfirmEmail(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
@@ -1156,8 +1156,8 @@ func (s *Service) CredentialVerifyEmail(w http.ResponseWriter, req *http.Request
 	}
 }
 
-// CredentialVerifyEmailPost is the API handler for starting email verification, POST request.
-func (s *Service) CredentialVerifyEmailPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// CredentialConfirmEmailPost is the API handler for starting email confirmation, POST request.
+func (s *Service) CredentialConfirmEmailPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -1186,7 +1186,7 @@ func (s *Service) CredentialVerifyEmailPost(w http.ResponseWriter, req *http.Req
 	}
 
 	if foundCredential.Confirmed {
-		// Nothing to do, already verified.
+		// Nothing to do, already confirmed.
 		s.WriteJSON(w, req, CredentialResponse{
 			Error:   "",
 			Success: true,
@@ -1225,7 +1225,7 @@ func (s *Service) CredentialVerifyEmailPost(w http.ResponseWriter, req *http.Req
 			Provider: ProviderCode,
 			// Store e-mail value.
 			DisplayName: foundCredential.DisplayName,
-			Confirmed:    false,
+			Confirmed:   false,
 		},
 		// Store e-mail credentials ID.
 		ProviderID: foundCredential.ID.String(),
@@ -1242,7 +1242,7 @@ func (s *Service) CredentialVerifyEmailPost(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	path, errE := s.Reverse("CredentialVerifyEmail", waf.Params{"id": credentialID.String()}, nil)
+	path, errE := s.Reverse("CredentialConfirmEmail", waf.Params{"id": credentialID.String()}, nil)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -1265,8 +1265,8 @@ func (s *Service) CredentialVerifyEmailPost(w http.ResponseWriter, req *http.Req
 	}, nil)
 }
 
-// CredentialVerifyEmailCompletePost is the API handler for completing email verification, POST request.
-func (s *Service) CredentialVerifyEmailCompletePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// CredentialConfirmEmailCompletePost is the API handler for completing email confirmation, POST request.
+func (s *Service) CredentialConfirmEmailCompletePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -1281,7 +1281,7 @@ func (s *Service) CredentialVerifyEmailCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	var request CredentialVerifyEmailCompleteRequest
+	var request CredentialConfirmEmailCompleteRequest
 	errE = x.DecodeJSONWithoutUnknownFields(req.Body, &request)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
@@ -1309,7 +1309,7 @@ func (s *Service) CredentialVerifyEmailCompletePost(w http.ResponseWriter, req *
 
 	if !hasRemaining {
 		s.WriteJSON(w, req, CredentialResponse{
-			Error:   ErrorCodeVerificationFailed,
+			Error:   ErrorCodeConfirmationFailed,
 			Success: false,
 			Signal:  nil,
 		}, nil)
@@ -1350,7 +1350,7 @@ func (s *Service) CredentialVerifyEmailCompletePost(w http.ResponseWriter, req *
 
 		if !hasRemaining {
 			s.WriteJSON(w, req, CredentialResponse{
-				Error:   ErrorCodeVerificationFailed,
+				Error:   ErrorCodeConfirmationFailed,
 				Success: false,
 				Signal:  nil,
 			}, nil)
@@ -1379,7 +1379,7 @@ func (s *Service) CredentialVerifyEmailCompletePost(w http.ResponseWriter, req *
 		return
 	}
 
-	// Verify email in code credential matches the found email credential (defensive check).
+	// Confirm email in code credential matches the found email credential (defensive check).
 	if account.Credentials[ProviderEmail][foundIndex].ID.String() != credential.ProviderID {
 		errE := errors.New("email mismatch between code credential and email credential")
 		errors.Details(errE)["id"] = credential.ID
@@ -1390,15 +1390,15 @@ func (s *Service) CredentialVerifyEmailCompletePost(w http.ResponseWriter, req *
 	}
 
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	accountWithVerifiedEmail, errE := s.getAccountByCredential(ctx, ProviderEmail, foundCredential.ProviderID)
+	accountWithConfirmedEmail, errE := s.getAccountByCredential(ctx, ProviderEmail, foundCredential.ProviderID)
 	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	if accountWithVerifiedEmail != nil {
-		// e-mail is verified on the same account, no-op.
-		if accountWithVerifiedEmail.ID == accountID {
+	if accountWithConfirmedEmail != nil {
+		// e-mail is confirmed on the same account, no-op.
+		if accountWithConfirmedEmail.ID == accountID {
 			s.WriteJSON(w, req, CredentialResponse{
 				Error:   "",
 				Success: true,
@@ -1406,7 +1406,7 @@ func (s *Service) CredentialVerifyEmailCompletePost(w http.ResponseWriter, req *
 			}, nil)
 			return
 		}
-		// Email is verified on a different account.
+		// Email is confirmed on a different account.
 		s.WriteJSON(w, req, CredentialResponse{
 			// TODO: Offer user to merge accounts.
 			Error:   ErrorCodeCredentialInUse,
@@ -1430,8 +1430,8 @@ func (s *Service) CredentialVerifyEmailCompletePost(w http.ResponseWriter, req *
 	}, nil)
 }
 
-// CredentialVerifiedEmailsGet is the API handler for getting verified email addresses of the account, GET request.
-func (s *Service) CredentialVerifiedEmailsGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// CredentialConfirmedEmailsGet is the API handler for getting confirmed email addresses of the account, GET request.
+func (s *Service) CredentialConfirmedEmailsGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	ctx := s.RequireAuthenticated(w, req)
 	if ctx == nil {
 		return
@@ -1444,19 +1444,19 @@ func (s *Service) CredentialVerifiedEmailsGet(w http.ResponseWriter, req *http.R
 		return
 	}
 
-	var verifiedEmails []string
-	hasUnverified := false
+	var confirmedEmails []string
+	hasUnconfirmed := false
 	for _, credential := range account.Credentials[ProviderEmail] {
-		if credential.Verified {
-			verifiedEmails = append(verifiedEmails, credential.DisplayName)
+		if credential.Confirmed {
+			confirmedEmails = append(confirmedEmails, credential.DisplayName)
 		} else {
-			hasUnverified = true
+			hasUnconfirmed = true
 		}
 	}
 
-	s.WriteJSON(w, req, AccountVerifiedEmailsResponse{
-		Emails:        verifiedEmails,
-		HasUnverified: hasUnverified,
+	s.WriteJSON(w, req, AccountConfirmedEmailsResponse{
+		Emails:         confirmedEmails,
+		HasUnconfirmed: hasUnconfirmed,
 	}, nil)
 }
 
@@ -1509,8 +1509,8 @@ func createEmailCredentialFromTPToken(account *Account, token map[string]interfa
 			ID:          identifier.New(),
 			Provider:    ProviderEmail,
 			DisplayName: preservedEmail,
-			// Although email_verified is a standard OIDC claim, we always add email as unverified.
-			Verified: false,
+			// Although email_verified is a standard OIDC claim, we always add email as unconfirmed.
+			Confirmed: false,
 		},
 		ProviderID: mappedEmail,
 		Data:       jsonData,

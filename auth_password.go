@@ -257,7 +257,7 @@ func (s *Service) AuthFlowPasswordCompletePostAPI(w http.ResponseWriter, req *ht
 						ID:          credential.ID,
 						Provider:    ProviderPassword,
 						DisplayName: credential.DisplayName,
-						Verified:    false,
+						Confirmed:   false,
 					},
 					ProviderID: "",
 					Data:       jsonData,
@@ -277,7 +277,7 @@ func (s *Service) AuthFlowPasswordCompletePostAPI(w http.ResponseWriter, req *ht
 		return
 	}
 
-	// Account does not exist (by username or by verified email).
+	// Account does not exist (by username or by confirmed email).
 	credentials := []Credential{}
 	if strings.Contains(mappedEmailOrUsername, "@") {
 		jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{})
@@ -292,9 +292,9 @@ func (s *Service) AuthFlowPasswordCompletePostAPI(w http.ResponseWriter, req *ht
 				ID:          identifier.New(),
 				Provider:    ProviderEmail,
 				DisplayName: flow.EmailOrUsername,
-				// We set verified to true because this credential is stored with
-				// the account only after the e-mail gets verified.
-				Verified: true,
+				// We set confirmed to true because this credential is stored with
+				// the account only after the e-mail gets confirmed.
+				Confirmed: true,
 			},
 			ProviderID: mappedEmailOrUsername,
 			Data:       jsonData,
@@ -311,7 +311,7 @@ func (s *Service) AuthFlowPasswordCompletePostAPI(w http.ResponseWriter, req *ht
 				ID:          identifier.New(),
 				Provider:    ProviderUsername,
 				DisplayName: flow.EmailOrUsername,
-				Verified:    false,
+				Confirmed:   false,
 			},
 			ProviderID: mappedEmailOrUsername,
 			Data:       jsonData,
@@ -338,7 +338,7 @@ func (s *Service) AuthFlowPasswordCompletePostAPI(w http.ResponseWriter, req *ht
 			Provider: ProviderPassword,
 			// TODO: Translate this to user's language.
 			DisplayName: "default password",
-			Verified:    false,
+			Confirmed:   false,
 		},
 		ProviderID: "",
 		Data:       jsonData,
@@ -346,7 +346,7 @@ func (s *Service) AuthFlowPasswordCompletePostAPI(w http.ResponseWriter, req *ht
 
 	if strings.Contains(mappedEmailOrUsername, "@") {
 		// Account does not exist and we do have an e-mail address.
-		// We send the code to verify the e-mail address.
+		// We send the code to confirmed the e-mail address.
 		s.sendCode(w, req, flow, true, flow.EmailOrUsername, []string{flow.EmailOrUsername}, nil, credentials)
 		return
 	}

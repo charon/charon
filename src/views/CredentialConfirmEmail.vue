@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CredentialPublic, CredentialResponse, CredentialVerifyEmailCompleteRequest } from "@/types"
+import type { CredentialConfirmEmailCompleteRequest, CredentialPublic, CredentialResponse } from "@/types"
 
 import { onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
@@ -35,8 +35,8 @@ function getErrorMessage(errorCode: string) {
       return t("common.errors.invalidCode")
     case "credentialInUse":
       return t("common.errors.credentialInUse.email")
-    case "verificationFailed":
-      return t("common.errors.verificationFailed")
+    case "confirmationFailed":
+      return t("common.errors.confirmationFailed")
     default:
       throw new Error(`unexpected error code: ${errorCode}`)
   }
@@ -73,11 +73,11 @@ onBeforeUnmount(() => {
 
 onMounted(async () => {
   await fetchCredential()
-  await startVerification()
+  await startConfirmation()
 
   if (!codeError.value) {
     if (codeFromHash.value) {
-      document.getElementById("credentialverifyemail-button-submitcode")?.focus()
+      document.getElementById("credentialconfirmemail-button-submitcode")?.focus()
     } else {
       document.getElementById("code")?.focus()
     }
@@ -118,7 +118,7 @@ async function fetchCredential() {
     if (abortController.signal.aborted) {
       return
     }
-    console.error("CredentialVerifyEmail.fetchCredential", error)
+    console.error("CredentialConfirmEmail.fetchCredential", error)
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   } finally {
@@ -126,7 +126,7 @@ async function fetchCredential() {
   }
 }
 
-async function startVerification() {
+async function startConfirmation() {
   if (abortController.signal.aborted) {
     return
   }
@@ -136,7 +136,7 @@ async function startVerification() {
 
   try {
     const url = router.apiResolve({
-      name: "CredentialVerifyEmail",
+      name: "CredentialConfirmEmail",
       params: { id: props.id },
     }).href
 
@@ -154,7 +154,7 @@ async function startVerification() {
     if (abortController.signal.aborted) {
       return
     }
-    console.error("CredentialVerifyEmail.startVerification", error)
+    console.error("CredentialConfirmEmail.startConfirmation", error)
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   } finally {
@@ -181,7 +181,7 @@ async function onSubmit() {
   progress.value += 1
   try {
     const url = router.apiResolve({
-      name: "CredentialVerifyEmailComplete",
+      name: "CredentialConfirmEmailComplete",
       params: { id: props.id },
     }).href
 
@@ -189,7 +189,7 @@ async function onSubmit() {
       url,
       {
         code: code.value,
-      } as CredentialVerifyEmailCompleteRequest,
+      } as CredentialConfirmEmailCompleteRequest,
       abortController.signal,
       progress,
     )
@@ -208,7 +208,7 @@ async function onSubmit() {
     if (abortController.signal.aborted) {
       return
     }
-    console.error("CredentialVerifyEmail.onSubmit", error)
+    console.error("CredentialConfirmEmail.onSubmit", error)
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   } finally {
@@ -229,7 +229,7 @@ async function onResend() {
     codeFromHash.value = false
 
     const url = router.apiResolve({
-      name: "CredentialVerifyEmail",
+      name: "CredentialConfirmEmail",
       params: { id: props.id },
     }).href
 
@@ -254,7 +254,7 @@ async function onResend() {
     if (abortController.signal.aborted) {
       return
     }
-    console.error("CredentialVerifyEmail.onResend", error)
+    console.error("CredentialConfirmEmail.onResend", error)
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   } finally {
@@ -273,7 +273,7 @@ async function onResendAfterFailure() {
   codeFromHash.value = false
   sendCounter.value = 1
 
-  await startVerification()
+  await startConfirmation()
 
   document.getElementById("code")?.focus()
 }
@@ -287,24 +287,24 @@ async function onResendAfterFailure() {
     <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,65ch)] gap-1 sm:m-4 sm:gap-4">
       <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <div class="flex flex-row items-center justify-between gap-4">
-          <h1 class="text-2xl font-bold">{{ t("views.CredentialVerifyEmail.verifyEmail") }}</h1>
+          <h1 class="text-2xl font-bold">{{ t("views.CredentialConfirmEmail.confirmEmail") }}</h1>
         </div>
       </div>
 
       <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <div v-if="codeError === 'credentialInUse'" class="text-error-600">{{ t("common.errors.credentialInUse.email") }}</div>
-        <div v-else-if="codeError === 'verificationFailed'" class="text-error-600">{{ getErrorMessage("verificationFailed") }}</div>
-        <template v-if="codeError === 'credentialInUse' || codeError === 'verificationFailed'">
+        <div v-else-if="codeError === 'confirmationFailed'" class="text-error-600">{{ getErrorMessage("confirmationFailed") }}</div>
+        <template v-if="codeError === 'credentialInUse' || codeError === 'confirmationFailed'">
           <div class="flex flex-row justify-between gap-4">
             <Button type="button" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
             <Button
-              v-if="codeError === 'verificationFailed'"
-              id="credentialverifyemail-button-resendonfailed"
+              v-if="codeError === 'confirmationFailed'"
+              id="credentialconfirmemail-button-resendonfailed"
               type="button"
               primary
               :progress="progress"
               @click.prevent="onResendAfterFailure"
-              >{{ t("views.CredentialVerifyEmail.resendButton") }}</Button
+              >{{ t("views.CredentialConfirmEmail.resendButton") }}</Button
             >
           </div>
         </template>
@@ -312,15 +312,15 @@ async function onResendAfterFailure() {
         <template v-else>
           <div class="flex flex-col">
             <label v-if="codeFromHash" for="code" class="mb-1">
-              <i18n-t keypath="views.CredentialVerifyEmail.codeFromHashEmail" scope="global">
+              <i18n-t keypath="views.CredentialConfirmEmail.codeFromHashEmail" scope="global">
                 <template #strongEmail
                   ><strong>{{ email }}</strong></template
                 >
               </i18n-t>
             </label>
             <label v-else-if="email" for="code" class="mb-1">
-              <i18n-t keypath="views.CredentialVerifyEmail.codeSentEmail" scope="global">
-                <template #sentCount>{{ t("views.CredentialVerifyEmail.sentCount", sendCounter) }}</template>
+              <i18n-t keypath="views.CredentialConfirmEmail.codeSentEmail" scope="global">
+                <template #sentCount>{{ t("views.CredentialConfirmEmail.sentCount", sendCounter) }}</template>
                 <template #strongEmail
                   ><strong>{{ email }}</strong></template
                 >
@@ -336,18 +336,18 @@ async function onResendAfterFailure() {
               <!--
               Button is on purpose not disabled on unexpectedError so that user can retry.
               -->
-              <Button id="credentialverifyemail-button-submitcode" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{
-                t("common.buttons.verify")
+              <Button id="credentialconfirmemail-button-submitcode" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{
+                t("common.buttons.confirm")
               }}</Button>
             </form>
           </div>
           <div v-if="codeError" class="mt-4 text-error-600">{{ getErrorMessage(codeError) }}</div>
           <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
-          <div v-else-if="codeFromHash" class="mt-4">{{ t("views.CredentialVerifyEmail.confirmCode") }}</div>
-          <div v-else class="mt-4">{{ t("views.CredentialVerifyEmail.waitForCode") }}</div>
+          <div v-else-if="codeFromHash" class="mt-4">{{ t("views.CredentialConfirmEmail.confirmCode") }}</div>
+          <div v-else class="mt-4">{{ t("views.CredentialConfirmEmail.waitForCode") }}</div>
           <div class="mt-4 flex flex-row justify-between gap-4">
             <Button type="button" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
-            <Button type="button" :progress="progress" @click.prevent="onResend">{{ t("views.CredentialVerifyEmail.resendButton") }}</Button>
+            <Button type="button" :progress="progress" @click.prevent="onResend">{{ t("views.CredentialConfirmEmail.resendButton") }}</Button>
           </div>
         </template>
       </div>

@@ -190,7 +190,7 @@ func (i *IdentityPublic) Validate(ctx context.Context, existing *IdentityPublic)
 		i.Username = username
 	}
 
-	// E-mails can only be set from verified email credentials. This is enforced during identity creation
+	// E-mails can only be set from confirmed email credentials. This is enforced during identity creation
 	// in makeIdentityFromCredentials() and validating identity in Identity.Validate().
 	// Here we just validate the format.
 	if i.Email != "" {
@@ -823,10 +823,10 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 			return errE
 		}
 
-		verifiedEmails := account.GetEmailAddresses(true)
-		if !slices.Contains(verifiedEmails, identity.Email) {
-			ErrIdentityEmailNotVerified := errors.Base("email not verified in account")
-			return errors.WithDetails(ErrIdentityEmailNotVerified, "id", *identity.ID, "email", identity.Email)
+		confirmedEmails := account.GetEmailAddresses(true)
+		if !slices.Contains(confirmedEmails, identity.Email) {
+			ErrIdentityEmailNotConfirmed := errors.Base("email not confirmed in account")
+			return errors.WithDetails(ErrIdentityEmailNotConfirmed, "id", *identity.ID, "email", identity.Email)
 		}
 	}
 
@@ -1334,9 +1334,9 @@ func (s *Service) IdentityCreatePostAPI(w http.ResponseWriter, req *http.Request
 			return
 		}
 
-		verifiedEmails := account.GetEmailAddresses(true)
-		if !slices.Contains(verifiedEmails, identity.Email) {
-			errE := errors.New("email not verified in account")
+		confirmedEmails := account.GetEmailAddresses(true)
+		if !slices.Contains(confirmedEmails, identity.Email) {
+			errE := errors.New("email not confirmed in account")
 			errors.Details(errE)["email"] = identity.Email
 			s.BadRequestWithError(w, req, errE)
 			return

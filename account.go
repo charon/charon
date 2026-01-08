@@ -25,8 +25,8 @@ type CredentialPublic struct {
 	// the original (normalized but not mapped) credential value itself. Otherwise, user can rename it.
 	// Unique per account per provider.
 	DisplayName string `json:"displayName"`
-	// Verified bool is relevant for e-mail addresses, otherwise false.
-	Verified bool `json:"verified,omitempty"`
+	// Confirmed bool is relevant for e-mail addresses, otherwise false.
+	Confirmed bool `json:"confirmed,omitempty"`
 }
 
 // Ref returns the credential reference.
@@ -154,11 +154,11 @@ func (a *Account) HasCredentialDisplayName(provider Provider, displayName string
 	return false
 }
 
-// GetEmailAddresses returns (verifiedOnly) email addresses of the account.
-func (a *Account) GetEmailAddresses(verifiedOnly bool) []string {
+// GetEmailAddresses returns (confirmedOnly) email addresses of the account.
+func (a *Account) GetEmailAddresses(confirmedOnly bool) []string {
 	emails := make([]string, 0, len(a.Credentials[ProviderEmail]))
 	for _, credential := range a.Credentials[ProviderEmail] {
-		if verifiedOnly && !credential.Verified {
+		if confirmedOnly && !credential.Confirmed {
 			continue
 		}
 		// Not-mapped e-mail address is stored in the display name.
@@ -199,7 +199,7 @@ func (s *Service) getAccountByCredential(ctx context.Context, provider Provider,
 			continue
 		}
 		if provider == ProviderEmail {
-			if !credential.Verified {
+			if !credential.Confirmed {
 				continue
 			}
 		}

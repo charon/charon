@@ -512,7 +512,7 @@ export type CredentialPublic = {
   id: string
   provider: string
   displayName: string
-  verified?: boolean
+  confirmed?: boolean
 }
 
 export type Credentials = CredentialRef[]
@@ -586,10 +586,10 @@ export type SignalUnknownCredential = {
   credentialId: string
 }
 
-export type AccountVerifiedEmailsResponse = {
+export type AccountConfirmedEmailsResponse = {
   emails: string[]
-  hasUnverified: boolean
+  hasUnconfirmed: boolean
 }
-export type CredentialVerifyEmailCompleteRequest = {
+export type CredentialConfirmEmailCompleteRequest = {
   code: string
 }

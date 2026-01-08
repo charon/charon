@@ -157,7 +157,7 @@ func (s *Service) sendCodeForExistingAccount(
 ) {
 	var emails []string
 	if strings.Contains(mappedEmailOrUsername, "@") {
-		// We know that such credential must exist and is verified on this account
+		// We know that such credential must exist and is confirmed on this account
 		// because we found this account using getAccountByCredential with mappedEmailOrUsername.
 		credential := account.GetCredential(ProviderEmail, mappedEmailOrUsername)
 		if credential == nil {
@@ -338,7 +338,7 @@ func (s *Service) AuthFlowCodeStartPostAPI(w http.ResponseWriter, req *http.Requ
 		return
 	}
 
-	// Account does not exist (by username or by verified email).
+	// Account does not exist (by username or by confirmed email).
 	// We can send a code only if we have an e-mail address.
 	if !strings.Contains(mappedEmailOrUsername, "@") {
 		s.flowError(w, req, flow, ErrorCodeNoAccount, nil, nil)
@@ -356,9 +356,9 @@ func (s *Service) AuthFlowCodeStartPostAPI(w http.ResponseWriter, req *http.Requ
 			ID:          identifier.New(),
 			Provider:    ProviderEmail,
 			DisplayName: preservedEmailOrUsername,
-			// We set verified to true because this credential is stored with
-			// the account only after the e-mail gets verified.
-			Verified: true,
+			// We set confirmed to true because this credential is stored with
+			// the account only after the e-mail gets confirmed.
+			Confirmed: true,
 		},
 		ProviderID: mappedEmailOrUsername,
 		Data:       jsonData,

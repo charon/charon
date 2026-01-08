@@ -242,7 +242,7 @@ func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, 
 		if existingCred != nil {
 			for i, cred := range account.Credentials[charon.ProviderEmail] {
 				if cred.ProviderID == testEmail {
-					account.Credentials[charon.ProviderEmail][i].Verified = true
+					account.Credentials[charon.ProviderEmail][i].Confirmed = true
 					break
 				}
 			}
@@ -257,7 +257,7 @@ func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, 
 						ID:          identifier.New(),
 						Provider:    charon.ProviderEmail,
 						DisplayName: testEmail,
-						Verified:    true,
+						Confirmed:   true,
 					},
 					ProviderID: testEmail,
 					Data:       jsonData,

@@ -3,7 +3,7 @@ import type { DeepReadonly, Ref } from "vue"
 import type { ComponentExposed } from "vue-component-type-helpers"
 
 import type {
-  AccountVerifiedEmailsResponse,
+  AccountConfirmedEmailsResponse,
   Identity,
   IdentityOrganization as IdentityOrganizationType,
   IdentityRef,
@@ -52,8 +52,8 @@ const basicUnexpectedError = ref("")
 const basicUpdated = ref(false)
 const username = ref("")
 const email = ref("")
-const verifiedEmails = ref<string[]>([])
-const hasUnverified = ref(false)
+const confirmedEmails = ref<string[]>([])
+const hasUnconfirmed = ref(false)
 const givenName = ref("")
 const fullName = ref("")
 const pictureUrl = ref("")
@@ -178,14 +178,14 @@ async function loadData(update: "init" | "basic" | "users" | "admins" | "organiz
 
     if (metadata.value.can_update) {
       const emailsUrl = router.apiResolve({
-        name: "CredentialVerifiedEmails",
+        name: "CredentialConfirmedEmails",
       }).href
-      const emailsResponse = await getURL<AccountVerifiedEmailsResponse>(emailsUrl, null, abortController.signal, progress)
+      const emailsResponse = await getURL<AccountConfirmedEmailsResponse>(emailsUrl, null, abortController.signal, progress)
       if (abortController.signal.aborted) {
         return
       }
-      verifiedEmails.value = emailsResponse.doc.emails || []
-      hasUnverified.value = emailsResponse.doc.hasUnverified || false
+      confirmedEmails.value = emailsResponse.doc.emails || []
+      hasUnconfirmed.value = emailsResponse.doc.hasUnconfirmed || false
     }
   } catch (error) {
     if (abortController.signal.aborted) {
@@ -492,12 +492,12 @@ const WithOrganizationDoc = WithDocument<Organization>
                   <RadioButton id="identityget-radio-email-current" v-model="email" :value="identity.email" :progress="progress" class="mx-2" />
                   <label for="identityget-radio-email-current" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{ identity.email }}</label>
                 </template>
-                <!-- Show available verifiedEmails, skipping identities email shown above, if found. -->
-                <template v-for="verifiedEmail in verifiedEmails" :key="verifiedEmail">
-                  <template v-if="verifiedEmail !== identity?.email">
-                    <RadioButton :id="`identityget-radio-email-${verifiedEmail}`" v-model="email" :value="verifiedEmail" :progress="progress" class="mx-2" />
-                    <label :for="`identityget-radio-email-${verifiedEmail}`" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
-                      verifiedEmail
+                <!-- Show available confirmedEmails, skipping identities email shown above, if found. -->
+                <template v-for="confirmedEmail in confirmedEmails" :key="confirmedEmail">
+                  <template v-if="confirmedEmail !== identity?.email">
+                    <RadioButton :id="`identityget-radio-email-${confirmedEmail}`" v-model="email" :value="confirmedEmail" :progress="progress" class="mx-2" />
+                    <label :for="`identityget-radio-email-${confirmedEmail}`" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
+                      confirmedEmail
                     }}</label>
                   </template>
                 </template>
@@ -507,17 +507,17 @@ const WithOrganizationDoc = WithDocument<Organization>
                   t("views.IdentityGet.selectNoEmail")
                 }}</label>
               </div>
-              <div v-if="hasUnverified" class="mt-1 text-sm text-slate-700">
-                <i18n-t keypath="views.IdentityGet.unverifiedEmailsHint" scope="global">
+              <div v-if="hasUnconfirmed" class="mt-1 text-sm text-slate-700">
+                <i18n-t keypath="views.IdentityGet.unconfirmedEmailsHint" scope="global">
                   <template #link>
-                    <router-link :to="{ name: 'CredentialList' }" class="link">{{ t("views.IdentityGet.verifyEmailsLink") }}</router-link>
+                    <router-link :to="{ name: 'CredentialList' }" class="link">{{ t("views.IdentityGet.confirmEmailsLink") }}</router-link>
                   </template>
                 </i18n-t>
               </div>
-              <div v-else-if="verifiedEmails.length === 0" class="mt-1 text-sm text-slate-700">
+              <div v-else-if="confirmedEmails.length === 0" class="mt-1 text-sm text-slate-700">
                 <i18n-t keypath="views.IdentityGet.noEmailsHint" scope="global">
                   <template #link>
-                    <router-link :to="{ name: 'CredentialList' }" class="link">{{ t("views.IdentityGet.addAndVerifyLink") }}</router-link>
+                    <router-link :to="{ name: 'CredentialList' }" class="link">{{ t("views.IdentityGet.addAndConfirmLink") }}</router-link>
                   </template>
                 </i18n-t>
               </div>

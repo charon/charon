@@ -27,7 +27,7 @@
       "block": "Block",
       "unblock": "Unblock",
       "rename": "Rename",
-      "verify": "Verify"
+      "confirm": "Confirm"
     },
     "errors": {
       "unexpected": "Unexpected error. Please try again.",
@@ -56,7 +56,7 @@
       },
       "credentialDisplayNameInUse": "Display name is already in use.",
       "credentialDisplayNameMissing": "Display name is missing.",
-      "verificationFailed": "Verification failed. Resend a code to try again."
+      "confirmationFailed": "ConfirmationFailed failed. Resend a code to try again."
     },
     "labels": {
       "optional": "(optional)",
@@ -69,7 +69,7 @@
       "blocked": "blocked",
       "shared": "shared",
       "individual": "individual",
-      "verified": "verified"
+      "confirmed": "confirmed"
     },
     "data": {
       "dataLoading": "Loading...",
@@ -324,10 +324,10 @@
       "addedOrganizations": "Added organizations",
       "availableOrganizations": "Available organizations",
       "selectNoEmail": "none",
-      "unverifiedEmailsHint": "There are unverified e-mail addresses. You need to {link} before you can use them.",
-      "verifyEmailsLink": "verify them",
-      "noEmailsHint": "There are no verified e-mail addresses available. You need to {link} before you can use it.",
-      "addAndVerifyLink": "add one and verify it"
+      "unconfirmedEmailsHint": "There are unconfirmed e-mail addresses. You need to {link} before you can use them.",
+      "confirmEmailsLink": "confirm them",
+      "noEmailsHint": "There are no confirmed e-mail addresses available. You need to {link} before you can use it.",
+      "addAndConfirmLink": "add one and confirm it"
     },
     "IdentityList": {
       "noIdentitiesCreate": "There are no identities. Create the first one.",
@@ -399,8 +399,8 @@
       "noCredentialsSignIn": "There are no authentication methods. Sign-in or sign-up to create the first one.",
       "verify": "Verify"
     },
-    "CredentialVerifyEmail": {
-      "verifyEmail": "Verify email address",
+    "CredentialConfirmEmail": {
+      "confirmEmail": "Confirm email address",
       "resendButton": "@:partials.AuthCode.resendButton",
       "codeSentEmail": "@:partials.AuthCode.codeSentEmail",
       "codeFromHashEmail": "@:partials.AuthCode.codeFromHashEmail",

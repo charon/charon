@@ -31,11 +31,11 @@ func assertEmailAndPasswordCredential(t *testing.T, ts *httptest.Server, service
 		switch credential.Provider {
 		case charon.ProviderEmail:
 			assert.Equal(t, email, credential.DisplayName)
-			// Code verification marks email as verified.
-			assert.True(t, credential.Verified)
+			// Code confirmation marks email as confirmed.
+			assert.True(t, credential.Confirmed)
 		case charon.ProviderPassword:
 			assert.Equal(t, "default password", credential.DisplayName)
-			assert.False(t, credential.Verified)
+			assert.False(t, credential.Confirmed)
 		case charon.ProviderUsername, charon.ProviderPasskey, charon.ProviderCode:
 			require.Fail(t, "unexpected credential provider", "provider: %s", credential.Provider)
 		}
@@ -141,29 +141,29 @@ func TestCredentialManagement(t *testing.T) {
 	oidcCred := credentialMap[oidcCredentialID]
 	assert.Equal(t, "oidcTesting", string(oidcCred.Provider))
 	assert.Equal(t, "My OIDC Login", oidcCred.DisplayName)
-	assert.False(t, oidcCred.Verified)
+	assert.False(t, oidcCred.Confirmed)
 
 	usernameCred := credentialMap[usernameCredentialID]
 	assert.Equal(t, charon.ProviderUsername, usernameCred.Provider)
 	assert.Equal(t, "MyCustomUsErNaMe", usernameCred.DisplayName)
-	assert.False(t, usernameCred.Verified)
+	assert.False(t, usernameCred.Confirmed)
 
 	emailCred := credentialMap[emailCredentialID]
 	assert.Equal(t, charon.ProviderEmail, emailCred.Provider)
 	assert.Equal(t, "EmAiL@example.com", emailCred.DisplayName)
-	// Email credential is initially added as unverified.
-	assert.False(t, emailCred.Verified)
-	// TODO: after adding email verification, verify email and test for verified true.
+	// Email credential is initially added as unconfirmed.
+	assert.False(t, emailCred.Confirmed)
+	// TODO: after adding email confirmation, confirm email and test for confirmation true.
 
 	passwordCred := credentialMap[passwordCredentialID]
 	assert.Equal(t, charon.ProviderPassword, passwordCred.Provider)
 	assert.Equal(t, "My super secret password", passwordCred.DisplayName)
-	assert.False(t, passwordCred.Verified)
+	assert.False(t, passwordCred.Confirmed)
 
 	passkeyCred := credentialMap[passkeyCredentialID]
 	assert.Equal(t, charon.ProviderPasskey, passkeyCred.Provider)
 	assert.Equal(t, "My renamed passkey", passkeyCred.DisplayName)
-	assert.False(t, passkeyCred.Verified)
+	assert.False(t, passkeyCred.Confirmed)
 
 	credentialRemove(t, ts, service, accessToken, usernameCredentialID, false)
 	credentialRemove(t, ts, service, accessToken, emailCredentialID, false)

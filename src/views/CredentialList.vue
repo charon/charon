@@ -180,12 +180,14 @@ const WithCredentialDocument = WithDocument<CredentialPublic>
               <CredentialFull :credential="doc" :url="url" :is-renaming="renamingCredentialId === credential.id" @renamed="onRenamed" @canceled="onRenameCancelled">
                 <div class="flex flex-row gap-4">
                   <ButtonLink
-                      v-if="doc.provider === 'email' && !doc.verified"
-                      class="credentiallist-button-verify"
-                      :to="{ name: 'CredentialVerifyEmail', params: { id: doc.id } }"
-                      :progress="progress"
-                      primary
+                    v-if="doc.provider === 'email' && !doc.confirmed"
+                    class="credentiallist-button-verify"
+                    :to="{ name: 'CredentialVerifyEmail', params: { id: doc.id } }"
+                    :progress="progress"
+                    primary
                   >
+                    {{ t("common.buttons.confirm") }}
+                  </ButtonLink>
                   <!--
                     Button is on purpose not disabled on unexpectedError so that user can retry.
                   -->
