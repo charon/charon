@@ -118,7 +118,7 @@ func TestCredentialManagement(t *testing.T) {
 	credentialRename(t, ts, service, accessToken, passwordCredentialID, " My super secret password ", false)
 	credentialRename(t, ts, service, accessToken, passkeyCredentialID, " My renamed passkey ", true)
 
-	// TODO: After email verification is done, test signin with different case email and password as well.
+	// TODO: After email confirmation is done, test signin with different case email and password as well.
 	// Sign-out and sign-in with newly added credentials - username+password.
 	signoutUser(t, ts, service, accessToken)
 	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
