@@ -10,7 +10,7 @@ import { postJSON } from "@/api"
 import Button from "@/components/Button.vue"
 import { processResponse } from "@/flow"
 import { useProgress } from "@/progress"
-import { signalPasskeyUnknown } from "@/utils.ts"
+import { signalPasskeyUnknown } from "@/utils"
 
 const props = defineProps<{
   flow: Flow
