@@ -119,7 +119,7 @@ type SignalCurrentUserDetails struct {
 	DisplayName string                    `json:"displayName"`
 }
 
-// SignalUnknownCredential represents the payload for WebAuthn credential signalUnknownCredential - client-side deletion.
+// SignalUnknownCredential represents the payload for WebAuthn credential signalUnknownCredential - client-side removal.
 type SignalUnknownCredential struct {
 	RPID         string                    `json:"rpId"`
 	CredentialID protocol.URLEncodedBase64 `json:"credentialId"`
