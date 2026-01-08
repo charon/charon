@@ -406,8 +406,7 @@
       "codeFromHashEmail": "@:partials.AuthCode.codeFromHashEmail",
       "waitForCode": "@:partials.AuthCode.waitForCode",
       "sentCount": "@:partials.AuthCode.sentCount",
-      "confirmCode": "@:partials.AuthCode.confirmCode",
-      "tryAgain": "You can return and try again later."
+      "confirmCode": "@:partials.AuthCode.confirmCode"
     },
     "Footer": {
       "terms": "Terms",

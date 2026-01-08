@@ -417,7 +417,6 @@ declare module "vue-i18n" {
         waitForCode: string
         sentCount: string
         confirmCode: string
-        tryAgain: string
       }
       Footer: {
         terms: string

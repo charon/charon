@@ -406,8 +406,7 @@
       "codeFromHashEmail": "@:partials.AuthCode.codeFromHashEmail",
       "waitForCode": "@:partials.AuthCode.waitForCode",
       "sentCount": "@:partials.AuthCode.sentCount",
-      "confirmCode": "@:partials.AuthCode.confirmCode",
-      "tryAgain": "Lahko se vrnete in poskusite znova."
+      "confirmCode": "@:partials.AuthCode.confirmCode"
     },
     "Footer": {
       "terms": "Pogoji",
