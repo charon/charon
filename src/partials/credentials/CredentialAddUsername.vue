@@ -5,10 +5,10 @@ import { onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
-import { postJSON } from "@/api.ts"
+import { postJSON } from "@/api"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
-import { useProgress } from "@/progress.ts"
+import { useProgress } from "@/progress"
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
