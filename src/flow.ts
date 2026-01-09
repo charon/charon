@@ -215,7 +215,7 @@ export function processFirstResponse(router: Router, response: AuthFlowResponse,
     // We remove the code step we might have added above.
     removeSteps(flow, ["code"])
   }
-  if ("error" in response && response.error) {
+  if ("error" in response) {
     throw new Error(`unexpected error: ${response.error}`)
   }
 }
