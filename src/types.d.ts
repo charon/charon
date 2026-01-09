@@ -537,6 +537,7 @@ export type SignalCurrentUserDetails = {
   name: string
   displayName: string
 }
+
 export type SignalUnknownCredential = {
   rpId: string
   credentialId: string
