@@ -12,6 +12,7 @@ import type {
   OrganizationApplicationPublic,
   QueryValues,
   QueryValuesWithOptional,
+  SignalCurrentUserDetails,
   SignalUnknownCredential,
 } from "@/types"
 
@@ -284,7 +285,12 @@ export function decodePasswordEncryptionResponse(response: AuthFlowResponsePassw
   }
 }
 
-export async function signalPasskeyUnknown(signalUnknown: SignalUnknownCredential) {
+export async function signalPasskeyUpdate(signal: SignalCurrentUserDetails) {
+  // PublicKeyCredential.signalCurrentUserDetails might not be available and this is fine.
+  await PublicKeyCredential.signalCurrentUserDetails?.(signal)
+}
+
+export async function signalPasskeyUnknown(signal: SignalUnknownCredential) {
   // PublicKeyCredential.signalUnknownCredential might not be available and this is fine.
-  await PublicKeyCredential.signalUnknownCredential?.(signalUnknown)
+  await PublicKeyCredential.signalUnknownCredential?.(signal)
 }

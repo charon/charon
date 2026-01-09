@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DeepReadonly } from "vue"
 
-import type { CredentialPublic, CredentialRenameRequest, CredentialResponse, SignalCurrentUserDetails } from "@/types"
+import type { CredentialPublic, CredentialRenameRequest, CredentialResponse } from "@/types"
 
 import { nextTick, onBeforeUnmount, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
@@ -12,6 +12,7 @@ import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import { getProviderNameTitle } from "@/flow.ts"
 import { useProgress } from "@/progress"
+import { signalPasskeyUpdate } from "@/utils"
 
 const props = defineProps<{
   credential: CredentialPublic | DeepReadonly<CredentialPublic>
@@ -148,11 +149,6 @@ async function onSubmit() {
   } finally {
     progress.value -= 1
   }
-}
-
-async function signalPasskeyUpdate(signal: SignalCurrentUserDetails) {
-  // PublicKeyCredential.signalCurrentUserDetails might not be available and this is fine.
-  await PublicKeyCredential.signalCurrentUserDetails?.(signal)
 }
 </script>
 
