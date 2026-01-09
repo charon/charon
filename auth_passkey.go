@@ -265,6 +265,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		s.BadRequestWithError(w, req, withWebauthnError(err))
 		return
 	}
+
 	// We know the user is passkeyCredential because we just created it above.
 	pkCredential := user.(passkeyCredential) //nolint:errcheck,forcetypeassert
 	// Credential is changed by ValidatePasskeyLogin (e.g., its Authenticator.UpdateCounter
@@ -289,6 +290,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
+
 	s.completeAuthStep(w, req, true, flow, account,
 		[]Credential{{
 			CredentialPublic: CredentialPublic{
