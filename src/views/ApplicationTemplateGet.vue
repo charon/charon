@@ -343,7 +343,7 @@ async function onAddVariable() {
   })
 
   await nextTick(() => {
-    document.getElementById(`applicationtemplateget-field-${variables.value.length - 1}-name`)?.focus()
+    document.getElementById(`applicationtemplateget-variable-${variables.value.length - 1}-name`)?.focus()
   })
 }
 
@@ -718,21 +718,21 @@ async function onAddAdmin() {
                 <li v-for="(variable, i) in variables" :key="i" class="mb-4 grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
-                    <label :for="`applicationtemplateget-field-${i}-name`" class="mb-1">{{ t("views.ApplicationTemplateGet.name") }}</label>
+                    <label :for="`applicationtemplateget-variable-${i}-name`" class="mb-1">{{ t("views.ApplicationTemplateGet.name") }}</label>
                     <InputText
-                      :id="`applicationtemplateget-field-${i}-name`"
+                      :id="`applicationtemplateget-variable-${i}-name`"
                       v-model="variable.name"
                       class="min-w-0 flex-auto grow"
                       :readonly="!metadata.can_update"
                       :progress="progress"
                       required
                     />
-                    <label :for="`applicationtemplateget-field-${i}-description`" class="mt-4 mb-1"
+                    <label :for="`applicationtemplateget-variable-${i}-description`" class="mt-4 mb-1"
                       >{{ t("common.fields.description") }}
                       <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
-                      :id="`applicationtemplateget-field-${i}-description`"
+                      :id="`applicationtemplateget-variable-${i}-description`"
                       v-model="variable.description"
                       class="min-w-0 flex-auto grow"
                       :readonly="!metadata.can_update"
