@@ -676,16 +676,36 @@ async function onAddAdmin() {
             We show them ourselves when we want them.
           -->
           <form class="flex flex-col" novalidate @submit.prevent="onBasicSubmit">
-            <label for="name" class="mb-1">{{ t("views.ApplicationTemplateGet.applicationTemplateName") }}</label>
-            <InputText id="name" v-model="name" class="min-w-0 flex-auto grow" :readonly="!metadata.can_update" :progress="progress" required />
-            <label for="description" class="mt-4 mb-1"
+            <label for="applicationtemplateget-input-name" class="mb-1">{{ t("views.ApplicationTemplateGet.applicationTemplateName") }}</label>
+            <InputText
+              id="applicationtemplateget-input-name"
+              v-model="name"
+              class="min-w-0 flex-auto grow"
+              :readonly="!metadata.can_update"
+              :progress="progress"
+              required
+            />
+            <label for="applicationtemplateget-textarea-description" class="mt-4 mb-1"
               >{{ t("common.fields.description") }}
               <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
             >
-            <TextArea id="description" v-model="description" class="min-w-0 flex-auto grow" :readonly="!metadata.can_update" :progress="progress" />
-            <label for="homepageTemplate" class="mt-4 mb-1">{{ t("views.ApplicationTemplateGet.homepageTemplate") }}</label>
-            <InputText id="homepageTemplate" v-model="homepageTemplate" class="min-w-0 flex-auto grow" :readonly="!metadata.can_update" :progress="progress" required />
-            <label for="applicationtemplateget-input-idscopes" class="mt-4 mb-1"
+            <TextArea
+              id="applicationtemplateget-textarea-description"
+              v-model="description"
+              class="min-w-0 flex-auto grow"
+              :readonly="!metadata.can_update"
+              :progress="progress"
+            />
+            <label for="applicationtemplateget-input-homepagetemplate" class="mt-4 mb-1">{{ t("views.ApplicationTemplateGet.homepageTemplate") }}</label>
+            <InputText
+              id="applicationtemplateget-input-homepagetemplate"
+              v-model="homepageTemplate"
+              class="min-w-0 flex-auto grow"
+              :readonly="!metadata.can_update"
+              :progress="progress"
+              required
+            />
+            <label for="applicationtemplateget-textarea-idscopes" class="mt-4 mb-1"
               >{{ t("views.ApplicationTemplateGet.spaceSeparatedScopes") }}
               <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
             >
@@ -700,7 +720,7 @@ async function onAddAdmin() {
             <div v-if="basicUnexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
             <div v-else-if="basicUpdated" class="mt-4 text-success-600">{{ t("views.ApplicationTemplateGet.applicationsUpdated") }}</div>
             <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
-              <Button id="applicatiomtemplateget-update-button" type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">{{
+              <Button id="applicationtemplateget-button-updatebasic" type="submit" primary :disabled="!canBasicSubmit()" :progress="progress">{{
                 t("common.buttons.update")
               }}</Button>
             </div>
@@ -745,8 +765,12 @@ async function onAddAdmin() {
                 </li>
               </ol>
               <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
-                <Button type="button" @click.prevent="onAddVariable">{{ t("views.ApplicationTemplateGet.addVariable") }}</Button>
-                <Button type="submit" primary :disabled="!canVariablesSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
+                <Button id="applicationtemplateget-button-addvariable" type="button" @click.prevent="onAddVariable">{{
+                  t("views.ApplicationTemplateGet.addVariable")
+                }}</Button>
+                <Button id="applicationtemplateget-button-updatevariables" type="submit" primary :disabled="!canVariablesSubmit()" :progress="progress">{{
+                  t("common.buttons.update")
+                }}</Button>
               </div>
             </form>
           </template>
@@ -1057,8 +1081,12 @@ async function onAddAdmin() {
                 </li>
               </ol>
               <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
-                <Button type="button" @click.prevent="onAddClientBackend">{{ t("views.ApplicationTemplateGet.addClient") }}</Button>
-                <Button type="submit" primary :disabled="!canClientsBackendSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
+                <Button id="applicationtemplateget-button-addbackendclient" type="button" @click.prevent="onAddClientBackend">{{
+                  t("views.ApplicationTemplateGet.addClient")
+                }}</Button>
+                <Button id="applicationtemplateget-button-updatebackendclient" type="submit" primary :disabled="!canClientsBackendSubmit()" :progress="progress">{{
+                  t("common.buttons.update")
+                }}</Button>
               </div>
             </form>
           </template>
@@ -1199,8 +1227,12 @@ async function onAddAdmin() {
                 </li>
               </ol>
               <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
-                <Button type="button" @click.prevent="onAddClientService">{{ t("views.ApplicationTemplateGet.addClient") }}</Button>
-                <Button type="submit" primary :disabled="!canClientsServiceSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
+                <Button id="applicationtemplateget-button-addserviceclient" type="button" @click.prevent="onAddClientService">{{
+                  t("views.ApplicationTemplateGet.addClient")
+                }}</Button>
+                <Button id="applicationtemplateget-button-updateserviceclient" type="submit" primary :disabled="!canClientsServiceSubmit()" :progress="progress">{{
+                  t("common.buttons.update")
+                }}</Button>
               </div>
             </form>
           </template>
@@ -1234,8 +1266,10 @@ async function onAddAdmin() {
                 </li>
               </ol>
               <div class="flex flex-row justify-between gap-4" :class="admins.length ? 'mt-4' : ''">
-                <Button type="button" @click.prevent="onAddAdmin">{{ t("common.buttons.addAdmin") }}</Button>
-                <Button type="submit" primary :disabled="!canAdminsSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
+                <Button id="applicationtemplateget-button-addadmin" type="button" @click.prevent="onAddAdmin">{{ t("common.buttons.addAdmin") }}</Button>
+                <Button id="applicationtemplateget-button-updateadmins" type="submit" primary :disabled="!canAdminsSubmit()" :progress="progress">{{
+                  t("common.buttons.update")
+                }}</Button>
               </div>
             </form>
           </template>
