@@ -30,10 +30,9 @@ test.describe.serial("Charon OIDC Flows", () => {
     await expect(applicationSubmitButton).toBeVisible()
     await applicationSubmitButton.click()
 
-    await checkpoint(page, "oidc-applications-created-application-initial")
-
     const idScopesField = page.locator("#applicationtemplateget-input-idscopes")
     await expect(idScopesField).toBeVisible()
+    await checkpoint(page, "oidc-applications-created-application-initial")
     await idScopesField.fill("openid profile email")
 
     const applicationUpdateButton = page.locator("#applicationtemplateget-button-updatebasic")
