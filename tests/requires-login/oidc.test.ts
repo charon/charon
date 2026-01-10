@@ -221,11 +221,10 @@ test.describe.serial("Charon OIDC Flows", () => {
       // Verify that activity log contains the identity link.
       const activityLogIdentityLink = page.locator(`a.link:has-text("${username}")`)
       await expect(activityLogIdentityLink).toBeVisible()
-
-      await checkpoint(page, `oidc-organization-user-activity-contains-${username}`, {
-        mask: [page.locator(".activitylistitem-text-session"), page.locator(".activitylistitem-text-timestamp")],
-      })
     }
+    await checkpoint(page, "oidc-organization-user-activity-contains-testers", {
+      mask: [page.locator(".activitylistitem-text-session"), page.locator(".activitylistitem-text-timestamp")],
+    })
 
     console.log("Successfully created an OIDC application, added it to an organization and signed in.")
   })
