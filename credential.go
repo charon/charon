@@ -905,7 +905,7 @@ FoundCredential:
 			s.InternalServerErrorWithError(w, req, errors.WithStack(err))
 			return
 		}
-		signalUnknown = s.getPasskeySignalUnknownData(credentialIDBytes)
+		signalUnknown = s.getPasskeySignalUnknownCredentialData(credentialIDBytes)
 	}
 
 	errE = s.setAccount(ctx, account)
@@ -917,7 +917,7 @@ FoundCredential:
 	s.WriteJSON(w, req, CredentialResponse{
 		Error:   "",
 		Success: true,
-		Signal:  buildCredentialSignalResponse(nil, signalUnknown),
+		Signal:  newCredentialSignalResponse(nil, signalUnknown),
 	}, nil)
 }
 
@@ -993,7 +993,7 @@ FoundCredential:
 
 	var signalUpdate *SignalCurrentUserDetails
 	if foundProvider == ProviderPasskey {
-		signalUpdate, errE = s.getPasskeySignalData(account.Credentials[foundProvider][foundIndex], requestDisplayName)
+		signalUpdate, errE = s.getPasskeySignalCurrentUserDetailsData(account.Credentials[foundProvider][foundIndex], requestDisplayName)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
@@ -1009,7 +1009,7 @@ FoundCredential:
 				s.WriteJSON(w, req, CredentialResponse{
 					Error:   "",
 					Success: true,
-					Signal:  buildCredentialSignalResponse(signalUpdate, nil),
+					Signal:  newCredentialSignalResponse(signalUpdate, nil),
 				}, nil)
 				return
 			}
@@ -1033,11 +1033,11 @@ FoundCredential:
 	s.WriteJSON(w, req, CredentialResponse{
 		Error:   "",
 		Success: true,
-		Signal:  buildCredentialSignalResponse(signalUpdate, nil),
+		Signal:  newCredentialSignalResponse(signalUpdate, nil),
 	}, nil)
 }
 
-func buildCredentialSignalResponse(update *SignalCurrentUserDetails, remove *SignalUnknownCredential) *SignalPasskey {
+func newCredentialSignalResponse(update *SignalCurrentUserDetails, remove *SignalUnknownCredential) *SignalPasskey {
 	if update == nil && remove == nil {
 		return nil
 	}
