@@ -792,7 +792,7 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
                       </div>
                       <div class="flex flex-row gap-4">
                         <Button
-                          :id="`organizationget-button-activateordeactivate-${i}`"
+                          :id="`organizationget-button-activateordisable-${i}`"
                           type="button"
                           :progress="progress"
                           @click.prevent="application.active = !application.active"

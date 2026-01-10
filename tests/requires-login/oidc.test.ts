@@ -104,7 +104,7 @@ test.describe.serial("Charon OIDC Flows", () => {
     const uriBaseField = page.locator("input#application-0-values-0")
     await expect(uriBaseField).toBeVisible()
     await uriBaseField.fill("https://oidcdebugger.com")
-    const activateApplicationButton = page.locator("#organizationget-button-activateordeactivate-0")
+    const activateApplicationButton = page.locator("#organizationget-button-activateordisable-0")
     await expect(activateApplicationButton).toBeVisible()
     await activateApplicationButton.click()
 
