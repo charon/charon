@@ -129,7 +129,7 @@ test.describe.serial("Charon OIDC Flows", () => {
     await expect(page.getByText("Added applications updated successfully.")).toBeVisible()
     // Without waiting, navbar sometimes appears in the middle of the screenshot.
     await page.waitForTimeout(500)
-    await checkpoint(page, "oidc-organization-with-added-application", { mask: [clientIdField] })
+    await checkpoint(page, "oidc-organization-with-added-and-activated-application", { mask: [clientIdField] })
 
     // Test with all three response modes.
     const responseModes = [
