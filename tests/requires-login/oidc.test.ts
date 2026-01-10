@@ -116,7 +116,7 @@ test.describe.serial("Charon OIDC Flows", () => {
     await expect(page.getByText("Status: active")).toBeVisible()
     // Without waiting, navbar sometimes appears in the middle of the screenshot.
     await page.waitForTimeout(500)
-    await checkpoint(page, "oidc-organization-with-activated-application")
+    await checkpoint(page, "oidc-organization-with-pending-activation-application")
     await updateApplicationButton.click()
 
     // Store client ID.
