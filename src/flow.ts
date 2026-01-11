@@ -6,7 +6,7 @@ import type { AuthFlowResponse, Completed, Flow, SiteProvider } from "@/types"
 // It is OK that we fetch siteContext here because the server sends preload header
 // so we have to fetch it always anyway. Generally this is already cached.
 import siteContext from "@/context"
-import {equals, redirectServerSide, signalPasskeyUnknown} from "@/utils"
+import { equals, redirectServerSide, signalPasskeyUnknown } from "@/utils"
 
 export function getThirdPartyProvider(providers: string[]): SiteProvider | null {
   for (const provider of providers) {
@@ -156,30 +156,30 @@ export function processCompleted(router: Router, flow: Flow, progress: Ref<numbe
 }
 
 export function processResponse(router: Router, response: AuthFlowResponse, flow: Flow, progress: Ref<number>, abortController: AbortController | null): boolean {
-	flow.setOrganizationId(response.organizationId)
-	flow.setAppId(response.appId)
-	if (response.providers) {
-		flow.setThirdPartyProvider(getThirdPartyProvider(response.providers))
-	} else {
-		flow.setThirdPartyProvider(null)
-	}
-	if (response.emailOrUsername) {
-		flow.setEmailOrUsername(response.emailOrUsername)
-	} else {
-		flow.setEmailOrUsername("")
-	}
-	// Signal browser to delete the unknown passkey.
-	if ("signalUnknown" in response && response.signalUnknown) {
-		void signalPasskeyUnknown(response.signalUnknown)
-	}
-	if (!equals(flow.getCompleted(), response.completed)) {
-		processCompleted(router, flow, progress, response.completed)
-		if (abortController) {
-			abortController.abort()
-		}
-		return true
-	}
-	return false
+  flow.setOrganizationId(response.organizationId)
+  flow.setAppId(response.appId)
+  if (response.providers) {
+    flow.setThirdPartyProvider(getThirdPartyProvider(response.providers))
+  } else {
+    flow.setThirdPartyProvider(null)
+  }
+  if (response.emailOrUsername) {
+    flow.setEmailOrUsername(response.emailOrUsername)
+  } else {
+    flow.setEmailOrUsername("")
+  }
+  // Signal browser to delete the unknown passkey.
+  if ("signalUnknown" in response && response.signalUnknown) {
+    void signalPasskeyUnknown(response.signalUnknown)
+  }
+  if (!equals(flow.getCompleted(), response.completed)) {
+    processCompleted(router, flow, progress, response.completed)
+    if (abortController) {
+      abortController.abort()
+    }
+    return true
+  }
+  return false
 }
 
 export function processFirstResponse(router: Router, response: AuthFlowResponse, flow: Flow, progress: Ref<number>) {
