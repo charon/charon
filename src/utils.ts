@@ -285,12 +285,12 @@ export function decodePasswordEncryptionResponse(response: AuthFlowResponsePassw
   }
 }
 
-export async function signalPasskeyUpdate(signal: SignalCurrentUserDetails) {
+export async function signalPasskeyCurrentUserDetails(signal: SignalCurrentUserDetails) {
   // PublicKeyCredential.signalCurrentUserDetails might not be available and this is fine.
   await PublicKeyCredential.signalCurrentUserDetails?.(signal)
 }
 
-export async function signalPasskeyUnknown(signal: SignalUnknownCredential) {
+export async function signalPasskeyUnknownCredential(signal: SignalUnknownCredential) {
   // PublicKeyCredential.signalUnknownCredential might not be available and this is fine.
   await PublicKeyCredential.signalUnknownCredential?.(signal)
 }

@@ -6,7 +6,7 @@ import type { AuthFlowResponse, Completed, Flow, SiteProvider } from "@/types"
 // It is OK that we fetch siteContext here because the server sends preload header
 // so we have to fetch it always anyway. Generally this is already cached.
 import siteContext from "@/context"
-import { equals, redirectServerSide, signalPasskeyUnknown } from "@/utils"
+import { equals, redirectServerSide, signalPasskeyUnknownCredential } from "@/utils"
 
 export function getThirdPartyProvider(providers: string[]): SiteProvider | null {
   for (const provider of providers) {
@@ -170,7 +170,7 @@ export function processResponse(router: Router, response: AuthFlowResponse, flow
   }
   // Signal browser to delete the unknown passkey.
   if ("signalUnknown" in response && response.signalUnknown) {
-    void signalPasskeyUnknown(response.signalUnknown)
+    void signalPasskeyUnknownCredential(response.signalUnknown)
   }
   if (!equals(flow.getCompleted(), response.completed)) {
     processCompleted(router, flow, progress, response.completed)

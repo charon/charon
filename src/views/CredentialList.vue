@@ -14,7 +14,7 @@ import CredentialFull from "@/partials/credentials/CredentialFull.vue"
 import Footer from "@/partials/Footer.vue"
 import NavBar from "@/partials/NavBar.vue"
 import { useProgress } from "@/progress"
-import { signalPasskeyUnknown } from "@/utils"
+import { signalPasskeyUnknownCredential } from "@/utils"
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
@@ -123,7 +123,7 @@ async function onRemove(credentialId: string) {
 
     // Signal browser to remove passkey credential if applicable.
     if ("signal" in response && response.signal && "remove" in response.signal) {
-      await signalPasskeyUnknown(response.signal.remove)
+      await signalPasskeyUnknownCredential(response.signal.remove)
       if (abortController.signal.aborted) {
         return
       }
