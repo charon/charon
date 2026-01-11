@@ -56,7 +56,7 @@
       },
       "credentialDisplayNameInUse": "Prikazno ime je že v uporabi.",
       "credentialDisplayNameMissing": "Manjka prikazno ime.",
-      "confirmationFailed": "Potrditev ni uspela. Ponovno pošljite kodo in poskusite ponovno."
+      "confirmationFailed": "Potrditev ni uspela. Ponovno pošljite kodo, da poskusite ponovno."
     },
     "labels": {
       "optional": "(neobvezno)",
@@ -326,7 +326,7 @@
       "selectNoEmail": "brez",
       "unconfirmedEmailsHint": "Imate nepotrjene e-poštne naslove. Preden jih lahko uporabite, jih morate {link}.",
       "confirmEmailsLink": "potrditi",
-      "noEmailsHint": "Nimate e-poštnih naslovov. {link} e-poštni naslov.",
+      "noEmailsHint": "Nimate potrjenih e-poštnih naslovov. {link} e-poštni naslov, da ga uporabite.",
       "addAndConfirmLink": "Dodajte in potrdite"
     },
     "IdentityList": {

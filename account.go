@@ -154,7 +154,9 @@ func (a *Account) HasCredentialDisplayName(provider Provider, displayName string
 	return false
 }
 
-// GetEmailAddresses returns (confirmedOnly) email addresses of the account.
+// GetEmailAddresses returns e-mail addresses of the account.
+//
+// It returns only confirmed e-mail addresses if confirmedOnly is set.
 func (a *Account) GetEmailAddresses(confirmedOnly bool) []string {
 	emails := make([]string, 0, len(a.Credentials[ProviderEmail]))
 	for _, credential := range a.Credentials[ProviderEmail] {

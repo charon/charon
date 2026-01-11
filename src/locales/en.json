@@ -56,7 +56,7 @@
       },
       "credentialDisplayNameInUse": "Display name is already in use.",
       "credentialDisplayNameMissing": "Display name is missing.",
-      "confirmationFailed": "ConfirmationFailed failed. Resend a code to try again."
+      "confirmationFailed": "Confirmation failed. Resend a code to try again."
     },
     "labels": {
       "optional": "(optional)",
@@ -400,7 +400,7 @@
       "verify": "Verify"
     },
     "CredentialConfirmEmail": {
-      "confirmEmail": "Confirm email address",
+      "confirmEmail": "Confirm e-mail address",
       "resendButton": "@:partials.AuthCode.resendButton",
       "codeSentEmail": "@:partials.AuthCode.codeSentEmail",
       "codeFromHashEmail": "@:partials.AuthCode.codeFromHashEmail",
