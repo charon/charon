@@ -63,7 +63,7 @@ function onAfterEnter() {
     // User might already paused using the esc key.
     initInterval()
   }
-  document.getElementById("redirect")?.focus()
+  document.getElementById("authautoredirect-button-redirect")?.focus()
 }
 
 function onBeforeLeave() {
