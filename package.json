@@ -44,7 +44,7 @@
     "openid-client": "^6.8.1",
     "structured-field-values": "^2.0.4",
     "vue": "^3.5.26",
-    "vue-i18n": "^11.2.8",
+    "vue-i18n": "^11.1.12",
     "vue-router": "^4.6.4"
   },
   "devDependencies": {
