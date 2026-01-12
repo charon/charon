@@ -3,7 +3,7 @@ import type { Component, DeepReadonly } from "vue"
 
 import type { Activity, ActivityRef, ApplicationTemplate, IdentityPublic, Organization, OrganizationApplicationPublic, OrganizationRef } from "@/types"
 
-import { LocalScope } from "@allindevelopers/vue-local-scope"
+import { LocalScope } from "@all1ndev/vue-local-scope"
 import { CalculatorIcon, IdentificationIcon, LockClosedIcon, LockOpenIcon, ShieldCheckIcon, ShieldExclamationIcon, UserGroupIcon } from "@heroicons/vue/24/outline"
 import { CalculatorIcon as CalculatorSolidIcon, IdentificationIcon as IdentificationSolidIcon, UserGroupIcon as UserGroupSolidIcon } from "@heroicons/vue/24/solid"
 import { uniqWith } from "lodash-es"
