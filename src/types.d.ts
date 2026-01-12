@@ -208,6 +208,11 @@ export type ApplicationTemplateRef = {
   id: string
 }
 
+export type Role = {
+	key: string
+	description: string
+}
+
 export type VariableType = "uriPrefix"
 
 export type Variable = {
@@ -260,6 +265,7 @@ export type ApplicationTemplatePublic = ApplicationTemplateCreate & {
   description: string
   homepageTemplate: string
   idScopes: string[]
+	roles: Role[]
   variables: Variable[]
   clientsPublic: ApplicationTemplateClientPublic[]
   clientsBackend: ApplicationTemplateClientBackend[]
