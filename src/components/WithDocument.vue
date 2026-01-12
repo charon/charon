@@ -34,8 +34,8 @@ const _doc = ref<T | null>(null)
 const _metadata = ref<Metadata>({})
 const _error = ref<string | null>(null)
 const _url = ref<string | null>(null)
-const doc = (import.meta.env.DEV ? readonly(_doc) : (_doc as DeepReadonly<Ref<T | null>>))
-const metadata = (import.meta.env.DEV ? readonly(_metadata) : (_metadata as DeepReadonly<Ref<Metadata>>))
+const doc = import.meta.env.DEV ? readonly(_doc) : (_doc as DeepReadonly<Ref<T | null>>)
+const metadata = import.meta.env.DEV ? readonly(_metadata) : (_metadata as DeepReadonly<Ref<Metadata>>)
 const error = import.meta.env.DEV ? readonly(_error) : _error
 const url = import.meta.env.DEV ? readonly(_url) : _url
 
