@@ -45,7 +45,7 @@ test.describe.serial("Charon OIDC Flows", () => {
     // Check for the success message.
     await expect(page.getByText("Application template updated successfully.")).toBeVisible()
     // Without waiting, navbar sometimes appears in the middle of the screenshot.
-    await page.waitForTimeout(500)
+    await page.waitForTimeout(1000)
 
     await checkpoint(page, "oidc-applications-created-application-with-id-scopes")
 
@@ -66,8 +66,7 @@ test.describe.serial("Charon OIDC Flows", () => {
     // Check for the success message.
     await expect(page.getByText("Public clients updated successfully.")).toBeVisible()
     // Without waiting, navbar sometimes appears in the middle of the screenshot.
-    await page.waitForTimeout(500)
-
+    await page.waitForTimeout(1000)
     await checkpoint(page, "oidc-applications-created-application-with-updated-public-client")
 
     // Click on home.
@@ -117,7 +116,7 @@ test.describe.serial("Charon OIDC Flows", () => {
     await expect(updateApplicationButton).toBeVisible()
     await expect(page.getByText("Status: active")).toBeVisible()
     // Without waiting, navbar sometimes appears in the middle of the screenshot.
-    await page.waitForTimeout(500)
+    await page.waitForTimeout(1000)
     await checkpoint(page, "oidc-organization-with-pending-activation-application")
     await updateApplicationButton.click()
 
@@ -130,7 +129,7 @@ test.describe.serial("Charon OIDC Flows", () => {
     // Check for the success message.
     await expect(page.getByText("Added applications updated successfully.")).toBeVisible()
     // Without waiting, navbar sometimes appears in the middle of the screenshot.
-    await page.waitForTimeout(500)
+    await page.waitForTimeout(1000)
     await checkpoint(page, "oidc-organization-with-added-and-activated-application", { mask: [clientIdField] })
 
     // Test with all three response modes.
@@ -159,7 +158,7 @@ test.describe.serial("Charon OIDC Flows", () => {
       await usePkceCheckbox.check()
       const oidcDebuggerTokenUriField = page.locator("input#tokenUri")
       await expect(oidcDebuggerTokenUriField).toBeVisible()
-      await oidcDebuggerTokenUriField.fill(`${CHARON_URL}/auth/oidc/token`)
+      await oidcDebuggerTokenUriField.fill(`${CHARON_URL}/api/auth/oidc/token`)
 
       // Select response mode.
       const responseModeRadio = page.locator(`input#responseMode-${mode}`)
@@ -256,7 +255,7 @@ test.describe.serial("Charon OIDC Flows", () => {
     // Check user activity for each tester.
     for (const { username } of responseModes) {
       // Verify that activity log contains the identity link.
-      const activityLogIdentityLink = page.locator(`a.link:has-text("${username}")`)
+      const activityLogIdentityLink = page.locator(`a.link:has-text("${username}")`).first()
       await expect(activityLogIdentityLink).toBeVisible()
     }
     await checkpoint(page, "oidc-organization-user-activity-contains-testers", {
