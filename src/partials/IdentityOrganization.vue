@@ -31,7 +31,7 @@ defineExpose({
       <div>{{ t("partials.IdentityOrganization.id") }}</div>
       <div v-if="identityOrganization.id">
         <router-link :to="{ name: 'OrganizationIdentity', params: { id: identityOrganization.organization.id, identityId: identityOrganization.id } }" class="link"
-          ><code>{{ identityOrganization.id }}</code></router-link
+          ><code class="identityorganization-text-organizationid">{{ identityOrganization.id }}</code></router-link
         >
       </div>
       <div v-else>
