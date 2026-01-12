@@ -48,6 +48,11 @@ export const test = baseTest.extend({
 
     context.on("page", (page) => {
       // Hide carets in all input elements once the page loads.
+      page.on("load", async () => {
+        await page.addStyleTag({ content: "input,textarea,[contenteditable] { caret-color: transparent !important; }" }).catch(() => {
+          // Ignore errors if page navigates before style is added.
+        })
+      })
 
       page.on("console", (msg) => {
         const url = page.url()
