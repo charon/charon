@@ -188,7 +188,7 @@ const (
 	TestingEmailOrUsernameCheckUsername = emailOrUsernameCheckUsername
 )
 
-func TestingNormalizeEmailOrUsername(emailOrUsername string, check emailOrUsernameCheck) (string, string, errors.E) {
+func TestingValidateEmailOrUsername(emailOrUsername string, check emailOrUsernameCheck) (string, string, errors.E) {
 	return validateEmailOrUsername(emailOrUsername, check)
 }
 
