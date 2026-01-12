@@ -18,12 +18,13 @@ import (
 // TODO: Should we remove ErrIdentityUnauthorized and just use ErrIdentityNotFound?
 
 var (
-	ErrIdentityNotFound         = errors.Base("identity not found")
-	ErrIdentityAlreadyExists    = errors.Base("identity already exists")
-	ErrIdentityUnauthorized     = errors.Base("identity access unauthorized")
-	ErrIdentityUpdateNotAllowed = errors.Base("identity update not allowed")
-	ErrIdentityValidationFailed = errors.Base("identity validation failed")
-	ErrIdentityBlocked          = errors.Base("identity blocked")
+	ErrIdentityNotFound          = errors.Base("identity not found")
+	ErrIdentityAlreadyExists     = errors.Base("identity already exists")
+	ErrIdentityUnauthorized      = errors.Base("identity access unauthorized")
+	ErrIdentityUpdateNotAllowed  = errors.Base("identity update not allowed")
+	ErrIdentityValidationFailed  = errors.Base("identity validation failed")
+	ErrIdentityBlocked           = errors.Base("identity blocked")
+	ErrIdentityEmailNotConfirmed = errors.Base("identity email not confirmed in account")
 
 	errEmptyIdentity = errors.Base("empty identity")
 )
@@ -157,7 +158,7 @@ type IdentityPublic struct {
 }
 
 // Validate validates the IdentityPublic struct.
-func (i *IdentityPublic) Validate(ctx context.Context, existing *IdentityPublic) errors.E {
+func (i *IdentityPublic) Validate(ctx context.Context, existing *IdentityPublic, service *Service) errors.E {
 	if existing == nil {
 		if i.ID != nil {
 			errE := errors.New("ID provided for new document")
@@ -190,14 +191,24 @@ func (i *IdentityPublic) Validate(ctx context.Context, existing *IdentityPublic)
 		i.Username = username
 	}
 
-	// E-mails can only be set from confirmed email credentials. This is enforced during identity creation
-	// in makeIdentityFromCredentials() and validating identity in Identity.Validate().
-	// Here we just validate the format.
 	if i.Email != "" {
 		email, _, errE := validateEmailOrUsername(i.Email, emailOrUsernameCheckEmail)
 		if errE != nil {
 			errors.Details(errE)["email"] = i.Email
 			return errE
+		}
+
+		if existing == nil || email != existing.Email {
+			accountID := mustGetAccountID(ctx)
+			account, errE := service.getAccount(ctx, accountID)
+			if errE != nil {
+				return errE
+			}
+
+			confirmedEmails := account.GetEmailAddresses(true)
+			if !slices.Contains(confirmedEmails, email) {
+				return errors.WithDetails(ErrIdentityEmailNotConfirmed, "id", *i.ID, "email", email)
+			}
 		}
 
 		i.Email = email
@@ -345,7 +356,7 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity, service *Se
 	} else {
 		e = &existing.IdentityPublic
 	}
-	errE := i.IdentityPublic.Validate(ctx, e)
+	errE := i.IdentityPublic.Validate(ctx, e, service)
 	if errE != nil {
 		return errE
 	}
@@ -815,20 +826,6 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 	}
 
 	i := identity.Ref()
-
-	if identity.Email != "" && identity.Email != existingIdentity.Email {
-		accountID := mustGetAccountID(ctx)
-		account, errE := s.getAccount(ctx, accountID)
-		if errE != nil {
-			return errE
-		}
-
-		confirmedEmails := account.GetEmailAddresses(true)
-		if !slices.Contains(confirmedEmails, identity.Email) {
-			ErrIdentityEmailNotConfirmed := errors.Base("email not confirmed in account")
-			return errors.WithDetails(ErrIdentityEmailNotConfirmed, "id", *identity.ID, "email", identity.Email)
-		}
-	}
 
 	errE = identity.Validate(ctx, existingIdentity, s)
 	if errE != nil {
@@ -1324,23 +1321,6 @@ func (s *Service) IdentityCreatePostAPI(w http.ResponseWriter, req *http.Request
 	if identity.ID != nil {
 		s.BadRequestWithError(w, req, errors.New("payload contains ID"))
 		return
-	}
-
-	if identity.Email != "" {
-		accountID := mustGetAccountID(ctx)
-		account, errE := s.getAccount(ctx, accountID)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-
-		confirmedEmails := account.GetEmailAddresses(true)
-		if !slices.Contains(confirmedEmails, identity.Email) {
-			errE := errors.New("email not confirmed in account")
-			errors.Details(errE)["email"] = identity.Email
-			s.BadRequestWithError(w, req, errE)
-			return
-		}
 	}
 
 	errE = s.createIdentity(ctx, &identity)
