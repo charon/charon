@@ -10,14 +10,12 @@ management, and third-party authentication providers.
 
 ## Development Commands
 
-### Backend Development
+### Backend (Go)
 
 - `make` - Build the complete application with embedded frontend
 - `make build` - Build backend binary with embedded frontend dist files
-- `make watch` - Auto-rebuild and restart backend on file changes (requires CompileDaemon)
-- `./charon -D -k localhost+2.pem -K localhost+2-key.pem` - Run backend in development mode with TLS
 
-### Frontend Development
+### Frontend (Node/TypeScript/Vue)
 
 - `npm install` - Install frontend dependencies
 - `npm run serve` - Start Vite dev server (runs on port 5173, proxied through backend on 8080)
@@ -153,104 +151,6 @@ To update internationalization TypeScript definitions:
 ## Development Setup Requirements
 
 - Go 1.25+ required
-- Node.js 20+ required
+- Node.js 24+ required
 - TLS certificates needed (recommend mkcert for local development)
 - CompileDaemon for backend auto-reload during development
-
-## Systematic Task Approach
-
-For large-scale refactoring or comprehensive code changes (like internationalization, dependency updates, or
-architectural changes), always use this systematic approach:
-
-### 1. Discovery Phase First
-
-**Never start implementing until you have a complete picture of the scope.**
-
-```bash
-# Example: Search for ALL files that need work
-grep -r "hardcoded pattern" src/
-find src/ -name "*.vue" -exec grep -l "pattern" {} \;
-```
-
-### 2. Use Task Tool for Complex Searches
-
-For comprehensive searches across large codebases, delegate to the `general-purpose` agent:
-
-```text
-Task tool with subagent_type: "general-purpose"
-Prompt: "Search the entire src/ directory for all Vue files containing hardcoded strings that need
-internationalization. Return a complete list of files and the specific strings that need translation, with line
-numbers."
-```
-
-### 3. Create Complete Todo Lists Upfront
-
-Instead of vague tasks like "Update remaining files", create enumerated lists:
-
-❌ **Bad approach:**
-
-- Update IdentityGet.vue
-- Update remaining files
-- Final search
-
-✅ **Systematic approach:**
-
-- Search all Vue files for hardcoded strings
-- Update IdentityGet.vue (strings on lines 23, 45, 67)
-- Update ApplicationTemplateGet.vue (strings on lines 12, 34, 89, 123)
-- Update AuthPassword.vue (strings on lines 5, 78)
-- Update OrganizationListItem.vue (admin label on line 22)
-- Verify no remaining hardcoded strings
-
-### 4. Batch Operations When Possible
-
-- Use `MultiEdit` for similar changes across multiple files
-- Use `grep` with `replace_all` patterns for systematic replacements
-- Process files systematically in order of complexity
-
-### 5. Always Verify Completeness
-
-Before marking any comprehensive task as complete:
-
-```bash
-# Search for remaining patterns with multiple approaches
-grep -r "pattern1" src/
-grep -r "pattern2" src/
-grep -r "alternative pattern" src/
-```
-
-### Example: Internationalization Task
-
-1. **Discovery**: Search all `.vue` files for hardcoded English strings
-2. **Cataloging**: List every file and specific strings that need translation
-3. **Implementation**: Work through files systematically, updating translation keys
-4. **Verification**: Multiple grep searches to confirm no strings were missed
-5. **Testing**: Run linting and formatting to ensure code quality
-
-This approach prevents partial implementations and ensures thorough, complete changes.
-
-### 6. Always Complete Tasks Fully
-
-**Never stop in the middle of a task and ask if you should continue.** When given a task, complete it entirely:
-
-❌ **Wrong approach:**
-
-- Complete 30% of the work
-- Ask: "Would you like me to continue with the remaining files?"
-- Leave the task in a partial state
-
-✅ **Correct approach:**
-
-- Work systematically through the entire task
-- Complete all identified work without interruption
-- Only ask for clarification if the requirements are genuinely unclear
-- Present the completed work as a finished deliverable
-
-**Examples of when to continue vs. when to ask:**
-
-- ✅ Continue: You have a clear list of 20 files to update with similar changes
-- ✅ Continue: The pattern is established and you can apply it systematically
-- ❌ Ask: The user provides conflicting requirements that need clarification
-- ❌ Ask: You encounter technical limitations that prevent completion
-
-**Key principle:** Treat tasks like a professional developer would - complete the work fully before presenting results.
