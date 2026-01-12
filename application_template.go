@@ -384,6 +384,27 @@ func (c *ApplicationTemplateClientService) Validate(_ context.Context, existing 
 	return nil
 }
 
+var validRoleKeyRegexp = regexp.MustCompile(`^[a-zA-Z_-]+$`)
+
+// Role represents user role defined in application template that can be applied to users in organization.
+type Role struct {
+	Key         string `json:"key"`
+	Description string `json:"description"`
+}
+
+// Validate validates the Role struct.
+func (r *Role) Validate(_ context.Context) errors.E {
+	if r.Key == "" {
+		return errors.New("key is required")
+	}
+	if !validRoleKeyRegexp.MatchString(r.Key) {
+		errE := errors.New("invalid key")
+		errors.Details(errE)["key"] = r.Key
+		return errE
+	}
+	return nil
+}
+
 // VariableType represents the type of the variable.
 type VariableType string
 
@@ -468,6 +489,7 @@ type ApplicationTemplatePublic struct {
 
 	IDScopes []string `json:"idScopes"`
 
+	Roles          []Role                             `json:"roles"`
 	Variables      []Variable                         `json:"variables"`
 	ClientsPublic  []ApplicationTemplateClientPublic  `json:"clientsPublic"`
 	ClientsBackend []ApplicationTemplateClientBackend `json:"clientsBackend"`
@@ -588,6 +610,39 @@ func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *Appl
 	a.IDScopes = slices.DeleteFunc(a.IDScopes, func(scope string) bool {
 		return scope == ""
 	})
+
+	// TODO: user roles.
+	if a.Roles == nil {
+		// Default role.
+		a.Roles = []Role{{
+			Key:         "admin",
+			Description: "Admins have full permissions in the app.",
+		}}
+	}
+
+	rolesSet := mapset.NewThreadUnsafeSet[string]()
+	for i, role := range a.Roles {
+		errE := role.Validate(ctx)
+		if errE != nil {
+			errE = errors.WithMessage(errE, "role")
+			errors.Details(errE)["i"] = i
+			if role.Key != "" {
+				errors.Details(errE)["key"] = role.Key
+			}
+			return errE
+		}
+
+		if rolesSet.Contains(role.Key) {
+			errE := errors.New("duplicate role key")
+			errors.Details(errE)["i"] = i
+			errors.Details(errE)["key"] = role.Key
+			return errE
+		}
+		rolesSet.Add(role.Key)
+
+		// Role might have been changed by Validate, so we assign it back.
+		a.Roles[i] = role
+	}
 
 	// TODO: Validate that a.IDScopes is a (non-strict) subset of supported ID scopes.
 

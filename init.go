@@ -50,6 +50,7 @@ func initCharonOrganization(ctx context.Context, config *Config, service *Servic
 							Description:      "",
 							HomepageTemplate: uri,
 							IDScopes:         []string{"openid", "profile", "email"},
+							Roles:            []Role{},
 							Variables:        []Variable{},
 							ClientsPublic: []ApplicationTemplateClientPublic{
 								{
