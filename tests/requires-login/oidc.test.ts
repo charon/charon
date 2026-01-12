@@ -4,6 +4,9 @@ test.describe.serial("Charon OIDC Flows", () => {
   test("Test OIDC login", async ({ context }) => {
     const page = await context.newPage()
 
+    // Grant permissions for oidcdebugger.com to perform PKCE token exchange.
+    await context.grantPermissions(["local-network-access"], { origin: "https://oidcdebugger.com" })
+
     await signInWithPassword(page, false)
 
     // Find and click the Application Templates link.
@@ -197,6 +200,41 @@ test.describe.serial("Charon OIDC Flows", () => {
 
       // Verify success message.
       await expect(page.getByText("Everything is ready to sign you in")).toBeVisible()
+
+      // Now click on redirect, go back to page, decode JWT token.
+      const redirectButton = page.locator("#authautoredirect-button-redirect")
+      await expect(redirectButton).toBeVisible()
+      await redirectButton.click()
+
+      // Wait for the flow and the key exchange to complete successfully.
+      await page.waitForTimeout(500)
+      await expect(page.getByText("The flow was successful.")).toBeVisible()
+
+      // Extract the id_token from the page content.
+      const bodyText = await page.textContent("body")
+      expect(bodyText).not.toBeNull()
+
+      // Extract the id_token using regex - JWT format is xxx.yyy.zzz.
+      const idTokenMatch = bodyText!.match(/id_token[=:\s]+([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)/)
+      expect(idTokenMatch).not.toBeNull()
+      const idToken = idTokenMatch![1]
+
+      // Decode and parse the JWT token.
+      const tokenParts = idToken.split(".")
+      expect(tokenParts).toHaveLength(3)
+
+      // Decode the payload (second part) - JWT uses base64url encoding.
+      // Convert base64url to base64.
+      let base64Payload = tokenParts[1].replace(/-/g, "+").replace(/_/g, "/")
+      // Add padding if needed.
+      while (base64Payload.length % 4) {
+        base64Payload += "="
+      }
+      const decodedPayload = Buffer.from(base64Payload, "base64").toString()
+      const payload = JSON.parse(decodedPayload) as { preferred_username: string }
+
+      // Verify the preferredUsername field matches the expected username.
+      expect(payload.preferred_username).toBe(username)
     }
 
     // Now sign in with tester and check activity logs.
