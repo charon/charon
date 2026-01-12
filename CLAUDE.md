@@ -8,7 +8,7 @@ Charon is a privacy-enabling account management and SSO solution built with Go b
 It implements OAuth 2.0 and OpenID Connect standards with support for multiple identities per user, organizational
 management, and third-party authentication providers.
 
-## Development Commands
+## Development
 
 ### Backend (Go)
 
@@ -49,25 +49,6 @@ To update internationalization TypeScript definitions:
 - `npm run lint-vue` - Run Vue TypeScript compiler check
 - `npm run fmt` - Format frontend code with Prettier
 
-## Architecture
-
-### Backend (Go)
-
-- **Entry Point**: `cmd/charon/main.go` - CLI setup and configuration parsing
-- **Core Service**: Root-level Go files implement the main application logic
-- **Authentication**: Multiple auth flows supported - password, passkey (WebAuthn), OIDC providers
-- **OIDC Implementation**: Full OAuth 2.0 and OpenID Connect provider using Fosite library
-- **Data Models**: Organizations, Applications, Identities, Users with complex relationships
-- **Configuration**: Extensive CLI flags and environment variables via Kong library
-
-### Key Backend Components
-
-- `auth_*.go` - Authentication flow implementations
-- `oidc_*.go` - OpenID Connect endpoints and logic
-- `organization.go`, `identity.go`, `account.go` - Core data models
-- `config.go` - Application configuration and CLI setup
-- `init.go` - System initialization and bootstrapping
-
 ### Backend Code Style
 
 - **Comments**: All comments must end with dots for consistency.
@@ -79,25 +60,6 @@ To update internationalization TypeScript definitions:
   - `make test` - Go tests with coverage
   - `make lint-docs` - Documentation linting (affects whole repo)
   - `make audit` - Go security audit with nancy
-
-### Frontend (Vue 3 + TypeScript)
-
-- **Framework**: Vue 3 with Composition API and TypeScript
-- **Build Tool**: Vite for development and production builds
-- **Styling**: Tailwind CSS with custom components
-- **Router**: Vue Router for SPA navigation
-- **API Layer**: Custom fetch wrappers in `src/api.ts`
-- **Internationalization**: Vue-i18n v11 with precompiled messages (English and Slovenian support)
-
-### Frontend Structure
-
-- `src/views/` - Main page components
-- `src/partials/` - Reusable page sections
-- `src/components/` - UI components (Button, Input, etc.)
-- `src/locales/` - Translation files (en.json, sl.json)
-- `src/i18n.ts` - Vue-i18n configuration
-- `src/types.d.ts` - TypeScript type definitions
-- `src/flow.ts`, `src/auth.ts` - Authentication flow logic
 
 ### Frontend Code Style
 
@@ -133,6 +95,53 @@ To update internationalization TypeScript definitions:
 - Backend serves as proxy to Vite dev server in development mode (`-D` flag)
 - Production builds embed frontend files into Go binary via `embed.FS`
 - Hot module replacement works through backend proxy during development
+- TypeScript strict mode enabled
+- Uses Vue 3 Composition API (Options API disabled via `__VUE_OPTIONS_API__: false`)
+
+### Development Setup Requirements
+
+- Go 1.25+ required
+- Node.js 24+ required
+- TLS certificates needed (recommend mkcert for local development)
+- CompileDaemon for backend auto-reload during development
+
+## Architecture
+
+### Backend
+
+- **Entry Point**: `cmd/charon/main.go` - CLI setup and configuration parsing
+- **Core Service**: Root-level Go files implement the main application logic
+- **Authentication**: Multiple auth flows supported - password, passkey (WebAuthn), OIDC providers
+- **OIDC Implementation**: Full OAuth 2.0 and OpenID Connect provider using Fosite library
+- **Data Models**: Organizations, Applications, Identities, Users with complex relationships
+- **Configuration**: Extensive CLI flags and environment variables via Kong library
+
+### Key Backend Components
+
+- `auth_*.go` - Authentication flow implementations
+- `oidc_*.go` - OpenID Connect endpoints and logic
+- `organization.go`, `identity.go`, `account.go` - Core data models
+- `config.go` - Application configuration and CLI setup
+- `init.go` - System initialization and bootstrapping
+
+### Frontend (Vue 3 + TypeScript)
+
+- **Framework**: Vue 3 with Composition API and TypeScript
+- **Build Tool**: Vite for development and production builds
+- **Styling**: Tailwind CSS with custom components
+- **Router**: Vue Router for SPA navigation
+- **API Layer**: Custom fetch wrappers in `src/api.ts`
+- **Internationalization**: Vue-i18n v11 with precompiled messages (English and Slovenian support)
+
+### Frontend Structure
+
+- `src/views/` - Main page components
+- `src/partials/` - Reusable page sections
+- `src/components/` - UI components (Button, Input, etc.)
+- `src/locales/` - Translation files (en.json, sl.json)
+- `src/i18n.ts` - Vue-i18n configuration
+- `src/types.d.ts` - TypeScript type definitions
+- `src/flow.ts`, `src/auth.ts` - Authentication flow logic
 
 ### Authentication Flows
 
@@ -147,10 +156,3 @@ To update internationalization TypeScript definitions:
 - Argon2id password hashing with WASM frontend implementation
 - CSRF protection and secure session management
 - OIDC-compliant token handling
-
-## Development Setup Requirements
-
-- Go 1.25+ required
-- Node.js 24+ required
-- TLS certificates needed (recommend mkcert for local development)
-- CompileDaemon for backend auto-reload during development
