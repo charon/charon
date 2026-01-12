@@ -262,6 +262,23 @@ test.describe.serial("Charon OIDC Flows", () => {
       mask: [page.locator(".activitylistitem-text-session"), page.locator(".activitylistitem-text-timestamp")],
     })
 
+    // Go to manage users
+    await page.goBack()
+    const manageUsersButton = page.locator("#organizationget-button-manageusers")
+    await expect(manageUsersButton).toBeVisible()
+    await manageUsersButton.click()
+
+    // Check that all users are present.
+    for (const { username } of responseModes) {
+      // Verify that activity log contains the identity link.
+      const usernameDiv = page.locator(`h2:has-text("${username}")`)
+      await expect(usernameDiv).toBeVisible()
+    }
+
+    // await checkpoint(page, "oidc-organization-manage-users-contains-testers", {
+    //   mask: [page.locator(".identityorganization-text-organizationid")],
+    // })
+
     console.log("Successfully created an OIDC application, added it to an organization and signed in.")
   })
 })
