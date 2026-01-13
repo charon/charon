@@ -1785,3 +1785,17 @@ func (s *Service) OrganizationBlockedStatusGetAPI(w http.ResponseWriter, req *ht
 
 	waf.Error(w, req, http.StatusUnauthorized)
 }
+
+// OrganizationUserRoles is the frontend handler for getting the organization's identity.
+func (s *Service) OrganizationUserRoles(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	if s.ProxyStaticTo != "" {
+		s.Proxy(w, req)
+	} else {
+		s.ServeStaticFile(w, req, "/index.html")
+	}
+}
+
+// OrganizationUserRoles is the frontend handler for getting the organization's identity.
+func (s *Service) OrganizationUserRolesGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	fmt.Print("Not implemented")
+}
