@@ -68,6 +68,14 @@ onBeforeMount(async () => {
   }
 })
 
+async function onRoles(identityId: string) {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  await router.push({ name: "OrganizationUserRoles", params: { id: props.id, identityId: identityId } })
+}
+
 async function onBlock(identityId: string) {
   if (abortController.signal.aborted) {
     return
@@ -133,9 +141,12 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
                     v-if="!organizationBlockedStatus || organizationBlockedStatus.blocked === 'onlyIdentity' || organizationBlockedStatus.blocked === 'notBlocked'"
                     class="flex flex-col items-start"
                   >
-                    <Button type="button" :progress="progress" @click.prevent="onBlock(user.id)">{{
-                      !organizationBlockedStatus || organizationBlockedStatus.blocked === "notBlocked" ? t("common.buttons.block") : t("common.buttons.unblock")
-                    }}</Button>
+                    <div class="flex flex-row gap-4">
+                      <Button type="button" :progress="progress" @click.prevent="onRoles(user.id)">{{ t("common.buttons.roles") }}</Button>
+                      <Button type="button" :progress="progress" @click.prevent="onBlock(user.id)">{{
+                        !organizationBlockedStatus || organizationBlockedStatus.blocked === "notBlocked" ? t("common.buttons.block") : t("common.buttons.unblock")
+                      }}</Button>
+                    </div>
                   </div>
                 </template>
               </IdentityOrganization>
