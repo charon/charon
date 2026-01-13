@@ -49,9 +49,9 @@ const description = ref("")
 const homepageTemplate = ref("")
 const idScopes = ref<string[]>([])
 
-const roles = ref<Role[]>([])
 const rolesUnexpectedError = ref("")
 const rolesUpdated = ref(false)
+const roles = ref<Role[]>([])
 
 const variablesUnexpectedError = ref("")
 const variablesUpdated = ref(false)
@@ -116,7 +116,10 @@ onBeforeUnmount(() => {
   abortController.abort()
 })
 
-async function loadData(update: "init" | "basic" | "roles" | "variables" | "clientsPublic" | "clientsBackend" | "clientsService" | "admins" | null, dataError: Ref<string> | null) {
+async function loadData(
+  update: "init" | "basic" | "roles" | "variables" | "clientsPublic" | "clientsBackend" | "clientsService" | "admins" | null,
+  dataError: Ref<string> | null,
+) {
   if (abortController.signal.aborted) {
     return
   }
@@ -796,7 +799,6 @@ async function onAddAdmin() {
             </div>
           </form>
 
-
           <template v-if="metadata.can_update || roles.length || canRolesSubmit() || rolesUnexpectedError || rolesUpdated">
             <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.roles") }}</h2>
             <div v-if="rolesUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
@@ -811,24 +813,17 @@ async function onAddAdmin() {
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
                     <label :for="`role-${i}-key`" class="mb-1">{{ t("views.ApplicationTemplateGet.name") }}</label>
-                    <InputText
-                        :id="`role-${i}-key`"
-                        v-model="role.key"
-                        class="min-w-0 flex-auto grow"
-                        :readonly="!metadata.can_update"
-                        :progress="progress"
-                        required
-                    />
+                    <InputText :id="`role-${i}-key`" v-model="role.key" class="min-w-0 flex-auto grow" :readonly="!metadata.can_update" :progress="progress" required />
                     <label :for="`role-${i}-description`" class="mt-4 mb-1"
-                    >{{ t("common.fields.description") }}
+                      >{{ t("common.fields.description") }}
                       <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
-                        :id="`role-${i}-description`"
-                        v-model="role.description"
-                        class="min-w-0 flex-auto grow"
-                        :readonly="!metadata.can_update"
-                        :progress="progress"
+                      :id="`role-${i}-description`"
+                      v-model="role.description"
+                      class="min-w-0 flex-auto grow"
+                      :readonly="!metadata.can_update"
+                      :progress="progress"
                     />
                     <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
                       <Button type="button" :progress="progress" @click.prevent="roles.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
@@ -842,7 +837,6 @@ async function onAddAdmin() {
               </div>
             </form>
           </template>
-
 
           <template v-if="metadata.can_update || variables.length || canVariablesSubmit() || variablesUnexpectedError || variablesUpdated">
             <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.variables") }}</h2>
