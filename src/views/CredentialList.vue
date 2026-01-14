@@ -146,7 +146,9 @@ const WithCredentialDocument = WithDocument<CredentialPublic>
       <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <div class="flex flex-row items-center justify-between gap-4">
           <h1 class="text-2xl font-bold">{{ t("common.entities.credentials") }}</h1>
-          <ButtonLink v-if="isSignedIn()" :to="{ name: 'CredentialAdd' }" :progress="progress" primary>{{ t("common.buttons.add") }}</ButtonLink>
+          <ButtonLink v-if="isSignedIn()" id="credentiallist-button-add" :to="{ name: 'CredentialAdd' }" :progress="progress" primary>{{
+            t("common.buttons.add")
+          }}</ButtonLink>
         </div>
       </div>
       <div v-if="dataLoading" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">{{ t("common.data.dataLoading") }}</div>
@@ -155,7 +157,11 @@ const WithCredentialDocument = WithDocument<CredentialPublic>
         <div v-if="!credentials.length" class="w-full rounded-sm border border-gray-200 bg-white p-4 italic shadow-sm">
           {{ isSignedIn() ? t("views.CredentialList.noCredentialsCreate") : t("views.CredentialList.noCredentialsSignIn") }}
         </div>
-        <div v-for="credential in credentials" :key="credential.id" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
+        <div
+          v-for="credential in credentials"
+          :key="credential.id"
+          class="credentiallist-div-credentialentry w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm"
+        >
           <!--
             We use key to force reloading of the credential after we know the credential has been updated (e.g., renamed).
             TODO: Remove this once we will subscribe reactively to updates to the credential document.
@@ -164,21 +170,16 @@ const WithCredentialDocument = WithDocument<CredentialPublic>
             <template #default="{ doc, url }">
               <CredentialFull :credential="doc" :url="url" :is-renaming="renamingCredentialId === credential.id" @renamed="onRenamed" @canceled="onRenameCancelled">
                 <div class="flex flex-row gap-4">
-                  <Button v-if="doc.provider === 'email' && !doc.verified" :id="`credentiallist-button-verify-${doc.id}`" type="button" secondary disabled>{{
+                  <Button v-if="doc.provider === 'email' && !doc.verified" class="credentiallist-button-verify" type="button" secondary disabled>{{
                     t("views.CredentialList.verify")
                   }}</Button>
                   <!--
                     Button is on purpose not disabled on unexpectedError so that user can retry.
                   -->
-                  <Button
-                    v-if="canRename(doc.provider)"
-                    :id="`credentiallist-button-rename-${doc.id}`"
-                    type="button"
-                    :progress="progress"
-                    @click.prevent="onRename(doc.id)"
-                    >{{ t("common.buttons.rename") }}</Button
-                  >
-                  <Button :id="`credentiallist-button-remove-${doc.id}`" type="button" :progress="progress" @click.prevent="onRemove(doc.id)">{{
+                  <Button v-if="canRename(doc.provider)" class="credentiallist-button-rename" type="button" :progress="progress" @click.prevent="onRename(doc.id)">{{
+                    t("common.buttons.rename")
+                  }}</Button>
+                  <Button class="credentiallist-button-remove" type="button" :progress="progress" @click.prevent="onRemove(doc.id)">{{
                     t("common.buttons.remove")
                   }}</Button>
                 </div>

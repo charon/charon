@@ -1,85 +1,8 @@
 import type { CDPSession } from "@playwright/test"
 
-import { CHARON_URL, checkpoint, expect, test } from "../utils"
-
-// Add a simple WebAuthnCredential interface since playwright does not export the Protocol type.
-interface WebAuthnCredential {
-  credentialId: string
-  isResidentCredential: boolean
-  privateKey: string
-  rpId?: string
-  signCount: number
-  userHandle?: string
-}
+import { CHARON_URL, checkpoint, expect, getIdFromAddedVirtualAuthenticator, simulatePasskeyInput, test, WebAuthnCredential } from "../utils.ts"
 
 let sharedCredential: WebAuthnCredential | null = null
-
-async function getIdFromAddedVirtualAuthenticator(client: CDPSession): Promise<string> {
-  await client.send("WebAuthn.enable")
-  const addVirtualAuthenticatorResult = await client.send("WebAuthn.addVirtualAuthenticator", {
-    options: {
-      protocol: "ctap2",
-      transport: "internal",
-      hasResidentKey: true,
-      hasUserVerification: true,
-      isUserVerified: true,
-      automaticPresenceSimulation: false,
-    },
-  })
-  return addVirtualAuthenticatorResult.authenticatorId
-}
-
-async function simulatePasskeyInput(
-  operationTrigger: () => Promise<void>,
-  action: "shouldSucceed" | "shouldNotSucceed" | "doNotSendVerifiedPasskey",
-  client: CDPSession,
-  authenticatorId: string,
-  credentialShouldAlreadyExist: boolean,
-) {
-  // Set isUserVerified option (true unless action is "doNotSendVerifiedPasskey").
-  await client.send("WebAuthn.setUserVerified", {
-    authenticatorId: authenticatorId,
-    isUserVerified: action !== "doNotSendVerifiedPasskey",
-  })
-
-  // set automaticPresenceSimulation option to true
-  // (so that the virtual authenticator will respond to the next passkey prompt).
-  await client.send("WebAuthn.setAutomaticPresenceSimulation", {
-    authenticatorId: authenticatorId,
-    enabled: true,
-  })
-
-  try {
-    // perform a user action that triggers passkey prompt
-    await operationTrigger()
-
-    // Wait to receive the event that the passkey was successfully registered or verified.
-    // WebAuthn events are only triggered during successful operations.
-    switch (action) {
-      case "shouldSucceed":
-        await new Promise<void>((resolve, reject) => {
-          setTimeout(reject, 3000)
-          client.on("WebAuthn.credentialAdded", () => (credentialShouldAlreadyExist ? reject(new Error("Unexpected credentialAdded event")) : resolve()))
-          client.on("WebAuthn.credentialAsserted", () => (credentialShouldAlreadyExist ? resolve() : reject(new Error("Unexpected credentialAsserted event"))))
-        })
-        break
-      case "shouldNotSucceed":
-      case "doNotSendVerifiedPasskey":
-        await new Promise<void>((resolve, reject) => {
-          setTimeout(resolve, 500)
-          client.on("WebAuthn.credentialAdded", reject)
-          client.on("WebAuthn.credentialAsserted", reject)
-        })
-        break
-    }
-  } finally {
-    // Set automaticPresenceSimulation option back to false.
-    await client.send("WebAuthn.setAutomaticPresenceSimulation", {
-      authenticatorId,
-      enabled: false,
-    })
-  }
-}
 
 test.describe.serial("Charon Sign-in Flows", () => {
   test("Successful sign-up flow via passkey", async ({ context }) => {

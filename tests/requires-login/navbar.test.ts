@@ -4,7 +4,7 @@ test.describe.serial("Charon Navbar Flows", () => {
   test("Test navbar scrolling", async ({ context }) => {
     const page = await context.newPage()
 
-    await signInWithPassword(page, false)
+    await signInWithPassword(page, "tester", "tester123", false, true)
 
     // Find and click the Organizations link.
     const organizationsLink = page.locator("#menu-list-organizations")
@@ -52,14 +52,14 @@ test.describe.serial("Charon Navbar Flows", () => {
     // Scroll down the page in increments, taking screenshots.
     for (let i = 1; i < NUM_SCROLLS; i++) {
       await page.mouse.wheel(0, 5)
-      await page.waitForTimeout(200) // ms.
+      await page.waitForTimeout(500) // ms.
       await checkpoint(page, `organization-list-scrolled-down-${i}`, { fullPage: false, mask: [page.locator("#organizationlist-content-list")] })
     }
 
     // Scroll back up.
     for (let i = 1; i < NUM_SCROLLS; i++) {
       await page.mouse.wheel(0, -5)
-      await page.waitForTimeout(200) // ms.
+      await page.waitForTimeout(500) // ms.
       await checkpoint(page, `organization-list-scrolled-up-${i}`, { fullPage: false, mask: [page.locator("#organizationlist-content-list")] })
     }
 

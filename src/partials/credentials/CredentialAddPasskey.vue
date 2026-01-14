@@ -138,7 +138,7 @@ async function onSubmit() {
     <div v-if="passkeyError" class="mt-4 text-error-600">{{ getErrorMessage(passkeyError) }}</div>
     <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-end">
-      <Button type="submit" primary :disabled="!canSubmit()" :progress="progress">{{ t("common.buttons.add") }}</Button>
+      <Button id="credentialaddpasskey-button-add" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{ t("common.buttons.add") }}</Button>
     </div>
   </form>
 </template>

@@ -162,7 +162,7 @@ function onCancel() {
       </i18n-t>
     </div>
     <div class="mt-4">{{ t("partials.AuthPasskeySignin.signupInfo") }}</div>
-    <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
+    <div v-if="unexpectedError" id="authpasskeysignin-message-unexpectederror" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="2" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
       <Button v-if="unexpectedError" primary type="button" tabindex="1" @click.prevent="onRetry">{{ t("common.buttons.retry") }}</Button>
