@@ -60,7 +60,8 @@ watch(
       displayName.value = props.credential.displayName
       resetOnInteraction()
       await nextTick(() => {
-        document.getElementById(`credentialfull-input-${props.credential.id}`)?.focus()
+        // Only one can be open at a time.
+        document.querySelector<HTMLInputElement>(".credentialfull-input")?.focus()
       })
     } else {
       resetOnInteraction()
@@ -158,9 +159,9 @@ async function signalPasskeyUpdate(signal: CredentialSignalData) {
 <template>
   <div v-if="!isRenaming" class="flex flex-row items-center justify-between gap-4">
     <div class="grow">
-      <h2 :id="`credentialfull-provider-${credential.id}`" class="text-xl">{{ getProviderNameTitle(t, credential.provider) }}</h2>
+      <h2 class="credentialfull-provider text-xl">{{ getProviderNameTitle(t, credential.provider) }}</h2>
       <div class="mt-1 flex flex-row items-center gap-1">
-        <span>{{ credential.displayName }}</span>
+        <span class="credentialfull-displayname">{{ credential.displayName }}</span>
         <span v-if="credential.verified" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{
           t("common.labels.verified")
         }}</span>
@@ -170,19 +171,15 @@ async function signalPasskeyUpdate(signal: CredentialSignalData) {
   </div>
   <div v-else class="flex flex-row items-center justify-between gap-4">
     <div class="grow">
-      <h2 :id="`credentialfull-provider-${credential.id}`" class="text-xl">{{ getProviderNameTitle(t, credential.provider) }}</h2>
+      <h2 class="credentialfull-provider text-xl">{{ getProviderNameTitle(t, credential.provider) }}</h2>
       <!--
         We set novalidate because we do not want UA to show hints.
         We show them ourselves when we want them.
       -->
       <form class="mt-1 flex flex-row items-center gap-4" novalidate @submit.prevent="onSubmit" @keydown.esc="onCancel">
-        <InputText :id="`credentialfull-input-${credential.id}`" v-model="displayName" class="min-w-0 flex-auto grow" :progress="progress" required />
-        <Button :id="`credentialfull-button-rename-${credential.id}`" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{
-          t("common.buttons.rename")
-        }}</Button>
-        <Button :id="`credentialfull-button-cancel-${credential.id}`" type="button" :progress="progress" @click.prevent="onCancel">{{
-          t("common.buttons.cancel")
-        }}</Button>
+        <InputText v-model="displayName" class="credentialfull-input min-w-0 flex-auto grow" :progress="progress" required />
+        <Button class="credentialfull-button-rename" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{ t("common.buttons.rename") }}</Button>
+        <Button class="credentialfull-button-cancel" type="button" :progress="progress" @click.prevent="onCancel">{{ t("common.buttons.cancel") }}</Button>
       </form>
     </div>
   </div>

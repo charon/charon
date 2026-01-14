@@ -46,14 +46,25 @@ async function onSignOut() {
     }
 
     if ("location" in response) {
-      if (browserSupportsWebAuthn()) {
+      // We do not call preventSilentAccess during E2E_TESTS because of the issues with headless Chromium.
+      // See: https://gitlab.com/charon/charon/-/merge_requests/37#note_2975752650
+      // See: https://issues.chromium.org/issues/474377389
+      if (browserSupportsWebAuthn() && !import.meta.env.VITE_E2E_TESTS) {
         await navigator.credentials.preventSilentAccess()
       }
 
-      accessToken.value = ""
-      currentIdentityId.value = ""
-
-      redirectServerSide(response.location, true, progress)
+      try {
+        redirectServerSide(response.location, true, progress)
+      } finally {
+        // We set these just in case that redirect fails for any reason.
+        if (!import.meta.env.VITE_E2E_TESTS) {
+          // During testing we do not clear these variables to not trigger reactive effects which can then trigger
+          // further logic, e.g., fetching from the backend, which can then, when signout redirect happens, fail and
+          // log to the console, which fails tests.
+          accessToken.value = ""
+          currentIdentityId.value = ""
+        }
+      }
 
       return
     }
@@ -86,6 +97,7 @@ async function onSignIn() {
     v-bind="navbarAttrs"
   >
     <router-link
+      id="navbar-link-home"
       :to="{ name: 'Home' }"
       class="group -my-1 -ml-1 border-r border-slate-400 p-1.5 outline-none hover:bg-slate-400 active:bg-slate-200 sm:-my-4 sm:ml-0 sm:p-0"
     >

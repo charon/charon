@@ -100,7 +100,7 @@ cleanup_certs=1
 echo "2. Building Docker images..."
 
 # Build the Charon Docker image from Dockerfile.
-docker build --target production --build-arg CHARON_BUILD_FLAGS="-cover -race -covermode atomic" --build-arg VITE_COVERAGE=true -t charon-image .
+docker build --target production --build-arg CHARON_BUILD_FLAGS="-cover -race -covermode atomic" --build-arg VITE_COVERAGE=true --build-arg VITE_E2E_TESTS=true -t charon-image .
 cleanup_charon_image=1
 
 # Build the Playwright test image.

@@ -158,7 +158,7 @@ async function onPasskeySignup() {
         >
       </i18n-t>
     </div>
-    <div v-else>
+    <div v-else id="authpasskeysignup-text-instructions">
       <i18n-t keypath="partials.AuthPasskeySignup.instructions" scope="global">
         <template #strongPasskey
           ><strong>{{ t("partials.AuthPasskeySignup.passkey") }}</strong></template
