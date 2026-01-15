@@ -36,7 +36,7 @@ const { t } = useI18n({ useScope: "global" })
         This should be similar in what is show as main piece of information in getIdentityDisplayName utility function.
         Keep it in sync with to IdentityFull component, too.
       -->
-      <h2 v-if="identity.username" class="text-xl">
+      <h2 v-if="identity.username" class="identitypublic-text-username text-xl">
         <ul v-if="canUpdate || isCurrent || labels?.length || isShared !== undefined" class="float-right flex flex-row flex-wrap content-start items-start gap-1 text-sm">
           <li v-for="label in labels || []" :key="label" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{ label }}</li>
           <li v-if="isCurrent" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.current") }}</li>
@@ -49,7 +49,7 @@ const { t } = useI18n({ useScope: "global" })
         {{ identity.username }}
         <span v-if="identity.email"> ({{ identity.email }})</span>
       </h2>
-      <h2 v-else-if="identity.email" class="text-xl">
+      <h2 v-else-if="identity.email" class="identitypublic-text-email text-xl">
         <ul v-if="canUpdate || isCurrent || labels?.length || isShared !== undefined" class="float-right flex flex-row flex-wrap content-start items-start gap-1 text-sm">
           <li v-for="label in labels || []" :key="label" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{ label }}</li>
           <li v-if="isCurrent" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.current") }}</li>
@@ -61,7 +61,7 @@ const { t } = useI18n({ useScope: "global" })
         </ul>
         {{ identity.email }}
       </h2>
-      <h2 v-else-if="identity.givenName" class="text-xl">
+      <h2 v-else-if="identity.givenName" class="identitypublic-text-givenname text-xl">
         <ul v-if="canUpdate || isCurrent || labels?.length || isShared !== undefined" class="float-right flex flex-row flex-wrap content-start items-start gap-1 text-sm">
           <li v-for="label in labels || []" :key="label" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{ label }}</li>
           <li v-if="isCurrent" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.current") }}</li>
@@ -74,7 +74,7 @@ const { t } = useI18n({ useScope: "global" })
         {{ identity.givenName }}
         <span v-if="identity.fullName"> ({{ identity.fullName }})</span>
       </h2>
-      <h2 v-else-if="identity.fullName" class="text-xl">
+      <h2 v-else-if="identity.fullName" class="identitypublic-text-fullname text-xl">
         <ul v-if="canUpdate || isCurrent || labels?.length || isShared !== undefined" class="float-right flex flex-row flex-wrap content-start items-start gap-1 text-sm">
           <li v-for="label in labels || []" :key="label" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{ label }}</li>
           <li v-if="isCurrent" class="rounded-xs bg-slate-100 px-1.5 py-0.5 leading-none text-gray-600 shadow-xs">{{ t("common.labels.current") }}</li>
