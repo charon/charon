@@ -10,7 +10,7 @@ import { useI18n } from "vue-i18n"
 import WithDocument from "@/components/WithDocument.vue"
 import { getHomepage } from "@/utils"
 
-defineProps<{
+const { identityOrganization } = defineProps<{
   identityOrganization: IdentityOrganization | DeepReadonly<IdentityOrganization>
 }>()
 
@@ -19,6 +19,8 @@ const { t } = useI18n({ useScope: "global" })
 const WithOrganizationApplicationDocument = WithDocument<OrganizationApplicationPublic>
 const WithOrganizationBlockedStatusDocument = WithDocument<OrganizationBlockedStatus>
 const withOrganizationBlockedStatusDocument = ref<ComponentExposed<typeof WithOrganizationBlockedStatusDocument> | null>(null)
+
+const sortedRoles = [...(identityOrganization.roles || [])].sort()
 
 defineExpose({
   organizationBlockedStatus: computed(() => withOrganizationBlockedStatusDocument.value?.doc || undefined),
@@ -57,6 +59,11 @@ defineExpose({
         </WithOrganizationBlockedStatusDocument>
         <strong v-else>{{ identityOrganization.active ? t("common.labels.active") : t("common.labels.disabled") }}</strong>
       </div>
+      <div>{{ "Roles" }}</div>
+      <div v-if="identityOrganization.roles && identityOrganization.roles.length">
+        {{ sortedRoles.join(", ") }}
+      </div>
+      <div v-else class="italic">{{ t("partials.IdentityOrganization.noRoles") }}</div>
       <div>{{ t("partials.IdentityOrganization.apps") }}</div>
       <ol v-if="identityOrganization.applications.length">
         <li v-for="application in identityOrganization.applications" :key="application.id">
