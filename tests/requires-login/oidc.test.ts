@@ -7,7 +7,7 @@ test.describe.serial("Charon OIDC Flows", () => {
     // Grant permissions for oidcdebugger.com to perform PKCE token exchange.
     await context.grantPermissions(["local-network-access"], { origin: "https://oidcdebugger.com" })
 
-    await signInWithPassword(page, false)
+    await signInWithPassword(page, "tester", "tester123", false, true)
 
     // Find and click the Application Templates link.
     const applicationsLink = page.locator("#menu-list-applicationTemplates")
@@ -206,7 +206,7 @@ test.describe.serial("Charon OIDC Flows", () => {
       await redirectButton.click()
 
       // Wait for the flow and the key exchange to complete successfully.
-      await page.waitForTimeout(500)
+      await page.waitForTimeout(1000)
       await expect(page.getByText("The flow was successful.")).toBeVisible()
 
       // Extract the id_token from the page content.
@@ -237,7 +237,7 @@ test.describe.serial("Charon OIDC Flows", () => {
     }
 
     // Now sign in with tester and check activity logs.
-    await signInWithPassword(page, false)
+    await signInWithPassword(page, "tester", "tester123", false, true)
 
     await expect(organizationsLink).toBeVisible()
     await organizationsLink.click()
