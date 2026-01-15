@@ -565,7 +565,7 @@ func applicationTemplateRefCmp(a ApplicationTemplateRef, b ApplicationTemplateRe
 }
 
 // Validate validates the ApplicationTemplatePublic struct.
-func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *ApplicationTemplatePublic) errors.E {
+func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *ApplicationTemplatePublic) errors.E { //nolint:maintidx
 	if existing == nil {
 		if a.ID != nil {
 			errE := errors.New("ID provided for new document")
