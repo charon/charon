@@ -33,6 +33,8 @@ const (
 	ActivityIdentityBlocked           ActivityType = "identityBlocked"
 	ActivityIdentityUnblocked         ActivityType = "identityUnblocked"
 	ActivityAccountBlocked            ActivityType = "accountBlocked"
+	// TODO: Add activity roleCreated.
+	ActivityApplicationRolesCreate ActivityType = "applicationRolesCreate"
 )
 
 // ActivityChangeType represents the type of change performed during an activity.
@@ -57,6 +59,10 @@ const (
 	ActivityChangeMembershipActivated ActivityChangeType = "membershipActivated"
 	// ActivityChangeMembershipDisabled represents deactivation/disabling a membership.
 	ActivityChangeMembershipDisabled ActivityChangeType = "membershipDisabled"
+	// ActivityChangeRolesAdded represents adding new roles.
+	ActivityChangeRolesAdded ActivityChangeType = "rolesAdded"
+	// ActivityChangeRolesRemoved represents removing roles.
+	ActivityChangeRolesRemoved ActivityChangeType = "rolesRemoved"
 )
 
 // Activity represents a user activity record.
@@ -74,6 +80,7 @@ type Activity struct {
 	ApplicationTemplates     []ApplicationTemplateRef     `json:"applicationTemplates,omitempty"`
 	OrganizationApplications []OrganizationApplicationRef `json:"organizationApplications,omitempty"`
 	Accounts                 []AccountRef                 `json:"-"`
+	Roles                    []string                     `json:"roles,omitempty"`
 
 	// For sign-in activities, this is the list of providers that were used to authenticate the user.
 	Providers []Provider `json:"providers,omitempty"`
@@ -252,6 +259,7 @@ func (s *Service) logActivity(
 				Active:       true,
 				Organization: currentOrganization,
 				Applications: []OrganizationApplicationApplicationRef{},
+				Roles:        []string{},
 			})
 
 			errE := s.updateIdentity(ctx, currentIdentity)
@@ -284,6 +292,7 @@ func (s *Service) logActivity(
 		ApplicationTemplates:     nil,
 		OrganizationApplications: nil,
 		Accounts:                 nil,
+		Roles:                    nil,
 	}
 
 	if len(identities) > 0 {

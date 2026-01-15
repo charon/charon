@@ -163,6 +163,10 @@ function getChangeDescription(
         return [t("partials.ActivityListItem.changes.organizationsDisabled")]
       }
       throw new Error(`unknown change type context: ${changeType}`)
+    case "rolesAdded":
+      return [t("partials.ActivityListItem.changes.rolesAdded")]
+    case "rolesRemoved":
+      return [t("partials.ActivityListItem.changes.rolesRemoved")]
     default:
       throw new Error(`unknown change type: ${changeType}`)
   }
