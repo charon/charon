@@ -23,6 +23,7 @@
       "resume": "Resume",
       "pause": "Pause",
       "redirect": "Redirect",
+      "roles": "Roles",
       "block": "Block",
       "unblock": "Unblock",
       "rename": "Rename"
@@ -207,6 +208,7 @@
       "status": "Status:",
       "apps": "Apps:",
       "noApps": "none",
+      "noRoles": "none",
       "statusAndBlocked": "{status}, {blocked}"
     },
     "ActivityListItem": {
@@ -236,7 +238,9 @@
         "organizationsActivated": "activated organizations",
         "organizationsDisabled": "disabled organizations",
         "identitiesAdded": "added identities",
-        "identitiesRemoved": "removed identities"
+        "identitiesRemoved": "removed identities",
+        "rolesAdded": "added roles",
+        "rolesRemoved": "removed roles"
       },
       "entityLinks": "{entity}: {links}"
     },
@@ -349,6 +353,12 @@
     "OrganizationUsers": {
       "usersForOrganization": "Users for organization",
       "noUsers": "There are no users."
+    },
+    "OrganizationUserRoles": {
+      "userRolesInOrganization": "Uporabniške vloge v organizaciji",
+      "rolesUpdated": "@:views.ApplicationTemplateGet.rolesUpdated",
+      "noRoles": "There are no roles. Add applications with roles to this organization first.",
+      "availableRoles": "Enabled roles for the user from roles available in the organization:"
     },
     "OrganizationBlockUser": {
       "blockUser": "Block user in organization",

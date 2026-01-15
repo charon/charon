@@ -34,6 +34,7 @@ declare module "vue-i18n" {
         resume: string
         pause: string
         redirect: string
+        roles: string
         block: string
         unblock: string
         rename: string
@@ -218,6 +219,7 @@ declare module "vue-i18n" {
         status: string
         apps: string
         noApps: string
+        noRoles: string
         statusAndBlocked: string
       }
       ActivityListItem: {
@@ -248,6 +250,8 @@ declare module "vue-i18n" {
           organizationsDisabled: string
           identitiesAdded: string
           identitiesRemoved: string
+          rolesAdded: string
+          rolesRemoved: string
         }
         entityLinks: string
       }
@@ -274,6 +278,8 @@ declare module "vue-i18n" {
         applicationTemplateName: string
         homepageTemplate: string
         spaceSeparatedScopes: string
+        roles: string
+        addRole: string
         variables: string
         name: string
         addVariable: string
@@ -292,6 +298,7 @@ declare module "vue-i18n" {
         tokenEndpointAuthMethod: string
         serviceClients: string
         applicationsUpdated: string
+        rolesUpdated: string
         variablesUpdated: string
         publicClientsUpdated: string
         backendClientsUpdated: string
@@ -357,6 +364,12 @@ declare module "vue-i18n" {
       OrganizationUsers: {
         usersForOrganization: string
         noUsers: string
+      }
+      OrganizationUserRoles: {
+        userRolesInOrganization: string
+        rolesUpdated: string
+        noRoles: string
+        availableRoles: string
       }
       OrganizationBlockUser: {
         blockUser: string
