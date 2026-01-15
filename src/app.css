@@ -95,7 +95,7 @@
   }
 }
 
-@layer components {
+@layer utilities {
   a:has(img) {
     @apply outline-none;
   }
