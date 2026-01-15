@@ -1786,7 +1786,7 @@ func (s *Service) OrganizationBlockedStatusGetAPI(w http.ResponseWriter, req *ht
 	waf.Error(w, req, http.StatusUnauthorized)
 }
 
-// OrganizationUserRoles is the frontend handler for getting the organization's identity.
+// OrganizationUserRoles is the frontend handler for managing user's roles.
 func (s *Service) OrganizationUserRoles(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
@@ -1795,7 +1795,113 @@ func (s *Service) OrganizationUserRoles(w http.ResponseWriter, req *http.Request
 	}
 }
 
-// OrganizationUserRoles is the frontend handler for getting the organization's identity.
-func (s *Service) OrganizationUserRolesGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	fmt.Print("Not implemented")
+// RolesRequest represents the request body for the OrganizationUserRolesPost handler.
+type RolesRequest struct {
+	Roles []string `json:"roles"`
+}
+
+// OrganizationUserRolesPost is the API handler for updating the organization's identity user roles.
+func (s *Service) OrganizationUserRolesPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	// We allow getting identities with the access token or session cookie.
+	ctx := s.requireAuthenticatedForIdentity(w, req)
+	if ctx == nil {
+		return
+	}
+
+	organization, errE := s.getOrganizationFromID(ctx, params["id"])
+	if errors.Is(errE, ErrOrganizationNotFound) {
+		s.NotFoundWithError(w, req, errE)
+		return
+	} else if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	if !organization.HasAdminAccess(IdentityRef{ID: mustGetIdentityID(ctx)}) {
+		waf.Error(w, req, http.StatusUnauthorized)
+		return
+	}
+
+	identityID, errE := identifier.MaybeString(params["identityId"])
+	if errE != nil {
+		s.NotFoundWithError(w, req, errors.WrapWith(errE, ErrIdentityNotFound))
+		return
+	}
+
+	identity, _, errE := s.getIdentityFromOrganization(ctx, *organization.ID, identityID)
+	if errors.Is(errE, ErrIdentityNotFound) {
+		// It is OK that we leak here if identity is in organization or not because
+		// we do the same in OrganizationIdentityGet.
+		s.NotFoundWithError(w, req, errE)
+		return
+	} else if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	var rolesUpdate RolesRequest
+	errE = x.DecodeJSONWithoutUnknownFields(req.Body, &rolesUpdate)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	for i := range identity.Organizations {
+		if identity.Organizations[i].Organization.ID == *organization.ID {
+			identity.Organizations[i].Roles = rolesUpdate.Roles
+			break
+		}
+	}
+
+	errE = s.updateIdentityRoles(ctx, identity, *organization.ID)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	s.WriteJSON(w, req, []byte(`{"success":true}`), nil)
+}
+
+// This function updates the roles of OrganizationIdentity without checking that user is admin of the identity, only organization.
+func (s *Service) updateIdentityRoles(ctx context.Context, identity *Identity, organizationID identifier.Identifier) errors.E {
+	co := s.charonOrganization()
+
+	if identity.ID == nil {
+		return errors.WithMessage(ErrIdentityValidationFailed, "ID is missing")
+	}
+
+	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.<.
+	existingIdentity, errE := s.getIdentityWithoutAccessCheck(ctx, *identity.ID)
+	if errE != nil {
+		return errE
+	}
+
+	for i, idOrg := range identity.Organizations {
+		if idOrg.Organization.ID == organizationID {
+			errE := idOrg.Validate(ctx, existingIdentity.GetOrganization(&organizationID), s, identity)
+			if errE != nil {
+				return errors.WrapWith(errE, ErrIdentityValidationFailed)
+			}
+			// IdentityOrganization might have been changed by Validate, so we assign it back.
+			identity.Organizations[i] = idOrg
+			break
+		}
+	}
+
+	changes, _, organizations, applications := identity.Changes(existingIdentity)
+
+	if len(changes) == 0 {
+		return nil
+	}
+
+	data, errE := x.MarshalWithoutEscapeHTML(identity)
+	if errE != nil {
+		errors.Details(errE)["id"] = *identity.ID
+		return errE
+	}
+
+	s.setIdentity(*identity.ID, data)
+
+	scopedIdentities := []OrganizationIdentityRef{{Organization: OrganizationRef{ID: co.ID}, Identity: identity.Ref()}}
+	return s.logActivity(ctx, ActivityIdentityUpdate, scopedIdentities, organizations, nil, applications, nil, changes, nil, OrganizationRef{ID: co.ID})
 }
