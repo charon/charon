@@ -1,24 +1,14 @@
-import type { CDPSession, Page } from "@playwright/test"
-import { checkpoint, clearConsoleErrors, expect, getIdFromAddedVirtualAuthenticator, signInWithPassword, simulatePasskeyInput, test } from "../utils"
-
-async function takeScreenshotsOfEachAuthMethod(page: Page) {
-  // Get all credential entry elements
-  const credentialEntries = page.locator(".credentiallist-div-credentialentry")
-  const count = await credentialEntries.count()
-
-  for (let i = 0; i < count; i++) {
-    const entry = credentialEntries.nth(i)
-    const box = await entry.boundingBox()
-    if (!box) {
-      continue
-    }
-
-    const displayNameElement = entry.locator(".credentialfull-displayname")
-    const displayName = (await displayNameElement.textContent())?.replace(/\s/g, "")
-
-    await checkpoint(page, `auth-methods-${displayName}`, { fullPage: true, clip: { x: box.x, y: box.y, width: box.width, height: box.height } })
-  }
-}
+import type { CDPSession } from "@playwright/test"
+import {
+  checkpoint,
+  clearConsoleErrors,
+  expect,
+  getIdFromAddedVirtualAuthenticator,
+  signInWithPassword,
+  simulatePasskeyInput,
+  takeScreenshotsOfEntries,
+  test,
+} from "../utils"
 
 test.describe.serial("Charon Auth Methods Flows", () => {
   test("Test adding a new password", async ({ context }) => {
@@ -34,7 +24,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     // Find and click the ADD button.
     let addButton = page.locator("#credentiallist-button-add")
     await expect(addButton).toBeVisible()
-    await takeScreenshotsOfEachAuthMethod(page)
+    await takeScreenshotsOfEntries(page, ".credentiallist-div-credentialentry", ".credentialfull-displayname", "auth-methods")
     await addButton.click()
 
     // Add a new password
@@ -80,7 +70,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     const passwordItem = page.locator('.credentiallist-div-credentialentry:has-text("password2")')
     const renameButton = passwordItem.locator("button.credentiallist-button-rename")
     await expect(renameButton).toBeVisible()
-    await takeScreenshotsOfEachAuthMethod(page)
+    await takeScreenshotsOfEntries(page, ".credentiallist-div-credentialentry", ".credentialfull-displayname", "auth-methods")
     await renameButton.click()
 
     const passwordRenameInput = page.locator("input.credentialfull-input")
@@ -94,7 +84,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     const renamedPasswordItem = page.locator('.credentiallist-div-credentialentry:has-text("password23")')
     const removeButton = renamedPasswordItem.locator("button.credentiallist-button-remove")
     await expect(removeButton).toBeVisible()
-    await takeScreenshotsOfEachAuthMethod(page)
+    await takeScreenshotsOfEntries(page, ".credentiallist-div-credentialentry", ".credentialfull-displayname", "auth-methods")
     await removeButton.click()
 
     // Since the signOutButton is always visible, we should wait to come back to the Auth Methods page instead.
@@ -126,7 +116,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     let addButton = page.locator("#credentiallist-button-add")
     await expect(addButton).toBeVisible()
 
-    await takeScreenshotsOfEachAuthMethod(page)
+    await takeScreenshotsOfEntries(page, ".credentiallist-div-credentialentry", ".credentialfull-displayname", "auth-methods")
     await addButton.click()
 
     // Add a new password
@@ -154,7 +144,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     let signOutButton = page.locator("#navbar-button-signout")
     // Since the signOutButton is always visible, we should wait to come back to the Auth Methods page instead.
     await expect(addButton).toBeVisible()
-    await takeScreenshotsOfEachAuthMethod(page)
+    await takeScreenshotsOfEntries(page, ".credentiallist-div-credentialentry", ".credentialfull-displayname", "auth-methods")
 
     const homeButton = page.locator("#navbar-link-home")
     await expect(homeButton).toBeVisible()
@@ -194,14 +184,14 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     // Go to auth methods.
     authMethodsLink = page.locator("#menu-list-credentials")
     await expect(authMethodsLink).toBeVisible()
-    await takeScreenshotsOfEachAuthMethod(page)
+    await takeScreenshotsOfEntries(page, ".credentiallist-div-credentialentry", ".credentialfull-displayname", "auth-methods")
     await authMethodsLink.click()
 
     // Now rename the passkey.
     const passkeyItem = page.locator('.credentiallist-div-credentialentry:has-text("passkey")')
     const renameButton = passkeyItem.locator("button.credentiallist-button-rename")
     await expect(renameButton).toBeVisible()
-    await takeScreenshotsOfEachAuthMethod(page)
+    await takeScreenshotsOfEntries(page, ".credentiallist-div-credentialentry", ".credentialfull-displayname", "auth-methods")
     await renameButton.click()
 
     const passkeyRenameInput = page.locator("input.credentialfull-input")
@@ -225,7 +215,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     expect(renamedCredential.userName).toBe("Charon (differentpasskey)")
 
     // Continue removing the passkey.
-    await takeScreenshotsOfEachAuthMethod(page)
+    await takeScreenshotsOfEntries(page, ".credentiallist-div-credentialentry", ".credentialfull-displayname", "auth-methods")
     await removeButton.click()
 
     // Since the signOutButton is always visible, we should wait to come back to the Auth Methods page instead.
@@ -271,7 +261,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     // Find and click the ADD button.
     let addButton = page.locator("#credentiallist-button-add")
     await expect(addButton).toBeVisible()
-    await takeScreenshotsOfEachAuthMethod(page)
+    await takeScreenshotsOfEntries(page, ".credentiallist-div-credentialentry", ".credentialfull-displayname", "auth-methods")
     await addButton.click()
 
     // Add a new username.
@@ -285,7 +275,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
 
     const addUsernameButton = page.locator("#credentialaddusername-button-add")
     await expect(addUsernameButton).toBeVisible()
-    await takeScreenshotsOfEachAuthMethod(page)
+    await takeScreenshotsOfEntries(page, ".credentiallist-div-credentialentry", ".credentialfull-displayname", "auth-methods")
     await addUsernameButton.click()
 
     let signOutButton = page.locator("#navbar-button-signout")
@@ -356,7 +346,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     const usernameItem = page.locator(`div.flex.flex-row:has-text("another")`)
     const removeButton = usernameItem.locator("button.credentiallist-button-remove")
     await expect(removeButton).toBeVisible()
-    await takeScreenshotsOfEachAuthMethod(page)
+    await takeScreenshotsOfEntries(page, ".credentiallist-div-credentialentry", ".credentialfull-displayname", "auth-methods")
     await removeButton.click()
 
     // Since the signOutButton is always visible, we should wait to come back to the Auth Methods page instead.

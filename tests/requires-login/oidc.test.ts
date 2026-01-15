@@ -1,4 +1,4 @@
-import { CHARON_URL, checkpoint, expect, signInWithPassword, test } from "../utils"
+import { CHARON_URL, checkpoint, expect, signInWithPassword, takeScreenshotsOfEntries, test } from "../utils"
 
 test.describe.serial("Charon OIDC Flows", () => {
   test("Test OIDC login", async ({ context }) => {
@@ -275,9 +275,10 @@ test.describe.serial("Charon OIDC Flows", () => {
       await expect(usernameDiv).toBeVisible()
     }
 
-    // await checkpoint(page, "oidc-organization-manage-users-contains-testers", {
-    //   mask: [page.locator(".identityorganization-text-organizationid")],
-    // })
+    // Take a screenshot of each user.
+    await takeScreenshotsOfEntries(page, ".organizationusers-div-userentry", ".identitypublic-text-username", "oidc-organization-manage-users", {
+      mask: [page.locator(".identityorganization-text-organizationid")],
+    })
 
     console.log("Successfully created an OIDC application, added it to an organization and signed in.")
   })

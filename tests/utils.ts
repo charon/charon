@@ -336,3 +336,28 @@ export async function simulatePasskeyInput(
     })
   }
 }
+
+export async function takeScreenshotsOfEntries(
+  page: Page,
+  entrySelector: string,
+  displayNameSelector: string,
+  screenshotPrefix: string,
+  options: CheckpointOptions = {},
+): Promise<void> {
+  // Get all entry elements.
+  const entries = page.locator(entrySelector)
+  const count = await entries.count()
+
+  for (let i = 0; i < count; i++) {
+    const entry = entries.nth(i)
+    const box = await entry.boundingBox()
+    if (!box) {
+      continue
+    }
+
+    const displayNameElement = entry.locator(displayNameSelector)
+    const displayName = (await displayNameElement.textContent())?.replace(/\s/g, "")
+
+    await checkpoint(page, `${screenshotPrefix}-${displayName}`, { ...options, fullPage: true, clip: { x: box.x, y: box.y, width: box.width, height: box.height } })
+  }
+}
