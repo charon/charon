@@ -37,6 +37,7 @@ type IdentityOrganization struct {
 
 	Organization OrganizationRef                         `json:"organization"`
 	Applications []OrganizationApplicationApplicationRef `json:"applications"`
+	Roles        []string                                `json:"roles"`
 }
 
 // Validate validates the IdentityOrganization struct.
@@ -120,6 +121,35 @@ func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityO
 		slices.SortFunc(applications, organizationApplicationApplicationRefCmp)
 		errors.Details(errE)["applications"] = applications
 	}
+
+	if i.Roles == nil {
+		i.Roles = []string{}
+	}
+
+	// We remove duplicates.
+	i.Roles = removeDuplicates(i.Roles)
+
+	validRoles := mapset.NewThreadUnsafeSet[string]()
+	for _, app := range organization.Applications {
+		if !app.Active {
+			continue
+		}
+		appTemplate, errE := service.getApplicationTemplate(ctx, *app.ApplicationTemplate.ID)
+		if errE != nil {
+			continue
+		}
+		for _, role := range appTemplate.Roles {
+			validRoles.Add(role.Key)
+		}
+	}
+
+	validatedRoles := []string{}
+	for _, roleKey := range i.Roles {
+		if validRoles.Contains(roleKey) {
+			validatedRoles = append(validatedRoles, roleKey)
+		}
+	}
+	i.Roles = validatedRoles
 
 	return nil
 }
@@ -482,6 +512,7 @@ func (i *Identity) Changes(existing *Identity) ([]ActivityChangeType, []Identity
 	changedOrganizationSet := mapset.NewThreadUnsafeSet[OrganizationRef]()
 	activatedOrganizationSet := mapset.NewThreadUnsafeSet[OrganizationRef]()
 	disabledOrganizationSet := mapset.NewThreadUnsafeSet[OrganizationRef]()
+	rolesChangedOrganizationSet := mapset.NewThreadUnsafeSet[OrganizationRef]()
 
 	// Compare organizations which are in both sets.
 	for orgRef := range mapset.Elements(newOrganizationSet.Intersect(existingOrganizationSet)) {
@@ -509,9 +540,20 @@ func (i *Identity) Changes(existing *Identity) ([]ActivityChangeType, []Identity
 			})
 		}
 
+		addedRoles, removedRoles := detectSliceChanges(existingOrg.Roles, newOrg.Roles)
+		if !addedRoles.IsEmpty() {
+			changes = append(changes, ActivityChangeRolesAdded)
+			rolesChangedOrganizationSet.Add(orgRef)
+		}
+		if !removedRoles.IsEmpty() {
+			changes = append(changes, ActivityChangeRolesRemoved)
+			rolesChangedOrganizationSet.Add(orgRef)
+		}
+
 		// We make Active and Applications fields the same and in this way compare the rest.
 		existingOrg.Active = newOrg.Active
 		existingOrg.Applications = newOrg.Applications
+		existingOrg.Roles = newOrg.Roles
 		if !reflect.DeepEqual(existingOrg, newOrg) {
 			changedOrganizationSet.Add(orgRef)
 		}
@@ -541,7 +583,10 @@ func (i *Identity) Changes(existing *Identity) ([]ActivityChangeType, []Identity
 		activatedOrganizationSet,
 	).Union(
 		disabledOrganizationSet,
+	).Union(
+		rolesChangedOrganizationSet,
 	).ToSlice()
+
 	slices.SortFunc(organizationsChanged, organizationRefCmp)
 
 	applicationsChanged := addedAppSet.Union(removedAppSet).ToSlice()
@@ -779,7 +824,7 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 		return errors.WithMessage(ErrIdentityValidationFailed, "ID is missing")
 	}
 
-	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
+	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.<.
 	existingIdentity, isAdmin, errE := s.getIdentity(ctx, *identity.ID)
 	if errE != nil {
 		return errE
@@ -1054,6 +1099,7 @@ func (s *Service) selectAndActivateIdentity(ctx context.Context, identityID, org
 			ID: organizationID,
 		},
 		Applications: []OrganizationApplicationApplicationRef{applicationRef},
+		Roles:        nil,
 	})
 
 	return identity, s.updateIdentity(ctx, identity)
