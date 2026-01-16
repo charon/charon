@@ -119,10 +119,10 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     await takeScreenshotsOfEntries(page, ".credentiallist-div-credentialentry", ".credentialfull-displayname", "auth-methods")
     await addButton.click()
 
-    // Add a new password
-    const passwordRadio = page.locator("#credentialadd-radio-passkey")
-    await expect(passwordRadio).toBeVisible()
-    await passwordRadio.click()
+    // Add a new passkey
+    const passkeyRadio = page.locator("#credentialadd-radio-passkey")
+    await expect(passkeyRadio).toBeVisible()
+    await passkeyRadio.click()
 
     const displayNameInput = page.locator("#credentialaddpasskey-input-displayname")
     await expect(displayNameInput).toBeVisible()
