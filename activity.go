@@ -33,7 +33,6 @@ const (
 	ActivityIdentityBlocked           ActivityType = "identityBlocked"
 	ActivityIdentityUnblocked         ActivityType = "identityUnblocked"
 	ActivityAccountBlocked            ActivityType = "accountBlocked"
-	ActivityApplicationRolesCreate    ActivityType = "applicationRolesCreate" // TODO: Add activity roleCreated.
 )
 
 // ActivityChangeType represents the type of change performed during an activity.
