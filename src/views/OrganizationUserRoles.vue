@@ -169,7 +169,7 @@ async function onSubmit() {
       </template>
       <div class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <div v-if="updateError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
-        <div v-if="updateSuccess" class="mb-4 text-success-600">{{ t("views.OrganizationUserRoles.rolesUpdatedSuccessfully") }}</div>
+        <div v-if="updateSuccess" class="mb-4 text-success-600">{{ t("views.OrganizationUserRoles.rolesUpdated") }}</div>
         <div v-if="!availableRoles.length" class="mb-4 text-gray-500 italic"> {{ t("views.OrganizationUserRoles.noRoles") }} </div>
         <form v-else class="flex flex-col" novalidate @submit.prevent="onSubmit">
           <fieldset class="mb-4">

@@ -1862,7 +1862,7 @@ func (s *Service) OrganizationUserRolesPost(w http.ResponseWriter, req *http.Req
 	s.WriteJSON(w, req, []byte(`{"success":true}`), nil)
 }
 
-// This function updates the roles of OrganizationIdentity without checking that user is admin of the identity, only organization.
+// This function updates the roles of OrganizationIdentity without checking that user is admin of the identity.
 func (s *Service) updateIdentityRoles(ctx context.Context, identity *Identity, organizationID identifier.Identifier) errors.E {
 	co := s.charonOrganization()
 
