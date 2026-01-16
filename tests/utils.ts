@@ -305,7 +305,7 @@ export async function simulatePasskeyInput(
           client.on("WebAuthn.credentialAdded", () => (credentialShouldAlreadyExist ? reject(new Error("unexpected credentialAdded event")) : resolve()))
           client.on("WebAuthn.credentialAsserted", () => (credentialShouldAlreadyExist ? resolve() : reject(new Error("unexpected credentialAsserted event"))))
           client.on("WebAuthn.credentialUpdated", () => reject(new Error("unexpected credentialUpdated event")))
-          client.on("WebAuthn.credentialDeleted", () => resolve())
+          client.on("WebAuthn.credentialDeleted", () => reject(new Error("unexpected credentialDeleted event")))
         })
         break
       case "updatePasskey":
