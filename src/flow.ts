@@ -155,7 +155,13 @@ export function processCompleted(router: Router, flow: Flow, progress: Ref<numbe
   }
 }
 
-export function processResponse(router: Router, response: AuthFlowResponse, flow: Flow, progress: Ref<number>, abortController: AbortController | null): boolean {
+export async function processResponse(
+  router: Router,
+  response: AuthFlowResponse,
+  flow: Flow,
+  progress: Ref<number>,
+  abortController: AbortController | null,
+): Promise<boolean> {
   flow.setOrganizationId(response.organizationId)
   flow.setAppId(response.appId)
   if (response.providers) {
@@ -170,7 +176,10 @@ export function processResponse(router: Router, response: AuthFlowResponse, flow
   }
   // Signal browser to delete the unknown passkey.
   if ("signalUnknown" in response && response.signalUnknown) {
-    void signalPasskeyUnknownCredential(response.signalUnknown)
+    await signalPasskeyUnknownCredential(response.signalUnknown)
+    if (abortController && abortController.signal.aborted) {
+      return true
+    }
   }
   if (!equals(flow.getCompleted(), response.completed)) {
     processCompleted(router, flow, progress, response.completed)
@@ -182,7 +191,7 @@ export function processResponse(router: Router, response: AuthFlowResponse, flow
   return false
 }
 
-export function processFirstResponse(router: Router, response: AuthFlowResponse, flow: Flow, progress: Ref<number>) {
+export async function processFirstResponse(router: Router, response: AuthFlowResponse, flow: Flow, progress: Ref<number>) {
   if (response.providers && response.providers.length > 0) {
     const targetSteps = []
     for (const provider of response.providers) {
@@ -208,7 +217,7 @@ export function processFirstResponse(router: Router, response: AuthFlowResponse,
   } else {
     updateSteps(flow, "start", true)
   }
-  processResponse(router, response, flow, progress, null)
+  await processResponse(router, response, flow, progress, null)
   if (
     (response.completed.includes("signin") || response.completed.includes("signup")) &&
     response.providers &&

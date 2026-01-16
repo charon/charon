@@ -145,7 +145,10 @@ export async function startPassword(
       return null
     }
     // processResponse should not really do anything here.
-    if (processResponse(router, response, flow, progress, abortController)) {
+    if (await processResponse(router, response, flow, progress, abortController)) {
+      return null
+    }
+    if (abortController.signal.aborted) {
       return null
     }
     if ("error" in response) {
@@ -189,7 +192,10 @@ export async function restartAuth(router: Router, flow: Flow, abort: AbortSignal
       return
     }
     // processResponse should update steps and move the flow back to the start.
-    if (processResponse(router, response, flow, progress, abort instanceof AbortController ? abort : null)) {
+    if (await processResponse(router, response, flow, progress, abort instanceof AbortController ? abort : null)) {
+      return
+    }
+    if (abortSignal.aborted) {
       return
     }
     throw new Error("unexpected response")
@@ -213,7 +219,10 @@ export async function redirectThirdPartyProvider(router: Router, flow: Flow, abo
       return
     }
     // processResponse should reload the flow for final redirect to happen.
-    if (processResponse(router, response, flow, progress, abortController)) {
+    if (await processResponse(router, response, flow, progress, abortController)) {
+      return
+    }
+    if (abortController.signal.aborted) {
       return
     }
     throw new Error("unexpected response")
