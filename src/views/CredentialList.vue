@@ -181,8 +181,8 @@ const WithCredentialDocument = WithDocument<CredentialPublic>
                 <div class="flex flex-row gap-4">
                   <ButtonLink
                     v-if="doc.provider === 'email' && !doc.confirmed"
-                    class="credentiallist-button-verify"
-                    :to="{ name: 'CredentialVerifyEmail', params: { id: doc.id } }"
+                    class="credentiallist-button-confirm"
+                    :to="{ name: 'CredentialConfirmEmail', params: { id: doc.id } }"
                     :progress="progress"
                     primary
                   >
