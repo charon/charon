@@ -343,6 +343,7 @@ export type IdentityForOrganization = {
   identity: Identity | DeepReadonly<Identity>
   url?: string
   applications: OrganizationApplicationApplicationRef[]
+  roles: string[]
   isCurrent: boolean
   canUpdate: boolean
   blocked: BlockedIdentityType

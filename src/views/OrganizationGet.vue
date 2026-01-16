@@ -220,6 +220,7 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
                 identity: clone(allIdentity.identity),
                 url: allIdentity.url,
                 applications: identityOrganization.applications,
+                roles: identityOrganization.roles || [],
                 isCurrent: allIdentity.isCurrent,
                 canUpdate: allIdentity.canUpdate,
                 blocked: allIdentity.blocked,
@@ -515,6 +516,7 @@ async function onAddIdentity(allIdentity: AllIdentity | DeepReadonly<AllIdentity
     active: false,
     identity: allIdentity.identity,
     applications: [],
+    roles: [],
     url: undefined,
     isCurrent: allIdentity.isCurrent,
     canUpdate: allIdentity.canUpdate,
@@ -884,6 +886,7 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
                       active: identityForOrganization.active,
                       organization: { id },
                       applications: identityForOrganization.applications,
+                      roles: identityForOrganization.roles || [],
                     }"
                   >
                     <div v-if="identityForOrganization.canUpdate" class="flex flex-row gap-4">
