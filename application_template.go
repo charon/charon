@@ -384,7 +384,7 @@ func (c *ApplicationTemplateClientService) Validate(_ context.Context, existing 
 	return nil
 }
 
-var validRoleKeyRegexp = regexp.MustCompile(`^[a-zA-Z_-]+$`)
+var validRoleKeyRegexp = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_-]*[a-zA-Z0-9]+$`)
 
 // Role represents user role defined in application template that can be applied to users in organization.
 type Role struct {
