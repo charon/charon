@@ -296,7 +296,7 @@ async function onResendAfterFailure() {
         <div v-else-if="codeError === 'confirmationFailed'" class="text-error-600">{{ getErrorMessage("confirmationFailed") }}</div>
         <template v-if="codeError === 'credentialInUse' || codeError === 'confirmationFailed'">
           <div class="flex flex-row justify-between gap-4">
-            <Button type="button" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
+            <Button class="credentialconfirmemail-button-back" type="button" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
             <Button
               v-if="codeError === 'confirmationFailed'"
               id="credentialconfirmemail-button-resendonfailed"
@@ -346,8 +346,10 @@ async function onResendAfterFailure() {
           <div v-else-if="codeFromHash" class="mt-4">{{ t("views.CredentialConfirmEmail.confirmCode") }}</div>
           <div v-else class="mt-4">{{ t("views.CredentialConfirmEmail.waitForCode") }}</div>
           <div class="mt-4 flex flex-row justify-between gap-4">
-            <Button type="button" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
-            <Button type="button" :progress="progress" @click.prevent="onResend">{{ t("views.CredentialConfirmEmail.resendButton") }}</Button>
+            <Button class="credentialconfirmemail-button-back" type="button" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
+            <Button id="credentialconfirmemail-button-resend" type="button" :progress="progress" @click.prevent="onResend">{{
+              t("views.CredentialConfirmEmail.resendButton")
+            }}</Button>
           </div>
         </template>
       </div>
