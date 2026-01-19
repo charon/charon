@@ -237,8 +237,8 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     await checkpoint(page, "main-page-after-clicking-signin")
 
     // Simulate passkey input with a promise that triggers a passkey prompt as the argument.
-    await simulatePasskeyInput(() => passkeyButton.click(), "shouldSucceed", client, authenticatorId, true)
-    const failedSigninText = page.locator("#authpasskeysignin-message-unexpectederror")
+    await simulatePasskeyInput(() => passkeyButton.click(), "shouldNotSucceed", client, authenticatorId, true)
+    const failedSigninText = page.locator("#authpasskeysignup-text-instructions")
     await expect(failedSigninText).toBeVisible()
     // TODO: This triggers a "AuthPasskeySignin.onAfterEnter G: fetch POST error 400:"
     //   "Failed to lookup Client-side Discoverable Credential: account not found" appears in server-side logs.
