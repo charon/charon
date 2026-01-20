@@ -191,7 +191,7 @@ export async function processResponse(
   return false
 }
 
-export async function processFirstResponse(router: Router, response: AuthFlowResponse, flow: Flow, progress: Ref<number>) {
+export async function processFirstResponse(router: Router, response: AuthFlowResponse, flow: Flow, progress: Ref<number>, abortController: AbortController) {
   if (response.providers && response.providers.length > 0) {
     const targetSteps = []
     for (const provider of response.providers) {
@@ -217,7 +217,10 @@ export async function processFirstResponse(router: Router, response: AuthFlowRes
   } else {
     updateSteps(flow, "start", true)
   }
-  await processResponse(router, response, flow, progress, null)
+  await processResponse(router, response, flow, progress, abortController)
+  if (abortController.signal.aborted) {
+    return
+  }
   if (
     (response.completed.includes("signin") || response.completed.includes("signup")) &&
     response.providers &&
