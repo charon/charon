@@ -274,7 +274,7 @@ export async function getIdFromAddedVirtualAuthenticator(client: CDPSession): Pr
 
 export async function simulatePasskeyInput(
   operationTrigger: () => Promise<void>,
-  action: "shouldSucceed" | "shouldNotSucceed" | "doNotSendVerifiedPasskey" | "updatePasskey",
+  action: "shouldSucceed" | "shouldNotSucceed" | "doNotSendVerifiedPasskey" | "updatePasskey" | "deletePasskey",
   client: CDPSession,
   authenticatorId: string,
   credentialShouldAlreadyExist: boolean,
@@ -315,6 +315,15 @@ export async function simulatePasskeyInput(
           client.on("WebAuthn.credentialAsserted", () => reject(new Error("unexpected credentialAsserted event")))
           client.on("WebAuthn.credentialUpdated", () => resolve())
           client.on("WebAuthn.credentialDeleted", () => reject(new Error("unexpected credentialDeleted event")))
+        })
+        break
+      case "deletePasskey":
+        await new Promise<void>((resolve, reject) => {
+          setTimeout(resolve, 3000)
+          client.on("WebAuthn.credentialAdded", () => reject(new Error("unexpected credentialAdded event")))
+          client.on("WebAuthn.credentialAsserted", () => reject(new Error("unexpected credentialAsserted event")))
+          client.on("WebAuthn.credentialUpdated", () => reject(new Error("unexpected credentialUpdated event")))
+          client.on("WebAuthn.credentialDeleted", () => resolve())
         })
         break
       case "shouldNotSucceed":

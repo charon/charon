@@ -216,7 +216,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
 
     // Continue removing the passkey.
     await takeScreenshotsOfEntries(page, ".credentiallist-div-credentialentry", ".credentialfull-displayname", "auth-methods")
-    await removeButton.click()
+    await simulatePasskeyInput(() => removeButton.click(), "deletePasskey", client, authenticatorId, true)
 
     // Since the signOutButton is always visible, we should wait to come back to the Auth Methods page instead.
     addButton = page.locator("#credentiallist-button-add")
