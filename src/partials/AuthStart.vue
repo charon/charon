@@ -26,6 +26,14 @@ const abortController = new AbortController()
 const passwordError = ref("")
 const unexpectedError = ref("")
 
+const allowedThirdPartyProviders = computed(() =>
+  siteContext.providers.filter((p) => (p.type === "oidc" || p.type === "saml") && props.flow.getAllowedProviders().includes(p.key)),
+)
+
+const isPasswordAllowed = computed(() => props.flow.getAllowedProviders().includes("password"))
+
+const isPasskeyAllowed = computed(() => props.flow.getAllowedProviders().includes("passkey"))
+
 function getErrorMessage(errorCode: string) {
   switch (errorCode) {
     case "invalidEmailOrUsername":
@@ -176,39 +184,51 @@ function onThirdPartyProvider(provider: string) {
 
 <template>
   <div class="flex w-full flex-col rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
-    <div class="flex flex-col">
-      <label for="authstart-input-email" class="mb-1">{{ t("partials.AuthStart.emailOrUsernameLabel", { siteTitle: siteContext.title }) }}</label>
-      <!--
-        We set novalidate because we do not want UA to show hints.
-        We show them ourselves when we want them.
-      -->
-      <form class="flex flex-row gap-4" novalidate @submit.prevent="onNext">
-        <InputText
-          id="authstart-input-email"
-          v-model="emailOrUsernameProxy"
-          name="email"
-          class="min-w-0 flex-auto grow"
-          :progress="progress"
-          :invalid="!!passwordError"
-          autocomplete="username"
-          autocorrect="off"
-          autocapitalize="none"
-          spellcheck="false"
-          type="email"
-          minlength="3"
-          required
-        />
-        <Button id="authstart-button-next" primary type="submit" :disabled="!canNext()" :progress="progress">{{ t("common.buttons.next") }}</Button>
-      </form>
-      <div v-if="passwordError" id="authstart-error-emailorusername" class="mt-4 text-error-600">{{ getErrorMessage(passwordError) }}</div>
-      <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
-    </div>
-    <h2 class="m-4 text-center text-xl font-bold uppercase">{{ t("partials.AuthStart.orUse") }}</h2>
-    <Button id="authstart-button-passkey" primary type="button" :disabled="!browserSupportsWebAuthn()" :progress="progress" @click.prevent="onPasskey">{{
-      t("common.providers.passkeyTitle")
-    }}</Button>
+    <template v-if="isPasswordAllowed">
+      <div class="flex flex-col">
+        <label for="authstart-input-email" class="mb-1">{{ t("partials.AuthStart.emailOrUsernameLabel", { siteTitle: siteContext.title }) }}</label>
+        <!--
+          We set novalidate because we do not want UA to show hints.
+          We show them ourselves when we want them.
+        -->
+        <form class="flex flex-row gap-4" novalidate @submit.prevent="onNext">
+          <InputText
+            id="authstart-input-email"
+            v-model="emailOrUsernameProxy"
+            name="email"
+            class="min-w-0 flex-auto grow"
+            :progress="progress"
+            :invalid="!!passwordError"
+            autocomplete="username"
+            autocorrect="off"
+            autocapitalize="none"
+            spellcheck="false"
+            type="email"
+            minlength="3"
+            required
+          />
+          <Button id="authstart-button-next" primary type="submit" :disabled="!canNext()" :progress="progress">{{ t("common.buttons.next") }}</Button>
+        </form>
+        <div v-if="passwordError" id="authstart-error-emailorusername" class="mt-4 text-error-600">{{ getErrorMessage(passwordError) }}</div>
+        <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
+      </div>
+    </template>
+    <h2 v-if="isPasswordAllowed && (isPasskeyAllowed || allowedThirdPartyProviders.length > 0)" class="m-4 text-center text-xl font-bold uppercase">
+      {{ t("partials.AuthStart.orUse") }}
+    </h2>
     <Button
-      v-for="p in siteContext.providers"
+      v-if="isPasskeyAllowed"
+      id="authstart-button-passkey"
+      primary
+      type="button"
+      :disabled="!browserSupportsWebAuthn()"
+      :progress="progress"
+      @click.prevent="onPasskey"
+    >
+      {{ t("common.providers.passkeyTitle") }}
+    </Button>
+    <Button
+      v-for="p in allowedThirdPartyProviders"
       :id="`authstart-button-${p.key}`"
       :key="p.key"
       primary
@@ -216,7 +236,7 @@ function onThirdPartyProvider(provider: string) {
       class="mt-4"
       :progress="progress"
       @click.prevent="onThirdPartyProvider(p.key)"
-      >{{ p.name }}</Button
-    >
+      >{{ p.name }}
+    </Button>
   </div>
 </template>

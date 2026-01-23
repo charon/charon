@@ -66,6 +66,7 @@ const emailOrUsername = ref("")
 const publicKey = ref<Uint8Array<ArrayBuffer>>()
 const deriveOptions = ref<DeriveOptions>()
 const encryptOptions = ref<EncryptOptions>()
+const allowedProviders = ref<string[]>([])
 
 onBeforeUnmount(() => {
   abortController.abort()
@@ -143,6 +144,12 @@ const flow: Flow = {
   },
   setEncryptOptions(value?: EncryptOptions) {
     encryptOptions.value = value
+  },
+  getAllowedProviders(): string[] {
+    return allowedProviders.value
+  },
+  setAllowedProviders(value: string[]) {
+    allowedProviders.value = value
   },
 }
 

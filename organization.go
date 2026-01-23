@@ -567,6 +567,8 @@ type Organization struct {
 	// allow users to be enumerated. This is why Roles map is not public, but we publicly
 	// expose the roles for each user through OrganizationIdentity.
 	Roles map[identifier.Identifier][]string `json:"roles"`
+
+	AllowedProviders []Provider `json:"allowedProviders"`
 }
 
 // GetApplication returns the application template added to the organization (i.e., the application)
@@ -765,6 +767,19 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 	// TODO: If an application is deactivated/removed from organization, obsolete roles stay.
 	//       See: https://gitlab.com/charon/charon/-/issues/77
 
+	if o.Name != "Charon" {
+		if len(o.AllowedProviders) == 0 {
+			return errors.New("at least 1 authentication method is required")
+		}
+
+		availableProviders := service.getAllAvailableProviders(ctx)
+		for _, provider := range o.AllowedProviders {
+			if !slices.Contains(availableProviders, provider) {
+				return errors.New("unknown provider")
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -787,6 +802,10 @@ func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []
 	}
 	if !adminsRemoved.IsEmpty() {
 		changes = append(changes, ActivityChangePermissionsRemoved)
+	}
+
+	if !reflect.DeepEqual(existing.AllowedProviders, o.AllowedProviders) {
+		changes = append(changes, ActivityChangeOtherData)
 	}
 
 	// We make copies of app structs on purpose, so that we can change Active field as needed.
@@ -1513,6 +1532,8 @@ func (s *Service) OrganizationCreatePostAPI(w http.ResponseWriter, req *http.Req
 		return
 	}
 
+	organization.AllowedProviders = s.getAllAvailableProviders(ctx)
+
 	errE = s.createOrganization(ctx, &organization)
 	if errors.Is(errE, ErrOrganizationValidationFailed) {
 		s.BadRequestWithError(w, req, errE)
@@ -1892,4 +1913,17 @@ func (s *Service) OrganizationRoles(w http.ResponseWriter, req *http.Request, _ 
 	} else {
 		s.ServeStaticFile(w, req, "/index.html")
 	}
+}
+
+func (s *Service) getAllAvailableProviders(ctx context.Context) []Provider {
+	providers := []Provider{}
+
+	providers = append(providers, ProviderPasskey, ProviderPassword)
+
+	site := waf.MustGetSite[*Site](ctx)
+	for _, p := range site.Providers {
+		providers = append(providers, p.Key)
+	}
+
+	return providers
 }

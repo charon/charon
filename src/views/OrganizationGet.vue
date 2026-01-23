@@ -23,6 +23,7 @@ import { setupArgon2id } from "@/argon2id"
 import { isSignedIn } from "@/auth"
 import Button from "@/components/Button.vue"
 import ButtonLink from "@/components/ButtonLink.vue"
+import CheckBox from "@/components/CheckBox.vue"
 import InputText from "@/components/InputText.vue"
 import TextArea from "@/components/TextArea.vue"
 import siteContext from "@/context"
@@ -71,6 +72,11 @@ const organizationIdentitiesUnexpectedError = ref("")
 const organizationIdentitiesUpdated = ref(false)
 let identitiesForOrganizationInitial: IdentityForOrganization[] = []
 const identitiesForOrganization = ref<IdentityForOrganization[]>([])
+
+const authMechanismsUnexpectedError = ref("")
+const authMechanismsUpdated = ref(false)
+const availableAuthMechanisms = ref<string[]>([])
+const selectedAuthMechanisms = ref<string[]>([])
 
 const allIdentities = ref<AllIdentity[]>([])
 const availableIdentities = computed(() => {
@@ -122,6 +128,8 @@ function resetOnInteraction() {
   adminsUpdated.value = false
   organizationIdentitiesUnexpectedError.value = ""
   organizationIdentitiesUpdated.value = false
+  authMechanismsUnexpectedError.value = ""
+  authMechanismsUpdated.value = false
   // dataLoading and dataLoadingError are not listed here on
   // purpose because they are used only on mount.
 }
@@ -147,7 +155,7 @@ onBeforeUnmount(() => {
   abortController.abort()
 })
 
-async function loadData(update: "init" | "basic" | "applications" | "admins" | "identities" | null, dataError: Ref<string> | null) {
+async function loadData(update: "init" | "basic" | "applications" | "admins" | "identities" | "authMechanisms" | null, dataError: Ref<string> | null) {
   if (abortController.signal.aborted) {
     return
   }
@@ -182,6 +190,11 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
       }
       if (update === "init" || update === "admins") {
         admins.value = clone(response.doc.admins || [])
+      }
+      if (update === "init" || update === "authMechanisms") {
+        const builtInProviders = ["password", "passkey"]
+        availableAuthMechanisms.value = [...builtInProviders, ...siteContext.providers.map((p) => p.key)]
+        selectedAuthMechanisms.value = clone(response.doc.allowedProviders || [])
       }
     }
 
@@ -257,7 +270,7 @@ onBeforeMount(async () => {
   await loadData("init", dataLoadingError)
 })
 
-async function onSubmit(payload: Organization, update: "basic" | "applications" | "admins", updated: Ref<boolean>, unexpectedError: Ref<string>) {
+async function onSubmit(payload: Organization, update: "basic" | "applications" | "admins" | "authMechanisms", updated: Ref<boolean>, unexpectedError: Ref<string>) {
   if (abortController.signal.aborted) {
     return
   }
@@ -326,6 +339,7 @@ async function onBasicSubmit() {
     admins: organization.value!.admins,
     applications: organization.value!.applications,
     roles: organization.value!.roles,
+    allowedProviders: organization.value!.allowedProviders,
   }
   await onSubmit(payload, "basic", basicUpdated, basicUnexpectedError)
 }
@@ -359,6 +373,7 @@ async function onApplicationsSubmit() {
     admins: organization.value!.admins,
     applications: applications.value,
     roles: organization.value!.roles,
+    allowedProviders: organization.value!.allowedProviders,
   }
   await onSubmit(payload, "applications", applicationsUpdated, applicationsUnexpectedError)
 }
@@ -479,6 +494,7 @@ async function onAdminsSubmit() {
     admins: admins.value,
     applications: organization.value!.applications,
     roles: organization.value!.roles,
+    allowedProviders: organization.value!.allowedProviders,
   }
   await onSubmit(payload, "admins", adminsUpdated, adminsUnexpectedError)
 }
@@ -650,6 +666,34 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
     labels.push(t("common.labels.blocked"))
   }
   return labels
+}
+
+async function onAuthMechanismSubmit() {
+  const payload: Organization = {
+    // We update only selected auth mechanisms.
+    id: props.id,
+    name: organization.value!.name,
+    description: organization.value!.description,
+    admins: organization.value!.admins,
+    applications: organization.value!.applications,
+    allowedProviders: selectedAuthMechanisms.value,
+  }
+  await onSubmit(payload, "authMechanisms", authMechanismsUpdated, authMechanismsUnexpectedError)
+
+  if (authMechanismsUnexpectedError.value) {
+    selectedAuthMechanisms.value = clone(organization.value!.allowedProviders || [])
+  }
+}
+
+function canAuthMechanismsSubmit(): boolean {
+  // Submission is on purpose not disabled on authMechanismsUnexpectedError so that user can retry.
+
+  // Anything changed?
+  if (!equals(organization.value!.allowedProviders || [], selectedAuthMechanisms.value)) {
+    return true
+  }
+
+  return false
 }
 
 // TODO: Remember previous client ID and secrets and reuse them if an add application is removed and then added back without calling update in-between.
@@ -932,6 +976,32 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
                 </IdentityFull>
               </li>
             </ul>
+          </template>
+          <template v-if="metadata.can_update || authMechanismsUnexpectedError || authMechanismsUpdated">
+            <h2 class="text-xl font-bold">Allowed authentication mechanisms</h2>
+            <div v-if="authMechanismsUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
+            <div v-else-if="authMechanismsUpdated" class="text-success-600">{{ t("views.OrganizationGet.allowedProvidersUpdated") }}</div>
+            <!--
+              We set novalidate because we do not want UA to show hints.
+              We show them ourselves when we want them.
+            -->
+            <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onAuthMechanismSubmit">
+              <fieldset class="mb-4">
+                <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                  <template v-for="mechanism in availableAuthMechanisms" :key="mechanism">
+                    <CheckBox :id="`organizationauth-checkbox-${mechanism}`" v-model="selectedAuthMechanisms" :value="mechanism" :progress="progress" class="mx-2" />
+                    <div class="flex flex-col">
+                      <label :for="`organizationauth-checkbox-${mechanism}`">{{ mechanism }}</label>
+                    </div>
+                  </template>
+                </div>
+              </fieldset>
+              <div class="flex justify-end">
+                <Button id="authMechanisms-update" type="submit" primary :disabled="!canAuthMechanismsSubmit()" :progress="progress">
+                  {{ t("common.buttons.update") }}
+                </Button>
+              </div>
+            </form>
           </template>
         </template>
       </div>

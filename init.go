@@ -37,6 +37,11 @@ func initCharonOrganization(ctx context.Context, config *Config, service *Servic
 
 		refreshTokenLifespan := x.Duration(time.Hour * 24 * 30) //nolint:mnd
 
+		allowedProviders := []Provider{ProviderPasskey, ProviderPassword}
+		for _, p := range service.providers {
+			allowedProviders = append(allowedProviders, p.Key)
+		}
+
 		organization := Organization{
 			OrganizationPublic: OrganizationPublic{
 				ID:          &charonOrganizationID,
@@ -88,7 +93,8 @@ func initCharonOrganization(ctx context.Context, config *Config, service *Servic
 					ClientsService: []OrganizationApplicationClientService{},
 				},
 			},
-			Roles: nil,
+			Roles:            nil,
+			AllowedProviders: allowedProviders,
 		}
 
 		errE := organization.validate(ctx, &organization, service)

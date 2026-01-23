@@ -73,11 +73,12 @@ func (s *Service) handleAuthFlowThirdPartyProviderStart(
 	}
 
 	s.WriteJSON(w, req, AuthFlowResponse{
-		Completed:       flow.Completed,
-		OrganizationID:  flow.OrganizationID,
-		AppID:           flow.AppID,
-		Providers:       flow.Providers,
-		EmailOrUsername: flow.EmailOrUsername,
+		Completed:        flow.Completed,
+		OrganizationID:   flow.OrganizationID,
+		AppID:            flow.AppID,
+		Providers:        flow.Providers,
+		AllowedProviders: flow.AllowedProviders,
+		EmailOrUsername:  flow.EmailOrUsername,
 		ThirdPartyProvider: &AuthFlowResponseThirdPartyProvider{
 			Location: location,
 		},
@@ -109,12 +110,21 @@ func (s *Service) AuthFlowThirdPartyProviderStartPostAPI(w http.ResponseWriter, 
 
 	providerKey := providerStart.Provider
 
+	if !flow.isProviderAllowed(providerKey) {
+		errE := errors.New("provider not allowed")
+		errors.Details(errE)["provider"] = providerKey
+		s.failAuthStep(w, req, true, flow, errE)
+		return
+	}
+
 	if p, ok := s.oidcProviders()[providerKey]; providerKey != "" && ok {
+		// TODO: add fail auth step if not allowed.
 		s.handleAuthFlowThirdPartyProviderStart(ctx, w, req, flow, providerKey, s.handlerOIDCStart(p))
 		return
 	}
 
 	if p, ok := s.samlProviders()[providerKey]; providerKey != "" && ok {
+		// TODO: add fail auth step if not allowed.
 		s.handleAuthFlowThirdPartyProviderStart(ctx, w, req, flow, providerKey, s.handlerSAMLStart(p))
 		return
 	}

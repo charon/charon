@@ -357,6 +357,8 @@ declare module "vue-i18n" {
         publicClients: string
         serviceClients: string
         status: string
+        allowedAuthMechanisms: string
+        allowedProvidersUpdated: string
       }
       OrganizationList: {
         noOrganizationsCreate: string

@@ -90,6 +90,13 @@ func (s *Service) AuthFlowPasswordStartPostAPI(w http.ResponseWriter, req *http.
 		return
 	}
 
+	if !flow.isProviderAllowed(ProviderPassword) {
+		errE := errors.New("provider not allowed")
+		errors.Details(errE)["provider"] = ProviderPassword
+		s.failAuthStep(w, req, true, flow, errE)
+		return
+	}
+
 	var passwordStart AuthFlowPasswordStartRequest
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &passwordStart)
 	if errE != nil {
@@ -132,6 +139,7 @@ func (s *Service) AuthFlowPasswordStartPostAPI(w http.ResponseWriter, req *http.
 		OrganizationID:     flow.OrganizationID,
 		AppID:              flow.AppID,
 		Providers:          flow.Providers,
+		AllowedProviders:   flow.AllowedProviders,
 		EmailOrUsername:    flow.EmailOrUsername,
 		ThirdPartyProvider: nil,
 		Passkey:            nil,

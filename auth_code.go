@@ -275,6 +275,7 @@ func (s *Service) sendCode(
 		OrganizationID:     flow.OrganizationID,
 		AppID:              flow.AppID,
 		Providers:          flow.Providers,
+		AllowedProviders:   flow.AllowedProviders,
 		EmailOrUsername:    preservedEmailOrUsername,
 		ThirdPartyProvider: nil,
 		Passkey:            nil,

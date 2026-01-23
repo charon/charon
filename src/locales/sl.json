@@ -345,7 +345,9 @@
       "configuration": "Konfiguracija",
       "publicClients": "@:views.ApplicationTemplateGet.publicClients",
       "serviceClients": "@:views.ApplicationTemplateGet.serviceClients",
-      "status": "Status: {strongStatus}"
+      "status": "Status: {strongStatus}",
+      "allowedAuthMechanisms": "Dovoljeni mehanizmi avtentikacije",
+      "allowedProvidersUpdated": "Dovoljeni mehanizmi avtentikacije uspešno posodobljeni."
     },
     "OrganizationList": {
       "noOrganizationsCreate": "Ni organizacij. Ustvarite prvo.",
