@@ -354,8 +354,8 @@
       "usersForOrganization": "Users for organization",
       "noUsers": "There are no users."
     },
-    "OrganizationUserRoles": {
-      "userRolesInOrganization": "User roles in organization",
+    "OrganizationRoles": {
+      "rolesInOrganization": "User roles in organization",
       "rolesUpdated": "@:views.ApplicationTemplateGet.rolesUpdated",
       "noRoles": "There are no user roles. Add applications with user roles to this organization first.",
       "availableRoles": "Enabled user roles for the user from roles available in the organization:"

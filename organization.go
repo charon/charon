@@ -1786,8 +1786,8 @@ func (s *Service) OrganizationBlockedStatusGetAPI(w http.ResponseWriter, req *ht
 	waf.Error(w, req, http.StatusUnauthorized)
 }
 
-// OrganizationUserRoles is the frontend handler for managing user's roles.
-func (s *Service) OrganizationUserRoles(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// OrganizationRoles is the frontend handler for managing user's roles.
+func (s *Service) OrganizationRoles(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
@@ -1795,13 +1795,13 @@ func (s *Service) OrganizationUserRoles(w http.ResponseWriter, req *http.Request
 	}
 }
 
-// RolesRequest represents the request body for the OrganizationUserRolesPost handler.
+// RolesRequest represents the request body for the OrganizationRolesPost handler.
 type RolesRequest struct {
 	Roles []string `json:"roles"`
 }
 
-// OrganizationUserRolesPost is the API handler for updating the organization's identity user roles.
-func (s *Service) OrganizationUserRolesPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// OrganizationRolesPost is the API handler for updating the organization's identity user roles.
+func (s *Service) OrganizationRolesPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	// We allow getting identities with the access token or session cookie.
 	ctx := s.requireAuthenticatedForIdentity(w, req)
 	if ctx == nil {

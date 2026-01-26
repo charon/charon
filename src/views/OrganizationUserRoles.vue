@@ -91,7 +91,7 @@ onBeforeMount(async () => {
     if (abortController.signal.aborted) {
       return
     }
-    console.error("OrganizationUserRoles.onBeforeMount", error)
+    console.error("OrganizationRoles.onBeforeMount", error)
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     dataLoadingError.value = `${error}`
   } finally {
@@ -120,7 +120,7 @@ async function onSubmit() {
       roles: selectedRoleKeys.value,
     }
     const url = router.apiResolve({
-      name: "OrganizationUserRoles",
+      name: "OrganizationRoles",
       params: {
         id: props.id,
         identityId: props.identityId,
@@ -137,7 +137,7 @@ async function onSubmit() {
     if (abortController.signal.aborted) {
       return
     }
-    console.error("OrganizationUserRoles.onUpdate", error)
+    console.error("OrganizationRoles.onUpdate", error)
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     updateError.value = `${error}`
   } finally {
@@ -154,7 +154,7 @@ async function onSubmit() {
     <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,65ch)] gap-1 sm:m-4 sm:gap-4">
       <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <div class="flex flex-col gap-4">
-          <h1 class="text-2xl font-bold">{{ t("views.OrganizationUserRoles.userRolesInOrganization") }}</h1>
+          <h1 class="text-2xl font-bold">{{ t("views.OrganizationRoles.rolesInOrganization") }}</h1>
           <div>
             <OrganizationListItem :item="{ id }" />
           </div>
@@ -169,17 +169,17 @@ async function onSubmit() {
       </template>
       <div class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <div v-if="updateError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
-        <div v-if="updateSuccess" class="mb-4 text-success-600">{{ t("views.OrganizationUserRoles.rolesUpdated") }}</div>
-        <div v-if="!availableRoles.length" class="mb-4 text-gray-500 italic"> {{ t("views.OrganizationUserRoles.noRoles") }} </div>
+        <div v-if="updateSuccess" class="mb-4 text-success-600">{{ t("views.OrganizationRoles.rolesUpdated") }}</div>
+        <div v-if="!availableRoles.length" class="mb-4 text-gray-500 italic"> {{ t("views.OrganizationRoles.noRoles") }} </div>
         <form v-else class="flex flex-col" novalidate @submit.prevent="onSubmit">
           <fieldset class="mb-4">
-            <legend class="mb-1">{{ t("views.OrganizationUserRoles.availableRoles") }}</legend>
+            <legend class="mb-1">{{ t("views.OrganizationRoles.availableRoles") }}</legend>
             <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
               <template v-for="role in availableRoles" :key="role.key">
-                <CheckBox :id="`organizationuserroles-checkbox-${role.key}`" v-model="selectedRoleKeys" :value="role.key" :progress="progress" class="mx-2" />
+                <CheckBox :id="`organizationroles-checkbox-${role.key}`" v-model="selectedRoleKeys" :value="role.key" :progress="progress" class="mx-2" />
                 <div class="flex flex-col">
-                  <label :for="`organizationuserroles-checkbox-${role.key}`">{{ role.key }}</label>
-                  <label :for="`organizationuserroles-checkbox-${role.key}`">{{ role.description }}</label>
+                  <label :for="`organizationroles-checkbox-${role.key}`">{{ role.key }}</label>
+                  <label :for="`organizationroles-checkbox-${role.key}`">{{ role.description }}</label>
                 </div>
               </template>
             </div>

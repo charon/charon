@@ -365,8 +365,8 @@ declare module "vue-i18n" {
         usersForOrganization: string
         noUsers: string
       }
-      OrganizationUserRoles: {
-        userRolesInOrganization: string
+      OrganizationRoles: {
+        rolesInOrganization: string
         rolesUpdated: string
         noRoles: string
         availableRoles: string

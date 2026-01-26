@@ -73,7 +73,7 @@ async function onRoles(identityId: string) {
     return
   }
 
-  await router.push({ name: "OrganizationUserRoles", params: { id: props.id, identityId: identityId } })
+  await router.push({ name: "OrganizationRoles", params: { id: props.id, identityId: identityId } })
 }
 
 async function onBlock(identityId: string) {
