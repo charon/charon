@@ -842,6 +842,7 @@ func (a *ApplicationTemplate) Changes(existing *ApplicationTemplate) ([]Activity
 	}
 
 	addedRoles, removedRoles := detectSliceChanges(existingRoleKeys, newRoleKeys)
+
 	if !addedRoles.IsEmpty() {
 		changes = append(changes, ActivityChangeRolesAdded)
 	}
@@ -859,6 +860,7 @@ func (a *ApplicationTemplate) Changes(existing *ApplicationTemplate) ([]Activity
 	}
 
 	adminsAdded, adminsRemoved := detectSliceChanges(existing.Admins, a.Admins)
+
 	if !adminsAdded.IsEmpty() {
 		changes = append(changes, ActivityChangePermissionsAdded)
 	}

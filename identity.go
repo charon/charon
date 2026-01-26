@@ -527,6 +527,7 @@ func (i *Identity) Changes(existing *Identity) ([]ActivityChangeType, []Identity
 		}
 
 		appsAdded, appsRemoved := detectSliceChanges(existingOrg.Applications, newOrg.Applications)
+
 		for app := range mapset.Elements(appsAdded) {
 			addedAppSet.Add(OrganizationApplicationRef{
 				Organization: orgRef,
@@ -541,6 +542,7 @@ func (i *Identity) Changes(existing *Identity) ([]ActivityChangeType, []Identity
 		}
 
 		addedRoles, removedRoles := detectSliceChanges(existingOrg.Roles, newOrg.Roles)
+
 		if !addedRoles.IsEmpty() {
 			changes = append(changes, ActivityChangeRolesAdded)
 			rolesChangedOrganizationSet.Add(orgRef)
