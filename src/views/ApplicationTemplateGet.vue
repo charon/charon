@@ -164,7 +164,7 @@ async function loadData(
       idScopes.value = clone(response.doc.idScopes)
     }
     if (update === "init" || update === "roles") {
-      roles.value = clone(response.doc.roles)
+      roles.value = clone(response.doc.roles || [])
     }
     if (update === "init" || update === "variables") {
       variables.value = clone(response.doc.variables)
@@ -309,13 +309,6 @@ async function onBasicSubmit() {
 
 function canRolesSubmit(): boolean {
   // Submission is on purpose not disabled on rolesUnexpectedError so that user can retry.
-
-  // Required fields.
-  for (const role of roles.value) {
-    if (!role.key) {
-      return false
-    }
-  }
 
   // Anything changed?
   if (!equals(applicationTemplate.value!.roles, roles.value)) {
