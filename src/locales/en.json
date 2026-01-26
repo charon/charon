@@ -287,7 +287,7 @@
       "tokenEndpointAuthMethod": "Token endpoint authentication method",
       "serviceClients": "Service clients",
       "applicationsUpdated": "Application template updated successfully.",
-      "rolesUpdated": "Roles updated successfully.",
+      "rolesUpdated": "User roles updated successfully.",
       "variablesUpdated": "Variables updated successfully.",
       "publicClientsUpdated": "Public clients updated successfully.",
       "backendClientsUpdated": "Backend clients updated successfully.",
@@ -355,10 +355,10 @@
       "noUsers": "There are no users."
     },
     "OrganizationUserRoles": {
-      "userRolesInOrganization": "Uporabniške vloge v organizaciji",
+      "userRolesInOrganization": "User roles in organization",
       "rolesUpdated": "@:views.ApplicationTemplateGet.rolesUpdated",
-      "noRoles": "There are no roles. Add applications with roles to this organization first.",
-      "availableRoles": "Enabled roles for the user from roles available in the organization:"
+      "noRoles": "There are no user roles. Add applications with user roles to this organization first.",
+      "availableRoles": "Enabled user roles for the user from roles available in the organization:"
     },
     "OrganizationBlockUser": {
       "blockUser": "Block user in organization",

@@ -153,10 +153,10 @@
       "createNewIdentity": "@:partials.AuthIdentity.newIdentityButton",
       "identitiesUsedWithOrg": "Identitete uporabljene z organizacijo, vendar ne z aplikacijo",
       "disabledIdentities": "Onemogočene identitete",
+      "blockedIdentities": "Blokirane identitete",
       "noIdentityUsed": "Še niste uporabili nobene identitete s to organizacijo.",
       "noIdentityUsedWithApp": "Še niste uporabili nobene identitete s to aplikacijo v organizaciji.",
-      "allPreviousDisabled": "Vse prej uporabljene identitete s to organizacijo so onemogočene.",
-      "blockedIdentities": "Blokirane identitete"
+      "allPreviousDisabled": "Vse prej uporabljene identitete s to organizacijo so onemogočene."
     },
     "AuthManualRedirect": {
       "failed": "{strongSorry} Prijava ali registracija ni uspela.",
@@ -287,7 +287,7 @@
       "tokenEndpointAuthMethod": "Metoda overjanja končne točke žetona",
       "serviceClients": "Servisni odjemalci",
       "applicationsUpdated": "Predloga aplikacije je bila uspešno posodobljena.",
-      "rolesUpdated": "Vloge so bile uspešno posodobljene.",
+      "rolesUpdated": "Uporabniške vloge so bile uspešno posodobljene.",
       "variablesUpdated": "Spremenljivke so bile uspešno posodobljene.",
       "publicClientsUpdated": "Javni odjemalci so bili uspešno posodobljeni.",
       "backendClientsUpdated": "Zaledni odjemalci so bili uspešno posodobljeni.",
@@ -355,10 +355,10 @@
       "noUsers": "Ni uporabnikov."
     },
     "OrganizationUserRoles": {
-      "userRolesInOrganization": "User roles in organization",
+      "userRolesInOrganization": "Uporabniške vloge v organizaciji",
       "rolesUpdated": "@:views.ApplicationTemplateGet.rolesUpdated",
-      "noRoles": "Vlog ni. Dodajte aplikacijo z vlogami v organziacijo.",
-      "availableRoles": "Omogočene vloge za uporabnika iz vlog, ki so na voljo v organizaciji:"
+      "noRoles": "Uporabniških vlog ni. Dodajte aplikacijo z uporabniškimi vlogami v organizacijo.",
+      "availableRoles": "Omogočene uporabniške vloge za uporabnika izmed vlog, ki so na voljo v organizaciji:"
     },
     "OrganizationBlockUser": {
       "blockUser": "Blokiraj uporabnika v organizaciji",
