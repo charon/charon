@@ -611,14 +611,6 @@ func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *Appl
 		return scope == ""
 	})
 
-	if a.Roles == nil {
-		// Default role.
-		a.Roles = []Role{{
-			Key:         "admin",
-			Description: "Admins have full permissions in the app.",
-		}}
-	}
-
 	rolesSet := mapset.NewThreadUnsafeSet[string]()
 	for i, role := range a.Roles {
 		errE := role.Validate(ctx)
