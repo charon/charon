@@ -23,7 +23,7 @@
       "resume": "Nadaljuj",
       "pause": "Ustavi",
       "redirect": "Preusmeri",
-      "roles": "Vloge",
+      "roles": "Uporabniške vloge",
       "block": "Blokiraj",
       "unblock": "Odblokiraj",
       "rename": "Preimenuj"
@@ -208,6 +208,7 @@
       "status": "Status:",
       "apps": "Aplikacije:",
       "noApps": "brez",
+      "roles": "Uporabniške vloge:",
       "noRoles": "brez",
       "statusAndBlocked": "{status}, {blocked}"
     },
@@ -267,8 +268,8 @@
       "applicationTemplateName": "Ime predloge aplikacije",
       "homepageTemplate": "Predloga domače strani",
       "spaceSeparatedScopes": "Z znaki ločeni OpenID dosegi, ki jih lahko aplikacija zahteva",
-      "roles": "Vloge",
-      "addRole": "Dodaj vlogo",
+      "roles": "Uporabniške vloge",
+      "addRole": "Dodaj uporabniško vlogo",
       "variables": "Spremenljivke",
       "name": "Ime",
       "addVariable": "Dodaj spremenljivko",

@@ -208,6 +208,7 @@
       "status": "Status:",
       "apps": "Apps:",
       "noApps": "none",
+      "roles": "User roles:",
       "noRoles": "none",
       "statusAndBlocked": "{status}, {blocked}"
     },
@@ -267,8 +268,8 @@
       "applicationTemplateName": "Application template name",
       "homepageTemplate": "Homepage template",
       "spaceSeparatedScopes": "Space-separated OpenID scopes the app might request",
-      "roles": "Roles",
-      "addRole": "Add role",
+      "roles": "User roles",
+      "addRole": "Add user role",
       "variables": "Variables",
       "name": "Name",
       "addVariable": "Add variable",

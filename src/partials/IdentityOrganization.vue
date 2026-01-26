@@ -59,7 +59,7 @@ defineExpose({
         </WithOrganizationBlockedStatusDocument>
         <strong v-else>{{ identityOrganization.active ? t("common.labels.active") : t("common.labels.disabled") }}</strong>
       </div>
-      <div>{{ "Roles:" }}</div>
+      <div>{{ t("partials.IdentityOrganization.roles") }}</div>
       <div v-if="identityOrganization.roles && identityOrganization.roles.length">
         {{ sortedRoles.join(", ") }}
       </div>
