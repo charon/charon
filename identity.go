@@ -824,7 +824,7 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 		return errors.WithMessage(ErrIdentityValidationFailed, "ID is missing")
 	}
 
-	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.<.
+	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
 	existingIdentity, isAdmin, errE := s.getIdentity(ctx, *identity.ID)
 	if errE != nil {
 		return errE
