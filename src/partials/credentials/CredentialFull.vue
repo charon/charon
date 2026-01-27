@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DeepReadonly } from "vue"
 
-import type { CredentialPublic, CredentialRenameRequest, CredentialResponse, CredentialSignalData } from "@/types"
+import type { CredentialPublic, CredentialRenameRequest, CredentialResponse } from "@/types"
 
 import { nextTick, onBeforeUnmount, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
@@ -12,6 +12,7 @@ import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import { getProviderNameTitle } from "@/flow.ts"
 import { useProgress } from "@/progress"
+import { signalPasskeyCurrentUserDetails } from "@/utils"
 
 const props = defineProps<{
   credential: CredentialPublic | DeepReadonly<CredentialPublic>
@@ -130,8 +131,8 @@ async function onSubmit() {
     }
 
     // When renaming a passkey, we try signaling to the authenticator about the updated user credential.
-    if (response.signal) {
-      await signalPasskeyUpdate(response.signal)
+    if (response.signal && "update" in response.signal) {
+      await signalPasskeyCurrentUserDetails(response.signal.update)
       if (abortController.signal.aborted) {
         return
       }
@@ -148,11 +149,6 @@ async function onSubmit() {
   } finally {
     progress.value -= 1
   }
-}
-
-async function signalPasskeyUpdate(signal: CredentialSignalData) {
-  // PublicKeyCredential.signalCurrentUserDetails might not be available and this is fine.
-  await PublicKeyCredential.signalCurrentUserDetails?.(signal)
 }
 </script>
 

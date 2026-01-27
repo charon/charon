@@ -176,7 +176,7 @@ func (s *Service) sendCodeForExistingAccount(
 			} else {
 				code = ErrorCodeNoEmails
 			}
-			s.flowError(w, req, flow, code, nil)
+			s.flowError(w, req, flow, code, nil, nil)
 			return
 		}
 	}
@@ -274,6 +274,7 @@ func (s *Service) sendCode(
 		Passkey:            nil,
 		Password:           nil,
 		Error:              "",
+		SignalUnknown:      nil,
 	}, nil)
 }
 
@@ -307,7 +308,7 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 	if errE != nil {
 		var ve *validationError
 		if errors.As(errE, &ve) {
-			s.flowError(w, req, flow, ve.Code, errE)
+			s.flowError(w, req, flow, ve.Code, errE, nil)
 		} else {
 			s.InternalServerErrorWithError(w, req, errE)
 		}
@@ -333,7 +334,7 @@ func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request
 	// Account does not exist (by username or by verified email).
 	// We can send a code only if we have an e-mail address.
 	if !strings.Contains(mappedEmailOrUsername, "@") {
-		s.flowError(w, req, flow, ErrorCodeNoAccount, nil)
+		s.flowError(w, req, flow, ErrorCodeNoAccount, nil, nil)
 		return
 	}
 
@@ -402,7 +403,7 @@ func (s *Service) AuthFlowCodeCompletePost(w http.ResponseWriter, req *http.Requ
 		if !s.increaseAuthAttempts(w, req, flow) {
 			return
 		}
-		s.flowError(w, req, flow, ErrorCodeInvalidCode, nil)
+		s.flowError(w, req, flow, ErrorCodeInvalidCode, nil, nil)
 		return
 	}
 

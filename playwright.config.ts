@@ -5,8 +5,7 @@ export default defineConfig({
   testMatch: "*.test.ts",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: 0,
-  workers: process.env.CI ? 1 : undefined,
+  retries: 1,
   timeout: 120000, // 2 minutes per test.
   reporter: [
     ["html", { outputFolder: "playwright-report", open: "never" }],

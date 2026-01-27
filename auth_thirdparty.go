@@ -79,9 +79,10 @@ func (s *Service) handleAuthFlowThirdPartyProviderStart(
 		ThirdPartyProvider: &AuthFlowResponseThirdPartyProvider{
 			Location: location,
 		},
-		Passkey:  nil,
-		Password: nil,
-		Error:    "",
+		Passkey:       nil,
+		Password:      nil,
+		Error:         "",
+		SignalUnknown: nil,
 	}, nil)
 }
 

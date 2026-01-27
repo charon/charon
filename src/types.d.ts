@@ -73,6 +73,7 @@ export type AuthFlowResponse = {
 } & (
   | {
       error: ErrorCode
+      signalUnknown?: SignalUnknownCredential
     }
   | {
       thirdPartyProvider: AuthFlowResponseThirdPartyProvider
@@ -519,12 +520,25 @@ export type CredentialResponse =
     }
   | {
       success: true
-      signal?: CredentialSignalData
+      signal?: SignalPasskey
     }
 
-export type CredentialSignalData = {
+export type SignalPasskey =
+  | {
+      update: SignalCurrentUserDetails
+    }
+  | {
+      remove: SignalUnknownCredential
+    }
+
+export type SignalCurrentUserDetails = {
   rpId: string
   userId: string
   name: string
   displayName: string
+}
+
+export type SignalUnknownCredential = {
+  rpId: string
+  credentialId: string
 }

@@ -165,8 +165,9 @@ func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.R
 			CreateOptions: nil,
 			GetOptions:    options,
 		},
-		Password: nil,
-		Error:    "",
+		Password:      nil,
+		Error:         "",
+		SignalUnknown: nil,
 	}, nil)
 }
 
@@ -256,6 +257,11 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 		return pkCredential, nil
 	}, *flowPasskey.SessionData, parsedResponse)
 	if err != nil {
+		if errors.Is(err, ErrAccountNotFound) {
+			signalUnknown := s.getPasskeySignalUnknownCredentialData(parsedResponse.RawID)
+			s.flowError(w, req, flow, ErrorCodeNoAccount, errors.WithStack(err), signalUnknown)
+			return
+		}
 		s.BadRequestWithError(w, req, withWebauthnError(err))
 		return
 	}
@@ -352,8 +358,9 @@ func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *htt
 			CreateOptions: options,
 			GetOptions:    nil,
 		},
-		Password: nil,
-		Error:    "",
+		Password:      nil,
+		Error:         "",
+		SignalUnknown: nil,
 	}, nil)
 }
 
@@ -428,7 +435,7 @@ func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *
 		}})
 }
 
-func (s *Service) getPasskeySignalData(credential Credential, updatedDisplayName string) (*CredentialSignalData, errors.E) {
+func (s *Service) getPasskeySignalCurrentUserDetailsData(credential Credential, updatedDisplayName string) (*SignalCurrentUserDetails, errors.E) {
 	var pk passkeyCredential
 	errE := x.UnmarshalWithoutUnknownFields(credential.Data, &pk)
 	if errE != nil {
@@ -439,10 +446,17 @@ func (s *Service) getPasskeySignalData(credential Credential, updatedDisplayName
 	pk.userID = credential.ID
 	pk.displayName = updatedDisplayName
 
-	return &CredentialSignalData{
+	return &SignalCurrentUserDetails{
 		RPID:        s.passkeyProvider().Config.RPID,
 		UserID:      pk.WebAuthnID(),
 		Name:        pk.WebAuthnName(),
 		DisplayName: pk.WebAuthnDisplayName(),
 	}, nil
+}
+
+func (s *Service) getPasskeySignalUnknownCredentialData(credentialID []byte) *SignalUnknownCredential {
+	return &SignalUnknownCredential{
+		RPID:         s.passkeyProvider().Config.RPID,
+		CredentialID: credentialID,
+	}
 }

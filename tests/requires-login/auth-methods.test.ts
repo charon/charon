@@ -119,10 +119,10 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     await takeScreenshotsOfEntries(page, ".credentiallist-div-credentialentry", ".credentialfull-displayname", "auth-methods")
     await addButton.click()
 
-    // Add a new password
-    const passwordRadio = page.locator("#credentialadd-radio-passkey")
-    await expect(passwordRadio).toBeVisible()
-    await passwordRadio.click()
+    // Add a new passkey
+    const passkeyRadio = page.locator("#credentialadd-radio-passkey")
+    await expect(passkeyRadio).toBeVisible()
+    await passkeyRadio.click()
 
     const displayNameInput = page.locator("#credentialaddpasskey-input-displayname")
     await expect(displayNameInput).toBeVisible()
@@ -216,7 +216,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
 
     // Continue removing the passkey.
     await takeScreenshotsOfEntries(page, ".credentiallist-div-credentialentry", ".credentialfull-displayname", "auth-methods")
-    await removeButton.click()
+    await simulatePasskeyInput(() => removeButton.click(), "deletePasskey", client, authenticatorId, true)
 
     // Since the signOutButton is always visible, we should wait to come back to the Auth Methods page instead.
     addButton = page.locator("#credentiallist-button-add")
@@ -237,8 +237,8 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     await checkpoint(page, "main-page-after-clicking-signin")
 
     // Simulate passkey input with a promise that triggers a passkey prompt as the argument.
-    await simulatePasskeyInput(() => passkeyButton.click(), "shouldSucceed", client, authenticatorId, true)
-    const failedSigninText = page.locator("#authpasskeysignin-message-unexpectederror")
+    await simulatePasskeyInput(() => passkeyButton.click(), "shouldNotSucceed", client, authenticatorId, true)
+    const failedSigninText = page.locator("#authpasskeysignup-text-instructions")
     await expect(failedSigninText).toBeVisible()
     // TODO: This triggers a "AuthPasskeySignin.onAfterEnter G: fetch POST error 400:"
     //   "Failed to lookup Client-side Discoverable Credential: account not found" appears in server-side logs.
