@@ -154,7 +154,10 @@ onBeforeMount(async () => {
     if (abortController.signal.aborted) {
       return
     }
-    processFirstResponse(router, response.doc, flow, progress)
+    await processFirstResponse(router, response.doc, flow, progress, abortController)
+    if (abortController.signal.aborted) {
+      return
+    }
   } catch (error) {
     if (abortController.signal.aborted) {
       return

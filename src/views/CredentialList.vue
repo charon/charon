@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CredentialPublic, Credentials } from "@/types"
+import type { CredentialPublic, CredentialResponse, Credentials } from "@/types"
 
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useI18n } from "vue-i18n"
@@ -14,6 +14,7 @@ import CredentialFull from "@/partials/credentials/CredentialFull.vue"
 import Footer from "@/partials/Footer.vue"
 import NavBar from "@/partials/NavBar.vue"
 import { useProgress } from "@/progress"
+import { signalPasskeyUnknownCredential } from "@/utils"
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
@@ -115,9 +116,17 @@ async function onRemove(credentialId: string) {
       params: { id: credentialId },
     }).href
 
-    await postJSON(url, {}, abortController.signal, progress)
+    const response = await postJSON<CredentialResponse>(url, {}, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
+    }
+
+    // Signal browser to remove passkey credential if applicable.
+    if ("signal" in response && response.signal && "remove" in response.signal) {
+      await signalPasskeyUnknownCredential(response.signal.remove)
+      if (abortController.signal.aborted) {
+        return
+      }
     }
 
     credentials.value = credentials.value.filter((c) => c.id !== credentialId)

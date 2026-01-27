@@ -130,7 +130,10 @@ async function onRedirect() {
       return
     }
     // processResponse should not really do anything here.
-    if (processResponse(router, response, props.flow, progress, abortController)) {
+    if (await processResponse(router, response, props.flow, progress, abortController)) {
+      return
+    }
+    if (abortController.signal.aborted) {
       return
     }
     if ("thirdPartyProvider" in response) {

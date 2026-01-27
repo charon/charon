@@ -85,7 +85,10 @@ async function onPasskeySignup() {
       return
     }
     // processResponse should not really do anything here.
-    if (processResponse(router, start, props.flow, progress, abortController)) {
+    if (await processResponse(router, start, props.flow, progress, abortController)) {
+      return
+    }
+    if (abortController.signal.aborted) {
       return
     }
     if (!("passkey" in start && "createOptions" in start.passkey)) {
@@ -124,7 +127,10 @@ async function onPasskeySignup() {
       return
     }
     // processResponse should move the flow to the next step.
-    if (processResponse(router, complete, props.flow, progress, abortController)) {
+    if (await processResponse(router, complete, props.flow, progress, abortController)) {
+      return
+    }
+    if (abortController.signal.aborted) {
       return
     }
     throw new Error("unexpected response")

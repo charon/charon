@@ -151,7 +151,10 @@ async function onNext() {
       return
     }
     // processResponse should move the flow to the next step.
-    if (processResponse(router, response, props.flow, progress, abortController)) {
+    if (await processResponse(router, response, props.flow, progress, abortController)) {
+      return
+    }
+    if (abortController.signal.aborted) {
       return
     }
     if ("error" in response) {
@@ -203,7 +206,10 @@ async function onResend() {
       return
     }
     // processResponse should not really do anything here.
-    if (processResponse(router, response, props.flow, progress, abortController)) {
+    if (await processResponse(router, response, props.flow, progress, abortController)) {
+      return
+    }
+    if (abortController.signal.aborted) {
       return
     }
     // No error is expected in the response because code has already been generated in the past

@@ -229,9 +229,12 @@ async function onNext() {
       return
     }
     // processResponse might move the flow to the next step if sign-in or sign-up happened.
-    if (processResponse(router, response, props.flow, progress, abortController)) {
+    if (await processResponse(router, response, props.flow, progress, abortController)) {
       // Sign-in or sign-up happened, code step is not necessary anymore.
       removeSteps(props.flow, ["code"])
+      return
+    }
+    if (abortController.signal.aborted) {
       return
     }
     if ("error" in response) {
@@ -310,7 +313,10 @@ async function onCode() {
       return
     }
     // processResponse should move the flow to the next step.
-    if (processResponse(router, response, props.flow, progress, abortController)) {
+    if (await processResponse(router, response, props.flow, progress, abortController)) {
+      return
+    }
+    if (abortController.signal.aborted) {
       return
     }
     if ("error" in response) {

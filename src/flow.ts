@@ -6,7 +6,7 @@ import type { AuthFlowResponse, Completed, Flow, SiteProvider } from "@/types"
 // It is OK that we fetch siteContext here because the server sends preload header
 // so we have to fetch it always anyway. Generally this is already cached.
 import siteContext from "@/context"
-import { equals, redirectServerSide } from "@/utils"
+import { equals, redirectServerSide, signalPasskeyUnknownCredential } from "@/utils"
 
 export function getThirdPartyProvider(providers: string[]): SiteProvider | null {
   for (const provider of providers) {
@@ -155,7 +155,13 @@ export function processCompleted(router: Router, flow: Flow, progress: Ref<numbe
   }
 }
 
-export function processResponse(router: Router, response: AuthFlowResponse, flow: Flow, progress: Ref<number>, abortController: AbortController | null): boolean {
+export async function processResponse(
+  router: Router,
+  response: AuthFlowResponse,
+  flow: Flow,
+  progress: Ref<number>,
+  abortController: AbortController | null,
+): Promise<boolean> {
   flow.setOrganizationId(response.organizationId)
   flow.setAppId(response.appId)
   if (response.providers) {
@@ -168,6 +174,13 @@ export function processResponse(router: Router, response: AuthFlowResponse, flow
   } else {
     flow.setEmailOrUsername("")
   }
+  // Signal browser to delete the unknown passkey.
+  if ("signalUnknown" in response && response.signalUnknown) {
+    await signalPasskeyUnknownCredential(response.signalUnknown)
+    if (abortController && abortController.signal.aborted) {
+      return true
+    }
+  }
   if (!equals(flow.getCompleted(), response.completed)) {
     processCompleted(router, flow, progress, response.completed)
     if (abortController) {
@@ -178,7 +191,7 @@ export function processResponse(router: Router, response: AuthFlowResponse, flow
   return false
 }
 
-export function processFirstResponse(router: Router, response: AuthFlowResponse, flow: Flow, progress: Ref<number>) {
+export async function processFirstResponse(router: Router, response: AuthFlowResponse, flow: Flow, progress: Ref<number>, abortController: AbortController) {
   if (response.providers && response.providers.length > 0) {
     const targetSteps = []
     for (const provider of response.providers) {
@@ -204,7 +217,10 @@ export function processFirstResponse(router: Router, response: AuthFlowResponse,
   } else {
     updateSteps(flow, "start", true)
   }
-  processResponse(router, response, flow, progress, null)
+  await processResponse(router, response, flow, progress, abortController)
+  if (abortController.signal.aborted) {
+    return
+  }
   if (
     (response.completed.includes("signin") || response.completed.includes("signup")) &&
     response.providers &&
@@ -215,7 +231,7 @@ export function processFirstResponse(router: Router, response: AuthFlowResponse,
     // We remove the code step we might have added above.
     removeSteps(flow, ["code"])
   }
-  if ("error" in response && response.error) {
+  if ("error" in response) {
     throw new Error(`unexpected error: ${response.error}`)
   }
 }

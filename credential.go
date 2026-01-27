@@ -2,6 +2,7 @@ package charon
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -99,15 +100,29 @@ type CredentialResponse struct {
 	Success bool      `json:"success,omitempty"`
 
 	// Signal is omitted for non-passkey providers or on an error.
-	Signal *CredentialSignalData `json:"signal,omitempty"`
+	Signal *SignalPasskey `json:"signal,omitempty"`
 }
 
-// CredentialSignalData represents the payload for WebAuthn credential signalCurrentUserDetails - client-side renaming.
-type CredentialSignalData struct {
+// SignalPasskey contains WebAuthn Signal API data for passkey credentials.
+type SignalPasskey struct {
+	// Update is used for signalCurrentUserDetails - client-side renaming.
+	Update *SignalCurrentUserDetails `json:"update,omitempty"`
+	// Remove is used for signalUnknownCredential - client-side removal.
+	Remove *SignalUnknownCredential `json:"remove,omitempty"`
+}
+
+// SignalCurrentUserDetails represents the payload for WebAuthn credential signalCurrentUserDetails - client-side renaming.
+type SignalCurrentUserDetails struct {
 	RPID        string                    `json:"rpId"`
 	UserID      protocol.URLEncodedBase64 `json:"userId"`
 	Name        string                    `json:"name"`
 	DisplayName string                    `json:"displayName"`
+}
+
+// SignalUnknownCredential represents the payload for WebAuthn credential signalUnknownCredential - client-side removal.
+type SignalUnknownCredential struct {
+	RPID         string                    `json:"rpId"`
+	CredentialID protocol.URLEncodedBase64 `json:"credentialId"`
 }
 
 // This function does not check for duplicates. Duplicate checking
@@ -851,6 +866,7 @@ func (s *Service) CredentialRemovePost(w http.ResponseWriter, req *http.Request,
 	}
 
 	var foundProvider Provider
+	var foundProviderID string
 	foundIndex := -1
 
 	credentialID, errE := identifier.MaybeString(params["id"])
@@ -864,6 +880,7 @@ FoundCredential:
 		for i, credential := range credentials {
 			if credential.ID == credentialID {
 				foundProvider = provider
+				foundProviderID = credential.ProviderID
 				foundIndex = i
 				break FoundCredential
 			}
@@ -881,6 +898,16 @@ FoundCredential:
 		delete(account.Credentials, foundProvider)
 	}
 
+	var signalUnknown *SignalUnknownCredential
+	if foundProvider == ProviderPasskey {
+		credentialIDBytes, err := base64.RawURLEncoding.DecodeString(foundProviderID)
+		if err != nil {
+			s.InternalServerErrorWithError(w, req, errors.WithStack(err))
+			return
+		}
+		signalUnknown = s.getPasskeySignalUnknownCredentialData(credentialIDBytes)
+	}
+
 	errE = s.setAccount(ctx, account)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -890,7 +917,7 @@ FoundCredential:
 	s.WriteJSON(w, req, CredentialResponse{
 		Error:   "",
 		Success: true,
-		Signal:  nil,
+		Signal:  newCredentialSignalResponse(nil, signalUnknown),
 	}, nil)
 }
 
@@ -964,9 +991,9 @@ FoundCredential:
 		return
 	}
 
-	var signalData *CredentialSignalData
+	var signalUpdate *SignalCurrentUserDetails
 	if foundProvider == ProviderPasskey {
-		signalData, errE = s.getPasskeySignalData(account.Credentials[foundProvider][foundIndex], requestDisplayName)
+		signalUpdate, errE = s.getPasskeySignalCurrentUserDetailsData(account.Credentials[foundProvider][foundIndex], requestDisplayName)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
@@ -982,7 +1009,7 @@ FoundCredential:
 				s.WriteJSON(w, req, CredentialResponse{
 					Error:   "",
 					Success: true,
-					Signal:  signalData,
+					Signal:  newCredentialSignalResponse(signalUpdate, nil),
 				}, nil)
 				return
 			}
@@ -1006,6 +1033,13 @@ FoundCredential:
 	s.WriteJSON(w, req, CredentialResponse{
 		Error:   "",
 		Success: true,
-		Signal:  signalData,
+		Signal:  newCredentialSignalResponse(signalUpdate, nil),
 	}, nil)
+}
+
+func newCredentialSignalResponse(update *SignalCurrentUserDetails, remove *SignalUnknownCredential) *SignalPasskey {
+	if update == nil && remove == nil {
+		return nil
+	}
+	return &SignalPasskey{Update: update, Remove: remove}
 }

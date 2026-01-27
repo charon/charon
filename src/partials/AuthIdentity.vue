@@ -184,7 +184,10 @@ async function onSelect(id: string) {
       return
     }
     // processResponse should move the flow to the next step.
-    if (processResponse(router, response, props.flow, progress, abortController)) {
+    if (await processResponse(router, response, props.flow, progress, abortController)) {
+      return
+    }
+    if (abortController.signal.aborted) {
       return
     }
     throw new Error("unexpected response")
@@ -244,7 +247,10 @@ async function onDecline() {
       return
     }
     // processResponse should move the flow to the next step.
-    if (processResponse(router, response, props.flow, progress, abortController)) {
+    if (await processResponse(router, response, props.flow, progress, abortController)) {
+      return
+    }
+    if (abortController.signal.aborted) {
       return
     }
     throw new Error("unexpected response")
