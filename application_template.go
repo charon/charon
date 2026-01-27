@@ -831,29 +831,8 @@ func (a *ApplicationTemplate) Validate(ctx context.Context, existing *Applicatio
 func (a *ApplicationTemplate) Changes(existing *ApplicationTemplate) ([]ActivityChangeType, []IdentityRef) {
 	changes := []ActivityChangeType{}
 
-	existingRoleKeys := make([]string, len(existing.Roles))
-	for i, role := range existing.Roles {
-		existingRoleKeys[i] = role.Key
-	}
-
-	newRoleKeys := make([]string, len(a.Roles))
-	for i, role := range a.Roles {
-		newRoleKeys[i] = role.Key
-	}
-
-	addedRoles, removedRoles := detectSliceChanges(existingRoleKeys, newRoleKeys)
-
-	if !addedRoles.IsEmpty() {
-		changes = append(changes, ActivityChangeRolesAdded)
-	}
-	if !removedRoles.IsEmpty() {
-		changes = append(changes, ActivityChangeRolesRemoved)
-	}
-
 	existingPublic := existing.ApplicationTemplatePublic
 	newPublic := a.ApplicationTemplatePublic
-	// Exclude roles from comparison.
-	existingPublic.Roles = newPublic.Roles
 
 	if !reflect.DeepEqual(newPublic, existingPublic) {
 		changes = append(changes, ActivityChangeOtherData)
