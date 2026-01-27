@@ -95,7 +95,6 @@
     "vue-tsc": "^3.2.2"
   },
   "overrides": {
-    "js-yaml": "4.1.1",
     "lodash": "^4.17.23"
   }
 }
