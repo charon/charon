@@ -134,11 +134,7 @@ func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityO
 		if !app.Active {
 			continue
 		}
-		appTemplate, errE := service.getApplicationTemplate(ctx, *app.ApplicationTemplate.ID)
-		if errE != nil {
-			continue
-		}
-		for _, role := range appTemplate.Roles {
+		for _, role := range app.ApplicationTemplate.Roles {
 			validRoles.Add(role.Key)
 		}
 	}
