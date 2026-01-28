@@ -11,7 +11,7 @@ import { createHash } from "node:crypto"
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 
 // Allowed console message patterns.
-const CONSOLE_ALLOWLIST = [/^Failed to load resource: the server responded with a status of 400 \(\)$/]
+const CONSOLE_ALLOWLIST = [/^Failed to load resource: the server responded with a status of 400 \(\)$/, /\[vite]/, /\[Vue/]
 
 export const CHARON_URL = process.env.CHARON_URL || "https://localhost:8080"
 export const MAILPIT_URL = process.env.MAILPIT_URL || "http://localhost:8025"

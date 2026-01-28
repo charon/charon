@@ -349,10 +349,10 @@ async function onCode() {
 <template>
   <div class="flex w-full flex-col rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
     <div class="flex flex-col">
-      <label for="email-or-username" class="mb-1">{{
+      <label for="authpassword-input-email-or-username" class="mb-1">{{
         isEmail(flow.getEmailOrUsername()) ? t("partials.AuthPassword.emailAddressLabel") : t("partials.AuthPassword.usernameLabel")
       }}</label>
-      <InputTextButton id="email-or-username" class="grow" tabindex="5" @click.prevent="onBack">{{ flow.getEmailOrUsername() }}</InputTextButton>
+      <InputTextButton id="authpassword-input-email-or-username" class="grow" tabindex="5" @click.prevent="onBack">{{ flow.getEmailOrUsername() }}</InputTextButton>
     </div>
     <div class="mt-4 flex flex-col">
       <label for="authpassword-input-currentpassword" class="mb-1">{{ t("partials.AuthPassword.passwordLabel") }}</label>
@@ -411,7 +411,7 @@ async function onCode() {
     <div v-else-if="unexpectedCodeError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div v-else class="mt-4">{{ t("partials.AuthPassword.skipPassword") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" tabindex="4" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
+      <Button id="authpassword-button-back" type="button" tabindex="4" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
       <Button id="authpassword-button-sendcode" type="button" primary tabindex="3" :disabled="!canCode()" :progress="progress" @click.prevent="onCode">{{
         t("partials.AuthPassword.sendCodeButton")
       }}</Button>
