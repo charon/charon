@@ -192,9 +192,9 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
     </WithOrganizationApplicationDocument>
     <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" tabindex="3" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
+      <Button id="authautoredirect-button-back" type="button" tabindex="3" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
       <div class="flex flex-row gap-4">
-        <Button type="button" tabindex="2" :progress="progress" @click.prevent="onPauseResume">{{
+        <Button id="authautoredirect-button-pause" type="button" tabindex="2" :progress="progress" @click.prevent="onPauseResume">{{
           paused ? t("common.buttons.resume") : t("common.buttons.pause")
         }}</Button>
         <Button id="authautoredirect-button-redirect" primary type="button" tabindex="1" :progress="progress" @click.prevent="onRedirect">{{

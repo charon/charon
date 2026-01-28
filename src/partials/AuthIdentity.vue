@@ -488,8 +488,8 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
       </template>
       <div v-if="unexpectedError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
       <div class="flex flex-row justify-between gap-4">
-        <Button type="button" tabindex="5" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
-        <Button type="button" tabindex="4" :progress="progress" @click.prevent="onDecline">{{ t("common.buttons.decline") }}</Button>
+        <Button id="authidentity-button-back" type="button" tabindex="5" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
+        <Button id="authidentity-button-decline" type="button" tabindex="4" :progress="progress" @click.prevent="onDecline">{{ t("common.buttons.decline") }}</Button>
       </div>
     </div>
   </div>

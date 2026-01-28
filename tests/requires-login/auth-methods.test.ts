@@ -157,11 +157,10 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     await expect(signInButton).toBeVisible()
     await signInButton.click()
 
-    await checkpoint(page, "main-page-after-clicking-signin")
-
     // Sign in with new passkey.
     const passkeyButton = page.locator("button#authstart-button-passkey")
     await expect(passkeyButton).toBeVisible()
+    await checkpoint(page, "main-page-after-clicking-signin")
 
     // Simulate passkey input with a promise that triggers a passkey prompt as the argument.
     await simulatePasskeyInput(() => passkeyButton.click(), "shouldSucceed", client, authenticatorId, true)
@@ -279,8 +278,6 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     await addUsernameButton.click()
 
     let signOutButton = page.locator("#navbar-button-signout")
-    // Since the signOutButton is always visible, we should wait to come back to the Auth Methods page instead.
-    await expect(addButton).toBeVisible()
     const homeButton = page.locator("#navbar-link-home")
     await expect(homeButton).toBeVisible()
     await homeButton.click()

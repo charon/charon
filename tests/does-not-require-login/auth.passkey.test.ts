@@ -10,18 +10,16 @@ test.describe.serial("Charon Sign-in Flows", () => {
 
     await page.goto(CHARON_URL)
 
-    await checkpoint(page, "main-page-before-signin")
-
     // Find and click the "SIGN-IN OR SIGN-UP" button.
     const signInButton = page.locator("#navbar-button-signin")
     await expect(signInButton).toBeVisible()
+    await checkpoint(page, "main-page-before-signin")
     await signInButton.click()
-
-    await checkpoint(page, "main-page-after-clicking-signin")
 
     // Find and click the PASSKEY button.
     const passkeyButton = page.locator("button#authstart-button-passkey")
     await expect(passkeyButton).toBeVisible()
+    await checkpoint(page, "main-page-after-clicking-signin")
 
     // Enable WebAuthn environment in this session.
     const client: CDPSession = await page.context().newCDPSession(page)
@@ -80,23 +78,21 @@ test.describe.serial("Charon Sign-in Flows", () => {
     console.log("Successfully completed passkey sign-up flow: entered passkey, created tester identity, selected tester identity, signed in.")
   })
 
-  test("Successful sign-in flow via passkey", async ({ context }) => {
+  test("Successful sign-in flow via passkey with flow restarts", async ({ context }) => {
     const page = await context.newPage()
 
     await page.goto(CHARON_URL)
 
-    await checkpoint(page, "main-page-before-signin")
-
     // Find and click the "SIGN-IN OR SIGN-UP" button.
     const signInButton = page.locator("#navbar-button-signin")
     await expect(signInButton).toBeVisible()
+    await checkpoint(page, "main-page-before-signin")
     await signInButton.click()
-
-    await checkpoint(page, "main-page-after-clicking-signin")
 
     // Find and click the PASSKEY button.
     const passkeyButton = page.locator("button#authstart-button-passkey")
     await expect(passkeyButton).toBeVisible()
+    await checkpoint(page, "main-page-after-clicking-signin")
 
     // Enable WebAuthn environment in this session.
     const client: CDPSession = await page.context().newCDPSession(page)
@@ -116,11 +112,34 @@ test.describe.serial("Charon Sign-in Flows", () => {
     // Simulate passkey input with a promise that triggers a passkey prompt as the argument.
     await simulatePasskeyInput(() => passkeyButton.click(), "shouldSucceed", client, authenticatorId, true)
 
+    // Go back to the first page of the flow.
+    const backButton = page.locator("button#authidentity-button-back")
     // Find the li element that contains "tester" and click its SELECT button.
     const testerIdentity = page.locator('li:has-text("tester")')
     const selectButton = testerIdentity.locator("button.authidentity-selector-identity")
     await expect(selectButton).toBeVisible()
-    await checkpoint(page, "auth-page-after-selecting-existing-passkey-identity")
+    await checkpoint(page, "auth-page-selecting-existing-passkey-identity")
+    await backButton.click()
+
+    await expect(passkeyButton).toBeVisible()
+    await checkpoint(page, "main-page-after-clicking-signin")
+    // Simulate passkey input again.
+    await simulatePasskeyInput(() => passkeyButton.click(), "shouldSucceed", client, authenticatorId, true)
+
+    // Go back again, this time via flow link.
+    const redirectFlowLink = page.locator("#authflowget-step-start")
+    await expect(selectButton).toBeVisible()
+    await checkpoint(page, "auth-page-selecting-existing-passkey-identity")
+    await redirectFlowLink.click()
+
+    await expect(passkeyButton).toBeVisible()
+    await checkpoint(page, "auth-signin-page-coming-back-from-flow")
+    // Simulate passkey input again.
+    await simulatePasskeyInput(() => passkeyButton.click(), "shouldSucceed", client, authenticatorId, true)
+
+    // Click SELECT button associated with "tester".
+    await expect(selectButton).toBeVisible()
+    await checkpoint(page, "auth-page-selecting-existing-passkey-identity")
     await selectButton.click()
 
     // Waiting for the automatic 3 seconds redirect.
@@ -140,18 +159,16 @@ test.describe.serial("Charon Sign-in Flows", () => {
 
     await page.goto(CHARON_URL)
 
-    await checkpoint(page, "main-page-before-signin")
-
     // Find and click the "SIGN-IN OR SIGN-UP" button.
     const signInButton = page.locator("#navbar-button-signin")
     await expect(signInButton).toBeVisible()
+    await checkpoint(page, "main-page-before-signin")
     await signInButton.click()
-
-    await checkpoint(page, "main-page-after-clicking-signin")
 
     // Find and click the PASSKEY button.
     const passkeyButton = page.locator("button#authstart-button-passkey")
     await expect(passkeyButton).toBeVisible()
+    await checkpoint(page, "main-page-after-clicking-signin")
 
     // Enable WebAuthn environment in this session.
     const client: CDPSession = await page.context().newCDPSession(page)
@@ -202,18 +219,16 @@ test.describe.serial("Charon Sign-in Flows", () => {
 
     await page.goto(CHARON_URL)
 
-    await checkpoint(page, "main-page-before-signin")
-
     // Find and click the "SIGN-IN OR SIGN-UP" button.
     const signInButton = page.locator("#navbar-button-signin")
     await expect(signInButton).toBeVisible()
+    await checkpoint(page, "main-page-before-signin")
     await signInButton.click()
-
-    await checkpoint(page, "main-page-after-clicking-signin")
 
     // Find and click the PASSKEY button.
     const passkeyButton = page.locator("button#authstart-button-passkey")
     await expect(passkeyButton).toBeVisible()
+    await checkpoint(page, "main-page-after-clicking-signin")
 
     // Enable WebAuthn environment in this session.
     const client: CDPSession = await page.context().newCDPSession(page)

@@ -341,6 +341,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                       step.key != 'passkeySignup' &&
                       step.key != 'code'))
                 "
+                :id="`authflowget-step-${step.key}`"
                 href=""
                 class="link"
                 @click.prevent="onPreviousStep(step.key)"
