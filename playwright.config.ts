@@ -48,5 +48,10 @@ export default defineConfig({
       testMatch: /requires-login\/.*\.test\.ts$/,
       dependencies: ["login"], // This depends on login.
     },
+    {
+      name: "adds-application-template", // This creates a globally visible application template, should be isolated.
+      testMatch: /adds-application-template\/.*\.test\.ts$/,
+      dependencies: ["requires-login"],
+    },
   ],
 })

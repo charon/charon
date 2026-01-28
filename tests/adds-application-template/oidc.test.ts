@@ -14,23 +14,20 @@ test.describe.serial("Charon OIDC Flows", () => {
     await expect(applicationsLink).toBeVisible()
     await applicationsLink.click()
 
-    await checkpoint(page, "oidc-applications-first-view")
-
     // Create a new one.
     const applicationCreateButton = page.locator("#applicationtemplatelist-button-create")
     await expect(applicationCreateButton).toBeVisible()
+    await checkpoint(page, "oidc-applications-first-view")
     await applicationCreateButton.click()
-
-    await checkpoint(page, "oidc-applications-create-application")
 
     const applicationNameField = page.locator("input#applicationtemplatecreate-input-name")
     await expect(applicationNameField).toBeVisible()
+    await checkpoint(page, "oidc-applications-create-application")
     await applicationNameField.fill("OIDC Application")
-
-    await checkpoint(page, "oidc-applications-create-application-filled")
 
     const applicationSubmitButton = page.locator("#applicationtemplatecreate-button-create")
     await expect(applicationSubmitButton).toBeVisible()
+    await checkpoint(page, "oidc-applications-create-application-filled")
     await applicationSubmitButton.click()
 
     const idScopesField = page.locator("#applicationtemplateget-input-idscopes")
@@ -102,10 +99,9 @@ test.describe.serial("Charon OIDC Flows", () => {
     await expect(addButton).toBeVisible()
     await addButton.click()
 
-    await checkpoint(page, "oidc-organization-adding-application")
-
     const uriBaseField = page.locator("input#application-0-values-0")
     await expect(uriBaseField).toBeVisible()
+    await checkpoint(page, "oidc-organization-adding-application")
     await uriBaseField.fill("https://oidcdebugger.com")
     const activateApplicationButton = page.locator("#organizationget-button-activateordisable-0")
     await expect(activateApplicationButton).toBeVisible()

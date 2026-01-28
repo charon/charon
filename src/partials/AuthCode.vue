@@ -312,7 +312,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
       </i18n-t>
     </div>
     <div class="mt-4 flex flex-row justify-between gap-4">
-      <Button type="button" tabindex="4" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
+      <Button id="authcode-button-back" type="button" tabindex="4" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>
       <Button id="authcode-button-resendcode" type="button" tabindex="3" :progress="progress" @click.prevent="onResend">{{ t("partials.AuthCode.resendButton") }}</Button>
     </div>
   </div>
