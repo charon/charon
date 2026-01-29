@@ -101,7 +101,43 @@ onBeforeMount(async () => {
 })
 
 function computeAvailableRoles(organization: Organization | null): Role[] {
-  const roles = organization?.applications?.filter((app) => app.active)?.flatMap((app) => app.applicationTemplate.roles) ?? []
+  const activeRoles = organization?.applications?.filter((app) => app.active)?.flatMap((app) => app.applicationTemplate.roles ?? []) ?? []
+  const activeRolesMap = new Map(activeRoles.map((role) => [role.key, role]))
+  // Roles assigned to identity, even if from inactive or removed applications.
+  const assignedRoleKeys = new Set<string>(organization?.roles?.[props.identityId] ?? [])
+
+  const allRoles = organization?.applications?.flatMap((app) => app.applicationTemplate.roles ?? []) ?? []
+  const allRolesMap = new Map(allRoles.map((role) => [role.key, role]))
+
+  const resultMap = new Map<string, Role>()
+
+  activeRoles.forEach((role) => {
+    resultMap.set(role.key, role)
+  })
+
+  assignedRoleKeys.forEach((key) => {
+    if (!activeRolesMap.has(key)) {
+      const roleFromInactive = allRolesMap.get(key)
+      if (roleFromInactive) {
+        resultMap.set(key, {
+          key: roleFromInactive.key,
+          description: `${roleFromInactive.description} (inactive app)`
+        })
+      } else {
+        resultMap.set(key, {
+          key,
+          description: `${key} (removed app)`
+        })
+      }
+    }
+  })
+
+
+  return sortBy(Array.from(resultMap.values()), 'key')
+}
+
+function canSubmit(): boolean {
+  const currentRoles = organization.value!.roles?.[props.identityId] || []
 
   const rolesMap = new Map(roles.map((role) => [role.key, role]))
   return Array.from(rolesMap.values()).sort((a, b) => a.key.localeCompare(b.key))
