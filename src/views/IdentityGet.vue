@@ -564,7 +564,7 @@ function organizationLabels(identityOrganization: IdentityOrganizationType | Dee
                   <IdentityOrganization
                     :ref="(el) => updateOrganizationBlockedStatuses(identityOrganization.organization.id, el as IdentityOrganizationComponent)"
                     :identity-organization="identityOrganization"
-                  >
+                  > <!-- TODO: How to pass roles? -->
                     <div v-if="metadata.can_update" class="flex flex-row gap-4">
                       <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = !identityOrganization.active">{{
                         identityOrganization.active ? t("common.buttons.disable") : t("common.buttons.activate")
