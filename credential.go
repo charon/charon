@@ -891,6 +891,9 @@ func (s *Service) CredentialRemovePostAPI(w http.ResponseWriter, req *http.Reque
 	if len(account.Credentials[foundProvider]) == 0 {
 		delete(account.Credentials, foundProvider)
 	}
+	if len(account.Credentials) == 0 {
+		account.Credentials = nil
+	}
 
 	var signalUnknown *SignalUnknownCredential
 	if foundProvider == ProviderPasskey {
