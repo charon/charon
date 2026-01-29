@@ -1299,6 +1299,7 @@ func (s *Service) CredentialConfirmEmailCompletePost(w http.ResponseWriter, req 
 		return
 	}
 
+	// Code credentials might have expired in meantime.
 	hasRemaining, errE := account.cleanupCodeCredentials(credentialID.String())
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
