@@ -363,7 +363,6 @@ export type IdentityOrganization = {
   active: boolean
   organization: OrganizationRef
   applications: OrganizationApplicationApplicationRef[]
-  roles?: string[]
 }
 
 export type OrganizationIdentityRef = {
@@ -381,6 +380,7 @@ export type Organization = OrganizationPublic & {
   // OrganizationPublic so we have these fields as optional.
   admins?: IdentityRef[]
   applications?: OrganizationApplication[]
+  roles?: Record<string, string[]>
 }
 
 export type OrganizationCreate = {
@@ -388,7 +388,8 @@ export type OrganizationCreate = {
 }
 
 export type IdentityForAdmin = IdentityPublic & {
-  organizations: IdentityOrganization[]
+  organization?: IdentityOrganization
+  roles?: string[]
 }
 
 export type Identity = IdentityCreate &

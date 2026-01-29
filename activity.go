@@ -257,7 +257,6 @@ func (s *Service) logActivity(
 				Active:       true,
 				Organization: currentOrganization,
 				Applications: []OrganizationApplicationApplicationRef{},
-				Roles:        []string{},
 			})
 
 			errE := s.updateIdentity(ctx, currentIdentity)

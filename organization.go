@@ -559,6 +559,8 @@ type Organization struct {
 	Admins []IdentityRef `json:"admins"`
 
 	Applications []OrganizationApplication `json:"applications"`
+
+	Roles map[identifier.Identifier][]string `json:"roles"`
 }
 
 // GetApplication returns the application template added to the organization (i.e., the application)
@@ -716,6 +718,22 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 		o.Applications[i] = orgApp
 	}
 
+	validRoles := mapset.NewThreadUnsafeSet[string]()
+	for _, app := range o.Applications {
+		if !app.Active {
+			continue
+		}
+		for _, role := range app.ApplicationTemplate.Roles {
+			validRoles.Add(role.Key)
+		}
+	}
+
+	for identityID, roles := range o.Roles {
+		// We remove duplicates.
+		o.Roles[identityID] = removeDuplicates(roles)
+		// TODO: if an application is removed, obsolete roles stay.
+	}
+
 	return nil
 }
 
@@ -738,8 +756,7 @@ func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []
 		changes = append(changes, ActivityChangePermissionsRemoved)
 	}
 
-	identitiesChanged := adminsAdded.Union(adminsRemoved).ToSlice()
-	slices.SortFunc(identitiesChanged, identityRefCmp)
+	identitiesChangedSet := adminsAdded.Union(adminsRemoved)
 
 	// We make copies of app structs on purpose, so that we can change Active field as needed.
 	existingAppMap := map[OrganizationApplicationRef]OrganizationApplication{}
@@ -790,6 +807,39 @@ func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []
 		}
 	}
 
+	existingRolesMap := existing.Roles
+	if existingRolesMap == nil {
+		existingRolesMap = make(map[identifier.Identifier][]string)
+	}
+	newRolesMap := o.Roles
+	if newRolesMap == nil {
+		newRolesMap = make(map[identifier.Identifier][]string)
+	}
+
+	allIdentityIDs := mapset.NewThreadUnsafeSet[identifier.Identifier]()
+	for identityID := range existingRolesMap {
+		allIdentityIDs.Add(identityID)
+	}
+	for identityID := range newRolesMap {
+		allIdentityIDs.Add(identityID)
+	}
+
+	for identityID := range allIdentityIDs.Iter() {
+		existingRoles := existingRolesMap[identityID]
+		newRoles := newRolesMap[identityID]
+
+		addedRoles, removedRoles := detectSliceChanges(existingRoles, newRoles)
+
+		if !addedRoles.IsEmpty() {
+			changes = append(changes, ActivityChangeRolesAdded)
+			identitiesChangedSet.Add(IdentityRef{ID: identityID})
+		}
+		if !removedRoles.IsEmpty() {
+			changes = append(changes, ActivityChangeRolesRemoved)
+			identitiesChangedSet.Add(IdentityRef{ID: identityID})
+		}
+	}
+
 	if !addedAppSet.IsEmpty() {
 		changes = append(changes, ActivityChangeMembershipAdded)
 	}
@@ -805,6 +855,9 @@ func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []
 	if !disabledAppSet.IsEmpty() {
 		changes = append(changes, ActivityChangeMembershipDisabled)
 	}
+
+	identitiesChanged := identitiesChangedSet.ToSlice()
+	slices.SortFunc(identitiesChanged, identityRefCmp)
 
 	appsChanged := addedAppSet.Union(removedAppSet).Union(changedAppSet).Union(activatedAppSet).Union(disabledAppSet).ToSlice()
 	slices.SortFunc(appsChanged, organizationApplicationRefCmp)
@@ -969,7 +1022,7 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 	scopedIdentities := []OrganizationIdentityRef{}
 	for _, identity := range identities {
 		scopedIdentities = append(scopedIdentities, OrganizationIdentityRef{
-			Organization: OrganizationRef{ID: co.ID},
+			Organization: OrganizationRef{ID: *organization.ID},
 			Identity:     identity,
 		})
 	}
@@ -1100,13 +1153,11 @@ func (s *Service) OrganizationAppGetAPI(w http.ResponseWriter, req *http.Request
 }
 
 // OrganizationIdentity represents the organization's identity.
-//
-// It is similar to Identity struct, but contains just information limited to one organization.
-// This is why Organizations field is a slice, even if it contains just one organization.
 type OrganizationIdentity struct {
 	IdentityPublic
 
-	Organizations []IdentityOrganization `json:"organizations,omitempty"`
+	Organization *IdentityOrganization `json:"organization,omitempty"`
+	Roles        []string              `json:"roles,omitempty"`
 }
 
 func (s *Service) getIdentityFromOrganization(_ context.Context, organizationID, identityID identifier.Identifier) (*Identity, *IdentityOrganization, errors.E) {
@@ -1304,23 +1355,33 @@ func (s *Service) OrganizationIdentityGetAPI(w http.ResponseWriter, req *http.Re
 		return
 	}
 
-	if !hasOrganizationAdminAccess {
-		// Only when organization admin is requesting identity information,
-		// we return additional field Organizations.
-		idOrg = nil
-	}
-
-	organizations := []IdentityOrganization{}
-	if idOrg != nil {
-		// idOrg can be nil not just when hasOrganizationAdminAccess is false,
-		// but also when the identity has not been added to the Charon organization.
-		organizations = append(organizations, *idOrg)
-	}
-
-	s.WriteJSON(w, req, OrganizationIdentity{
+	orgIdentity := OrganizationIdentity{
 		IdentityPublic: identity.IdentityPublic,
-		Organizations:  organizations,
-	}, map[string]interface{}{
+		Organization:   nil,
+		Roles:          nil,
+	}
+
+	if hasOrganizationAdminAccess && idOrg != nil {
+		orgIdentity.Organization = idOrg
+	}
+
+	if idOrg != nil {
+		organization, errE := s.getOrganizationFromID(ctx, params["id"])
+		if errors.Is(errE, ErrOrganizationNotFound) {
+			s.NotFoundWithError(w, req, errE)
+			return
+		} else if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+		if organization.Roles != nil {
+			if roles, exists := organization.Roles[*idOrg.ID]; exists {
+				orgIdentity.Roles = roles
+			}
+		}
+	}
+
+	s.WriteJSON(w, req, orgIdentity, map[string]interface{}{
 		"can_use":    hasUserAccess,
 		"can_update": hasAdminAccess,
 		// identity.ID is organization-scoped (we make it so above) and it makes sense to
@@ -1793,115 +1854,4 @@ func (s *Service) OrganizationRoles(w http.ResponseWriter, req *http.Request, _ 
 	} else {
 		s.ServeStaticFile(w, req, "/index.html")
 	}
-}
-
-// RolesRequest represents the request body for the OrganizationRolesPost handler.
-type RolesRequest struct {
-	Roles []string `json:"roles"`
-}
-
-// OrganizationRolesPost is the API handler for updating the organization's identity user roles.
-func (s *Service) OrganizationRolesPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
-	// We allow getting identities with the access token or session cookie.
-	ctx := s.requireAuthenticatedForIdentity(w, req)
-	if ctx == nil {
-		return
-	}
-
-	organization, errE := s.getOrganizationFromID(ctx, params["id"])
-	if errors.Is(errE, ErrOrganizationNotFound) {
-		s.NotFoundWithError(w, req, errE)
-		return
-	} else if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	if !organization.HasAdminAccess(IdentityRef{ID: mustGetIdentityID(ctx)}) {
-		waf.Error(w, req, http.StatusUnauthorized)
-		return
-	}
-
-	identityID, errE := identifier.MaybeString(params["identityId"])
-	if errE != nil {
-		s.NotFoundWithError(w, req, errors.WrapWith(errE, ErrIdentityNotFound))
-		return
-	}
-
-	identity, _, errE := s.getIdentityFromOrganization(ctx, *organization.ID, identityID)
-	if errors.Is(errE, ErrIdentityNotFound) {
-		// It is OK that we leak here if identity is in organization or not because
-		// we do the same in OrganizationIdentityGet.
-		s.NotFoundWithError(w, req, errE)
-		return
-	} else if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	var rolesUpdate RolesRequest
-	errE = x.DecodeJSONWithoutUnknownFields(req.Body, &rolesUpdate)
-	if errE != nil {
-		s.BadRequestWithError(w, req, errE)
-		return
-	}
-
-	for i := range identity.Organizations {
-		if identity.Organizations[i].Organization.ID == *organization.ID {
-			identity.Organizations[i].Roles = rolesUpdate.Roles
-			break
-		}
-	}
-
-	errE = s.updateIdentityRoles(ctx, identity, *organization.ID)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	s.WriteJSON(w, req, []byte(`{"success":true}`), nil)
-}
-
-// This function updates the roles of OrganizationIdentity without checking that user is admin of the identity.
-func (s *Service) updateIdentityRoles(ctx context.Context, identity *Identity, organizationID identifier.Identifier) errors.E {
-	co := s.charonOrganization()
-
-	if identity.ID == nil {
-		return errors.WithMessage(ErrIdentityValidationFailed, "ID is missing")
-	}
-
-	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.<.
-	existingIdentity, errE := s.getIdentityWithoutAccessCheck(ctx, *identity.ID)
-	if errE != nil {
-		return errE
-	}
-
-	for i, idOrg := range identity.Organizations {
-		if idOrg.Organization.ID == organizationID {
-			errE := idOrg.Validate(ctx, existingIdentity.GetOrganization(&organizationID), s, identity)
-			if errE != nil {
-				return errors.WrapWith(errE, ErrIdentityValidationFailed)
-			}
-			// IdentityOrganization might have been changed by Validate, so we assign it back.
-			identity.Organizations[i] = idOrg
-			break
-		}
-	}
-
-	changes, _, organizations, applications := identity.Changes(existingIdentity)
-
-	if len(changes) == 0 {
-		return nil
-	}
-
-	data, errE := x.MarshalWithoutEscapeHTML(identity)
-	if errE != nil {
-		errors.Details(errE)["id"] = *identity.ID
-		return errE
-	}
-
-	s.setIdentity(*identity.ID, data)
-
-	scopedIdentities := []OrganizationIdentityRef{{Organization: OrganizationRef{ID: co.ID}, Identity: identity.Ref()}}
-	return s.logActivity(ctx, ActivityIdentityUpdate, scopedIdentities, organizations, nil, applications, nil, changes, nil, OrganizationRef{ID: co.ID})
 }
