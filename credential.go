@@ -880,7 +880,7 @@ func (s *Service) CredentialRemovePostAPI(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	_, foundProvider, foundIndex := account.getCredentialByID(credentialID)
+	_, foundProviderID, foundProvider, foundIndex := account.getCredentialByID(credentialID)
 	if foundIndex == -1 {
 		s.NotFound(w, req)
 		return
@@ -955,7 +955,7 @@ func (s *Service) CredentialRenamePostAPI(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	_, foundProvider, foundIndex := account.getCredentialByID(credentialID)
+	_, _, foundProvider, foundIndex := account.getCredentialByID(credentialID)
 
 	if foundIndex == -1 {
 		s.NotFound(w, req)
@@ -1179,7 +1179,7 @@ func (s *Service) CredentialConfirmEmailPost(w http.ResponseWriter, req *http.Re
 		return
 	}
 
-	foundCredential, foundProvider, foundIndex := account.getCredentialByID(credentialID)
+	foundCredential, _, foundProvider, foundIndex := account.getCredentialByID(credentialID)
 	if foundIndex == -1 || foundProvider != ProviderEmail {
 		s.NotFound(w, req)
 		return
@@ -1373,7 +1373,7 @@ func (s *Service) CredentialConfirmEmailCompletePost(w http.ResponseWriter, req 
 		return
 	}
 
-	foundCredential, _, foundIndex := account.getCredentialByID(credentialID)
+	foundCredential, _, _, foundIndex := account.getCredentialByID(credentialID)
 	if foundIndex == -1 {
 		s.NotFound(w, req)
 		return
@@ -1461,7 +1461,7 @@ func (s *Service) CredentialConfirmedEmailsGet(w http.ResponseWriter, req *http.
 }
 
 // getCredentialByID finds a credential by ID across providers, excluding ProviderCode.
-func (a *Account) getCredentialByID(credentialID identifier.Identifier) (*Credential, Provider, int) {
+func (a *Account) getCredentialByID(credentialID identifier.Identifier) (*Credential, string, Provider, int) {
 	for provider, credentials := range a.Credentials {
 		// Code provider credentials are never exposed over the API.
 		if provider == ProviderCode {
@@ -1469,12 +1469,12 @@ func (a *Account) getCredentialByID(credentialID identifier.Identifier) (*Creden
 		}
 		for i, credential := range credentials {
 			if credential.ID == credentialID {
-				return &credentials[i], provider, i
+				return &credentials[i], credentials[i].ProviderID, provider, i
 			}
 		}
 	}
 
-	return nil, "", -1
+	return nil, "", "", -1
 }
 
 func createEmailCredentialFromTPToken(account *Account, token map[string]interface{}) (*Credential, errors.E) {
