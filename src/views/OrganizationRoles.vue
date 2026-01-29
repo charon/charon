@@ -4,6 +4,7 @@ import type { IdentityForAdmin, Metadata, Organization, Role } from "@/types"
 import { onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
+import { sortBy } from "lodash-es"
 
 import { getURL, postJSON } from "@/api"
 import Button from "@/components/Button.vue"
@@ -49,6 +50,27 @@ onBeforeUnmount(() => {
   abortController.abort()
 })
 
+async function loadOrganization() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  const organizationURL = router.apiResolve({
+    name: "OrganizationGet",
+    params: {
+      id: props.id,
+    },
+  }).href
+
+  const response = await getURL<Organization>(organizationURL, null, abortController.signal, progress)
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  organization.value = response.doc
+  availableRoles.value = computeAvailableRoles(organization.value)
+}
+
 onBeforeMount(async () => {
   progress.value += 1
   try {
@@ -68,25 +90,11 @@ onBeforeMount(async () => {
     identity.value = response.doc
     metadata.value = response.metadata
 
-    const identityOrganization = identity.value.organizations.find((o) => o.organization.id === props.id)
-    if (identityOrganization?.roles) {
-      selectedRoleKeys.value = [...identityOrganization.roles]
+    if (identity.value.roles) {
+      selectedRoleKeys.value = [...identity.value.roles]
     }
 
-    const organizationURL = router.apiResolve({
-      name: "OrganizationGet",
-      params: {
-        id: props.id,
-      },
-    }).href
-
-    const resp = await getURL<Organization>(organizationURL, null, abortController.signal, progress)
-    if (abortController.signal.aborted) {
-      return
-    }
-    organization.value = resp.doc
-
-    availableRoles.value = computeAvailableRoles(organization.value)
+    await loadOrganization()
   } catch (error) {
     if (abortController.signal.aborted) {
       return
@@ -139,12 +147,15 @@ function computeAvailableRoles(organization: Organization | null): Role[] {
 function canSubmit(): boolean {
   const currentRoles = organization.value!.roles?.[props.identityId] || []
 
-  const rolesMap = new Map(roles.map((role) => [role.key, role]))
-  return Array.from(rolesMap.values()).sort((a, b) => a.key.localeCompare(b.key))
+  if (selectedRoleKeys.value.length !== currentRoles.length) {
+    return true
+  }
+
+  return !selectedRoleKeys.value.every(role => currentRoles.includes(role))
 }
 
 async function onSubmit() {
-  if (abortController.signal.aborted || !identity.value) {
+  if (abortController.signal.aborted) {
     return
   }
 
@@ -152,14 +163,22 @@ async function onSubmit() {
 
   progress.value += 1
   try {
-    const payload = {
-      roles: selectedRoleKeys.value,
+    const payload: Organization = {
+      id: props.id,
+      name: organization.value!.name,
+      description: organization.value!.description,
+      admins: organization.value!.admins,
+      applications: organization.value!.applications,
+      roles: {
+        ...(organization.value!.roles || {}),
+        [props.identityId]: selectedRoleKeys.value,
+      },
     }
+
     const url = router.apiResolve({
-      name: "OrganizationRoles",
+      name: "OrganizationUpdate",
       params: {
         id: props.id,
-        identityId: props.identityId,
       },
     }).href
 
@@ -177,6 +196,7 @@ async function onSubmit() {
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     updateError.value = `${error}`
   } finally {
+    await loadOrganization()
     progress.value -= 1
   }
 }
@@ -198,35 +218,35 @@ async function onSubmit() {
       </div>
       <div v-if="dataLoading" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">{{ t("common.data.dataLoading") }}</div>
       <div v-else-if="dataLoadingError" class="w-full rounded-sm border border-gray-200 bg-white p-4 text-error-600 shadow-sm">{{ t("common.errors.unexpected") }}</div>
-      <template v-else-if="identity">
+      <template v-else>
         <div class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
-          <IdentityPublic :identity="identity" :is-current="!metadata.is_current" :can-update="true" />
+          <IdentityPublic :identity="identity!" :is-current="!metadata.is_current" :can-update="!metadata.can_update" />
+        </div>
+        <div class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
+          <div v-if="updateError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
+          <div v-if="updateSuccess" class="mb-4 text-success-600">{{ t("views.OrganizationRoles.rolesUpdated") }}</div>
+          <div v-if="!availableRoles.length" class="mb-4 text-gray-500 italic"> {{ t("views.OrganizationRoles.noRoles") }} </div>
+          <form v-else class="flex flex-col" novalidate @submit.prevent="onSubmit">
+            <fieldset class="mb-4">
+              <legend class="mb-1">{{ t("views.OrganizationRoles.availableRoles") }}</legend>
+              <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                <template v-for="role in availableRoles" :key="role.key">
+                  <CheckBox :id="`organizationroles-checkbox-${role.key}`" v-model="selectedRoleKeys" :value="role.key" :progress="progress" class="mx-2" />
+                  <div class="flex flex-col">
+                    <label :for="`organizationroles-checkbox-${role.key}`">{{ role.key }}</label>
+                    <label :for="`organizationroles-checkbox-${role.key}`">{{ role.description }}</label>
+                  </div>
+                </template>
+              </div>
+            </fieldset>
+            <div class="flex justify-end">
+              <Button type="submit" primary :disabled="!canSubmit()" :progress="progress">
+                {{ t("common.buttons.update") }}
+              </Button>
+            </div>
+          </form>
         </div>
       </template>
-      <div class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
-        <div v-if="updateError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
-        <div v-if="updateSuccess" class="mb-4 text-success-600">{{ t("views.OrganizationRoles.rolesUpdated") }}</div>
-        <div v-if="!availableRoles.length" class="mb-4 text-gray-500 italic"> {{ t("views.OrganizationRoles.noRoles") }} </div>
-        <form v-else class="flex flex-col" novalidate @submit.prevent="onSubmit">
-          <fieldset class="mb-4">
-            <legend class="mb-1">{{ t("views.OrganizationRoles.availableRoles") }}</legend>
-            <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
-              <template v-for="role in availableRoles" :key="role.key">
-                <CheckBox :id="`organizationroles-checkbox-${role.key}`" v-model="selectedRoleKeys" :value="role.key" :progress="progress" class="mx-2" />
-                <div class="flex flex-col">
-                  <label :for="`organizationroles-checkbox-${role.key}`">{{ role.key }}</label>
-                  <label :for="`organizationroles-checkbox-${role.key}`">{{ role.description }}</label>
-                </div>
-              </template>
-            </div>
-          </fieldset>
-          <div class="flex justify-end">
-            <Button type="submit" primary :disabled="false" :progress="progress">
-              {{ t("common.buttons.update") }}
-            </Button>
-          </div>
-        </form>
-      </div>
     </div>
   </div>
   <Teleport to="footer">
