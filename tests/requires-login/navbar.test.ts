@@ -14,7 +14,8 @@ test.describe.serial("Charon Navbar Flows", () => {
     // Find and click the CREATE button.
     const createButton = page.locator("#organizationlist-button-create")
     await expect(createButton).toBeVisible()
-    await checkpoint(page, "organization-list-page", { mask: [page.locator("#organizationlist-content-list")] })
+    const organizationContentList = page.locator("#organizationlist-content-list")
+    await checkpoint(page, "organization-list-page", { mask: [organizationContentList] })
     await createButton.click()
 
     // Create 10 organizations.
@@ -48,19 +49,32 @@ test.describe.serial("Charon Navbar Flows", () => {
     // Navigate to the organizations list.
     await page.goBack()
 
+    await expect(organizationContentList).toBeVisible()
+    await checkpoint(page, "organization-list-scrolled-down-0", { fullPage: false, mask: [organizationContentList] })
+
     const NUM_SCROLLS = 30
     // Scroll down the page in increments, taking screenshots.
     for (let i = 1; i < NUM_SCROLLS; i++) {
-      await page.mouse.wheel(0, 5)
+      await page.evaluate(() => {
+        window.scrollTo({
+          top: window.scrollY + 5,
+          behavior: "instant",
+        })
+      })
       await page.waitForTimeout(500) // ms.
-      await checkpoint(page, `organization-list-scrolled-down-${i}`, { fullPage: false, mask: [page.locator("#organizationlist-content-list")] })
+      await checkpoint(page, `organization-list-scrolled-down-${i}`, { fullPage: false, mask: [organizationContentList] })
     }
 
     // Scroll back up.
     for (let i = 1; i < NUM_SCROLLS; i++) {
-      await page.mouse.wheel(0, -5)
+      await page.evaluate(() => {
+        window.scrollTo({
+          top: window.scrollY - 5,
+          behavior: "instant",
+        })
+      })
       await page.waitForTimeout(500) // ms.
-      await checkpoint(page, `organization-list-scrolled-up-${i}`, { fullPage: false, mask: [page.locator("#organizationlist-content-list")] })
+      await checkpoint(page, `organization-list-scrolled-up-${i}`, { fullPage: false, mask: [organizationContentList] })
     }
 
     console.log("Successfully created 10 organizations and verified navbar scrolling behavior.")

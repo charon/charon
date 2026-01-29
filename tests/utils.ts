@@ -292,51 +292,53 @@ export async function simulatePasskeyInput(
     enabled: true,
   })
 
-  try {
-    // perform a user action that triggers passkey prompt
-    await operationTrigger()
+  // Set up event listeners before triggering the operation to avoid race conditions.
+  let eventPromise: Promise<void>
+  switch (action) {
+    case "shouldSucceed":
+      eventPromise = new Promise<void>((resolve, reject) => {
+        setTimeout(() => reject(new Error("no WebAuthn event received")), 3000)
+        client.on("WebAuthn.credentialAdded", () => (credentialShouldAlreadyExist ? reject(new Error("unexpected credentialAdded event")) : resolve()))
+        client.on("WebAuthn.credentialAsserted", () => (credentialShouldAlreadyExist ? resolve() : reject(new Error("unexpected credentialAsserted event"))))
+        client.on("WebAuthn.credentialUpdated", () => reject(new Error("unexpected credentialUpdated event")))
+        client.on("WebAuthn.credentialDeleted", () => reject(new Error("unexpected credentialDeleted event")))
+      })
+      break
+    case "updatePasskey":
+      eventPromise = new Promise<void>((resolve, reject) => {
+        setTimeout(resolve, 3000)
+        client.on("WebAuthn.credentialAdded", () => reject(new Error("unexpected credentialAdded event")))
+        client.on("WebAuthn.credentialAsserted", () => reject(new Error("unexpected credentialAsserted event")))
+        client.on("WebAuthn.credentialUpdated", () => resolve())
+        client.on("WebAuthn.credentialDeleted", () => reject(new Error("unexpected credentialDeleted event")))
+      })
+      break
+    case "deletePasskey":
+      eventPromise = new Promise<void>((resolve, reject) => {
+        setTimeout(resolve, 3000)
+        client.on("WebAuthn.credentialAdded", () => reject(new Error("unexpected credentialAdded event")))
+        client.on("WebAuthn.credentialAsserted", () => reject(new Error("unexpected credentialAsserted event")))
+        client.on("WebAuthn.credentialUpdated", () => reject(new Error("unexpected credentialUpdated event")))
+        client.on("WebAuthn.credentialDeleted", () => resolve())
+      })
+      break
+    case "shouldNotSucceed":
+    case "doNotSendVerifiedPasskey":
+      eventPromise = new Promise<void>((resolve, reject) => {
+        setTimeout(resolve, 3000)
+        client.on("WebAuthn.credentialAdded", () => reject(new Error("unexpected credentialAdded event")))
+        client.on("WebAuthn.credentialAsserted", () => reject(new Error("unexpected credentialAsserted event")))
+        client.on("WebAuthn.credentialUpdated", () => reject(new Error("unexpected credentialUpdated event")))
+        client.on("WebAuthn.credentialDeleted", () => reject(new Error("unexpected credentialDeleted event")))
+      })
+      break
+  }
 
-    // Wait to receive the event that the passkey was successfully registered or verified.
-    // WebAuthn events are only triggered during successful operations.
-    switch (action) {
-      case "shouldSucceed":
-        await new Promise<void>((resolve, reject) => {
-          setTimeout(() => reject(new Error("no WebAuthn event received")), 3000)
-          client.on("WebAuthn.credentialAdded", () => (credentialShouldAlreadyExist ? reject(new Error("unexpected credentialAdded event")) : resolve()))
-          client.on("WebAuthn.credentialAsserted", () => (credentialShouldAlreadyExist ? resolve() : reject(new Error("unexpected credentialAsserted event"))))
-          client.on("WebAuthn.credentialUpdated", () => reject(new Error("unexpected credentialUpdated event")))
-          client.on("WebAuthn.credentialDeleted", () => reject(new Error("unexpected credentialDeleted event")))
-        })
-        break
-      case "updatePasskey":
-        await new Promise<void>((resolve, reject) => {
-          setTimeout(resolve, 3000)
-          client.on("WebAuthn.credentialAdded", () => reject(new Error("unexpected credentialAdded event")))
-          client.on("WebAuthn.credentialAsserted", () => reject(new Error("unexpected credentialAsserted event")))
-          client.on("WebAuthn.credentialUpdated", () => resolve())
-          client.on("WebAuthn.credentialDeleted", () => reject(new Error("unexpected credentialDeleted event")))
-        })
-        break
-      case "deletePasskey":
-        await new Promise<void>((resolve, reject) => {
-          setTimeout(resolve, 3000)
-          client.on("WebAuthn.credentialAdded", () => reject(new Error("unexpected credentialAdded event")))
-          client.on("WebAuthn.credentialAsserted", () => reject(new Error("unexpected credentialAsserted event")))
-          client.on("WebAuthn.credentialUpdated", () => reject(new Error("unexpected credentialUpdated event")))
-          client.on("WebAuthn.credentialDeleted", () => resolve())
-        })
-        break
-      case "shouldNotSucceed":
-      case "doNotSendVerifiedPasskey":
-        await new Promise<void>((resolve, reject) => {
-          setTimeout(resolve, 3000)
-          client.on("WebAuthn.credentialAdded", () => reject(new Error("unexpected credentialAdded event")))
-          client.on("WebAuthn.credentialAsserted", () => reject(new Error("unexpected credentialAsserted event")))
-          client.on("WebAuthn.credentialUpdated", () => reject(new Error("unexpected credentialUpdated event")))
-          client.on("WebAuthn.credentialDeleted", () => reject(new Error("unexpected credentialDeleted event")))
-        })
-        break
-    }
+  try {
+    // Perform user action that triggers passkey prompt.
+    await operationTrigger()
+    // Wait for the WebAuthn event.
+    await eventPromise
   } finally {
     // Set automaticPresenceSimulation option back to false.
     await client.send("WebAuthn.setAutomaticPresenceSimulation", {
