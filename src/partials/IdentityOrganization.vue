@@ -10,8 +10,9 @@ import { useI18n } from "vue-i18n"
 import WithDocument from "@/components/WithDocument.vue"
 import { getHomepage } from "@/utils"
 
-const { identityOrganization } = defineProps<{
+const props = defineProps<{
   identityOrganization: IdentityOrganization | DeepReadonly<IdentityOrganization>
+  roles?: readonly string[]
 }>()
 
 const { t } = useI18n({ useScope: "global" })
@@ -20,7 +21,9 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
 const WithOrganizationBlockedStatusDocument = WithDocument<OrganizationBlockedStatus>
 const withOrganizationBlockedStatusDocument = ref<ComponentExposed<typeof WithOrganizationBlockedStatusDocument> | null>(null)
 
-const sortedRoles = [...(identityOrganization.roles || [])].sort()
+function getSortedRoles(roles : readonly string []): string[] {
+  return [...roles].sort()
+}
 
 defineExpose({
   organizationBlockedStatus: computed(() => withOrganizationBlockedStatusDocument.value?.doc || undefined),
@@ -60,8 +63,8 @@ defineExpose({
         <strong v-else>{{ identityOrganization.active ? t("common.labels.active") : t("common.labels.disabled") }}</strong>
       </div>
       <div>{{ t("partials.IdentityOrganization.roles") }}</div>
-      <div v-if="identityOrganization.roles && identityOrganization.roles.length">
-        {{ sortedRoles.join(", ") }}
+        <div v-if="props.roles && props.roles.length">
+        {{ getSortedRoles(props.roles).join(", ") }}
       </div>
       <div v-else class="italic">{{ t("partials.IdentityOrganization.noRoles") }}</div>
       <div>{{ t("partials.IdentityOrganization.apps") }}</div>

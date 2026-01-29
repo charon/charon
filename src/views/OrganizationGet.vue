@@ -212,6 +212,7 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
         for (const allIdentity of updatedAllIdentities) {
           for (const identityOrganization of allIdentity.identity.organizations) {
             if (identityOrganization.organization.id === props.id) {
+              const rolesForIdentity = organization.value!.roles?.[identityOrganization.id!] || []
               updatedIdentitiesForOrganization.push({
                 id: identityOrganization.id,
                 active: identityOrganization.active,
@@ -220,7 +221,7 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
                 identity: clone(allIdentity.identity),
                 url: allIdentity.url,
                 applications: identityOrganization.applications,
-                roles: identityOrganization.roles || [],
+                roles: rolesForIdentity,
                 isCurrent: allIdentity.isCurrent,
                 canUpdate: allIdentity.canUpdate,
                 blocked: allIdentity.blocked,
@@ -324,6 +325,7 @@ async function onBasicSubmit() {
     description: description.value,
     admins: organization.value!.admins,
     applications: organization.value!.applications,
+    roles: organization.value!.roles,
   }
   await onSubmit(payload, "basic", basicUpdated, basicUnexpectedError)
 }
@@ -356,6 +358,7 @@ async function onApplicationsSubmit() {
     description: organization.value!.description,
     admins: organization.value!.admins,
     applications: applications.value,
+    roles: organization.value!.roles,
   }
   await onSubmit(payload, "applications", applicationsUpdated, applicationsUnexpectedError)
 }
@@ -475,6 +478,7 @@ async function onAdminsSubmit() {
     description: organization.value!.description,
     admins: admins.value,
     applications: organization.value!.applications,
+    roles: organization.value!.roles,
   }
   await onSubmit(payload, "admins", adminsUpdated, adminsUnexpectedError)
 }
@@ -886,8 +890,8 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
                       active: identityForOrganization.active,
                       organization: { id },
                       applications: identityForOrganization.applications,
-                      roles: identityForOrganization.roles || [],
                     }"
+                    :roles="identityForOrganization.roles"
                   >
                     <div v-if="identityForOrganization.canUpdate" class="flex flex-row gap-4">
                       <Button type="button" :progress="progress" @click.prevent="identityForOrganization.active = !identityForOrganization.active">{{

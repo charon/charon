@@ -96,7 +96,7 @@ function updateOrganizationBlockedStatuses(userId: string, component: IdentityOr
 
 function identityLabels(identity: IdentityForAdmin | DeepReadonly<IdentityForAdmin>): string[] {
   const labels: string[] = []
-  if (!identity.organizations[0].active) {
+  if (!identity.organization?.active) {
     labels.push(t("common.labels.disabled"))
   }
   const organizationBlockedStatus = organizationBlockedStatusComponents.value.get(identity.id)?.organizationBlockedStatus
@@ -132,8 +132,10 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
             <template #default="{ doc, metadata, url }">
               <IdentityPublic :identity="doc" :url="url" :is-current="metadata.is_current" :can-update="metadata.can_update" :labels="identityLabels(doc)" />
               <IdentityOrganization
+                v-if="doc.organization"
                 :ref="(el) => updateOrganizationBlockedStatuses(user.id, el as IdentityOrganizationComponent | null)"
-                :identity-organization="doc.organizations[0]"
+                :identity-organization="doc.organization"
+                :roles="doc.roles"
               >
                 <template #default="{ organizationBlockedStatus }">
                   <!-- Only when just identity is blocked we can show the button. Admin cannot unblock account-level block. -->
