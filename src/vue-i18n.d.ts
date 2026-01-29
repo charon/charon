@@ -219,6 +219,7 @@ declare module "vue-i18n" {
         status: string
         apps: string
         noApps: string
+        roles: string
         noRoles: string
         statusAndBlocked: string
       }
