@@ -1384,7 +1384,7 @@ func (s *Service) CredentialConfirmEmailCompletePost(w http.ResponseWriter, req 
 
 	// Confirm email in code credential matches the found email credential (defensive check).
 	if account.Credentials[ProviderEmail][foundIndex].ID.String() != credential.ProviderID {
-		errE := errors.New("email mismatch between code credential and email credential")
+		errE := errors.New("mismatch between code credential and e-mail credential")
 		errors.Details(errE)["id"] = credential.ID
 		errors.Details(errE)["codeEmail"] = credential.DisplayName
 		errors.Details(errE)["credentialEmail"] = account.Credentials[ProviderEmail][foundIndex].DisplayName
