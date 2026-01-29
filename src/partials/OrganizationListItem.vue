@@ -4,6 +4,7 @@ import type { Organization, OrganizationRef } from "@/types"
 import { useI18n } from "vue-i18n"
 
 import WithDocument from "@/components/WithDocument.vue"
+import OrganizationPublic from "@/partials/OrganizationPublic.vue"
 
 defineProps<{
   item: OrganizationRef
@@ -19,17 +20,9 @@ const WithOrganizationDocument = WithDocument<Organization>
 <template>
   <WithOrganizationDocument :params="{ id: item.id }" name="OrganizationGet">
     <template #default="{ doc, metadata, url }">
-      <div class="flex flex-row items-center justify-between gap-4" :data-url="url">
-        <component :is="h3 ? 'h3' : 'h2'" class="flex flex-row items-center gap-1" :class="h3 ? 'text-lg' : 'text-xl'">
-          <router-link :to="{ name: 'OrganizationGet', params: { id: doc.id } }" class="link">{{ doc.name }}</router-link>
-          <span v-for="label in labels || []" :key="label" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{ label }}</span>
-          <span v-if="metadata.can_update" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{
-            t("common.labels.admin")
-          }}</span>
-        </component>
+      <OrganizationPublic :organization="doc" :metadata="metadata" :url="url" :h3="h3" :labels="labels">
         <slot :doc="doc" :metadata="metadata"></slot>
-      </div>
-      <div v-if="doc.description" class="mt-4 ml-4 whitespace-pre-line">{{ doc.description }}</div>
+      </OrganizationPublic>
     </template>
     <template #error="{ url }">
       <div class="flex flex-row gap-4" :data-url="url">

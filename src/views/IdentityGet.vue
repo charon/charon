@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { DeepReadonly, Ref } from "vue"
+import { computed, DeepReadonly, Ref } from "vue"
 import type { ComponentExposed } from "vue-component-type-helpers"
 
-import type { Identity, IdentityOrganization as IdentityOrganizationType, IdentityRef, Metadata, OrganizationRef, Organizations } from "@/types"
+import type { Identity, IdentityOrganization as IdentityOrganizationType, IdentityRef, Metadata, Organization, OrganizationRef, Organizations } from "@/types"
 
-import { computed, nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
+import { nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
@@ -17,6 +17,7 @@ import Footer from "@/partials/Footer.vue"
 import IdentityOrganization from "@/partials/IdentityOrganization.vue"
 import NavBar from "@/partials/NavBar.vue"
 import OrganizationListItem from "@/partials/OrganizationListItem.vue"
+import OrganizationPublic from "@/partials/OrganizationPublic.vue"
 import WithIdentityPublicDocument from "@/partials/WithIdentityPublicDocument.vue"
 import { useProgress } from "@/progress"
 import { clone, equals } from "@/utils"
@@ -35,6 +36,8 @@ const dataLoadingError = ref("")
 const identity = ref<Identity | null>(null)
 const metadata = ref<Metadata>({})
 const organizations = ref<Organizations>([])
+const loadedOrganizations = ref(new Map<string, Organization>())
+const loadedOrganizationsMetadata = ref(new Map<string, Metadata>())
 
 const basicUnexpectedError = ref("")
 const basicUpdated = ref(false)
@@ -147,6 +150,7 @@ async function loadData(update: "init" | "basic" | "users" | "admins" | "organiz
     }
     if (update == "init" || update === "organizations") {
       identityOrganizations.value = clone(response.doc.organizations || [])
+      await loadOrganizations()
     }
 
     if (update === "init") {
@@ -428,6 +432,53 @@ function organizationLabels(identityOrganization: IdentityOrganizationType | Dee
   return labels
 }
 
+async function loadOrganizations() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  const newOrgs = new Map<string, Organization>()
+  const newMetadata = new Map<string, Metadata>()
+
+  // Load only organizations that are already in identityOrganizations.
+  for (const identityOrganization of identityOrganizations.value) {
+    const orgId = identityOrganization.organization.id
+
+    try {
+      const organizationURL = router.apiResolve({
+        name: "OrganizationGet",
+        params: { id: orgId },
+      }).href
+
+      const response = await getURL<Organization>(organizationURL, null, abortController.signal, progress)
+      if (abortController.signal.aborted) {
+        return
+      }
+
+      newOrgs.set(orgId, response.doc)
+      newMetadata.set(orgId, response.metadata)
+    } catch (error) {
+      if (abortController.signal.aborted) {
+        return
+      }
+      console.error("IdentityGet.loadOrganizations", error)
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      dataLoadingError.value = `${error}`
+      return
+    }
+  }
+  loadedOrganizations.value = newOrgs
+  loadedOrganizationsMetadata.value = newMetadata
+}
+
+function getIdentityRoles(identityOrganization: IdentityOrganizationType): string[] {
+  if (!identityOrganization.id) {
+    return []
+  }
+  const org = loadedOrganizations.value.get(identityOrganization.organization.id)
+  return org?.roles?.[identityOrganization.id] ?? []
+}
+
 // TODO: Remember previous organization-scoped identity IDs and reuse them if an organization is removed and then added back without calling update in-between.
 </script>
 
@@ -560,11 +611,18 @@ function organizationLabels(identityOrganization: IdentityOrganizationType | Dee
             <form v-if="identityOrganizations.length || canOrganizationsSubmit()" class="flex flex-col" novalidate @submit.prevent="onOrganizationsSubmit">
               <ul>
                 <li v-for="(identityOrganization, i) in identityOrganizations" :key="identityOrganization.organization.id" class="mb-4 flex flex-col">
-                  <OrganizationListItem :item="identityOrganization.organization" :labels="organizationLabels(identityOrganization)" h3 />
+                  <OrganizationPublic
+                    v-if="loadedOrganizations.get(identityOrganization.organization.id)"
+                    :organization="loadedOrganizations.get(identityOrganization.organization.id)!"
+                    :metadata="loadedOrganizationsMetadata.get(identityOrganization.organization.id)"
+                    :labels="organizationLabels(identityOrganization)"
+                    h3
+                  />
                   <IdentityOrganization
                     :ref="(el) => updateOrganizationBlockedStatuses(identityOrganization.organization.id, el as IdentityOrganizationComponent)"
                     :identity-organization="identityOrganization"
-                  > <!-- TODO: How to pass roles? -->
+                    :roles="getIdentityRoles(identityOrganization)"
+                  >
                     <div v-if="metadata.can_update" class="flex flex-row gap-4">
                       <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = !identityOrganization.active">{{
                         identityOrganization.active ? t("common.buttons.disable") : t("common.buttons.activate")

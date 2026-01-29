@@ -21,7 +21,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
 const WithOrganizationBlockedStatusDocument = WithDocument<OrganizationBlockedStatus>
 const withOrganizationBlockedStatusDocument = ref<ComponentExposed<typeof WithOrganizationBlockedStatusDocument> | null>(null)
 
-function getSortedRoles(roles : readonly string []): string[] {
+function getSortedRoles(roles: readonly string[]): string[] {
   return [...roles].sort()
 }
 
@@ -63,7 +63,7 @@ defineExpose({
         <strong v-else>{{ identityOrganization.active ? t("common.labels.active") : t("common.labels.disabled") }}</strong>
       </div>
       <div>{{ t("partials.IdentityOrganization.roles") }}</div>
-        <div v-if="props.roles && props.roles.length">
+      <div v-if="props.roles && props.roles.length">
         {{ getSortedRoles(props.roles).join(", ") }}
       </div>
       <div v-else class="italic">{{ t("partials.IdentityOrganization.noRoles") }}</div>

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { IdentityForAdmin, Metadata, Organization, Role } from "@/types"
 
+import { sortBy } from "lodash-es"
 import { onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
-import { sortBy } from "lodash-es"
 
 import { getURL, postJSON } from "@/api"
 import Button from "@/components/Button.vue"
@@ -12,7 +12,7 @@ import CheckBox from "@/components/CheckBox.vue"
 import Footer from "@/partials/Footer.vue"
 import IdentityPublic from "@/partials/IdentityPublic.vue"
 import NavBar from "@/partials/NavBar.vue"
-import OrganizationListItem from "@/partials/OrganizationListItem.vue"
+import OrganizationPublic from "@/partials/OrganizationPublic.vue"
 import { useProgress } from "@/progress"
 
 const props = defineProps<{
@@ -31,6 +31,7 @@ const dataLoadingError = ref("")
 const identity = ref<IdentityForAdmin | null>(null)
 const metadata = ref<Metadata>({})
 const organization = ref<Organization | null>(null)
+const organizationMetadata = ref<Metadata>({})
 const availableRoles = ref<Role[]>([])
 const selectedRoleKeys = ref<string[]>([])
 const updateError = ref("")
@@ -68,6 +69,7 @@ async function loadOrganization() {
   }
 
   organization.value = response.doc
+  organizationMetadata.value = response.metadata
   availableRoles.value = computeAvailableRoles(organization.value)
 }
 
@@ -129,19 +131,18 @@ function computeAvailableRoles(organization: Organization | null): Role[] {
       if (roleFromInactive) {
         resultMap.set(key, {
           key: roleFromInactive.key,
-          description: `${roleFromInactive.description} (inactive app)`
+          description: `${roleFromInactive.description} (inactive app)`,
         })
       } else {
         resultMap.set(key, {
           key,
-          description: `${key} (removed app)`
+          description: `${key} (removed app)`,
         })
       }
     }
   })
 
-
-  return sortBy(Array.from(resultMap.values()), 'key')
+  return sortBy(Array.from(resultMap.values()), "key")
 }
 
 function canSubmit(): boolean {
@@ -151,7 +152,7 @@ function canSubmit(): boolean {
     return true
   }
 
-  return !selectedRoleKeys.value.every(role => currentRoles.includes(role))
+  return !selectedRoleKeys.value.every((role) => currentRoles.includes(role))
 }
 
 async function onSubmit() {
@@ -208,17 +209,17 @@ async function onSubmit() {
   </Teleport>
   <div class="mt-12 flex w-full flex-col items-center border-t border-transparent sm:mt-[4.5rem]">
     <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,65ch)] gap-1 sm:m-4 sm:gap-4">
-      <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
-        <div class="flex flex-col gap-4">
-          <h1 class="text-2xl font-bold">{{ t("views.OrganizationRoles.rolesInOrganization") }}</h1>
-          <div>
-            <OrganizationListItem :item="{ id }" />
-          </div>
-        </div>
-      </div>
       <div v-if="dataLoading" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">{{ t("common.data.dataLoading") }}</div>
       <div v-else-if="dataLoadingError" class="w-full rounded-sm border border-gray-200 bg-white p-4 text-error-600 shadow-sm">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
+        <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
+          <div class="flex flex-col gap-4">
+            <h1 class="text-2xl font-bold">{{ t("views.OrganizationRoles.rolesInOrganization") }}</h1>
+            <div>
+              <OrganizationPublic :organization="organization!" :metadata="organizationMetadata" />
+            </div>
+          </div>
+        </div>
         <div class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
           <IdentityPublic :identity="identity!" :is-current="!metadata.is_current" :can-update="!metadata.can_update" />
         </div>
