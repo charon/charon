@@ -1226,11 +1226,12 @@ func (s *Service) CredentialConfirmEmailPost(w http.ResponseWriter, req *http.Re
 		CredentialPublic: CredentialPublic{
 			ID:       identifier.New(),
 			Provider: ProviderCode,
-			// Store e-mail value.
+			// Store e-mail address for debugging purposes.
 			DisplayName: foundCredential.DisplayName,
 			Confirmed:   false,
 		},
-		// Store e-mail credentials ID.
+		// Store e-mail credential ID so that we can later on double check
+		// we confirmed the right e-mail address.
 		ProviderID: foundCredential.ID.String(),
 		Data:       jsonData,
 	}
