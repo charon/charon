@@ -1169,11 +1169,12 @@ func (s *Service) CredentialConfirmEmailPost(w http.ResponseWriter, req *http.Re
 		return
 	}
 
-	credentialID, errE := identifier.MaybeString(params["id"])
+	emailCredentialID, errE := identifier.MaybeString(params["id"])
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
+	emailCredentialIDString := emailCredentialID.String()
 
 	accountID := mustGetAccountID(ctx)
 	account, errE := s.getAccount(ctx, accountID)
@@ -1182,13 +1183,13 @@ func (s *Service) CredentialConfirmEmailPost(w http.ResponseWriter, req *http.Re
 		return
 	}
 
-	foundCredential, _, foundProvider, foundIndex := account.getCredentialByID(credentialID)
-	if foundIndex == -1 || foundProvider != ProviderEmail {
+	emailCredential, _, foundProvider, emailCredentialIndex := account.getCredentialByID(emailCredentialID)
+	if emailCredentialIndex == -1 || foundProvider != ProviderEmail {
 		s.NotFound(w, req)
 		return
 	}
 
-	if foundCredential.Confirmed {
+	if emailCredential.Confirmed {
 		// Nothing to do, already confirmed.
 		s.WriteJSON(w, req, CredentialResponse{
 			Error:   "",
@@ -1198,7 +1199,7 @@ func (s *Service) CredentialConfirmEmailPost(w http.ResponseWriter, req *http.Re
 		return
 	}
 
-	_, errE = account.cleanupCodeCredentials(credentialID.String())
+	_, errE = account.cleanupCodeCredentials(emailCredentialIDString)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -1227,12 +1228,12 @@ func (s *Service) CredentialConfirmEmailPost(w http.ResponseWriter, req *http.Re
 			ID:       identifier.New(),
 			Provider: ProviderCode,
 			// Store e-mail address for debugging purposes.
-			DisplayName: foundCredential.DisplayName,
+			DisplayName: emailCredential.DisplayName,
 			Confirmed:   false,
 		},
 		// Store e-mail credential ID so that we can later on double check
 		// we confirmed the right e-mail address.
-		ProviderID: foundCredential.ID.String(),
+		ProviderID: emailCredential.ID.String(),
 		Data:       jsonData,
 	}
 
@@ -1246,14 +1247,14 @@ func (s *Service) CredentialConfirmEmailPost(w http.ResponseWriter, req *http.Re
 		return
 	}
 
-	path, errE := s.Reverse("CredentialConfirmEmail", waf.Params{"id": credentialID.String()}, nil)
+	path, errE := s.Reverse("CredentialConfirmEmail", waf.Params{"id": emailCredentialIDString}, nil)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 	url := fmt.Sprintf("%s%s#code=%s", s.codeProvider().origin, path, code)
 
-	errE = s.sendMail(ctx, credentialID, []string{foundCredential.DisplayName}, codeProviderSubject, codeProviderTemplateCompiled, map[string]string{
+	errE = s.sendMail(ctx, emailCredentialID, []string{emailCredential.DisplayName}, codeProviderSubject, codeProviderTemplateCompiled, map[string]string{
 		"code": code,
 		"url":  url,
 	})
@@ -1279,11 +1280,12 @@ func (s *Service) CredentialConfirmEmailCompletePost(w http.ResponseWriter, req 
 		return
 	}
 
-	credentialID, errE := identifier.MaybeString(params["id"])
+	emailCredentialID, errE := identifier.MaybeString(params["id"])
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
+	emailCredentialIDString := emailCredentialID.String()
 
 	var request CredentialConfirmEmailCompleteRequest
 	errE = x.DecodeJSONWithoutUnknownFields(req.Body, &request)
@@ -1300,7 +1302,7 @@ func (s *Service) CredentialConfirmEmailCompletePost(w http.ResponseWriter, req 
 	}
 
 	// Code credentials might have expired in meantime.
-	hasRemaining, errE := account.cleanupCodeCredentials(credentialID.String())
+	hasRemaining, errE := account.cleanupCodeCredentials(emailCredentialIDString)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -1329,19 +1331,19 @@ func (s *Service) CredentialConfirmEmailCompletePost(w http.ResponseWriter, req 
 		return r
 	}, request.Code)
 
-	credential, errE := account.findCodeCredential(credentialID.String(), code)
+	codeCredential, errE := account.findCodeCredential(emailCredentialIDString, code)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-	if credential == nil {
-		errE = account.incrementCodeCredentialAttempts(credentialID.String())
+	if codeCredential == nil {
+		errE = account.incrementCodeCredentialAttempts(emailCredentialIDString)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
 
-		hasRemaining, errE = account.cleanupCodeCredentials(credentialID.String())
+		hasRemaining, errE = account.cleanupCodeCredentials(emailCredentialIDString)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
@@ -1371,38 +1373,40 @@ func (s *Service) CredentialConfirmEmailCompletePost(w http.ResponseWriter, req 
 	}
 
 	// Code is correct, remove all code credentials.
-	account.removeCodeCredentials(credentialID.String())
+	account.removeCodeCredentials(emailCredentialIDString)
 	errE = s.setAccount(ctx, account)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
-	foundCredential, _, _, foundIndex := account.getCredentialByID(credentialID)
-	if foundIndex == -1 {
+	emailCredential, _, _, emailCredentialIndex := account.getCredentialByID(emailCredentialID)
+	if emailCredential == nil {
 		s.NotFound(w, req)
 		return
 	}
 
 	// Confirm email in code credential matches the found email credential (defensive check).
-	if account.Credentials[ProviderEmail][foundIndex].ID.String() != credential.ProviderID {
+	if emailCredential.ID.String() != codeCredential.ProviderID {
 		errE := errors.New("mismatch between code credential and e-mail credential")
-		errors.Details(errE)["id"] = credential.ID
-		errors.Details(errE)["codeEmail"] = credential.DisplayName
-		errors.Details(errE)["credentialEmail"] = account.Credentials[ProviderEmail][foundIndex].DisplayName
+		errors.Details(errE)["id"] = codeCredential.ID
+		errors.Details(errE)["codeEmail"] = codeCredential.DisplayName
+		errors.Details(errE)["credentialEmail"] = emailCredential.DisplayName
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
+	// Before we confirm the e-mail address, we have to check if the
+	// e-mail address is in use and confirmed in another account.
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	accountWithConfirmedEmail, errE := s.getAccountByCredential(ctx, ProviderEmail, foundCredential.ProviderID)
+	accountWithConfirmedEmail, errE := s.getAccountByCredential(ctx, ProviderEmail, emailCredential.ProviderID)
 	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
 	if accountWithConfirmedEmail != nil {
-		// e-mail is confirmed on the same account, no-op.
+		// E-mail is confirmed on the same account, no-op.
 		if accountWithConfirmedEmail.ID == accountID {
 			s.WriteJSON(w, req, CredentialResponse{
 				Error:   "",
@@ -1411,7 +1415,7 @@ func (s *Service) CredentialConfirmEmailCompletePost(w http.ResponseWriter, req 
 			}, nil)
 			return
 		}
-		// Email is confirmed on a different account.
+		// E-mail is confirmed on a different account.
 		s.WriteJSON(w, req, CredentialResponse{
 			// TODO: Offer user to merge accounts.
 			Error:   ErrorCodeCredentialInUse,
@@ -1421,7 +1425,7 @@ func (s *Service) CredentialConfirmEmailCompletePost(w http.ResponseWriter, req 
 		return
 	}
 
-	account.Credentials[ProviderEmail][foundIndex].Confirmed = true
+	account.Credentials[ProviderEmail][emailCredentialIndex].Confirmed = true
 	errE = s.setAccount(ctx, account)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -1467,14 +1471,14 @@ func (s *Service) CredentialConfirmedEmailsGet(w http.ResponseWriter, req *http.
 
 // getCredentialByID finds a credential by ID across providers, excluding ProviderCode.
 func (a *Account) getCredentialByID(credentialID identifier.Identifier) (*Credential, string, Provider, int) {
-	for provider, credentials := range a.Credentials {
+	for provider := range a.Credentials {
 		// Code provider credentials are never exposed over the API.
 		if provider == ProviderCode {
 			continue
 		}
-		for i, credential := range credentials {
+		for i, credential := range a.Credentials[provider] {
 			if credential.ID == credentialID {
-				return &credentials[i], credentials[i].ProviderID, provider, i
+				return &a.Credentials[provider][i], credential.ProviderID, provider, i
 			}
 		}
 	}
