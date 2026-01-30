@@ -210,11 +210,11 @@ test_e2e_link_publish_coverage:
   when: always
 
   script:
-    - echo "Publishing E2E backend coverage link:"
+    - echo "Publishing combined (E2E + unit tests) backend coverage link:"
     - echo "https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage.html"
 
   environment:
-    name: MR/${CI_MERGE_REQUEST_IID}/e2e_backend_coverage
+    name: MR/${CI_MERGE_REQUEST_IID}/combined_backend_coverage
     url: https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage.html
     deployment_tier: other
 
