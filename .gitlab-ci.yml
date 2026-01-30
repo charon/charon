@@ -48,6 +48,10 @@ test_go:
   script:
     - make test-ci
 
+  after_script:
+    - echo "Prepared go coverage link:"
+    - echo "https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage.html"
+
   artifacts:
     when: always
     reports:
@@ -100,6 +104,10 @@ test_node:
     - npm ci --audit=false
     - npm run test-ci
 
+  after_script:
+    - echo "Prepared node coverage link:"
+    - echo "https://charon.gitlab.io/-/charon/-/jobs/${CI_JOB_ID}/artifacts/coverage/index.html"
+
   artifacts:
     when: always
     reports:
@@ -132,7 +140,7 @@ test_node_link_publish:
   when: always
 
   script:
-    - echo "Publishing node coverage link."
+    - echo "Publishing node coverage link:"
     - echo "https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage/index.html"
 
   environment:
@@ -168,6 +176,16 @@ test_e2e:
     - go tool cover -html=coverage.txt -o coverage.html
     - gocover-cobertura < coverage.txt > coverage.xml
     - go tool cover -func=coverage.txt
+
+  after_script:
+    - echo "Prepared combined (E2E + unit tests) backend coverage link:"
+    - echo "https://charon.gitlab.io/-/charon/-/jobs/${CI_JOB_ID}/artifacts/coverage.html"
+    - echo "Prepared E2E report link:"
+    - echo "https://charon.gitlab.io/-/charon/-/jobs/${CI_JOB_ID}/artifacts/playwright-report/index.html"
+    - echo "Prepared E2E frontend coverage link:"
+    - echo "https://charon.gitlab.io/-/charon/-/jobs/${CI_JOB_ID}/artifacts/coverage-frontend/index.html"
+    - echo "Prepared accessibility report link:"
+    - echo "https://charon.gitlab.io/-/charon/-/jobs/${CI_JOB_ID}/artifacts/a11y-report/a11y-report.html"
 
   artifacts:
     when: always
