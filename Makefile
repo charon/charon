@@ -38,9 +38,7 @@ test: dist/index.html
 	gotestsum --format pkgname --packages ./... -- -race -timeout 10m -cover -covermode atomic
 
 test-ci: dist/index.html
-	gotestsum --format pkgname --packages ./... --junitfile tests.xml -- -race -timeout 10m -coverprofile=coverage.txt -covermode atomic
-	gocover-cobertura < coverage.txt > coverage.xml
-	go tool cover -html=coverage.txt -o coverage.html
+	gotestsum --format pkgname --packages ./... --junitfile tests.xml -- -race -timeout 10m -coverprofile=coverage-unit.txt -covermode atomic
 
 lint: dist/index.html
 	golangci-lint run --output.text.colors --allow-parallel-runners --fix
@@ -61,7 +59,7 @@ upgrade:
 	go mod tidy
 
 clean:
-	rm -rf coverage.* codeclimate.json tests.xml coverage dist charon
+	rm -rf coverage-unit.* codeclimate.json tests.xml coverage dist charon
 
 release:
 	npx --yes --package 'release-it@19.0.5' --package '@release-it/keep-a-changelog@7.0.0' -- release-it

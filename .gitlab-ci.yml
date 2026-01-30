@@ -48,49 +48,18 @@ test_go:
   script:
     - make test-ci
 
-  after_script:
-    - echo "Prepared go coverage link:"
-    - echo "https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage.html"
-
   artifacts:
     when: always
     reports:
       junit: tests.xml
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage.xml
       dotenv:
         - link_publish.env
     paths:
       - tests.xml
-      - coverage.html
-      - coverage.xml
+      - coverage-unit.txt
     expire_in: never
 
   coverage: '/coverage: \d+\.\d+% of statements/'
-
-test_go_link_publish:
-  stage: deploy
-
-  rules:
-    # We create a link only for merge request pipelines.
-    # Created environment is automatically removed when the merge request is closed.
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-
-  needs:
-    - test_go
-
-  # Publish the link even if test_go fails.
-  when: always
-
-  script:
-    - echo "Publishing go coverage link:"
-    - echo "https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage.html"
-
-  environment:
-    name: MR/${CI_MERGE_REQUEST_IID}/go_coverage
-    url: https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage.html
-    deployment_tier: other
 
 test_node:
   stage: test
@@ -159,9 +128,12 @@ test_e2e:
         - "--feature"
         - "containerd-snapshotter=true"
 
+  needs:
+    - test_go
+
   before_script:
     - apk --update add docker-cli docker-cli-buildx make bash gcc musl-dev jq
-    - (cd /go; go install github.com/boumenot/gocover-cobertura@v1.4.0)
+    - (cd /go; go install github.com/boumenot/gocover-cobertura@v1.4.0 github.com/wadey/gocovmerge@b5bfa59)
     - docker info
     - echo "$CI_REGISTRY_PASSWORD" | docker login --username "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
     - echo "LINK_PUBLISH_JOB_ID=${CI_JOB_ID}" > link_publish.env
@@ -172,7 +144,8 @@ test_e2e:
   #       See: https://github.com/golang/go/issues/66506
   script:
     - ./test-e2e.sh
-    - go tool covdata textfmt -i=coverage -o coverage.txt
+    - go tool covdata textfmt -i=coverage -o coverage-e2e.txt
+    - gocovmerge coverage-unit.txt coverage-e2e.txt > coverage.txt
     - go tool cover -html=coverage.txt -o coverage.html
     - gocover-cobertura < coverage.txt > coverage.xml
     - go tool cover -func=coverage.txt
