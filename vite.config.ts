@@ -73,9 +73,9 @@ export default defineConfig({
     coverage: {
       include: ["src/**/*.{ts,vue}"],
       exclude: ["**/tests/**", "**/*.d.ts"],
-      provider: 'istanbul',  // Required for nyc compatibility.
-      reporter: ['json', 'html', 'text'],  // JSON required for nyc compatibility.
-      reportsDirectory: './coverage/vitest'
+      provider: "istanbul", // Required for nyc compatibility.
+      reporter: ["json", "html", "text"], // JSON required for nyc compatibility.
+      reportsDirectory: "./coverage/vitest",
     },
   },
   esbuild: {
