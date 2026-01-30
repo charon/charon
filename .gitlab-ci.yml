@@ -73,17 +73,10 @@ test_node:
     - npm ci --audit=false
     - npm run test-ci
 
-  after_script:
-    - echo "Prepared node coverage link:"
-    - echo "https://charon.gitlab.io/-/charon/-/jobs/${CI_JOB_ID}/artifacts/coverage/index.html"
-
   artifacts:
     when: always
     reports:
       junit: tests.xml
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage/cobertura-coverage.xml
       dotenv:
         - link_publish.env
     paths:
@@ -91,31 +84,6 @@ test_node:
     exclude:
       - coverage/tmp/
     expire_in: never
-
-  coverage: '/^All files\s+\|\s+\S+\s+\|\s+\S+\s+\|\s+\S+\s+\|\s+\S+\s+\|/'
-
-test_node_link_publish:
-  stage: deploy
-
-  rules:
-    # We create a link only for merge request pipelines.
-    # Created environment is automatically removed when the merge request is closed.
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-
-  needs:
-    - test_node
-
-  # Publish the link even if test_node fails.
-  when: always
-
-  script:
-    - echo "Publishing node coverage link:"
-    - echo "https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage/index.html"
-
-  environment:
-    name: MR/${CI_MERGE_REQUEST_IID}/node_coverage
-    url: https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage/index.html
-    deployment_tier: other
 
 test_e2e:
   stage: test
@@ -130,6 +98,7 @@ test_e2e:
 
   needs:
     - test_go
+    - test_node
 
   before_script:
     - apk --update add docker-cli docker-cli-buildx make bash gcc musl-dev jq
@@ -138,6 +107,7 @@ test_e2e:
     - echo "$CI_REGISTRY_PASSWORD" | docker login --username "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
     - echo "LINK_PUBLISH_JOB_ID=${CI_JOB_ID}" > link_publish.env
     - mkdir playwright-screenshots
+    - mkdir -p .nyc_output && cp coverage/vitest/coverage-final.json .nyc_output/vitest.json
     - source ./prepare-e2e.sh
 
   # TODO: Use go tool covdata percent to obtain total coverage instead of the workaround with go tool cover -func.
@@ -155,7 +125,7 @@ test_e2e:
     - echo "https://charon.gitlab.io/-/charon/-/jobs/${CI_JOB_ID}/artifacts/coverage.html"
     - echo "Prepared E2E report link:"
     - echo "https://charon.gitlab.io/-/charon/-/jobs/${CI_JOB_ID}/artifacts/playwright-report/index.html"
-    - echo "Prepared E2E frontend coverage link:"
+    - echo "Prepared combined (E2E + unit tests) frontend coverage link:"
     - echo "https://charon.gitlab.io/-/charon/-/jobs/${CI_JOB_ID}/artifacts/coverage-frontend/index.html"
     - echo "Prepared accessibility report link:"
     - echo "https://charon.gitlab.io/-/charon/-/jobs/${CI_JOB_ID}/artifacts/a11y-report/a11y-report.html"
@@ -263,11 +233,11 @@ test_e2e_link_publish_frontend_coverage:
   when: always
 
   script:
-    - echo "Publishing E2E frontend coverage link:"
+    - echo "Publishing combined (E2E + unit tests) frontend coverage link:"
     - echo "https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage-frontend/index.html"
 
   environment:
-    name: MR/${CI_MERGE_REQUEST_IID}/e2e_frontend_coverage
+    name: MR/${CI_MERGE_REQUEST_IID}/combined_frontend_coverage
     url: https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage-frontend/index.html
     deployment_tier: other
 
