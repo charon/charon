@@ -204,7 +204,7 @@ async function takeStableScreenshot(page: Page, screenshotOptions: PageScreensho
     }
     olderScreenshot = newerScreenshot
   }
-  return olderScreenshot
+  throw new Error(`unable to take stable screenshot: ${screenshotOptions.path}`)
 }
 
 export async function checkpoint(page: Page, name: string, options: CheckpointOptions = { mask: [], fullPage: true }) {
