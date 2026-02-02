@@ -731,7 +731,7 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 	for identityID, roles := range o.Roles {
 		// We remove duplicates.
 		o.Roles[identityID] = removeDuplicates(roles)
-		// TODO: if an application is removed, obsolete roles stay.
+		// TODO: if an application is deactivated/removed from organization, obsolete roles stay.
 		//       See: https://gitlab.com/charon/charon/-/issues/77
 	}
 
