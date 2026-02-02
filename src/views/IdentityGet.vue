@@ -2,7 +2,16 @@
 import { computed, DeepReadonly, Ref } from "vue"
 import type { ComponentExposed } from "vue-component-type-helpers"
 
-import type { Identity, IdentityOrganization as IdentityOrganizationType, IdentityRef, Metadata, Organization, OrganizationRef, Organizations } from "@/types"
+import type {
+  Identity,
+  IdentityOrganization as IdentityOrganizationType,
+  IdentityRef,
+  Metadata,
+  Organization,
+  OrganizationForIdentity,
+  OrganizationRef,
+  Organizations,
+} from "@/types"
 
 import { nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
@@ -16,7 +25,6 @@ import siteContext from "@/context"
 import Footer from "@/partials/Footer.vue"
 import IdentityOrganization from "@/partials/IdentityOrganization.vue"
 import NavBar from "@/partials/NavBar.vue"
-import OrganizationListItem from "@/partials/OrganizationListItem.vue"
 import OrganizationPublic from "@/partials/OrganizationPublic.vue"
 import WithIdentityPublicDocument from "@/partials/WithIdentityPublicDocument.vue"
 import { useProgress } from "@/progress"
@@ -36,8 +44,7 @@ const dataLoadingError = ref("")
 const identity = ref<Identity | null>(null)
 const metadata = ref<Metadata>({})
 const organizations = ref<Organizations>([])
-const loadedOrganizations = ref(new Map<string, Organization>())
-const loadedOrganizationsMetadata = ref(new Map<string, Metadata>())
+const loadedOrganizations = ref(new Map<string, OrganizationForIdentity>())
 
 const basicUnexpectedError = ref("")
 const basicUpdated = ref(false)
@@ -150,7 +157,6 @@ async function loadData(update: "init" | "basic" | "users" | "admins" | "organiz
     }
     if (update == "init" || update === "organizations") {
       identityOrganizations.value = clone(response.doc.organizations || [])
-      await loadOrganizations()
     }
 
     if (update === "init") {
@@ -164,6 +170,7 @@ async function loadData(update: "init" | "basic" | "users" | "admins" | "organiz
       }
 
       organizations.value = organizationsResponse.doc
+      await loadOrganizations()
     }
   } catch (error) {
     if (abortController.signal.aborted) {
@@ -437,46 +444,46 @@ async function loadOrganizations() {
     return
   }
 
-  const newOrgs = new Map<string, Organization>()
-  const newMetadata = new Map<string, Metadata>()
+  const promises = organizations.value.map(async (organization) => {
+    const organizationURL = router.apiResolve({
+      name: "OrganizationGet",
+      params: { id: organization.id },
+    }).href
+    const response = await getURL<Organization>(organizationURL, null, abortController.signal, progress)
+    return { url: organizationURL, response }
+  })
 
-  // Load only organizations that are already in identityOrganizations.
-  for (const identityOrganization of identityOrganizations.value) {
-    const orgId = identityOrganization.organization.id
+  try {
+    const results = await Promise.all(promises)
+    if (abortController.signal.aborted) return
 
-    try {
-      const organizationURL = router.apiResolve({
-        name: "OrganizationGet",
-        params: { id: orgId },
-      }).href
+    const newOrganizations = new Map<string, OrganizationForIdentity>()
 
-      const response = await getURL<Organization>(organizationURL, null, abortController.signal, progress)
-      if (abortController.signal.aborted) {
-        return
-      }
+    organizations.value.forEach((org, index) => {
+      newOrganizations.set(org.id, {
+        organization: results[index].response.doc,
+        url: results[index].url,
+        canUpdate: !!results[index].response.metadata.can_update,
+      })
+    })
 
-      newOrgs.set(orgId, response.doc)
-      newMetadata.set(orgId, response.metadata)
-    } catch (error) {
-      if (abortController.signal.aborted) {
-        return
-      }
-      console.error("IdentityGet.loadOrganizations", error)
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      dataLoadingError.value = `${error}`
+    loadedOrganizations.value = newOrganizations
+  } catch (error) {
+    if (abortController.signal.aborted) {
       return
     }
+    console.error("IdentityGet.loadOrganizations", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    dataLoadingError.value = `${error}`
   }
-  loadedOrganizations.value = newOrgs
-  loadedOrganizationsMetadata.value = newMetadata
 }
 
 function getIdentityRoles(identityOrganization: IdentityOrganizationType): string[] {
   if (!identityOrganization.id) {
     return []
   }
-  const org = loadedOrganizations.value.get(identityOrganization.organization.id)
-  return org?.roles?.[identityOrganization.id] ?? []
+  const organizationData = loadedOrganizations.value.get(identityOrganization.organization.id)
+  return organizationData?.organization.roles?.[identityOrganization.id] ?? []
 }
 
 // TODO: Remember previous organization-scoped identity IDs and reuse them if an organization is removed and then added back without calling update in-between.
@@ -613,8 +620,8 @@ function getIdentityRoles(identityOrganization: IdentityOrganizationType): strin
                 <li v-for="(identityOrganization, i) in identityOrganizations" :key="identityOrganization.organization.id" class="mb-4 flex flex-col">
                   <OrganizationPublic
                     v-if="loadedOrganizations.get(identityOrganization.organization.id)"
-                    :organization="loadedOrganizations.get(identityOrganization.organization.id)!"
-                    :metadata="loadedOrganizationsMetadata.get(identityOrganization.organization.id)"
+                    :organization="loadedOrganizations.get(identityOrganization.organization.id)!.organization"
+                    :can-update="loadedOrganizations.get(identityOrganization.organization.id)!.canUpdate"
                     :labels="organizationLabels(identityOrganization)"
                     h3
                   />
@@ -643,13 +650,16 @@ function getIdentityRoles(identityOrganization: IdentityOrganizationType): strin
             <h2 class="text-xl font-bold">{{ t("views.IdentityGet.availableOrganizations") }}</h2>
             <ul class="flex flex-col gap-4">
               <li v-for="organization in availableOrganizations" :key="organization.id">
-                <OrganizationListItem :item="organization" h3>
-                  <template #default="{ doc }">
-                    <div v-if="doc" class="flex flex-col items-start">
-                      <Button type="button" :progress="progress" primary @click.prevent="onAddOrganization(organization)">{{ t("common.buttons.add") }}</Button>
-                    </div>
-                  </template>
-                </OrganizationListItem>
+                <OrganizationPublic
+                  v-if="loadedOrganizations.get(organization.id)"
+                  :organization="loadedOrganizations.get(organization.id)!.organization"
+                  :can-update="loadedOrganizations.get(organization.id)!.canUpdate"
+                  h3
+                >
+                  <div class="flex flex-col items-start">
+                    <Button type="button" :progress="progress" primary @click.prevent="onAddOrganization(organization)">{{ t("common.buttons.add") }}</Button>
+                  </div>
+                </OrganizationPublic>
               </li>
             </ul>
           </template>

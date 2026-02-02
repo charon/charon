@@ -15,7 +15,7 @@ import Footer from "@/partials/Footer.vue"
 import IdentityOrganization from "@/partials/IdentityOrganization.vue"
 import IdentityPublic from "@/partials/IdentityPublic.vue"
 import NavBar from "@/partials/NavBar.vue"
-import OrganizationListItem from "@/partials/OrganizationListItem.vue"
+import WithOrganizationPublicDocument from "@/partials/WithOrganizationPublicDocument.vue"
 import { useProgress } from "@/progress"
 
 const props = defineProps<{
@@ -119,7 +119,7 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
         <div class="flex flex-col gap-4">
           <h1 class="text-2xl font-bold">{{ t("views.OrganizationUsers.usersForOrganization") }}</h1>
           <div>
-            <OrganizationListItem :item="{ id }" />
+            <WithOrganizationPublicDocument :item="{ id }" />
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Organization, OrganizationRef } from "@/types"
+import type { OrganizationPublic as OrganizationPublicType, OrganizationRef } from "@/types"
 
 import { useI18n } from "vue-i18n"
 
@@ -14,14 +14,14 @@ defineProps<{
 
 const { t } = useI18n({ useScope: "global" })
 
-const WithOrganizationDocument = WithDocument<Organization>
+const WithOrganizationPublicDocument = WithDocument<OrganizationPublicType>
 </script>
 
 <template>
-  <WithOrganizationDocument :params="{ id: item.id }" name="OrganizationGet">
+  <WithOrganizationPublicDocument :params="{ id: item.id }" name="OrganizationGet">
     <template #default="{ doc, metadata, url }">
-      <OrganizationPublic :organization="doc" :metadata="metadata" :url="url" :h3="h3" :labels="labels">
-        <slot :doc="doc" :metadata="metadata"></slot>
+      <OrganizationPublic :organization="doc" :url="url" :can-update="metadata.can_update" :h3="h3" :labels="labels">
+        <slot :organization="doc" :can-update="metadata.can_update"></slot>
       </OrganizationPublic>
     </template>
     <template #error="{ url }">
@@ -29,8 +29,8 @@ const WithOrganizationDocument = WithDocument<Organization>
         <div class="flex grow">
           <span class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
         </div>
-        <slot :doc="undefined" :metadata="undefined"></slot>
+        <slot :organization="undefined" :can-update="undefined"></slot>
       </div>
     </template>
-  </WithOrganizationDocument>
+  </WithOrganizationPublicDocument>
 </template>
