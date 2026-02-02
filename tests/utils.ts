@@ -195,9 +195,6 @@ interface CheckpointOptions {
 
 // Take up to 10 screenshots, wait until they stabilize.
 async function takeStableScreenshot(page: Page, screenshotOptions: PageScreenshotOptions): Promise<Buffer> {
-  // TODO: Remove when supported by Playwright.
-  //       See: https://github.com/microsoft/playwright/issues/23502
-
   let olderScreenshot = await page.screenshot(screenshotOptions)
   for (let i = 0; i < 10; i++) {
     await page.waitForTimeout(500)
