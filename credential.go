@@ -37,7 +37,7 @@ const (
 const (
 	credentialAddSessionExpiration  = time.Hour * 24
 	emailConfirmationCodeExpiration = credentialAddSessionExpiration
-	maxEmailConfirmationAttempts    = 10
+	maxEmailConfirmationAttempts    = maxAuthAttempts
 )
 
 var (
