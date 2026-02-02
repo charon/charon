@@ -964,10 +964,9 @@ func (s *Service) CredentialRenamePostAPI(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	if foundProvider == ProviderEmail || foundProvider == ProviderUsername || foundProvider == ProviderCode {
+	if foundProvider == ProviderEmail || foundProvider == ProviderUsername {
 		// We do not allow changing display names of e-mail or username credentials.
 		// We store not-mapped e-mail address or username as a display name.
-		// Code provider credentials are never exposed over the API.
 		errE = errors.New("invalid credential type")
 		errors.Details(errE)["provider"] = foundProvider
 		errors.Details(errE)["id"] = credentialID
