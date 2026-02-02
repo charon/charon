@@ -221,9 +221,9 @@ func (i *Identity) GetIdentityOrganization(id *identifier.Identifier) *IdentityO
 		return nil
 	}
 
-	for _, idOrg := range i.Organizations {
-		if idOrg.ID != nil && *idOrg.ID == *id {
-			return &idOrg
+	for idOrgID := range i.Organizations {
+		if i.Organizations[idOrgID].ID != nil && *i.Organizations[idOrgID].ID == *id {
+			return &i.Organizations[idOrgID]
 		}
 	}
 
@@ -239,9 +239,9 @@ func (i *Identity) GetOrganization(id *identifier.Identifier) *IdentityOrganizat
 		return nil
 	}
 
-	for _, idOrg := range i.Organizations {
-		if idOrg.Organization.ID == *id {
-			return &idOrg
+	for idOrgID := range i.Organizations {
+		if i.Organizations[idOrgID].Organization.ID == *id {
+			return &i.Organizations[idOrgID]
 		}
 	}
 
