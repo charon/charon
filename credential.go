@@ -1060,26 +1060,31 @@ type CredentialConfirmEmailCompleteRequest struct {
 // Returns true if any valid confirmation codes remain for given emailCredentialID.
 func (a *Account) cleanupCodeCredentials(emailCredentialID string) (bool, errors.E) {
 	hasRemaining := false
-	filtered := a.Credentials[ProviderCode][:0]
+	var errE errors.E
 
-	for _, credential := range a.Credentials[ProviderCode] {
+	a.Credentials[ProviderCode] = slices.DeleteFunc(a.Credentials[ProviderCode], func(credential Credential) bool {
 		var c codeCredential
-		errE := x.UnmarshalWithoutUnknownFields(credential.Data, &c)
+
+		// TODO: if unmarshal fails and errE is set, loop continues but returns early.
+		//       Maybe it should continue cleaning up other credentials?
+		errE = x.UnmarshalWithoutUnknownFields(credential.Data, &c)
 		if errE != nil {
 			errors.Details(errE)["id"] = credential.ID
 			errors.Details(errE)["providerID"] = credential.ProviderID
-			return false, errE
+			return false
 		}
-		// Cleanup all codeCredentials, not only for current emailCredentialID.
 		if c.Expired() || c.MaxAttemptsReached() {
-			continue
+			return true
 		}
-		filtered = append(filtered, credential)
 		if credential.ProviderID == emailCredentialID {
 			hasRemaining = true
 		}
+		return false
+	})
+
+	if errE != nil {
+		return false, errE
 	}
-	a.Credentials[ProviderCode] = filtered
 
 	if len(a.Credentials[ProviderCode]) == 0 {
 		delete(a.Credentials, ProviderCode)
@@ -1090,14 +1095,9 @@ func (a *Account) cleanupCodeCredentials(emailCredentialID string) (bool, errors
 
 // removeCodeCredentials removes all code credentials for given emailCredentialID.
 func (a *Account) removeCodeCredentials(emailCredentialID string) {
-	filtered := a.Credentials[ProviderCode][:0]
-
-	for _, credential := range a.Credentials[ProviderCode] {
-		if credential.ProviderID != emailCredentialID {
-			filtered = append(filtered, credential)
-		}
-	}
-	a.Credentials[ProviderCode] = filtered
+	a.Credentials[ProviderCode] = slices.DeleteFunc(a.Credentials[ProviderCode], func(credential Credential) bool {
+		return credential.ProviderID == emailCredentialID
+	})
 
 	if len(a.Credentials[ProviderCode]) == 0 {
 		delete(a.Credentials, ProviderCode)
