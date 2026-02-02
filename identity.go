@@ -24,7 +24,7 @@ var (
 	ErrIdentityUpdateNotAllowed  = errors.Base("identity update not allowed")
 	ErrIdentityValidationFailed  = errors.Base("identity validation failed")
 	ErrIdentityBlocked           = errors.Base("identity blocked")
-	ErrIdentityEmailNotConfirmed = errors.Base("identity email not confirmed in account")
+	ErrIdentityEmailNotConfirmed = errors.Base("identity email not confirmed")
 
 	errEmptyIdentity = errors.Base("empty identity")
 )
@@ -207,7 +207,11 @@ func (i *IdentityPublic) Validate(ctx context.Context, existing *IdentityPublic,
 
 			confirmedEmails := account.GetEmailAddresses(true)
 			if !slices.Contains(confirmedEmails, email) {
-				return errors.WithDetails(ErrIdentityEmailNotConfirmed, "id", *i.ID, "email", email)
+				return errors.WithDetails(
+					ErrIdentityEmailNotConfirmed,
+					"id", *i.ID,
+					"email", email,
+				)
 			}
 		}
 

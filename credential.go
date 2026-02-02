@@ -1039,7 +1039,7 @@ func (c codeCredential) Expired() bool {
 	return time.Now().After(c.CreatedAt.Add(emailConfirmationCodeExpiration))
 }
 
-// MaxAttemptsReached returns true if maximum wrong attempts have been reached.
+// MaxAttemptsReached returns true if maximum confirmation attempts have been reached.
 func (c codeCredential) MaxAttemptsReached() bool {
 	return c.ConfirmationAttempts >= maxEmailConfirmationAttempts
 }
@@ -1063,7 +1063,7 @@ func (a *Account) cleanupCodeCredentials(emailCredentialID string) (bool, errors
 	filtered := a.Credentials[ProviderCode][:0]
 
 	for _, credential := range a.Credentials[ProviderCode] {
-		var data codeCredential
+		var c codeCredential
 		errE := x.UnmarshalWithoutUnknownFields(credential.Data, &data)
 		if errE != nil {
 			errors.Details(errE)["id"] = credential.ID
@@ -1517,7 +1517,9 @@ func makeEmailCredentialFromTPToken(account *Account, token map[string]interface
 			ID:          identifier.New(),
 			Provider:    ProviderEmail,
 			DisplayName: preservedEmail,
-			// Although email_verified is a standard OIDC claim, we always add email as unconfirmed.
+			// We always add e-mail addressed from third-party as unconfirmed, even if they tell us that
+			// they have been verified by them. We do not trust them enough because this could lead to
+			// a compromise of an unrelated our account which is not even using this third-party provider.
 			Confirmed: false,
 		},
 		ProviderID: mappedEmail,
