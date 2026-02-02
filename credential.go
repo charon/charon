@@ -1468,23 +1468,6 @@ func (s *Service) CredentialConfirmedEmailsGet(w http.ResponseWriter, req *http.
 	}, nil)
 }
 
-// getCredentialByID finds a credential by ID across providers, excluding ProviderCode.
-func (a *Account) getCredentialByID(credentialID identifier.Identifier) (*Credential, Provider, int) {
-	for provider := range a.Credentials {
-		// Code provider credentials are never exposed over the API.
-		if provider == ProviderCode {
-			continue
-		}
-		for i, credential := range a.Credentials[provider] {
-			if credential.ID == credentialID {
-				return &a.Credentials[provider][i], provider, i
-			}
-		}
-	}
-
-	return nil, "", -1
-}
-
 func makeEmailCredentialFromTPToken(account *Account, token map[string]interface{}) (*Credential, errors.E) {
 	email := findFirstString(token, "email", "eMailAddress", "emailAddress", "email_address")
 	if email == "" {

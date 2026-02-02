@@ -138,6 +138,23 @@ func (a *Account) GetCredential(provider Provider, providerID string) *Credentia
 	return nil
 }
 
+// getCredentialByID finds a credential by ID across providers, excluding ProviderCode.
+func (a *Account) getCredentialByID(credentialID identifier.Identifier) (*Credential, Provider, int) {
+	for provider := range a.Credentials {
+		// Code provider credentials are never exposed over the API.
+		if provider == ProviderCode {
+			continue
+		}
+		for i, credential := range a.Credentials[provider] {
+			if credential.ID == credentialID {
+				return &a.Credentials[provider][i], provider, i
+			}
+		}
+	}
+
+	return nil, "", -1
+}
+
 // HasCredentialDisplayName returns true if displayName is already in use by a credential for the provider in the account.
 func (a *Account) HasCredentialDisplayName(provider Provider, displayName string) bool {
 	credentials, ok := a.Credentials[provider]
