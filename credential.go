@@ -1064,14 +1064,14 @@ func (a *Account) cleanupCodeCredentials(emailCredentialID string) (bool, errors
 
 	for _, credential := range a.Credentials[ProviderCode] {
 		var c codeCredential
-		errE := x.UnmarshalWithoutUnknownFields(credential.Data, &data)
+		errE := x.UnmarshalWithoutUnknownFields(credential.Data, &c)
 		if errE != nil {
 			errors.Details(errE)["id"] = credential.ID
 			errors.Details(errE)["providerID"] = credential.ProviderID
 			return false, errE
 		}
 		// Cleanup all codeCredentials, not only for current emailCredentialID.
-		if data.Expired() || data.MaxAttemptsReached() {
+		if c.Expired() || c.MaxAttemptsReached() {
 			continue
 		}
 		filtered = append(filtered, credential)
