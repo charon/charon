@@ -36,9 +36,8 @@ const (
 
 const (
 	credentialAddSessionExpiration  = time.Hour * 24
-	emailConfirmationCodeExpiration = time.Minute * 10
-	// TODO: How many attempts?
-	maxEmailConfirmationAttempts = 2
+	emailConfirmationCodeExpiration = credentialAddSessionExpiration
+	maxEmailConfirmationAttempts    = 10
 )
 
 var (
@@ -880,7 +879,7 @@ func (s *Service) CredentialRemovePostAPI(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	_, foundProviderID, foundProvider, foundIndex := account.getCredentialByID(credentialID)
+	credential, foundProvider, foundIndex := account.getCredentialByID(credentialID)
 	if foundIndex == -1 {
 		s.NotFound(w, req)
 		return
@@ -897,7 +896,7 @@ func (s *Service) CredentialRemovePostAPI(w http.ResponseWriter, req *http.Reque
 
 	var signalUnknown *SignalUnknownCredential
 	if foundProvider == ProviderPasskey {
-		credentialIDBytes, err := base64.RawURLEncoding.DecodeString(foundProviderID)
+		credentialIDBytes, err := base64.RawURLEncoding.DecodeString(credential.ProviderID)
 		if err != nil {
 			s.InternalServerErrorWithError(w, req, errors.WithStack(err))
 			return
@@ -958,7 +957,7 @@ func (s *Service) CredentialRenamePostAPI(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	_, _, foundProvider, foundIndex := account.getCredentialByID(credentialID)
+	_, foundProvider, foundIndex := account.getCredentialByID(credentialID)
 
 	if foundIndex == -1 {
 		s.NotFound(w, req)
@@ -1030,9 +1029,9 @@ func newCredentialSignalResponse(update *SignalCurrentUserDetails, remove *Signa
 }
 
 type codeCredential struct {
-	Code          string    `json:"code"`
-	CreatedAt     time.Time `json:"createdAt"`
-	WrongAttempts int       `json:"wrongAttempts"`
+	Code                 string    `json:"code"`
+	CreatedAt            time.Time `json:"createdAt"`
+	ConfirmationAttempts int       `json:"confirmationAttempts"`
 }
 
 // Expired returns true if the email confirmation code has expired.
@@ -1042,7 +1041,7 @@ func (c codeCredential) Expired() bool {
 
 // MaxAttemptsReached returns true if maximum wrong attempts have been reached.
 func (c codeCredential) MaxAttemptsReached() bool {
-	return c.WrongAttempts >= maxEmailConfirmationAttempts
+	return c.ConfirmationAttempts >= maxEmailConfirmationAttempts
 }
 
 // AccountConfirmedEmailsResponse represents the response for getting confirmed emails
@@ -1138,7 +1137,7 @@ func (a *Account) incrementCodeCredentialAttempts(emailCredentialID string) erro
 			errors.Details(errE)["providerID"] = credential.ProviderID
 			return errE
 		}
-		data.WrongAttempts++
+		data.ConfirmationAttempts++
 		jsonData, errE := x.MarshalWithoutEscapeHTML(data)
 		if errE != nil {
 			errors.Details(errE)["id"] = credential.ID
@@ -1183,7 +1182,7 @@ func (s *Service) CredentialConfirmEmailPost(w http.ResponseWriter, req *http.Re
 		return
 	}
 
-	emailCredential, _, foundProvider, emailCredentialIndex := account.getCredentialByID(emailCredentialID)
+	emailCredential, foundProvider, emailCredentialIndex := account.getCredentialByID(emailCredentialID)
 	if emailCredentialIndex == -1 || foundProvider != ProviderEmail {
 		s.NotFound(w, req)
 		return
@@ -1212,9 +1211,9 @@ func (s *Service) CredentialConfirmEmailPost(w http.ResponseWriter, req *http.Re
 	}
 
 	codeData := codeCredential{
-		Code:          code,
-		CreatedAt:     time.Now(),
-		WrongAttempts: 0,
+		Code:                 code,
+		CreatedAt:            time.Now(),
+		ConfirmationAttempts: 0,
 	}
 
 	jsonData, errE := x.MarshalWithoutEscapeHTML(codeData)
@@ -1380,7 +1379,7 @@ func (s *Service) CredentialConfirmEmailCompletePost(w http.ResponseWriter, req 
 		return
 	}
 
-	emailCredential, _, _, emailCredentialIndex := account.getCredentialByID(emailCredentialID)
+	emailCredential, _, emailCredentialIndex := account.getCredentialByID(emailCredentialID)
 	if emailCredential == nil {
 		s.NotFound(w, req)
 		return
@@ -1470,7 +1469,7 @@ func (s *Service) CredentialConfirmedEmailsGet(w http.ResponseWriter, req *http.
 }
 
 // getCredentialByID finds a credential by ID across providers, excluding ProviderCode.
-func (a *Account) getCredentialByID(credentialID identifier.Identifier) (*Credential, string, Provider, int) {
+func (a *Account) getCredentialByID(credentialID identifier.Identifier) (*Credential, Provider, int) {
 	for provider := range a.Credentials {
 		// Code provider credentials are never exposed over the API.
 		if provider == ProviderCode {
@@ -1478,15 +1477,15 @@ func (a *Account) getCredentialByID(credentialID identifier.Identifier) (*Creden
 		}
 		for i, credential := range a.Credentials[provider] {
 			if credential.ID == credentialID {
-				return &a.Credentials[provider][i], credential.ProviderID, provider, i
+				return &a.Credentials[provider][i], provider, i
 			}
 		}
 	}
 
-	return nil, "", "", -1
+	return nil, "", -1
 }
 
-func createEmailCredentialFromTPToken(account *Account, token map[string]interface{}) (*Credential, errors.E) {
+func makeEmailCredentialFromTPToken(account *Account, token map[string]interface{}) (*Credential, errors.E) {
 	email := findFirstString(token, "email", "eMailAddress", "emailAddress", "email_address")
 	if email == "" {
 		// No email in token, not an error.
