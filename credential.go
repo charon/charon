@@ -1064,12 +1064,13 @@ func (a *Account) cleanupCodeCredentials(emailCredentialID string) (bool, errors
 	a.Credentials[ProviderCode] = slices.DeleteFunc(a.Credentials[ProviderCode], func(credential Credential) bool {
 		var c codeCredential
 
-		// TODO: if unmarshal fails and errE is set, loop continues but returns early.
-		//       Maybe it should continue cleaning up other credentials?
-		errE = x.UnmarshalWithoutUnknownFields(credential.Data, &c)
-		if errE != nil {
-			errors.Details(errE)["id"] = credential.ID
-			errors.Details(errE)["providerID"] = credential.ProviderID
+		tempErrE := x.UnmarshalWithoutUnknownFields(credential.Data, &c)
+		if tempErrE != nil {
+			if errE != nil {
+				errors.Details(errE)["id"] = credential.ID
+				errors.Details(errE)["providerID"] = credential.ProviderID
+				errE = tempErrE
+			}
 			return false
 		}
 		if c.Expired() || c.MaxAttemptsReached() {
