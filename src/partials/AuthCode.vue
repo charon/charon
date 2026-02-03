@@ -12,7 +12,7 @@ import WithDocument from "@/components/WithDocument.vue"
 import siteContext from "@/context"
 import { processResponse } from "@/flow"
 import { useProgress } from "@/progress"
-import { isEmail } from "@/utils"
+import { isEmail, useAuthCode } from "@/utils"
 
 const props = defineProps<{
   flow: Flow
@@ -24,11 +24,10 @@ const route = useRoute()
 const progress = useProgress()
 
 const abortController = new AbortController()
-const code = ref("")
+const { code, codeFromHash } = useAuthCode("code", resetOnInteraction)
 const sendCounter = ref(1)
 const codeError = ref("")
 const unexpectedError = ref("")
-const codeFromHash = ref(false)
 
 function getErrorMessage(errorCode: string) {
   switch (errorCode) {

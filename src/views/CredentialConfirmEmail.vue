@@ -11,6 +11,7 @@ import InputCode from "@/components/InputCode.vue"
 import Footer from "@/partials/Footer.vue"
 import NavBar from "@/partials/NavBar.vue"
 import { useProgress } from "@/progress"
+import { useAuthCode } from "@/utils.ts";
 
 const props = defineProps<{
   id: string
@@ -22,11 +23,10 @@ const route = useRoute()
 const progress = useProgress()
 
 const abortController = new AbortController()
-const code = ref("")
+const { code, codeFromHash } = useAuthCode("code", resetOnInteraction)
 const sendCounter = ref(1)
 const codeError = ref("")
 const unexpectedError = ref("")
-const codeFromHash = ref(false)
 const email = ref("")
 
 function getErrorMessage(errorCode: string) {

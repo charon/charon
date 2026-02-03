@@ -1,4 +1,4 @@
-import type { DeepReadonly, Ref } from "vue"
+import {DeepReadonly, ref, Ref, watchEffect} from "vue"
 
 import type {
   AuthFlowResponsePassword,
@@ -18,6 +18,7 @@ import type {
 
 import { cloneDeep, isEqual } from "lodash-es"
 import { toRaw } from "vue"
+import {useRoute} from "vue-router";
 
 export function redirectServerSide(url: string, replace: boolean, progress: Ref<number>) {
   // We increase the progress and never decrease it to wait for browser to do the redirect.
@@ -293,4 +294,34 @@ export async function signalPasskeyCurrentUserDetails(signal: SignalCurrentUserD
 export async function signalPasskeyUnknownCredential(signal: SignalUnknownCredential) {
   // PublicKeyCredential.signalUnknownCredential might not be available and this is fine.
   await PublicKeyCredential.signalUnknownCredential?.(signal)
+}
+
+export function useAuthCode(
+  paramName: string,
+  onFound?: (value: string) => void,
+): {
+  code: Ref<string>
+  codeFromHash: Ref<boolean>
+} {
+  const route = useRoute()
+  const code = ref("")
+  const codeFromHash = ref(false)
+
+  watchEffect(() => {
+    const h = route.hash
+    if (!h || h.substring(0, 1) !== "#") {
+      return
+    }
+    const params = new URLSearchParams(h.substring(1))
+    const c = params.get(paramName)
+    if (c) {
+      code.value = c
+      codeFromHash.value = true
+      onFound?.(c)
+    }
+  })
+  return {
+    code,
+    codeFromHash,
+  }
 }
