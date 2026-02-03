@@ -161,6 +161,43 @@ func createAuthFlow(t *testing.T, ts *httptest.Server, service *charon.Service) 
 func createIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, flowID identifier.Identifier) charon.IdentityRef {
 	t.Helper()
 
+	ctx := context.Background()
+	accountID, errE := service.TestingGetAccountIDFromFlow(ctx, flowID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	account, errE := service.TestingGetAccount(ctx, accountID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	testEmail := "user@example.com"
+	existingCred := false
+	for i, cred := range account.Credentials[charon.ProviderEmail] {
+		if cred.ProviderID == testEmail {
+			account.Credentials[charon.ProviderEmail][i].Confirmed = true
+			existingCred = true
+			break
+		}
+	}
+	if !existingCred {
+		type emailCredential struct{}
+		jsonData, e := x.MarshalWithoutEscapeHTML(emailCredential{})
+		require.NoError(t, e, "% -+#.1v", e)
+		account.Credentials[charon.ProviderEmail] = append(
+			account.Credentials[charon.ProviderEmail],
+			charon.Credential{
+				CredentialPublic: charon.CredentialPublic{
+					ID:          identifier.New(),
+					Provider:    charon.ProviderEmail,
+					DisplayName: testEmail,
+					Confirmed:   true,
+				},
+				ProviderID: testEmail,
+				Data:       jsonData,
+			},
+		)
+	}
+
+	errE = service.TestingSetAccount(ctx, account)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
 	identityCreate, errE := service.ReverseAPI("IdentityCreate", nil, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
@@ -231,43 +268,6 @@ func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, 
 
 	var identity charon.IdentityRef
 	if len(identities) < expectedIdentities {
-		ctx := context.Background()
-		accountID, errE := service.TestingGetAccountIDFromFlow(ctx, flowID)
-		require.NoError(t, errE, "% -+#.1v", errE)
-		account, errE := service.TestingGetAccount(ctx, accountID)
-		require.NoError(t, errE, "% -+#.1v", errE)
-
-		testEmail := "user@example.com"
-		existingCred := account.GetCredential(charon.ProviderEmail, testEmail)
-		if existingCred != nil {
-			for i, cred := range account.Credentials[charon.ProviderEmail] {
-				if cred.ProviderID == testEmail {
-					account.Credentials[charon.ProviderEmail][i].Confirmed = true
-					break
-				}
-			}
-		} else {
-			type emailCredential struct{}
-			jsonData, e := x.MarshalWithoutEscapeHTML(emailCredential{})
-			require.NoError(t, e, "% -+#.1v", e)
-			account.Credentials[charon.ProviderEmail] = append(
-				account.Credentials[charon.ProviderEmail],
-				charon.Credential{
-					CredentialPublic: charon.CredentialPublic{
-						ID:          identifier.New(),
-						Provider:    charon.ProviderEmail,
-						DisplayName: testEmail,
-						Confirmed:   true,
-					},
-					ProviderID: testEmail,
-					Data:       jsonData,
-				},
-			)
-		}
-
-		errE = service.TestingSetAccount(ctx, account)
-		require.NoError(t, errE, "% -+#.1v", errE)
-
 		identity = createIdentity(t, ts, service, flowID)
 
 		resp, err = ts.Client().Get(ts.URL + identityList + "?flow=" + flowID.String()) //nolint:noctx,bodyclose
