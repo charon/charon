@@ -522,7 +522,7 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		Data:       jsonData,
 	}}
 
-	credentials, errE = maybeAddEmailCredentialFromThirdPartyToken(account, credentials, providerKey, jsonData)
+	credentials, errE = s.maybeAddEmailCredentialFromThirdPartyToken(ctx, account, credentials, providerKey, credentialID, jsonData)
 	if errE != nil {
 		errors.Details(errE)["provider"] = providerKey
 		s.InternalServerErrorWithError(w, req, errE)

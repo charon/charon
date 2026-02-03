@@ -1464,17 +1464,27 @@ func (s *Service) CredentialConfirmedEmailsGet(w http.ResponseWriter, req *http.
 	}, nil)
 }
 
-func maybeAddEmailCredentialFromThirdPartyToken(account *Account, credentials []Credential, providerKey Provider, jsonData json.RawMessage) ([]Credential, errors.E) {
+func (s *Service) maybeAddEmailCredentialFromThirdPartyToken(
+	ctx context.Context,
+	account *Account,
+	credentials []Credential,
+	providerKey Provider,
+	providerID string,
+	jsonData json.RawMessage,
+) ([]Credential, errors.E) {
 	if account != nil {
-		// Only add email credential on first sign-in (sign-up). If user removes it afterwards, we do not re-add it.
-		return credentials, nil
+		// Only add email credential on first sign-in (sign-up).
+		existingCredential := account.GetCredential(providerKey, providerID)
+		if existingCredential != nil {
+			return credentials, nil
+		}
 	}
 
 	var token map[string]interface{}
 	errE := x.UnmarshalWithoutUnknownFields(jsonData, &token)
 	if errE != nil {
 		errors.Details(errE)["provider"] = providerKey
-		return credentials, errE
+		return nil, errE
 	}
 
 	email := findFirstString(token, "email", "eMailAddress", "emailAddress", "email_address")
@@ -1488,10 +1498,19 @@ func maybeAddEmailCredentialFromThirdPartyToken(account *Account, credentials []
 		return credentials, nil //nolint:nilerr
 	}
 
+	existingAccount, _ := s.getAccountByCredential(ctx, ProviderEmail, mappedEmail)
+	if existingAccount != nil {
+		existingCredential := existingAccount.GetCredential(ProviderEmail, mappedEmail)
+		if existingCredential != nil && existingCredential.Confirmed {
+			// Confirmed e-mail address is already in use.
+			return credentials, nil
+		}
+	}
+
 	credentialData, errE := x.MarshalWithoutEscapeHTML(emailCredential{})
 	if errE != nil {
 		errors.Details(errE)["email"] = preservedEmail
-		return credentials, errE
+		return nil, errE
 	}
 
 	credential := &Credential{
@@ -1501,7 +1520,7 @@ func maybeAddEmailCredentialFromThirdPartyToken(account *Account, credentials []
 			DisplayName: preservedEmail,
 			// We always add e-mail addresses from third-party as unconfirmed, even if they tell us that
 			// they have been verified by them. We do not trust them enough because this could lead to
-			// a compromise of an unrelated our account which is not even using this third-party provider.
+			// a compromise of our unrelated account which is not even using this third-party provider.
 			Confirmed: false,
 		},
 		ProviderID: mappedEmail,
