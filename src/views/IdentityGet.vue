@@ -3,7 +3,8 @@ import type { DeepReadonly, Ref } from "vue"
 import type { ComponentExposed } from "vue-component-type-helpers"
 
 import type {
-  AccountConfirmedEmailsResponse,
+  CredentialPublic,
+  Credentials,
   Identity,
   IdentityOrganization as IdentityOrganizationType,
   IdentityRef,
@@ -52,12 +53,21 @@ const basicUnexpectedError = ref("")
 const basicUpdated = ref(false)
 const username = ref("")
 const email = ref("")
-const confirmedEmails = ref<string[]>([])
-const hasUnconfirmed = ref(false)
+const credentials = ref<CredentialPublic[]>([])
 const givenName = ref("")
 const fullName = ref("")
 const pictureUrl = ref("")
 const description = ref("")
+
+const confirmedEmails = computed(() => {
+  return credentials.value
+      .filter(c => c.provider === 'email' && c.confirmed)
+      .map(c => c.displayName)
+})
+
+const hasUnconfirmed = computed(() => {
+  return credentials.value.some(c => c.provider === 'email' && !c.confirmed)
+})
 
 const usersUnexpectedError = ref("")
 const usersUpdated = ref(false)
@@ -176,16 +186,30 @@ async function loadData(update: "init" | "basic" | "users" | "admins" | "organiz
       organizations.value = organizationsResponse.doc
     }
 
-    if (metadata.value.can_update) {
-      const emailsUrl = router.apiResolve({
-        name: "CredentialConfirmedEmails",
+    if (update === "init") {
+      const url = router.apiResolve({
+        name: "CredentialList",
       }).href
-      const emailsResponse = await getURL<AccountConfirmedEmailsResponse>(emailsUrl, null, abortController.signal, progress)
+
+      const credentialsListResponse = await getURL<Credentials>(url, null, abortController.signal, progress)
       if (abortController.signal.aborted) {
         return
       }
-      confirmedEmails.value = emailsResponse.doc.emails || []
-      hasUnconfirmed.value = emailsResponse.doc.hasUnconfirmed || false
+
+      const fullCredentials: CredentialPublic[] = []
+      for (const credentialRef of credentialsListResponse.doc) {
+        const credentialUrl = router.apiResolve({
+          name: "CredentialGet",
+          params: {id: credentialRef.id},
+        }).href
+
+        const credentialResponse = await getURL<CredentialPublic>(credentialUrl, null, abortController.signal, progress)
+        if (abortController.signal.aborted) {
+          return
+        }
+        fullCredentials.push(credentialResponse.doc)
+      }
+      credentials.value = fullCredentials
     }
   } catch (error) {
     if (abortController.signal.aborted) {

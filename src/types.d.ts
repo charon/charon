@@ -586,11 +586,6 @@ export type SignalUnknownCredential = {
   credentialId: string
 }
 
-export type AccountConfirmedEmailsResponse = {
-  emails: string[]
-  hasUnconfirmed: boolean
-}
-
 export type CredentialConfirmEmailCompleteRequest = {
   code: string
 }

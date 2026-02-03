@@ -1431,36 +1431,6 @@ func (s *Service) CredentialConfirmEmailCompletePost(w http.ResponseWriter, req 
 	}, nil)
 }
 
-// CredentialConfirmedEmailsGet is the API handler for getting confirmed email addresses of the account, GET request.
-func (s *Service) CredentialConfirmedEmailsGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	ctx := s.RequireAuthenticated(w, req)
-	if ctx == nil {
-		return
-	}
-
-	accountID := mustGetAccountID(ctx)
-	account, errE := s.getAccount(ctx, accountID)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
-
-	var confirmedEmails []string
-	hasUnconfirmed := false
-	for _, credential := range account.Credentials[ProviderEmail] {
-		if credential.Confirmed {
-			confirmedEmails = append(confirmedEmails, credential.DisplayName)
-		} else {
-			hasUnconfirmed = true
-		}
-	}
-
-	s.WriteJSON(w, req, AccountConfirmedEmailsResponse{
-		Emails:         confirmedEmails,
-		HasUnconfirmed: hasUnconfirmed,
-	}, nil)
-}
-
 func (s *Service) maybeAddEmailCredentialFromThirdPartyToken(
 	ctx context.Context,
 	account *Account,
