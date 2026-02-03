@@ -1030,7 +1030,7 @@ type codeCredential struct {
 	Code                 string    `json:"code"`
 	CreatedAt            time.Time `json:"createdAt"`
 	ConfirmationAttempts int       `json:"confirmationAttempts"`
-	EmailCredentialID    string    `json:"emailCredentialID"`
+	EmailCredentialID    string    `json:"emailCredentialId"`
 }
 
 // Expired returns true if the email confirmation code has expired.
@@ -1317,12 +1317,12 @@ func (s *Service) CredentialConfirmEmailCompletePost(w http.ResponseWriter, req 
 		return r
 	}, request.Code)
 
-	codeCredential, errE := account.findCodeCredential(emailCredentialIDString, code)
+	codeCred, errE := account.findCodeCredential(emailCredentialIDString, code)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-	if codeCredential == nil {
+	if codeCred == nil {
 		errE = account.incrementCodeCredentialAttempts(emailCredentialIDString)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
@@ -1368,11 +1368,21 @@ func (s *Service) CredentialConfirmEmailCompletePost(w http.ResponseWriter, req 
 		return
 	}
 
-	// Confirm email in code credential matches the found email credential (defensive check).
-	if emailCredential.ID.String() != codeCredential.ProviderID {
+	var c codeCredential
+
+	errE = x.UnmarshalWithoutUnknownFields(codeCred.Data, &c)
+	if errE != nil {
+		errors.Details(errE)["id"] = codeCred.ID
+		errors.Details(errE)["email"] = codeCred.DisplayName
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	// Confirm EmailCredentialID in code credential matches the found email credentials ID (defensive check).
+	if emailCredential.ID.String() != c.EmailCredentialID {
 		errE := errors.New("mismatch between code credential and e-mail credential")
-		errors.Details(errE)["id"] = codeCredential.ID
-		errors.Details(errE)["codeEmail"] = codeCredential.DisplayName
+		errors.Details(errE)["id"] = codeCred.ID
+		errors.Details(errE)["codeEmail"] = codeCred.DisplayName
 		errors.Details(errE)["credentialEmail"] = emailCredential.DisplayName
 		s.InternalServerErrorWithError(w, req, errE)
 		return

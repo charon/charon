@@ -148,7 +148,7 @@ func (s *Service) AuthFlowGetGetAPI(w http.ResponseWriter, req *http.Request, pa
 	s.WriteJSON(w, req, response, nil)
 }
 
-func (s *Service) makeIdentityFromCredentials(credentials []Credential) (*Identity, errors.E) {
+func (s *Service) makeIdentityFromCredentials(account Account, credentials []Credential) (*Identity, errors.E) {
 	var identity *Identity
 	for _, credential := range credentials {
 		switch credential.Provider {
@@ -199,15 +199,22 @@ func (s *Service) makeIdentityFromCredentials(credentials []Credential) (*Identi
 			if picture != "" {
 				identity.PictureURL = picture
 			}
+			email := findFirstString(token, "email", "eMailAddress", "emailAddress", "email_address")
+			confirmedEmails := account.GetEmailAddresses(true)
+			if email != "" {
+				for _, confirmedEmail := range confirmedEmails {
+					if email == confirmedEmail {
+						identity.Email = email
+						break
+					}
+				}
+			}
 			username := findFirstString(token, "username", "preferred_username")
 			if username != "" {
 				identity.Username = username
-			} else {
-				// E-mail has to be confirmed first, so we do not add it to identity.Email. But if username is missing, we try to extract it from email.
-				email := findFirstString(token, "email", "eMailAddress", "emailAddress", "email_address")
-				if identity.Username == "" && email != "" {
-					identity.Username, _, _ = strings.Cut(email, "@")
-				}
+			}
+			if identity.Username == "" && email != "" {
+				identity.Username, _, _ = strings.Cut(email, "@")
 			}
 
 			if oidc, oidcFound := s.oidcProviders()[credential.Provider]; oidcFound {
@@ -262,7 +269,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
-		identity, errE := s.makeIdentityFromCredentials(credentials)
+		identity, errE := s.makeIdentityFromCredentials(*account, credentials)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
