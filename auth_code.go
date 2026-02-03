@@ -37,8 +37,16 @@ type codeProvider struct {
 	origin string
 }
 
-func (p *codeProvider) URL(s *Service, flow *flow, code string) (string, errors.E) {
-	path, errE := s.Reverse("AuthFlowGet", waf.Params{"id": flow.ID.String()}, nil)
+func (p *codeProvider) AuthURL(s *Service, flowID string, code string) (string, errors.E) {
+	path, errE := s.Reverse("AuthFlowGet", waf.Params{"id": flowID}, nil)
+	if errE != nil {
+		return "", errE
+	}
+	return fmt.Sprintf("%s%s#code=%s", p.origin, path, code), nil
+}
+
+func (p *codeProvider) CredentialURL(s *Service, emailCredentialID string, code string) (string, errors.E) {
+	path, errE := s.Reverse("CredentialConfirmEmail", waf.Params{"id": emailCredentialID}, nil)
 	if errE != nil {
 		return "", errE
 	}
@@ -255,7 +263,7 @@ func (s *Service) sendCode(
 		return
 	}
 
-	url, errE := s.codeProvider().URL(s, flow, code)
+	url, errE := s.codeProvider().AuthURL(s, flow.ID.String(), code)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"slices"
@@ -1173,7 +1172,6 @@ func (s *Service) CredentialConfirmEmailPost(w http.ResponseWriter, req *http.Re
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
-	emailCredentialIDString := emailCredentialID.String()
 
 	accountID := mustGetAccountID(ctx)
 	account, errE := s.getAccount(ctx, accountID)
@@ -1198,7 +1196,7 @@ func (s *Service) CredentialConfirmEmailPost(w http.ResponseWriter, req *http.Re
 		return
 	}
 
-	_, errE = account.cleanupCodeCredentials(emailCredentialIDString)
+	_, errE = account.cleanupCodeCredentials(emailCredentialID.String())
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -1246,13 +1244,11 @@ func (s *Service) CredentialConfirmEmailPost(w http.ResponseWriter, req *http.Re
 		return
 	}
 
-	path, errE := s.Reverse("CredentialConfirmEmail", waf.Params{"id": emailCredentialIDString}, nil)
+	url, errE := s.codeProvider().CredentialURL(s, emailCredentialID.String(), code)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-	url := fmt.Sprintf("%s%s#code=%s", s.codeProvider().origin, path, code)
-
 	errE = s.sendMail(ctx, emailCredentialID, []string{emailCredential.DisplayName}, codeProviderSubject, codeProviderTemplateCompiled, map[string]string{
 		"code": code,
 		"url":  url,
