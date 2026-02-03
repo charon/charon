@@ -1030,6 +1030,7 @@ type codeCredential struct {
 	Code                 string    `json:"code"`
 	CreatedAt            time.Time `json:"createdAt"`
 	ConfirmationAttempts int       `json:"confirmationAttempts"`
+	EmailCredentialID    string    `json:"emailCredentialID"`
 }
 
 // Expired returns true if the email confirmation code has expired.
@@ -1056,46 +1057,44 @@ type CredentialConfirmEmailCompleteRequest struct {
 
 // cleanupCodeCredentials removes all expired or max-attempts-reached code credentials.
 // Returns true if any valid confirmation codes remain for given emailCredentialID.
-func (a *Account) cleanupCodeCredentials(emailCredentialID string) (bool, errors.E) {
+func (a *Account) cleanupCodeCredentials(emailCredentialID string) bool {
 	hasRemaining := false
-	var errE errors.E
 
 	a.Credentials[ProviderCode] = slices.DeleteFunc(a.Credentials[ProviderCode], func(credential Credential) bool {
 		var c codeCredential
 
-		tempErrE := x.UnmarshalWithoutUnknownFields(credential.Data, &c)
-		if tempErrE != nil {
-			if errE != nil {
-				errors.Details(errE)["id"] = credential.ID
-				errors.Details(errE)["providerID"] = credential.ProviderID
-				errE = tempErrE
-			}
-			return false
+		errE := x.UnmarshalWithoutUnknownFields(credential.Data, &c)
+		if errE != nil {
+			// If we cannot unmarshal it, we cannot use it, so we remove it.
+			return true
 		}
 		if c.Expired() || c.MaxAttemptsReached() {
 			return true
 		}
-		if credential.ProviderID == emailCredentialID {
+		if c.EmailCredentialID == emailCredentialID {
 			hasRemaining = true
 		}
 		return false
 	})
 
-	if errE != nil {
-		return false, errE
-	}
-
 	if len(a.Credentials[ProviderCode]) == 0 {
 		delete(a.Credentials, ProviderCode)
 	}
 
-	return hasRemaining, nil
+	return hasRemaining
 }
 
 // removeCodeCredentials removes all code credentials for given emailCredentialID.
 func (a *Account) removeCodeCredentials(emailCredentialID string) {
 	a.Credentials[ProviderCode] = slices.DeleteFunc(a.Credentials[ProviderCode], func(credential Credential) bool {
-		return credential.ProviderID == emailCredentialID
+		var c codeCredential
+
+		errE := x.UnmarshalWithoutUnknownFields(credential.Data, &c)
+		if errE != nil {
+			// If we cannot unmarshal it, we cannot use it, so we remove it.
+			return true
+		}
+		return c.EmailCredentialID == emailCredentialID
 	})
 
 	if len(a.Credentials[ProviderCode]) == 0 {
@@ -1106,14 +1105,15 @@ func (a *Account) removeCodeCredentials(emailCredentialID string) {
 // findCodeCredential tries to find a code credential matching given emailCredentialID and code.
 func (a *Account) findCodeCredential(emailCredentialID string, code string) (*Credential, errors.E) {
 	for _, credential := range a.Credentials[ProviderCode] {
-		var data codeCredential
-		errE := x.UnmarshalWithoutUnknownFields(credential.Data, &data)
+		var c codeCredential
+
+		errE := x.UnmarshalWithoutUnknownFields(credential.Data, &c)
 		if errE != nil {
 			errors.Details(errE)["id"] = credential.ID
-			errors.Details(errE)["providerID"] = credential.ProviderID
+			errors.Details(errE)["email"] = credential.DisplayName
 			return nil, errE
 		}
-		if credential.ProviderID == emailCredentialID && data.Code == code {
+		if c.EmailCredentialID == emailCredentialID && c.Code == code {
 			return &credential, nil
 		}
 	}
@@ -1125,22 +1125,22 @@ func (a *Account) findCodeCredential(emailCredentialID string, code string) (*Cr
 // on all code credentials for given email credential ID.
 func (a *Account) incrementCodeCredentialAttempts(emailCredentialID string) errors.E {
 	for i, credential := range a.Credentials[ProviderCode] {
-		if credential.ProviderID != emailCredentialID {
-			continue
-		}
+		var c codeCredential
 
-		var data codeCredential
-		errE := x.UnmarshalWithoutUnknownFields(credential.Data, &data)
+		errE := x.UnmarshalWithoutUnknownFields(credential.Data, &c)
 		if errE != nil {
 			errors.Details(errE)["id"] = credential.ID
-			errors.Details(errE)["providerID"] = credential.ProviderID
+			errors.Details(errE)["email"] = credential.DisplayName
 			return errE
 		}
-		data.ConfirmationAttempts++
-		jsonData, errE := x.MarshalWithoutEscapeHTML(data)
+		if c.EmailCredentialID != emailCredentialID {
+			continue
+		}
+		c.ConfirmationAttempts++
+		jsonData, errE := x.MarshalWithoutEscapeHTML(c)
 		if errE != nil {
 			errors.Details(errE)["id"] = credential.ID
-			errors.Details(errE)["providerID"] = credential.ProviderID
+			errors.Details(errE)["email"] = credential.DisplayName
 			return errE
 		}
 		a.Credentials[ProviderCode][i].Data = jsonData
@@ -1196,11 +1196,7 @@ func (s *Service) CredentialConfirmEmailPost(w http.ResponseWriter, req *http.Re
 		return
 	}
 
-	_, errE = account.cleanupCodeCredentials(emailCredentialID.String())
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
+	_ = account.cleanupCodeCredentials(emailCredentialID.String())
 
 	code, errE := getRandomCode()
 	if errE != nil {
@@ -1212,6 +1208,7 @@ func (s *Service) CredentialConfirmEmailPost(w http.ResponseWriter, req *http.Re
 		Code:                 code,
 		CreatedAt:            time.Now(),
 		ConfirmationAttempts: 0,
+		EmailCredentialID:    emailCredential.ID.String(),
 	}
 
 	jsonData, errE := x.MarshalWithoutEscapeHTML(codeData)
@@ -1228,9 +1225,7 @@ func (s *Service) CredentialConfirmEmailPost(w http.ResponseWriter, req *http.Re
 			DisplayName: emailCredential.DisplayName,
 			Confirmed:   false,
 		},
-		// Store e-mail credential ID so that we can later on double check
-		// we confirmed the right e-mail address.
-		ProviderID: emailCredential.ID.String(),
+		ProviderID: "",
 		Data:       jsonData,
 	}
 
@@ -1297,11 +1292,7 @@ func (s *Service) CredentialConfirmEmailCompletePost(w http.ResponseWriter, req 
 	}
 
 	// Code credentials might have expired in meantime.
-	hasRemaining, errE := account.cleanupCodeCredentials(emailCredentialIDString)
-	if errE != nil {
-		s.InternalServerErrorWithError(w, req, errE)
-		return
-	}
+	hasRemaining := account.cleanupCodeCredentials(emailCredentialIDString)
 
 	errE = s.setAccount(ctx, account)
 	if errE != nil {
@@ -1338,11 +1329,7 @@ func (s *Service) CredentialConfirmEmailCompletePost(w http.ResponseWriter, req 
 			return
 		}
 
-		hasRemaining, errE = account.cleanupCodeCredentials(emailCredentialIDString)
-		if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
+		hasRemaining = account.cleanupCodeCredentials(emailCredentialIDString)
 
 		errE = s.setAccount(ctx, account)
 		if errE != nil {
