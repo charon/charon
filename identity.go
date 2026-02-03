@@ -223,6 +223,7 @@ func (i *Identity) GetIdentityOrganization(id *identifier.Identifier) *IdentityO
 
 	for idOrgID := range i.Organizations {
 		if i.Organizations[idOrgID].ID != nil && *i.Organizations[idOrgID].ID == *id {
+			// We are making sure that we return a reference the caller can in-place modify if needed.
 			return &i.Organizations[idOrgID]
 		}
 	}
@@ -241,6 +242,7 @@ func (i *Identity) GetOrganization(id *identifier.Identifier) *IdentityOrganizat
 
 	for idOrgID := range i.Organizations {
 		if i.Organizations[idOrgID].Organization.ID == *id {
+			// We are making sure that we return a reference the caller can in-place modify if needed.
 			return &i.Organizations[idOrgID]
 		}
 	}
