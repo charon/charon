@@ -156,7 +156,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     // Find and click the enabled NEXT button (not disabled).
     const nextButton2 = page.locator("button#authpassword-button-next")
     await expect(nextButton2).toBeVisible()
-    await checkpoint(page, "auth-page-after-entering-email-and-wrong-pw")
+    await checkpoint(page, "auth-page-after-entering-email-and-wrong-password")
     await nextButton2.click()
 
     // Get email code from mailpit.
@@ -171,7 +171,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     // Find and click the enabled NEXT button (not disabled).
     const nextButton3 = page.locator("button#authcode-button-submitcode")
     await expect(nextButton3).toBeVisible()
-    await checkpoint(page, "auth-page-after-entering-code", { mask: [codeField] })
+    await checkpoint(page, "auth-page-after-entering-code-after-wrong-password", { mask: [codeField] })
     await nextButton3.click()
 
     // Code should be accepted - verify successful sign-in message.
