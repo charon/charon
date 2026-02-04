@@ -2,6 +2,7 @@
 
 import type { BrowserContext, CDPSession, Locator, Page } from "@playwright/test"
 import type { Result } from "axe-core"
+import type { PageScreenshotOptions } from "playwright-core"
 
 import AxeBuilder from "@axe-core/playwright"
 import { test as baseTest } from "@playwright/test"
@@ -192,18 +193,23 @@ interface CheckpointOptions {
   clip?: { x: number; y: number; width: number; height: number }
 }
 
+// Take up to 10 screenshots, wait until they stabilize. We had issues (and flakiness) because sometimes
+// screenshots are not saved fully (just part of the page is visible, the rest is blank). Now we wait
+// visually for screenshot to stabilize (instead of waiting just for DOM).
+async function takeStableScreenshot(page: Page, screenshotOptions: PageScreenshotOptions): Promise<Buffer> {
+  let olderScreenshot = await page.screenshot(screenshotOptions)
+  for (let i = 0; i < 10; i++) {
+    await page.waitForTimeout(500)
+    const newerScreenshot = await page.screenshot(screenshotOptions)
+    if (olderScreenshot.equals(newerScreenshot)) {
+      return newerScreenshot
+    }
+    olderScreenshot = newerScreenshot
+  }
+  throw new Error(`unable to take stable screenshot: ${screenshotOptions.path}`)
+}
+
 export async function checkpoint(page: Page, name: string, options: CheckpointOptions = { mask: [], fullPage: true }) {
-  // Wait for the page to stabilize.
-  await page.waitForLoadState("networkidle")
-
-  // Check that images have loaded.
-  // See: https://github.com/microsoft/playwright/issues/6046#issuecomment-3641164427
-  await page.waitForFunction(() => {
-    return Array.from(document.querySelectorAll("img")).every((img) => img.complete && img.naturalWidth > 0)
-  })
-
-  // TODO: Remove when supported by Playwright.
-  //       See: https://github.com/microsoft/playwright/issues/23502
   const screenshotPath = test.info().snapshotPath(`${name}.png`, { kind: "screenshot" })
   const screenshotOptions = {
     fullPage: options?.fullPage ?? true,
@@ -212,15 +218,16 @@ export async function checkpoint(page: Page, name: string, options: CheckpointOp
     ...(existsSync(screenshotPath) ? {} : { path: screenshotPath }),
   }
 
-  if (!screenshotOptions.path) {
-    await expect(page).toHaveScreenshot(`${name}.png`, screenshotOptions)
-  } else {
+  const screenshotBuffer = await takeStableScreenshot(page, screenshotOptions)
+  if (screenshotOptions.path) {
     // Only attach new screenshots to the report.
-    await page.screenshot(screenshotOptions)
     await test.info().attach(name, {
       contentType: "image/png",
       path: screenshotPath,
     })
+  } else {
+    // Compare snapshot buffer with the existing one.
+    expect(screenshotBuffer).toMatchSnapshot(`${name}.png`)
   }
 
   // Check for duplicate IDs.

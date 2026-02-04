@@ -60,7 +60,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     // Find and click the enabled NEXT button (not disabled).
     const nextButton2 = page.locator("button#authpassword-button-next")
     await expect(nextButton2).toBeVisible()
-    await checkpoint(page, "auth-page-after-entering-password")
+    await checkpoint(page, "auth-page-after-entering-password-for-tester4")
     await nextButton2.click()
 
     // Press back. We should come to the original page.
@@ -83,7 +83,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     await passwordField.fill("tester123")
 
     await expect(nextButton2).toBeVisible()
-    await checkpoint(page, "auth-page-after-entering-password")
+    await checkpoint(page, "auth-page-after-entering-password-for-tester4-second-try")
     await nextButton2.click()
 
     // Find the li element that contains "tester4" and click its SELECT button.
