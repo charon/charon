@@ -193,7 +193,9 @@ interface CheckpointOptions {
   clip?: { x: number; y: number; width: number; height: number }
 }
 
-// Take up to 10 screenshots, wait until they stabilize.
+// Take up to 10 screenshots, wait until they stabilize. We had issues (and flakiness) because sometimes
+// screenshots are not saved fully (just part of the page is visible, the rest is blank). Now we wait
+// visually for screenshot to stabilize (instead of waiting just for DOM).
 async function takeStableScreenshot(page: Page, screenshotOptions: PageScreenshotOptions): Promise<Buffer> {
   let olderScreenshot = await page.screenshot(screenshotOptions)
   for (let i = 0; i < 10; i++) {
