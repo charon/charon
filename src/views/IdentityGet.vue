@@ -60,13 +60,11 @@ const pictureUrl = ref("")
 const description = ref("")
 
 const confirmedEmails = computed(() => {
-  return credentials.value
-      .filter(c => c.provider === 'email' && c.confirmed)
-      .map(c => c.displayName)
+  return credentials.value.filter((c) => c.provider === "email" && c.confirmed).map((c) => c.displayName)
 })
 
 const hasUnconfirmed = computed(() => {
-  return credentials.value.some(c => c.provider === 'email' && !c.confirmed)
+  return credentials.value.some((c) => c.provider === "email" && !c.confirmed)
 })
 
 const usersUnexpectedError = ref("")
@@ -200,7 +198,7 @@ async function loadData(update: "init" | "basic" | "users" | "admins" | "organiz
       for (const credentialRef of credentialsListResponse.doc) {
         const credentialUrl = router.apiResolve({
           name: "CredentialGet",
-          params: {id: credentialRef.id},
+          params: { id: credentialRef.id },
         }).href
 
         const credentialResponse = await getURL<CredentialPublic>(credentialUrl, null, abortController.signal, progress)

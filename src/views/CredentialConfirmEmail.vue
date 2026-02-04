@@ -1,21 +1,18 @@
 <script setup lang="ts">
-import type {
-  CredentialConfirmEmailCompleteRequest,
-  CredentialPublic,
-  CredentialResponse,
-} from "@/types"
+import type { CredentialConfirmEmailCompleteRequest, CredentialPublic, CredentialResponse } from "@/types"
 
 import { onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
-import { useRoute, useRouter } from "vue-router"
+import { useRouter } from "vue-router"
 
-import { getURL, postJSON } from "@/api"
+import { postJSON, sendCredentialConfirmationEmail } from "@/api"
 import Button from "@/components/Button.vue"
 import InputCode from "@/components/InputCode.vue"
+import WithDocument from "@/components/WithDocument.vue"
 import Footer from "@/partials/Footer.vue"
 import NavBar from "@/partials/NavBar.vue"
 import { useProgress } from "@/progress"
-import { useAuthCode } from "@/utils.ts";
+import { useAuthCode } from "@/utils"
 
 const props = defineProps<{
   id: string
@@ -23,7 +20,6 @@ const props = defineProps<{
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-const route = useRoute()
 const progress = useProgress()
 
 const abortController = new AbortController()
@@ -31,7 +27,6 @@ const { code, codeFromHash } = useAuthCode("code", resetOnInteraction)
 const sendCounter = ref(1)
 const codeError = ref("")
 const unexpectedError = ref("")
-const email = ref("")
 
 function getErrorMessage(errorCode: string) {
   switch (errorCode) {
@@ -54,37 +49,15 @@ function resetOnInteraction() {
 
 watch([code], resetOnInteraction)
 
-watch(
-  () => route.hash,
-  (h) => {
-    if (!h || h.substring(0, 1) !== "#") {
-      return
-    }
-    const params = new URLSearchParams(h.substring(1))
-    const c = params.get("code")
-    if (c) {
-      code.value = c
-      codeFromHash.value = true
-      resetOnInteraction()
-    }
-  },
-  { immediate: true },
-)
-
 onBeforeUnmount(() => {
   abortController.abort()
 })
 
-onMounted(async () => {
-  await fetchCredential()
-  await startConfirmation()
-
-  if (!codeError.value) {
-    if (codeFromHash.value) {
-      document.getElementById("credentialconfirmemail-button-submitcode")?.focus()
-    } else {
-      document.getElementById("code")?.focus()
-    }
+onMounted(() => {
+  if (codeFromHash.value) {
+    document.getElementById("credentialconfirmemail-button-submitcode")?.focus()
+  } else {
+    document.getElementById("code")?.focus()
   }
 })
 
@@ -100,72 +73,6 @@ function canSubmit(): boolean {
   return !!code.value.replaceAll(/\s/g, "")
 }
 
-async function fetchCredential() {
-  if (abortController.signal.aborted) {
-    return
-  }
-
-  progress.value += 1
-  try {
-    const url = router.apiResolve({
-      name: "CredentialGet",
-      params: { id: props.id },
-    }).href
-
-    const response = await getURL<CredentialPublic>(url, null, abortController.signal, progress)
-    if (abortController.signal.aborted) {
-      return
-    }
-
-    email.value = response.doc.displayName
-  } catch (error) {
-    if (abortController.signal.aborted) {
-      return
-    }
-    console.error("CredentialConfirmEmail.fetchCredential", error)
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-    unexpectedError.value = `${error}`
-  } finally {
-    progress.value -= 1
-  }
-}
-
-async function startConfirmation() {
-  if (abortController.signal.aborted) {
-    return
-  }
-
-  resetOnInteraction()
-  progress.value += 1
-
-  try {
-    const url = router.apiResolve({
-      name: "CredentialConfirmEmail",
-      params: { id: props.id },
-    }).href
-
-    const response = await postJSON<CredentialResponse>(url, {}, abortController.signal, progress)
-    if (abortController.signal.aborted) {
-      return
-    }
-    if ("error" in response) {
-      // We check if it is an expected error code by trying to get the error message.
-      getErrorMessage(response.error)
-      codeError.value = response.error
-      return
-    }
-  } catch (error) {
-    if (abortController.signal.aborted) {
-      return
-    }
-    console.error("CredentialConfirmEmail.startConfirmation", error)
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-    unexpectedError.value = `${error}`
-  } finally {
-    progress.value -= 1
-  }
-}
-
 async function onSubmit() {
   if (abortController.signal.aborted) {
     return
@@ -176,7 +83,7 @@ async function onSubmit() {
   progress.value += 1
   try {
     const payload: CredentialConfirmEmailCompleteRequest = {
-      code: code.value
+      code: code.value,
     }
 
     const url = router.apiResolve({
@@ -219,33 +126,24 @@ async function onResend() {
   try {
     code.value = ""
     codeFromHash.value = false
-    const url = router.apiResolve({
-      name: "CredentialConfirmEmail",
-      params: { id: props.id },
-    }).href
 
-    const response = await postJSON<CredentialResponse>(url, {}, abortController.signal, progress)
+    const response = await sendCredentialConfirmationEmail(router, props.id, abortController, progress)
     if (abortController.signal.aborted) {
       return
     }
-
-    if ("error" in response) {
+    if (response.error) {
+      // We check if it is an expected error code by trying to get the error message.
       getErrorMessage(response.error)
       codeError.value = response.error
       return
     }
-
-    if (!response.success) {
-      throw new Error("unexpected response")
-    }
-
     sendCounter.value += 1
     document.getElementById("code")?.focus()
   } catch (error) {
     if (abortController.signal.aborted) {
       return
     }
-    console.error("CredentialConfirmEmail.onResend", error)
+    console.error("CredentialConfirmEmail.startConfirmation", error)
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   } finally {
@@ -257,17 +155,12 @@ async function onResendAfterFailure() {
   if (abortController.signal.aborted) {
     return
   }
-
-  codeError.value = ""
-  unexpectedError.value = ""
-  code.value = ""
-  codeFromHash.value = false
+  // All codes reached maxEmailConfirmationAttempts or expired, so we reset the counter.
   sendCounter.value = 1
-
-  await startConfirmation()
-
-  document.getElementById("code")?.focus()
+  await onResend()
 }
+
+const WithCredentialDocument = WithDocument<CredentialPublic>
 </script>
 
 <template>
@@ -282,66 +175,79 @@ async function onResendAfterFailure() {
         </div>
       </div>
 
-      <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
-        <div v-if="codeError === 'credentialInUse'" class="text-error-600">{{ t("common.errors.credentialInUse.email") }}</div>
-        <div v-else-if="codeError === 'confirmationFailed'" class="text-error-600">{{ getErrorMessage("confirmationFailed") }}</div>
-        <template v-if="codeError === 'credentialInUse' || codeError === 'confirmationFailed'">
-          <div class="flex flex-row justify-end gap-4">
-            <Button
-              v-if="codeError === 'confirmationFailed'"
-              id="credentialconfirmemail-button-resendonfailed"
-              type="button"
-              primary
-              :progress="progress"
-              @click.prevent="onResendAfterFailure"
-              >{{ t("views.CredentialConfirmEmail.resendButton") }}</Button
-            >
-          </div>
-        </template>
+          <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
+            <div v-if="codeError === 'credentialInUse'" class="text-error-600">{{ getErrorMessage("credentialInUse") }}</div>
+            <div v-else-if="codeError === 'confirmationFailed'" class="text-error-600">{{ getErrorMessage("confirmationFailed") }}</div>
+            <template v-if="codeError === 'credentialInUse' || codeError === 'confirmationFailed'">
+              <div class="flex flex-row justify-end gap-4">
+                <Button
+                  v-if="codeError === 'confirmationFailed'"
+                  id="credentialconfirmemail-button-resendonfailed"
+                  type="button"
+                  primary
+                  :progress="progress"
+                  @click.prevent="onResendAfterFailure"
+                  >{{ t("views.CredentialConfirmEmail.resendButton") }}</Button
+                >
+              </div>
+            </template>
 
-        <template v-else>
-          <div class="flex flex-col">
-            <label v-if="codeFromHash" for="code" class="mb-1">
-              <i18n-t keypath="views.CredentialConfirmEmail.codeFromHashEmail" scope="global">
-                <template #strongEmail
-                  ><strong>{{ email }}</strong></template
-                >
-              </i18n-t>
-            </label>
-            <label v-else-if="email" for="code" class="mb-1">
-              <i18n-t keypath="views.CredentialConfirmEmail.codeSentEmail" scope="global">
-                <template #sentCount>{{ t("views.CredentialConfirmEmail.sentCount", sendCounter) }}</template>
-                <template #strongEmail
-                  ><strong>{{ email }}</strong></template
-                >
-              </i18n-t>
-            </label>
-            <!--
+            <template v-else>
+              <div class="flex flex-col">
+                <WithCredentialDocument :key="`${props.id}`" :params="{ id: props.id }" name="CredentialGet">
+                  <template #default="{ doc }">
+                <label v-if="codeFromHash" for="code" class="mb-1">
+                  <i18n-t keypath="views.CredentialConfirmEmail.codeFromHashEmail" scope="global">
+                    <template #strongEmail
+                      ><strong>{{ doc.displayName }}</strong></template
+                    >
+                  </i18n-t>
+                </label>
+                <label v-else-if="doc.displayName" for="code" class="mb-1">
+                  <i18n-t keypath="views.CredentialConfirmEmail.codeSentEmail" scope="global">
+                    <template #sentCount>{{ t("views.CredentialConfirmEmail.sentCount", sendCounter) }}</template>
+                    <template #strongEmail
+                      ><strong>{{ doc.displayName }}</strong></template
+                    >
+                  </i18n-t>
+                </label>
+                </template>
+              </WithCredentialDocument>
+                <!--
              We set novalidate because we do not want UA to show hints.
              We show them ourselves when we want them.
            -->
-            <form class="flex flex-row gap-4" novalidate @submit.prevent="onSubmit">
-              <!-- We do not set maxlength so that users can paste too long text and clean it up. -->
-              <InputCode id="code" v-model="code" class="min-w-0 flex-auto grow" :progress="progress" inputmode="numeric" pattern="[0-9]*" :code-length="6" required />
-              <!--
+                <form class="flex flex-row gap-4" novalidate @submit.prevent="onSubmit">
+                  <!-- We do not set maxlength so that users can paste too long text and clean it up. -->
+                  <InputCode
+                    id="code"
+                    v-model="code"
+                    class="min-w-0 flex-auto grow"
+                    :progress="progress"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    :code-length="6"
+                    required
+                  />
+                  <!--
               Button is on purpose not disabled on unexpectedError so that user can retry.
               -->
-              <Button id="credentialconfirmemail-button-submitcode" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{
-                t("common.buttons.confirm")
-              }}</Button>
-            </form>
+                  <Button id="credentialconfirmemail-button-submitcode" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{
+                    t("common.buttons.confirm")
+                  }}</Button>
+                </form>
+              </div>
+              <div v-if="codeError" class="mt-4 text-error-600">{{ getErrorMessage(codeError) }}</div>
+              <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
+              <div v-else-if="codeFromHash" class="mt-4">{{ t("views.CredentialConfirmEmail.confirmCode") }}</div>
+              <div v-else class="mt-4">{{ t("views.CredentialConfirmEmail.waitForCode") }}</div>
+              <div class="mt-4 flex flex-row justify-end gap-4">
+                <Button id="credentialconfirmemail-button-resend" type="button" :progress="progress" @click.prevent="onResend">{{
+                  t("views.CredentialConfirmEmail.resendButton")
+                }}</Button>
+              </div>
+            </template>
           </div>
-          <div v-if="codeError" class="mt-4 text-error-600">{{ getErrorMessage(codeError) }}</div>
-          <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
-          <div v-else-if="codeFromHash" class="mt-4">{{ t("views.CredentialConfirmEmail.confirmCode") }}</div>
-          <div v-else class="mt-4">{{ t("views.CredentialConfirmEmail.waitForCode") }}</div>
-          <div class="mt-4 flex flex-row justify-end gap-4">
-            <Button id="credentialconfirmemail-button-resend" type="button" :progress="progress" @click.prevent="onResend">{{
-              t("views.CredentialConfirmEmail.resendButton")
-            }}</Button>
-          </div>
-        </template>
-      </div>
     </div>
   </div>
   <Teleport to="footer">

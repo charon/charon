@@ -3,7 +3,7 @@ import type { AuthFlowCodeCompleteRequest, AuthFlowCodeStartRequest, AuthFlowRes
 
 import { getCurrentInstance, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
-import { useRoute, useRouter } from "vue-router"
+import { useRouter } from "vue-router"
 
 import { postJSON } from "@/api"
 import Button from "@/components/Button.vue"
@@ -20,7 +20,6 @@ const props = defineProps<{
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-const route = useRoute()
 const progress = useProgress()
 
 const abortController = new AbortController()
@@ -86,6 +85,7 @@ watch(
   },
   { flush: "post" },
 )
+
 
 // Define transition hooks to be called by the parent component.
 // See: https://github.com/vuejs/rfcs/discussions/613
