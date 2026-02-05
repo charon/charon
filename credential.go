@@ -1435,7 +1435,6 @@ func (s *Service) CredentialConfirmEmailCompletePost(w http.ResponseWriter, req 
 }
 
 func (s *Service) maybeAddEmailCredentialFromThirdPartyToken(
-	ctx context.Context,
 	account *Account,
 	credentials []Credential,
 	providerKey Provider,
@@ -1468,11 +1467,10 @@ func (s *Service) maybeAddEmailCredentialFromThirdPartyToken(
 		return credentials, nil //nolint:nilerr
 	}
 
-	existingAccount, _ := s.getAccountByCredential(ctx, ProviderEmail, mappedEmail)
-	if existingAccount != nil {
-		existingCredential := existingAccount.GetCredential(ProviderEmail, mappedEmail)
-		if existingCredential != nil && existingCredential.Confirmed {
-			// Confirmed e-mail address is already in use.
+	if account != nil {
+		// Skip adding email credential if it is already present to avoid duplicates.
+		existingEmailCredential := account.GetCredential(ProviderEmail, mappedEmail)
+		if existingEmailCredential != nil {
 			return credentials, nil
 		}
 	}

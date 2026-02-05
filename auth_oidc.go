@@ -253,7 +253,7 @@ func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, p
 		Data:       jsonData,
 	}}
 
-	credentials, errE = s.maybeAddEmailCredentialFromThirdPartyToken(ctx, account, credentials, providerKey, idToken.Subject, jsonData)
+	credentials, errE = s.maybeAddEmailCredentialFromThirdPartyToken(account, credentials, providerKey, idToken.Subject, jsonData)
 	if errE != nil {
 		errors.Details(errE)["provider"] = providerKey
 		s.InternalServerErrorWithError(w, req, errE)
