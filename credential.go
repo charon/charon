@@ -1224,7 +1224,7 @@ func (s *Service) CredentialConfirmEmailPost(w http.ResponseWriter, req *http.Re
 		CredentialPublic: CredentialPublic{
 			ID:       identifier.New(),
 			Provider: ProviderCode,
-			// In code credential we store mapped e-mail in DisplayName for debugging purposes.
+			// Code credential is internal. We store mapped e-mail in DisplayName for debugging purposes.
 			DisplayName: emailCredential.ProviderID,
 			Confirmed:   false,
 		},

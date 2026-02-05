@@ -5,11 +5,15 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
+	"time"
 
+	smtpmock "github.com/mocktools/go-smtp-mock/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/tozd/go/x"
@@ -87,7 +91,7 @@ func TestCredentialEmailAccessControl(t *testing.T) {
 func TestCredentialManagement(t *testing.T) {
 	t.Parallel()
 
-	ts, service, _, oidcTS, _ := startTestServer(t)
+	ts, service, smtpServer, oidcTS, _ := startTestServer(t)
 
 	// Signup with OIDC.
 	accessToken, identityID := oidcSignin(t, ts, service, oidcTS, charon.CompletedSignup)
@@ -110,25 +114,33 @@ func TestCredentialManagement(t *testing.T) {
 		credentialMap[credentialRef.ID] = credential
 	}
 
+	// Email credential is initially added as unconfirmed.
+	assert.False(t, credentialMap[emailCredentialID].Confirmed)
 	assert.Equal(t, "OIDCusername", credentialMap[oidcCredentialID].DisplayName)
 	assert.Equal(t, "My default password", credentialMap[passwordCredentialID].DisplayName)
 	assert.Equal(t, "My first passkey", credentialMap[passkeyCredentialID].DisplayName)
 
+	credentialConfirmEmail(t, ts, service, smtpServer, accessToken, emailCredentialID.String())
 	credentialRename(t, ts, service, accessToken, oidcCredentialID, " My OIDC Login   ", false)
 	credentialRename(t, ts, service, accessToken, passwordCredentialID, " My super secret password ", false)
 	credentialRename(t, ts, service, accessToken, passkeyCredentialID, " My renamed passkey ", true)
 
-	// TODO: After email confirmation is done, test signin with different case email and password as well.
-	// Sign-out and sign-in with newly added credentials - username+password.
+	// Sign-out and sign-in with newly added credentials - e-mail+password.
 	signoutUser(t, ts, service, accessToken)
 	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
-	// We test "MyCustomUsErNaMe" in a different case to verify that signin w/ username is case-insensitive.
-	accessToken, identityID2 := signinUser(t, ts, service, "Mycustomusername", "OIDCusername", charon.CompletedSignin, flowID, nonce, state, pkceVerifier, config, verifier)
+	// We test "EmAiL@example.com" in a different case to verify that signin w/ e-mail is case-insensitive.
+	accessToken, identityID2 := signinUser(t, ts, service, "Email@example.com", "OIDCusername", charon.CompletedSignin, flowID, nonce, state, pkceVerifier, config, verifier)
 	assert.Equal(t, identityID, identityID2)
+	// Sign-out and sign-in with newly added credentials - username+password.
+	signoutUser(t, ts, service, accessToken)
+	flowID, nonce, state, pkceVerifier, config, verifier = createAuthFlow(t, ts, service)
+	// We test "MyCustomUsErNaMe" in a different case to verify that signin w/ username is case-insensitive.
+	accessToken, identityID3 := signinUser(t, ts, service, "Mycustomusername", "OIDCusername", charon.CompletedSignin, flowID, nonce, state, pkceVerifier, config, verifier)
+	assert.Equal(t, identityID, identityID3)
 	// Sign-out and sign-in with newly added credentials - passkey.
 	signoutUser(t, ts, service, accessToken)
-	accessToken, identityID3 := signinMockPasskey(t, ts, service, "OIDCusername", rsaKey, publicKeyID, credentialID, rawAuthData, userID)
-	assert.Equal(t, identityID, identityID3)
+	accessToken, identityID4 := signinMockPasskey(t, ts, service, "OIDCusername", rsaKey, publicKeyID, credentialID, rawAuthData, userID)
+	assert.Equal(t, identityID, identityID4)
 
 	// Update CredentialPublic in credentialMap after rename.
 	for _, credentialRef := range credentialRefs {
@@ -151,9 +163,7 @@ func TestCredentialManagement(t *testing.T) {
 	emailCred := credentialMap[emailCredentialID]
 	assert.Equal(t, charon.ProviderEmail, emailCred.Provider)
 	assert.Equal(t, "EmAiL@example.com", emailCred.DisplayName)
-	// Email credential is initially added as unconfirmed.
-	assert.False(t, emailCred.Confirmed)
-	// TODO: after adding email confirmation, confirm email and test for confirmation true.
+	assert.True(t, emailCred.Confirmed)
 
 	passwordCred := credentialMap[passwordCredentialID]
 	assert.Equal(t, charon.ProviderPassword, passwordCred.Provider)
@@ -453,4 +463,73 @@ func credentialRename(t *testing.T, ts *httptest.Server, service *charon.Service
 	} else {
 		assert.Nil(t, renameResponse.Signal)
 	}
+}
+
+func credentialConfirmEmail(t *testing.T, ts *httptest.Server, service *charon.Service, smtpServer *smtpmock.Server, accessToken string, emailCredentialID string) {
+	t.Helper()
+
+	credentialConfirmEmail, errE := service.ReverseAPI("CredentialConfirmEmail", waf.Params{"id": emailCredentialID}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, ts.URL+credentialConfirmEmail, strings.NewReader(`{}`))
+	require.NoError(t, err)
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := ts.Client().Do(req) //nolint:bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, 2, resp.ProtoMajor)
+	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+
+	var confirmResponse charon.CredentialResponse
+	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &confirmResponse)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Empty(t, confirmResponse.Error)
+	assert.True(t, confirmResponse.Success)
+	assert.Nil(t, confirmResponse.Signal)
+
+	messages, err := smtpServer.WaitForMessagesAndPurge(1, time.Second)
+	require.NoError(t, err)
+	require.Len(t, messages, 1)
+
+	nonAPICredentialConfirmEmail, errE := service.Reverse("CredentialConfirmEmail", waf.Params{"id": emailCredentialID}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	// Different regex pattern compared to auth_code due to longer route name, which causes line break.
+	r, err := regexp.Compile(regexp.QuoteMeta(fmt.Sprintf("%s%s", ts.URL, nonAPICredentialConfirmEmail)) + `#code=\s*=3D(\d+)`)
+	require.NoError(t, err)
+
+	match := r.FindStringSubmatch(messages[len(messages)-1].MsgRequest())
+	require.NotNil(t, match)
+	code := match[1]
+
+	credentialConfirmEmailComplete, errE := service.ReverseAPI("CredentialConfirmEmailComplete", waf.Params{"id": emailCredentialID}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	completeRequest := charon.CredentialConfirmEmailCompleteRequest{
+		Code: code,
+	}
+	data, errE := x.MarshalWithoutEscapeHTML(completeRequest)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	req, err = http.NewRequestWithContext(context.Background(), http.MethodPost, ts.URL+credentialConfirmEmailComplete, bytes.NewReader(data))
+	require.NoError(t, err)
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err = ts.Client().Do(req) //nolint:bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, 2, resp.ProtoMajor)
+	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+
+	var completeResponse charon.CredentialResponse
+	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &completeResponse)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Empty(t, completeResponse.Error)
+	assert.True(t, completeResponse.Success)
+	assert.Nil(t, completeResponse.Signal)
 }
