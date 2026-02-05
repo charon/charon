@@ -171,19 +171,21 @@ func (a *Account) HasCredentialDisplayName(provider Provider, displayName string
 	return false
 }
 
-// GetEmailAddresses returns e-mail addresses of the account.
-//
-// It returns only confirmed e-mail addresses if confirmedOnly is set.
-func (a *Account) GetEmailAddresses(confirmedOnly bool) []string {
-	emails := make([]string, 0, len(a.Credentials[ProviderEmail]))
+// GetEmailAddresses returns only confirmed e-mail addresses (preserved and mapped) of the account.
+func (a *Account) GetEmailAddresses() ([]string, []string) {
+	preservedEmails := make([]string, 0, len(a.Credentials[ProviderEmail]))
+	mappedEmails := make([]string, 0, len(a.Credentials[ProviderEmail]))
 	for _, credential := range a.Credentials[ProviderEmail] {
-		if confirmedOnly && !credential.Confirmed {
+		if !credential.Confirmed {
 			continue
 		}
 		// Not-mapped e-mail address is stored in the display name.
-		emails = append(emails, credential.DisplayName)
+		preservedEmails = append(preservedEmails, credential.DisplayName)
+		// Mapped e-mail address is stored in the ProviderID.
+		mappedEmails = append(mappedEmails, credential.ProviderID)
 	}
-	return emails
+
+	return preservedEmails, mappedEmails
 }
 
 func (s *Service) getAccount(_ context.Context, id identifier.Identifier) (*Account, errors.E) {

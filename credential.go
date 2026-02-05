@@ -1110,6 +1110,7 @@ func (a *Account) findCodeCredential(emailCredentialID string, code string) (*Cr
 		errE := x.UnmarshalWithoutUnknownFields(credential.Data, &c)
 		if errE != nil {
 			errors.Details(errE)["id"] = credential.ID
+			// DisplayName in code credential holds the mapped e-mail.
 			errors.Details(errE)["email"] = credential.DisplayName
 			return nil, errE
 		}
@@ -1130,6 +1131,7 @@ func (a *Account) incrementCodeCredentialAttempts(emailCredentialID string) erro
 		errE := x.UnmarshalWithoutUnknownFields(credential.Data, &c)
 		if errE != nil {
 			errors.Details(errE)["id"] = credential.ID
+			// DisplayName in code credential holds the mapped e-mail.
 			errors.Details(errE)["email"] = credential.DisplayName
 			return errE
 		}
@@ -1140,6 +1142,7 @@ func (a *Account) incrementCodeCredentialAttempts(emailCredentialID string) erro
 		jsonData, errE := x.MarshalWithoutEscapeHTML(c)
 		if errE != nil {
 			errors.Details(errE)["id"] = credential.ID
+			// DisplayName in code credential holds the mapped e-mail.
 			errors.Details(errE)["email"] = credential.DisplayName
 			return errE
 		}
@@ -1221,8 +1224,8 @@ func (s *Service) CredentialConfirmEmailPost(w http.ResponseWriter, req *http.Re
 		CredentialPublic: CredentialPublic{
 			ID:       identifier.New(),
 			Provider: ProviderCode,
-			// Store e-mail address for debugging purposes.
-			DisplayName: emailCredential.DisplayName,
+			// In code credential we store mapped e-mail in DisplayName for debugging purposes.
+			DisplayName: emailCredential.ProviderID,
 			Confirmed:   false,
 		},
 		ProviderID: "",
@@ -1244,7 +1247,7 @@ func (s *Service) CredentialConfirmEmailPost(w http.ResponseWriter, req *http.Re
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-	errE = s.sendMail(ctx, emailCredentialID, []string{emailCredential.DisplayName}, codeProviderSubject, codeProviderTemplateCompiled, map[string]string{
+	errE = s.sendMail(ctx, emailCredentialID, []string{emailCredential.ProviderID}, codeProviderSubject, codeProviderTemplateCompiled, map[string]string{
 		"code": code,
 		"url":  url,
 	})

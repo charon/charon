@@ -163,7 +163,7 @@ func (s *Service) sendCodeForExistingAccount(
 	w http.ResponseWriter, req *http.Request, flow *flow, passwordFlow bool,
 	account *Account, preservedEmailOrUsername, mappedEmailOrUsername string,
 ) {
-	var emails []string
+	var mappedEmails []string
 	if strings.Contains(mappedEmailOrUsername, "@") {
 		// We know that such credential must exist and is confirmed on this account
 		// because we found this account using getAccountByCredential with mappedEmailOrUsername.
@@ -175,14 +175,14 @@ func (s *Service) sendCodeForExistingAccount(
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
-		// Not-mapped e-mail address is stored in the display name.
-		emails = []string{credential.DisplayName}
+		// Mapped e-mail address is stored in the providerID.
+		mappedEmails = []string{credential.ProviderID}
 	} else {
 		// mappedEmailOrUsername is an username. Let's see if there are any
 		// e-mails associated with the account.
-		emails = account.GetEmailAddresses(false)
+		_, mappedEmails = account.GetEmailAddresses()
 
-		if len(emails) == 0 {
+		if len(mappedEmails) == 0 {
 			var code ErrorCode
 			if passwordFlow {
 				code = ErrorCodeWrongPassword
@@ -194,7 +194,7 @@ func (s *Service) sendCodeForExistingAccount(
 		}
 	}
 
-	s.sendCode(w, req, flow, passwordFlow, preservedEmailOrUsername, emails, &account.ID, nil)
+	s.sendCode(w, req, flow, passwordFlow, preservedEmailOrUsername, mappedEmails, &account.ID, nil)
 }
 
 func (s *Service) sendCode(
@@ -374,7 +374,7 @@ func (s *Service) AuthFlowCodeStartPostAPI(w http.ResponseWriter, req *http.Requ
 
 	// Account does not exist but we have an e-mail address.
 	// We attempt to create a new account with an e-mail address only.
-	s.sendCode(w, req, flow, false, preservedEmailOrUsername, []string{preservedEmailOrUsername}, nil, credentials)
+	s.sendCode(w, req, flow, false, preservedEmailOrUsername, []string{mappedEmailOrUsername}, nil, credentials)
 }
 
 // AuthFlowCodeCompleteRequest represents the request body for the AuthFlowCodeCompletePost handler.

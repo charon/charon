@@ -192,30 +192,30 @@ func (i *IdentityPublic) Validate(ctx context.Context, existing *IdentityPublic,
 	}
 
 	if i.Email != "" {
-		email, _, errE := validateEmailOrUsername(i.Email, emailOrUsernameCheckEmail)
+		preservedEmail, mappedEmail, errE := validateEmailOrUsername(i.Email, emailOrUsernameCheckEmail)
 		if errE != nil {
 			errors.Details(errE)["email"] = i.Email
 			return errE
 		}
 
-		if existing == nil || email != existing.Email {
+		if existing == nil || preservedEmail != existing.Email {
 			accountID := mustGetAccountID(ctx)
 			account, errE := service.getAccount(ctx, accountID)
 			if errE != nil {
 				return errE
 			}
 
-			confirmedEmails := account.GetEmailAddresses(true)
-			if !slices.Contains(confirmedEmails, email) {
+			_, mappedEmails := account.GetEmailAddresses()
+			if !slices.Contains(mappedEmails, mappedEmail) {
 				return errors.WithDetails(
 					ErrIdentityEmailNotConfirmed,
 					"id", *i.ID,
-					"email", email,
+					"email", mappedEmail,
 				)
 			}
 		}
 
-		i.Email = email
+		i.Email = preservedEmail
 	}
 
 	// TODO: Normalize GivenName and FullName.

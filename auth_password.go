@@ -347,7 +347,7 @@ func (s *Service) AuthFlowPasswordCompletePostAPI(w http.ResponseWriter, req *ht
 	if strings.Contains(mappedEmailOrUsername, "@") {
 		// Account does not exist and we do have an e-mail address.
 		// We send the code to confirmed the e-mail address.
-		s.sendCode(w, req, flow, true, flow.EmailOrUsername, []string{flow.EmailOrUsername}, nil, credentials)
+		s.sendCode(w, req, flow, true, flow.EmailOrUsername, []string{mappedEmailOrUsername}, nil, credentials)
 		return
 	}
 
