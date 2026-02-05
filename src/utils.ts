@@ -1,4 +1,4 @@
-import {DeepReadonly, ref, Ref, watchEffect} from "vue"
+import { DeepReadonly, ref, Ref, watchEffect } from "vue"
 
 import type {
   AuthFlowResponsePassword,
@@ -18,7 +18,7 @@ import type {
 
 import { cloneDeep, isEqual } from "lodash-es"
 import { toRaw } from "vue"
-import {useRoute} from "vue-router";
+import { useRoute } from "vue-router"
 
 export function redirectServerSide(url: string, replace: boolean, progress: Ref<number>) {
   // We increase the progress and never decrease it to wait for browser to do the redirect.

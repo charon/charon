@@ -175,27 +175,27 @@ const WithCredentialDocument = WithDocument<CredentialPublic>
         </div>
       </div>
 
-          <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
-            <div v-if="codeError === 'credentialInUse'" class="text-error-600">{{ getErrorMessage("credentialInUse") }}</div>
-            <div v-else-if="codeError === 'confirmationFailed'" class="text-error-600">{{ getErrorMessage("confirmationFailed") }}</div>
-            <template v-if="codeError === 'credentialInUse' || codeError === 'confirmationFailed'">
-              <div class="flex flex-row justify-end gap-4">
-                <Button
-                  v-if="codeError === 'confirmationFailed'"
-                  id="credentialconfirmemail-button-resendonfailed"
-                  type="button"
-                  primary
-                  :progress="progress"
-                  @click.prevent="onResendAfterFailure"
-                  >{{ t("views.CredentialConfirmEmail.resendButton") }}</Button
-                >
-              </div>
-            </template>
+      <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
+        <div v-if="codeError === 'credentialInUse'" class="text-error-600">{{ getErrorMessage("credentialInUse") }}</div>
+        <div v-else-if="codeError === 'confirmationFailed'" class="text-error-600">{{ getErrorMessage("confirmationFailed") }}</div>
+        <template v-if="codeError === 'credentialInUse' || codeError === 'confirmationFailed'">
+          <div class="flex flex-row justify-end gap-4">
+            <Button
+              v-if="codeError === 'confirmationFailed'"
+              id="credentialconfirmemail-button-resendonfailed"
+              type="button"
+              primary
+              :progress="progress"
+              @click.prevent="onResendAfterFailure"
+              >{{ t("views.CredentialConfirmEmail.resendButton") }}</Button
+            >
+          </div>
+        </template>
 
-            <template v-else>
-              <div class="flex flex-col">
-                <WithCredentialDocument :key="`${props.id}`" :params="{ id: props.id }" name="CredentialGet">
-                  <template #default="{ doc }">
+        <template v-else>
+          <div class="flex flex-col">
+            <WithCredentialDocument :key="`${props.id}`" :params="{ id: props.id }" name="CredentialGet">
+              <template #default="{ doc }">
                 <label v-if="codeFromHash" for="code" class="mb-1">
                   <i18n-t keypath="views.CredentialConfirmEmail.codeFromHashEmail" scope="global">
                     <template #strongEmail
@@ -211,43 +211,34 @@ const WithCredentialDocument = WithDocument<CredentialPublic>
                     >
                   </i18n-t>
                 </label>
-                </template>
-              </WithCredentialDocument>
-                <!--
+              </template>
+            </WithCredentialDocument>
+            <!--
              We set novalidate because we do not want UA to show hints.
              We show them ourselves when we want them.
            -->
-                <form class="flex flex-row gap-4" novalidate @submit.prevent="onSubmit">
-                  <!-- We do not set maxlength so that users can paste too long text and clean it up. -->
-                  <InputCode
-                    id="code"
-                    v-model="code"
-                    class="min-w-0 flex-auto grow"
-                    :progress="progress"
-                    inputmode="numeric"
-                    pattern="[0-9]*"
-                    :code-length="6"
-                    required
-                  />
-                  <!--
+            <form class="flex flex-row gap-4" novalidate @submit.prevent="onSubmit">
+              <!-- We do not set maxlength so that users can paste too long text and clean it up. -->
+              <InputCode id="code" v-model="code" class="min-w-0 flex-auto grow" :progress="progress" inputmode="numeric" pattern="[0-9]*" :code-length="6" required />
+              <!--
               Button is on purpose not disabled on unexpectedError so that user can retry.
               -->
-                  <Button id="credentialconfirmemail-button-submitcode" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{
-                    t("common.buttons.confirm")
-                  }}</Button>
-                </form>
-              </div>
-              <div v-if="codeError" class="mt-4 text-error-600">{{ getErrorMessage(codeError) }}</div>
-              <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
-              <div v-else-if="codeFromHash" class="mt-4">{{ t("views.CredentialConfirmEmail.confirmCode") }}</div>
-              <div v-else class="mt-4">{{ t("views.CredentialConfirmEmail.waitForCode") }}</div>
-              <div class="mt-4 flex flex-row justify-end gap-4">
-                <Button id="credentialconfirmemail-button-resend" type="button" :progress="progress" @click.prevent="onResend">{{
-                  t("views.CredentialConfirmEmail.resendButton")
-                }}</Button>
-              </div>
-            </template>
+              <Button id="credentialconfirmemail-button-submitcode" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{
+                t("common.buttons.confirm")
+              }}</Button>
+            </form>
           </div>
+          <div v-if="codeError" class="mt-4 text-error-600">{{ getErrorMessage(codeError) }}</div>
+          <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
+          <div v-else-if="codeFromHash" class="mt-4">{{ t("views.CredentialConfirmEmail.confirmCode") }}</div>
+          <div v-else class="mt-4">{{ t("views.CredentialConfirmEmail.waitForCode") }}</div>
+          <div class="mt-4 flex flex-row justify-end gap-4">
+            <Button id="credentialconfirmemail-button-resend" type="button" :progress="progress" @click.prevent="onResend">{{
+              t("views.CredentialConfirmEmail.resendButton")
+            }}</Button>
+          </div>
+        </template>
+      </div>
     </div>
   </div>
   <Teleport to="footer">
