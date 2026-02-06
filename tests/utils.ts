@@ -128,8 +128,6 @@ export async function signInWithPassword(page: Page, username: string, password:
   // Find and click the "SIGN-IN OR SIGN-UP" button.
   const signInButton = page.locator("#navbar-button-signin")
   await expect(signInButton).toBeVisible()
-  // Move mouse to the same location so the same element gets focused every time.
-  await page.mouse.move(0, 0)
   await checkpoint(page, "main-page-before-signin")
   await signInButton.click()
 
@@ -210,6 +208,8 @@ async function takeStableScreenshot(page: Page, screenshotOptions: PageScreensho
 }
 
 export async function checkpoint(page: Page, name: string, options: CheckpointOptions = { mask: [], fullPage: true }) {
+  // Move mouse to the same location so the same element gets focused every time.
+  await page.mouse.move(0, 0)
   const screenshotPath = test.info().snapshotPath(`${name}.png`, { kind: "screenshot" })
   const screenshotOptions = {
     fullPage: options?.fullPage ?? true,
