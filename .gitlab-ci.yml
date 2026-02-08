@@ -52,12 +52,9 @@ test_go:
     when: always
     reports:
       junit: tests.xml
-      dotenv:
-        - link_publish.env
     paths:
       - coverage/
       - tests.xml
-      - coverage-unit.txt
     expire_in: never
 
   coverage: '/coverage: \d+\.\d+% of statements/'

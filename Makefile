@@ -59,7 +59,7 @@ upgrade:
 	go mod tidy
 
 clean:
-	rm -rf coverage-unit.* codeclimate.json tests.xml coverage dist charon
+	rm -rf coverage.* codeclimate.json tests.xml coverage dist charon
 
 release:
 	npx --yes --package 'release-it@19.0.5' --package '@release-it/keep-a-changelog@7.0.0' -- release-it
