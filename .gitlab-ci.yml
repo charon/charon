@@ -107,7 +107,8 @@ test_e2e:
     - echo "$CI_REGISTRY_PASSWORD" | docker login --username "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
     - echo "LINK_PUBLISH_JOB_ID=${CI_JOB_ID}" > link_publish.env
     - mkdir playwright-screenshots
-    - mkdir -p .nyc_output && cp coverage/vitest/coverage-final.json .nyc_output/vitest.json
+    - mkdir -p .nyc_output
+    - cp coverage/vitest/coverage-final.json .nyc_output/vitest.json
     - source ./prepare-e2e.sh
 
   # TODO: Use go tool covdata percent to obtain total coverage instead of the workaround with go tool cover -func.
