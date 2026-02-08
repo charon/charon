@@ -153,7 +153,7 @@ test_e2e:
 
 # We need an extra job to report frontend coverage from test_e2e because
 # GitLab cannot capture two coverage numbers from one job.
-test_e2e_frontend:
+test_e2e_frontend_coverage:
   stage: test
 
   needs:
@@ -172,7 +172,7 @@ test_e2e_frontend:
   # Reports grep output with distinctive prefix.
   coverage: '/Frontend coverage: (\d+\.\d+)%/'
 
-test_e2e_link_publish_report:
+publish_e2e_report:
   stage: deploy
 
   rules:
@@ -195,7 +195,7 @@ test_e2e_link_publish_report:
     url: https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/playwright-report/index.html
     deployment_tier: other
 
-test_e2e_link_publish_coverage:
+publish_backend_coverage:
   stage: deploy
 
   rules:
@@ -214,11 +214,11 @@ test_e2e_link_publish_coverage:
     - echo "https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage.html"
 
   environment:
-    name: MR/${CI_MERGE_REQUEST_IID}/combined_backend_coverage
+    name: MR/${CI_MERGE_REQUEST_IID}/backend_coverage
     url: https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage.html
     deployment_tier: other
 
-test_e2e_link_publish_frontend_coverage:
+publish_frontend_coverage:
   stage: deploy
 
   rules:
@@ -237,11 +237,11 @@ test_e2e_link_publish_frontend_coverage:
     - echo "https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage-frontend/index.html"
 
   environment:
-    name: MR/${CI_MERGE_REQUEST_IID}/combined_frontend_coverage
+    name: MR/${CI_MERGE_REQUEST_IID}/frontend_coverage
     url: https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage-frontend/index.html
     deployment_tier: other
 
-test_e2e_link_publish_a11y:
+publish_a11y_report:
   stage: deploy
 
   rules:
