@@ -54,6 +54,7 @@ test_go:
       dotenv:
         - link_publish.env
     paths:
+      - coverage/
       - tests.xml
       - coverage-unit.txt
     expire_in: never
@@ -101,7 +102,7 @@ test_e2e:
 
   before_script:
     - apk --update add docker-cli docker-cli-buildx make bash gcc musl-dev jq
-    - (cd /go; go install github.com/boumenot/gocover-cobertura@v1.4.0 && go install github.com/wadey/gocovmerge@b5bfa59)
+    - (cd /go; go install github.com/boumenot/gocover-cobertura@v1.4.0)
     - docker info
     - echo "$CI_REGISTRY_PASSWORD" | docker login --username "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
     - echo "LINK_PUBLISH_JOB_ID=${CI_JOB_ID}" > link_publish.env
@@ -114,8 +115,7 @@ test_e2e:
   #       See: https://github.com/golang/go/issues/66506
   script:
     - ./test-e2e.sh
-    - go tool covdata textfmt -i=coverage -o coverage-e2e.txt
-    - gocovmerge coverage-unit.txt coverage-e2e.txt > coverage.txt
+    - go tool covdata textfmt -i=coverage -o coverage.txt
     - go tool cover -html=coverage.txt -o coverage.html
     - gocover-cobertura < coverage.txt > coverage.xml
     - go tool cover -func=coverage.txt
