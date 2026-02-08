@@ -43,7 +43,6 @@ test_go:
     - (cd /go; go install gotest.tools/gotestsum@v1.13.0)
     - (cd /go; go install github.com/boumenot/gocover-cobertura@v1.4.0)
     - go version
-    - echo "LINK_PUBLISH_JOB_ID=${CI_JOB_ID}" > link_publish.env
 
   script:
     - make test-ci
