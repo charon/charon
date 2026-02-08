@@ -1057,16 +1057,20 @@ type CredentialConfirmEmailCompleteRequest struct {
 
 // cleanupCodeCredentials removes all expired or max-attempts-reached code credentials.
 // Returns true if any valid confirmation codes remain for given emailCredentialID.
-func (a *Account) cleanupCodeCredentials(emailCredentialID string) bool {
+func (a *Account) cleanupCodeCredentials(emailCredentialID string) (bool, errors.E) {
 	hasRemaining := false
+	var firstErrE errors.E
 
 	a.Credentials[ProviderCode] = slices.DeleteFunc(a.Credentials[ProviderCode], func(credential Credential) bool {
 		var c codeCredential
 
 		errE := x.UnmarshalWithoutUnknownFields(credential.Data, &c)
 		if errE != nil {
-			// If we cannot unmarshal it, we cannot use it, so we remove it.
-			return true
+			errors.Details(errE)["id"] = credential.ID
+			errors.Details(errE)["providerID"] = credential.ProviderID
+			if firstErrE == nil {
+				firstErrE = errE
+			}
 		}
 		if c.Expired() || c.MaxAttemptsReached() {
 			return true
@@ -1081,18 +1085,24 @@ func (a *Account) cleanupCodeCredentials(emailCredentialID string) bool {
 		delete(a.Credentials, ProviderCode)
 	}
 
-	return hasRemaining
+	return hasRemaining, firstErrE
 }
 
 // removeCodeCredentials removes all code credentials for given emailCredentialID.
-func (a *Account) removeCodeCredentials(emailCredentialID string) {
+func (a *Account) removeCodeCredentials(emailCredentialID string) errors.E {
+	var firstErrE errors.E
+
 	a.Credentials[ProviderCode] = slices.DeleteFunc(a.Credentials[ProviderCode], func(credential Credential) bool {
 		var c codeCredential
 
 		errE := x.UnmarshalWithoutUnknownFields(credential.Data, &c)
 		if errE != nil {
-			// If we cannot unmarshal it, we cannot use it, so we remove it.
-			return true
+			errors.Details(errE)["id"] = credential.ID
+			errors.Details(errE)["providerID"] = credential.ProviderID
+			if firstErrE == nil {
+				firstErrE = errE
+			}
+			return false
 		}
 		return c.EmailCredentialID == emailCredentialID
 	})
@@ -1100,6 +1110,7 @@ func (a *Account) removeCodeCredentials(emailCredentialID string) {
 	if len(a.Credentials[ProviderCode]) == 0 {
 		delete(a.Credentials, ProviderCode)
 	}
+	return firstErrE
 }
 
 // findCodeCredential tries to find a code credential matching given emailCredentialID and code.
@@ -1199,7 +1210,10 @@ func (s *Service) CredentialConfirmEmailPost(w http.ResponseWriter, req *http.Re
 		return
 	}
 
-	_ = account.cleanupCodeCredentials(emailCredentialID.String())
+	_, errE = account.cleanupCodeCredentials(emailCredentialID.String())
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+	}
 
 	code, errE := getRandomCode()
 	if errE != nil {
@@ -1295,7 +1309,10 @@ func (s *Service) CredentialConfirmEmailCompletePost(w http.ResponseWriter, req 
 	}
 
 	// Code credentials might have expired in meantime.
-	hasRemaining := account.cleanupCodeCredentials(emailCredentialIDString)
+	hasRemaining, errE := account.cleanupCodeCredentials(emailCredentialIDString)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+	}
 
 	errE = s.setAccount(ctx, account)
 	if errE != nil {
@@ -1332,7 +1349,10 @@ func (s *Service) CredentialConfirmEmailCompletePost(w http.ResponseWriter, req 
 			return
 		}
 
-		hasRemaining = account.cleanupCodeCredentials(emailCredentialIDString)
+		hasRemaining, errE = account.cleanupCodeCredentials(emailCredentialIDString)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+		}
 
 		errE = s.setAccount(ctx, account)
 		if errE != nil {
@@ -1358,7 +1378,11 @@ func (s *Service) CredentialConfirmEmailCompletePost(w http.ResponseWriter, req 
 	}
 
 	// Code is correct, remove all code credentials.
-	account.removeCodeCredentials(emailCredentialIDString)
+	errE = account.removeCodeCredentials(emailCredentialIDString)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+	}
+
 	errE = s.setAccount(ctx, account)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -1469,8 +1493,7 @@ func (s *Service) maybeAddEmailCredentialFromThirdPartyToken(
 
 	if account != nil {
 		// Skip adding email credential if it is already present to avoid duplicates.
-		existingEmailCredential := account.GetCredential(ProviderEmail, mappedEmail)
-		if existingEmailCredential != nil {
+		if account.HasCredential(ProviderEmail, mappedEmail) {
 			return credentials, nil
 		}
 	}
