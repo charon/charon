@@ -110,14 +110,14 @@ onBeforeMount(async () => {
   }
 })
 
-function computeAvailableRoles(organization: Organization | null): Role[] {
-  const activeRoles = organization?.applications?.filter((app) => app.active)?.flatMap((app) => app.applicationTemplate.roles ?? []) ?? []
-  const activeRolesMap = new Map(activeRoles.map((role) => [role.key, role]))
-  // Roles assigned to identity, even if from inactive or removed applications.
-  const assignedRoleKeys = new Set<string>(organization?.roles?.[props.identityId] ?? [])
+function computeAvailableRoles(organization: Organization): Role[] {
+  const allApps = organization.applications ?? []
+  const activeApps = allApps.filter((app) => app.active)
 
-  const allRoles = organization?.applications?.flatMap((app) => app.applicationTemplate.roles ?? []) ?? []
-  const allRolesMap = new Map(allRoles.map((role) => [role.key, role]))
+  const activeRoles = activeApps.flatMap((app) => app.applicationTemplate.roles ?? [])
+  const activeRoleKeys = new Set(activeRoles.map((role) => role.key))
+
+  const assignedRoleKeys = organization.roles?.[props.identityId] ?? []
 
   const resultMap = new Map<string, Role>()
 
@@ -125,8 +125,12 @@ function computeAvailableRoles(organization: Organization | null): Role[] {
     resultMap.set(role.key, role)
   })
 
-  assignedRoleKeys.forEach((key) => {
-    if (!activeRolesMap.has(key)) {
+  const orphanedRoleKeys = assignedRoleKeys.filter((key) => !activeRoleKeys.has(key))
+  if (orphanedRoleKeys.length > 0) {
+    const allRoles = allApps.flatMap((app) => app.applicationTemplate.roles ?? [])
+    const allRolesMap = new Map(allRoles.map((role) => [role.key, role]))
+
+    orphanedRoleKeys.forEach((key) => {
       const roleFromInactive = allRolesMap.get(key)
       if (roleFromInactive) {
         resultMap.set(key, {
@@ -136,11 +140,12 @@ function computeAvailableRoles(organization: Organization | null): Role[] {
       } else {
         resultMap.set(key, {
           key,
-          description: `${key} (removed app)`,
+          // If app and with it role was deleted, we do not have a description for it.
+          description: `(removed app)`,
         })
       }
-    }
-  })
+    })
+  }
 
   return sortBy(Array.from(resultMap.values()), "key")
 }

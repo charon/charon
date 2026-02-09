@@ -618,14 +618,14 @@ function getIdentityRoles(identityOrganization: IdentityOrganizationType): strin
             <form v-if="identityOrganizations.length || canOrganizationsSubmit()" class="flex flex-col" novalidate @submit.prevent="onOrganizationsSubmit">
               <ul>
                 <li v-for="(identityOrganization, i) in identityOrganizations" :key="identityOrganization.organization.id" class="mb-4 flex flex-col">
-                  <template v-for="orgData in [loadedOrganizations.get(identityOrganization.organization.id)]" :key="orgData?.organization.id">
-                  <OrganizationPublic
-                    v-if="orgData"
-                    :organization="orgData.organization"
-                    :can-update="orgData.canUpdate"
-                    :labels="organizationLabels(identityOrganization)"
-                    h3
-                  />
+                  <template v-for="orgData in [loadedOrganizations.get(identityOrganization.organization.id)]" :key="orgData!.organization.id">
+                    <OrganizationPublic
+                      v-if="orgData"
+                      :organization="orgData.organization"
+                      :can-update="orgData.canUpdate"
+                      :labels="organizationLabels(identityOrganization)"
+                      h3
+                    />
                   </template>
                   <IdentityOrganization
                     :ref="(el) => updateOrganizationBlockedStatuses(identityOrganization.organization.id, el as IdentityOrganizationComponent)"
