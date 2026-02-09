@@ -733,6 +733,20 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 		o.Roles[identityID] = removeDuplicates(roles)
 		// TODO: if an application is deactivated/removed from organization, obsolete roles stay.
 		//       See: https://gitlab.com/charon/charon/-/issues/77
+		for _, roleKey := range o.Roles[identityID] {
+			existingRoles := []string{}
+			if existing != nil && existing.Roles != nil {
+				existingRoles = existing.Roles[identityID]
+			}
+
+			if !validRoles.Contains(roleKey) && !slices.Contains(existingRoles, roleKey) {
+				errE := errors.New("invalid role key")
+				errors.Details(errE)["organizationID"] = o.ID
+				errors.Details(errE)["identityID"] = identityID
+				errors.Details(errE)["roleKey"] = roleKey
+				return errE
+			}
+		}
 	}
 
 	return nil
