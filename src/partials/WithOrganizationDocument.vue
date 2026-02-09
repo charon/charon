@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { OrganizationPublic as OrganizationPublicType, OrganizationRef } from "@/types"
+import type { Organization, OrganizationRef } from "@/types"
 
 import { useI18n } from "vue-i18n"
 
@@ -14,11 +14,11 @@ defineProps<{
 
 const { t } = useI18n({ useScope: "global" })
 
-const WithOrganizationPublicDocument = WithDocument<OrganizationPublicType>
+const WithOrganizationDocument = WithDocument<Organization>
 </script>
 
 <template>
-  <WithOrganizationPublicDocument :params="{ id: item.id }" name="OrganizationGet">
+  <WithOrganizationDocument :params="{ id: item.id }" name="OrganizationGet">
     <template #default="{ doc, metadata, url }">
       <OrganizationPublic :organization="doc" :url="url" :can-update="metadata.can_update" :h3="h3" :labels="labels">
         <slot :organization="doc" :can-update="metadata.can_update"></slot>
@@ -32,5 +32,5 @@ const WithOrganizationPublicDocument = WithDocument<OrganizationPublicType>
         <slot :organization="undefined" :can-update="undefined"></slot>
       </div>
     </template>
-  </WithOrganizationPublicDocument>
+  </WithOrganizationDocument>
 </template>

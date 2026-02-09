@@ -13,7 +13,7 @@ import WithDocument from "@/components/WithDocument.vue"
 import Footer from "@/partials/Footer.vue"
 import IdentityPublic from "@/partials/IdentityPublic.vue"
 import NavBar from "@/partials/NavBar.vue"
-import WithOrganizationPublicDocument from "@/partials/WithOrganizationPublicDocument.vue"
+import WithOrganizationDocument from "@/partials/WithOrganizationDocument.vue"
 import { useProgress } from "@/progress"
 
 const props = defineProps<{
@@ -97,7 +97,7 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
         <div class="flex flex-col gap-4">
           <h1 class="text-2xl font-bold">{{ t("views.OrganizationBlockUser.blockUser") }}</h1>
           <div>
-            <WithOrganizationPublicDocument :item="{ id }" />
+            <WithOrganizationDocument :item="{ id }" />
           </div>
         </div>
       </div>
