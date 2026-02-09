@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { CredentialConfirmEmailCompleteRequest, CredentialPublic, CredentialResponse } from "@/types"
 
-import { onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
@@ -49,16 +49,20 @@ function resetOnInteraction() {
 
 watch([code], resetOnInteraction)
 
+watch(
+    codeFromHash,
+    async (hasCode) => {
+      await nextTick()
+      const targetId = hasCode
+          ? "credentialconfirmemail-button-submitcode"
+          : "code"
+      document.getElementById(targetId)?.focus()
+    },
+    { immediate: true },
+)
+
 onBeforeUnmount(() => {
   abortController.abort()
-})
-
-onMounted(() => {
-  if (codeFromHash.value) {
-    document.getElementById("credentialconfirmemail-button-submitcode")?.focus()
-  } else {
-    document.getElementById("code")?.focus()
-  }
 })
 
 function canSubmit(): boolean {
