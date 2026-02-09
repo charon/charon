@@ -157,8 +157,9 @@ async function onResendAfterFailure() {
   if (abortController.signal.aborted) {
     return
   }
-  // All codes reached maxEmailConfirmationAttempts or expired, so we reset the counter.
-  sendCounter.value = 1
+  // All codes reached maxEmailConfirmationAttempts or expired, so we set the counter to 0.
+  // onResend increments the counter, so UI will show 1.
+  sendCounter.value = 0
   await onResend()
 }
 
