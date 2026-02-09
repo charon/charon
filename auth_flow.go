@@ -200,15 +200,8 @@ func (s *Service) makeIdentityFromCredentials(account Account, credentials []Cre
 				identity.PictureURL = picture
 			}
 			email := findFirstString(token, "email", "eMailAddress", "emailAddress", "email_address")
-			if email != "" {
-				_, mappedEmail, errE := validateEmailOrUsername(email, emailOrUsernameCheckEmail)
-				if errE != nil {
-					errors.Details(errE)["email"] = email
-					return nil, errE
-				}
-
-				emailCredential := account.GetCredential(ProviderEmail, mappedEmail)
-				if emailCredential != nil && emailCredential.Confirmed == true {
+			if email != "" && len(credentials) == 1 {
+				if account.HasEmailAddress(email) {
 					identity.Email = email
 				}
 			}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"slices"
 
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
@@ -169,6 +170,16 @@ func (a *Account) HasCredentialDisplayName(provider Provider, displayName string
 	}
 
 	return false
+}
+
+// HasEmailAddress maps the input and returns true if e-mail address is already confirmed in the account.
+func (a *Account) HasEmailAddress(email string) bool {
+	_, mapped, errE := validateEmailOrUsername(email, emailOrUsernameCheckEmail)
+	if errE != nil {
+		return false
+	}
+	_, mappedEmails := a.GetEmailAddresses()
+	return slices.Contains(mappedEmails, mapped)
 }
 
 // GetEmailAddresses returns only confirmed e-mail addresses (preserved and mapped) of the account.
