@@ -23,10 +23,11 @@ const router = useRouter()
 const progress = useProgress()
 
 const abortController = new AbortController()
-const { code, codeFromHash } = useAuthCode("code", resetOnInteraction)
 const sendCounter = ref(1)
 const codeError = ref("")
 const unexpectedError = ref("")
+
+const { code, codeFromHash } = useAuthCode("code", resetOnInteraction)
 
 function getErrorMessage(errorCode: string) {
   switch (errorCode) {
@@ -42,6 +43,12 @@ function resetOnInteraction() {
   codeError.value = ""
   unexpectedError.value = ""
 }
+
+watch(codeFromHash, async (hasCode) => {
+  await nextTick()
+  const targetId = hasCode ? "authcode-button-submitcode" : "code"
+  document.getElementById(targetId)?.focus()
+})
 
 watch([code], resetOnInteraction)
 
