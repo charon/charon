@@ -1281,13 +1281,13 @@ func TestGetOrganizationInPlaceModification(t *testing.T) {
 		},
 	}
 
-	organization := identity.GetOrganization(&organizationID)
-	require.NotNil(t, organization)
-	require.Equal(t, &identityOrganizationID, organization.ID)
-	assert.True(t, organization.Active)
+	identityOrganization := identity.GetOrganization(&organizationID)
+	require.NotNil(t, identityOrganization)
+	require.Equal(t, &identityOrganizationID, identityOrganization.ID)
+	assert.True(t, identityOrganization.Active)
 
-	organization.Active = false
-	organization.Applications = append(organization.Applications, applicationID)
+	identityOrganization.Active = false
+	identityOrganization.Applications = append(identityOrganization.Applications, applicationID)
 	// Verify in-place modification via GetOrganization().
 	idOrgGetOrganization := identity.GetOrganization(&organizationID)
 	assert.False(t, idOrgGetOrganization.Active)
