@@ -199,9 +199,9 @@ func (s *Service) sendCodeForExistingAccount(
 
 func (s *Service) sendCode(
 	w http.ResponseWriter, req *http.Request, flow *flow, passwordFlow bool,
-	preservedEmailOrUsername string, emails []string, accountID *identifier.Identifier, credentials []Credential,
+	preservedEmailOrUsername string, mappedEmails []string, accountID *identifier.Identifier, credentials []Credential,
 ) {
-	if len(emails) == 0 {
+	if len(mappedEmails) == 0 {
 		// Internal error: this method should not be called without e-mail addresses.
 		panic(errors.New("no email addresses"))
 	}
@@ -268,7 +268,7 @@ func (s *Service) sendCode(
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-	errE = s.sendMail(req.Context(), flow.ID, emails, codeProviderSubjectCompiled, codeProviderTemplateCompiled, map[string]string{
+	errE = s.sendMail(req.Context(), flow.ID, mappedEmails, codeProviderSubjectCompiled, codeProviderTemplateCompiled, map[string]string{
 		"code":  code,
 		"title": s.title,
 		"url":   url,
