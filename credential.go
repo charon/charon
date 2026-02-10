@@ -1071,6 +1071,7 @@ func (a *Account) cleanupCodeCredentials(emailCredentialID string) (bool, errors
 			if firstErrE == nil {
 				firstErrE = errE
 			}
+			return false
 		}
 		if c.Expired() || c.MaxAttemptsReached() {
 			return true
