@@ -221,7 +221,12 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 			}
 		case "email":
 			if flow.Identity.Email != "" {
-				idTokenClaims.Add("email", flow.Identity.Email)
+				_, mappedEmail, errE := validateEmailOrUsername(flow.Identity.Email, emailOrUsernameCheckEmail)
+				if errE != nil {
+					// This should never happen, identity email has already been validated.
+					s.InternalServerErrorWithError(w, req, errE)
+				}
+				idTokenClaims.Add("email", mappedEmail)
 				idTokenClaims.Add("email_verified", true)
 			}
 		}
