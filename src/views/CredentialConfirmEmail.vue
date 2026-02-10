@@ -23,10 +23,11 @@ const router = useRouter()
 const progress = useProgress()
 
 const abortController = new AbortController()
-const { code, codeFromHash } = useAuthCode("code", resetOnInteraction)
 const sendCounter = ref(1)
 const codeError = ref("")
 const unexpectedError = ref("")
+
+const { code, codeFromHash } = useAuthCode("code", resetOnInteraction)
 
 function getErrorMessage(errorCode: string) {
   switch (errorCode) {

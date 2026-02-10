@@ -178,7 +178,9 @@ func (a *Account) HasEmailAddress(email string) bool {
 	if errE != nil {
 		return false
 	}
+
 	_, mappedEmails := a.GetEmailAddresses()
+
 	return slices.Contains(mappedEmails, mapped)
 }
 

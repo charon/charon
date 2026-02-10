@@ -44,13 +44,13 @@ function resetOnInteraction() {
   unexpectedError.value = ""
 }
 
+watch([code], resetOnInteraction)
+
 watch(codeFromHash, async (hasCode) => {
   await nextTick()
   const targetId = hasCode ? "authcode-button-submitcode" : "code"
   document.getElementById(targetId)?.focus()
 })
-
-watch([code], resetOnInteraction)
 
 watch(codeError, async (newValue) => {
   if (newValue) {
@@ -59,39 +59,6 @@ watch(codeError, async (newValue) => {
     })
   }
 })
-
-watch(
-  () => route.hash,
-  (h) => {
-    if (!h || h.substring(0, 1) !== "#") {
-      return
-    }
-    const params = new URLSearchParams(h.substring(1))
-    const c = params.get("code")
-    if (c) {
-      code.value = c
-      codeFromHash.value = true
-      resetOnInteraction()
-    }
-  },
-  { immediate: true },
-)
-
-// Covers the case where the hash arrives while AuthCode is already mounted
-// (same-URL hash change is a soft navigation, so onAfterEnter won't fire).
-// flush: "post" is required because the hash watcher sets code.value from
-// empty to the extracted code, which flips canNext() from false to true and
-// clears the submit button's :disabled prop. Post-flush waits for that
-// re-render, otherwise focus() could land on a still-disabled button.
-watch(
-  codeFromHash,
-  (v) => {
-    if (v) {
-      document.getElementById("authcode-button-submitcode")?.focus()
-    }
-  },
-  { flush: "post" },
-)
 
 
 // Define transition hooks to be called by the parent component.

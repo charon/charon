@@ -355,7 +355,7 @@ export async function sendCredentialConfirmationEmail(
     if (abortController.signal.aborted) {
       return {}
     }
-    if ("error" in response && response.error) {
+    if ("error" in response) {
       return { error: response.error }
     }
 
