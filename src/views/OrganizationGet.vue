@@ -989,9 +989,9 @@ function canAuthMechanismsSubmit(): boolean {
               <fieldset class="mb-4">
                 <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
                   <template v-for="mechanism in availableAuthMechanisms" :key="mechanism">
-                    <CheckBox :id="`organizationauth-checkbox-${mechanism}`" v-model="selectedAuthMechanisms" :value="mechanism" :progress="progress" class="mx-2" />
+                    <CheckBox :id="`organization-authmech-checkbox-${mechanism}`" v-model="selectedAuthMechanisms" :value="mechanism" :progress="progress" class="mx-2" />
                     <div class="flex flex-col">
-                      <label :for="`organizationauth-checkbox-${mechanism}`">{{ mechanism }}</label>
+                      <label :for="`organization-authmech-checkbox-${mechanism}`">{{ mechanism }}</label>
                     </div>
                   </template>
                 </div>

@@ -43,7 +43,7 @@ func grantAllScopes(request fosite.Requester) {
 //       See: https://github.com/ory/fosite/issues/409
 // TODO: Support also cases where frontend is never involved and redirect happens on the server side.
 //       Currently the frontend redirects at the end, but with "prompt=none" or when prompt is not
-//       required we could just finish the whole flow serer side and never even load frontend.
+//       required we could just finish the whole flow server side and never even load frontend.
 // TODO: If session is already provided through Cookie, skip to organization step (unless prompt or something else requires us to re-authenticate).
 
 // OIDCAuthorizeGet handler does not really do the whole handling of the authorization request,
