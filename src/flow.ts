@@ -195,10 +195,10 @@ export async function processResponse(
 }
 
 export async function processFirstResponse(router: Router, response: AuthFlowResponse, flow: Flow, progress: Ref<number>, abortController: AbortController) {
-	if (response.allowedProviders) {
-		flow.setAllowedProviders(response.allowedProviders)
-	}
-	if (response.providers && response.providers.length > 0) {
+  if (response.allowedProviders) {
+    flow.setAllowedProviders(response.allowedProviders)
+  }
+  if (response.providers && response.providers.length > 0) {
     const targetSteps = []
     for (const provider of response.providers) {
       const thirdPartyProvider = getThirdPartyProvider([provider])

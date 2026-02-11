@@ -989,18 +989,19 @@ function canAuthMechanismsSubmit(): boolean {
                 <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
                   <template v-for="mechanism in availableAuthMechanisms" :key="mechanism">
                     <CheckBox
-                        :id="`organization-authmech-checkbox-${mechanism}`"
-                        v-model="selectedAuthMechanisms"
-                        :value="mechanism"
-                        :progress="progress"
-                        :disabled="fixedBuiltInAuthMechanisms.includes(mechanism)"
-                        class="mx-2"
+                      :id="`organization-authmech-checkbox-${mechanism}`"
+                      v-model="selectedAuthMechanisms"
+                      :value="mechanism"
+                      :progress="progress"
+                      :disabled="fixedBuiltInAuthMechanisms.includes(mechanism)"
+                      class="mx-2"
                     />
                     <div class="flex flex-col">
                       <label
-                          :for="`organization-authmech-checkbox-${mechanism}`"
-                          :class="(progress > 0 || fixedBuiltInAuthMechanisms.includes(mechanism)) ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
-                      >{{ mechanism }}</label>
+                        :for="`organization-authmech-checkbox-${mechanism}`"
+                        :class="progress > 0 || fixedBuiltInAuthMechanisms.includes(mechanism) ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                        >{{ mechanism }}</label
+                      >
                     </div>
                   </template>
                 </div>

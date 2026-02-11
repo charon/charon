@@ -185,9 +185,9 @@ function onThirdPartyProvider(provider: string) {
       <div class="flex flex-col">
         <label for="authstart-input-email" class="mb-1">{{ t("partials.AuthStart.emailOrUsernameLabel", { siteTitle: siteContext.title }) }}</label>
         <!--
-          We set novalidate because we do not want UA to show hints.
-          We show them ourselves when we want them.
-        -->
+        We set novalidate because we do not want UA to show hints.
+        We show them ourselves when we want them.
+      -->
         <form class="flex flex-row gap-4" novalidate @submit.prevent="onNext">
           <InputText
             id="authstart-input-email"
@@ -235,25 +235,19 @@ function onThirdPartyProvider(provider: string) {
     </Button>
 
     <!-- remove -->
+    <Button id="authstart-button-passkey" primary type="button" :disabled="!browserSupportsWebAuthn()" :progress="progress" @click.prevent="onPasskey">{{
+      t("common.providers.passkeyTitle")
+    }}</Button>
     <Button
-        id="authstart-button-passkey"
-        primary
-        type="button"
-        :disabled="!browserSupportsWebAuthn()"
-        :progress="progress"
-        @click.prevent="onPasskey"
-    >{{ t("common.providers.passkeyTitle") }}</Button
-    >
-    <Button
-        v-for="p in siteContext.providers"
-        :id="`authstart-button-${p.key}`"
-        :key="p.key"
-        primary
-        type="button"
-        class="mt-4"
-        :progress="progress"
-        @click.prevent="onThirdPartyProvider(p.key)"
-    >{{ p.name }}</Button
+      v-for="p in siteContext.providers"
+      :id="`authstart-button-${p.key}`"
+      :key="p.key"
+      primary
+      type="button"
+      class="mt-4"
+      :progress="progress"
+      @click.prevent="onThirdPartyProvider(p.key)"
+      >{{ p.name }}</Button
     >
     <!-- remove -->
   </div>
