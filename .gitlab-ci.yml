@@ -57,8 +57,6 @@ test_go:
       - tests.xml
     expire_in: never
 
-  coverage: '/coverage: \d+\.\d+% of statements/'
-
 test_node:
   stage: test
 
@@ -116,7 +114,7 @@ test_e2e:
     - go tool covdata textfmt -i=coverage -o coverage.txt
     - go tool cover -html=coverage.txt -o coverage.html
     - gocover-cobertura < coverage.txt > coverage.xml
-    - go tool cover -func=coverage.txt
+    - go tool cover -func=coverage.txt -o coverage-percentages.txt
 
   after_script:
     - echo "Prepared combined (E2E + unit tests) backend coverage link:"
@@ -132,9 +130,6 @@ test_e2e:
     when: always
     reports:
       junit: test-results/junit.xml
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage.xml
       dotenv:
         - link_publish.env
     paths:
@@ -143,15 +138,14 @@ test_e2e:
       - playwright-screenshots/
       - coverage.html
       - coverage.xml
+      - coverage-percentages.txt
       - coverage-frontend/
       - a11y-report/a11y-report.html
     expire_in: never
 
-  coverage: '/total:.+statements.+\d+\.\d+%/'
-
 # We need an extra job to report frontend coverage from test_e2e because
 # GitLab cannot capture two coverage numbers from one job.
-test_e2e_frontend_coverage:
+frontend_coverage:
   stage: test
 
   needs:
@@ -169,6 +163,26 @@ test_e2e_frontend_coverage:
 
   # Reports grep output with distinctive prefix.
   coverage: '/Frontend coverage: (\d+\.\d+)%/'
+
+# Gitlab displays the job name as the source of the coverage data. Thus creating a new job.
+backend_coverage:
+  stage: test
+
+  needs:
+    - test_e2e
+
+  script:
+    - echo "Backend coverage:" $(grep -oP '\(statements\)\s+\K\d+\.\d+' coverage-percentages.txt)%
+
+  artifacts:
+    when: always
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+
+  # Reports grep output with distinctive prefix.
+  coverage: '/Backend coverage: (\d+\.\d+)%/'
 
 publish_e2e_report:
   stage: deploy
