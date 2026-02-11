@@ -662,12 +662,13 @@ func (o *Organization) Validate(ctx context.Context, existing *Organization, ser
 	if !o.HasAdminAccess(currentIdentity) {
 		o.Admins = append(o.Admins, currentIdentity)
 	}
+	providers := service.getAllAvailableProviders(ctx)
 
-	return o.validate(ctx, existing, service)
+	return o.validate(ctx, existing, service, providers)
 }
 
 // validate is a version of Validate which allows empty Admins.
-func (o *Organization) validate(ctx context.Context, existing *Organization, service *Service) errors.E {
+func (o *Organization) validate(ctx context.Context, existing *Organization, service *Service, allAvailableProviders []Provider) errors.E {
 	var e *OrganizationPublic
 	if existing == nil {
 		e = nil
@@ -767,16 +768,24 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 	// TODO: If an application is deactivated/removed from organization, obsolete roles stay.
 	//       See: https://gitlab.com/charon/charon/-/issues/77
 
-	if o.Name != "Charon" {
-		if len(o.AllowedProviders) == 0 {
-			return errors.New("at least 1 authentication method is required")
+	if len(o.AllowedProviders) == 0 {
+		return errors.New("at least 1 authentication method is required")
+	}
+	// TODO: Add support of removing the following (3) built-in providers. For now they are required to be present.
+	fixedBuiltInProviders := [3]Provider{ProviderUsername, ProviderEmail, ProviderPassword}
+	for _, provider := range fixedBuiltInProviders {
+		if !slices.Contains(o.AllowedProviders, provider) {
+			errE := errors.New("fixed built-in provider missing")
+			errors.Details(errE)["provider"] = provider
+			return errE
 		}
+	}
 
-		availableProviders := service.getAllAvailableProviders(ctx)
-		for _, provider := range o.AllowedProviders {
-			if !slices.Contains(availableProviders, provider) {
-				return errors.New("unknown provider")
-			}
+	for _, provider := range o.AllowedProviders {
+		if !slices.Contains(allAvailableProviders, provider) {
+			errE := errors.New("unknown provider")
+			errors.Details(errE)["provider"] = provider
+			return errE
 		}
 	}
 
@@ -1012,6 +1021,8 @@ func (s *Service) setAccountsBlock(
 
 func (s *Service) createOrganization(ctx context.Context, organization *Organization) errors.E {
 	co := s.charonOrganization()
+
+	organization.AllowedProviders = s.getAllAvailableProviders(ctx)
 
 	errE := organization.Validate(ctx, nil, s)
 	if errE != nil {
@@ -1532,8 +1543,6 @@ func (s *Service) OrganizationCreatePostAPI(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	organization.AllowedProviders = s.getAllAvailableProviders(ctx)
-
 	errE = s.createOrganization(ctx, &organization)
 	if errors.Is(errE, ErrOrganizationValidationFailed) {
 		s.BadRequestWithError(w, req, errE)
@@ -1918,7 +1927,7 @@ func (s *Service) OrganizationRoles(w http.ResponseWriter, req *http.Request, _ 
 func (s *Service) getAllAvailableProviders(ctx context.Context) []Provider {
 	providers := []Provider{}
 
-	providers = append(providers, ProviderPasskey, ProviderPassword)
+	providers = append(providers, ProviderUsername, ProviderEmail, ProviderPassword, ProviderPasskey)
 
 	site := waf.MustGetSite[*Site](ctx)
 	for _, p := range site.Providers {

@@ -90,13 +90,6 @@ func (s *Service) AuthFlowPasswordStartPostAPI(w http.ResponseWriter, req *http.
 		return
 	}
 
-	if !flow.isProviderAllowed(ProviderPassword) {
-		errE := errors.New("provider not allowed")
-		errors.Details(errE)["provider"] = ProviderPassword
-		s.failAuthStep(w, req, true, flow, errE)
-		return
-	}
-
 	var passwordStart AuthFlowPasswordStartRequest
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &passwordStart)
 	if errE != nil {

@@ -257,10 +257,5 @@ func (s *Service) setFlow(_ context.Context, fl *flow) errors.E {
 }
 
 func (f *flow) isProviderAllowed(provider Provider) bool {
-	for _, allowed := range f.AllowedProviders {
-		if provider == allowed {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(f.AllowedProviders, provider)
 }

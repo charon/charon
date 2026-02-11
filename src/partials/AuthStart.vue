@@ -30,8 +30,6 @@ const allowedThirdPartyProviders = computed(() =>
   siteContext.providers.filter((p) => (p.type === "oidc" || p.type === "saml") && props.flow.getAllowedProviders().includes(p.key)),
 )
 
-const isPasswordAllowed = computed(() => props.flow.getAllowedProviders().includes("password"))
-
 const isPasskeyAllowed = computed(() => props.flow.getAllowedProviders().includes("passkey"))
 
 function getErrorMessage(errorCode: string) {
@@ -184,7 +182,6 @@ function onThirdPartyProvider(provider: string) {
 
 <template>
   <div class="flex w-full flex-col rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
-    <template v-if="isPasswordAllowed">
       <div class="flex flex-col">
         <label for="authstart-input-email" class="mb-1">{{ t("partials.AuthStart.emailOrUsernameLabel", { siteTitle: siteContext.title }) }}</label>
         <!--
@@ -212,10 +209,9 @@ function onThirdPartyProvider(provider: string) {
         <div v-if="passwordError" id="authstart-error-emailorusername" class="mt-4 text-error-600">{{ getErrorMessage(passwordError) }}</div>
         <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
       </div>
-    </template>
-    <h2 v-if="isPasswordAllowed && (isPasskeyAllowed || allowedThirdPartyProviders.length > 0)" class="m-4 text-center text-xl font-bold uppercase">
-      {{ t("partials.AuthStart.orUse") }}
-    </h2>
+    <template v-if="isPasskeyAllowed || allowedThirdPartyProviders.length > 0"
+      ><h2 class="m-4 text-center text-xl font-bold uppercase">{{ t("partials.AuthStart.orUse") }}</h2></template
+    >
     <Button
       v-if="isPasskeyAllowed"
       id="authstart-button-passkey"
@@ -224,9 +220,8 @@ function onThirdPartyProvider(provider: string) {
       :disabled="!browserSupportsWebAuthn()"
       :progress="progress"
       @click.prevent="onPasskey"
+      >{{ t("common.providers.passkeyTitle") }}</Button
     >
-      {{ t("common.providers.passkeyTitle") }}
-    </Button>
     <Button
       v-for="p in allowedThirdPartyProviders"
       :id="`authstart-button-${p.key}`"
@@ -238,5 +233,28 @@ function onThirdPartyProvider(provider: string) {
       @click.prevent="onThirdPartyProvider(p.key)"
       >{{ p.name }}
     </Button>
+
+    <!-- remove -->
+    <Button
+        id="authstart-button-passkey"
+        primary
+        type="button"
+        :disabled="!browserSupportsWebAuthn()"
+        :progress="progress"
+        @click.prevent="onPasskey"
+    >{{ t("common.providers.passkeyTitle") }}</Button
+    >
+    <Button
+        v-for="p in siteContext.providers"
+        :id="`authstart-button-${p.key}`"
+        :key="p.key"
+        primary
+        type="button"
+        class="mt-4"
+        :progress="progress"
+        @click.prevent="onThirdPartyProvider(p.key)"
+    >{{ p.name }}</Button
+    >
+    <!-- remove -->
   </div>
 </template>

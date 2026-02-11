@@ -118,13 +118,11 @@ func (s *Service) AuthFlowThirdPartyProviderStartPostAPI(w http.ResponseWriter, 
 	}
 
 	if p, ok := s.oidcProviders()[providerKey]; providerKey != "" && ok {
-		// TODO: add fail auth step if not allowed.
 		s.handleAuthFlowThirdPartyProviderStart(ctx, w, req, flow, providerKey, s.handlerOIDCStart(p))
 		return
 	}
 
 	if p, ok := s.samlProviders()[providerKey]; providerKey != "" && ok {
-		// TODO: add fail auth step if not allowed.
 		s.handleAuthFlowThirdPartyProviderStart(ctx, w, req, flow, providerKey, s.handlerSAMLStart(p))
 		return
 	}

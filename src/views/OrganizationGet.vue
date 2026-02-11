@@ -75,7 +75,8 @@ const identitiesForOrganization = ref<IdentityForOrganization[]>([])
 
 const authMechanismsUnexpectedError = ref("")
 const authMechanismsUpdated = ref(false)
-const availableAuthMechanisms = ref<string[]>([])
+const fixedBuiltInAuthMechanisms = ["username", "email", "password"]
+const availableAuthMechanisms = [...fixedBuiltInAuthMechanisms, "passkey", ...siteContext.providers.map((p) => p.key)]
 const selectedAuthMechanisms = ref<string[]>([])
 
 const allIdentities = ref<AllIdentity[]>([])
@@ -192,8 +193,6 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
         admins.value = clone(response.doc.admins || [])
       }
       if (update === "init" || update === "authMechanisms") {
-        const builtInProviders = ["password", "passkey"]
-        availableAuthMechanisms.value = [...builtInProviders, ...siteContext.providers.map((p) => p.key)]
         selectedAuthMechanisms.value = clone(response.doc.allowedProviders || [])
       }
     }
@@ -989,9 +988,19 @@ function canAuthMechanismsSubmit(): boolean {
               <fieldset class="mb-4">
                 <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
                   <template v-for="mechanism in availableAuthMechanisms" :key="mechanism">
-                    <CheckBox :id="`organization-authmech-checkbox-${mechanism}`" v-model="selectedAuthMechanisms" :value="mechanism" :progress="progress" class="mx-2" />
+                    <CheckBox
+                        :id="`organization-authmech-checkbox-${mechanism}`"
+                        v-model="selectedAuthMechanisms"
+                        :value="mechanism"
+                        :progress="progress"
+                        :disabled="fixedBuiltInAuthMechanisms.includes(mechanism)"
+                        class="mx-2"
+                    />
                     <div class="flex flex-col">
-                      <label :for="`organization-authmech-checkbox-${mechanism}`">{{ mechanism }}</label>
+                      <label
+                          :for="`organization-authmech-checkbox-${mechanism}`"
+                          :class="(progress > 0 || fixedBuiltInAuthMechanisms.includes(mechanism)) ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                      >{{ mechanism }}</label>
                     </div>
                   </template>
                 </div>
