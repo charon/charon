@@ -370,6 +370,7 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity, service *Se
 		identities := unknown.ToSlice()
 		slices.SortFunc(identities, identityRefCmp)
 		errors.Details(errE)["identities"] = identities
+		return errE
 	}
 
 	if i.Organizations == nil {
