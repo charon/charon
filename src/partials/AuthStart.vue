@@ -233,22 +233,5 @@ function onThirdPartyProvider(provider: string) {
       @click.prevent="onThirdPartyProvider(p.key)"
       >{{ p.name }}
     </Button>
-
-    <!-- remove -->
-    <Button id="authstart-button-passkey" primary type="button" :disabled="!browserSupportsWebAuthn()" :progress="progress" @click.prevent="onPasskey">{{
-      t("common.providers.passkeyTitle")
-    }}</Button>
-    <Button
-      v-for="p in siteContext.providers"
-      :id="`authstart-button-${p.key}`"
-      :key="p.key"
-      primary
-      type="button"
-      class="mt-4"
-      :progress="progress"
-      @click.prevent="onThirdPartyProvider(p.key)"
-      >{{ p.name }}</Button
-    >
-    <!-- remove -->
   </div>
 </template>
