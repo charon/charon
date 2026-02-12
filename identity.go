@@ -364,6 +364,10 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity, service *Se
 	//       Charon organization (but they have to join the target organization).
 	identities := mapset.NewThreadUnsafeSet(i.Users...)
 	identities.Append(i.Admins...)
+	// The identity is stored after validation. When creating an identity, exclude it from referencing itself.
+	if existing == nil {
+		identities.Remove(IdentityRef{*i.ID})
+	}
 	unknown := service.hasIdentities(ctx, identities, false)
 	if !unknown.IsEmpty() {
 		errE := errors.New("unknown identities")
