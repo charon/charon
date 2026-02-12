@@ -655,16 +655,19 @@ func (o *Organization) HasAdminAccess(identities ...IdentityRef) bool {
 // Validate validates the Organization struct.
 //
 // Validate requires ctx with identityIDContextKey set.
-func (o *Organization) Validate(ctx context.Context, existing *Organization, service *Service) errors.E {
+func (o *Organization) Validate(ctx context.Context, existing *Organization, service *Service, allAvailableProviders []Provider) errors.E {
 	// Current user must be among admins if it is changing the organization.
 	// We check this elsewhere, here we make sure the user is stored as an admin.
 	currentIdentity := IdentityRef{ID: mustGetIdentityID(ctx)}
 	if !o.HasAdminAccess(currentIdentity) {
 		o.Admins = append(o.Admins, currentIdentity)
 	}
-	providers := service.getAllAvailableProviders(ctx)
 
-	return o.validate(ctx, existing, service, providers)
+	if allAvailableProviders == nil {
+		allAvailableProviders = service.getAllAvailableProviders(ctx)
+	}
+
+	return o.validate(ctx, existing, service, allAvailableProviders)
 }
 
 // validate is a version of Validate which allows empty Admins.
@@ -1022,9 +1025,10 @@ func (s *Service) setAccountsBlock(
 func (s *Service) createOrganization(ctx context.Context, organization *Organization) errors.E {
 	co := s.charonOrganization()
 
-	organization.AllowedProviders = s.getAllAvailableProviders(ctx)
+	allowedProviders := s.getAllAvailableProviders(ctx)
+	organization.AllowedProviders = allowedProviders
 
-	errE := organization.Validate(ctx, nil, s)
+	errE := organization.Validate(ctx, nil, s, allowedProviders)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrOrganizationValidationFailed)
 	}
@@ -1057,7 +1061,7 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 		return errors.WithDetails(ErrOrganizationUnauthorized, "id", organization.ID)
 	}
 
-	errE = organization.Validate(ctx, existingOrganization, s)
+	errE = organization.Validate(ctx, existingOrganization, s, nil)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrOrganizationValidationFailed)
 	}
