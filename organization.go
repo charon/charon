@@ -682,6 +682,7 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 		identities := unknown.ToSlice()
 		slices.SortFunc(identities, identityRefCmp)
 		errors.Details(errE)["identities"] = identities
+		return errE
 	}
 
 	if o.Applications == nil {
