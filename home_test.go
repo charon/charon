@@ -29,15 +29,16 @@ import (
 //go:embed public
 var publicFiles embed.FS
 
+//nolint:exhaustruct
 var testFiles = fstest.MapFS{ //nolint:gochecknoglobals
-	"dist/index.html": &fstest.MapFile{
+	"index.html": &fstest.MapFile{
 		Data: []byte("<html><body>dummy test content</body></html>"),
 	},
 	// Symlinks are not included in publicFiles.
-	"dist/LICENSE.txt": &fstest.MapFile{
+	"LICENSE.txt": &fstest.MapFile{
 		Data: []byte("test license file"),
 	},
-	"dist/NOTICE.txt": &fstest.MapFile{
+	"NOTICE.txt": &fstest.MapFile{
 		Data: []byte("test notice file"),
 	},
 }
@@ -66,7 +67,7 @@ func init() { //nolint:gochecknoinits
 			return err
 		}
 
-		testFiles[filepath.Join("dist", path)] = &fstest.MapFile{
+		testFiles[path] = &fstest.MapFile{
 			Data:    data,
 			Mode:    info.Mode(),
 			ModTime: info.ModTime(),
@@ -107,7 +108,7 @@ func TestRouteHome(t *testing.T) {
 	t.Parallel()
 
 	// Regular GET should just return the SPA index page.
-	testStaticFile(t, "Home", "dist/index.html", "text/html; charset=utf-8")
+	testStaticFile(t, "Home", "index.html", "text/html; charset=utf-8")
 }
 
 func init() { //nolint:gochecknoinits

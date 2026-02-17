@@ -671,7 +671,7 @@ func (config *Config) Init(files fs.ReadFileFS) (*Service, errors.E) { //nolint:
 			Logger:          config.Logger,
 			CanonicalLogger: config.Logger,
 			WithContext:     config.WithContext,
-			StaticFiles:     files,
+			StaticFiles:     files.(fs.ReadFileFS), //nolint:errcheck
 			Routes:          nil,
 			Sites:           sites,
 			// We serve our own context.json file.
