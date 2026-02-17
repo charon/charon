@@ -246,14 +246,15 @@ type Config struct {
 	Config  cli.ConfigFlag    `         help:"Load configuration from a JSON or YAML file." name:"config" placeholder:"PATH" short:"c" yaml:"-"`
 	Server  waf.Server[*Site] `embed:""                                                                                                yaml:",inline"`
 
+	Sites []Site `help:"Site configuration as JSON or YAML. Can be provided multiple times." name:"site" placeholder:"SITE" sep:"none" short:"s" yaml:"sites"`
+
 	Domains      []string             `                  help:"Domain name(s) to use. If not provided, they are determined from domain names found in TLS certificates."                                 name:"domain" placeholder:"STRING" yaml:"domains"`
 	MainDomain   string               `                  help:"When using multiple domains, which one is the main one."                                                                                                                     yaml:"mainDomain"`
 	ExternalPort int                  `                  help:"Port on which Charon is accessible when it is different from the port on which the program listens."                                                    placeholder:"INT"    yaml:"externalPort"`
 	Secret       kong.FileContentFlag `env:"SECRET_PATH" help:"File with base64 (URL encoding, no padding) encoded 32 bytes with \"${secretPrefixCharonConfig}\" prefix used for session and OIDC HMAC."               placeholder:"PATH"   yaml:"secret"`
 
-	Providers Providers `                          embed:"" group:"Providers:"                                                                                                                                           yaml:"providers"`
-	Title     string    `default:"${defaultTitle}"                             help:"Title of this Charon instance as shown to users when sites are not configured."             placeholder:"NAME"            short:"T" yaml:"title"`
-	Sites     []Site    `                                                      help:"Site configuration as JSON or YAML. Can be provided multiple times."            name:"site" placeholder:"SITE" sep:"none" short:"s" yaml:"sites"`
+	Providers Providers `                          embed:"" group:"Providers:"                                                                                                                    yaml:"providers"`
+	Title     string    `default:"${defaultTitle}"                             help:"Title of this Charon instance as shown to users when sites are not configured." placeholder:"NAME" short:"T" yaml:"title"`
 
 	// TODO: This is just temporary. Once we have PeerDB as backend we should just create PeerDB documents with these during populate.
 	TermsOfService kong.FileContentFlag `help:"File with terms of service." placeholder:"PATH" yaml:"termsOfService"`

@@ -25,9 +25,12 @@ func init() { //nolint:gochecknoinits
 	}
 }
 
-func (s *Service) sendMail(ctx context.Context, flow *flow, emails []string, subject string, body *tt.Template, data interface{}) errors.E {
+func (s *Service) sendMail(ctx context.Context, flow *flow, emails []string, subject *tt.Template, body *tt.Template, data map[string]string) errors.E {
 	logger := zerolog.Ctx(ctx)
 	ms := []*mail.Msg{}
+	site := waf.MustGetSite[*Site](ctx)
+	// We set user facing title to site's title, which defaults to config.Title (defaultTitle) if not set.
+	data["title"] = site.Title
 	for _, to := range emails {
 		m := mail.NewMsg()
 		id := identifier.New()
@@ -41,7 +44,13 @@ func (s *Service) sendMail(ctx context.Context, flow *flow, emails []string, sub
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		m.Subject(subject)
+		// Use title from data for subject as well.
+		var subjectBuf bytes.Buffer
+		err = subject.Execute(&subjectBuf, data)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		m.Subject(subjectBuf.String())
 		err = m.SetBodyTextTemplate(body, data)
 		if err != nil {
 			return errors.WithStack(err)
@@ -49,7 +58,6 @@ func (s *Service) sendMail(ctx context.Context, flow *flow, emails []string, sub
 		// By setting X-Entity-Ref-ID to a random value, Gmail does not combine
 		// similar e-mails into one thread.
 		m.SetGenHeader("X-Entity-Ref-ID", id.String())
-		site := waf.MustGetSite[*Site](ctx)
 		if site.Build != nil {
 			m.SetUserAgent(fmt.Sprintf("Charon version %s (build on %s, git revision %s)", site.Build.Version, site.Build.BuildTimestamp, site.Build.Revision))
 		} else {
