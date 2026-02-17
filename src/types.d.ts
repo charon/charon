@@ -140,6 +140,7 @@ export type SiteContext = {
     buildTimestamp?: string
     revision?: string
   }
+  title: string
   providers: SiteProvider[]
   privacyPolicy?: boolean
   termsOfService?: boolean

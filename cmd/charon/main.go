@@ -2,6 +2,7 @@
 package main
 
 import (
+	"io/fs"
 	"slices"
 	"strings"
 
@@ -10,6 +11,7 @@ import (
 	"gitlab.com/tozd/go/errors"
 
 	"gitlab.com/charon/charon"
+	"gitlab.com/charon/charon/dist"
 )
 
 func main() {
@@ -23,6 +25,7 @@ func main() {
 	cli.Run(&config, kong.Vars{
 		"defaultListen":            charon.DefaultListen,
 		"defaultProxyTo":           charon.DefaultProxyTo,
+		"defaultTitle":             charon.DefaultTitle,
 		"defaultMailAuth":          "none",
 		"defaultMailFrom":          "noreply@example.com",
 		"defaultSIPASSMetadataURL": charon.DefaultSIPASSMetadataURL,
@@ -31,5 +34,7 @@ func main() {
 		"developmentModeHelp":      " Proxy unknown requests, send debug messages to clients, generate the secret and private keys if not provided, enable MockSAML provider. LEAKS SENSITIVE INFORMATION!",
 	}, func(ctx *kong.Context) errors.E {
 		return errors.WithStack(ctx.Run())
-	})
+		// We have to use BindTo instead of passing it directly to Run because we are using an interface.
+		// See: https://github.com/alecthomas/kong/issues/48
+	}, kong.BindTo(dist.Files, (*fs.FS)(nil)))
 }

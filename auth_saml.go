@@ -292,7 +292,7 @@ func initSAMLKeyStore(config *Config, samlKey []byte) (dsig.X509KeyStore, errors
 			// Certificate will be valid for 10 years.
 			NotAfter: time.Now().AddDate(10, 0, 0), //nolint:mnd
 			Subject: pkix.Name{ //nolint:exhaustruct
-				CommonName: config.Name,
+				CommonName: config.Title,
 			},
 			BasicConstraintsValid: true,
 			SubjectKeyId:          keyID,
@@ -530,7 +530,7 @@ func (s *Service) SAMLMetadataGetAPI(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	metadata, errE := generateSAMLMetadata(provider, s.name)
+	metadata, errE := generateSAMLMetadata(provider, s.title)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
