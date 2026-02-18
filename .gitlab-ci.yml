@@ -431,7 +431,7 @@ audit_node:
 
   # Signatures audit is done during install in Dockerfile.
   script:
-    - npm audit
+    - npm run check-audit
 
 commits:
   stage: test

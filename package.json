@@ -31,7 +31,9 @@
     "test-e2e": "playwright test --config=playwright.config.ts --update-snapshots=${UPDATE_SCREENSHOTS:-missing} && nyc report",
     "test-e2e-install": "playwright install --with-deps chromium",
     "generate-vue-i18n": "node generate-vue-i18n.js",
-    "upgrade": "ncu -u"
+    "upgrade": "ncu -u",
+    "check-audit": "check-audit",
+    "resolve-audit": "resolve-audit"
   },
   "dependencies": {
     "@all1ndev/vue-local-scope": "^0.3.2",
@@ -75,6 +77,7 @@
     "eslint-formatter-gitlab": "^7.0.1",
     "eslint-plugin-vue": "^10.6.2",
     "globals": "^17.0.0",
+    "npm-audit-resolver": "^3.0.0-RC.0",
     "npm-check-updates": "^19.3.1",
     "nyc": "^17.1.0",
     "prettier": "^3.7.4",
