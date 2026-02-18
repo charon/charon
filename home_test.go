@@ -29,7 +29,6 @@ import (
 //go:embed public
 var publicFiles embed.FS
 
-//nolint:exhaustruct
 var testFiles = fstest.MapFS{ //nolint:gochecknoglobals
 	"index.html": &fstest.MapFile{
 		Data: []byte("<html><body>dummy test content</body></html>"),

@@ -357,7 +357,7 @@ type Service struct {
 }
 
 // Init initializes the HTTP service and is used together with Prepare to implement Run.
-func (config *Config) Init(files fs.ReadFileFS) (*Service, errors.E) { //nolint:maintidx
+func (config *Config) Init(files fs.FS) (*Service, errors.E) { //nolint:maintidx
 	var secret []byte
 	if config.Secret != nil {
 		// We use a prefix to aid secret scanners.
@@ -666,7 +666,7 @@ func (config *Config) Init(files fs.ReadFileFS) (*Service, errors.E) { //nolint:
 		Config: &hmacStrategyConfigurator{Secret: secret},
 	}
 
-	service := &Service{
+	service := &Service{ //nolint:forcetypeassert
 		Service: waf.Service[*Site]{
 			Logger:          config.Logger,
 			CanonicalLogger: config.Logger,

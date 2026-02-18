@@ -35,6 +35,8 @@ type passkeyCredential struct {
 
 	// displayName is the same as the display name of the credential so we do not need to store it.
 	displayName string
+	// title is the site's title, used to construct WebAuthDisplayName, so we do not need to store it.
+	title string
 
 	Credential *webauthn.Credential `json:"credential"`
 }
@@ -48,7 +50,7 @@ func (c passkeyCredential) WebAuthnName() string {
 }
 
 func (c passkeyCredential) WebAuthnDisplayName() string {
-	return fmt.Sprintf("Charon (%s)", c.displayName)
+	return fmt.Sprintf("%s (%s)", c.title, c.displayName)
 }
 
 func (passkeyCredential) WebAuthnIcon() string {
@@ -88,7 +90,7 @@ func initPasskeyProvider(config *Config, service *Service) (func() *webauthn.Web
 	return initWithHost(config, service.domain, func(host string) *webauthn.WebAuthn {
 		origin := "https://" + host
 		wconfig := &webauthn.Config{ //nolint:exhaustruct
-			RPDisplayName:         "Charon",
+			RPDisplayName:         config.Title,
 			RPID:                  service.domain,
 			RPOrigins:             []string{origin},
 			AttestationPreference: protocol.PreferNoAttestation,
@@ -203,6 +205,8 @@ func (s *Service) AuthFlowPasskeyGetCompletePostAPI(w http.ResponseWriter, req *
 
 	ctx := req.Context()
 
+	site := waf.MustGetSite[*Site](ctx)
+
 	flow := s.getActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
 		return
@@ -254,6 +258,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePostAPI(w http.ResponseWriter, req *
 		}
 		pkCredential.userID = storedCredential.ID
 		pkCredential.displayName = storedCredential.DisplayName
+		pkCredential.title = site.Title
 		return pkCredential, nil
 	}, *flowPasskey.SessionData, parsedResponse)
 	if err != nil {
@@ -312,6 +317,8 @@ func (s *Service) AuthFlowPasskeyCreateStartPostAPI(w http.ResponseWriter, req *
 
 	ctx := req.Context()
 
+	site := waf.MustGetSite[*Site](ctx)
+
 	flow := s.getActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
 		return
@@ -327,7 +334,7 @@ func (s *Service) AuthFlowPasskeyCreateStartPostAPI(w http.ResponseWriter, req *
 	// User ID also serves as public credential ID once stored in the database.
 	userID := identifier.New()
 	displayName := userID.String()
-	options, session, errE := beginPasskeyRegistration(s.passkeyProvider(), userID, displayName)
+	options, session, errE := beginPasskeyRegistration(s.passkeyProvider(), userID, displayName, site.Title)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -376,6 +383,8 @@ func (s *Service) AuthFlowPasskeyCreateCompletePostAPI(w http.ResponseWriter, re
 
 	ctx := req.Context()
 
+	site := waf.MustGetSite[*Site](ctx)
+
 	flow := s.getActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
 		return
@@ -403,7 +412,7 @@ func (s *Service) AuthFlowPasskeyCreateCompletePostAPI(w http.ResponseWriter, re
 
 	createResponse := passkeyCreateComplete.CreateResponse
 
-	credential, providerID, errE := s.completePasskeyRegistration(createResponse, flowPasskey.DisplayName, flowPasskey.SessionData)
+	credential, providerID, errE := s.completePasskeyRegistration(createResponse, flowPasskey.DisplayName, site.Title, flowPasskey.SessionData)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
@@ -435,7 +444,7 @@ func (s *Service) AuthFlowPasskeyCreateCompletePostAPI(w http.ResponseWriter, re
 		}})
 }
 
-func (s *Service) getPasskeySignalCurrentUserDetailsData(credential Credential, updatedDisplayName string) (*SignalCurrentUserDetails, errors.E) {
+func (s *Service) getPasskeySignalCurrentUserDetailsData(credential Credential, updatedDisplayName string, title string) (*SignalCurrentUserDetails, errors.E) {
 	var pk passkeyCredential
 	errE := x.UnmarshalWithoutUnknownFields(credential.Data, &pk)
 	if errE != nil {
@@ -445,6 +454,7 @@ func (s *Service) getPasskeySignalCurrentUserDetailsData(credential Credential, 
 
 	pk.userID = credential.ID
 	pk.displayName = updatedDisplayName
+	pk.title = title
 
 	return &SignalCurrentUserDetails{
 		RPID:        s.passkeyProvider().Config.RPID,

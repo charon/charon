@@ -690,6 +690,8 @@ func (s *Service) CredentialAddPasskeyStartPostAPI(w http.ResponseWriter, req *h
 		return
 	}
 
+	site := waf.MustGetSite[*Site](ctx)
+
 	var request CredentialAddCredentialStartRequest
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &request)
 	if errE != nil {
@@ -730,7 +732,7 @@ func (s *Service) CredentialAddPasskeyStartPostAPI(w http.ResponseWriter, req *h
 	}
 
 	userID := identifier.New()
-	options, sessionData, errE := beginPasskeyRegistration(s.passkeyProvider(), userID, displayName)
+	options, sessionData, errE := beginPasskeyRegistration(s.passkeyProvider(), userID, displayName, site.Title)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -772,6 +774,8 @@ func (s *Service) CredentialAddPasskeyCompletePostAPI(w http.ResponseWriter, req
 		return
 	}
 
+	site := waf.MustGetSite[*Site](ctx)
+
 	var request CredentialAddPasskeyCompleteRequest
 	errE := x.DecodeJSON(req.Body, &request)
 	if errE != nil {
@@ -794,7 +798,7 @@ func (s *Service) CredentialAddPasskeyCompletePostAPI(w http.ResponseWriter, req
 		return
 	}
 
-	credential, providerID, errE := s.completePasskeyRegistration(request.CreateResponse, cas.DisplayName, cas.Passkey)
+	credential, providerID, errE := s.completePasskeyRegistration(request.CreateResponse, cas.DisplayName, site.Title, cas.Passkey)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
@@ -931,6 +935,8 @@ func (s *Service) CredentialRenamePostAPI(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
+	site := waf.MustGetSite[*Site](ctx)
+
 	var request CredentialRenameRequest
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &request)
 	if errE != nil {
@@ -993,7 +999,7 @@ FoundCredential:
 
 	var signalUpdate *SignalCurrentUserDetails
 	if foundProvider == ProviderPasskey {
-		signalUpdate, errE = s.getPasskeySignalCurrentUserDetailsData(account.Credentials[foundProvider][foundIndex], requestDisplayName)
+		signalUpdate, errE = s.getPasskeySignalCurrentUserDetailsData(account.Credentials[foundProvider][foundIndex], requestDisplayName, site.Title)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
