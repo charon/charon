@@ -358,6 +358,9 @@ type Service struct {
 
 // Init initializes the HTTP service and is used together with Prepare to implement Run.
 func (config *Config) Init(files fs.FS) (*Service, errors.E) { //nolint:maintidx
+	if config.Title == "" {
+		config.Title = DefaultTitle
+	}
 	var secret []byte
 	if config.Secret != nil {
 		// We use a prefix to aid secret scanners.
