@@ -38,39 +38,39 @@
     },
     "1113296|@eslint/compat>eslint>@eslint/config-array>minimatch": {
       "decision": "ignore",
-      "madeAt": 1771458423025
+      "madeAt": 1771487080276
     },
     "1113296|@intlify/unplugin-vue-i18n>@typescript-eslint/typescript-estree>minimatch": {
       "decision": "ignore",
-      "madeAt": 1771458423025
+      "madeAt": 1771487080276
     },
     "1113296|@typescript-eslint/eslint-plugin>@typescript-eslint/type-utils>@typescript-eslint/typescript-estree>minimatch": {
       "decision": "ignore",
-      "madeAt": 1771458423025
+      "madeAt": 1771487080276
     },
     "1113296|@vue/eslint-config-typescript>eslint>@eslint/config-array>minimatch": {
       "decision": "ignore",
-      "madeAt": 1771458423025
+      "madeAt": 1771487080276
     },
     "1113296|eslint>@eslint/config-array>minimatch": {
       "decision": "ignore",
-      "madeAt": 1771458423025
+      "madeAt": 1771487080276
     },
     "1113296|eslint-formatter-codeclimate>eslint>@eslint/config-array>minimatch": {
       "decision": "ignore",
-      "madeAt": 1771458423025
+      "madeAt": 1771487080276
     },
     "1113296|eslint-plugin-vue>eslint>@eslint/config-array>minimatch": {
       "decision": "ignore",
-      "madeAt": 1771458423025
+      "madeAt": 1771487080276
     },
     "1113296|typescript-eslint>@typescript-eslint/eslint-plugin>@typescript-eslint/type-utils>@typescript-eslint/typescript-estree>minimatch": {
       "decision": "ignore",
-      "madeAt": 1771458423025
+      "madeAt": 1771487080276
     },
     "1113296|vue-eslint-parser>eslint>@eslint/config-array>minimatch": {
       "decision": "ignore",
-      "madeAt": 1771458423025
+      "madeAt": 1771487080276
     },
     "1113214|@eslint/compat>eslint>@eslint/config-array>minimatch>@eslint/eslintrc>ajv": {
       "decision": "ignore",
@@ -103,6 +103,14 @@
     "1113214|vue-eslint-parser>eslint>@eslint/config-array>minimatch>@eslint/eslintrc>ajv": {
       "decision": "ignore",
       "madeAt": 1771458434259
+    },
+    "1113296|nyc>glob>minimatch": {
+      "decision": "ignore",
+      "madeAt": 1771487080276
+    },
+    "1113296|vite-plugin-istanbul>test-exclude>glob>minimatch": {
+      "decision": "ignore",
+      "madeAt": 1771487080276
     }
   },
   "rules": {},
