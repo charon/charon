@@ -9,6 +9,7 @@ import { postJSON, startPassword } from "@/api"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import InputTextButton from "@/components/InputTextButton.vue"
+import siteContext from "@/context"
 import { processResponse, removeSteps } from "@/flow"
 import { useProgress } from "@/progress"
 import { encryptPassword, isEmail, toBase64 } from "@/utils"
@@ -349,9 +350,12 @@ async function onCode() {
 <template>
   <div class="flex w-full flex-col rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
     <div class="flex flex-col">
-      <label for="authpassword-input-email-or-username" class="mb-1">{{
-        isEmail(flow.getEmailOrUsername()) ? t("partials.AuthPassword.emailAddressLabel") : t("partials.AuthPassword.usernameLabel")
-      }}</label>
+      <label for="authpassword-input-email-or-username" class="mb-1">
+        <i18n-t v-if="isEmail(flow.getEmailOrUsername())" keypath="partials.AuthPassword.emailAddressLabel" scope="global" />
+        <i18n-t v-else keypath="partials.AuthPassword.usernameLabel" scope="global">
+          <template #siteTitle>{{ siteContext.title }}</template>
+        </i18n-t>
+      </label>
       <InputTextButton id="authpassword-input-email-or-username" class="grow" tabindex="5" @click.prevent="onBack">{{ flow.getEmailOrUsername() }}</InputTextButton>
     </div>
     <div class="mt-4 flex flex-col">

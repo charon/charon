@@ -8,6 +8,7 @@ import { useRouter } from "vue-router"
 
 import { postJSON } from "@/api"
 import Button from "@/components/Button.vue"
+import siteContext from "@/context"
 import { processResponse } from "@/flow"
 import { useProgress } from "@/progress"
 
@@ -171,7 +172,9 @@ async function onPasskeySignup() {
         >
       </i18n-t>
     </div>
-    <div class="mt-4">{{ t("partials.AuthPasskeySignup.signupInfo") }}</div>
+    <i18n-t keypath="partials.AuthPasskeySignup.signupInfo" scope="global">
+      <template #siteTitle>{{ siteContext.title }}</template>
+    </i18n-t>
     <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button id="authpasskeysignup-button-retrysignin" type="button" tabindex="2" @click.prevent="onBack">{{

@@ -7,6 +7,7 @@ import { useRouter } from "vue-router"
 
 import { redirectThirdPartyProvider } from "@/api"
 import Button from "@/components/Button.vue"
+import siteContext from "@/context"
 import WithDocument from "@/components/WithDocument.vue"
 import { useProgress } from "@/progress"
 
@@ -179,6 +180,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
             <template #strongDeclineSignInOrSignUp
               ><strong>{{ t("partials.AuthAutoRedirect.declineSignInOrSignUp") }}</strong></template
             >
+            <template #siteTitle>{{ siteContext.title }}</template>
           </i18n-t>
         </div>
         <div>{{

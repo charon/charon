@@ -25,6 +25,7 @@ import { useRouter } from "vue-router"
 import { getURL, restartAuth } from "@/api"
 import Stepper from "@/components/Stepper.vue"
 import WithDocument from "@/components/WithDocument.vue"
+import siteContext from "@/context"
 // Importing "@/flow" also fetches siteContext which we have to fetch because
 // the server sends the preload header for it. Generally this is already cached.
 import { processFirstResponse, updateSteps } from "@/flow"
@@ -315,6 +316,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                   </template>
                 </WithOrganizationDocument>
               </template>
+              <template #siteTitle>{{ siteContext.title }}</template>
             </i18n-t>
           </div>
           <Stepper v-if="steps.length" v-slot="{ step, active, beforeActive }" :steps="steps" :current-step="currentStep">
