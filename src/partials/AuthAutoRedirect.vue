@@ -7,8 +7,8 @@ import { useRouter } from "vue-router"
 
 import { redirectThirdPartyProvider } from "@/api"
 import Button from "@/components/Button.vue"
-import siteContext from "@/context"
 import WithDocument from "@/components/WithDocument.vue"
+import siteContext from "@/context"
 import { useProgress } from "@/progress"
 
 const props = defineProps<{

@@ -7,10 +7,10 @@ import { useRouter } from "vue-router"
 
 import { postJSON } from "@/api"
 import Button from "@/components/Button.vue"
+import siteContext from "@/context"
 import { processResponse } from "@/flow"
 import { useProgress } from "@/progress"
 import { redirectServerSide } from "@/utils"
-import siteContext from "@/context";
 
 const props = defineProps<{
   flow: Flow
