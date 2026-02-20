@@ -259,7 +259,8 @@ func (s *Service) sendCode(
 		return
 	}
 	errE = s.sendMail(req.Context(), flow, emails, codeProviderSubjectCompiled, codeProviderTemplateCompiled, map[string]string{
-		"code":  code,
+		"code": code,
+		// We set title for subject to site's title, which defaults to config.Title (defaultTitle) if not set.
 		"title": s.title,
 		"url":   url,
 	})
