@@ -633,9 +633,6 @@ func (config *Config) Init(files fs.FS) (*Service, errors.E) { //nolint:maintidx
 
 	for _, site := range sites {
 		site.Providers = providers
-		if site.Title == "" {
-			site.Title = config.Title
-		}
 	}
 
 	var domain string
