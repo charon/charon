@@ -17,6 +17,8 @@ var (
 	ErrInvalidCompleted = errors.Base("invalid completed value for flow state")
 )
 
+const flowExpiration = time.Hour * 24
+
 // Completed represents which steps have completed in the auth flow.
 type Completed string
 
@@ -90,6 +92,10 @@ type flow struct {
 	Passkey         *flowPasskey
 	Password        *flowPassword
 	Code            *flowCode
+}
+
+func (f *flow) Expired() bool {
+	return time.Now().After(f.CreatedAt.Add(flowExpiration))
 }
 
 func (f *flow) AddCompleted(completed Completed) errors.E {
@@ -212,6 +218,9 @@ func (s *Service) getFlow(_ context.Context, id identifier.Identifier) (*flow, e
 	if errE != nil {
 		errors.Details(errE)["id"] = id
 		return nil, errE
+	}
+	if fl.Expired() {
+		return nil, errors.WithDetails(ErrFlowNotFound, "id", id)
 	}
 	// If ResponseTypes is still nil, then OIDCAuthorizeRequest was not really set
 	// in the flow, so we set it to nil explicitly to clear interface fields we set.
