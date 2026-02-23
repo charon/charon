@@ -21,7 +21,8 @@ func TestStore(t *testing.T) {
 
 	ctx := context.Background()
 	f := &charon.TestingFlow{
-		ID: identifier.New(),
+		ID:        identifier.New(),
+		CreatedAt: time.Now().UTC(),
 	}
 	errE := service.TestingSetFlow(ctx, f)
 	require.NoError(t, errE, "% -+#.1v", errE)
