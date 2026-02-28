@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AuthSignoutRequest, AuthSignoutResponse } from "@/types"
 
-import { GlobeAltIcon } from "@sidekickicons/vue/24/outline"
+import { GlobeAltIcon } from "@heroicons/vue/24/outline"
 import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
 import { onBeforeUnmount } from "vue"
 import { useI18n } from "vue-i18n"
