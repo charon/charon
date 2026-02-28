@@ -38,7 +38,7 @@
   "dependencies": {
     "@all1ndev/vue-local-scope": "^0.3.2",
     "@headlessui/vue": "^1.7.23",
-    "@sidekickicons/vue": "^0.15.0",
+    "@heroicons/vue": "^2.2.0",
     "@simplewebauthn/browser": "^13.2.2",
     "@tozd/identifier": "^0.8.1",
     "argon2id": "^1.0.1",
