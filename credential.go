@@ -30,7 +30,7 @@ const (
 	ErrorCodeCredentialDisplayNameMissing ErrorCode = "credentialDisplayNameMissing" //nolint:gosec
 )
 
-const credentialAddSessionExpiration = time.Hour * 24
+const credentialAddSessionExpiration = flowExpiration
 
 var (
 	credentialSessions   = make(map[identifier.Identifier]json.RawMessage) //nolint:gochecknoglobals
