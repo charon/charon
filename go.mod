@@ -43,7 +43,7 @@ require (
 	github.com/btcsuite/btcd/btcutil v1.1.6 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/chainguard-dev/git-urls v1.0.2 // indirect
-	github.com/cloudflare/circl v1.6.1 // indirect
+	github.com/cloudflare/circl v1.6.3 // indirect
 	github.com/coreos/go-oidc/v3 v3.16.0
 	github.com/cristalhq/jwt/v4 v4.0.2 // indirect
 	github.com/cyphar/filepath-securejoin v0.5.0 // indirect
