@@ -1262,3 +1262,99 @@ func TestIdentityChanges(t *testing.T) { //nolint:maintidx
 		})
 	}
 }
+
+func TestGetOrganizationInPlaceModification(t *testing.T) {
+	t.Parallel()
+
+	identityOrganizationID := identifier.New()
+	organizationID := identifier.New()
+	applicationID := charon.OrganizationApplicationApplicationRef{ID: identifier.New()}
+
+	identity := &charon.Identity{
+		Organizations: []charon.IdentityOrganization{
+			{
+				ID:           &identityOrganizationID,
+				Active:       true,
+				Organization: charon.OrganizationRef{ID: organizationID},
+				Applications: []charon.OrganizationApplicationApplicationRef{},
+			},
+		},
+	}
+
+	idOrg := identity.GetOrganization(&organizationID)
+	require.NotNil(t, idOrg)
+	require.Equal(t, &identityOrganizationID, idOrg.ID)
+	assert.True(t, idOrg.Active)
+
+	idOrg.Active = false
+	idOrg.Applications = append(idOrg.Applications, applicationID)
+	// Verify in-place modification via GetOrganization().
+	idOrg = identity.GetOrganization(&organizationID)
+	assert.False(t, idOrg.Active)
+	assert.Contains(t, idOrg.Applications, applicationID)
+	// Verify in-place modification via GetIdentityOrganization().
+	idOrg = identity.GetIdentityOrganization(&identityOrganizationID)
+	assert.False(t, idOrg.Active)
+	assert.Contains(t, idOrg.Applications, applicationID)
+}
+
+func TestGetOrganizationAndGetIdentityOrganization(t *testing.T) {
+	t.Parallel()
+
+	identityOrganizationID := identifier.New()
+	organizationID := identifier.New()
+	unknownID := identifier.New()
+
+	tests := []struct {
+		name     string
+		identity *charon.Identity
+		orgID    *identifier.Identifier
+		idOrgID  *identifier.Identifier
+	}{
+		{
+			name: "ID not found",
+			identity: &charon.Identity{
+				Organizations: []charon.IdentityOrganization{
+					{ID: &identityOrganizationID, Organization: charon.OrganizationRef{ID: organizationID}},
+				},
+			},
+			orgID:   &unknownID,
+			idOrgID: &unknownID,
+		},
+		{
+			name:     "identity is nil",
+			identity: nil,
+			orgID:    &organizationID,
+			idOrgID:  &identityOrganizationID,
+		},
+		{
+			name: "ID parameter is nil",
+			identity: &charon.Identity{
+				Organizations: []charon.IdentityOrganization{
+					{ID: &identityOrganizationID, Organization: charon.OrganizationRef{ID: organizationID}},
+				},
+			},
+			orgID:   nil,
+			idOrgID: nil,
+		},
+		{
+			name: "empty organizations",
+			identity: &charon.Identity{
+				Organizations: []charon.IdentityOrganization{},
+			},
+			orgID:   &organizationID,
+			idOrgID: &identityOrganizationID,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			idOrgGetOrganization := tt.identity.GetOrganization(tt.orgID)
+			assert.Nil(t, idOrgGetOrganization)
+			idOrgGetIdentityOrganization := tt.identity.GetIdentityOrganization(tt.idOrgID)
+			assert.Nil(t, idOrgGetIdentityOrganization)
+		})
+	}
+}
