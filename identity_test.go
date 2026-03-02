@@ -1281,21 +1281,21 @@ func TestGetOrganizationInPlaceModification(t *testing.T) {
 		},
 	}
 
-	identityOrganization := identity.GetOrganization(&organizationID)
-	require.NotNil(t, identityOrganization)
-	require.Equal(t, &identityOrganizationID, identityOrganization.ID)
-	assert.True(t, identityOrganization.Active)
+	idOrg := identity.GetOrganization(&organizationID)
+	require.NotNil(t, idOrg)
+	require.Equal(t, &identityOrganizationID, idOrg.ID)
+	assert.True(t, idOrg.Active)
 
-	identityOrganization.Active = false
-	identityOrganization.Applications = append(identityOrganization.Applications, applicationID)
+	idOrg.Active = false
+	idOrg.Applications = append(idOrg.Applications, applicationID)
 	// Verify in-place modification via GetOrganization().
-	idOrgGetOrganization := identity.GetOrganization(&organizationID)
-	assert.False(t, idOrgGetOrganization.Active)
-	assert.Contains(t, idOrgGetOrganization.Applications, applicationID)
+	idOrg = identity.GetOrganization(&organizationID)
+	assert.False(t, idOrg.Active)
+	assert.Contains(t, idOrg.Applications, applicationID)
 	// Verify in-place modification via GetIdentityOrganization().
-	idOrgGetIdentityOrganization := identity.GetIdentityOrganization(&identityOrganizationID)
-	assert.False(t, idOrgGetIdentityOrganization.Active)
-	assert.Contains(t, idOrgGetIdentityOrganization.Applications, applicationID)
+	idOrg = identity.GetIdentityOrganization(&identityOrganizationID)
+	assert.False(t, idOrg.Active)
+	assert.Contains(t, idOrg.Applications, applicationID)
 }
 
 func TestGetOrganizationAndGetIdentityOrganization(t *testing.T) {
