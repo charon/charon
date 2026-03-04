@@ -17,9 +17,15 @@ if [ -n "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" ]; then
     echo "Target branch has no open MR, downloading screenshots from branch artifacts."
     wget -O artifacts.zip "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/jobs/artifacts/${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}/download?job=test_e2e"
   fi
-
-  unzip -o artifacts.zip -x playwright-report/\* -x test-results/\* -x coverage.html -x coverage.xml -x coverage-frontend/\* -x a11y-report/\*
-else
-  echo "Branch or tag pipeline (not MR), update screenshots."
+elif [ -n "$CI_COMMIT_TAG" ] || [ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" ]; then
+  echo "Tag or main branch pipeline, update screenshots."
   export UPDATE_SCREENSHOTS=changed
+else
+  echo "Branch pipeline for '$CI_COMMIT_BRANCH', downloading screenshots from default branch '($CI_DEFAULT_BRANCH)'."
+  wget -O artifacts.zip "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/jobs/artifacts/${CI_DEFAULT_BRANCH}/download?job=test_e2e"
+fi
+
+# Unzip artifacts if downloaded.
+if [ -f artifacts.zip ]; then
+  unzip -o artifacts.zip -x playwright-report/\* -x test-results/\* -x coverage.html -x coverage.xml -x coverage-frontend/\* -x a11y-report/\*
 fi
