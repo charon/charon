@@ -42,8 +42,9 @@ test_go:
     - apk --update add make bash gcc musl-dev mailcap git
     - (cd /go; go install gotest.tools/gotestsum@v1.13.0)
     - (cd /go; go install github.com/boumenot/gocover-cobertura@v1.4.0)
+    # Needs the coverage folder to generate go coverage.
+    - mkdir -p coverage
     - go version
-    - echo "LINK_PUBLISH_JOB_ID=${CI_JOB_ID}" > link_publish.env
 
   script:
     - make test-ci
@@ -52,48 +53,15 @@ test_go:
     when: always
     reports:
       junit: tests.xml
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage.xml
-      dotenv:
-        - link_publish.env
     paths:
+      - coverage/
       - tests.xml
-      - coverage.html
-      - coverage.xml
     expire_in: never
-
-  coverage: '/coverage: \d+\.\d+% of statements/'
-
-test_go_link_publish:
-  stage: deploy
-
-  rules:
-    # We create a link only for merge request pipelines.
-    # Created environment is automatically removed when the merge request is closed.
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-
-  needs:
-    - test_go
-
-  # Publish the link even if test_go fails.
-  when: always
-
-  script:
-    - echo "Publishing link"
-
-  environment:
-    name: MR/${CI_MERGE_REQUEST_IID}/go_coverage
-    url: https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage.html
-    deployment_tier: other
 
 test_node:
   stage: test
 
   image: node:24.10-alpine3.22
-
-  before_script:
-    - echo "LINK_PUBLISH_JOB_ID=${CI_JOB_ID}" > link_publish.env
 
   script:
     - npm ci --audit=false
@@ -103,40 +71,11 @@ test_node:
     when: always
     reports:
       junit: tests.xml
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage/cobertura-coverage.xml
-      dotenv:
-        - link_publish.env
     paths:
       - coverage/
     exclude:
       - coverage/tmp/
     expire_in: never
-
-  coverage: '/^All files\s+\|\s+\S+\s+\|\s+\S+\s+\|\s+\S+\s+\|\s+\S+\s+\|/'
-
-test_node_link_publish:
-  stage: deploy
-
-  rules:
-    # We create a link only for merge request pipelines.
-    # Created environment is automatically removed when the merge request is closed.
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-
-  needs:
-    - test_node
-
-  # Publish the link even if test_node fails.
-  when: always
-
-  script:
-    - echo "Publishing link"
-
-  environment:
-    name: MR/${CI_MERGE_REQUEST_IID}/node_coverage
-    url: https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage/index.html
-    deployment_tier: other
 
 test_e2e:
   stage: test
@@ -149,6 +88,10 @@ test_e2e:
         - "--feature"
         - "containerd-snapshotter=true"
 
+  needs:
+    - test_go
+    - test_node
+
   before_script:
     - apk --update add docker-cli docker-cli-buildx make bash gcc musl-dev jq
     - (cd /go; go install github.com/boumenot/gocover-cobertura@v1.4.0)
@@ -156,6 +99,8 @@ test_e2e:
     - echo "$CI_REGISTRY_PASSWORD" | docker login --username "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
     - echo "LINK_PUBLISH_JOB_ID=${CI_JOB_ID}" > link_publish.env
     - mkdir playwright-screenshots
+    - mkdir -p .nyc_output
+    - cp coverage/vitest/coverage-final.json .nyc_output/vitest.json
     - source ./prepare-e2e.sh
 
   # TODO: Use go tool covdata percent to obtain total coverage instead of the workaround with go tool cover -func.
@@ -165,15 +110,22 @@ test_e2e:
     - go tool covdata textfmt -i=coverage -o coverage.txt
     - go tool cover -html=coverage.txt -o coverage.html
     - gocover-cobertura < coverage.txt > coverage.xml
-    - go tool cover -func=coverage.txt
+    - go tool cover -func=coverage.txt -o coverage-percentages.txt
+
+  after_script:
+    - echo "Prepared combined (E2E + unit tests) backend coverage link:"
+    - echo "https://charon.gitlab.io/-/charon/-/jobs/${CI_JOB_ID}/artifacts/coverage.html"
+    - echo "Prepared E2E report link:"
+    - echo "https://charon.gitlab.io/-/charon/-/jobs/${CI_JOB_ID}/artifacts/playwright-report/index.html"
+    - echo "Prepared combined (E2E + unit tests) frontend coverage link:"
+    - echo "https://charon.gitlab.io/-/charon/-/jobs/${CI_JOB_ID}/artifacts/coverage-frontend/index.html"
+    - echo "Prepared accessibility report link:"
+    - echo "https://charon.gitlab.io/-/charon/-/jobs/${CI_JOB_ID}/artifacts/a11y-report/a11y-report.html"
 
   artifacts:
     when: always
     reports:
       junit: test-results/junit.xml
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage.xml
       dotenv:
         - link_publish.env
     paths:
@@ -182,15 +134,13 @@ test_e2e:
       - playwright-screenshots/
       - coverage.html
       - coverage.xml
+      - coverage-percentages.txt
       - coverage-frontend/
       - a11y-report/a11y-report.html
     expire_in: never
 
-  coverage: '/total:.+statements.+\d+\.\d+%/'
-
-# We need an extra job to report frontend coverage from test_e2e because
-# GitLab cannot capture two coverage numbers from one job.
-test_e2e_frontend:
+# Gitlab displays the job name as the source of the coverage data. Thus creating a new job.
+frontend_coverage:
   stage: test
 
   needs:
@@ -209,7 +159,27 @@ test_e2e_frontend:
   # Reports grep output with distinctive prefix.
   coverage: '/Frontend coverage: (\d+\.\d+)%/'
 
-test_e2e_link_publish_report:
+# Gitlab displays the job name as the source of the coverage data. Thus creating a new job.
+backend_coverage:
+  stage: test
+
+  needs:
+    - test_e2e
+
+  script:
+    - echo "Backend coverage:" $(grep -oP '\(statements\)\s+\K\d+\.\d+' coverage-percentages.txt)%
+
+  artifacts:
+    when: always
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+
+  # Reports grep output with distinctive prefix.
+  coverage: '/Backend coverage: (\d+\.\d+)%/'
+
+publish_e2e_report:
   stage: deploy
 
   rules:
@@ -224,14 +194,15 @@ test_e2e_link_publish_report:
   when: always
 
   script:
-    - echo "Publishing E2E report link"
+    - echo "Publishing E2E report link:"
+    - echo "https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/playwright-report/index.html"
 
   environment:
     name: MR/${CI_MERGE_REQUEST_IID}/e2e_report
     url: https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/playwright-report/index.html
     deployment_tier: other
 
-test_e2e_link_publish_coverage:
+publish_backend_coverage:
   stage: deploy
 
   rules:
@@ -246,14 +217,15 @@ test_e2e_link_publish_coverage:
   when: always
 
   script:
-    - echo "Publishing E2E backend coverage link"
+    - echo "Publishing combined (E2E + unit tests) backend coverage link:"
+    - echo "https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage.html"
 
   environment:
-    name: MR/${CI_MERGE_REQUEST_IID}/e2e_backend_coverage
+    name: MR/${CI_MERGE_REQUEST_IID}/backend_coverage
     url: https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage.html
     deployment_tier: other
 
-test_e2e_link_publish_frontend_coverage:
+publish_frontend_coverage:
   stage: deploy
 
   rules:
@@ -268,14 +240,15 @@ test_e2e_link_publish_frontend_coverage:
   when: always
 
   script:
-    - echo "Publishing E2E frontend coverage link"
+    - echo "Publishing combined (E2E + unit tests) frontend coverage link:"
+    - echo "https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage-frontend/index.html"
 
   environment:
-    name: MR/${CI_MERGE_REQUEST_IID}/e2e_frontend_coverage
+    name: MR/${CI_MERGE_REQUEST_IID}/frontend_coverage
     url: https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/coverage-frontend/index.html
     deployment_tier: other
 
-test_e2e_link_publish_a11y:
+publish_a11y_report:
   stage: deploy
 
   rules:
@@ -290,7 +263,8 @@ test_e2e_link_publish_a11y:
   when: always
 
   script:
-    - echo "Publishing accessibility report link"
+    - echo "Publishing accessibility report link:"
+    - echo "https://charon.gitlab.io/-/charon/-/jobs/${LINK_PUBLISH_JOB_ID}/artifacts/a11y-report/a11y-report.html"
 
   environment:
     name: MR/${CI_MERGE_REQUEST_IID}/a11y_report

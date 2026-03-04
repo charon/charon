@@ -163,6 +163,7 @@ docker run --rm \
   -v "$(pwd)/playwright-screenshots:/src/charon/playwright-screenshots" \
   -v "$(pwd)/coverage-frontend:/src/charon/coverage-frontend" \
   -v "$(pwd)/a11y-report:/src/charon/a11y-report" \
+  -v "$(pwd)/.nyc_output:/.nyc_output" \
   -e CHARON_URL="https://charon-container:8080" \
   -e MAILPIT_URL="http://mailpit:8025" \
   -e LINK_PUBLISH_JOB_ID \
