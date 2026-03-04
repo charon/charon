@@ -21,7 +21,7 @@ elif [ -n "$CI_COMMIT_TAG" ] || [ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" ]; 
   echo "Tag or main branch pipeline, update screenshots."
   export UPDATE_SCREENSHOTS=changed
 else
-  echo "Branch pipeline for $CI_COMMIT_BRANCH, downloading screenshots from default branch '($CI_DEFAULT_BRANCH)'."
+  echo "Branch pipeline for '$CI_COMMIT_BRANCH', downloading screenshots from default branch '($CI_DEFAULT_BRANCH)'."
   wget -O artifacts.zip "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/jobs/artifacts/${CI_DEFAULT_BRANCH}/download?job=test_e2e"
 fi
 
