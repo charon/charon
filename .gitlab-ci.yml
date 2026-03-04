@@ -143,8 +143,7 @@ test_e2e:
       - a11y-report/a11y-report.html
     expire_in: never
 
-# We need an extra job to report frontend coverage from test_e2e because
-# GitLab cannot capture two coverage numbers from one job.
+# Gitlab displays the job name as the source of the coverage data. Thus creating a new job.
 frontend_coverage:
   stage: test
 
