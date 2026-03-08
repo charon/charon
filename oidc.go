@@ -181,7 +181,9 @@ func (c *configurableCoreStrategy) GenerateAccessToken(ctx context.Context, requ
 		c.initializeJWTClaims(ctx, requester)
 		return c.hmacStrategy.GenerateAccessToken(ctx, requester) //nolint:wrapcheck
 	default:
-		panic(errors.Errorf("unknown access token type: %s", tt))
+		errE := errors.New("unknown access token type")
+		errors.Details(errE)["type"] = tt
+		panic(errE)
 	}
 }
 
@@ -194,7 +196,9 @@ func (c *configurableCoreStrategy) ValidateAccessToken(ctx context.Context, requ
 	case AccessTokenHMAC:
 		return c.hmacStrategy.ValidateAccessToken(ctx, requester, token) //nolint:wrapcheck
 	default:
-		panic(errors.Errorf("unknown access token type: %s", tt))
+		errE := errors.New("unknown access token type")
+		errors.Details(errE)["type"] = tt
+		panic(errE)
 	}
 }
 
@@ -624,7 +628,9 @@ func (c *OIDCClient) GetEffectiveLifespan(_ fosite.GrantType, tt fosite.TokenTyp
 	case fosite.AuthorizeCode, fosite.PushedAuthorizeRequestContext, fosite.UserCode, fosite.DeviceCode:
 		return fallback
 	default:
-		panic(errors.Errorf("unknown token type: %s", tt))
+		errE := errors.New("unknown token type")
+		errors.Details(errE)["type"] = tt
+		panic(errE)
 	}
 }
 
