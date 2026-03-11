@@ -84,12 +84,12 @@ func withPreferredCredentialAlgorithms(preferredAlgorithms []webauthncose.COSEAl
 	}
 }
 
-func initPasskeyProvider(config *Config, domain string) (func() *webauthn.WebAuthn, errors.E) {
-	return initWithHost(config, domain, func(host string) *webauthn.WebAuthn {
+func initPasskeyProvider(config *Config, service *Service) (func() *webauthn.WebAuthn, errors.E) {
+	return initWithHost(config, service.domain, func(host string) *webauthn.WebAuthn {
 		origin := "https://" + host
 		wconfig := &webauthn.Config{ //nolint:exhaustruct
 			RPDisplayName:         "Charon",
-			RPID:                  domain,
+			RPID:                  service.domain,
 			RPOrigins:             []string{origin},
 			AttestationPreference: protocol.PreferNoAttestation,
 			Timeouts: webauthn.TimeoutsConfig{

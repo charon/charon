@@ -284,6 +284,8 @@ type Service struct {
 	oidc     func() *fosite.Fosite
 	oidcKeys []*jose.JSONWebKey
 
+	providers []SiteProvider
+
 	oidcProviders      func() map[Provider]oidcProvider
 	samlProviders      func() map[Provider]samlProvider
 	passkeyProvider    func() *webauthn.WebAuthn
@@ -645,6 +647,7 @@ func (config *Config) Init(files fs.ReadFileFS) (*Service, errors.E) { //nolint:
 		hmac:                   hmacStrategy,
 		oidc:                   nil,
 		oidcKeys:               config.OIDC.keys,
+		providers:              providers,
 		oidcProviders:          nil,
 		samlProviders:          nil,
 		passkeyProvider:        nil,
@@ -712,33 +715,6 @@ func (config *Config) Init(files fs.ReadFileFS) (*Service, errors.E) { //nolint:
 		}
 	}
 
-	// We prepare initialization of OIDC and providers and in the common case
-	// (when server's bind port is not 0) immediately do the initialization.
-	service.oidc, errE = initOIDC(config, service, domain, hmacStrategy)
-	if errE != nil {
-		return nil, errE
-	}
-	service.oidcProviders, errE = initOIDCProviders(config, service, domain, providers)
-	if errE != nil {
-		return nil, errE
-	}
-	service.samlProviders, errE = initSAMLProviders(config, service, domain, providers)
-	if errE != nil {
-		return nil, errE
-	}
-	service.passkeyProvider, errE = initPasskeyProvider(config, domain)
-	if errE != nil {
-		return nil, errE
-	}
-	service.codeProvider, errE = initCodeProvider(config, domain)
-	if errE != nil {
-		return nil, errE
-	}
-	service.charonOrganization, errE = initCharonOrganization(config, service, domain)
-	if errE != nil {
-		return nil, errE
-	}
-
 	return service, nil
 }
 
@@ -747,6 +723,33 @@ func (config *Config) Prepare(service *Service) (http.Handler, errors.E) {
 	// Construct the main handler for the service using the router.
 	router := new(waf.Router)
 	handler, errE := service.RouteWith(router)
+	if errE != nil {
+		return nil, errE
+	}
+
+	// We prepare initialization of OIDC and providers and in the common case
+	// (when server's bind port is not 0) immediately do the initialization.
+	service.oidc, errE = initOIDC(config, service)
+	if errE != nil {
+		return nil, errE
+	}
+	service.oidcProviders, errE = initOIDCProviders(config, service)
+	if errE != nil {
+		return nil, errE
+	}
+	service.samlProviders, errE = initSAMLProviders(config, service)
+	if errE != nil {
+		return nil, errE
+	}
+	service.passkeyProvider, errE = initPasskeyProvider(config, service)
+	if errE != nil {
+		return nil, errE
+	}
+	service.codeProvider, errE = initCodeProvider(config, service)
+	if errE != nil {
+		return nil, errE
+	}
+	service.charonOrganization, errE = initCharonOrganization(config, service)
 	if errE != nil {
 		return nil, errE
 	}

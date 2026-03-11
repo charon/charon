@@ -44,8 +44,8 @@ func (p *codeProvider) URL(s *Service, flow *flow, code string) (string, errors.
 	return fmt.Sprintf("%s%s#code=%s", p.origin, path, code), nil
 }
 
-func initCodeProvider(config *Config, domain string) (func() *codeProvider, errors.E) {
-	return initWithHost(config, domain, func(host string) *codeProvider {
+func initCodeProvider(config *Config, service *Service) (func() *codeProvider, errors.E) {
+	return initWithHost(config, service.domain, func(host string) *codeProvider {
 		return &codeProvider{
 			origin: "https://" + host,
 		}
