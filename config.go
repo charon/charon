@@ -743,7 +743,7 @@ func (config *Config) Init(files fs.ReadFileFS) (*Service, errors.E) { //nolint:
 }
 
 // Prepare prepares the HTTP service for serving.
-func (config *Config) Prepare(ctx context.Context, service *Service) (http.Handler, errors.E) {
+func (config *Config) Prepare(service *Service) (http.Handler, errors.E) {
 	// Construct the main handler for the service using the router.
 	router := new(waf.Router)
 	handler, errE := service.RouteWith(router)
@@ -774,7 +774,7 @@ func (config *Config) Run() errors.E {
 		return errE
 	}
 
-	handler, errE := config.Prepare(ctx, service)
+	handler, errE := config.Prepare(service)
 	if errE != nil {
 		return errE
 	}
