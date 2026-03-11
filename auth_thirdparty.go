@@ -20,8 +20,8 @@ type AuthFlowResponseThirdPartyProvider struct {
 	Location string `json:"location"`
 }
 
-// AuthThirdPartyProvider is the frontend handler for the third-party provider callback.
-func (s *Service) AuthThirdPartyProvider(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// AuthThirdPartyProviderGet is the frontend handler for the third-party provider callback.
+func (s *Service) AuthThirdPartyProviderGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	providerKey := Provider(params["provider"])
 
 	// Only OIDC providers use GET requests for callbacks (response type is code which has response mode query).
@@ -35,7 +35,9 @@ func (s *Service) AuthThirdPartyProvider(w http.ResponseWriter, req *http.Reques
 	s.NotFoundWithError(w, req, errE)
 }
 
-// AuthThirdPartyProviderPost is the API handler for the third-party provider callback, POST request.
+// AuthThirdPartyProviderPost is the frontend handler for the third-party provider callback, POST request.
+//
+// This is an exception. SAML makes a POST to user-facing URL so we do not want to use /api here.
 func (s *Service) AuthThirdPartyProviderPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	providerKey := Provider(params["provider"])
 
@@ -86,8 +88,8 @@ func (s *Service) handleAuthFlowThirdPartyProviderStart(
 	}, nil)
 }
 
-// AuthFlowThirdPartyProviderStartPost is the API handler for starting the third-party provider step, POST request.
-func (s *Service) AuthFlowThirdPartyProviderStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// AuthFlowThirdPartyProviderStartPostAPI is the API handler for starting the third-party provider step, POST request.
+func (s *Service) AuthFlowThirdPartyProviderStartPostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 

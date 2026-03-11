@@ -201,8 +201,8 @@ func getAndDeleteCredentialSession(sessionID identifier.Identifier) (*credential
 	return &cas, nil
 }
 
-// CredentialList is the frontend handler for getting credentials.
-func (s *Service) CredentialList(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// CredentialListGet is the frontend handler for getting credentials.
+func (s *Service) CredentialListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
@@ -210,8 +210,8 @@ func (s *Service) CredentialList(w http.ResponseWriter, req *http.Request, _ waf
 	}
 }
 
-// CredentialListGet is the API handler for listing credentials, GET request.
-func (s *Service) CredentialListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// CredentialListGetAPI is the API handler for listing credentials, GET request.
+func (s *Service) CredentialListGetAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	ctx := s.RequireAuthenticated(w, req)
 	if ctx == nil {
 		return
@@ -248,8 +248,8 @@ func (s *Service) CredentialGet(w http.ResponseWriter, req *http.Request, _ waf.
 	}
 }
 
-// CredentialGetGet is the API handler for getting the credential, GET request.
-func (s *Service) CredentialGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// CredentialGetGetAPI is the API handler for getting the credential, GET request.
+func (s *Service) CredentialGetGetAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := s.RequireAuthenticated(w, req)
 	if ctx == nil {
 		return
@@ -284,8 +284,8 @@ func (s *Service) CredentialGetGet(w http.ResponseWriter, req *http.Request, par
 	s.NotFound(w, req)
 }
 
-// CredentialAdd is the frontend handler for adding a credential to account.
-func (s *Service) CredentialAdd(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// CredentialAddGet is the frontend handler for adding a credential to account.
+func (s *Service) CredentialAddGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
@@ -293,8 +293,8 @@ func (s *Service) CredentialAdd(w http.ResponseWriter, req *http.Request, _ waf.
 	}
 }
 
-// CredentialAddEmailPost is the API handler for adding an e-mail credential to account, POST request.
-func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// CredentialAddEmailPostAPI is the API handler for adding an e-mail credential to account, POST request.
+func (s *Service) CredentialAddEmailPostAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -368,8 +368,8 @@ func (s *Service) CredentialAddEmailPost(w http.ResponseWriter, req *http.Reques
 	}, nil)
 }
 
-// CredentialAddUsernamePost is the API handler for adding a username credential to account, POST request.
-func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// CredentialAddUsernamePostAPI is the API handler for adding a username credential to account, POST request.
+func (s *Service) CredentialAddUsernamePostAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -458,8 +458,8 @@ func (s *Service) CredentialAddUsernamePost(w http.ResponseWriter, req *http.Req
 	}, nil)
 }
 
-// CredentialAddPasswordStartPost is the API handler to start the password credential step, POST request.
-func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// CredentialAddPasswordStartPostAPI is the API handler to start the password credential step, POST request.
+func (s *Service) CredentialAddPasswordStartPostAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -541,8 +541,8 @@ func (s *Service) CredentialAddPasswordStartPost(w http.ResponseWriter, req *htt
 	s.WriteJSON(w, req, response, nil)
 }
 
-// CredentialAddPasswordCompletePost is the API handler to complete the password credential step, POST request.
-func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// CredentialAddPasswordCompletePostAPI is the API handler to complete the password credential step, POST request.
+func (s *Service) CredentialAddPasswordCompletePostAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -680,8 +680,8 @@ func (s *Service) CredentialAddPasswordCompletePost(w http.ResponseWriter, req *
 	}, nil)
 }
 
-// CredentialAddPasskeyStartPost is the API handler to start the passkey credential step, POST request.
-func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// CredentialAddPasskeyStartPostAPI is the API handler to start the passkey credential step, POST request.
+func (s *Service) CredentialAddPasskeyStartPostAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -762,8 +762,8 @@ func (s *Service) CredentialAddPasskeyStartPost(w http.ResponseWriter, req *http
 	}, nil)
 }
 
-// CredentialAddPasskeyCompletePost is the API handler to complete the passkey credential step, POST request.
-func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// CredentialAddPasskeyCompletePostAPI is the API handler to complete the passkey credential step, POST request.
+func (s *Service) CredentialAddPasskeyCompletePostAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -841,8 +841,8 @@ func (s *Service) CredentialAddPasskeyCompletePost(w http.ResponseWriter, req *h
 	}, nil)
 }
 
-// CredentialRemovePost is the API handler for removing credential, POST request.
-func (s *Service) CredentialRemovePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// CredentialRemovePostAPI is the API handler for removing credential, POST request.
+func (s *Service) CredentialRemovePostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -921,8 +921,8 @@ FoundCredential:
 	}, nil)
 }
 
-// CredentialRenamePost is the API handler for updating credentials displayName, POST request.
-func (s *Service) CredentialRenamePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// CredentialRenamePostAPI is the API handler for updating credentials displayName, POST request.
+func (s *Service) CredentialRenamePostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 

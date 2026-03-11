@@ -449,7 +449,7 @@ func (s *Service) getActiveFlowWithSession(w http.ResponseWriter, req *http.Requ
 
 func getHost(config *Config, domain string) (string, errors.E) {
 	// ListenAddr blocks until the server runs.
-	listenAddr := config.Server.ListenAddr()
+	listenAddr := config.Server.ListenAddrHTTPS()
 	if listenAddr == "" {
 		// Server failed to start. We just return in this case.
 		return "", nil
@@ -481,10 +481,10 @@ func initWithHost[T any](config *Config, domain string, init func(string) T) (fu
 		}, nil
 	}
 
-	_, port, err := net.SplitHostPort(config.Server.Addr)
+	_, port, err := net.SplitHostPort(config.Server.HTTPS.Listen)
 	if err != nil {
 		errE := errors.WithMessage(err, "server address")
-		errors.Details(errE)["address"] = config.Server.Addr
+		errors.Details(errE)["address"] = config.Server.HTTPS.Listen
 		return nil, errE
 	} else if port == "" {
 		return nil, errors.New("server address: port empty")

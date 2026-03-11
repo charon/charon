@@ -18,8 +18,8 @@ type charonOrganization struct {
 	RedirectURI                       string
 }
 
-func initCharonOrganization(config *Config, service *Service, domain string) (func() charonOrganization, errors.E) {
-	return initWithHost(config, domain, func(host string) charonOrganization {
+func initCharonOrganization(config *Config, service *Service) (func() charonOrganization, errors.E) {
+	return initWithHost(config, service.domain, func(host string) charonOrganization {
 		charonOrganizationID := identifier.New()
 		charonAppID := identifier.New()
 		charonClientID := identifier.New()

@@ -46,11 +46,11 @@ func grantAllScopes(request fosite.Requester) {
 //       required we could just finish the whole flow serer side and never even load frontend.
 // TODO: If session is already provided through Cookie, skip to organization step (unless prompt or something else requires us to re-authenticate).
 
-// OIDCAuthorize handler does not really do the whole handling of the authorization request,
+// OIDCAuthorizeGet handler does not really do the whole handling of the authorization request,
 // but stores the request into a flow, and then redirects to our authentication page
 // (GET request), which is expected to conclude handling the authorization request eventually
 // with call to completeOIDCAuthorize.
-func (s *Service) OIDCAuthorize(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+func (s *Service) OIDCAuthorizeGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	// OIDC GetClient requires ctx with serviceContextKey set.
 	ctx := context.WithValue(req.Context(), serviceContextKey, s)
 	oidc := s.oidc()

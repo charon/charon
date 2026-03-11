@@ -51,10 +51,10 @@ func (ks samlMemoryKeyStore) GetKeyPair() (*rsa.PrivateKey, []byte, error) {
 	return ks.privateKey, ks.cert, nil
 }
 
-func initSAMLProviders(config *Config, service *Service, domain string, providers []SiteProvider) (func() map[Provider]samlProvider, errors.E) {
-	return initWithHost(config, domain, func(host string) map[Provider]samlProvider {
+func initSAMLProviders(config *Config, service *Service) (func() map[Provider]samlProvider, errors.E) {
+	return initWithHost(config, service.domain, func(host string) map[Provider]samlProvider {
 		samlProviders := map[Provider]samlProvider{}
-		for _, p := range providers {
+		for _, p := range service.providers {
 			if p.Type != ThirdPartyProviderSAML {
 				continue
 			}
@@ -74,7 +74,7 @@ func initSAMLProviders(config *Config, service *Service, domain string, provider
 }
 
 func initSAMLProvider(service *Service, host string, p SiteProvider) (samlProvider, errors.E) {
-	path, errE := service.ReverseAPI("AuthThirdPartyProvider", waf.Params{"provider": string(p.Key)}, nil)
+	path, errE := service.Reverse("AuthThirdPartyProvider", waf.Params{"provider": string(p.Key)}, nil)
 	if errE != nil {
 		return samlProvider{}, errE
 	}
@@ -517,8 +517,8 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		}})
 }
 
-// SAMLMetadataGet is the API handler for getting the SAML metadata for a third-party SAML provider, GET request.
-func (s *Service) SAMLMetadataGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// SAMLMetadataGetAPI is the API handler for getting the SAML metadata for a third-party SAML provider, GET request.
+func (s *Service) SAMLMetadataGetAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	providerKey := Provider(params["provider"])
 
 	samlProviders := s.samlProviders()

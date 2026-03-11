@@ -25,10 +25,10 @@ type oidcProvider struct {
 	SupportsPKCE bool
 }
 
-func initOIDCProviders(config *Config, service *Service, domain string, providers []SiteProvider) (func() map[Provider]oidcProvider, errors.E) {
-	return initWithHost(config, domain, func(host string) map[Provider]oidcProvider {
+func initOIDCProviders(config *Config, service *Service) (func() map[Provider]oidcProvider, errors.E) {
+	return initWithHost(config, service.domain, func(host string) map[Provider]oidcProvider {
 		oidcProviders := map[Provider]oidcProvider{}
-		for _, p := range providers {
+		for _, p := range service.providers {
 			if p.Type != ThirdPartyProviderOIDC {
 				continue
 			}

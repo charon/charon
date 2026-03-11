@@ -35,8 +35,10 @@ import (
 
 // Default configuration values.
 const (
-	DefaultProxyTo  = "http://localhost:5173"
-	DefaultTLSCache = "letsencrypt"
+	// DefaultListen is the default TCP listen address.
+	DefaultListen = ":8080"
+	// DefaultProxyTo is the default URL to proxy to during development.
+	DefaultProxyTo = "http://localhost:5173"
 )
 
 // Prefixes used by Charon for secrets.
@@ -49,9 +51,6 @@ const (
 var secretPrefixCharonConfig = x.String2ByteSlice(SecretPrefixCharonConfig) //nolint:gochecknoglobals
 
 const expectedSecretSize = 32
-
-//go:embed routes.json
-var routesConfiguration []byte
 
 //go:embed dist
 var files embed.FS
@@ -265,7 +264,7 @@ type Config struct {
 // We have to call Validate on kong-embedded structs ourselves.
 // See: https://github.com/alecthomas/kong/issues/554
 func (config *Config) Validate() error {
-	err := config.Server.TLS.Validate()
+	err := config.Server.HTTPS.Validate()
 	if err != nil {
 		return err //nolint:wrapcheck
 	}
@@ -284,6 +283,8 @@ type Service struct {
 
 	oidc     func() *fosite.Fosite
 	oidcKeys []*jose.JSONWebKey
+
+	providers []SiteProvider
 
 	oidcProviders      func() map[Provider]oidcProvider
 	samlProviders      func() map[Provider]samlProvider
@@ -329,13 +330,13 @@ type Service struct {
 	identitiesBlockedMu sync.RWMutex
 }
 
-// Init is used primarily in tests. Use Run otherwise.
-func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.E) { //nolint:maintidx
+// Init initializes the HTTP service and is used together with Prepare to implement Run.
+func (config *Config) Init(files fs.ReadFileFS) (*Service, errors.E) { //nolint:maintidx
 	var secret []byte
 	if config.Secret != nil {
 		// We use a prefix to aid secret scanners.
 		if !bytes.HasPrefix(config.Secret, secretPrefixCharonConfig) {
-			return nil, nil, errors.Errorf(`secret does not have "%s" prefix`, SecretPrefixCharonConfig)
+			return nil, errors.Errorf(`secret does not have "%s" prefix`, SecretPrefixCharonConfig)
 		}
 		encodedSecret := bytes.TrimPrefix(config.Secret, secretPrefixCharonConfig)
 		// We trim space so that the file can contain whitespace (e.g., a newline) at the end.
@@ -344,36 +345,27 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		n, err := base64.RawURLEncoding.Decode(secret, encodedSecret)
 		secret = secret[:n]
 		if err != nil {
-			return nil, nil, errors.WithMessage(err, "invalid secret")
+			return nil, errors.WithMessage(err, "invalid secret")
 		}
 		if len(secret) != expectedSecretSize {
 			errE := errors.New("secret does not have valid length")
 			errors.Details(errE)["got"] = len(secret)
 			errors.Details(errE)["expected"] = 32
-			return nil, nil, errE
+			return nil, errE
 		}
 	} else if config.Server.Development {
 		secret = make([]byte, expectedSecretSize)
 		_, err := rand.Read(secret)
 		if err != nil {
-			return nil, nil, errors.WithStack(err)
+			return nil, errors.WithStack(err)
 		}
 	} else {
-		return nil, nil, errors.New("secret not provided")
+		return nil, errors.New("secret not provided")
 	}
 
 	errE := config.OIDC.Init(config.Server.Development)
 	if errE != nil {
-		return nil, nil, errE
-	}
-
-	// Routes come from a single source of truth, e.g., a file.
-	var routesConfig struct {
-		Routes []waf.Route `json:"routes"`
-	}
-	errE = x.UnmarshalWithoutUnknownFields(routesConfiguration, &routesConfig)
-	if errE != nil {
-		return nil, nil, errE
+		return nil, errE
 	}
 
 	config.Server.Logger = config.Logger
@@ -395,7 +387,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 	// If domains are not provided, sites are automatically constructed based on the certificate.
 	sites, errE = config.Server.Init(sites)
 	if errE != nil {
-		return nil, nil, errE
+		return nil, errE
 	}
 
 	// We set build information on sites.
@@ -493,7 +485,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		samlKeyStore, errE := initSAMLKeyStore(config, config.Providers.SIPASS.Key)
 		if errE != nil {
 			errors.Details(errE)["provider"] = "sipass"
-			return nil, nil, errE
+			return nil, errE
 		}
 		providers = append(providers, SiteProvider{
 			Key:                     "sipass",
@@ -523,7 +515,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		samlKeyStore, errE := initSAMLKeyStore(config, nil)
 		if errE != nil {
 			errors.Details(errE)["provider"] = "mockSAML"
-			return nil, nil, errE
+			return nil, errE
 		}
 		providers = append(providers, SiteProvider{
 			Key:                     "mockSAML",
@@ -553,7 +545,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		samlKeyStore, errE := initSAMLKeyStore(config, nil)
 		if errE != nil {
 			errors.Details(errE)["provider"] = "samlTesting"
-			return nil, nil, errE
+			return nil, errE
 		}
 		providers = append(providers, SiteProvider{
 			Key:                     "samlTesting",
@@ -587,13 +579,13 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 	// We remove "dist" prefix.
 	f, err := fs.Sub(files, "dist")
 	if err != nil {
-		return nil, nil, errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 
 	var domain string
 	if len(sites) > 1 {
 		if config.MainDomain == "" {
-			return nil, nil, errors.New("main domain is not configured, but multiple domains are used")
+			return nil, errors.New("main domain is not configured, but multiple domains are used")
 		}
 		if _, ok := sites[config.MainDomain]; !ok {
 			errE = errors.New("main domain is not among domains")
@@ -604,7 +596,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			}
 			slices.Sort(domains)
 			errors.Details(errE)["domains"] = domains
-			return nil, nil, errE
+			return nil, errE
 		}
 
 		domain = config.MainDomain
@@ -627,10 +619,11 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			CanonicalLogger: config.Logger,
 			WithContext:     config.WithContext,
 			StaticFiles:     f.(fs.ReadFileFS), //nolint:errcheck
-			Routes:          routesConfig.Routes,
+			Routes:          nil,
 			Sites:           sites,
 			// We serve our own context.json file.
 			SiteContextPath: "",
+			RoutesPath:      "/routes.json",
 			ProxyStaticTo:   config.Server.ProxyToInDevelopment(),
 			SkipServingFile: func(path string) bool {
 				switch path {
@@ -654,6 +647,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		hmac:                   hmacStrategy,
 		oidc:                   nil,
 		oidcKeys:               config.OIDC.keys,
+		providers:              providers,
 		oidcProviders:          nil,
 		samlProviders:          nil,
 		passkeyProvider:        nil,
@@ -685,6 +679,8 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		identitiesBlockedMu:    sync.RWMutex{},
 	}
 
+	service.setRoutes()
+
 	if config.Mail.Host != "" {
 		c, err := mail.NewClient(
 			config.Mail.Host,
@@ -696,7 +692,7 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 			mail.WithLogger(loggerAdapter{config.Logger}),
 		)
 		if err != nil {
-			return nil, nil, errors.WithStack(err)
+			return nil, errors.WithStack(err)
 		}
 		if config.Mail.NotRequiredTLS {
 			// go-smtp-mock does not support STARTTLS.
@@ -710,58 +706,52 @@ func (config *Config) Init(files fs.ReadFileFS) (http.Handler, *Service, errors.
 		service.Middleware = append(service.Middleware, service.RedirectToMainSite(domain))
 	}
 
-	router := new(waf.Router)
-
-	// Construct the main handler for the service using the router.
-	handler, errE := service.RouteWith(service, router)
-	if errE != nil {
-		return nil, nil, errE
-	}
-
 	// We iterate over providers using an index to be able to mutate them.
 	for i := range providers {
 		errE = providers[i].initProvider(config)
 		if errE != nil {
 			errors.Details(errE)["provider"] = providers[i].Key
-			return nil, nil, errE
+			return nil, errE
 		}
+	}
+
+	return service, nil
+}
+
+// Prepare prepares the HTTP service for serving.
+func (config *Config) Prepare(service *Service) (http.Handler, errors.E) {
+	// Construct the main handler for the service using the router.
+	router := new(waf.Router)
+	handler, errE := service.RouteWith(router)
+	if errE != nil {
+		return nil, errE
 	}
 
 	// We prepare initialization of OIDC and providers and in the common case
 	// (when server's bind port is not 0) immediately do the initialization.
-	service.oidc, errE = initOIDC(config, service, domain, hmacStrategy)
+	service.oidc, errE = initOIDC(config, service)
 	if errE != nil {
-		return nil, nil, errE
+		return nil, errE
 	}
-	service.oidcProviders, errE = initOIDCProviders(config, service, domain, providers)
+	service.oidcProviders, errE = initOIDCProviders(config, service)
 	if errE != nil {
-		return nil, nil, errE
+		return nil, errE
 	}
-	service.samlProviders, errE = initSAMLProviders(config, service, domain, providers)
+	service.samlProviders, errE = initSAMLProviders(config, service)
 	if errE != nil {
-		return nil, nil, errE
+		return nil, errE
 	}
-	service.passkeyProvider, errE = initPasskeyProvider(config, domain)
+	service.passkeyProvider, errE = initPasskeyProvider(config, service)
 	if errE != nil {
-		return nil, nil, errE
+		return nil, errE
 	}
-	service.codeProvider, errE = initCodeProvider(config, domain)
+	service.codeProvider, errE = initCodeProvider(config, service)
 	if errE != nil {
-		return nil, nil, errE
+		return nil, errE
 	}
-	service.charonOrganization, errE = initCharonOrganization(config, service, domain)
+	service.charonOrganization, errE = initCharonOrganization(config, service)
 	if errE != nil {
-		return nil, nil, errE
-	}
-
-	return handler, service, nil
-}
-
-// Run runs the Charon service.
-func (config *Config) Run() errors.E {
-	handler, service, errE := config.Init(files)
-	if errE != nil {
-		return errE
+		return nil, errE
 	}
 
 	// In the case when server's bind port is 0, we access values once to start
@@ -773,9 +763,24 @@ func (config *Config) Run() errors.E {
 	go service.codeProvider()
 	go service.charonOrganization()
 
+	return handler, nil
+}
+
+// Run starts the HTTP server and serves the Charon application.
+func (config *Config) Run() errors.E {
 	// We stop the server gracefully on ctrl-c and TERM signal.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	service, errE := config.Init(files)
+	if errE != nil {
+		return errE
+	}
+
+	handler, errE := config.Prepare(service)
+	if errE != nil {
+		return errE
+	}
 
 	// It returns only on error or if the server is gracefully shut down using ctrl-c.
 	return config.Server.Run(ctx, handler)

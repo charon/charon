@@ -1,12 +1,12 @@
 import { createApp, ref } from "vue"
 import { createRouter, createWebHistory } from "vue-router"
 
-import { routes } from "@/../routes.json"
 import "@/app.css"
 import App from "@/App.vue"
 import { processOIDCRedirect } from "@/auth"
 import i18n from "@/i18n"
 import { progressKey, rootProgressKey } from "@/progress"
+import routes from "@/routes"
 import { replaceLocationHash } from "@/utils"
 
 // Facebook Login returns adds a hash on its callback. Here we remove it before
@@ -22,12 +22,12 @@ await processOIDCRedirect()
 
 const router = createRouter({
   history: createWebHistory(),
-  routes: routes
-    .filter((route) => route.get)
-    .map((route) => ({
+  routes: Object.entries(routes)
+    .filter(([, route]) => route.handlers)
+    .map(([name, route]) => ({
       path: route.path,
-      name: route.name,
-      component: () => import(`./views/${route.name}.vue`),
+      name,
+      component: () => import(`./views/${name}.vue`),
       props: true,
       strict: true,
     })),
@@ -35,11 +35,11 @@ const router = createRouter({
 
 const apiRouter = createRouter({
   history: createWebHistory(),
-  routes: routes
-    .filter((route) => route.api)
-    .map((route) => ({
+  routes: Object.entries(routes)
+    .filter(([, route]) => route.api)
+    .map(([name, route]) => ({
       path: route.path === "/" ? "/api" : `/api${route.path}`,
-      name: route.name,
+      name,
       component: () => null,
       props: true,
       strict: true,

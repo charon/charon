@@ -146,6 +146,19 @@ export type SiteContext = {
   redirectUri: string
 }
 
+export type RouteOptions = {
+  handlers?: Record<string, true>
+}
+
+export type Route = RouteOptions & {
+  path: string
+  api?: RouteOptions
+}
+
+export type Routes = {
+  [name: string]: Route
+}
+
 export type AuthFlowStep = { key: string; name: string }
 
 export type Flow = {

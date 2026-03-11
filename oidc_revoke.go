@@ -8,8 +8,8 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
-// OIDCRevokePost handler handles requests to revoke a token.
-func (s *Service) OIDCRevokePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// OIDCRevokePostAPI handler handles requests to revoke a token.
+func (s *Service) OIDCRevokePostAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 

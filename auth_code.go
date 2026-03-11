@@ -44,8 +44,8 @@ func (p *codeProvider) URL(s *Service, flow *flow, code string) (string, errors.
 	return fmt.Sprintf("%s%s#code=%s", p.origin, path, code), nil
 }
 
-func initCodeProvider(config *Config, domain string) (func() *codeProvider, errors.E) {
-	return initWithHost(config, domain, func(host string) *codeProvider {
+func initCodeProvider(config *Config, service *Service) (func() *codeProvider, errors.E) {
+	return initWithHost(config, service.domain, func(host string) *codeProvider {
 		return &codeProvider{
 			origin: "https://" + host,
 		}
@@ -283,8 +283,8 @@ type AuthFlowCodeStartRequest struct {
 	EmailOrUsername string `json:"emailOrUsername"`
 }
 
-// AuthFlowCodeStartPost is the API handler to start the code provider step, POST request.
-func (s *Service) AuthFlowCodeStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// AuthFlowCodeStartPostAPI is the API handler to start the code provider step, POST request.
+func (s *Service) AuthFlowCodeStartPostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -367,8 +367,8 @@ type AuthFlowCodeCompleteRequest struct {
 	Code string `json:"code"`
 }
 
-// AuthFlowCodeCompletePost is the API handler to complete the code provider step, POST request.
-func (s *Service) AuthFlowCodeCompletePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// AuthFlowCodeCompletePostAPI is the API handler to complete the code provider step, POST request.
+func (s *Service) AuthFlowCodeCompletePostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 

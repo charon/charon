@@ -78,8 +78,8 @@ type AuthFlowPasswordStartRequest struct {
 	EmailOrUsername string `json:"emailOrUsername"`
 }
 
-// AuthFlowPasswordStartPost is the API handler to start the password provider step, POST request.
-func (s *Service) AuthFlowPasswordStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// AuthFlowPasswordStartPostAPI is the API handler to start the password provider step, POST request.
+func (s *Service) AuthFlowPasswordStartPostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -147,8 +147,8 @@ type AuthFlowPasswordCompleteRequest struct {
 	Password  []byte `json:"password"`
 }
 
-// AuthFlowPasswordCompletePost is the API handler to complete the password provider step, POST request.
-func (s *Service) AuthFlowPasswordCompletePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// AuthFlowPasswordCompletePostAPI is the API handler to complete the password provider step, POST request.
+func (s *Service) AuthFlowPasswordCompletePostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 

@@ -17,8 +17,8 @@ import (
 // TODO: Add support for specifying expected audience to be available in introspected access tokens.
 //       See: https://github.com/ory/fosite/issues/845
 
-// OIDCIntrospectPost handler handles requests to introspect a token. This also validates the token for the caller.
-func (s *Service) OIDCIntrospectPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// OIDCIntrospectPostAPI handler handles requests to introspect a token. This also validates the token for the caller.
+func (s *Service) OIDCIntrospectPostAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 

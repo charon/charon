@@ -980,8 +980,8 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 	)
 }
 
-// OrganizationGet is the frontend handler for getting the organization.
-func (s *Service) OrganizationGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// OrganizationGetGet is the frontend handler for getting the organization.
+func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
@@ -989,8 +989,8 @@ func (s *Service) OrganizationGet(w http.ResponseWriter, req *http.Request, _ wa
 	}
 }
 
-// OrganizationCreate is the frontend handler for creating the organization.
-func (s *Service) OrganizationCreate(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// OrganizationCreateGet is the frontend handler for creating the organization.
+func (s *Service) OrganizationCreateGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	// We always serve the page and leave to the API call to check permissions.
 
 	if s.ProxyStaticTo != "" {
@@ -1000,8 +1000,8 @@ func (s *Service) OrganizationCreate(w http.ResponseWriter, req *http.Request, _
 	}
 }
 
-// OrganizationList is the frontend handler for listing organizations.
-func (s *Service) OrganizationList(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// OrganizationListGet is the frontend handler for listing organizations.
+func (s *Service) OrganizationListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
@@ -1009,8 +1009,8 @@ func (s *Service) OrganizationList(w http.ResponseWriter, req *http.Request, _ w
 	}
 }
 
-// OrganizationUsers is the frontend handler for listing organization's users.
-func (s *Service) OrganizationUsers(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// OrganizationUsersGet is the frontend handler for listing organization's users.
+func (s *Service) OrganizationUsersGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
@@ -1031,8 +1031,8 @@ func (s *Service) returnOrganizationRef(_ context.Context, w http.ResponseWriter
 	s.WriteJSON(w, req, organization.Ref(), nil)
 }
 
-// OrganizationGetGet is the API handler for getting the organization, GET request.
-func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// OrganizationGetGetAPI is the API handler for getting the organization, GET request.
+func (s *Service) OrganizationGetGetAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 	co := s.charonOrganization()
 
@@ -1066,8 +1066,8 @@ func (s *Service) OrganizationGetGet(w http.ResponseWriter, req *http.Request, p
 
 // TODO: We should get rid of OrganizationApp API endpoint and make OrganizationGetGet return a list of public data for all its applications.
 
-// OrganizationAppGet is the API handler for getting the organization's application, GET request.
-func (s *Service) OrganizationAppGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// OrganizationAppGetAPI is the API handler for getting the organization's application, GET request.
+func (s *Service) OrganizationAppGetAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 
 	organization, errE := s.getOrganizationFromID(ctx, params["id"])
@@ -1133,8 +1133,8 @@ func (s *Service) getIdentityFromOrganization(_ context.Context, organizationID,
 	return nil, nil, errors.WithDetails(ErrIdentityNotFound, "id", identityID)
 }
 
-// OrganizationIdentity is the frontend handler for getting the organization's identity.
-func (s *Service) OrganizationIdentity(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// OrganizationIdentityGet is the frontend handler for getting the organization's identity.
+func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
@@ -1142,7 +1142,7 @@ func (s *Service) OrganizationIdentity(w http.ResponseWriter, req *http.Request,
 	}
 }
 
-// OrganizationIdentityGet is the API handler for getting the organization's identity, GET request.
+// OrganizationIdentityGetAPI is the API handler for getting the organization's identity, GET request.
 //
 // Anyone with valid access token for the organization can access public data about any
 // identity in the organization given the organization-scoped identity ID.
@@ -1153,7 +1153,7 @@ func (s *Service) OrganizationIdentity(w http.ResponseWriter, req *http.Request,
 // The second special case is for admins of the organization, which can also authenticate using
 // valid Charon organization access token. They can access public data of any identity in the organization.
 // In this case also Organizations field is returned with IdentityOrganization struct for just this organization.
-func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+func (s *Service) OrganizationIdentityGetAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 	co := s.charonOrganization()
 
@@ -1332,8 +1332,8 @@ func (s *Service) OrganizationIdentityGet(w http.ResponseWriter, req *http.Reque
 	})
 }
 
-// OrganizationListGet is the API handler for listing organizations, GET request.
-func (s *Service) OrganizationListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// OrganizationListGetAPI is the API handler for listing organizations, GET request.
+func (s *Service) OrganizationListGetAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	result := []OrganizationRef{}
 
 	s.organizationsMu.RLock()
@@ -1348,8 +1348,8 @@ func (s *Service) OrganizationListGet(w http.ResponseWriter, req *http.Request, 
 	s.WriteJSON(w, req, result, nil)
 }
 
-// OrganizationUpdatePost is the API handler for updating the organization, POST request.
-func (s *Service) OrganizationUpdatePost(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
+// OrganizationUpdatePostAPI is the API handler for updating the organization, POST request.
+func (s *Service) OrganizationUpdatePostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -1392,8 +1392,8 @@ func (s *Service) OrganizationUpdatePost(w http.ResponseWriter, req *http.Reques
 	s.returnOrganizationRef(ctx, w, req, &organization)
 }
 
-// OrganizationCreatePost is the API handler for creating the organization, POST request.
-func (s *Service) OrganizationCreatePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// OrganizationCreatePostAPI is the API handler for creating the organization, POST request.
+func (s *Service) OrganizationCreatePostAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -1426,8 +1426,8 @@ func (s *Service) OrganizationCreatePost(w http.ResponseWriter, req *http.Reques
 	s.returnOrganizationRef(ctx, w, req, &organization)
 }
 
-// OrganizationUsersGet is the API handler for listing organization's users, GET request.
-func (s *Service) OrganizationUsersGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// OrganizationUsersGetAPI is the API handler for listing organization's users, GET request.
+func (s *Service) OrganizationUsersGetAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := s.RequireAuthenticated(w, req)
 	if ctx == nil {
 		return
@@ -1554,8 +1554,8 @@ func (s *Service) blockAccounts(
 	}}, []OrganizationRef{organizationRef}, nil, nil, blockedAccountIDs, nil, nil, organizationRef)
 }
 
-// OrganizationBlockUser is the frontend handler for blocking organization's user.
-func (s *Service) OrganizationBlockUser(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// OrganizationBlockUserGet is the frontend handler for blocking organization's user.
+func (s *Service) OrganizationBlockUserGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
@@ -1570,8 +1570,8 @@ type OrganizationBlockRequest struct {
 	USerNote         string          `json:"userNote"`
 }
 
-// OrganizationBlockUserPost is the API handler for blocking organization's user, POST request.
-func (s *Service) OrganizationBlockUserPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// OrganizationBlockUserPostAPI is the API handler for blocking organization's user, POST request.
+func (s *Service) OrganizationBlockUserPostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -1663,8 +1663,8 @@ type OrganizationBlockedStatus struct {
 	Notes   []OrganizationBlockedStatusNotes `json:"notes,omitempty"`
 }
 
-// OrganizationBlockedStatusGet is the API handler for getting the organization user's blocked status, GET request.
-func (s *Service) OrganizationBlockedStatusGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// OrganizationBlockedStatusGetAPI is the API handler for getting the organization user's blocked status, GET request.
+func (s *Service) OrganizationBlockedStatusGetAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	// We allow getting identities with the access token or session cookie.
 	ctx := s.requireAuthenticatedForIdentity(w, req)
 	if ctx == nil {

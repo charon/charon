@@ -232,8 +232,8 @@ func (c *configurableCoreStrategy) ValidateRefreshToken(ctx context.Context, req
 	return c.hmacStrategy.ValidateRefreshToken(ctx, requester, token) //nolint:wrapcheck
 }
 
-func initOIDC(config *Config, service *Service, domain string, hmacStrategy *hmac.HMACStrategy) (func() *fosite.Fosite, errors.E) {
-	return initWithHost(config, domain, func(host string) *fosite.Fosite {
+func initOIDC(config *Config, service *Service) (func() *fosite.Fosite, errors.E) {
+	return initWithHost(config, service.domain, func(host string) *fosite.Fosite {
 		tokenPath, errE := service.ReverseAPI("OIDCToken", nil, nil)
 		if errE != nil {
 			// Internal error: this should never happen.
@@ -282,7 +282,7 @@ func initOIDC(config *Config, service *Service, domain string, hmacStrategy *hma
 			panic(errors.New("OIDC RSA private key not provided"))
 		}
 
-		oAuth2HMACStrategy := newHMACSHAStrategy(hmacStrategy, config)
+		oAuth2HMACStrategy := newHMACSHAStrategy(service.hmac, config)
 
 		return compose.Compose( //nolint:forcetypeassert,errcheck
 			config,
