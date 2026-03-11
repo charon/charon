@@ -142,14 +142,14 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 			Logger: logger,
 		},
 		Server: waf.Server[*charon.Site]{
-			TLS: waf.TLS{
+			HTTPS: waf.HTTPS{
 				CertFile: certPath,
 				KeyFile:  keyPath,
+				// httptest.Server allocates a random port for its listener (but does not use config.Server.Addr to do so).
+				// Having 0 for port here makes the rest of the codebase expect a random port and wait for its assignment.
+				Listen: "localhost:0",
 			},
 			Development: true,
-			// httptest.Server allocates a random port for its listener (but does not use config.Server.Addr to do so).
-			// Having 0 for port here makes the rest of the codebase expect a random port and wait for its assignment.
-			Addr: "localhost:0",
 		},
 		Mail: charon.Mail{
 			Host: "127.0.0.1",
@@ -175,16 +175,19 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 		},
 	}
 
-	handler, service, errE := config.Init(testFiles)
+	service, errE := config.Init(testFiles)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	handler, errE := config.Prepare(t.Context(), service)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	ts := httptest.NewUnstartedServer(nil)
 	ts.EnableHTTP2 = true
 	t.Cleanup(ts.Close)
 
-	ts.Config = config.Server.HTTPServer
+	ts.Config = config.Server.HTTPSServer
 	ts.Config.Handler = handler
-	ts.TLS = config.Server.HTTPServer.TLSConfig.Clone()
+	ts.TLS = config.Server.HTTPSServer.TLSConfig.Clone()
 
 	// We have to call GetCertificate ourselves.
 	// See: https://github.com/golang/go/issues/63812

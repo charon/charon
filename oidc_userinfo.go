@@ -54,12 +54,12 @@ func (s *Service) oidcUserInfo(w http.ResponseWriter, req *http.Request) {
 	s.WriteJSON(w, req, interim, nil)
 }
 
-// OIDCUserInfoGet is the API handler for getting the user info for the access token, GET request.
-func (s *Service) OIDCUserInfoGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// OIDCUserInfoGetAPI is the API handler for getting the user info for the access token, GET request.
+func (s *Service) OIDCUserInfoGetAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	s.oidcUserInfo(w, req)
 }
 
-// OIDCUserInfoPost is the API handler for getting the user info for the access token, POST request.
-func (s *Service) OIDCUserInfoPost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// OIDCUserInfoPostAPI is the API handler for getting the user info for the access token, POST request.
+func (s *Service) OIDCUserInfoPostAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	s.oidcUserInfo(w, req)
 }

@@ -14,8 +14,8 @@ type serviceContext struct {
 	RedirectURI    string `json:"redirectUri"`
 }
 
-// Context is the frontend handler for the context.json file.
-func (s *Service) Context(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// ContextGet is the frontend handler for the context.json file.
+func (s *Service) ContextGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	ctx := req.Context()
 
 	site := waf.MustGetSite[*Site](ctx)

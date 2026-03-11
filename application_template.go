@@ -910,8 +910,8 @@ func (s *Service) ApplicationTemplateGet(w http.ResponseWriter, req *http.Reques
 	}
 }
 
-// ApplicationTemplateCreate is the frontend handler for creating the application template.
-func (s *Service) ApplicationTemplateCreate(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// ApplicationTemplateCreateGet is the frontend handler for creating the application template.
+func (s *Service) ApplicationTemplateCreateGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	// We always serve the page and leave to the API call to check permissions.
 
 	if s.ProxyStaticTo != "" {
@@ -921,8 +921,8 @@ func (s *Service) ApplicationTemplateCreate(w http.ResponseWriter, req *http.Req
 	}
 }
 
-// ApplicationTemplateList is the frontend handler for listing application templates.
-func (s *Service) ApplicationTemplateList(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// ApplicationTemplateListGet is the frontend handler for listing application templates.
+func (s *Service) ApplicationTemplateListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
@@ -943,8 +943,8 @@ func (s *Service) returnApplicationTemplateRef(_ context.Context, w http.Respons
 	s.WriteJSON(w, req, applicationTemplate.Ref(), nil)
 }
 
-// ApplicationTemplateGetGet is the API handler for getting the application template, GET request.
-func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// ApplicationTemplateGetGetAPI is the API handler for getting the application template, GET request.
+func (s *Service) ApplicationTemplateGetGetAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := req.Context()
 	co := s.charonOrganization()
 
@@ -979,8 +979,8 @@ func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Req
 	s.WriteJSON(w, req, applicationTemplate.ApplicationTemplatePublic, nil)
 }
 
-// ApplicationTemplateListGet is the API handler for listing application templates, GET request.
-func (s *Service) ApplicationTemplateListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// ApplicationTemplateListGetAPI is the API handler for listing application templates, GET request.
+func (s *Service) ApplicationTemplateListGetAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	result := []ApplicationTemplateRef{}
 
 	s.applicationTemplatesMu.RLock()
@@ -995,8 +995,8 @@ func (s *Service) ApplicationTemplateListGet(w http.ResponseWriter, req *http.Re
 	s.WriteJSON(w, req, result, nil)
 }
 
-// ApplicationTemplateUpdatePost is the API handler for updating the application template, POST request.
-func (s *Service) ApplicationTemplateUpdatePost(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
+// ApplicationTemplateUpdatePostAPI is the API handler for updating the application template, POST request.
+func (s *Service) ApplicationTemplateUpdatePostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -1039,8 +1039,8 @@ func (s *Service) ApplicationTemplateUpdatePost(w http.ResponseWriter, req *http
 	s.returnApplicationTemplateRef(ctx, w, req, &applicationTemplate)
 }
 
-// ApplicationTemplateCreatePost is the API handler for creating the application template, POST request.
-func (s *Service) ApplicationTemplateCreatePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// ApplicationTemplateCreatePostAPI is the API handler for creating the application template, POST request.
+func (s *Service) ApplicationTemplateCreatePostAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 

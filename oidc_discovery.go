@@ -326,12 +326,12 @@ func (s *Service) oidcDiscovery(w http.ResponseWriter, req *http.Request) {
 	s.WriteJSON(w, req, response, nil)
 }
 
-// OIDCDiscovery1 is the frontend handler for the OIDC discovery endpoint.
-func (s *Service) OIDCDiscovery1(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// OIDCDiscovery1Get is the frontend handler for the OIDC discovery endpoint.
+func (s *Service) OIDCDiscovery1Get(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	s.oidcDiscovery(w, req)
 }
 
-// OIDCDiscovery2 is the frontend handler for the OIDC discovery endpoint.
-func (s *Service) OIDCDiscovery2(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// OIDCDiscovery2Get is the frontend handler for the OIDC discovery endpoint.
+func (s *Service) OIDCDiscovery2Get(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	s.oidcDiscovery(w, req)
 }

@@ -115,8 +115,8 @@ func initPasskeyProvider(config *Config, domain string) (func() *webauthn.WebAut
 	})
 }
 
-// AuthFlowPasskeyGetStartPost is the API handler to start the passkey provider step (sign-in), POST request.
-func (s *Service) AuthFlowPasskeyGetStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// AuthFlowPasskeyGetStartPostAPI is the API handler to start the passkey provider step (sign-in), POST request.
+func (s *Service) AuthFlowPasskeyGetStartPostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -196,8 +196,8 @@ type AuthFlowPasskeyGetCompleteRequest struct {
 	GetResponse protocol.CredentialAssertionResponse `json:"getResponse"`
 }
 
-// AuthFlowPasskeyGetCompletePost is the API handler to complete the passkey provider step (sign-in), POST request.
-func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// AuthFlowPasskeyGetCompletePostAPI is the API handler to complete the passkey provider step (sign-in), POST request.
+func (s *Service) AuthFlowPasskeyGetCompletePostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -305,8 +305,8 @@ func (s *Service) AuthFlowPasskeyGetCompletePost(w http.ResponseWriter, req *htt
 	)
 }
 
-// AuthFlowPasskeyCreateStartPost is the API handler to start the passkey provider step (sign-up), POST request.
-func (s *Service) AuthFlowPasskeyCreateStartPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// AuthFlowPasskeyCreateStartPostAPI is the API handler to start the passkey provider step (sign-up), POST request.
+func (s *Service) AuthFlowPasskeyCreateStartPostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -369,8 +369,8 @@ type AuthFlowPasskeyCreateCompleteRequest struct {
 	CreateResponse protocol.CredentialCreationResponse `json:"createResponse"`
 }
 
-// AuthFlowPasskeyCreateCompletePost is the API handler to complete the passkey provider step (sign-up), POST request.
-func (s *Service) AuthFlowPasskeyCreateCompletePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// AuthFlowPasskeyCreateCompletePostAPI is the API handler to complete the passkey provider step (sign-up), POST request.
+func (s *Service) AuthFlowPasskeyCreateCompletePostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 

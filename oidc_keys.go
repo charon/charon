@@ -10,8 +10,8 @@ import (
 // TODO: Implement using fosite.
 //       See: https://github.com/ory/fosite/issues/407
 
-// OIDCKeys provides public key used to sign tokens.
-func (s *Service) OIDCKeys(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// OIDCKeysGet provides public key used to sign tokens.
+func (s *Service) OIDCKeysGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	keys := []jose.JSONWebKey{}
 
 	for _, key := range s.oidcKeys {

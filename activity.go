@@ -305,8 +305,8 @@ func (s *Service) logActivity(
 	return s.createActivity(ctx, activity)
 }
 
-// ActivityList is the frontend handler for listing activities.
-func (s *Service) ActivityList(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// ActivityListGet is the frontend handler for listing activities.
+func (s *Service) ActivityListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
@@ -314,8 +314,8 @@ func (s *Service) ActivityList(w http.ResponseWriter, req *http.Request, _ waf.P
 	}
 }
 
-// ActivityListGet is the API handler for listing activities, GET request.
-func (s *Service) ActivityListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// ActivityListGetAPI is the API handler for listing activities, GET request.
+func (s *Service) ActivityListGetAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	ctx := s.RequireAuthenticated(w, req)
 	if ctx == nil {
 		return
@@ -386,8 +386,8 @@ func (s *Service) limitIdentitiesForUser(
 	return limitedIdentities, nil
 }
 
-// ActivityGetGet is the API handler for getting the activity, GET request.
-func (s *Service) ActivityGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// ActivityGetGetAPI is the API handler for getting the activity, GET request.
+func (s *Service) ActivityGetGetAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	co := s.charonOrganization()
 
 	ctx := s.RequireAuthenticated(w, req)
@@ -459,8 +459,8 @@ func (s *Service) ActivityGetGet(w http.ResponseWriter, req *http.Request, param
 	s.WriteJSON(w, req, activity, nil)
 }
 
-// OrganizationActivity is the frontend handler for listing organization's activities.
-func (s *Service) OrganizationActivity(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// OrganizationActivityGet is the frontend handler for listing organization's activities.
+func (s *Service) OrganizationActivityGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
@@ -468,8 +468,8 @@ func (s *Service) OrganizationActivity(w http.ResponseWriter, req *http.Request,
 	}
 }
 
-// OrganizationActivityGet is the API handler for listing organization's activities, GET request.
-func (s *Service) OrganizationActivityGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// OrganizationActivityGetAPI is the API handler for listing organization's activities, GET request.
+func (s *Service) OrganizationActivityGetAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	ctx := s.RequireAuthenticated(w, req)
 	if ctx == nil {
 		return
@@ -527,8 +527,8 @@ func (s *Service) OrganizationActivityGet(w http.ResponseWriter, req *http.Reque
 	s.WriteJSON(w, req, result, nil)
 }
 
-// OrganizationActivityGetGet is the API handler for getting the organization's activity, GET request.
-func (s *Service) OrganizationActivityGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// OrganizationActivityGetGetAPI is the API handler for getting the organization's activity, GET request.
+func (s *Service) OrganizationActivityGetGetAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	co := s.charonOrganization()
 
 	ctx := s.RequireAuthenticated(w, req)

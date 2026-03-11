@@ -517,8 +517,8 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		}})
 }
 
-// SAMLMetadataGet is the API handler for getting the SAML metadata for a third-party SAML provider, GET request.
-func (s *Service) SAMLMetadataGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// SAMLMetadataGetAPI is the API handler for getting the SAML metadata for a third-party SAML provider, GET request.
+func (s *Service) SAMLMetadataGetAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	providerKey := Provider(params["provider"])
 
 	samlProviders := s.samlProviders()

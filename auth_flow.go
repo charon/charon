@@ -82,8 +82,8 @@ func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *flow
 	_, _ = w.Write(encoded)
 }
 
-// AuthFlowGet is the frontend handler for getting the auth flow.
-func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// AuthFlowGetGet is the frontend handler for getting the auth flow.
+func (s *Service) AuthFlowGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	flow := s.getFlowHandler(w, req, params["id"])
 	if flow == nil {
 		return
@@ -102,6 +102,7 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 
 	// We have it hard-coded here because we have it hard-coded on the frontend as well.
 	w.Header().Add("Link", "</context.json>; rel=preload; as=fetch; crossorigin=anonymous")
+	w.Header().Add("Link", "</routes.json>; rel=preload; as=fetch; crossorigin=anonymous")
 	w.Header().Add("Link", fmt.Sprintf("<%s>; rel=preload; as=fetch; crossorigin=anonymous", l))
 	w.WriteHeader(http.StatusEarlyHints)
 
@@ -112,8 +113,8 @@ func (s *Service) AuthFlowGet(w http.ResponseWriter, req *http.Request, params w
 	}
 }
 
-// AuthFlowGetGet is the API handler for getting the auth flow, GET request.
-func (s *Service) AuthFlowGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// AuthFlowGetGetAPI is the API handler for getting the auth flow, GET request.
+func (s *Service) AuthFlowGetGetAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	// This is similar to API case in failAuthStep, but fetches also the flow and checks the session.
 
 	flow := s.getFlowHandler(w, req, params["id"])
@@ -443,8 +444,8 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 	s.TemporaryRedirectGetMethod(w, req, l)
 }
 
-// AuthFlowRestartAuthPost is the API handler for restarting the auth flow, POST request.
-func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// AuthFlowRestartAuthPostAPI is the API handler for restarting the auth flow, POST request.
+func (s *Service) AuthFlowRestartAuthPostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -518,8 +519,8 @@ func (s *Service) AuthFlowRestartAuthPost(w http.ResponseWriter, req *http.Reque
 	}, nil)
 }
 
-// AuthFlowDeclinePost is the API handler for declining to choose the identity, POST request.
-func (s *Service) AuthFlowDeclinePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// AuthFlowDeclinePostAPI is the API handler for declining to choose the identity, POST request.
+func (s *Service) AuthFlowDeclinePostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -570,8 +571,8 @@ type AuthFlowChooseIdentityRequest struct {
 	Identity IdentityRef `json:"identity"`
 }
 
-// AuthFlowChooseIdentityPost is the API handler for choosing the identity, POST request.
-func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// AuthFlowChooseIdentityPostAPI is the API handler for choosing the identity, POST request.
+func (s *Service) AuthFlowChooseIdentityPostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -627,9 +628,9 @@ func (s *Service) AuthFlowChooseIdentityPost(w http.ResponseWriter, req *http.Re
 	}, nil)
 }
 
-// AuthFlowRedirectPost is the API handler for marking the flow as ready to be finished
+// AuthFlowRedirectPostAPI is the API handler for marking the flow as ready to be finished
 // (and ready for the user to be redirected back to the app), POST request.
-func (s *Service) AuthFlowRedirectPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+func (s *Service) AuthFlowRedirectPostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 

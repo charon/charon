@@ -21,8 +21,8 @@ func main() {
 	var config charon.Config
 	//nolint:lll
 	cli.Run(&config, kong.Vars{
+		"defaultListen":            charon.DefaultListen,
 		"defaultProxyTo":           charon.DefaultProxyTo,
-		"defaultTLSCache":          charon.DefaultTLSCache,
 		"defaultMailAuth":          "none",
 		"defaultMailFrom":          "noreply@example.com",
 		"defaultSIPASSMetadataURL": charon.DefaultSIPASSMetadataURL,

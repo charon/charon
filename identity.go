@@ -1059,8 +1059,8 @@ func (s *Service) selectAndActivateIdentity(ctx context.Context, identityID, org
 	return identity, s.updateIdentity(ctx, identity)
 }
 
-// IdentityGet is the frontend handler for getting the identity.
-func (s *Service) IdentityGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// IdentityGetGet is the frontend handler for getting the identity.
+func (s *Service) IdentityGetGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	// We always serve the page and leave to the API call to check permissions.
 
 	if s.ProxyStaticTo != "" {
@@ -1070,8 +1070,8 @@ func (s *Service) IdentityGet(w http.ResponseWriter, req *http.Request, _ waf.Pa
 	}
 }
 
-// IdentityCreate is the frontend handler for creating the identity.
-func (s *Service) IdentityCreate(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// IdentityCreateGet is the frontend handler for creating the identity.
+func (s *Service) IdentityCreateGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	// We always serve the page and leave to the API call to check permissions.
 
 	if s.ProxyStaticTo != "" {
@@ -1081,8 +1081,8 @@ func (s *Service) IdentityCreate(w http.ResponseWriter, req *http.Request, _ waf
 	}
 }
 
-// IdentityList is the frontend handler for listing identities.
-func (s *Service) IdentityList(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// IdentityListGet is the frontend handler for listing identities.
+func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	// We always serve the page and leave to the API call to check permissions.
 
 	if s.ProxyStaticTo != "" {
@@ -1105,8 +1105,8 @@ func (s *Service) returnIdentityRef(_ context.Context, w http.ResponseWriter, re
 	s.WriteJSON(w, req, identity.Ref(), nil)
 }
 
-// IdentityGetGet is the API handler for getting the identity, GET request.
-func (s *Service) IdentityGetGet(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// IdentityGetGetAPI is the API handler for getting the identity, GET request.
+func (s *Service) IdentityGetGetAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	// We allow getting identities with the access token or session cookie.
 	ctx := s.requireAuthenticatedForIdentity(w, req)
 	if ctx == nil {
@@ -1203,8 +1203,8 @@ func (s *Service) identityList(ctx context.Context) ([]IdentityRef, errors.E) {
 	return result, nil
 }
 
-// IdentityListGet is the API handler for listing identities, GET request.
-func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// IdentityListGetAPI is the API handler for listing identities, GET request.
+func (s *Service) IdentityListGetAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	// We allow getting identities with the access token or session cookie.
 	ctx := s.requireAuthenticatedForIdentity(w, req)
 	if ctx == nil {
@@ -1220,8 +1220,8 @@ func (s *Service) IdentityListGet(w http.ResponseWriter, req *http.Request, _ wa
 	s.WriteJSON(w, req, result, nil)
 }
 
-// IdentityUpdatePost is the API handler for updating the identity, POST request.
-func (s *Service) IdentityUpdatePost(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
+// IdentityUpdatePostAPI is the API handler for updating the identity, POST request.
+func (s *Service) IdentityUpdatePostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -1265,8 +1265,8 @@ func (s *Service) IdentityUpdatePost(w http.ResponseWriter, req *http.Request, p
 	s.returnIdentityRef(ctx, w, req, &identity)
 }
 
-// IdentityCreatePost is the API handler for creating the identity, POST request.
-func (s *Service) IdentityCreatePost(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// IdentityCreatePostAPI is the API handler for creating the identity, POST request.
+func (s *Service) IdentityCreatePostAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
