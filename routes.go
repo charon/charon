@@ -152,14 +152,11 @@ func (s *Service) setRoutes() { //nolint:maintidx
 			RouteOptions: waf.RouteOptions{
 				Handlers: map[string]waf.Handler{
 					http.MethodGet: s.AuthThirdPartyProviderGet,
+					// This is an exception. SAML makes a POST to user-facing URL so we do not want to use /api here.
+					http.MethodPost: s.AuthThirdPartyProviderPost,
 				},
 			},
 			Path: "/auth/provider/:provider",
-			API: waf.RouteOptions{
-				Handlers: map[string]waf.Handler{
-					http.MethodPost: s.AuthThirdPartyProviderPostAPI,
-				},
-			},
 		},
 		"AuthFlowThirdPartyProviderStart": {
 			Path: "/auth/providerStart/:id",

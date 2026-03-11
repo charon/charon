@@ -733,7 +733,7 @@ func TestSAMLMetadata(t *testing.T) {
 	certRegex := regexp.MustCompile(`<ds:X509Certificate>[\s\S]*?</ds:X509Certificate>`)
 	normalizedMetadata := certRegex.ReplaceAllString(metadata, "<ds:X509Certificate>CERT</ds:X509Certificate>")
 
-	authThirdPartyProvider, errE := service.ReverseAPI("AuthThirdPartyProvider", waf.Params{"provider": samlTestingEntityID}, nil)
+	authThirdPartyProvider, errE := service.Reverse("AuthThirdPartyProvider", waf.Params{"provider": samlTestingEntityID}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	xmlGeneratedMetadata := struct {

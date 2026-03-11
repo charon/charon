@@ -74,7 +74,7 @@ func initSAMLProviders(config *Config, service *Service, domain string, provider
 }
 
 func initSAMLProvider(service *Service, host string, p SiteProvider) (samlProvider, errors.E) {
-	path, errE := service.ReverseAPI("AuthThirdPartyProvider", waf.Params{"provider": string(p.Key)}, nil)
+	path, errE := service.Reverse("AuthThirdPartyProvider", waf.Params{"provider": string(p.Key)}, nil)
 	if errE != nil {
 		return samlProvider{}, errE
 	}

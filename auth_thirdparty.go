@@ -35,8 +35,10 @@ func (s *Service) AuthThirdPartyProviderGet(w http.ResponseWriter, req *http.Req
 	s.NotFoundWithError(w, req, errE)
 }
 
-// AuthThirdPartyProviderPostAPI is the API handler for the third-party provider callback, POST request.
-func (s *Service) AuthThirdPartyProviderPostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// AuthThirdPartyProviderPost is the frontend handler for the third-party provider callback, POST request.
+//
+// This is an exception. SAML makes a POST to user-facing URL so we do not want to use /api here.
+func (s *Service) AuthThirdPartyProviderPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	providerKey := Provider(params["provider"])
 
 	// Only SAML providers use POST requests for callbacks (HTTP-POST binding).
