@@ -831,10 +831,7 @@ func (a *ApplicationTemplate) Validate(ctx context.Context, existing *Applicatio
 func (a *ApplicationTemplate) Changes(existing *ApplicationTemplate) ([]ActivityChangeType, []IdentityRef) {
 	changes := []ActivityChangeType{}
 
-	existingPublic := existing.ApplicationTemplatePublic
-	newPublic := a.ApplicationTemplatePublic
-
-	if !reflect.DeepEqual(newPublic, existingPublic) {
+	if !reflect.DeepEqual(a.ApplicationTemplatePublic, existing.ApplicationTemplatePublic) {
 		changes = append(changes, ActivityChangeOtherData)
 	}
 
