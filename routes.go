@@ -615,6 +615,27 @@ func (s *Service) setRoutes() { //nolint:maintidx
 				},
 			},
 		},
+		"CredentialConfirmEmail": {
+			RouteOptions: waf.RouteOptions{
+				Handlers: map[string]waf.Handler{
+					http.MethodGet: s.CredentialConfirmEmailGet,
+				},
+			},
+			Path: "/authentication/confirm/:id",
+			API: waf.RouteOptions{
+				Handlers: map[string]waf.Handler{
+					http.MethodPost: s.CredentialConfirmEmailPostAPI,
+				},
+			},
+		},
+		"CredentialConfirmEmailComplete": {
+			Path: "/authentication/confirmComplete/:id",
+			API: waf.RouteOptions{
+				Handlers: map[string]waf.Handler{
+					http.MethodPost: s.CredentialConfirmEmailCompletePostAPI,
+				},
+			},
+		},
 		"CredentialGet": {
 			Path: "/authentication/:id",
 			API: waf.RouteOptions{

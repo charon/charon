@@ -1050,7 +1050,7 @@ type AccountConfirmedEmailsResponse struct {
 	HasUnconfirmed bool     `json:"hasUnconfirmed"`
 }
 
-// CredentialConfirmEmailCompleteRequest represents the request body for the CredentialConfirmEmailCompletePost handler.
+// CredentialConfirmEmailCompleteRequest represents the request body for the CredentialConfirmEmailCompletePostAPI handler.
 type CredentialConfirmEmailCompleteRequest struct {
 	Code string `json:"code"`
 }
@@ -1163,8 +1163,8 @@ func (a *Account) incrementCodeCredentialAttempts(emailCredentialID string) erro
 	return nil
 }
 
-// CredentialConfirmEmail is the frontend handler for email confirmation.
-func (s *Service) CredentialConfirmEmail(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// CredentialConfirmEmailGet is the frontend handler for email confirmation.
+func (s *Service) CredentialConfirmEmailGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
@@ -1172,8 +1172,8 @@ func (s *Service) CredentialConfirmEmail(w http.ResponseWriter, req *http.Reques
 	}
 }
 
-// CredentialConfirmEmailPost is the API handler for starting email confirmation, POST request.
-func (s *Service) CredentialConfirmEmailPost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// CredentialConfirmEmailPostAPI is the API handler for starting email confirmation, POST request.
+func (s *Service) CredentialConfirmEmailPostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -1278,8 +1278,8 @@ func (s *Service) CredentialConfirmEmailPost(w http.ResponseWriter, req *http.Re
 	}, nil)
 }
 
-// CredentialConfirmEmailCompletePost is the API handler for completing email confirmation, POST request.
-func (s *Service) CredentialConfirmEmailCompletePost(w http.ResponseWriter, req *http.Request, params waf.Params) {
+// CredentialConfirmEmailCompletePostAPI is the API handler for completing email confirmation, POST request.
+func (s *Service) CredentialConfirmEmailCompletePostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
