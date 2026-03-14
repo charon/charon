@@ -22,10 +22,7 @@ build: dist
 build-static: dist
 	go build $(CHARON_BUILD_FLAGS) -trimpath -ldflags "-s -w -linkmode external -extldflags '-static' -X gitlab.com/tozd/go/cli.Version=${VERSION} -X gitlab.com/tozd/go/cli.BuildTimestamp=${BUILD_TIMESTAMP} -X gitlab.com/tozd/go/cli.Revision=${REVISION}" -o charon gitlab.com/charon/charon/cmd/charon
 
-dist: dist/index.html dist/assets dist/LICENSE.txt dist/NOTICE.txt dist/robots.txt
-
-dist/index.html dist/assets dist/LICENSE.txt dist/NOTICE.txt dist/robots.txt: node_modules src vite.config.ts tsconfig.json tsconfig.node.json LICENSE
-	find dist -mindepth 1 ! -path "dist/dist.go" -delete
+dist: node_modules src vite.config.ts tsconfig.json tsconfig.node.json LICENSE
 	npm run build
 
 node_modules: package-lock.json
@@ -33,16 +30,20 @@ node_modules: package-lock.json
 package-lock.json: package.json
 	npm install
 
-test:
+dist/index.html:
+	mkdir -p dist
+	if [ ! -e dist/index.html ]; then echo "<html><body>dummy content</body></html>" > dist/index.html; fi
+
+test: dist/index.html
 	gotestsum --format pkgname --packages ./... -- -race -timeout 10m -cover -covermode atomic
 
 test-ci: dist/index.html
 	gotestsum --format pkgname --packages ./... --junitfile tests.xml -- -race -timeout 10m -cover -covermode atomic -args -test.gocoverdir=coverage
 
-lint:
+lint: dist/index.html
 	golangci-lint run --output.text.colors --allow-parallel-runners --fix
 
-lint-ci:
+lint-ci: dist/index.html
 	golangci-lint run --output.text.path=stdout --output.code-climate.path=codeclimate.json
 
 fmt:
@@ -70,7 +71,7 @@ lint-docs:
 lint-docs-ci: lint-docs
 	git diff --exit-code --color=always
 
-audit:
+audit: dist/index.html
 	go list -json -deps ./... | nancy sleuth --skip-update-check
 
 encrypt:
