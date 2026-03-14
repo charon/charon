@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/elliptic"
 	"crypto/rand"
-	_ "embed"
 	"encoding/base64"
 	"io/fs"
 	"net/http"
