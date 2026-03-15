@@ -28,6 +28,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
 
     const passwordInput = page.locator("#credentialaddpassword-input-password")
     await expect(passwordInput).toBeVisible()
+    await expect(passwordInput).toBeFocused()
     await passwordInput.fill("tester1234")
 
     const displayNameInput = page.locator("#credentialaddpassword-input-displayname")
@@ -69,6 +70,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
 
     const passwordRenameInput = page.locator("input.credentialfull-input")
     await expect(passwordRenameInput).toBeVisible()
+    await expect(passwordRenameInput).toBeFocused()
     await passwordRenameInput.fill("password23")
     const confirmRenameButton = passwordRenameInput.locator("..").locator("button.credentialfull-button-rename")
     await expect(confirmRenameButton).toBeVisible()
@@ -122,6 +124,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
 
     const displayNameInput = page.locator("#credentialaddpasskey-input-displayname")
     await expect(displayNameInput).toBeVisible()
+    await expect(displayNameInput).toBeFocused()
     await displayNameInput.fill("passkey")
 
     // Enable WebAuthn environment in this session.
@@ -165,11 +168,16 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     const testerIdentity = page.locator('li:has-text("tester")')
     const selectButton = testerIdentity.locator("button.authidentity-selector-identity")
     await expect(selectButton).toBeVisible()
+    await expect(selectButton).toBeFocused()
     await checkpoint(page, "auth-page-after-selecting-existing-passkey-identity")
     await selectButton.click()
 
     // Waiting for the automatic 3 seconds redirect.
-    await page.waitForTimeout(3500)
+    await page.waitForTimeout(1000)
+    const redirectButton = page.locator("#authautoredirect-button-redirect")
+    await expect(redirectButton).toBeVisible()
+    await expect(redirectButton).toBeFocused()
+    await page.waitForTimeout(2000)
 
     // Check that the Identities link is visible.
     const identitiesLink = page.locator("#menu-list-identities")
@@ -191,6 +199,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
 
     const passkeyRenameInput = page.locator("input.credentialfull-input")
     await expect(passkeyRenameInput).toBeVisible()
+    await expect(passkeyRenameInput).toBeFocused()
     await passkeyRenameInput.fill("differentpasskey")
     const confirmRenameButton = passkeyRenameInput.locator("..").locator("button.credentialfull-button-rename")
     await expect(confirmRenameButton).toBeVisible()
@@ -264,6 +273,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
 
     const usernameInput = page.locator("#credentialaddusername-input-username")
     await expect(usernameInput).toBeVisible()
+    await expect(usernameInput).toBeFocused()
     await usernameInput.fill("tester-auth-method-another-username")
 
     const addUsernameButton = page.locator("#credentialaddusername-button-add")
@@ -313,6 +323,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     const usernameIdentity = page.locator(`li:has-text("tester-auth-method-new-username")`)
     const selectButton = usernameIdentity.locator("button.authidentity-selector-identity")
     await expect(selectButton).toBeVisible()
+    await expect(selectButton).toBeFocused()
     // This screenshot differs based on whether you signed up or signed in.
     await checkpoint(page, `signin-successful-signin-tester-auth-method-new-username-previous-identities-page-from-password`)
     await selectButton.click()
@@ -320,6 +331,9 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     // Verify success message.
     await expect(page.locator("#authautoredirect-text-congratulations")).toBeVisible()
     await checkpoint(page, "auth-page-after-selecting-username-identity")
+    const redirectButton = page.locator("#authautoredirect-button-redirect")
+    await expect(redirectButton).toBeVisible()
+    await expect(redirectButton).toBeFocused()
 
     // Waiting for the automatic 3 seconds redirect.
     await page.waitForTimeout(3500)
