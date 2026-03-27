@@ -119,6 +119,20 @@ export async function expectNoConsoleErrors(page: Page): Promise<void> {
   expect(resolvedMessages.length, `Console errors detected:\n${resolvedMessages.join("\n")}`).toBe(0)
 }
 
+// Takes a screenshot of the activity page. Meant to be run at the end of every successful test.
+export async function takeActivityScreenshot(page: Page, name: string) {
+  const homeButton = page.locator("#navbar-link-home")
+  await expect(homeButton).toBeVisible()
+  await homeButton.click()
+  const activityLink = page.locator("#menu-list-activity")
+  await expect(activityLink).toBeVisible()
+  await activityLink.click()
+
+  const activityHeader = page.locator("#activitylist-header-activity")
+  await expect(activityHeader).toBeVisible()
+  await checkpoint(page, name, { mask: [page.locator(".activitylistitem-text-timestamp"), page.locator(".activitylistitem-text-session")] })
+}
+
 // Meant for tests where the user needs to be authenticated.
 export async function signInWithPassword(page: Page, username: string, password: string, expectSignup: boolean, expectingSuccessfulSignin: boolean) {
   // Wait to prevent net::ERR_ABORTED issues.

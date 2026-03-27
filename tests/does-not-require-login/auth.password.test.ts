@@ -1,4 +1,4 @@
-import { CHARON_URL, checkpoint, expect, test } from "../utils"
+import { CHARON_URL, checkpoint, expect, takeActivityScreenshot, test } from "../utils"
 
 test.describe.serial("Charon Sign-in Flows", () => {
   test("Correct password sign-in flow with flow restarts", async ({ context }) => {
@@ -124,6 +124,10 @@ test.describe.serial("Charon Sign-in Flows", () => {
     await expect(identitiesLink).toBeVisible()
 
     await checkpoint(page, "successful-signin-identities-page")
+
+    await takeActivityScreenshot(page, "password-sign-in-flow-with-restarts-activity")
+
+    console.log("Successfully tested correct password flow with flow restarts.")
   })
 
   test("Wrong password sign-in flow", async ({ context }) => {

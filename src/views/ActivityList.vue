@@ -60,7 +60,7 @@ onBeforeMount(async () => {
     <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,65ch)] gap-1 sm:m-4 sm:gap-4">
       <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <div class="flex flex-row items-center justify-between gap-4">
-          <h1 class="text-2xl font-bold">{{ t("common.entities.activity") }}</h1>
+          <h1 id="activitylist-header-activity" class="text-2xl font-bold">{{ t("common.entities.activity") }}</h1>
         </div>
       </div>
       <div v-if="dataLoading" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">{{ t("common.data.dataLoading") }}</div>
