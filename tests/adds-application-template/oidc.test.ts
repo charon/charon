@@ -1,4 +1,4 @@
-import { CHARON_URL, checkpoint, expect, signInWithPassword, takeScreenshotsOfEntries, test } from "../utils"
+import { CHARON_URL, checkpoint, expect, signInWithPassword, takeActivityScreenshot, takeScreenshotsOfEntries, test } from "../utils"
 
 test.describe.serial("Charon OIDC Flows", () => {
   test("Test OIDC login", async ({ context }) => {
@@ -7,7 +7,7 @@ test.describe.serial("Charon OIDC Flows", () => {
     // Grant permissions for oidcdebugger.com to perform PKCE token exchange.
     await context.grantPermissions(["local-network-access"], { origin: "https://oidcdebugger.com" })
 
-    await signInWithPassword(page, "tester", "tester123", false, true)
+    await signInWithPassword(page, "tester-oidc", "tester123", true, true)
 
     // Find and click the Application Templates link.
     const applicationsLink = page.locator("#menu-list-applicationTemplates")
@@ -130,9 +130,9 @@ test.describe.serial("Charon OIDC Flows", () => {
 
     // Test with all three response modes.
     const responseModes = [
-      { mode: "query", username: "tester-query" },
-      { mode: "formPost", username: "tester-formPost" },
-      { mode: "fragment", username: "tester-fragment" },
+      { mode: "query", username: "tester-oidc-query" },
+      { mode: "formPost", username: "tester-oidc-formPost" },
+      { mode: "fragment", username: "tester-oidc-fragment" },
     ]
 
     for (const { mode, username } of responseModes) {
@@ -233,7 +233,7 @@ test.describe.serial("Charon OIDC Flows", () => {
     }
 
     // Now sign in with tester and check activity logs.
-    await signInWithPassword(page, "tester", "tester123", false, true)
+    await signInWithPassword(page, "tester-oidc", "tester123", false, true)
 
     await expect(organizationsLink).toBeVisible()
     await organizationsLink.click()
@@ -275,6 +275,8 @@ test.describe.serial("Charon OIDC Flows", () => {
     await takeScreenshotsOfEntries(page, ".organizationusers-div-userentry", ".identitypublic-text-username", "oidc-organization-manage-users", {
       mask: [page.locator(".identityorganization-text-organizationid")],
     })
+
+    await takeActivityScreenshot(page, "oidc-activity")
 
     console.log("Successfully created an OIDC application, added it to an organization and signed in.")
   })

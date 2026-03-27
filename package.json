@@ -75,7 +75,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-formatter-gitlab": "^7.0.1",
     "eslint-plugin-vue": "^10.8.0",
-    "eslint": "^9.39.2",
+    "eslint": "^9.39.4",
     "globals": "^17.3.0",
     "npm-audit-resolver": "^3.0.0-RC.0",
     "npm-check-updates": "^19.6.3",

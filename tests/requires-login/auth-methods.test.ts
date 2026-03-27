@@ -6,6 +6,7 @@ import {
   getIdFromAddedVirtualAuthenticator,
   signInWithPassword,
   simulatePasskeyInput,
+  takeActivityScreenshot,
   takeScreenshotsOfEntries,
   test,
 } from "../utils"
@@ -14,7 +15,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
   test("Test adding a new password", async ({ context }) => {
     const page = await context.newPage()
 
-    await signInWithPassword(page, "tester", "tester123", false, true)
+    await signInWithPassword(page, "tester-auth-method-new-password", "tester123", true, true)
 
     // Find and click the Authentication methods link.
     let authMethodsLink = page.locator("#menu-list-credentials")
@@ -59,7 +60,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     await expect(signInButton).toBeVisible()
 
     // Sign in with new password.
-    await signInWithPassword(page, "tester", "tester1234", false, true)
+    await signInWithPassword(page, "tester-auth-method-new-password", "tester1234", false, true)
 
     // Go to auth methods.
     authMethodsLink = page.locator("#menu-list-credentials")
@@ -91,13 +92,15 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     addButton = page.locator("#credentiallist-button-add")
     await expect(addButton).toBeVisible()
 
+    await takeActivityScreenshot(page, "auth-methods-adding-new-password-activity")
+
     await expect(homeButton).toBeVisible()
     await homeButton.click()
     await page.waitForLoadState("networkidle")
     await signOutButton.click()
 
     // Now try to sign in, it should fail.
-    await signInWithPassword(page, "tester", "tester1234", false, false)
+    await signInWithPassword(page, "tester-auth-method-new-password", "tester1234", false, false)
 
     console.log("Successfully added a new password, signed in, removed it, and tried to sign in unsuccessfully.")
   })
@@ -105,7 +108,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
   test("Test adding a new passkey", async ({ context }) => {
     const page = await context.newPage()
 
-    await signInWithPassword(page, "tester", "tester123", false, true)
+    await signInWithPassword(page, "tester-auth-method-new-passkey", "tester123", false, true)
 
     // Find and click the Authentication methods link.
     let authMethodsLink = page.locator("#menu-list-credentials")
@@ -113,7 +116,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     await authMethodsLink.click()
 
     // Find and click the ADD button.
-    let addButton = page.locator("#credentiallist-button-add")
+    const addButton = page.locator("#credentiallist-button-add")
     await expect(addButton).toBeVisible()
 
     await takeScreenshotsOfEntries(page, ".credentiallist-div-credentialentry", ".credentialfull-displayname", "auth-methods")
@@ -217,9 +220,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     await takeScreenshotsOfEntries(page, ".credentiallist-div-credentialentry", ".credentialfull-displayname", "auth-methods")
     await simulatePasskeyInput(() => removeButton.click(), "deletePasskey", client, authenticatorId, true)
 
-    // Since the signOutButton is always visible, we should wait to come back to the Auth Methods page instead.
-    addButton = page.locator("#credentiallist-button-add")
-    await expect(addButton).toBeVisible()
+    await takeActivityScreenshot(page, "auth-methods-adding-new-passkey-activity")
     signOutButton = page.locator("#navbar-button-signout")
 
     await expect(homeButton).toBeVisible()
@@ -250,7 +251,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
   test("Test adding a new username", async ({ context }) => {
     const page = await context.newPage()
 
-    await signInWithPassword(page, "tester", "tester123", false, true)
+    await signInWithPassword(page, "tester-auth-method-new-username", "tester123", true, true)
 
     // Find and click the Authentication methods link.
     let authMethodsLink = page.locator("#menu-list-credentials")
@@ -270,7 +271,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
 
     const usernameInput = page.locator("#credentialaddusername-input-username")
     await expect(usernameInput).toBeVisible()
-    await usernameInput.fill("another")
+    await usernameInput.fill("tester-auth-method-another-username")
 
     const addUsernameButton = page.locator("#credentialaddusername-button-add")
     await expect(addUsernameButton).toBeVisible()
@@ -295,7 +296,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     const emailField = page.locator("input#authstart-input-email")
     await expect(emailField).toBeVisible()
     await checkpoint(page, "main-page-after-clicking-signin")
-    await emailField.fill("another")
+    await emailField.fill("tester-auth-method-another-username")
 
     // Find and click the NEXT button.
     const nextButton = page.locator("button#authstart-button-next")
@@ -316,11 +317,11 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     await nextButton2.click()
 
     // Find the li element that contains "tester" and click its SELECT button.
-    const usernameIdentity = page.locator(`li:has-text("tester")`)
+    const usernameIdentity = page.locator(`li:has-text("tester-auth-method-new-username")`)
     const selectButton = usernameIdentity.locator("button.authidentity-selector-identity")
     await expect(selectButton).toBeVisible()
     // This screenshot differs based on whether you signed up or signed in.
-    await checkpoint(page, `signin-successful-signin-previous-identities-page-from-password`)
+    await checkpoint(page, `signin-successful-signin-tester-auth-method-new-username-previous-identities-page-from-password`)
     await selectButton.click()
 
     // Verify success message.
@@ -340,7 +341,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     await authMethodsLink.click()
 
     // Now remove the username.
-    const usernameItem = page.locator(`div.flex.flex-row:has-text("another")`)
+    const usernameItem = page.locator(`div.flex.flex-row:has-text("tester-auth-method-another-username")`)
     const removeButton = usernameItem.locator("button.credentiallist-button-remove")
     await expect(removeButton).toBeVisible()
     await takeScreenshotsOfEntries(page, ".credentiallist-div-credentialentry", ".credentialfull-displayname", "auth-methods")
@@ -357,7 +358,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     await signOutButton.click()
 
     // Now try to sign in with the other username, it should succeed but as that own user.
-    await signInWithPassword(page, "another", "tester123", true, true)
+    await signInWithPassword(page, "tester-auth-method-another-username", "tester123", true, true)
 
     console.log("Successfully added a new username, signed in, removed it, and signed in as a new user.")
   })

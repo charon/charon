@@ -1,10 +1,10 @@
-import { checkpoint, expect, signInWithPassword, test } from "../utils"
+import { checkpoint, expect, signInWithPassword, takeActivityScreenshot, test } from "../utils"
 
 test.describe.serial("Charon Navbar Flows", () => {
   test("Test navbar scrolling", async ({ context }) => {
     const page = await context.newPage()
 
-    await signInWithPassword(page, "tester", "tester123", false, true)
+    await signInWithPassword(page, "tester-navbar", "tester123", true, true)
 
     // Find and click the Organizations link.
     const organizationsLink = page.locator("#menu-list-organizations")
@@ -76,6 +76,8 @@ test.describe.serial("Charon Navbar Flows", () => {
       await page.waitForTimeout(500) // ms.
       await checkpoint(page, `organization-list-scrolled-up-${i}`, { fullPage: false, mask: [organizationContentList] })
     }
+
+    await takeActivityScreenshot(page, "navbar-activity")
 
     console.log("Successfully created 10 organizations and verified navbar scrolling behavior.")
   })

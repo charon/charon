@@ -1,10 +1,11 @@
-import { signInWithPassword, test } from "../utils"
+import { signInWithPassword, takeActivityScreenshot, test } from "../utils"
 
 test.describe.serial("Charon Sign-in Flows", () => {
   test("Successful password sign-in flow", async ({ context }) => {
     const page = await context.newPage()
 
     await signInWithPassword(page, "tester", "tester123", true, true)
+    await takeActivityScreenshot(page, "successful-password-sign-in-activity")
 
     console.log("Successfully completed sign-in flow: entered credentials, navigated through flow, selected tester identity, and verified Identities link is visible")
   })

@@ -1,6 +1,6 @@
 import type { CDPSession } from "@playwright/test"
 
-import { CHARON_URL, checkpoint, expect, getIdFromAddedVirtualAuthenticator, simulatePasskeyInput, test, WebAuthnCredential } from "../utils.ts"
+import { CHARON_URL, checkpoint, expect, getIdFromAddedVirtualAuthenticator, simulatePasskeyInput, takeActivityScreenshot, test, WebAuthnCredential } from "../utils.ts"
 
 let sharedCredential: WebAuthnCredential | null = null
 
@@ -46,16 +46,16 @@ test.describe.serial("Charon Sign-in Flows", () => {
     const usernameField = page.locator("input#username")
     await expect(usernameField).toBeVisible()
     await checkpoint(page, "auth-page-after-passkey-signup-add-new-identity")
-    await usernameField.fill("tester")
+    await usernameField.fill("tester-passkey-flow")
 
     // Click submit.
     const submitIdentityButton = page.locator("button#identitycreate-button-create")
     await expect(submitIdentityButton).toBeVisible()
-    await checkpoint(page, "auth-page-after-passkey-signup-add-new-identity-tester")
+    await checkpoint(page, "auth-page-after-passkey-signup-add-new-identity-tester-passkey-flow")
     await submitIdentityButton.click()
 
     // Find the li element that contains "tester" and click its SELECT button.
-    const testerIdentity = page.locator('li:has-text("tester")')
+    const testerIdentity = page.locator('li:has-text("tester-passkey-flow")')
     const selectButton = testerIdentity.locator("button.authidentity-selector-identity")
     await expect(selectButton).toBeVisible()
     await checkpoint(page, "auth-page-after-selecting-new-passkey-identity")
@@ -74,6 +74,8 @@ test.describe.serial("Charon Sign-in Flows", () => {
       authenticatorId: authenticatorId,
     })
     sharedCredential = credentials.credentials[0]
+
+    await takeActivityScreenshot(page, "passkey-sign-up-flow-activity")
 
     console.log("Successfully completed passkey sign-up flow: entered passkey, created tester identity, selected tester identity, signed in.")
   })
@@ -114,8 +116,8 @@ test.describe.serial("Charon Sign-in Flows", () => {
 
     // Go back to the first page of the flow.
     const backButton = page.locator("button#authidentity-button-back")
-    // Find the li element that contains "tester" and click its SELECT button.
-    const testerIdentity = page.locator('li:has-text("tester")')
+    // Find the li element that contains "tester-passkey-flow" and click its SELECT button.
+    const testerIdentity = page.locator('li:has-text("tester-passkey-flow")')
     const selectButton = testerIdentity.locator("button.authidentity-selector-identity")
     await expect(selectButton).toBeVisible()
     await checkpoint(page, "auth-page-selecting-existing-passkey-identity")
@@ -137,7 +139,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     // Simulate passkey input again.
     await simulatePasskeyInput(() => passkeyButton.click(), "shouldSucceed", client, authenticatorId, true)
 
-    // Click SELECT button associated with "tester".
+    // Click SELECT button associated with "tester-passkey-flow".
     await expect(selectButton).toBeVisible()
     await checkpoint(page, "auth-page-selecting-existing-passkey-identity")
     await selectButton.click()
@@ -149,6 +151,8 @@ test.describe.serial("Charon Sign-in Flows", () => {
     const identitiesLink = page.locator("#menu-list-identities")
     await expect(identitiesLink).toBeVisible()
     await checkpoint(page, "successful-signin-identities-page")
+
+    await takeActivityScreenshot(page, "passkey-sign-up-flow-with-restarts-activity")
 
     console.log("Successfully completed passkey sign-in flow: entered passkey, selected tester identity, signed in.")
   })
@@ -194,8 +198,8 @@ test.describe.serial("Charon Sign-in Flows", () => {
 
     await simulatePasskeyInput(() => retrySigninButton.click(), "shouldSucceed", client, authenticatorId, true)
 
-    // Find the li element that contains "tester" and click its SELECT button.
-    const testerIdentity = page.locator('li:has-text("tester")')
+    // Find the li element that contains "tester-passkey-flow" and click its SELECT button.
+    const testerIdentity = page.locator('li:has-text("tester-passkey-flow")')
     const selectButton = testerIdentity.locator("button.authidentity-selector-identity")
     await expect(selectButton).toBeVisible()
     await checkpoint(page, "auth-page-after-failed-signin-and-selecting-existing-passkey-identity")
@@ -208,6 +212,8 @@ test.describe.serial("Charon Sign-in Flows", () => {
     const identitiesLink = page.locator("#menu-list-identities")
     await expect(identitiesLink).toBeVisible()
     await checkpoint(page, "successful-signin-identities-page")
+
+    await takeActivityScreenshot(page, "passkey-sign-in-flow-after-failed-sign-in-activity")
 
     console.log(
       "Successfully completed passkey sign-in flow after a failed attempt: failed to enter passkey, went back, entered passkey, selected tester identity, signed in.",
@@ -255,20 +261,20 @@ test.describe.serial("Charon Sign-in Flows", () => {
     await checkpoint(page, "auth-page-after-clicking-passkey-signup")
     await newIdentityButton.click()
 
-    // Find the username input field and enter 'tester'.
+    // Find the username input field and enter 'tester-passkey-flow'.
     const usernameField = page.locator("input#username")
     await expect(usernameField).toBeVisible()
     await checkpoint(page, "auth-page-after-passkey-signup-add-new-identity")
-    await usernameField.fill("tester")
+    await usernameField.fill("tester-passkey-flow")
 
     // Click submit.
     const submitIdentityButton = page.locator("button#identitycreate-button-create")
     await expect(submitIdentityButton).toBeVisible()
-    await checkpoint(page, "auth-page-after-passkey-signup-add-new-identity-tester")
+    await checkpoint(page, "auth-page-after-passkey-signup-add-new-identity-tester-passkey-flow")
     await submitIdentityButton.click()
 
-    // Find the li element that contains "tester" and click its SELECT button.
-    const testerIdentity = page.locator('li:has-text("tester")')
+    // Find the li element that contains "tester-passkey-flow" and click its SELECT button.
+    const testerIdentity = page.locator('li:has-text("tester-passkey-flow")')
     const selectButton = testerIdentity.locator("button.authidentity-selector-identity")
     await expect(selectButton).toBeVisible()
     await checkpoint(page, "auth-page-after-selecting-new-passkey-identity")
@@ -281,6 +287,8 @@ test.describe.serial("Charon Sign-in Flows", () => {
     const identitiesLink = page.locator("#menu-list-identities")
     await expect(identitiesLink).toBeVisible()
     await checkpoint(page, "successful-signin-identities-page")
+
+    await takeActivityScreenshot(page, "passkey-sign-up-after-failed-sign-in-and-sign-up-activity")
 
     console.log(
       "Successfully completed passkey sign-up flow after a failed attempt: signed-in but failed,",

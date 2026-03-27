@@ -1,4 +1,4 @@
-import { CHARON_URL, checkpoint, expect, MAILPIT_URL, test } from "../utils"
+import { CHARON_URL, checkpoint, expect, MAILPIT_URL, takeActivityScreenshot, test } from "../utils"
 
 const EMAIL_CODE_REGEX_MATCHER: RegExp = /code to complete your Charon sign-in or sign-up:\s+(\d{6})\s+You can also open:/s
 const EMAIL_LINK_REGEX_MATCHER: RegExp = /You can also open:\s+(https:\/\/[^\s]+)/s
@@ -121,6 +121,8 @@ test.describe.serial("Charon Sign-in Flows", () => {
 
     await checkpoint(page, "successful-signin-identities-page")
 
+    await takeActivityScreenshot(page, "email-sign-in-code-activity")
+
     console.log("Successfully completed email sign-in flow: entered email, navigated through flow, selected tester email, signed in via email code.")
   })
 
@@ -196,6 +198,8 @@ test.describe.serial("Charon Sign-in Flows", () => {
     await expect(identitiesLink).toBeVisible()
 
     await checkpoint(page, "successful-signin-identities-page")
+
+    await takeActivityScreenshot(page, "email-sign-in-after-wrong-password-activity")
 
     console.log("Successfully completed email sign-in flow: entered email, navigated through flow, selected tester email, signed in via email code.")
   })
@@ -377,6 +381,12 @@ test.describe.serial("Charon Sign-in Flows", () => {
 
     expect(identityId).toEqual(emailIdentityId)
 
+    await selectButton.click()
+
+    // Check that the Identities link is visible.
+    await expect(identitiesLink).toBeVisible()
+    await takeActivityScreenshot(page, "email-sign-in-after-adding-username-activity")
+
     console.log(
       "Successfully signed up with email, added username, signed in with username, extracted identity ID, signed in via e-mail, confirmed that identity IDs match.",
     )
@@ -446,6 +456,8 @@ test.describe.serial("Charon Sign-in Flows", () => {
     await expect(identitiesLink).toBeVisible()
 
     await checkpoint(page, "successful-signin-identities-page")
+
+    await takeActivityScreenshot(page, "email-sign-in-via-link-activity")
 
     console.log("Successfully completed email sign-in flow: entered email, navigated through flow, selected tester email, signed in via email link.")
   })
