@@ -1,4 +1,5 @@
-import { signInWithPassword, takeActivityScreenshot, test } from "../utils"
+import { signInWithPassword, takeActivityScreenshot } from "../charon_utils"
+import { test } from "../utils"
 
 test.describe.serial("Charon Sign-in Flows", () => {
   test("Successful password sign-in flow", async ({ context }) => {

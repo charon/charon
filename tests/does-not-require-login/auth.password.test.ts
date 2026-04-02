@@ -1,4 +1,5 @@
-import { CHARON_URL, checkpoint, expect, takeActivityScreenshot, test } from "../utils"
+import { takeActivityScreenshot } from "../charon_utils"
+import { CHARON_URL, checkpoint, expect, test } from "../utils"
 
 test.describe.serial("Charon Sign-in Flows", () => {
   test("Correct password sign-in flow with flow restarts", async ({ context }) => {

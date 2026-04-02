@@ -1,4 +1,5 @@
-import { CHARON_URL, checkpoint, expect, signInWithPassword, takeActivityScreenshot, takeScreenshotsOfEntries, test } from "../utils"
+import { signInWithPassword, takeActivityScreenshot } from "../charon_utils"
+import { CHARON_URL, checkpoint, expect, takeScreenshotsOfEntries, test } from "../utils"
 
 test.describe.serial("Charon OIDC Flows", () => {
   test("Test OIDC login", async ({ context }) => {
