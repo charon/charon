@@ -1,15 +1,8 @@
 import type { CDPSession } from "@playwright/test"
-import {
-  checkpoint,
-  clearConsoleErrors,
-  expect,
-  getIdFromAddedVirtualAuthenticator,
-  signInWithPassword,
-  simulatePasskeyInput,
-  takeActivityScreenshot,
-  takeScreenshotsOfEntries,
-  test,
-} from "../utils"
+
+import { checkpoint, clearConsoleErrors, expect, takeScreenshotsOfEntries, test } from "../utils"
+
+import { getIdFromAddedVirtualAuthenticator, signInWithPassword, simulatePasskeyInput, takeActivityScreenshot } from "../charon_utils"
 
 test.describe.serial("Charon Auth Methods Flows", () => {
   test("Test adding a new password", async ({ context }) => {

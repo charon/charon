@@ -1,6 +1,7 @@
 import type { CDPSession } from "@playwright/test"
 
-import { CHARON_URL, checkpoint, expect, getIdFromAddedVirtualAuthenticator, simulatePasskeyInput, takeActivityScreenshot, test, WebAuthnCredential } from "../utils.ts"
+import { getIdFromAddedVirtualAuthenticator, simulatePasskeyInput, takeActivityScreenshot, WebAuthnCredential } from "../charon_utils"
+import { CHARON_URL, checkpoint, expect, test } from "../utils.ts"
 
 let sharedCredential: WebAuthnCredential | null = null
 

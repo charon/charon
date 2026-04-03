@@ -1,4 +1,5 @@
-import { checkpoint, expect, signInWithPassword, takeActivityScreenshot, test } from "../utils"
+import { signInWithPassword, takeActivityScreenshot } from "../charon_utils"
+import { checkpoint, expect, test } from "../utils"
 
 test.describe.serial("Charon Navbar Flows", () => {
   test("Test navbar scrolling", async ({ context }) => {
