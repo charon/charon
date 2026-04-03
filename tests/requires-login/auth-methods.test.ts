@@ -1,4 +1,5 @@
 import type { CDPSession } from "@playwright/test"
+
 import { checkpoint, clearConsoleErrors, expect, takeScreenshotsOfEntries, test } from "../utils"
 
 import { getIdFromAddedVirtualAuthenticator, signInWithPassword, simulatePasskeyInput, takeActivityScreenshot } from "../charon_utils"
