@@ -89,7 +89,7 @@ test_e2e:
   image: golang:1.25-alpine3.22
 
   tags:
-    - saas-linux-medium-amd64
+    - saas-linux-large-amd64
 
   services:
     - name: docker:28-dind
