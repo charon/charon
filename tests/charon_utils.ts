@@ -1,6 +1,6 @@
 import type { CDPSession, Page } from "@playwright/test"
 
-import { checkpoint, test } from "./utils.ts"
+import { checkpoint, test } from "./utils"
 
 export const CHARON_URL = process.env.CHARON_URL || "https://localhost:8080"
 
