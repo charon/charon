@@ -248,6 +248,35 @@ Charon can be configured through CLI arguments and a config file. CLI arguments 
 over the config file. Config file is a YAML file with the structure corresponding to the structure of
 CLI flags and commands. Run `./charon --help` for list of available flags.
 
+### Sign in with Google
+
+To configure [Sign in with Google](https://developers.google.com/identity/siwg) as an identity provider:
+
+- Register a new OAuth client in the [Google Cloud Console](https://console.cloud.google.com/auth/clients).
+  If necessary you have to create first a project. Then for OAuth client use:
+  - Application type: Web application
+  - Name: Charon (or any other name)
+  - Authorized redirect URIs: `https://example.com/auth/provider/google`
+- Pass provided Client ID as `--google.client-id=` CLI flag.
+- Store Client secret into a file and pass path to the file
+  with `--google.secret=` CLI flag.
+- Publish the project once you are ready.
+
+### Facebook Login
+
+To configure [Facebook Login](https://developers.facebook.com/documentation/facebook-login) as an identity provider:
+
+- Create a new app in the [Meta for Developers portal](https://developers.facebook.com/apps/).
+  - Select "Authenticate and request data from users with Facebook Login" use case.
+- Customize the use case and select `email` and `public_profile` permissions.
+  - Under "Settings", set "Valid OAuth redirect URIs" to `https://example.com/auth/provider/facebook`.
+- Configure "App settings -> Basic".
+  - Note "App ID" value and pass it as `--facebook.client-id=` CLI flag.
+  - Note "App secret" value and store it into a file and pass path to the
+    file `--facebook.secret=` CLI flag.
+  - Click "Add platform" and select "Website". For "Site URL" enter `https://example.com`.
+- Publish the app once you are ready.
+
 ## Development
 
 During Charon development run backend and frontend as separate processes. During development the backend
