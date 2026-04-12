@@ -9,7 +9,7 @@ const { t } = useI18n({ useScope: "global" })
 <template>
   <div class="flex justify-between gap-x-2 p-2 leading-none sm:gap-x-4 sm:p-4">
     <ul class="flex gap-x-2 sm:gap-x-4">
-      <li v-if="siteContext.termsOfService">
+      <li v-if="siteContext.termsOfService"
         ><router-link :to="{ name: 'TermsOfService' }" class="link">{{ t("views.Footer.terms") }}</router-link></li
       >
       <li v-if="siteContext.privacyPolicy"
