@@ -420,8 +420,8 @@ func (config *Config) Init(files fs.FS) (*Service, errors.E) { //nolint:maintidx
 	}
 
 	if len(sites) == 0 && len(config.Domains) > 0 {
-		// If sites are not provided, but default domain is,
-		// we create a site based on the default domain.
+		// If sites are not provided, but domains are,
+		// we create sites based on those domains.
 		for _, domain := range config.Domains {
 			sites[domain] = &Site{
 				Site: waf.Site{
@@ -429,6 +429,7 @@ func (config *Config) Init(files fs.FS) (*Service, errors.E) { //nolint:maintidx
 					CertFile: "",
 					KeyFile:  "",
 				},
+				// We will set the rest later for all sites.
 				Build:          nil,
 				Title:          config.Title,
 				Providers:      nil,
@@ -438,8 +439,8 @@ func (config *Config) Init(files fs.FS) (*Service, errors.E) { //nolint:maintidx
 		}
 	}
 
-	// If sites are not provided (and no default domain), sites
-	// are automatically constructed based on the certificate.
+	// If sites and domains are not provided, sites are
+	// automatically constructed based on the certificate.
 	sitesProvided := len(sites) > 0
 	sites, errE = config.Server.Init(sites)
 	if errE != nil {
@@ -836,16 +837,13 @@ func (config *Config) Prepare(service *Service) (http.Handler, errors.E) {
 
 // Run starts the HTTP server and serves the Charon application.
 func (config *Config) Run(files fs.FS) errors.E {
-	f, ok := files.(fs.ReadFileFS)
-	if !ok {
-		return errors.New("files fs.ReadFileFS error")
-	}
-
 	// We stop the server gracefully on ctrl-c and TERM signal.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	service, errE := config.Init(f)
+	ctx = config.Logger.WithContext(ctx)
+
+	service, errE := config.Init(files)
 	if errE != nil {
 		return errE
 	}
