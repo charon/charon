@@ -82,7 +82,10 @@ export function updateSteps(flow: Flow, targetStep: string, force?: boolean) {
       newSteps.push({ key: "passkeySignin", name: flow.t("views.AuthFlowGet.steps.passkeySignin") })
       break
     case "passkeySignup":
-      newSteps.push({ key: "passkeySignin", name: flow.t("views.AuthFlowGet.steps.passkeySignin") }, { key: "passkeySignup", name: flow.t("views.AuthFlowGet.steps.passkeySignup") })
+      newSteps.push(
+        { key: "passkeySignin", name: flow.t("views.AuthFlowGet.steps.passkeySignin") },
+        { key: "passkeySignup", name: flow.t("views.AuthFlowGet.steps.passkeySignup") },
+      )
       break
     case "password":
     case "code":
