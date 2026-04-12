@@ -73,7 +73,7 @@ export function updateSteps(flow: Flow, targetStep: string, force?: boolean) {
   const newSteps = [
     {
       key: "start",
-      name: "Charon sign-in or sign-up",
+      name: `${siteContext.title} sign-in or sign-up`,
     },
   ]
 
