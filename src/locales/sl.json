@@ -121,15 +121,15 @@
   "partials": {
     "AuthAutoRedirect": {
       "congratulations": "{strongCongratulations} Vse je pripravljeno za vašo prijavo ali registracijo v {appName} z izbrano identiteto.",
-      "declined": "Odločili ste se {strongDeclineSignInOrSignUp} v {appName} z uporabo Charon.",
+      "declined": "Odločili ste se {strongDeclineSignInOrSignUp} v {appName} z uporabo {siteTitle}.",
       "redirectMessage": "Sedaj boste preusmerjeni v {appName} čez {time}{pausedText}.",
       "declineSignInOrSignUp": "zavrniti prijavo ali registracijo"
     },
     "AuthCode": {
       "codeSentEmail": "{sentCount} 6-mestno kodo na e-naslov {strongEmail}. Vnesite jo za nadaljevanje:",
-      "codeSentUsername": "{sentCount} 6-mestno kodo na e-naslove, povezane z uporabniškim imenom Charon {strongUsername}. Vnesite jo za nadaljevanje:",
+      "codeSentUsername": "{sentCount} 6-mestno kodo na e-naslove, povezane z uporabniškim imenom {siteTitle} {strongUsername}. Vnesite jo za nadaljevanje:",
       "codeFromHashEmail": "Poslali smo naslednjo 6-mestno kodo na e-naslov {strongEmail}:",
-      "codeFromHashUsername": "Poslali smo naslednjo 6-mestno kodo na e-naslove, povezane z uporabniškim imenom Charon {strongUsername}:",
+      "codeFromHashUsername": "Poslali smo naslednjo 6-mestno kodo na e-naslove, povezane z uporabniškim imenom {siteTitle} {strongUsername}:",
       "resendButton": "Ponovno pošlji kodo",
       "sentCount": "Poslali smo | Poslali smo ({count}x)",
       "confirmCode": "Prosimo, potrdite kodo za nadaljevanje.",
@@ -141,8 +141,8 @@
     },
     "AuthIdentity": {
       "newIdentityButton": "Ustvari novo identiteto",
-      "signinSuccess": "{strongCongratulations} Uspešno ste se prijavili v Charon.",
-      "signupSuccess": "{strongCongratulations} Uspešno ste se registrirali v Charon.",
+      "signinSuccess": "{strongCongratulations} Uspešno ste se prijavili v {siteTitle}.",
+      "signupSuccess": "{strongCongratulations} Uspešno ste se registrirali v {siteTitle}.",
       "previouslyUsedDisabled": "Prej uporabljene identitete s to organizacijo so onemogočene.",
       "otherAvailableIdentities": "Druge razpoložljive identitete",
       "noIdentitiesCreateFirst": "Ni identitet. Ustvarite prvo.",
@@ -166,7 +166,7 @@
     },
     "AuthPasskeySignin": {
       "signingIn": "Prijavljamo vas z uporabo {strongPasskey}. Prosimo, sledite navodilom vašega brskalnika in/ali naprave.",
-      "signupInfo": "Če se še niste registrirali s passkey, bo to neuspešno. V tem primeru vam bo Charon ponudil registracijo.",
+      "signupInfo": "Če se še niste registrirali s passkey, bo to neuspešno. V tem primeru vam bo {siteTitle} ponudil registracijo.",
       "passkey": "@:common.providers.passkey"
     },
     "AuthPasskeySignup": {
@@ -177,11 +177,11 @@
       "passkeySignupButton": "Registracija s passkey",
       "retrySignupButton": "Poskusi registracijo znova",
       "passkey": "@:common.providers.passkey",
-      "signupInfo": "Če ste se že registrirali s passkey, se boste znova registrirali in ustvarili še en račun Charon."
+      "signupInfo": "Če ste se že registrirali s passkey, se boste znova registrirali in ustvarili še en račun {siteTitle}."
     },
     "AuthPassword": {
       "emailAddressLabel": "Vaš e-naslov",
-      "usernameLabel": "Uporabniško ime Charon",
+      "usernameLabel": "Uporabniško ime {siteTitle}",
       "passwordLabel": "Geslo ali geslovni stavek",
       "sendCodeButton": "Pošlji kodo",
       "emailAccount": "Če še nimate računa, bo ustvarjen za vas. Če vnesete napačno geslo ali geslovni stavek, se bo obnova izvedla samodejno s pošiljanjem kode na vaš e-naslov.",
@@ -191,12 +191,12 @@
       "differentSigninMethod": "drug način prijave"
     },
     "AuthStart": {
-      "emailOrUsernameLabel": "Vnesite uporabniško ime Charon ali vaš e-naslov",
+      "emailOrUsernameLabel": "Vnesite uporabniško ime {siteTitle} ali vaš e-naslov",
       "orUse": "Ali uporabite"
     },
     "AuthThirdPartyProvider": {
       "redirectMessage": "Preusmerjeni boste k {strongProvider} čez {time}{pausedText}.",
-      "instructions": "Prosimo, sledite navodilom tam za prijavo v Charon. Nato boste preusmerjeni nazaj sem.",
+      "instructions": "Prosimo, sledite navodilom tam za prijavo v {siteTitle}. Nato boste preusmerjeni nazaj sem.",
       "additionalInfo": "Morda se boste morali najprej prijaviti v {provider}. Morda vas bo {provider} takoj preusmeril nazaj, ne da bi vam pokazal karkoli."
     },
     "Footer": {
@@ -290,7 +290,17 @@
       "noApplicationTemplatesSignIn": "Ni predlog aplikacij. Prijavite se ali registrirajte, da ustvarite prvo."
     },
     "AuthFlowGet": {
-      "instructionsMessage": "{appLink} iz organizacije {orgLink} uporablja Charon, da vas prosi za prijavo ali registracijo. Prosimo, sledite spodnjim korakom za nadaljevanje ali zavrnitev."
+      "instructionsMessage": "{appLink} iz organizacije {orgLink} uporablja {siteTitle}, da vas prosi za prijavo ali registracijo. Prosimo, sledite spodnjim korakom za nadaljevanje ali zavrnitev.",
+      "steps": {
+        "start": "{siteTitle} prijava ali registracija",
+        "passkeySignin": "Prijava s passkey",
+        "passkeySignup": "Registracija s passkey",
+        "password": "Vnesite geslo ali geslovni stavek",
+        "code": "Vnesite kodo",
+        "thirdPartyProvider": "Preusmeritev na {provider}",
+        "identity": "Izberite identiteto ali zavrnite",
+        "autoRedirect": "Preusmeritev nazaj v aplikacijo"
+      }
     },
     "IdentityCreate": {
       "createIdentity": "Ustvari identiteto"

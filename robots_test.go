@@ -15,7 +15,7 @@ func TestRobotsTxt(t *testing.T) {
 
 	ts, _, _, _, _ := startTestServer(t) //nolint:dogsled
 
-	expected, err := testFiles.ReadFile("dist/robots.txt")
+	expected, err := testFiles.ReadFile("robots.txt")
 	require.NoError(t, err)
 
 	resp, err := ts.Client().Get(ts.URL + "/robots.txt") //nolint:noctx,bodyclose

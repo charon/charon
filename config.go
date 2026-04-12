@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/elliptic"
 	"crypto/rand"
-	"embed"
 	"encoding/base64"
 	"io/fs"
 	"net/http"
@@ -18,6 +17,7 @@ import (
 
 	"github.com/alecthomas/kong"
 	"github.com/coreos/go-oidc/v3/oidc"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/go-jose/go-jose/v3"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/ory/fosite"
@@ -39,6 +39,8 @@ const (
 	DefaultListen = ":8080"
 	// DefaultProxyTo is the default URL to proxy to during development.
 	DefaultProxyTo = "http://localhost:5173"
+	// DefaultTitle is the default application title.
+	DefaultTitle = "Charon"
 )
 
 // Prefixes used by Charon for secrets.
@@ -51,9 +53,6 @@ const (
 var secretPrefixCharonConfig = x.String2ByteSlice(SecretPrefixCharonConfig) //nolint:gochecknoglobals
 
 const expectedSecretSize = 32
-
-//go:embed dist
-var files embed.FS
 
 // ThirdPartyProviderType represents the type of the third-party provider.
 type ThirdPartyProviderType string
@@ -246,13 +245,15 @@ type Config struct {
 	Config  cli.ConfigFlag    `         help:"Load configuration from a JSON or YAML file." name:"config" placeholder:"PATH" short:"c" yaml:"-"`
 	Server  waf.Server[*Site] `embed:""                                                                                                yaml:",inline"`
 
+	Sites []Site `help:"Site configuration as JSON or YAML. Can be provided multiple times." name:"site" placeholder:"SITE" sep:"none" short:"s" yaml:"sites"`
+
 	Domains      []string             `                  help:"Domain name(s) to use. If not provided, they are determined from domain names found in TLS certificates."                                 name:"domain" placeholder:"STRING" yaml:"domains"`
 	MainDomain   string               `                  help:"When using multiple domains, which one is the main one."                                                                                                                     yaml:"mainDomain"`
 	ExternalPort int                  `                  help:"Port on which Charon is accessible when it is different from the port on which the program listens."                                                    placeholder:"INT"    yaml:"externalPort"`
 	Secret       kong.FileContentFlag `env:"SECRET_PATH" help:"File with base64 (URL encoding, no padding) encoded 32 bytes with \"${secretPrefixCharonConfig}\" prefix used for session and OIDC HMAC."               placeholder:"PATH"   yaml:"secret"`
 
-	Providers Providers `                 embed:"" group:"Providers:"                                                                                       yaml:"providers"`
-	Name      string    `default:"Charon"                             help:"Name of this Charon instance as shown to users." placeholder:"STRING" short:"N" yaml:"name"`
+	Providers Providers `                          embed:"" group:"Providers:"                                                                                                                      yaml:"providers"`
+	Title     string    `default:"${defaultTitle}"                             help:"Title of this Charon instance as shown to users when sites are not configured." placeholder:"STRING" short:"T" yaml:"title"`
 
 	// TODO: This is just temporary. Once we have PeerDB as backend we should just create PeerDB documents with these during populate.
 	TermsOfService kong.FileContentFlag `help:"File with terms of service." placeholder:"PATH" yaml:"termsOfService"`
@@ -276,6 +277,36 @@ func (config *Config) Validate() error {
 	if err != nil {
 		return err
 	}
+
+	domains := mapset.NewThreadUnsafeSet[string]()
+	for i, site := range config.Sites {
+		// This is not validated when Site is not populated by Kong.
+		if site.Domain == "" {
+			errE := errors.New("domain is required for site")
+			errors.Details(errE)["index"] = i
+			return errE
+		}
+
+		// To make sure validation is called.
+		err := site.Validate()
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		// We cannot use kong to set these defaults, so we do it here.
+		if site.Title == "" {
+			site.Title = DefaultTitle
+		}
+
+		if !domains.Add(site.Domain) {
+			errE := errors.New("duplicate site for domain")
+			errors.Details(errE)["domain"] = site.Domain
+			return errE
+		}
+
+		// Site might have been changed, so we assign it back.
+		config.Sites[i] = site
+	}
 	return nil
 }
 
@@ -297,7 +328,7 @@ type Service struct {
 	charonOrganization func() charonOrganization
 
 	domain         string
-	name           string
+	title          string
 	termsOfService []byte
 	privacyPolicy  []byte
 
@@ -337,7 +368,12 @@ type Service struct {
 }
 
 // Init initializes the HTTP service and is used together with Prepare to implement Run.
-func (config *Config) Init(files fs.ReadFileFS) (*Service, errors.E) { //nolint:maintidx
+func (config *Config) Init(files fs.FS) (*Service, errors.E) { //nolint:maintidx
+	// This is not set when Config is not populated by Kong.
+	if config.Title == "" {
+		config.Title = DefaultTitle
+	}
+
 	var secret []byte
 	if config.Secret != nil {
 		// We use a prefix to aid secret scanners.
@@ -377,25 +413,49 @@ func (config *Config) Init(files fs.ReadFileFS) (*Service, errors.E) { //nolint:
 	config.Server.Logger = config.Logger
 
 	sites := map[string]*Site{}
-	// If domains are provided, we create sites based on those domains.
-	for _, domain := range config.Domains {
-		sites[domain] = &Site{
-			Site: waf.Site{
-				Domain:   domain,
-				CertFile: "",
-				KeyFile:  "",
-			},
-			// We will set the rest later for all sites.
-			Build:          nil,
-			Providers:      nil,
-			TermsOfService: false,
-			PrivacyPolicy:  false,
+	for i := range config.Sites {
+		site := &config.Sites[i]
+
+		sites[site.Domain] = site
+	}
+
+	if len(sites) == 0 && len(config.Domains) > 0 {
+		// If sites are not provided, but domains are,
+		// we create sites based on those domains.
+		for _, domain := range config.Domains {
+			sites[domain] = &Site{
+				Site: waf.Site{
+					Domain:   domain,
+					CertFile: "",
+					KeyFile:  "",
+				},
+				// We will set the rest later for all sites.
+				Build:          nil,
+				Title:          config.Title,
+				Providers:      nil,
+				TermsOfService: false,
+				PrivacyPolicy:  false,
+			}
 		}
 	}
-	// If domains are not provided, sites are automatically constructed based on the certificate.
+
+	// If sites and domains are not provided, sites are
+	// automatically constructed based on the certificate.
+	sitesProvided := len(sites) > 0
 	sites, errE = config.Server.Init(sites)
 	if errE != nil {
 		return nil, errE
+	}
+
+	if !sitesProvided {
+		// We set fields not set when sites are automatically constructed.
+		for domain, site := range sites {
+			site.Title = config.Title
+			// We copy the site to config.Sites.
+			config.Sites = append(config.Sites, *site)
+			// And then we update the reference to this copy.
+			sites[domain] = &config.Sites[len(config.Sites)-1]
+		}
 	}
 
 	// We set build information on sites.
@@ -589,12 +649,6 @@ func (config *Config) Init(files fs.ReadFileFS) (*Service, errors.E) { //nolint:
 		site.Providers = providers
 	}
 
-	// We remove "dist" prefix.
-	f, err := fs.Sub(files, "dist")
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
 	var domain string
 	if len(sites) > 1 {
 		if config.MainDomain == "" {
@@ -631,7 +685,7 @@ func (config *Config) Init(files fs.ReadFileFS) (*Service, errors.E) { //nolint:
 			Logger:          config.Logger,
 			CanonicalLogger: config.Logger,
 			WithContext:     config.WithContext,
-			StaticFiles:     f.(fs.ReadFileFS), //nolint:errcheck
+			StaticFiles:     files.(fs.ReadFileFS), //nolint:errcheck
 			Routes:          nil,
 			Sites:           sites,
 			// We serve our own context.json file.
@@ -667,7 +721,7 @@ func (config *Config) Init(files fs.ReadFileFS) (*Service, errors.E) { //nolint:
 		codeProvider:           nil,
 		charonOrganization:     nil,
 		domain:                 domain,
-		name:                   config.Name,
+		title:                  config.Title,
 		termsOfService:         config.TermsOfService,
 		privacyPolicy:          config.PrivacyPolicy,
 		mailClient:             nil,
@@ -782,10 +836,12 @@ func (config *Config) Prepare(service *Service) (http.Handler, errors.E) {
 }
 
 // Run starts the HTTP server and serves the Charon application.
-func (config *Config) Run() errors.E {
+func (config *Config) Run(files fs.FS) errors.E {
 	// We stop the server gracefully on ctrl-c and TERM signal.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	ctx = config.Logger.WithContext(ctx)
 
 	service, errE := config.Init(files)
 	if errE != nil {

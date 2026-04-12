@@ -12,17 +12,20 @@ ifeq ($(REVISION),)
  REVISION = `git rev-parse HEAD`
 endif
 
-.PHONY: build build-static test test-ci lint lint-ci fmt fmt-ci upgrade clean release lint-docs lint-docs-ci audit encrypt decrypt sops watch
+.PHONY: build charon build-static test test-ci lint lint-ci fmt fmt-ci upgrade clean release lint-docs lint-docs-ci audit encrypt decrypt sops watch
 
-# dist is build only if it is missing. Use "make clean" to remove it to build it again.
-build: dist
-	go build -trimpath -ldflags "-s -w -X gitlab.com/tozd/go/cli.Version=${VERSION} -X gitlab.com/tozd/go/cli.BuildTimestamp=${BUILD_TIMESTAMP} -X gitlab.com/tozd/go/cli.Revision=${REVISION}" -o charon gitlab.com/charon/charon/cmd/charon
+build: charon
 
-# dist is build only if it is missing. Use "make clean" to remove it to build it again.
+charon: dist
+	go build -trimpath -ldflags "-s -w -X gitlab.com/tozd/go/cli.Version=${VERSION} -X gitlab.com/tozd/go/cli.BuildTimestamp=${BUILD_TIMESTAMP} -X gitlab.com/tozd/go/cli.Revision=${REVISION}" -o $@ gitlab.com/charon/charon/cmd/$@
+
 build-static: dist
 	go build $(CHARON_BUILD_FLAGS) -trimpath -ldflags "-s -w -linkmode external -extldflags '-static' -X gitlab.com/tozd/go/cli.Version=${VERSION} -X gitlab.com/tozd/go/cli.BuildTimestamp=${BUILD_TIMESTAMP} -X gitlab.com/tozd/go/cli.Revision=${REVISION}" -o charon gitlab.com/charon/charon/cmd/charon
 
-dist: node_modules src vite.config.ts tsconfig.json tsconfig.node.json LICENSE
+dist: dist/index.html dist/assets dist/LICENSE.txt dist/NOTICE.txt dist/robots.txt
+
+dist/index.html dist/assets dist/LICENSE.txt dist/NOTICE.txt dist/robots.txt: node_modules src vite.config.ts tsconfig.json tsconfig.node.json LICENSE
+	find dist -mindepth 1 ! -path "dist/dist.go" -delete
 	npm run build
 
 node_modules: package-lock.json
@@ -30,20 +33,17 @@ node_modules: package-lock.json
 package-lock.json: package.json
 	npm install
 
-dist/index.html:
-	mkdir -p dist
-	if [ ! -e dist/index.html ]; then echo "<html><body>dummy content</body></html>" > dist/index.html; fi
-
-test: dist/index.html
+test:
 	gotestsum --format pkgname --packages ./... -- -race -timeout 10m -cover -covermode atomic
 
-test-ci: dist/index.html
-	gotestsum --format pkgname --packages ./... --junitfile tests.xml -- -race -timeout 10m -cover -covermode atomic -args -test.gocoverdir=coverage
+test-ci:
+	mkdir -p coverage
+	gotestsum --format pkgname --packages ./... --junitfile tests.xml -- -race -timeout 10m -cover -covermode atomic -args -test.gocoverdir="$(CURDIR)/coverage"
 
-lint: dist/index.html
+lint:
 	golangci-lint run --output.text.colors --allow-parallel-runners --fix
 
-lint-ci: dist/index.html
+lint-ci:
 	golangci-lint run --output.text.path=stdout --output.code-climate.path=codeclimate.json
 
 fmt:
@@ -59,7 +59,8 @@ upgrade:
 	go mod tidy
 
 clean:
-	rm -rf coverage.* codeclimate.json tests.xml coverage dist charon
+	find dist -mindepth 1 ! -path "dist/dist.go" -delete
+	rm -rf coverage.* codeclimate.json tests.xml coverage charon
 
 release:
 	npx --yes --package 'release-it@19.0.5' --package '@release-it/keep-a-changelog@7.0.0' -- release-it
@@ -70,7 +71,7 @@ lint-docs:
 lint-docs-ci: lint-docs
 	git diff --exit-code --color=always
 
-audit: dist/index.html
+audit:
 	go list -json -deps ./... | nancy sleuth --skip-update-check
 
 encrypt:
@@ -83,4 +84,4 @@ sops:
 	SOPS_AGE_KEY_FILE=keys.txt gitlab-config sops .gitlab-conf.yml
 
 watch:
-	CompileDaemon -build="make --silent build" -command="./charon -D -k localhost+2.pem -K localhost+2-key.pem" -include="*.json" -include="go.mod" -include="go.sum" -exclude-dir=.git -graceful-kill=true -log-prefix=false -color=true
+	CompileDaemon -build="make --silent charon" -command="./charon -D -k localhost+2.pem -K localhost+2-key.pem" -include="*.json" -include="go.mod" -include="go.sum" -exclude-dir=.git -graceful-kill=true -log-prefix=false -color=true

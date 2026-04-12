@@ -9,6 +9,7 @@ import { postJSON } from "@/api"
 import Button from "@/components/Button.vue"
 import InputCode from "@/components/InputCode.vue"
 import WithDocument from "@/components/WithDocument.vue"
+import siteContext from "@/context"
 import { processResponse } from "@/flow"
 import { useProgress } from "@/progress"
 import { isEmail } from "@/utils"
@@ -250,6 +251,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
           <template #strongUsername
             ><strong>{{ flow.getEmailOrUsername() }}</strong></template
           >
+          <template #siteTitle>{{ siteContext.title }}</template>
         </i18n-t>
       </label>
       <label v-else-if="!codeFromHash && isEmail(flow.getEmailOrUsername())" for="code" class="mb-1">
@@ -266,6 +268,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
           <template #strongUsername
             ><strong>{{ flow.getEmailOrUsername() }}</strong></template
           >
+          <template #siteTitle>{{ siteContext.title }}</template>
         </i18n-t>
       </label>
       <!--

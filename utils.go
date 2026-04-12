@@ -982,11 +982,12 @@ func newPasswordEncryptionResponse(publicKeyBytes, nonce []byte, overhead int) *
 }
 
 func beginPasskeyRegistration(
-	provider *webauthn.WebAuthn, userID identifier.Identifier, displayName string,
+	provider *webauthn.WebAuthn, userID identifier.Identifier, displayName string, title string,
 ) (*protocol.CredentialCreation, *webauthn.SessionData, errors.E) {
 	options, session, err := provider.BeginRegistration(
 		passkeyCredential{
 			userID:      userID,
+			title:       title,
 			displayName: displayName,
 			Credential:  nil,
 		},
@@ -1045,7 +1046,7 @@ func validateEmailOrUsername(emailOrUsername string, check emailOrUsernameCheck)
 }
 
 func (s *Service) completePasskeyRegistration(
-	createResponse protocol.CredentialCreationResponse, displayName string, sessionData *webauthn.SessionData,
+	createResponse protocol.CredentialCreationResponse, displayName string, title string, sessionData *webauthn.SessionData,
 ) (*passkeyCredential, string, errors.E) {
 	parsedResponse, err := createResponse.Parse()
 	if err != nil {
@@ -1056,6 +1057,7 @@ func (s *Service) completePasskeyRegistration(
 
 	pkCredential := passkeyCredential{
 		userID:      userID,
+		title:       title,
 		displayName: displayName,
 		Credential:  nil,
 	}

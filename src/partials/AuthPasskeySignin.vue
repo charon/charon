@@ -8,6 +8,7 @@ import { useRouter } from "vue-router"
 
 import { postJSON } from "@/api"
 import Button from "@/components/Button.vue"
+import siteContext from "@/context"
 import { processResponse } from "@/flow"
 import { useProgress } from "@/progress"
 
@@ -171,7 +172,7 @@ function onCancel() {
         >
       </i18n-t>
     </div>
-    <div class="mt-4">{{ t("partials.AuthPasskeySignin.signupInfo") }}</div>
+    <div class="mt-4">{{ t("partials.AuthPasskeySignin.signupInfo", { siteTitle: siteContext.title }) }}</div>
     <div v-if="unexpectedError" id="authpasskeysignin-message-unexpectederror" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="2" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>

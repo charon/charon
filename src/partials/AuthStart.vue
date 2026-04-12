@@ -169,7 +169,7 @@ function onThirdPartyProvider(provider: string) {
 <template>
   <div class="flex w-full flex-col rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
     <div class="flex flex-col">
-      <label for="authstart-input-email" class="mb-1">{{ t("partials.AuthStart.emailOrUsernameLabel") }}</label>
+      <label for="authstart-input-email" class="mb-1">{{ t("partials.AuthStart.emailOrUsernameLabel", { siteTitle: siteContext.title }) }}</label>
       <!--
         We set novalidate because we do not want UA to show hints.
         We show them ourselves when we want them.
@@ -196,7 +196,9 @@ function onThirdPartyProvider(provider: string) {
       <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     </div>
     <h2 class="m-4 text-center text-xl font-bold uppercase">{{ t("partials.AuthStart.orUse") }}</h2>
-    <Button id="authstart-button-passkey" primary type="button" :disabled="!browserSupportsWebAuthn()" :progress="progress" @click.prevent="onPasskey">Passkey</Button>
+    <Button id="authstart-button-passkey" primary type="button" :disabled="!browserSupportsWebAuthn()" :progress="progress" @click.prevent="onPasskey">{{
+      t("common.providers.passkeyTitle")
+    }}</Button>
     <Button
       v-for="p in siteContext.providers"
       :id="`authstart-button-${p.key}`"

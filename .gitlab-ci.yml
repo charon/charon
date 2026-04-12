@@ -38,12 +38,13 @@ test_go:
 
   image: golang:1.25-alpine3.22
 
+  tags:
+    - saas-linux-2xlarge-amd64
+
   before_script:
     - apk --update add make bash gcc musl-dev mailcap git
     - (cd /go; go install gotest.tools/gotestsum@v1.13.0)
     - (cd /go; go install github.com/boumenot/gocover-cobertura@v1.4.0)
-    # Needs the coverage folder to generate go coverage.
-    - mkdir -p coverage
     - go version
 
   script:
@@ -62,6 +63,9 @@ test_node:
   stage: test
 
   image: node:24.10-alpine3.22
+
+  before_script:
+    - apk --update add git
 
   script:
     - npm ci --audit=false
@@ -276,6 +280,9 @@ lint_go:
 
   image: golang:1.25-alpine3.22
 
+  tags:
+    - saas-linux-2xlarge-amd64
+
   before_script:
     - apk --update add make bash gcc musl-dev git
     - wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.5.0
@@ -312,6 +319,9 @@ lint_vue:
   stage: test
 
   image: node:24.10-alpine3.22
+
+  before_script:
+    - apk --update add git
 
   script:
     - npm ci --audit=false
@@ -403,6 +413,9 @@ audit_node:
 
   image: node:24.10-alpine3.22
 
+  before_script:
+    - apk --update add git
+
   # Signatures audit is done during install in Dockerfile.
   script:
     - npm ci --audit=false
@@ -437,6 +450,9 @@ docker:
 
   image: docker:28-cli
 
+  tags:
+    - saas-linux-2xlarge-amd64
+
   services:
     - name: docker:28-dind
       command:
@@ -453,29 +469,36 @@ docker:
     - export VERSION="$(git describe --tags --always --dirty=+)"
     - echo VERSION "$VERSION"
     - docker build
-        --target production
-        --tag "$DOCKER_PIPELINE_IMAGE_NAME"
-        --tag "$CI_REGISTRY_IMAGE/commit:$CI_COMMIT_SHA"
-        --build-arg BUILD_TIMESTAMP
-        --label "org.opencontainers.image.version=$VERSION"
-        --label "org.opencontainers.image.created=$BUILD_TIMESTAMP"
-        --label "org.opencontainers.image.revision=$CI_COMMIT_SHA"
-        --label "org.opencontainers.image.url=$CI_PROJECT_URL" .
+      --platform linux/amd64,linux/arm64
+      --target production
+      --tag "$DOCKER_PIPELINE_IMAGE_NAME"
+      --tag "$CI_REGISTRY_IMAGE/commit:$CI_COMMIT_SHA"
+      --build-arg BUILD_TIMESTAMP
+      --build-arg VERSION
+      --label "org.opencontainers.image.version=$VERSION"
+      --label "org.opencontainers.image.created=$BUILD_TIMESTAMP"
+      --label "org.opencontainers.image.revision=$CI_COMMIT_SHA"
+      --label "org.opencontainers.image.url=$CI_PROJECT_URL" .
     - docker build
-        --target debug
-        --tag "$DOCKER_PIPELINE_IMAGE_NAME-debug"
-        --tag "$CI_REGISTRY_IMAGE/commit:$CI_COMMIT_SHA-debug"
-        --build-arg BUILD_TIMESTAMP
-        --label "org.opencontainers.image.version=$VERSION"
-        --label "org.opencontainers.image.created=$BUILD_TIMESTAMP"
-        --label "org.opencontainers.image.revision=$CI_COMMIT_SHA"
-        --label "org.opencontainers.image.url=$CI_PROJECT_URL" .
+      --platform linux/amd64,linux/arm64
+      --target debug
+      --tag "$DOCKER_PIPELINE_IMAGE_NAME-debug"
+      --tag "$CI_REGISTRY_IMAGE/commit:$CI_COMMIT_SHA-debug"
+      --build-arg BUILD_TIMESTAMP
+      --build-arg VERSION
+      --label "org.opencontainers.image.version=$VERSION"
+      --label "org.opencontainers.image.created=$BUILD_TIMESTAMP"
+      --label "org.opencontainers.image.revision=$CI_COMMIT_SHA"
+      --label "org.opencontainers.image.url=$CI_PROJECT_URL" .
     - docker push "$DOCKER_PIPELINE_IMAGE_NAME"
     - docker push "$CI_REGISTRY_IMAGE/commit:$CI_COMMIT_SHA"
     - docker push "$DOCKER_PIPELINE_IMAGE_NAME-debug"
     - docker push "$CI_REGISTRY_IMAGE/commit:$CI_COMMIT_SHA-debug"
-    - export IMAGE_ID=$(docker create "$DOCKER_PIPELINE_IMAGE_NAME")
+    - export IMAGE_ID=$(docker create --platform linux/amd64 "$DOCKER_PIPELINE_IMAGE_NAME")
     - docker cp "$IMAGE_ID:/charon" charon-linux-amd64
+    - docker rm "$IMAGE_ID"
+    - export IMAGE_ID=$(docker create --platform linux/arm64 "$DOCKER_PIPELINE_IMAGE_NAME")
+    - docker cp "$IMAGE_ID:/charon" charon-linux-arm64
     - docker rm "$IMAGE_ID"
 
   artifacts:
@@ -483,6 +506,7 @@ docker:
     name: binaries
     paths:
       - charon-linux-amd64
+      - charon-linux-arm64
     expire_in: never
 
   # We want to run it as soon as possible and do not wait for test stage to finish.
@@ -528,7 +552,7 @@ push_tag:
 
   rules:
     # Only on protected tags. Protected tags start with "v".
-    - if: '$CI_COMMIT_TAG && $CI_COMMIT_REF_NAME =~ /^v/'
+    - if: "$CI_COMMIT_TAG && $CI_COMMIT_REF_NAME =~ /^v/"
 
   # We do not need build artifacts in this job.
   dependencies: []
@@ -540,10 +564,11 @@ upload_binaries:
 
   script:
     - 'curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file charon-linux-amd64 "$PACKAGE_REGISTRY_URL/linux-amd64/${CI_COMMIT_REF_NAME#v}/charon"'
+    - 'curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file charon-linux-arm64 "$PACKAGE_REGISTRY_URL/linux-arm64/${CI_COMMIT_REF_NAME#v}/charon"'
 
   rules:
     # Only on protected tags. Protected tags start with "v".
-    - if: '$CI_COMMIT_TAG && $CI_COMMIT_REF_NAME =~ /^v/'
+    - if: "$CI_COMMIT_TAG && $CI_COMMIT_REF_NAME =~ /^v/"
 
   dependencies:
     - docker

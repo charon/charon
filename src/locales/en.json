@@ -121,15 +121,15 @@
   "partials": {
     "AuthAutoRedirect": {
       "congratulations": "{strongCongratulations} Everything is ready to sign you in or sign you up into {appName} using the identity you have chosen.",
-      "declined": "You decided to {strongDeclineSignInOrSignUp} into {appName} using Charon.",
+      "declined": "You decided to {strongDeclineSignInOrSignUp} into {appName} using {siteTitle}.",
       "redirectMessage": "You will be now redirected to {appName} in {time}{pausedText}.",
       "declineSignInOrSignUp": "decline sign-in or sign-up"
     },
     "AuthCode": {
       "codeSentEmail": "We {sentCount} a 6-digit code to {strongEmail} e-mail address. Please enter it to continue:",
-      "codeSentUsername": "We {sentCount} a 6-digit code to e-mail address(es) associated with the Charon username {strongUsername}. Please enter it to continue:",
+      "codeSentUsername": "We {sentCount} a 6-digit code to e-mail address(es) associated with the {siteTitle} username {strongUsername}. Please enter it to continue:",
       "codeFromHashEmail": "We sent the following 6-digit code to {strongEmail} e-mail address:",
-      "codeFromHashUsername": "We sent the following 6-digit code to e-mail address(es) associated with the Charon username {strongUsername}:",
+      "codeFromHashUsername": "We sent the following 6-digit code to e-mail address(es) associated with the {siteTitle} username {strongUsername}:",
       "resendButton": "Resend code",
       "sentCount": "sent | sent ({count}x)",
       "confirmCode": "Please confirm the code to continue.",
@@ -141,8 +141,8 @@
     },
     "AuthIdentity": {
       "newIdentityButton": "Create new identity",
-      "signinSuccess": "{strongCongratulations} You successfully signed in into Charon.",
-      "signupSuccess": "{strongCongratulations} You successfully signed up into Charon.",
+      "signinSuccess": "{strongCongratulations} You successfully signed in into {siteTitle}.",
+      "signupSuccess": "{strongCongratulations} You successfully signed up into {siteTitle}.",
       "previouslyUsedDisabled": "Previously used identities with this organization are disabled.",
       "otherAvailableIdentities": "Other available identities",
       "noIdentitiesCreateFirst": "@:views.IdentityList.noIdentitiesCreate",
@@ -166,7 +166,7 @@
     },
     "AuthPasskeySignin": {
       "signingIn": "Signing you in using {strongPasskey}. Please follow instructions by your browser and/or device.",
-      "signupInfo": "If you have not yet signed up with passkey, this will fail. In that case Charon will offer you to sign up instead.",
+      "signupInfo": "If you have not yet signed up with passkey, this will fail. In that case {siteTitle} will offer you to sign up instead.",
       "passkey": "@:common.providers.passkey"
     },
     "AuthPasskeySignup": {
@@ -177,11 +177,11 @@
       "passkeySignupButton": "Passkey sign-up",
       "retrySignupButton": "Retry sign-up",
       "passkey": "@:common.providers.passkey",
-      "signupInfo": "If you have already signed up with passkey, this will sign you up again and create another Charon account for you."
+      "signupInfo": "If you have already signed up with passkey, this will sign you up again and create another {siteTitle} account for you."
     },
     "AuthPassword": {
       "emailAddressLabel": "Your e-mail address",
-      "usernameLabel": "Charon username",
+      "usernameLabel": "{siteTitle} username",
       "passwordLabel": "Password or passphrase",
       "sendCodeButton": "Send code",
       "emailAccount": "If you do not yet have an account, it will be created for you. If you enter wrong password or passphrase, recovery will be done automatically for you by sending you a code to your e-mail address.",
@@ -191,12 +191,12 @@
       "differentSigninMethod": "different sign-in method"
     },
     "AuthStart": {
-      "emailOrUsernameLabel": "Enter Charon username or your e-mail address",
+      "emailOrUsernameLabel": "Enter {siteTitle} username or your e-mail address",
       "orUse": "Or use"
     },
     "AuthThirdPartyProvider": {
       "redirectMessage": "You will be redirected to {strongProvider} in {time}{pausedText}.",
-      "instructions": "Please follow instructions there to sign-in into Charon. Afterwards, you will be redirected back here.",
+      "instructions": "Please follow instructions there to sign-in into {siteTitle}. Afterwards, you will be redirected back here.",
       "additionalInfo": "You might have to sign-in into {provider} first. You might be redirected back by {provider} immediately, without showing you anything."
     },
     "Footer": {
@@ -290,7 +290,17 @@
       "noApplicationTemplatesSignIn": "There are no application templates. Sign-in or sign-up to create the first one."
     },
     "AuthFlowGet": {
-      "instructionsMessage": "{appLink} from organization {orgLink} is using Charon to ask you to sign-in or sign-up. Please follow the steps below to do so, or to decline."
+      "instructionsMessage": "{appLink} from organization {orgLink} is using {siteTitle} to ask you to sign-in or sign-up. Please follow the steps below to do so, or to decline.",
+      "steps": {
+        "start": "{siteTitle} sign-in or sign-up",
+        "passkeySignin": "Passkey sign-in",
+        "passkeySignup": "Passkey sign-up",
+        "password": "Provide password or passphrase",
+        "code": "Provide code",
+        "thirdPartyProvider": "Redirect to {provider}",
+        "identity": "Choose identity or decline",
+        "autoRedirect": "Redirect back to the app"
+      }
     },
     "IdentityCreate": {
       "createIdentity": "Create identity"

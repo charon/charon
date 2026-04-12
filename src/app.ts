@@ -4,10 +4,17 @@ import { createRouter, createWebHistory } from "vue-router"
 import "@/app.css"
 import App from "@/App.vue"
 import { processOIDCRedirect } from "@/auth"
+import siteContext from "@/context"
 import i18n from "@/i18n"
 import { progressKey, rootProgressKey } from "@/progress"
 import routes from "@/routes"
 import { replaceLocationHash } from "@/utils"
+
+// During development when requests are proxied to Vite, placeholders
+// in HTML files are not rendered. So we set them here as well.
+if (siteContext.title) {
+  document.title = siteContext.title
+}
 
 // Facebook Login returns adds a hash on its callback. Here we remove it before
 // we create Vue router so that Vue router gets clean route (it might matter if

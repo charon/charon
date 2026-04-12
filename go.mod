@@ -6,7 +6,7 @@ go 1.25.0
 ignore ./node_modules
 
 require (
-	github.com/alecthomas/kong v1.12.2-0.20250922094329-a62e6a47decf
+	github.com/alecthomas/kong v1.13.1-0.20260401093329-db421839da20
 	github.com/alexedwards/argon2id v1.0.1-0.20251028180742-493d7dead70e
 	github.com/automattic/go-gravatar v0.0.0-20210818030622-453d3c921ea3
 	github.com/go-jose/go-jose/v3 v3.0.5
@@ -16,9 +16,9 @@ require (
 	github.com/ory/fosite v0.49.1-0.20250703093431-a5f0b09bf31c
 	github.com/temoto/robotstxt v1.1.2
 	github.com/wneessen/go-mail v0.7.2
-	gitlab.com/tozd/go/cli v0.6.0
+	gitlab.com/tozd/go/cli v0.7.0
 	gitlab.com/tozd/go/errors v0.10.0
-	gitlab.com/tozd/go/x v0.0.0-20260315142907-e9103a5928d0
+	gitlab.com/tozd/go/x v0.0.0-20260326230658-7f3b8e405781
 	gitlab.com/tozd/go/zerolog v0.11.2
 	gitlab.com/tozd/identifier v0.8.1
 	gitlab.com/tozd/waf v0.23.0
@@ -62,7 +62,7 @@ require (
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.8.0 // indirect
-	github.com/go-git/go-git/v5 v5.17.1 // indirect
+	github.com/go-git/go-git/v5 v5.17.2 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-webauthn/webauthn v0.15.0
@@ -141,5 +141,5 @@ require (
 	google.golang.org/grpc v1.80.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
+	gopkg.in/yaml.v3 v3.0.1
 )

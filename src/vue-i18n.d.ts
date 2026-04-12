@@ -302,6 +302,16 @@ declare module "vue-i18n" {
       }
       AuthFlowGet: {
         instructionsMessage: string
+        steps: {
+          start: string
+          passkeySignin: string
+          passkeySignup: string
+          password: string
+          code: string
+          thirdPartyProvider: string
+          identity: string
+          autoRedirect: string
+        }
       }
       IdentityCreate: {
         createIdentity: string

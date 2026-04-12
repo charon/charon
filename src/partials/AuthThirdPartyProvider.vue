@@ -7,6 +7,7 @@ import { useRouter } from "vue-router"
 
 import { postJSON } from "@/api"
 import Button from "@/components/Button.vue"
+import siteContext from "@/context"
 import { processResponse } from "@/flow"
 import { useProgress } from "@/progress"
 import { redirectServerSide } from "@/utils"
@@ -197,7 +198,7 @@ onBeforeUnmount(() => {
         >
       </i18n-t>
     </div>
-    <div class="mt-4">{{ t("partials.AuthThirdPartyProvider.instructions") }}</div>
+    <div class="mt-4">{{ t("partials.AuthThirdPartyProvider.instructions", { siteTitle: siteContext.title }) }}</div>
     <div class="mt-4">{{ t("partials.AuthThirdPartyProvider.additionalInfo", { provider: flow.getThirdPartyProvider()!.name }) }}</div>
     <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">

@@ -730,7 +730,7 @@ func (s *Service) CredentialAddPasskeyStartPostAPI(w http.ResponseWriter, req *h
 	}
 
 	userID := identifier.New()
-	options, sessionData, errE := beginPasskeyRegistration(s.passkeyProvider(), userID, displayName)
+	options, sessionData, errE := beginPasskeyRegistration(s.passkeyProvider(), userID, displayName, s.title)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -794,7 +794,7 @@ func (s *Service) CredentialAddPasskeyCompletePostAPI(w http.ResponseWriter, req
 		return
 	}
 
-	credential, providerID, errE := s.completePasskeyRegistration(request.CreateResponse, cas.DisplayName, cas.Passkey)
+	credential, providerID, errE := s.completePasskeyRegistration(request.CreateResponse, cas.DisplayName, s.title, cas.Passkey)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
@@ -993,7 +993,7 @@ FoundCredential:
 
 	var signalUpdate *SignalCurrentUserDetails
 	if foundProvider == ProviderPasskey {
-		signalUpdate, errE = s.getPasskeySignalCurrentUserDetailsData(account.Credentials[foundProvider][foundIndex], requestDisplayName)
+		signalUpdate, errE = s.getPasskeySignalCurrentUserDetailsData(account.Credentials[foundProvider][foundIndex], requestDisplayName, s.title)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return

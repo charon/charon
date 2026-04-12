@@ -25,7 +25,7 @@ func init() { //nolint:gochecknoinits
 	}
 }
 
-func (s *Service) sendMail(ctx context.Context, flow *flow, emails []string, subject string, body *tt.Template, data interface{}) errors.E {
+func (s *Service) sendMail(ctx context.Context, flow *flow, emails []string, subject *tt.Template, body *tt.Template, data interface{}) errors.E {
 	logger := zerolog.Ctx(ctx)
 	ms := []*mail.Msg{}
 	for _, to := range emails {
@@ -41,7 +41,13 @@ func (s *Service) sendMail(ctx context.Context, flow *flow, emails []string, sub
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		m.Subject(subject)
+		// Use title from data for subject as well.
+		var subjectBuf bytes.Buffer
+		err = subject.Execute(&subjectBuf, data)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		m.Subject(subjectBuf.String())
 		err = m.SetBodyTextTemplate(body, data)
 		if err != nil {
 			return errors.WithStack(err)
@@ -51,9 +57,9 @@ func (s *Service) sendMail(ctx context.Context, flow *flow, emails []string, sub
 		m.SetGenHeader("X-Entity-Ref-ID", id.String())
 		site := waf.MustGetSite[*Site](ctx)
 		if site.Build != nil {
-			m.SetUserAgent(fmt.Sprintf("Charon version %s (build on %s, git revision %s)", site.Build.Version, site.Build.BuildTimestamp, site.Build.Revision))
+			m.SetUserAgent(fmt.Sprintf("%s version %s (build on %s, git revision %s)", s.title, site.Build.Version, site.Build.BuildTimestamp, site.Build.Revision))
 		} else {
-			m.SetUserAgent("Charon")
+			m.SetUserAgent(s.title)
 		}
 		ms = append(ms, m)
 	}

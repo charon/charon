@@ -9,6 +9,7 @@ import { useRouter } from "vue-router"
 
 import { getAllIdentities, postJSON, restartAuth } from "@/api"
 import Button from "@/components/Button.vue"
+import siteContext from "@/context"
 import { processResponse } from "@/flow"
 import IdentityCreate from "@/partials/IdentityCreate.vue"
 import IdentityPublic from "@/partials/IdentityPublic.vue"
@@ -343,6 +344,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
           <template #strongCongratulations
             ><strong>{{ t("common.messages.congratulations") }}</strong></template
           >
+          <template #siteTitle>{{ siteContext.title }}</template>
         </i18n-t>
       </div>
       <div v-else-if="flow.getCompleted().includes('signup')" class="mb-4">
@@ -350,6 +352,7 @@ async function onEnable(identity: Identity | DeepReadonly<Identity>) {
           <template #strongCongratulations
             ><strong>{{ t("common.messages.congratulations") }}</strong></template
           >
+          <template #siteTitle>{{ siteContext.title }}</template>
         </i18n-t>
       </div>
       <div class="mb-4">{{ t("partials.AuthIdentity.selectInstructions") }}</div>

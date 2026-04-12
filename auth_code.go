@@ -19,10 +19,10 @@ import (
 const ProviderCode Provider = "code"
 
 const (
-	codeProviderSubject  = `Your code for Charon`
+	codeProviderSubject  = `Your code for {{.title}}`
 	codeProviderTemplate = `Hi!
 
-Here is the code to complete your Charon sign-in or sign-up:
+Here is the code to complete your {{.title}} sign-in or sign-up:
 
 {{.code}}
 
@@ -52,7 +52,11 @@ func initCodeProvider(config *Config, service *Service) (func() *codeProvider, e
 	})
 }
 
-var codeProviderTemplateCompiled = tt.Must(tt.New("CodeProviderTemplate").Parse(codeProviderTemplate)) //nolint:gochecknoglobals
+//nolint:gochecknoglobals
+var (
+	codeProviderSubjectCompiled  = tt.Must(tt.New("CodeProviderSubject").Parse(codeProviderSubject))
+	codeProviderTemplateCompiled = tt.Must(tt.New("CodeProviderTemplate").Parse(codeProviderTemplate))
+)
 
 var errMultipleCredentials = errors.Base("multiple credentials for the provider")
 
@@ -255,9 +259,10 @@ func (s *Service) sendCode(
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-	errE = s.sendMail(req.Context(), flow, emails, codeProviderSubject, codeProviderTemplateCompiled, map[string]string{
-		"code": code,
-		"url":  url,
+	errE = s.sendMail(req.Context(), flow, emails, codeProviderSubjectCompiled, codeProviderTemplateCompiled, map[string]string{
+		"code":  code,
+		"title": s.title,
+		"url":   url,
 	})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
