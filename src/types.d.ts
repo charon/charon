@@ -141,6 +141,8 @@ export type SiteContext = {
     revision?: string
   }
   providers: SiteProvider[]
+  privacyPolicy?: boolean
+  termsOfService?: boolean
   organizationId: string
   clientId: string
   redirectUri: string
