@@ -37,7 +37,8 @@ test:
 	gotestsum --format pkgname --packages ./... -- -race -timeout 10m -cover -covermode atomic
 
 test-ci:
-	gotestsum --format pkgname --packages ./... --junitfile tests.xml -- -race -timeout 10m -cover -covermode atomic -args -test.gocoverdir=coverage
+	mkdir -p coverage
+	gotestsum --format pkgname --packages ./... --junitfile tests.xml -- -race -timeout 10m -cover -covermode atomic -args -test.gocoverdir="$(pwd)/coverage"
 
 lint:
 	golangci-lint run --output.text.colors --allow-parallel-runners --fix

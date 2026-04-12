@@ -45,8 +45,6 @@ test_go:
     - apk --update add make bash gcc musl-dev mailcap git
     - (cd /go; go install gotest.tools/gotestsum@v1.13.0)
     - (cd /go; go install github.com/boumenot/gocover-cobertura@v1.4.0)
-    # Needs the coverage folder to generate go coverage.
-    - mkdir -p coverage
     - go version
 
   script:
