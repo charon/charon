@@ -530,8 +530,7 @@ func (s *Service) SAMLMetadataGetAPI(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	site := waf.MustGetSite[*Site](req.Context())
-	metadata, errE := generateSAMLMetadata(provider, site.Title)
+	metadata, errE := generateSAMLMetadata(provider, s.title)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return

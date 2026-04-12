@@ -205,8 +205,6 @@ func (s *Service) AuthFlowPasskeyGetCompletePostAPI(w http.ResponseWriter, req *
 
 	ctx := req.Context()
 
-	site := waf.MustGetSite[*Site](ctx)
-
 	flow := s.getActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
 		return
@@ -258,7 +256,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePostAPI(w http.ResponseWriter, req *
 		}
 		pkCredential.userID = storedCredential.ID
 		pkCredential.displayName = storedCredential.DisplayName
-		pkCredential.title = site.Title
+		pkCredential.title = s.title
 		return pkCredential, nil
 	}, *flowPasskey.SessionData, parsedResponse)
 	if err != nil {
@@ -317,8 +315,6 @@ func (s *Service) AuthFlowPasskeyCreateStartPostAPI(w http.ResponseWriter, req *
 
 	ctx := req.Context()
 
-	site := waf.MustGetSite[*Site](ctx)
-
 	flow := s.getActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
 		return
@@ -334,7 +330,7 @@ func (s *Service) AuthFlowPasskeyCreateStartPostAPI(w http.ResponseWriter, req *
 	// User ID also serves as public credential ID once stored in the database.
 	userID := identifier.New()
 	displayName := userID.String()
-	options, session, errE := beginPasskeyRegistration(s.passkeyProvider(), userID, displayName, site.Title)
+	options, session, errE := beginPasskeyRegistration(s.passkeyProvider(), userID, displayName, s.title)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -383,8 +379,6 @@ func (s *Service) AuthFlowPasskeyCreateCompletePostAPI(w http.ResponseWriter, re
 
 	ctx := req.Context()
 
-	site := waf.MustGetSite[*Site](ctx)
-
 	flow := s.getActiveFlowNoAuthStep(w, req, params["id"])
 	if flow == nil {
 		return
@@ -412,7 +406,7 @@ func (s *Service) AuthFlowPasskeyCreateCompletePostAPI(w http.ResponseWriter, re
 
 	createResponse := passkeyCreateComplete.CreateResponse
 
-	credential, providerID, errE := s.completePasskeyRegistration(createResponse, flowPasskey.DisplayName, site.Title, flowPasskey.SessionData)
+	credential, providerID, errE := s.completePasskeyRegistration(createResponse, flowPasskey.DisplayName, s.title, flowPasskey.SessionData)
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return

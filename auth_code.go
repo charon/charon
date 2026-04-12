@@ -259,10 +259,9 @@ func (s *Service) sendCode(
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-	site := waf.MustGetSite[*Site](req.Context())
 	errE = s.sendMail(req.Context(), flow, emails, codeProviderSubjectCompiled, codeProviderTemplateCompiled, map[string]string{
 		"code":  code,
-		"title": site.Title,
+		"title": s.title,
 		"url":   url,
 	})
 	if errE != nil {

@@ -57,9 +57,9 @@ func (s *Service) sendMail(ctx context.Context, flow *flow, emails []string, sub
 		m.SetGenHeader("X-Entity-Ref-ID", id.String())
 		site := waf.MustGetSite[*Site](ctx)
 		if site.Build != nil {
-			m.SetUserAgent(fmt.Sprintf("%s version %s (build on %s, git revision %s)", site.Title, site.Build.Version, site.Build.BuildTimestamp, site.Build.Revision))
+			m.SetUserAgent(fmt.Sprintf("%s version %s (build on %s, git revision %s)", s.title, site.Build.Version, site.Build.BuildTimestamp, site.Build.Revision))
 		} else {
-			m.SetUserAgent(site.Title)
+			m.SetUserAgent(s.title)
 		}
 		ms = append(ms, m)
 	}
