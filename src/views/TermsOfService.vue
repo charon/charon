@@ -11,7 +11,7 @@ const router = useRouter()
 const progress = useProgress()
 const abortController = new AbortController()
 
-const termsOfUse = ref("")
+const termsOfService = ref("")
 
 onBeforeUnmount(() => {
   abortController.abort()
@@ -21,20 +21,20 @@ onBeforeMount(async () => {
   progress.value += 1
   try {
     const url = router.apiResolve({
-      name: "TermsOfUse",
+      name: "TermsOfService",
     }).href
 
     const html = await getHTML(url, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }
-    termsOfUse.value = html
+    termsOfService.value = html
   } catch (err) {
     if (abortController.signal.aborted) {
       return
     }
     // TODO: Show some error to the user.
-    console.error("TermsOfUse.onBeforeMount", err)
+    console.error("TermsOfService.onBeforeMount", err)
   } finally {
     progress.value -= 1
   }
@@ -47,7 +47,7 @@ onBeforeMount(async () => {
   </Teleport>
   <div class="mt-12 flex w-full flex-col items-center border-t border-transparent sm:mt-[4.5rem]">
     <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,65ch)] gap-1 sm:m-4 sm:gap-4">
-      <div class="prose w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm" v-html="termsOfUse" />
+      <div class="prose w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm" v-html="termsOfService" />
     </div>
   </div>
   <Teleport to="footer">

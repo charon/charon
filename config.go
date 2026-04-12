@@ -255,8 +255,8 @@ type Config struct {
 	Name      string    `default:"Charon"                             help:"Name of this Charon instance as shown to users." placeholder:"STRING" short:"N" yaml:"name"`
 
 	// TODO: This is just temporary. Once we have PeerDB as backend we should just create PeerDB documents with these during populate.
-	TermsOfUse    kong.FileContentFlag `help:"File with terms of use."   placeholder:"PATH" yaml:"termsOfUse"`
-	PrivacyPolicy kong.FileContentFlag `help:"File with privacy policy." placeholder:"PATH" yaml:"privacyPolicy"`
+	TermsOfService kong.FileContentFlag `help:"File with terms of service." placeholder:"PATH" yaml:"termsOfService"`
+	PrivacyPolicy  kong.FileContentFlag `help:"File with privacy policy."   placeholder:"PATH" yaml:"privacyPolicy"`
 
 	Mail Mail `embed:"" envprefix:"MAIL_" group:"Mail:" prefix:"mail." yaml:"mail"`
 
@@ -296,10 +296,10 @@ type Service struct {
 	codeProvider       func() *codeProvider
 	charonOrganization func() charonOrganization
 
-	domain        string
-	name          string
-	termsOfUse    []byte
-	privacyPolicy []byte
+	domain         string
+	name           string
+	termsOfService []byte
+	privacyPolicy  []byte
 
 	mailClient *mail.Client
 	mailFrom   string
@@ -386,10 +386,10 @@ func (config *Config) Init(files fs.ReadFileFS) (*Service, errors.E) { //nolint:
 				KeyFile:  "",
 			},
 			// We will set the rest later for all sites.
-			Build:         nil,
-			Providers:     nil,
-			TermsOfUse:    false,
-			PrivacyPolicy: false,
+			Build:          nil,
+			Providers:      nil,
+			TermsOfService: false,
+			PrivacyPolicy:  false,
 		}
 	}
 	// If domains are not provided, sites are automatically constructed based on the certificate.
@@ -410,7 +410,7 @@ func (config *Config) Init(files fs.ReadFileFS) (*Service, errors.E) { //nolint:
 	}
 
 	for _, site := range sites {
-		site.TermsOfUse = config.TermsOfUse != nil
+		site.TermsOfService = config.TermsOfService != nil
 		site.PrivacyPolicy = config.PrivacyPolicy != nil
 	}
 
@@ -668,7 +668,7 @@ func (config *Config) Init(files fs.ReadFileFS) (*Service, errors.E) { //nolint:
 		charonOrganization:     nil,
 		domain:                 domain,
 		name:                   config.Name,
-		termsOfUse:             config.TermsOfUse,
+		termsOfService:         config.TermsOfService,
 		privacyPolicy:          config.PrivacyPolicy,
 		mailClient:             nil,
 		mailFrom:               config.Mail.From,

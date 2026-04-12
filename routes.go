@@ -617,20 +617,20 @@ func (s *Service) setRoutes() { //nolint:maintidx
 		},
 	}
 
-	if s.termsOfUse != nil {
+	if s.termsOfService != nil {
 		// TODO: This is just temporary. Once we have PeerDB as backend we should just create PeerDB documents with these during populate.
-		termsOfUsePageID := identifier.From(s.domain, "PAGE", "TERMS_OF_USE")
+		termsOfServicePageID := identifier.From(s.domain, "PAGE", "TERMS_OF_SERVICE")
 
-		s.Routes["TermsOfUse"] = waf.Route{
+		s.Routes["TermsOfService"] = waf.Route{
 			RouteOptions: waf.RouteOptions{
 				Handlers: map[string]waf.Handler{
-					http.MethodGet: s.TermsOfUseGet,
+					http.MethodGet: s.TermsOfServiceGet,
 				},
 			},
-			Path: "/d/" + termsOfUsePageID.String(),
+			Path: "/d/" + termsOfServicePageID.String(),
 			API: waf.RouteOptions{
 				Handlers: map[string]waf.Handler{
-					http.MethodGet: s.TermsOfUseGetAPI,
+					http.MethodGet: s.TermsOfServiceGetAPI,
 				},
 			},
 		}

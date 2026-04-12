@@ -34,8 +34,8 @@ func (s *Service) NoticeGet(w http.ResponseWriter, req *http.Request, _ waf.Para
 	}
 }
 
-// TermsOfUseGet is the frontend handler for the "terms of use" page.
-func (s *Service) TermsOfUseGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// TermsOfServiceGet is the frontend handler for the "terms of service" page.
+func (s *Service) TermsOfServiceGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
@@ -43,13 +43,13 @@ func (s *Service) TermsOfUseGet(w http.ResponseWriter, req *http.Request, _ waf.
 	}
 }
 
-// TermsOfUseGetAPI is the API handler for the "terms of use" page.
-func (s *Service) TermsOfUseGetAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// TermsOfServiceGetAPI is the API handler for the "terms of service" page.
+func (s *Service) TermsOfServiceGetAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("Content-Length", strconv.Itoa(len(s.termsOfUse)))
-	w.Header().Set("Etag", x.ComputeEtag(s.termsOfUse))
+	w.Header().Set("Content-Length", strconv.Itoa(len(s.termsOfService)))
+	w.Header().Set("Etag", x.ComputeEtag(s.termsOfService))
 	w.Header().Set("Cache-Control", "no-cache")
-	http.ServeContent(w, req, "", time.Time{}, bytes.NewReader(s.termsOfUse))
+	http.ServeContent(w, req, "", time.Time{}, bytes.NewReader(s.termsOfService))
 }
 
 // PrivacyPolicyGet is the frontend handler for the "privacy policy" page.
