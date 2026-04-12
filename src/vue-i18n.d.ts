@@ -373,6 +373,10 @@ declare module "vue-i18n" {
         noCredentialsSignIn: string
         verify: string
       }
+      Footer: {
+        terms: string
+        privacy: string
+      }
     }
   }
 }
