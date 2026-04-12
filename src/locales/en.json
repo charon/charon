@@ -290,7 +290,17 @@
       "noApplicationTemplatesSignIn": "There are no application templates. Sign-in or sign-up to create the first one."
     },
     "AuthFlowGet": {
-      "instructionsMessage": "{appLink} from organization {orgLink} is using {siteTitle} to ask you to sign-in or sign-up. Please follow the steps below to do so, or to decline."
+      "instructionsMessage": "{appLink} from organization {orgLink} is using {siteTitle} to ask you to sign-in or sign-up. Please follow the steps below to do so, or to decline.",
+      "steps": {
+        "start": "{siteTitle} sign-in or sign-up",
+        "passkeySignin": "Passkey sign-in",
+        "passkeySignup": "Passkey sign-up",
+        "password": "Provide password or passphrase",
+        "code": "Provide code",
+        "thirdPartyProvider": "Redirect to {provider}",
+        "identity": "Choose identity or decline",
+        "autoRedirect": "Redirect back to the app"
+      }
     },
     "IdentityCreate": {
       "createIdentity": "Create identity"

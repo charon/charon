@@ -73,25 +73,25 @@ export function updateSteps(flow: Flow, targetStep: string, force?: boolean) {
   const newSteps = [
     {
       key: "start",
-      name: `${siteContext.title} sign-in or sign-up`,
+      name: flow.t("views.AuthFlowGet.steps.start", { siteTitle: siteContext.title }),
     },
   ]
 
   switch (targetStep) {
     case "passkeySignin":
-      newSteps.push({ key: "passkeySignin", name: "Passkey sign-in" })
+      newSteps.push({ key: "passkeySignin", name: flow.t("views.AuthFlowGet.steps.passkeySignin") })
       break
     case "passkeySignup":
-      newSteps.push({ key: "passkeySignin", name: "Passkey sign-in" }, { key: "passkeySignup", name: "Passkey sign-up" })
+      newSteps.push({ key: "passkeySignin", name: flow.t("views.AuthFlowGet.steps.passkeySignin") }, { key: "passkeySignup", name: flow.t("views.AuthFlowGet.steps.passkeySignup") })
       break
     case "password":
     case "code":
       // Currently we always push both password and code steps and possibly
       // later on remove the code step if it is not necessary.
-      newSteps.push({ key: "password", name: "Provide password or passphrase" }, { key: "code", name: "Provide code" })
+      newSteps.push({ key: "password", name: flow.t("views.AuthFlowGet.steps.password") }, { key: "code", name: flow.t("views.AuthFlowGet.steps.code") })
       break
     case "thirdPartyProvider":
-      newSteps.push({ key: "thirdPartyProvider", name: `Redirect to ${flow.getThirdPartyProvider()!.name}` })
+      newSteps.push({ key: "thirdPartyProvider", name: flow.t("views.AuthFlowGet.steps.thirdPartyProvider", { provider: flow.getThirdPartyProvider()!.name }) })
       break
   }
 
@@ -99,9 +99,9 @@ export function updateSteps(flow: Flow, targetStep: string, force?: boolean) {
   // This effectively means that we update steps only for target steps above,
   // while for other target steps we do not update steps (unless "force" is set).
   if (newSteps.length > 1 || force) {
-    newSteps.push({ key: "identity", name: "Choose identity or decline" })
+    newSteps.push({ key: "identity", name: flow.t("views.AuthFlowGet.steps.identity") })
     // TODO: Show the app name like "Redirect to <app name>".
-    newSteps.push({ key: "autoRedirect", name: `Redirect back to the app` })
+    newSteps.push({ key: "autoRedirect", name: flow.t("views.AuthFlowGet.steps.autoRedirect") })
     flow.setSteps(newSteps)
     return
   }

@@ -6,6 +6,7 @@ import type {
 } from "@simplewebauthn/browser"
 import type { BareItem, Key } from "structured-field-values"
 import type { DeepReadonly } from "vue"
+import type { NamedValue } from "vue-i18n"
 
 export type DeriveOptions = {
   name: string
@@ -166,6 +167,7 @@ export type AuthFlowStep = { key: string; name: string }
 
 export type Flow = {
   getId(): string
+  t(key: string, named?: NamedValue): string
 
   forward(to: string): void
   backward(to: string): void
