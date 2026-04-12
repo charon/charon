@@ -63,8 +63,8 @@ type Site struct {
 	Title     string         `json:"title,omitempty" yaml:"title,omitempty"`
 	Providers []SiteProvider `json:"providers"       yaml:"-"`
 
-	PrivacyPolicy  bool `json:"privacyPolicy,omitempty" yaml:"-"`
-	TermsOfService bool `json:"termsOfService,omitempty"    yaml:"-"`
+	PrivacyPolicy  bool `json:"privacyPolicy,omitempty"  yaml:"-"`
+	TermsOfService bool `json:"termsOfService,omitempty" yaml:"-"`
 }
 
 func (p *SiteProvider) initProvider(config *Config) errors.E {
