@@ -18,7 +18,7 @@ require (
 	github.com/wneessen/go-mail v0.7.2
 	gitlab.com/tozd/go/cli v0.6.0
 	gitlab.com/tozd/go/errors v0.10.0
-	gitlab.com/tozd/go/x v0.0.0-20260315142907-e9103a5928d0
+	gitlab.com/tozd/go/x v0.0.0-20260326230658-7f3b8e405781
 	gitlab.com/tozd/go/zerolog v0.11.2
 	gitlab.com/tozd/identifier v0.8.1
 	gitlab.com/tozd/waf v0.23.0
