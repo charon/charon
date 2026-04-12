@@ -280,19 +280,31 @@ func (config *Config) Validate() error {
 
 	domains := mapset.NewThreadUnsafeSet[string]()
 	for i, site := range config.Sites {
+		// This is not validated when Site is not populated by Kong.
 		if site.Domain == "" {
-			return errors.Errorf(`domain is required for site at index %d`, i)
+			errE := errors.New("domain is required for site")
+			errors.Details(errE)["index"] = i
+			return errE
 		}
+
+		// To make sure validation is called.
 		err := site.Validate()
 		if err != nil {
 			return errors.WithStack(err)
 		}
+
+		// We cannot use kong to set these defaults, so we do it here.
 		if site.Title == "" {
 			site.Title = DefaultTitle
 		}
+
 		if !domains.Add(site.Domain) {
-			return errors.Errorf(`duplicate site for domain "%s"`, site.Domain)
+			errE := errors.New("duplicate site for domain")
+			errors.Details(errE)["domain"] = site.Domain
+			return errE
 		}
+
+		// Site might have been changed, so we assign it back.
 		config.Sites[i] = site
 	}
 	return nil
@@ -357,9 +369,11 @@ type Service struct {
 
 // Init initializes the HTTP service and is used together with Prepare to implement Run.
 func (config *Config) Init(files fs.FS) (*Service, errors.E) { //nolint:maintidx
+	// This is not set when Config is not populated by Kong.
 	if config.Title == "" {
 		config.Title = DefaultTitle
 	}
+
 	var secret []byte
 	if config.Secret != nil {
 		// We use a prefix to aid secret scanners.
