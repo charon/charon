@@ -2,6 +2,9 @@ module gitlab.com/charon/charon
 
 go 1.25.0
 
+// Some NPM modules ship Go code.
+ignore ./node_modules
+
 require (
 	github.com/alecthomas/kong v1.12.2-0.20250922094329-a62e6a47decf
 	github.com/alexedwards/argon2id v1.0.1-0.20251028180742-493d7dead70e
