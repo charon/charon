@@ -90,7 +90,7 @@ func initPasskeyProvider(config *Config, service *Service) (func() *webauthn.Web
 	return initWithHost(config, service.domain, func(host string) *webauthn.WebAuthn {
 		origin := "https://" + host
 		wconfig := &webauthn.Config{ //nolint:exhaustruct
-			RPDisplayName:         config.Title,
+			RPDisplayName:         service.title,
 			RPID:                  service.domain,
 			RPOrigins:             []string{origin},
 			AttestationPreference: protocol.PreferNoAttestation,
