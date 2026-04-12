@@ -350,12 +350,9 @@ async function onCode() {
 <template>
   <div class="flex w-full flex-col rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
     <div class="flex flex-col">
-      <label for="authpassword-input-email-or-username" class="mb-1">
-        <i18n-t v-if="isEmail(flow.getEmailOrUsername())" keypath="partials.AuthPassword.emailAddressLabel" scope="global" />
-        <i18n-t v-else keypath="partials.AuthPassword.usernameLabel" scope="global">
-          <template #siteTitle>{{ siteContext.title }}</template>
-        </i18n-t>
-      </label>
+      <label for="authpassword-input-email-or-username" class="mb-1">{{
+        isEmail(flow.getEmailOrUsername()) ? t("partials.AuthPassword.emailAddressLabel") : t("partials.AuthPassword.usernameLabel", { siteTitle: siteContext.title })
+      }}</label>
       <InputTextButton id="authpassword-input-email-or-username" class="grow" tabindex="5" @click.prevent="onBack">{{ flow.getEmailOrUsername() }}</InputTextButton>
     </div>
     <div class="mt-4 flex flex-col">

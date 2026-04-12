@@ -198,11 +198,7 @@ onBeforeUnmount(() => {
         >
       </i18n-t>
     </div>
-    <div class="mt-4">
-      <i18n-t keypath="partials.AuthThirdPartyProvider.instructions" scope="global">
-        <template #siteTitle>{{ siteContext.title }}</template>
-      </i18n-t>
-    </div>
+    <div class="mt-4">{{ t("partials.AuthThirdPartyProvider.instructions", { siteTitle: siteContext.title }) }}</div>
     <div class="mt-4">{{ t("partials.AuthThirdPartyProvider.additionalInfo", { provider: flow.getThirdPartyProvider()!.name }) }}</div>
     <div v-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">

@@ -172,9 +172,7 @@ function onCancel() {
         >
       </i18n-t>
     </div>
-    <i18n-t keypath="partials.AuthPasskeySignin.signupInfo" scope="global">
-      <template #siteTitle>{{ siteContext.title }}</template>
-    </i18n-t>
+    <div class="mt-4">{{ t("partials.AuthPasskeySignin.signupInfo", { siteTitle: siteContext.title }) }}</div>
     <div v-if="unexpectedError" id="authpasskeysignin-message-unexpectederror" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-between gap-4">
       <Button type="button" tabindex="2" @click.prevent="onBack">{{ t("common.buttons.back") }}</Button>

@@ -169,11 +169,7 @@ function onThirdPartyProvider(provider: string) {
 <template>
   <div class="flex w-full flex-col rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
     <div class="flex flex-col">
-      <label for="authstart-input-email" class="mb-1">
-        <i18n-t keypath="partials.AuthStart.emailOrUsernameLabel" scope="global">
-          <template #siteTitle>{{ siteContext.title }}</template>
-        </i18n-t>
-      </label>
+      <label for="authstart-input-email" class="mb-1">{{ t("partials.AuthStart.emailOrUsernameLabel", { siteTitle: siteContext.title }) }}</label>
       <!--
         We set novalidate because we do not want UA to show hints.
         We show them ourselves when we want them.
