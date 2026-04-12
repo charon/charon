@@ -52,9 +52,10 @@ func initCodeProvider(config *Config, service *Service) (func() *codeProvider, e
 	})
 }
 
+//nolint:gochecknoglobals
 var (
-	codeProviderSubjectCompiled  = tt.Must(tt.New("CodeProviderSubject").Parse(codeProviderSubject))   //nolint:gochecknoglobals
-	codeProviderTemplateCompiled = tt.Must(tt.New("CodeProviderTemplate").Parse(codeProviderTemplate)) //nolint:gochecknoglobals
+	codeProviderSubjectCompiled  = tt.Must(tt.New("CodeProviderSubject").Parse(codeProviderSubject))
+	codeProviderTemplateCompiled = tt.Must(tt.New("CodeProviderTemplate").Parse(codeProviderTemplate))
 )
 
 var errMultipleCredentials = errors.Base("multiple credentials for the provider")
@@ -260,8 +261,7 @@ func (s *Service) sendCode(
 	}
 	site := waf.MustGetSite[*Site](req.Context())
 	errE = s.sendMail(req.Context(), flow, emails, codeProviderSubjectCompiled, codeProviderTemplateCompiled, map[string]string{
-		"code": code,
-		// We set title for subject to site's title, which defaults to config.Title (defaultTitle) if not set.
+		"code":  code,
 		"title": site.Title,
 		"url":   url,
 	})

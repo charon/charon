@@ -33,10 +33,10 @@ type passkeyCredential struct {
 	// userID is the same as the public credential ID so we do not need to store it.
 	userID identifier.Identifier
 
-	// displayName is the same as the display name of the credential so we do not need to store it.
-	displayName string
 	// title is the site's title, used to construct WebAuthDisplayName, so we do not need to store it.
 	title string
+	// displayName is the same as the display name of the credential so we do not need to store it.
+	displayName string
 
 	Credential *webauthn.Credential `json:"credential"`
 }
