@@ -254,6 +254,10 @@ type Config struct {
 	Providers Providers `                 embed:"" group:"Providers:"                                                                                       yaml:"providers"`
 	Name      string    `default:"Charon"                             help:"Name of this Charon instance as shown to users." placeholder:"STRING" short:"N" yaml:"name"`
 
+	// TODO: This is just temporary. Once we have PeerDB as backend we should just create PeerDB documents with these during populate.
+	TermsOfUse    kong.FileContentFlag `help:"File with terms of use."   placeholder:"PATH" yaml:"termsOfUse"`
+	PrivacyPolicy kong.FileContentFlag `help:"File with privacy policy." placeholder:"PATH" yaml:"privacyPolicy"`
+
 	Mail Mail `embed:"" envprefix:"MAIL_" group:"Mail:" prefix:"mail." yaml:"mail"`
 
 	OIDC OIDC `embed:"" envprefix:"OIDC_" group:"OIDC:" prefix:"oidc." yaml:"oidc"`
@@ -292,8 +296,10 @@ type Service struct {
 	codeProvider       func() *codeProvider
 	charonOrganization func() charonOrganization
 
-	domain string
-	name   string
+	domain        string
+	name          string
+	termsOfUse    []byte
+	privacyPolicy []byte
 
 	mailClient *mail.Client
 	mailFrom   string
@@ -380,8 +386,10 @@ func (config *Config) Init(files fs.ReadFileFS) (*Service, errors.E) { //nolint:
 				KeyFile:  "",
 			},
 			// We will set the rest later for all sites.
-			Build:     nil,
-			Providers: nil,
+			Build:         nil,
+			Providers:     nil,
+			TermsOfUse:    false,
+			PrivacyPolicy: false,
 		}
 	}
 	// If domains are not provided, sites are automatically constructed based on the certificate.
@@ -399,6 +407,11 @@ func (config *Config) Init(files fs.ReadFileFS) (*Service, errors.E) { //nolint:
 				Revision:       cli.Revision,
 			}
 		}
+	}
+
+	for _, site := range sites {
+		site.TermsOfUse = config.TermsOfUse != nil
+		site.PrivacyPolicy = config.PrivacyPolicy != nil
 	}
 
 	providers := []SiteProvider{}
@@ -655,6 +668,8 @@ func (config *Config) Init(files fs.ReadFileFS) (*Service, errors.E) { //nolint:
 		charonOrganization:     nil,
 		domain:                 domain,
 		name:                   config.Name,
+		termsOfUse:             config.TermsOfUse,
+		privacyPolicy:          config.PrivacyPolicy,
 		mailClient:             nil,
 		mailFrom:               config.Mail.From,
 		accounts:               map[identifier.Identifier][]byte{},

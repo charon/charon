@@ -3,6 +3,7 @@ package charon
 import (
 	"net/http"
 
+	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 )
 
@@ -53,7 +54,7 @@ func (s *Service) setRoutes() { //nolint:maintidx
 		"OIDCToken": {
 			Path: "/auth/oidc/token",
 			API: waf.RouteOptions{
-				CORS: &waf.CORSOptions{ //nolint:exhaustruct
+				CORS: &waf.CORSOptions{
 					AllowedOrigins: []string{"*"},
 					AllowedMethods: []string{"POST"},
 					AllowedHeaders: []string{"Authorization"},
@@ -67,7 +68,7 @@ func (s *Service) setRoutes() { //nolint:maintidx
 		"OIDCRevoke": {
 			Path: "/auth/oidc/revoke",
 			API: waf.RouteOptions{
-				CORS: &waf.CORSOptions{ //nolint:exhaustruct
+				CORS: &waf.CORSOptions{
 					AllowedOrigins: []string{"*"},
 					AllowedMethods: []string{"POST"},
 					AllowedHeaders: []string{"Authorization"},
@@ -89,7 +90,7 @@ func (s *Service) setRoutes() { //nolint:maintidx
 		"OIDCUserInfo": {
 			Path: "/auth/oidc/userinfo",
 			API: waf.RouteOptions{
-				CORS: &waf.CORSOptions{ //nolint:exhaustruct
+				CORS: &waf.CORSOptions{
 					AllowedOrigins: []string{"*"},
 					AllowedMethods: []string{"GET", "HEAD", "POST"},
 					AllowedHeaders: []string{"Authorization"},
@@ -103,7 +104,7 @@ func (s *Service) setRoutes() { //nolint:maintidx
 		},
 		"OIDCKeys": {
 			RouteOptions: waf.RouteOptions{
-				CORS: &waf.CORSOptions{ //nolint:exhaustruct
+				CORS: &waf.CORSOptions{
 					AllowedOrigins: []string{"*"},
 					AllowedMethods: []string{"GET", "HEAD"},
 					MaxAge:         corsMaxAge,
@@ -116,7 +117,7 @@ func (s *Service) setRoutes() { //nolint:maintidx
 		},
 		"OIDCDiscovery1": {
 			RouteOptions: waf.RouteOptions{
-				CORS: &waf.CORSOptions{ //nolint:exhaustruct
+				CORS: &waf.CORSOptions{
 					AllowedOrigins: []string{"*"},
 					AllowedMethods: []string{"GET", "HEAD"},
 					MaxAge:         corsMaxAge,
@@ -129,7 +130,7 @@ func (s *Service) setRoutes() { //nolint:maintidx
 		},
 		"OIDCDiscovery2": {
 			RouteOptions: waf.RouteOptions{
-				CORS: &waf.CORSOptions{ //nolint:exhaustruct
+				CORS: &waf.CORSOptions{
 					AllowedOrigins: []string{"*"},
 					AllowedMethods: []string{"GET", "HEAD"},
 					MaxAge:         corsMaxAge,
@@ -614,5 +615,43 @@ func (s *Service) setRoutes() { //nolint:maintidx
 				},
 			},
 		},
+	}
+
+	if s.termsOfUse != nil {
+		// TODO: This is just temporary. Once we have PeerDB as backend we should just create PeerDB documents with these during populate.
+		termsOfUsePageID := identifier.From(s.domain, "PAGE", "TERMS_OF_USE")
+
+		s.Routes["TermsOfUse"] = waf.Route{
+			RouteOptions: waf.RouteOptions{
+				Handlers: map[string]waf.Handler{
+					http.MethodGet: s.TermsOfUseGet,
+				},
+			},
+			Path: "/d/" + termsOfUsePageID.String(),
+			API: waf.RouteOptions{
+				Handlers: map[string]waf.Handler{
+					http.MethodGet: s.TermsOfUseGetAPI,
+				},
+			},
+		}
+	}
+
+	if s.privacyPolicy != nil {
+		// TODO: This is just temporary. Once we have PeerDB as backend we should just create PeerDB documents with these during populate.
+		privacyPolicyPageID := identifier.From(s.domain, "PAGE", "PRIVACY_POLICY")
+
+		s.Routes["PrivacyPolicy"] = waf.Route{
+			RouteOptions: waf.RouteOptions{
+				Handlers: map[string]waf.Handler{
+					http.MethodGet: s.PrivacyPolicyGet,
+				},
+			},
+			Path: "/d/" + privacyPolicyPageID.String(),
+			API: waf.RouteOptions{
+				Handlers: map[string]waf.Handler{
+					http.MethodGet: s.PrivacyPolicyGetAPI,
+				},
+			},
+		}
 	}
 }

@@ -56,6 +56,9 @@ type Site struct {
 
 	Build     *Build         `json:"build,omitempty"`
 	Providers []SiteProvider `json:"providers"`
+
+	PrivacyPolicy bool `json:"privacyPolicy,omitempty"`
+	TermsOfUse    bool `json:"termsOfUse,omitempty"`
 }
 
 func (p *SiteProvider) initProvider(config *Config) errors.E {

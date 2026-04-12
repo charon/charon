@@ -78,6 +78,39 @@ export async function getURL<T>(
   }
 }
 
+// TODO: Just temporary. Remove.
+export async function getHTML(url: string, abortSignal: AbortSignal | null, progress: Ref<number> | null): Promise<string> {
+  if (progress) {
+    progress.value += 1
+  }
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      // Mode and credentials match crossorigin=anonymous in link preload header.
+      mode: "cors",
+      credentials: "same-origin",
+      referrer: document.location.href,
+      referrerPolicy: "strict-origin-when-cross-origin",
+      signal: abortSignal,
+    })
+    const contentType = response.headers.get("Content-Type")
+    if (!contentType || !contentType.includes("text/html; charset=utf-8")) {
+      const body = await response.text()
+      throw new FetchError(`fetch GET error ${response.status}: ${body}`, {
+        status: response.status,
+        body,
+        url,
+        requestID: response.headers.get("Request-ID"),
+      })
+    }
+    return await response.text()
+  } finally {
+    if (progress) {
+      progress.value -= 1
+    }
+  }
+}
+
 export async function postJSON<T>(url: string, data: object, abortSignal: AbortSignal, progress: Ref<number> | null): Promise<T> {
   if (progress) {
     progress.value += 1

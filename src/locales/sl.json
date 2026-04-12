@@ -361,6 +361,10 @@
       "noCredentialsCreate": "Ni metod za avtentikacijo. Ustvarite prvo.",
       "noCredentialsSignIn": "Ni metod za avtentikacijo. Prijavite se ali registrirajte, da ustvarite prvo.",
       "verify": "Potrdi"
+    },
+    "Footer": {
+      "terms": "Pogoji",
+      "privacy": "Zasebnost"
     }
   }
 }
