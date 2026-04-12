@@ -6,7 +6,7 @@ FROM node:24.10-alpine3.22 AS node-build
 ARG VITE_COVERAGE
 ARG VITE_E2E_TESTS
 
-RUN apk --update add make bash
+RUN apk --update add make bash git
 COPY . /src/charon
 WORKDIR /src/charon
 RUN \
@@ -21,9 +21,10 @@ RUN apk --update add make bash git gcc musl-dev ca-certificates tzdata mailcap &
 COPY . /src/charon
 COPY --from=node-build /src/charon/dist /src/charon/dist
 WORKDIR /src/charon
-# We want Docker image for build timestamp label to match the one in
-# the binary so we take a timestamp once outside and pass it in.
+# We want Docker image for build timestamp and version labels to match the ones
+# in the binary so we take them once outside and pass them in.
 ARG BUILD_TIMESTAMP
+ARG VERSION
 ARG CHARON_BUILD_FLAGS
 # We run make with "-o dist" which prevents dist from being build here as it was done
 # in the node-build stage and we cannot (missing node, etc.) and do not want to build
