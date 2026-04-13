@@ -1262,7 +1262,7 @@ func (s *Service) CredentialConfirmEmailPostAPI(w http.ResponseWriter, req *http
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-	errE = s.sendMail(ctx, emailCredentialID, []string{emailCredential.ProviderID}, codeProviderSubject, codeProviderTemplateCompiled, map[string]string{
+	errE = s.sendMail(ctx, emailCredentialID, []string{emailCredential.ProviderID}, codeProviderSubjectCompiled, codeProviderTemplateCompiled, map[string]string{
 		"code": code,
 		"url":  url,
 	})
