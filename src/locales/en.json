@@ -396,8 +396,7 @@
     },
     "CredentialList": {
       "noCredentialsCreate": "No authentication methods configured. Create the first one.",
-      "noCredentialsSignIn": "There are no authentication methods. Sign-in or sign-up to create the first one.",
-      "verify": "Verify"
+      "noCredentialsSignIn": "There are no authentication methods. Sign-in or sign-up to create the first one."
     },
     "CredentialConfirmEmail": {
       "confirmEmail": "Confirm e-mail address",

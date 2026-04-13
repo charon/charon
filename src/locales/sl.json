@@ -396,8 +396,7 @@
     },
     "CredentialList": {
       "noCredentialsCreate": "Ni metod za avtentikacijo. Ustvarite prvo.",
-      "noCredentialsSignIn": "Ni metod za avtentikacijo. Prijavite se ali registrirajte, da ustvarite prvo.",
-      "verify": "Potrdi"
+      "noCredentialsSignIn": "Ni metod za avtentikacijo. Prijavite se ali registrirajte, da ustvarite prvo."
     },
     "CredentialConfirmEmail": {
       "confirmEmail": "Potrdite e-poštni naslov",
