@@ -210,7 +210,12 @@ func (s *Service) makeIdentityFromCredentials(account Account, credentials []Cre
 				identity.Username = username
 			}
 			if identity.Username == "" && email != "" {
-				identity.Username, _, _ = strings.Cut(email, "@")
+				// Username extracted from email should pass our validation. Otherwise, skip it.
+				username, _, _ := strings.Cut(email, "@")
+				preservedUsername, _, _ := validateEmailOrUsername(username, emailOrUsernameCheckUsername)
+				if preservedUsername != "" {
+					identity.Username = preservedUsername
+				}
 			}
 
 			if oidc, oidcFound := s.oidcProviders()[credential.Provider]; oidcFound {
@@ -222,7 +227,12 @@ func (s *Service) makeIdentityFromCredentials(account Account, credentials []Cre
 	}
 	if identity != nil {
 		if identity.Username == "" && identity.Email != "" {
-			identity.Username, _, _ = strings.Cut(identity.Email, "@")
+			// Username extracted from email should pass our validation. Otherwise, skip it.
+			username, _, _ := strings.Cut(identity.Email, "@")
+			preservedUsername, _, _ := validateEmailOrUsername(username, emailOrUsernameCheckUsername)
+			if preservedUsername != "" {
+				identity.Username = preservedUsername
+			}
 		}
 		if identity.PictureURL == "" && identity.Email != "" {
 			// TODO: Generate some local picture and do not use remote Gravatar.
