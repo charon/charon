@@ -370,7 +370,7 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity, service *Se
 	if existing == nil {
 		identities.Remove(IdentityRef{*i.ID})
 	}
-	unknown := service.hasIdentities(ctx, identities, false)
+	unknown := service.hasIdentities(ctx, identities)
 	if !unknown.IsEmpty() {
 		errE := errors.New("unknown identities")
 		identities := unknown.ToSlice()
@@ -1146,11 +1146,9 @@ func (s *Service) IdentityGetGetAPI(w http.ResponseWriter, req *http.Request, pa
 	})
 }
 
-func (s *Service) hasIdentities(_ context.Context, ids mapset.Set[IdentityRef], lock bool) mapset.Set[IdentityRef] {
-	if lock {
-		s.identitiesMu.RLock()
-		defer s.identitiesMu.RUnlock()
-	}
+func (s *Service) hasIdentities(_ context.Context, ids mapset.Set[IdentityRef]) mapset.Set[IdentityRef] {
+	s.identitiesMu.RLock()
+	defer s.identitiesMu.RUnlock()
 
 	unknown := mapset.NewThreadUnsafeSet[IdentityRef]()
 
