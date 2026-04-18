@@ -188,9 +188,36 @@ test.describe.serial("Charon Sign-in Flows", () => {
     // Wait for error message to appear.
     const errorMessage = page.locator("#authpassword-error-wrongpassword")
     await expect(errorMessage).toBeVisible()
+    await expect(passwordField).toBeFocused()
 
     await checkpoint(page, "auth-page-wrong-password-error-message")
 
     console.log("Successfully tested wrong password flow: entered wrong password and verified error message appeared")
+  })
+
+  test("Short username on AuthStart refocuses email input after error", async ({ context }) => {
+    const page = await context.newPage()
+
+    await page.goto(CHARON_URL)
+
+    const signInButton = page.locator("#navbar-button-signin")
+    await expect(signInButton).toBeVisible()
+    await signInButton.click()
+
+    const emailField = page.locator("input#authstart-input-email")
+    await expect(emailField).toBeVisible()
+    await expect(emailField).toBeFocused()
+    await emailField.fill("a")
+
+    const nextButton = page.locator("button#authstart-button-next")
+    await expect(nextButton).toBeVisible()
+    await checkpoint(page, "auth-start-page-with-short-username")
+    await nextButton.click()
+
+    await expect(page.locator("#authstart-error-emailorusername")).toBeVisible()
+    await expect(emailField).toBeFocused()
+    await checkpoint(page, "auth-start-page-short-username-error")
+
+    console.log("Successfully tested short username flow: entered short username, verified error appeared and email field refocused.")
   })
 })

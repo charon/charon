@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { CredentialAddEmailRequest, CredentialAddResponse } from "@/types"
 
-import { onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
@@ -39,6 +39,14 @@ function resetOnInteraction() {
 }
 
 watch([email], resetOnInteraction)
+
+watch(emailError, async (newValue) => {
+  if (newValue) {
+    await nextTick(() => {
+      document.getElementById("credentialaddemail-input-email")?.focus()
+    })
+  }
+})
 
 onBeforeUnmount(() => {
   abortController.abort()
@@ -120,10 +128,10 @@ async function onSubmit() {
       minlength="3"
       required
     />
-    <div v-if="emailError" class="mt-4 text-error-600">{{ getErrorMessage(emailError) }}</div>
+    <div v-if="emailError" id="credentialaddemail-error-email" class="mt-4 text-error-600">{{ getErrorMessage(emailError) }}</div>
     <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-end">
-      <Button type="submit" primary :disabled="!canSubmit()" :progress="progress">{{ t("common.buttons.add") }}</Button>
+      <Button id="credentialaddemail-button-add" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{ t("common.buttons.add") }}</Button>
     </div>
   </form>
 </template>

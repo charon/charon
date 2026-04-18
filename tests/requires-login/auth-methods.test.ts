@@ -250,6 +250,57 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     console.log("Successfully added a new passkey, signed in, removed it, and tried to sign in unsuccessfully.")
   })
 
+  test("Test failed passkey registration refocuses add button", async ({ context }) => {
+    const page = await context.newPage()
+
+    await signInWithPassword(page, "tester-auth-method-failed-passkey", "tester123", true, true)
+
+    const authMethodsLink = page.locator("#menu-list-credentials")
+    await expect(authMethodsLink).toBeVisible()
+    await authMethodsLink.click()
+
+    const addButton = page.locator("#credentiallist-button-add")
+    await expect(addButton).toBeVisible()
+    await addButton.click()
+
+    const passkeyRadio = page.locator("#credentialadd-radio-passkey")
+    await expect(passkeyRadio).toBeVisible()
+    await passkeyRadio.click()
+
+    const displayNameInput = page.locator("#credentialaddpasskey-input-displayname")
+    await expect(displayNameInput).toBeVisible()
+    await expect(displayNameInput).toBeFocused()
+    await displayNameInput.fill("failing-passkey")
+
+    // Enable WebAuthn environment in this session.
+    const client: CDPSession = await page.context().newCDPSession(page)
+
+    // Create a new Authenticator ID.
+    const authenticatorId = await getIdFromAddedVirtualAuthenticator(client)
+
+    const addPasskeyButton = page.locator("#credentialaddpasskey-button-add")
+    await expect(addPasskeyButton).toBeVisible()
+    await checkpoint(page, "auth-methods-add-passkey-failing-filled")
+
+    // Simulate a WebAuthn ceremony that fails (passkey does not send verification).
+    await simulatePasskeyInput(() => addPasskeyButton.click(), "doNotSendVerifiedPasskey", client, authenticatorId, false)
+
+    // Verify the failure banner appears and the Add button is refocused so Enter retries.
+    await expect(page.locator("#credentialaddpasskey-message-failed")).toBeVisible()
+    await expect(addPasskeyButton).toBeFocused()
+    await checkpoint(page, "auth-methods-add-passkey-failed-banner")
+
+    const homeButton = page.locator("#navbar-link-home")
+    await expect(homeButton).toBeVisible()
+    await homeButton.click()
+    const signOutButton = page.locator("#navbar-button-signout")
+    await expect(signOutButton).toBeVisible()
+    await page.waitForLoadState("networkidle")
+    await signOutButton.click()
+
+    console.log("Successfully verified that a failed passkey registration shows a failure banner and refocuses the add button.")
+  })
+
   test("Test adding a new username", async ({ context }) => {
     const page = await context.newPage()
 
@@ -369,5 +420,234 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     await signInWithPassword(page, "tester-auth-method-another-username", "tester123", true, true)
 
     console.log("Successfully added a new username, signed in, removed it, and signed in as a new user.")
+  })
+
+  test("Test adding a passkey with duplicate displayname refocuses displayname input", async ({ context }) => {
+    const page = await context.newPage()
+
+    await signInWithPassword(page, "tester-auth-method-dup-passkey", "tester123", true, true)
+
+    const authMethodsLink = page.locator("#menu-list-credentials")
+    await expect(authMethodsLink).toBeVisible()
+    await authMethodsLink.click()
+
+    const addButton = page.locator("#credentiallist-button-add")
+    await expect(addButton).toBeVisible()
+    await addButton.click()
+
+    const passkeyRadio = page.locator("#credentialadd-radio-passkey")
+    await expect(passkeyRadio).toBeVisible()
+    await passkeyRadio.click()
+
+    const displayNameInput = page.locator("#credentialaddpasskey-input-displayname")
+    await expect(displayNameInput).toBeVisible()
+    await expect(displayNameInput).toBeFocused()
+    await displayNameInput.fill("dup-passkey")
+
+    const client: CDPSession = await page.context().newCDPSession(page)
+    const authenticatorId = await getIdFromAddedVirtualAuthenticator(client)
+
+    const addPasskeyButton = page.locator("#credentialaddpasskey-button-add")
+    await expect(addPasskeyButton).toBeVisible()
+
+    // First add succeeds.
+    await simulatePasskeyInput(() => addPasskeyButton.click(), "shouldSucceed", client, authenticatorId, false)
+
+    // Back on credentials page after success.
+    await expect(addButton).toBeVisible()
+    await addButton.click()
+
+    await expect(passkeyRadio).toBeVisible()
+    await passkeyRadio.click()
+
+    await expect(displayNameInput).toBeVisible()
+    await expect(displayNameInput).toBeFocused()
+    await displayNameInput.fill("dup-passkey")
+
+    // Second add: server rejects with credentialDisplayNameInUse before WebAuthn ceremony starts.
+    await expect(addPasskeyButton).toBeVisible()
+    await addPasskeyButton.click()
+
+    await expect(page.locator("#credentialaddpasskey-error-passkey")).toBeVisible()
+    await expect(displayNameInput).toBeFocused()
+    await checkpoint(page, "auth-methods-add-passkey-duplicate-displayname")
+
+    const homeButton = page.locator("#navbar-link-home")
+    await expect(homeButton).toBeVisible()
+    await homeButton.click()
+    const signOutButton = page.locator("#navbar-button-signout")
+    await expect(signOutButton).toBeVisible()
+    await page.waitForLoadState("networkidle")
+    await signOutButton.click()
+
+    console.log("Successfully verified that adding a passkey with a duplicate display name refocuses the displayname input.")
+  })
+
+  test("Test adding a password with duplicate displayname refocuses password input", async ({ context }) => {
+    const page = await context.newPage()
+
+    await signInWithPassword(page, "tester-auth-method-dup-password", "tester123", true, true)
+
+    const authMethodsLink = page.locator("#menu-list-credentials")
+    await expect(authMethodsLink).toBeVisible()
+    await authMethodsLink.click()
+
+    const addButton = page.locator("#credentiallist-button-add")
+    await expect(addButton).toBeVisible()
+    await addButton.click()
+
+    const passwordRadio = page.locator("#credentialadd-radio-password")
+    await expect(passwordRadio).toBeVisible()
+    await passwordRadio.click()
+
+    const passwordInput = page.locator("#credentialaddpassword-input-password")
+    await expect(passwordInput).toBeVisible()
+    await expect(passwordInput).toBeFocused()
+    await passwordInput.fill("first-password-value")
+
+    const displayNameInput = page.locator("#credentialaddpassword-input-displayname")
+    await expect(displayNameInput).toBeVisible()
+    await displayNameInput.fill("my-dup-pw")
+
+    const addPasswordButton = page.locator("#credentialaddpassword-button-add")
+    await expect(addPasswordButton).toBeVisible()
+    await addPasswordButton.click()
+
+    // Back on credentials page after success.
+    await expect(addButton).toBeVisible()
+    await addButton.click()
+
+    await expect(passwordRadio).toBeVisible()
+    await passwordRadio.click()
+
+    await expect(passwordInput).toBeVisible()
+    await expect(passwordInput).toBeFocused()
+    await passwordInput.fill("second-password-value")
+    await displayNameInput.fill("my-dup-pw")
+
+    await expect(addPasswordButton).toBeVisible()
+    await addPasswordButton.click()
+
+    await expect(page.locator("#credentialaddpassword-error-password")).toBeVisible()
+    await expect(passwordInput).toBeFocused()
+    await checkpoint(page, "auth-methods-add-password-duplicate-displayname")
+
+    const homeButton = page.locator("#navbar-link-home")
+    await expect(homeButton).toBeVisible()
+    await homeButton.click()
+    const signOutButton = page.locator("#navbar-button-signout")
+    await expect(signOutButton).toBeVisible()
+    await page.waitForLoadState("networkidle")
+    await signOutButton.click()
+
+    console.log("Successfully verified that adding a password with a duplicate display name refocuses the password input.")
+  })
+
+  test("Test adding a duplicate username refocuses username input", async ({ context }) => {
+    const page = await context.newPage()
+
+    await signInWithPassword(page, "tester-auth-method-dup-username", "tester123", true, true)
+
+    const authMethodsLink = page.locator("#menu-list-credentials")
+    await expect(authMethodsLink).toBeVisible()
+    await authMethodsLink.click()
+
+    const addButton = page.locator("#credentiallist-button-add")
+    await expect(addButton).toBeVisible()
+    await addButton.click()
+
+    const usernameRadio = page.locator("#credentialadd-radio-username")
+    await expect(usernameRadio).toBeVisible()
+    await usernameRadio.click()
+
+    const usernameInput = page.locator("#credentialaddusername-input-username")
+    await expect(usernameInput).toBeVisible()
+    await expect(usernameInput).toBeFocused()
+    await usernameInput.fill("tester-auth-method-dup-username-alt")
+
+    const addUsernameButton = page.locator("#credentialaddusername-button-add")
+    await expect(addUsernameButton).toBeVisible()
+    await addUsernameButton.click()
+
+    await expect(addButton).toBeVisible()
+    await addButton.click()
+
+    await expect(usernameRadio).toBeVisible()
+    await usernameRadio.click()
+
+    await expect(usernameInput).toBeVisible()
+    await expect(usernameInput).toBeFocused()
+    await usernameInput.fill("tester-auth-method-dup-username-alt")
+
+    await expect(addUsernameButton).toBeVisible()
+    await addUsernameButton.click()
+
+    await expect(page.locator("#credentialaddusername-error-username")).toBeVisible()
+    await expect(usernameInput).toBeFocused()
+    await checkpoint(page, "auth-methods-add-username-duplicate")
+
+    const homeButton = page.locator("#navbar-link-home")
+    await expect(homeButton).toBeVisible()
+    await homeButton.click()
+    const signOutButton = page.locator("#navbar-button-signout")
+    await expect(signOutButton).toBeVisible()
+    await page.waitForLoadState("networkidle")
+    await signOutButton.click()
+
+    console.log("Successfully verified that adding a duplicate username refocuses the username input.")
+  })
+
+  test("Test adding an email credential focuses input on mount and refocuses on duplicate error", async ({ context }) => {
+    const page = await context.newPage()
+
+    await signInWithPassword(page, "tester-auth-method-dup-email", "tester123", true, true)
+
+    const authMethodsLink = page.locator("#menu-list-credentials")
+    await expect(authMethodsLink).toBeVisible()
+    await authMethodsLink.click()
+
+    const addButton = page.locator("#credentiallist-button-add")
+    await expect(addButton).toBeVisible()
+    await addButton.click()
+
+    const emailRadio = page.locator("#credentialadd-radio-email")
+    await expect(emailRadio).toBeVisible()
+    await emailRadio.click()
+
+    const emailInput = page.locator("#credentialaddemail-input-email")
+    await expect(emailInput).toBeVisible()
+    await expect(emailInput).toBeFocused()
+    await emailInput.fill("dup-email@example.com")
+
+    const addEmailButton = page.locator("#credentialaddemail-button-add")
+    await expect(addEmailButton).toBeVisible()
+    await addEmailButton.click()
+
+    await expect(addButton).toBeVisible()
+    await addButton.click()
+
+    await expect(emailRadio).toBeVisible()
+    await emailRadio.click()
+
+    await expect(emailInput).toBeVisible()
+    await expect(emailInput).toBeFocused()
+    await emailInput.fill("dup-email@example.com")
+
+    await expect(addEmailButton).toBeVisible()
+    await addEmailButton.click()
+
+    await expect(page.locator("#credentialaddemail-error-email")).toBeVisible()
+    await expect(emailInput).toBeFocused()
+    await checkpoint(page, "auth-methods-add-email-duplicate")
+
+    const homeButton = page.locator("#navbar-link-home")
+    await expect(homeButton).toBeVisible()
+    await homeButton.click()
+    const signOutButton = page.locator("#navbar-button-signout")
+    await expect(signOutButton).toBeVisible()
+    await page.waitForLoadState("networkidle")
+    await signOutButton.click()
+
+    console.log("Successfully verified that adding a duplicate e-mail refocuses the e-mail input.")
   })
 })

@@ -561,7 +561,8 @@ test.describe.serial("Charon Sign-in Flows", () => {
     await nextButton2.click()
 
     // Code should not be accepted - verify error message.
-    await expect(page.locator('text="Code is invalid. Please try again."')).toBeVisible()
+    await expect(page.locator("#authcode-error-code")).toBeVisible()
+    await expect(codeField).toBeFocused()
 
     await checkpoint(page, "auth-page-incorrect-email-code")
 
@@ -621,7 +622,8 @@ test.describe.serial("Charon Sign-in Flows", () => {
     await nextButton2.click()
 
     // Code should not be accepted - verify error message.
-    await expect(page.locator('text="Code is invalid. Please try again."')).toBeVisible()
+    await expect(page.locator("#authcode-error-code")).toBeVisible()
+    await expect(codeField).toBeFocused()
 
     await checkpoint(page, "auth-page-incorrect-email-code-from-link")
 

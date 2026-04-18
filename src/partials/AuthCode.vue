@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AuthFlowCodeCompleteRequest, AuthFlowCodeStartRequest, AuthFlowResponse, Flow, OrganizationApplicationPublic } from "@/types"
 
-import { getCurrentInstance, onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { getCurrentInstance, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRoute, useRouter } from "vue-router"
 
@@ -46,6 +46,14 @@ function resetOnInteraction() {
 }
 
 watch([code], resetOnInteraction)
+
+watch(codeError, async (newValue) => {
+  if (newValue) {
+    await nextTick(() => {
+      document.getElementById("code")?.focus()
+    })
+  }
+})
 
 watch(
   () => route.hash,
@@ -291,7 +299,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
         <Button id="authcode-button-submitcode" primary type="submit" tabindex="2" :disabled="!canNext()" :progress="progress">{{ t("common.buttons.next") }}</Button>
       </form>
     </div>
-    <div v-if="codeError" class="mt-4 text-error-600">{{ getErrorMessage(codeError) }}</div>
+    <div v-if="codeError" id="authcode-error-code" class="mt-4 text-error-600">{{ getErrorMessage(codeError) }}</div>
     <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div v-else-if="codeFromHash" class="mt-4">{{ t("partials.AuthCode.confirmCode") }}</div>
     <div v-else class="mt-4">{{ t("partials.AuthCode.waitForCode") }}</div>
