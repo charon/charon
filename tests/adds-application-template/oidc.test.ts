@@ -195,7 +195,7 @@ test.describe.serial("Charon OIDC Flows", () => {
       await selectButton.click()
 
       // Verify success message.
-      await expect(page.getByText("Everything is ready to sign you in")).toBeVisible()
+      await expect(page.locator("#authautoredirect-text-congratulations")).toBeVisible()
 
       // Now click on redirect, go back to page, decode JWT token.
       const redirectButton = page.locator("#authautoredirect-button-redirect")

@@ -3,14 +3,12 @@ import { defineConfig, devices } from "@playwright/test"
 export default defineConfig({
   testDir: "./tests",
   testMatch: "*.test.ts",
+  tag: process.env.PLAYWRIGHT_TAG ? [`@${process.env.PLAYWRIGHT_TAG}`] : undefined,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: 0,
   timeout: 180000, // 3 minutes per test.
-  reporter: [
-    ["html", { outputFolder: "playwright-report", open: "never" }],
-    ["junit", { outputFile: "test-results/junit.xml" }],
-  ],
+  reporter: [["blob"], ["html", { open: "never" }], ["junit", { outputFile: "test-results/junit.xml" }]],
   use: {
     baseURL: process.env.CHARON_URL || "https://localhost:8080",
     ignoreHTTPSErrors: false,
@@ -23,6 +21,20 @@ export default defineConfig({
     contextOptions: {
       reducedMotion: "reduce", // Avoids animation-related test flakiness.
     },
+    clientCertificates: process.env.SIPASS_TESTUSER_CERT_PATH
+      ? [
+          {
+            origin: "https://sicas-test.sigov.si",
+            certPath: process.env.SIPASS_TESTUSER_CERT_PATH,
+            keyPath: process.env.SIPASS_TESTUSER_KEY_PATH,
+          },
+          {
+            origin: "https://sicas-x509-test.sigov.si",
+            certPath: process.env.SIPASS_TESTUSER_CERT_PATH,
+            keyPath: process.env.SIPASS_TESTUSER_KEY_PATH,
+          },
+        ]
+      : [],
     launchOptions: {
       args: ["--font-render-hinting=none", "--disable-skia-runtime-opts", "--disable-font-subpixel-positioning", "--disable-lcd-text"],
     },
@@ -53,5 +65,14 @@ export default defineConfig({
       testMatch: /adds-application-template\/.*\.test\.ts$/,
       dependencies: ["requires-login"],
     },
+    // SIPASS tests - only run when SIPASS env variables are present
+    ...(process.env.SIPASS_TESTUSER_CERT_PATH
+      ? [
+          {
+            name: "sipass",
+            testMatch: /sipass\/.*\.test\.ts$/,
+          },
+        ]
+      : []),
   ],
 })

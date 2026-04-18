@@ -170,7 +170,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
           <i18n-t keypath="partials.AuthAutoRedirect.congratulations" scope="global">
             <template #appName>{{ doc.applicationTemplate.name }}</template>
             <template #strongCongratulations
-              ><strong>{{ t("common.messages.congratulations") }}</strong></template
+              ><strong id="authautoredirect-text-congratulations">{{ t("common.messages.congratulations") }}</strong></template
             >
           </i18n-t>
         </div>

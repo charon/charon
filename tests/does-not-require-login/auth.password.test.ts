@@ -95,7 +95,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     await selectButton.click()
 
     // Verify success message and go back.
-    await expect(page.getByText("Everything is ready to sign you in")).toBeVisible()
+    await expect(page.locator("#authautoredirect-text-congratulations")).toBeVisible()
     const redirectBackButton = page.locator("button#authautoredirect-button-back")
     await expect(redirectBackButton).toBeVisible()
     await checkpoint(page, "auth-page-after-selecting-username-identity")
@@ -124,7 +124,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     const identitiesLink = page.locator("#menu-list-identities")
     await expect(identitiesLink).toBeVisible()
 
-    await checkpoint(page, "successful-signin-identities-page")
+    await checkpoint(page, "successful-signin-identities-visible-on-main-page")
 
     await takeActivityScreenshot(page, "password-sign-in-flow-with-restarts-activity")
 

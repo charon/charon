@@ -84,7 +84,12 @@ test_node:
 test_e2e:
   stage: test
 
+  resource_group: sipass
+
   image: golang:1.25-alpine3.22
+
+  tags:
+    - saas-linux-2xlarge-amd64
 
   services:
     - name: docker:28-dind
@@ -129,7 +134,9 @@ test_e2e:
   artifacts:
     when: always
     reports:
-      junit: test-results/junit.xml
+      junit:
+        - test-results/junit.xml
+        - test-results-sipass/junit.xml
       dotenv:
         - link_publish.env
     paths:

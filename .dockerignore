@@ -42,7 +42,9 @@ codeclimate.json
 /playwright-report
 /playwright-screenshots
 /test-results
+/test-results-sipass
 /a11y-report
+/blob-report
 
 # Binaries
 /charon
