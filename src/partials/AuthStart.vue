@@ -2,7 +2,7 @@
 import type { Flow } from "@/types"
 
 import { browserSupportsWebAuthn } from "@simplewebauthn/browser"
-import { computed, getCurrentInstance, onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { computed, getCurrentInstance, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
@@ -52,6 +52,14 @@ function resetOnInteraction() {
 }
 
 watch(() => props.flow.getEmailOrUsername(), resetOnInteraction)
+
+watch(passwordError, async (newValue) => {
+  if (newValue) {
+    await nextTick(() => {
+      document.getElementById("authstart-input-email")?.focus()
+    })
+  }
+})
 
 // A proxy so that we can pass it as v-model.
 const emailOrUsernameProxy = computed({

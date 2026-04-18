@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { CredentialAddEmailRequest, CredentialAddResponse } from "@/types"
 
-import { onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
@@ -39,6 +39,14 @@ function resetOnInteraction() {
 }
 
 watch([email], resetOnInteraction)
+
+watch(emailError, async (newValue) => {
+  if (newValue) {
+    await nextTick(() => {
+      document.getElementById("credentialaddemail-input-email")?.focus()
+    })
+  }
+})
 
 onBeforeUnmount(() => {
   abortController.abort()

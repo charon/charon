@@ -249,7 +249,8 @@
     },
     "CredentialAddPasskey": {
       "displayNameLabel": "@:partials.CredentialAddPassword.displayNameLabel",
-      "passkeyInstructions": "Please follow instructions by your browser and/or device to add a passkey."
+      "passkeyInstructions": "Please follow instructions by your browser and/or device to add a passkey.",
+      "failed": "Adding a passkey failed."
     }
   },
   "views": {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { CredentialAddResponse, CredentialAddUsernameRequest } from "@/types"
 
-import { onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
@@ -41,6 +41,14 @@ function resetOnInteraction() {
 }
 
 watch([username], resetOnInteraction)
+
+watch(usernameError, async (newValue) => {
+  if (newValue) {
+    await nextTick(() => {
+      document.getElementById("credentialaddusername-input-username")?.focus()
+    })
+  }
+})
 
 onBeforeUnmount(() => {
   abortController.abort()

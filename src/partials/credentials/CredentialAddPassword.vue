@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { CredentialAddCredentialStartRequest, CredentialAddPasswordCompleteRequest, CredentialAddResponse } from "@/types"
 
-import { onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
@@ -55,6 +55,14 @@ function resetOnInteraction() {
 }
 
 watch([password, passwordDisplayName], resetOnInteraction)
+
+watch(passwordError, async (newValue) => {
+  if (newValue) {
+    await nextTick(() => {
+      document.getElementById("credentialaddpassword-input-password")?.focus()
+    })
+  }
+})
 
 onBeforeUnmount(() => {
   abortController.abort()

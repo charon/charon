@@ -261,6 +261,7 @@ declare module "vue-i18n" {
       CredentialAddPasskey: {
         displayNameLabel: string
         passkeyInstructions: string
+        failed: string
       }
     }
     views: {

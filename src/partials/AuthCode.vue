@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AuthFlowCodeCompleteRequest, AuthFlowCodeStartRequest, AuthFlowResponse, Flow, OrganizationApplicationPublic } from "@/types"
 
-import { getCurrentInstance, onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { getCurrentInstance, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRoute, useRouter } from "vue-router"
 
@@ -46,6 +46,14 @@ function resetOnInteraction() {
 }
 
 watch([code], resetOnInteraction)
+
+watch(codeError, async (newValue) => {
+  if (newValue) {
+    await nextTick(() => {
+      document.getElementById("code")?.focus()
+    })
+  }
+})
 
 watch(
   () => route.hash,

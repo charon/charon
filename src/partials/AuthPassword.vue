@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AuthFlowCodeStartRequest, AuthFlowPasswordCompleteRequest, AuthFlowResponse, Flow } from "@/types"
 
-import { getCurrentInstance, onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { getCurrentInstance, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
@@ -65,6 +65,14 @@ function resetOnInteraction() {
 }
 
 watch([password], resetOnInteraction)
+
+watch(passwordError, async (newValue) => {
+  if (newValue) {
+    await nextTick(() => {
+      document.getElementById("authpassword-input-currentpassword")?.focus()
+    })
+  }
+})
 
 // Define transition hooks to be called by the parent component.
 // See: https://github.com/vuejs/rfcs/discussions/613

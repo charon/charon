@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { CredentialAddCredentialStartRequest, CredentialAddPasskeyCompleteRequest, CredentialAddResponse } from "@/types"
 
-import { onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
@@ -18,6 +18,7 @@ const progress = useProgress()
 const abortController = new AbortController()
 const passkeyDisplayName = ref("")
 const passkeyError = ref("")
+const registrationFailed = ref(false)
 const unexpectedError = ref("")
 
 if (!browserSupportsWebAuthn()) {
@@ -48,10 +49,19 @@ async function completeAddPasskeyCredential(request: CredentialAddPasskeyComplet
 function resetOnInteraction() {
   // We reset the error on interaction.
   passkeyError.value = ""
+  registrationFailed.value = false
   unexpectedError.value = ""
 }
 
 watch([passkeyDisplayName], resetOnInteraction)
+
+watch(passkeyError, async (newValue) => {
+  if (newValue) {
+    await nextTick(() => {
+      document.getElementById("credentialaddpasskey-input-displayname")?.focus()
+    })
+  }
+})
 
 onBeforeUnmount(() => {
   abortController.abort()
@@ -62,7 +72,10 @@ onMounted(() => {
 })
 
 function canSubmit(): boolean {
-  // Submission is on purpose not disabled on unexpectedError so that user can retry.
+  // Submission is on purpose not disabled on registrationFailed and unexpectedError so that user can retry.
+  if (passkeyError.value) {
+    return false
+  }
 
   // Required fields.
   return !!passkeyDisplayName.value
@@ -93,7 +106,20 @@ async function onSubmit() {
       throw new Error("unexpected response")
     }
 
-    const regResponse = await startRegistration({ optionsJSON: startResponse.passkey.createOptions.publicKey })
+    let regResponse
+    try {
+      regResponse = await startRegistration({ optionsJSON: startResponse.passkey.createOptions.publicKey })
+    } catch {
+      if (abortController.signal.aborted) {
+        return
+      }
+      registrationFailed.value = true
+      await nextTick(() => {
+        // We refocus button to retry.
+        document.getElementById("credentialaddpasskey-button-add")?.focus()
+      })
+      return
+    }
     if (abortController.signal.aborted) {
       return
     }
@@ -135,7 +161,8 @@ async function onSubmit() {
     <label for="credentialaddpasskey-input-displayname" class="mb-1"> {{ t("partials.CredentialAddPasskey.displayNameLabel") }}</label>
     <InputText id="credentialaddpasskey-input-displayname" v-model="passkeyDisplayName" class="min-w-0 flex-auto grow" :progress="progress" required />
     <div class="mt-4">{{ t("partials.CredentialAddPasskey.passkeyInstructions") }}</div>
-    <div v-if="passkeyError" class="mt-4 text-error-600">{{ getErrorMessage(passkeyError) }}</div>
+    <div v-if="registrationFailed" class="mt-4 text-error-600">{{ t("partials.CredentialAddPasskey.failed") }}</div>
+    <div v-else-if="passkeyError" class="mt-4 text-error-600">{{ getErrorMessage(passkeyError) }}</div>
     <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-end">
       <Button id="credentialaddpasskey-button-add" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{ t("common.buttons.add") }}</Button>

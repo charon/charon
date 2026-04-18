@@ -249,7 +249,8 @@
     },
     "CredentialAddPasskey": {
       "displayNameLabel": "@:partials.CredentialAddPassword.displayNameLabel",
-      "passkeyInstructions": "Prosimo, sledite navodilom vašega brskalnika in/ali naprave, da dodate passkey."
+      "passkeyInstructions": "Prosimo, sledite navodilom vašega brskalnika in/ali naprave, da dodate passkey.",
+      "failed": "Dodajanje passkeya ni uspelo."
     }
   },
   "views": {
