@@ -331,12 +331,13 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     // Verify success message.
     await expect(page.locator("#authautoredirect-text-congratulations")).toBeVisible()
     await checkpoint(page, "auth-page-after-selecting-username-identity")
+
+    // Waiting for the automatic 3 seconds redirect.
+    await page.waitForTimeout(1000)
     const redirectButton = page.locator("#authautoredirect-button-redirect")
     await expect(redirectButton).toBeVisible()
     await expect(redirectButton).toBeFocused()
-
-    // Waiting for the automatic 3 seconds redirect.
-    await page.waitForTimeout(3500)
+    await page.waitForTimeout(2200)
 
     // Check that the Identities link is visible.
     const identitiesLink = page.locator("#menu-list-identities")
