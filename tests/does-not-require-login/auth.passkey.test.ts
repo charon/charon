@@ -61,6 +61,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     const testerIdentity = page.locator('li:has-text("tester-passkey-flow")')
     const selectButton = testerIdentity.locator("button.authidentity-selector-identity")
     await expect(selectButton).toBeVisible()
+    await expect(selectButton).toBeFocused()
     await checkpoint(page, "auth-page-after-selecting-new-passkey-identity")
     await selectButton.click()
 
@@ -298,8 +299,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     const testerIdentity = page.locator('li:has-text("tester-passkey-flow")')
     const selectButton = testerIdentity.locator("button.authidentity-selector-identity")
     await expect(selectButton).toBeVisible()
-    // TODO: Select button not focused after creating a new identity.
-    // await expect(selectButton).toBeFocused()
+    await expect(selectButton).toBeFocused()
     await checkpoint(page, "auth-page-after-selecting-new-passkey-identity")
     await selectButton.click()
 

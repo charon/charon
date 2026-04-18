@@ -3,7 +3,7 @@ import type { DeepReadonly } from "vue"
 
 import type { AllIdentity, AuthFlowChooseIdentityRequest, AuthFlowResponse, Flow, Identity, IdentityRef } from "@/types"
 
-import { computed, getCurrentInstance, onBeforeUnmount, onMounted, ref } from "vue"
+import { computed, getCurrentInstance, nextTick, onBeforeUnmount, onMounted, ref } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
@@ -285,7 +285,10 @@ async function onIdentityCreated(identity: IdentityRef) {
   // TODO: Fetch only the new identity instead of re-fetching all.
   await getIdentities()
 
-  // TODO: Focus "select" button for the new identity.
+  await nextTick(() => {
+    // Focus first identity select button if available.
+    document.querySelector<HTMLInputElement>(".authidentity-selector-identity")?.focus()
+  })
 }
 
 async function onEnable(identity: Identity | DeepReadonly<Identity>) {
