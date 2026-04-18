@@ -23,6 +23,7 @@ test.describe.serial("Charon OIDC Flows", () => {
 
     const applicationNameField = page.locator("input#applicationtemplatecreate-input-name")
     await expect(applicationNameField).toBeVisible()
+    await expect(applicationNameField).toBeFocused()
     await checkpoint(page, "oidc-applications-create-application")
     await applicationNameField.fill("OIDC Application")
 
@@ -86,6 +87,7 @@ test.describe.serial("Charon OIDC Flows", () => {
     // Find the organization name input field and enter organization name.
     const orgNameField = page.locator("input#organizationcreate-input-name")
     await expect(orgNameField).toBeVisible()
+    await expect(orgNameField).toBeFocused()
     await orgNameField.fill("Test OIDC Organization 1")
 
     // Find and click the CREATE button.
@@ -170,6 +172,7 @@ test.describe.serial("Charon OIDC Flows", () => {
       // Sign in with the username.
       const emailField = page.locator("input#authstart-input-email")
       await expect(emailField).toBeVisible()
+      await expect(emailField).toBeFocused()
       await checkpoint(page, `main-page-after-clicking-signin-${mode}`)
       await emailField.fill(username)
 
@@ -180,6 +183,7 @@ test.describe.serial("Charon OIDC Flows", () => {
 
       const passwordField = page.locator("input#authpassword-input-currentpassword")
       await expect(passwordField).toBeVisible()
+      await expect(passwordField).toBeFocused()
       await checkpoint(page, `auth-page-after-entering-username-and-clicking-next-${mode}`)
       await passwordField.fill("tester1234")
 
@@ -191,6 +195,7 @@ test.describe.serial("Charon OIDC Flows", () => {
       const testerIdentity = page.locator(`li:has-text("${username}")`)
       const selectButton = testerIdentity.locator("button.authidentity-selector-identity")
       await expect(selectButton).toBeVisible()
+      await expect(selectButton).toBeFocused()
       await checkpoint(page, `signup-successful-signin-username-${username}-previous-identities-page-from-password`)
       await selectButton.click()
 
@@ -200,6 +205,7 @@ test.describe.serial("Charon OIDC Flows", () => {
       // Now click on redirect, go back to page, decode JWT token.
       const redirectButton = page.locator("#authautoredirect-button-redirect")
       await expect(redirectButton).toBeVisible()
+      await expect(redirectButton).toBeFocused()
       await redirectButton.click()
 
       // Wait for the flow and the key exchange to complete successfully.

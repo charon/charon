@@ -34,6 +34,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     // Find and click the PASSKEY SIGN-UP button.
     const passkeySignupButton = page.locator("button#authpasskeysignup-button-signup")
     await expect(passkeySignupButton).toBeVisible()
+    await expect(passkeySignupButton).toBeFocused()
     await checkpoint(page, "auth-page-after-clicking-passkey-signin-no-existing-user")
     await simulatePasskeyInput(() => passkeySignupButton.click(), "shouldSucceed", client, authenticatorId, false)
 
@@ -46,6 +47,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     // Find the username input field and enter 'tester'.
     const usernameField = page.locator("input#username")
     await expect(usernameField).toBeVisible()
+    await expect(usernameField).toBeFocused()
     await checkpoint(page, "auth-page-after-passkey-signup-add-new-identity")
     await usernameField.fill("tester-passkey-flow")
 
@@ -59,11 +61,16 @@ test.describe.serial("Charon Sign-in Flows", () => {
     const testerIdentity = page.locator('li:has-text("tester-passkey-flow")')
     const selectButton = testerIdentity.locator("button.authidentity-selector-identity")
     await expect(selectButton).toBeVisible()
+    await expect(selectButton).toBeFocused()
     await checkpoint(page, "auth-page-after-selecting-new-passkey-identity")
     await selectButton.click()
 
     // Waiting for the automatic 3 seconds redirect.
-    await page.waitForTimeout(3500)
+    await page.waitForTimeout(1000)
+    const redirectButton = page.locator("#authautoredirect-button-redirect")
+    await expect(redirectButton).toBeVisible()
+    await expect(redirectButton).toBeFocused()
+    await page.waitForTimeout(2200)
 
     // Check that the Identities link is visible.
     const identitiesLink = page.locator("#menu-list-identities")
@@ -121,6 +128,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     const testerIdentity = page.locator('li:has-text("tester-passkey-flow")')
     const selectButton = testerIdentity.locator("button.authidentity-selector-identity")
     await expect(selectButton).toBeVisible()
+    await expect(selectButton).toBeFocused()
     await checkpoint(page, "auth-page-selecting-existing-passkey-identity")
     await backButton.click()
 
@@ -132,6 +140,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     // Go back again, this time via flow link.
     const redirectFlowLink = page.locator("#authflowget-step-start")
     await expect(selectButton).toBeVisible()
+    await expect(selectButton).toBeFocused()
     await checkpoint(page, "auth-page-selecting-existing-passkey-identity")
     await redirectFlowLink.click()
 
@@ -142,11 +151,16 @@ test.describe.serial("Charon Sign-in Flows", () => {
 
     // Click SELECT button associated with "tester-passkey-flow".
     await expect(selectButton).toBeVisible()
+    await expect(selectButton).toBeFocused()
     await checkpoint(page, "auth-page-selecting-existing-passkey-identity")
     await selectButton.click()
 
     // Waiting for the automatic 3 seconds redirect.
-    await page.waitForTimeout(3500)
+    await page.waitForTimeout(1000)
+    const redirectButton = page.locator("#authautoredirect-button-redirect")
+    await expect(redirectButton).toBeVisible()
+    await expect(redirectButton).toBeFocused()
+    await page.waitForTimeout(2200)
 
     // Check that the Identities link is visible.
     const identitiesLink = page.locator("#menu-list-identities")
@@ -203,11 +217,16 @@ test.describe.serial("Charon Sign-in Flows", () => {
     const testerIdentity = page.locator('li:has-text("tester-passkey-flow")')
     const selectButton = testerIdentity.locator("button.authidentity-selector-identity")
     await expect(selectButton).toBeVisible()
+    await expect(selectButton).toBeFocused()
     await checkpoint(page, "auth-page-after-failed-signin-and-selecting-existing-passkey-identity")
     await selectButton.click()
 
     // Waiting for the automatic 3 seconds redirect.
-    await page.waitForTimeout(3500)
+    await page.waitForTimeout(1000)
+    const redirectButton = page.locator("#authautoredirect-button-redirect")
+    await expect(redirectButton).toBeVisible()
+    await expect(redirectButton).toBeFocused()
+    await page.waitForTimeout(2200)
 
     // Check that the Identities link is visible.
     const identitiesLink = page.locator("#menu-list-identities")
@@ -249,6 +268,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     // Find and click the PASSKEY SIGN-UP button.
     const passkeySignupButton = page.locator("button#authpasskeysignup-button-signup")
     await expect(passkeySignupButton).toBeVisible()
+    await expect(passkeySignupButton).toBeFocused()
     await checkpoint(page, "auth-page-after-clicking-passkey-signin-no-existing-user")
     await simulatePasskeyInput(() => passkeySignupButton.click(), "doNotSendVerifiedPasskey", client, authenticatorId, false)
 
@@ -265,6 +285,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     // Find the username input field and enter 'tester-passkey-flow'.
     const usernameField = page.locator("input#username")
     await expect(usernameField).toBeVisible()
+    await expect(usernameField).toBeFocused()
     await checkpoint(page, "auth-page-after-passkey-signup-add-new-identity")
     await usernameField.fill("tester-passkey-flow")
 
@@ -278,11 +299,16 @@ test.describe.serial("Charon Sign-in Flows", () => {
     const testerIdentity = page.locator('li:has-text("tester-passkey-flow")')
     const selectButton = testerIdentity.locator("button.authidentity-selector-identity")
     await expect(selectButton).toBeVisible()
+    await expect(selectButton).toBeFocused()
     await checkpoint(page, "auth-page-after-selecting-new-passkey-identity")
     await selectButton.click()
 
     // Waiting for the automatic 3 seconds redirect.
-    await page.waitForTimeout(3500)
+    await page.waitForTimeout(1000)
+    const redirectButton = page.locator("#authautoredirect-button-redirect")
+    await expect(redirectButton).toBeVisible()
+    await expect(redirectButton).toBeFocused()
+    await page.waitForTimeout(2200)
 
     // Check that the Identities link is visible.
     const identitiesLink = page.locator("#menu-list-identities")

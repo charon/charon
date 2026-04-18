@@ -24,6 +24,7 @@ test.describe.serial("Charon Navbar Flows", () => {
       // Find the organization name input field and enter organization name.
       const orgNameField = page.locator("input#organizationcreate-input-name")
       await expect(orgNameField).toBeVisible()
+      await expect(orgNameField).toBeFocused()
       if (i === 1) {
         await checkpoint(page, "organization-create-page")
       }

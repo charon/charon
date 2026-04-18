@@ -15,6 +15,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     // Find the email input field and enter 'tester2'.
     const emailField = page.locator("input#authstart-input-email")
     await expect(emailField).toBeVisible()
+    await expect(emailField).toBeFocused()
     await checkpoint(page, "main-page-after-clicking-signin")
     await emailField.fill("tester2")
 
@@ -24,6 +25,9 @@ test.describe.serial("Charon Sign-in Flows", () => {
     await checkpoint(page, "auth-sign-in-page-after-entering-username-tester2")
     await nextButton.click()
 
+    const passwordField = page.locator("input#authpassword-input-currentpassword")
+    await expect(passwordField).toBeVisible()
+    await expect(passwordField).toBeFocused()
     // Go back, correct to tester3.
     const backButton = page.locator("button#authpassword-button-back")
     await expect(backButton).toBeVisible()
@@ -31,6 +35,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     await backButton.click()
 
     await expect(emailField).toBeVisible()
+    await expect(emailField).toBeFocused()
     await checkpoint(page, "auth-sign-in-page-after-pressing-back-username-tester2")
     await emailField.fill("tester3")
 
@@ -38,6 +43,8 @@ test.describe.serial("Charon Sign-in Flows", () => {
     await checkpoint(page, "auth-sign-in-page-after-entering-username-tester3")
     await nextButton.click()
 
+    await expect(passwordField).toBeVisible()
+    await expect(passwordField).toBeFocused()
     // Go back by clicking on the username, correct to tester4.
     const emailOrUsernameButton = page.locator("button#authpassword-input-email-or-username")
     await expect(emailOrUsernameButton).toBeVisible()
@@ -45,6 +52,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     await emailOrUsernameButton.click()
 
     await expect(emailField).toBeVisible()
+    await expect(emailField).toBeFocused()
     await checkpoint(page, "auth-sign-in-page-after-going-back-via-email-field")
     await emailField.fill("tester4")
 
@@ -53,8 +61,8 @@ test.describe.serial("Charon Sign-in Flows", () => {
     await nextButton.click()
 
     // Find the password input field and enter 'tester123'.
-    const passwordField = page.locator("input#authpassword-input-currentpassword")
     await expect(passwordField).toBeVisible()
+    await expect(passwordField).toBeFocused()
     await checkpoint(page, "auth-page-after-entering-username-tester4-and-clicking-next")
     await passwordField.fill("tester123")
 
@@ -72,6 +80,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
 
     // Now go through flow again.
     await expect(emailField).toBeVisible()
+    await expect(emailField).toBeFocused()
     await checkpoint(page, "main-page-after-clicking-signin")
     await emailField.fill("tester4")
 
@@ -80,6 +89,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     await nextButton.click()
 
     await expect(passwordField).toBeVisible()
+    await expect(passwordField).toBeFocused()
     await checkpoint(page, "auth-page-after-entering-username-and-clicking-next")
     await passwordField.fill("tester123")
 
@@ -91,6 +101,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     const testerIdentity = page.locator('li:has-text("tester4")')
     const selectButton = testerIdentity.locator("button.authidentity-selector-identity")
     await expect(selectButton).toBeVisible()
+    await expect(selectButton).toBeFocused()
     await checkpoint(page, `signup-successful-signin-previous-identities-page-from-password`)
     await selectButton.click()
 
@@ -103,6 +114,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
 
     // Select the tester identity again.
     await expect(selectButton).toBeVisible()
+    await expect(selectButton).toBeFocused()
     await checkpoint(page, `signin-successful-signin-tester4-previous-identities-page-from-password`)
     await selectButton.click()
 
@@ -114,11 +126,16 @@ test.describe.serial("Charon Sign-in Flows", () => {
 
     // Select the tester identity again.
     await expect(selectButton).toBeVisible()
+    await expect(selectButton).toBeFocused()
     await checkpoint(page, `signin-successful-signin-previous-identities-page-from-password`)
     await selectButton.click()
 
     // Waiting for the automatic 3 seconds redirect.
-    await page.waitForTimeout(3500)
+    await page.waitForTimeout(1000)
+    const redirectButton = page.locator("#authautoredirect-button-redirect")
+    await expect(redirectButton).toBeVisible()
+    await expect(redirectButton).toBeFocused()
+    await page.waitForTimeout(2200)
 
     // Check that the Identities link is visible.
     const identitiesLink = page.locator("#menu-list-identities")
@@ -145,6 +162,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     // Find the email input field and enter 'tester'.
     const emailField = page.locator("input#authstart-input-email")
     await expect(emailField).toBeVisible()
+    await expect(emailField).toBeFocused()
     await checkpoint(page, "main-page-after-clicking-signin")
     await emailField.fill("tester")
 
@@ -157,6 +175,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     // Find the password input field and enter 'tester1234' (wrong password).
     const passwordField = page.locator("input#authpassword-input-currentpassword")
     await expect(passwordField).toBeVisible()
+    await expect(passwordField).toBeFocused()
     await checkpoint(page, "auth-password-page-after-entering-username-tester")
     await passwordField.fill("tester1234")
 
