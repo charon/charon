@@ -66,7 +66,7 @@ export async function signInWithPassword(page: Page, username: string, password:
     await selectButton.click()
 
     // Verify success message.
-    await expect(page.getByText("Everything is ready to sign you in")).toBeVisible()
+    await expect(page.locator("#authautoredirect-text-congratulations")).toBeVisible()
     await checkpoint(page, `auth-page-after-selecting-username-${username}-identity`)
 
     // Waiting for the automatic 3 seconds redirect.
@@ -76,7 +76,7 @@ export async function signInWithPassword(page: Page, username: string, password:
     const identitiesLink = page.locator("#menu-list-identities")
     await expect(identitiesLink).toBeVisible()
 
-    await checkpoint(page, "successful-signin-identities-page")
+    await checkpoint(page, "successful-signin-identities-visible-on-main-page")
   } else {
     // Wait for error message to appear.
     const errorMessage = page.locator("#authpassword-error-wrongpassword")

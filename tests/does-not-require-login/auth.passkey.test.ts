@@ -68,7 +68,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     // Check that the Identities link is visible.
     const identitiesLink = page.locator("#menu-list-identities")
     await expect(identitiesLink).toBeVisible()
-    await checkpoint(page, "successful-signin-identities-page")
+    await checkpoint(page, "successful-signin-identities-visible-on-main-page")
 
     // Store credentials for next test.
     const credentials = await client.send("WebAuthn.getCredentials", {
@@ -151,7 +151,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     // Check that the Identities link is visible.
     const identitiesLink = page.locator("#menu-list-identities")
     await expect(identitiesLink).toBeVisible()
-    await checkpoint(page, "successful-signin-identities-page")
+    await checkpoint(page, "successful-signin-identities-visible-on-main-page")
 
     await takeActivityScreenshot(page, "passkey-sign-up-flow-with-restarts-activity")
 
@@ -212,7 +212,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     // Check that the Identities link is visible.
     const identitiesLink = page.locator("#menu-list-identities")
     await expect(identitiesLink).toBeVisible()
-    await checkpoint(page, "successful-signin-identities-page")
+    await checkpoint(page, "successful-signin-identities-visible-on-main-page")
 
     await takeActivityScreenshot(page, "passkey-sign-in-flow-after-failed-sign-in-activity")
 
@@ -287,7 +287,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     // Check that the Identities link is visible.
     const identitiesLink = page.locator("#menu-list-identities")
     await expect(identitiesLink).toBeVisible()
-    await checkpoint(page, "successful-signin-identities-page")
+    await checkpoint(page, "successful-signin-identities-visible-on-main-page")
 
     await takeActivityScreenshot(page, "passkey-sign-up-after-failed-sign-in-and-sign-up-activity")
 

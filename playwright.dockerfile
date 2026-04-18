@@ -27,4 +27,5 @@ ENV CHARON_URL=
 ENV LINK_PUBLISH_JOB_ID=
 ENV UPDATE_SCREENSHOTS=
 
+ENTRYPOINT ["/src/charon/playwright-entrypoint.sh"]
 CMD ["npm", "run", "test-e2e"]
