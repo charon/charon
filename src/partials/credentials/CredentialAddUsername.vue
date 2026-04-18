@@ -129,7 +129,7 @@ async function onSubmit() {
       minlength="3"
       required
     />
-    <div v-if="usernameError" class="mt-4 text-error-600">{{ getErrorMessage(usernameError) }}</div>
+    <div v-if="usernameError" id="credentialaddusername-error-username" class="mt-4 text-error-600">{{ getErrorMessage(usernameError) }}</div>
     <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-end">
       <Button id="credentialaddusername-button-add" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{ t("common.buttons.add") }}</Button>

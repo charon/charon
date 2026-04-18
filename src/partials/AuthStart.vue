@@ -200,7 +200,7 @@ function onThirdPartyProvider(provider: string) {
         />
         <Button id="authstart-button-next" primary type="submit" :disabled="!canNext()" :progress="progress">{{ t("common.buttons.next") }}</Button>
       </form>
-      <div v-if="passwordError" class="mt-4 text-error-600">{{ getErrorMessage(passwordError) }}</div>
+      <div v-if="passwordError" id="authstart-error-emailorusername" class="mt-4 text-error-600">{{ getErrorMessage(passwordError) }}</div>
       <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     </div>
     <h2 class="m-4 text-center text-xl font-bold uppercase">{{ t("partials.AuthStart.orUse") }}</h2>

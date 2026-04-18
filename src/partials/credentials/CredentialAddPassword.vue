@@ -168,7 +168,7 @@ async function onSubmit() {
     />
     <label for="credentialaddpassword-input-displayname" class="mt-4 mb-1"> {{ t("partials.CredentialAddPassword.displayNameLabel") }}</label>
     <InputText id="credentialaddpassword-input-displayname" v-model="passwordDisplayName" class="min-w-0 flex-auto grow" :progress="progress" required />
-    <div v-if="passwordError" class="mt-4 text-error-600">{{ getErrorMessage(passwordError) }}</div>
+    <div v-if="passwordError" id="credentialaddpassword-error-password" class="mt-4 text-error-600">{{ getErrorMessage(passwordError) }}</div>
     <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-end">
       <Button id="credentialaddpassword-button-add" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{ t("common.buttons.add") }}</Button>

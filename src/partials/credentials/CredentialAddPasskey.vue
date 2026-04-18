@@ -161,8 +161,8 @@ async function onSubmit() {
     <label for="credentialaddpasskey-input-displayname" class="mb-1"> {{ t("partials.CredentialAddPasskey.displayNameLabel") }}</label>
     <InputText id="credentialaddpasskey-input-displayname" v-model="passkeyDisplayName" class="min-w-0 flex-auto grow" :progress="progress" required />
     <div class="mt-4">{{ t("partials.CredentialAddPasskey.passkeyInstructions") }}</div>
-    <div v-if="registrationFailed" class="mt-4 text-error-600">{{ t("partials.CredentialAddPasskey.failed") }}</div>
-    <div v-else-if="passkeyError" class="mt-4 text-error-600">{{ getErrorMessage(passkeyError) }}</div>
+    <div v-if="registrationFailed" id="credentialaddpasskey-message-failed" class="mt-4 text-error-600">{{ t("partials.CredentialAddPasskey.failed") }}</div>
+    <div v-else-if="passkeyError" id="credentialaddpasskey-error-passkey" class="mt-4 text-error-600">{{ getErrorMessage(passkeyError) }}</div>
     <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     <div class="mt-4 flex flex-row justify-end">
       <Button id="credentialaddpasskey-button-add" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{ t("common.buttons.add") }}</Button>
