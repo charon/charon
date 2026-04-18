@@ -177,7 +177,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     const redirectButton = page.locator("#authautoredirect-button-redirect")
     await expect(redirectButton).toBeVisible()
     await expect(redirectButton).toBeFocused()
-    await page.waitForTimeout(2000)
+    await page.waitForTimeout(2200)
 
     // Check that the Identities link is visible.
     const identitiesLink = page.locator("#menu-list-identities")
