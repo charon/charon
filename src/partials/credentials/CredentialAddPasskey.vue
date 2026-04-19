@@ -115,8 +115,11 @@ async function onSubmit() {
       }
       registrationFailed.value = true
       await nextTick(() => {
-        // We refocus button to retry.
-        document.getElementById("credentialaddpasskey-button-add")?.focus()
+        // Refocus button to retry after passkey registration fails. WebAuthn opens authenticator windows
+        // that steal focus, so timeout ensures the browser returns focus before attempting to refocus.
+        setTimeout(() => {
+          document.getElementById("credentialaddpasskey-button-add")?.focus()
+        }, 500)
       })
       return
     }
