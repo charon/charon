@@ -33,8 +33,8 @@ const (
 const credentialAddSessionExpiration = flowExpiration
 
 var (
-	credentialSessions   = make(map[identifier.Identifier]json.RawMessage) //nolint:gochecknoglobals
-	credentialSessionsMu sync.RWMutex                                      //nolint:gochecknoglobals
+	credentialSessions   = map[identifier.Identifier]json.RawMessage{} //nolint:gochecknoglobals
+	credentialSessionsMu sync.RWMutex                                  //nolint:gochecknoglobals
 )
 
 // CredentialAddEmailRequest represents the request body for the CredentialAddEmail handler.
@@ -150,7 +150,7 @@ func (s *Service) addCredentialToAccount(
 	}
 
 	if account.Credentials == nil {
-		account.Credentials = make(map[Provider][]Credential)
+		account.Credentials = map[Provider][]Credential{}
 	}
 
 	account.Credentials[providerKey] = append(account.Credentials[providerKey], newCredential)

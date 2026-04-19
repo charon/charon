@@ -103,7 +103,7 @@ func TestCredentialManagement(t *testing.T) {
 
 	credentialRefs = credentialListGet(t, ts, service, accessToken, 5)
 
-	credentialMap := make(map[identifier.Identifier]charon.CredentialPublic)
+	credentialMap := map[identifier.Identifier]charon.CredentialPublic{}
 	for _, credentialRef := range credentialRefs {
 		credential := credentialGet(t, ts, service, accessToken, credentialRef.ID)
 

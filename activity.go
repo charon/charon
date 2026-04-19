@@ -330,7 +330,7 @@ func (s *Service) ActivityListGetAPI(w http.ResponseWriter, req *http.Request, _
 	defer s.activitiesMu.RUnlock()
 
 	// Collect activities for the current user only (identity or account).
-	activities := make([]*Activity, 0)
+	activities := []*Activity{}
 	for id, data := range s.activities {
 		var activity Activity
 		errE := x.UnmarshalWithoutUnknownFields(data, &activity)
@@ -497,7 +497,7 @@ func (s *Service) OrganizationActivityGetAPI(w http.ResponseWriter, req *http.Re
 	defer s.activitiesMu.RUnlock()
 
 	// Collect activities that include this organization.
-	activities := make([]*Activity, 0)
+	activities := []*Activity{}
 	for id, data := range s.activities {
 		var activity Activity
 		errE := x.UnmarshalWithoutUnknownFields(data, &activity)

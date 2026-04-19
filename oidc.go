@@ -427,7 +427,7 @@ func (s *OIDCSession) IDTokenHeaders() *jwt.Headers {
 // SetExpiresAt sets the expiration time of a token.
 func (s *OIDCSession) SetExpiresAt(key fosite.TokenType, exp time.Time) {
 	if s.ExpiresAt == nil {
-		s.ExpiresAt = make(map[fosite.TokenType]time.Time)
+		s.ExpiresAt = map[fosite.TokenType]time.Time{}
 	}
 
 	s.ExpiresAt[key] = exp
@@ -436,7 +436,7 @@ func (s *OIDCSession) SetExpiresAt(key fosite.TokenType, exp time.Time) {
 // GetExpiresAt returns the expiration time of a token if set, or time.IsZero() if not.
 func (s *OIDCSession) GetExpiresAt(key fosite.TokenType) time.Time {
 	if s.ExpiresAt == nil {
-		s.ExpiresAt = make(map[fosite.TokenType]time.Time)
+		s.ExpiresAt = map[fosite.TokenType]time.Time{}
 	}
 
 	_, ok := s.ExpiresAt[key]

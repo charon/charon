@@ -742,7 +742,7 @@ func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []
 	slices.SortFunc(identitiesChanged, identityRefCmp)
 
 	// We make copies of app structs on purpose, so that we can change Active field as needed.
-	existingAppMap := make(map[OrganizationApplicationRef]OrganizationApplication)
+	existingAppMap := map[OrganizationApplicationRef]OrganizationApplication{}
 	for _, app := range existing.Applications {
 		existingAppMap[OrganizationApplicationRef{
 			Organization: o.Ref(),
@@ -751,7 +751,7 @@ func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []
 			},
 		}] = app
 	}
-	newAppMap := make(map[OrganizationApplicationRef]OrganizationApplication)
+	newAppMap := map[OrganizationApplicationRef]OrganizationApplication{}
 	for _, app := range o.Applications {
 		newAppMap[OrganizationApplicationRef{
 			Organization: o.Ref(),

@@ -443,11 +443,11 @@ func (i *Identity) Changes(existing *Identity) ([]ActivityChangeType, []Identity
 	slices.SortFunc(identitiesChanged, identityRefCmp)
 
 	// We make copies of organization structs on purpose, so that we can change Active field as needed.
-	existingOrganizationMap := make(map[OrganizationRef]IdentityOrganization)
+	existingOrganizationMap := map[OrganizationRef]IdentityOrganization{}
 	for _, idOrg := range existing.Organizations {
 		existingOrganizationMap[idOrg.Organization] = idOrg
 	}
-	newOrganizationMap := make(map[OrganizationRef]IdentityOrganization)
+	newOrganizationMap := map[OrganizationRef]IdentityOrganization{}
 	for _, idOrg := range i.Organizations {
 		newOrganizationMap[idOrg.Organization] = idOrg
 	}
