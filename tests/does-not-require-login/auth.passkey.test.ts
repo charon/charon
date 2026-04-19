@@ -273,6 +273,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     await simulatePasskeyInput(() => passkeySignupButton.click(), "doNotSendVerifiedPasskey", client, authenticatorId, false)
 
     await expect(passkeySignupButton).toBeVisible()
+    await expect(passkeySignupButton).toBeFocused()
     await checkpoint(page, "auth-page-after-clicking-passkey-signup-and-cancelling")
     await simulatePasskeyInput(() => passkeySignupButton.click(), "shouldSucceed", client, authenticatorId, false)
 

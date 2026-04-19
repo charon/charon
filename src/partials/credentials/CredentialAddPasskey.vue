@@ -63,6 +63,24 @@ watch(passkeyError, async (newValue) => {
   }
 })
 
+// flush: "post" so this fires after onSubmit's finally has decremented progress
+// and Vue has re-rendered the button without the disabled attribute. The
+// document.hasFocus() branch handles the WebAuthn ceremony taking window focus
+// away: in that case we wait for focus to return before refocusing the button.
+watch(
+  registrationFailed,
+  (newValue) => {
+    if (!newValue) return
+    const refocus = () => document.getElementById("credentialaddpasskey-button-add")?.focus()
+    if (document.hasFocus()) {
+      refocus()
+    } else {
+      window.addEventListener("focus", refocus, { once: true, signal: abortController.signal })
+    }
+  },
+  { flush: "post" },
+)
+
 onBeforeUnmount(() => {
   abortController.abort()
 })
@@ -114,16 +132,6 @@ async function onSubmit() {
         return
       }
       registrationFailed.value = true
-      await nextTick(() => {
-        // WebAuthn authenticator dialogs steal focus, so wait for the window
-        // to regain focus before refocusing the retry button.
-        const refocus = () => document.getElementById("credentialaddpasskey-button-add")?.focus()
-        if (document.hasFocus()) {
-          refocus()
-        } else {
-          window.addEventListener("focus", refocus, { once: true, signal: abortController.signal })
-        }
-      })
       return
     }
     if (abortController.signal.aborted) {

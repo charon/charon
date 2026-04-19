@@ -2,7 +2,7 @@
 import type { AuthFlowPasskeyCreateCompleteRequest, AuthFlowResponse, Flow } from "@/types"
 
 import { startRegistration, WebAuthnAbortService } from "@simplewebauthn/browser"
-import { getCurrentInstance, nextTick, onBeforeUnmount, onMounted, ref } from "vue"
+import { getCurrentInstance, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
@@ -39,6 +39,18 @@ defineExpose({
 })
 
 onBeforeUnmount(onBeforeLeave)
+
+// flush: "post" so this fires after onPasskeySignup's finally has decremented
+// progress and Vue has re-rendered the button without the disabled attribute.
+watch(
+  signupFailed,
+  (newValue) => {
+    if (newValue) {
+      document.getElementById("authpasskeysignup-button-signup")?.focus()
+    }
+  },
+  { flush: "post" },
+)
 
 function onAfterEnter() {
   document.getElementById("authpasskeysignup-button-signup")?.focus()
@@ -105,10 +117,6 @@ async function onPasskeySignup() {
       }
       signupFailed.value = true
       signupFailedAtLeastOnce.value = true
-      await nextTick(() => {
-        // We refocus button to retry.
-        document.getElementById("authpasskeysignup-button-signup")?.focus()
-      })
       return
     }
 
