@@ -722,6 +722,10 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 		o.Applications[i] = orgApp
 	}
 
+	if o.Roles == nil {
+		o.Roles = map[identifier.Identifier][]string{}
+	}
+
 	validRoles := mapset.NewThreadUnsafeSet[string]()
 	for _, app := range o.Applications {
 		if !app.Active {
