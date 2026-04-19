@@ -42,11 +42,17 @@ onBeforeUnmount(onBeforeLeave)
 
 // flush: "post" so this fires after onPasskeySignup's finally has decremented
 // progress and Vue has re-rendered the button without the disabled attribute.
+// The document.hasFocus() branch handles the WebAuthn ceremony taking window
+// focus away: in that case we wait for focus to return before refocusing.
 watch(
   signupFailed,
   (newValue) => {
-    if (newValue) {
-      document.getElementById("authpasskeysignup-button-signup")?.focus()
+    if (!newValue) return
+    const refocus = () => document.getElementById("authpasskeysignup-button-signup")?.focus()
+    if (document.hasFocus()) {
+      refocus()
+    } else {
+      window.addEventListener("focus", refocus, { once: true, signal: abortController.signal })
     }
   },
   { flush: "post" },
