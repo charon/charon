@@ -112,12 +112,13 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 	app2ID := identifier.New()
 
 	tests := []struct {
-		name               string
-		existing           *charon.Organization
-		updated            *charon.Organization
-		expectedChanges    []charon.ActivityChangeType
-		expectedIdentities []charon.IdentityRef
-		expectedApps       []charon.OrganizationApplicationRef
+		name                           string
+		existing                       *charon.Organization
+		updated                        *charon.Organization
+		expectedChanges                []charon.ActivityChangeType
+		expectedAdminsChanged          []charon.IdentityRef
+		expectedRolesIdentitiesChanged []charon.IdentityRef
+		expectedApps                   []charon.OrganizationApplicationRef
 	}{
 		{
 			name: "no changes",
@@ -153,9 +154,10 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 					},
 				},
 			},
-			expectedChanges:    []charon.ActivityChangeType{},
-			expectedIdentities: []charon.IdentityRef{},
-			expectedApps:       []charon.OrganizationApplicationRef{},
+			expectedChanges:                []charon.ActivityChangeType{},
+			expectedAdminsChanged:          []charon.IdentityRef{},
+			expectedRolesIdentitiesChanged: []charon.IdentityRef{},
+			expectedApps:                   []charon.OrganizationApplicationRef{},
 		},
 		{
 			name: "name and description changed",
@@ -173,9 +175,10 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 					Description: "New description",
 				},
 			},
-			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangeOtherData},
-			expectedIdentities: []charon.IdentityRef{},
-			expectedApps:       []charon.OrganizationApplicationRef{},
+			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeOtherData},
+			expectedAdminsChanged:          []charon.IdentityRef{},
+			expectedRolesIdentitiesChanged: []charon.IdentityRef{},
+			expectedApps:                   []charon.OrganizationApplicationRef{},
 		},
 		{
 			name: "admin added",
@@ -193,9 +196,10 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				},
 				Admins: []charon.IdentityRef{{ID: identity1ID}, {ID: identity2ID}},
 			},
-			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangePermissionsAdded},
-			expectedIdentities: []charon.IdentityRef{{ID: identity2ID}},
-			expectedApps:       []charon.OrganizationApplicationRef{},
+			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangePermissionsAdded},
+			expectedAdminsChanged:          []charon.IdentityRef{{ID: identity2ID}},
+			expectedRolesIdentitiesChanged: []charon.IdentityRef{},
+			expectedApps:                   []charon.OrganizationApplicationRef{},
 		},
 		{
 			name: "admin removed",
@@ -213,9 +217,10 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				},
 				Admins: []charon.IdentityRef{{ID: identity1ID}},
 			},
-			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangePermissionsRemoved},
-			expectedIdentities: []charon.IdentityRef{{ID: identity2ID}},
-			expectedApps:       []charon.OrganizationApplicationRef{},
+			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangePermissionsRemoved},
+			expectedAdminsChanged:          []charon.IdentityRef{{ID: identity2ID}},
+			expectedRolesIdentitiesChanged: []charon.IdentityRef{},
+			expectedApps:                   []charon.OrganizationApplicationRef{},
 		},
 		{
 			name: "application membership added",
@@ -240,8 +245,9 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 					},
 				},
 			},
-			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded},
-			expectedIdentities: []charon.IdentityRef{},
+			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded},
+			expectedAdminsChanged:          []charon.IdentityRef{},
+			expectedRolesIdentitiesChanged: []charon.IdentityRef{},
 			expectedApps: []charon.OrganizationApplicationRef{
 				{
 					Organization: charon.OrganizationRef{ID: orgID},
@@ -272,8 +278,9 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				},
 				Applications: []charon.OrganizationApplication{},
 			},
-			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangeMembershipRemoved},
-			expectedIdentities: []charon.IdentityRef{},
+			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeMembershipRemoved},
+			expectedAdminsChanged:          []charon.IdentityRef{},
+			expectedRolesIdentitiesChanged: []charon.IdentityRef{},
 			expectedApps: []charon.OrganizationApplicationRef{
 				{
 					Organization: charon.OrganizationRef{ID: orgID},
@@ -311,8 +318,9 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 					},
 				},
 			},
-			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangeMembershipActivated},
-			expectedIdentities: []charon.IdentityRef{},
+			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeMembershipActivated},
+			expectedAdminsChanged:          []charon.IdentityRef{},
+			expectedRolesIdentitiesChanged: []charon.IdentityRef{},
 			expectedApps: []charon.OrganizationApplicationRef{
 				{
 					Organization: charon.OrganizationRef{ID: orgID},
@@ -350,8 +358,9 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 					},
 				},
 			},
-			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangeMembershipDisabled},
-			expectedIdentities: []charon.IdentityRef{},
+			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeMembershipDisabled},
+			expectedAdminsChanged:          []charon.IdentityRef{},
+			expectedRolesIdentitiesChanged: []charon.IdentityRef{},
 			expectedApps: []charon.OrganizationApplicationRef{
 				{
 					Organization: charon.OrganizationRef{ID: orgID},
@@ -397,14 +406,168 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 					},
 				},
 			},
-			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangeMembershipChanged},
-			expectedIdentities: []charon.IdentityRef{},
+			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeMembershipChanged},
+			expectedAdminsChanged:          []charon.IdentityRef{},
+			expectedRolesIdentitiesChanged: []charon.IdentityRef{},
 			expectedApps: []charon.OrganizationApplicationRef{
 				{
 					Organization: charon.OrganizationRef{ID: orgID},
 					Application:  charon.OrganizationApplicationApplicationRef{ID: app1ID},
 				},
 			},
+		},
+		{
+			name: "roles assigned to identity",
+			existing: &charon.Organization{
+				OrganizationPublic: charon.OrganizationPublic{
+					ID:   &orgID,
+					Name: "Test Org",
+				},
+				Roles: map[identifier.Identifier][]string{},
+			},
+			updated: &charon.Organization{
+				OrganizationPublic: charon.OrganizationPublic{
+					ID:   &orgID,
+					Name: "Test Org",
+				},
+				Roles: map[identifier.Identifier][]string{
+					identity1ID: {"admin"},
+				},
+			},
+			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeRolesAdded},
+			expectedAdminsChanged:          []charon.IdentityRef{},
+			expectedRolesIdentitiesChanged: []charon.IdentityRef{{ID: identity1ID}},
+			expectedApps:                   []charon.OrganizationApplicationRef{},
+		},
+		{
+			name: "roles removed from identity",
+			existing: &charon.Organization{
+				OrganizationPublic: charon.OrganizationPublic{
+					ID:   &orgID,
+					Name: "Test Org",
+				},
+				Roles: map[identifier.Identifier][]string{
+					identity1ID: {"admin"},
+				},
+			},
+			updated: &charon.Organization{
+				OrganizationPublic: charon.OrganizationPublic{
+					ID:   &orgID,
+					Name: "Test Org",
+				},
+				Roles: map[identifier.Identifier][]string{},
+			},
+			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeRolesRemoved},
+			expectedAdminsChanged:          []charon.IdentityRef{},
+			expectedRolesIdentitiesChanged: []charon.IdentityRef{{ID: identity1ID}},
+			expectedApps:                   []charon.OrganizationApplicationRef{},
+		},
+		{
+			name: "same roles in different order do not produce changes",
+			existing: &charon.Organization{
+				OrganizationPublic: charon.OrganizationPublic{
+					ID:   &orgID,
+					Name: "Test Org",
+				},
+				Roles: map[identifier.Identifier][]string{
+					identity1ID: {"admin", "viewer"},
+				},
+			},
+			updated: &charon.Organization{
+				OrganizationPublic: charon.OrganizationPublic{
+					ID:   &orgID,
+					Name: "Test Org",
+				},
+				Roles: map[identifier.Identifier][]string{
+					identity1ID: {"viewer", "admin"},
+				},
+			},
+			expectedChanges:                []charon.ActivityChangeType{},
+			expectedAdminsChanged:          []charon.IdentityRef{},
+			expectedRolesIdentitiesChanged: []charon.IdentityRef{},
+			expectedApps:                   []charon.OrganizationApplicationRef{},
+		},
+		{
+			name: "roles changed for identity (one added, one removed)",
+			existing: &charon.Organization{
+				OrganizationPublic: charon.OrganizationPublic{
+					ID:   &orgID,
+					Name: "Test Org",
+				},
+				Roles: map[identifier.Identifier][]string{
+					identity1ID: {"admin"},
+				},
+			},
+			updated: &charon.Organization{
+				OrganizationPublic: charon.OrganizationPublic{
+					ID:   &orgID,
+					Name: "Test Org",
+				},
+				Roles: map[identifier.Identifier][]string{
+					identity1ID: {"viewer"},
+				},
+			},
+			expectedChanges: []charon.ActivityChangeType{
+				charon.ActivityChangeRolesAdded,
+				charon.ActivityChangeRolesRemoved,
+			},
+			expectedAdminsChanged:          []charon.IdentityRef{},
+			expectedRolesIdentitiesChanged: []charon.IdentityRef{{ID: identity1ID}},
+			expectedApps:                   []charon.OrganizationApplicationRef{},
+		},
+		{
+			name: "roles added to one identity and removed from another",
+			existing: &charon.Organization{
+				OrganizationPublic: charon.OrganizationPublic{
+					ID:   &orgID,
+					Name: "Test Org",
+				},
+				Roles: map[identifier.Identifier][]string{
+					identity1ID: {"admin"},
+				},
+			},
+			updated: &charon.Organization{
+				OrganizationPublic: charon.OrganizationPublic{
+					ID:   &orgID,
+					Name: "Test Org",
+				},
+				Roles: map[identifier.Identifier][]string{
+					identity1ID: {},
+					identity2ID: {"viewer"},
+				},
+			},
+			expectedChanges: []charon.ActivityChangeType{
+				charon.ActivityChangeRolesAdded,
+				charon.ActivityChangeRolesRemoved,
+			},
+			expectedAdminsChanged:          []charon.IdentityRef{},
+			expectedRolesIdentitiesChanged: []charon.IdentityRef{{ID: identity1ID}, {ID: identity2ID}},
+			expectedApps:                   []charon.OrganizationApplicationRef{},
+		},
+		{
+			name: "roles added to multiple identities yields single change entry",
+			existing: &charon.Organization{
+				OrganizationPublic: charon.OrganizationPublic{
+					ID:   &orgID,
+					Name: "Test Org",
+				},
+				Roles: map[identifier.Identifier][]string{},
+			},
+			updated: &charon.Organization{
+				OrganizationPublic: charon.OrganizationPublic{
+					ID:   &orgID,
+					Name: "Test Org",
+				},
+				Roles: map[identifier.Identifier][]string{
+					identity1ID: {"admin"},
+					identity2ID: {"viewer"},
+					identity3ID: {"editor"},
+				},
+			},
+			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeRolesAdded},
+			expectedAdminsChanged:          []charon.IdentityRef{},
+			expectedRolesIdentitiesChanged: []charon.IdentityRef{{ID: identity1ID}, {ID: identity2ID}, {ID: identity3ID}},
+			expectedApps:                   []charon.OrganizationApplicationRef{},
 		},
 		{
 			name: "complex scenario with multiple changes",
@@ -422,6 +585,9 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 							Active: false,
 						},
 					},
+				},
+				Roles: map[identifier.Identifier][]string{
+					identity1ID: {"admin"},
 				},
 			},
 			updated: &charon.Organization{
@@ -445,15 +611,20 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 						},
 					},
 				},
+				Roles: map[identifier.Identifier][]string{
+					identity1ID: {"admin", "viewer"},
+				},
 			},
 			expectedChanges: []charon.ActivityChangeType{
 				charon.ActivityChangeOtherData,
 				charon.ActivityChangePermissionsAdded,
 				charon.ActivityChangePermissionsRemoved,
+				charon.ActivityChangeRolesAdded,
 				charon.ActivityChangeMembershipAdded,
 				charon.ActivityChangeMembershipActivated,
 			},
-			expectedIdentities: []charon.IdentityRef{{ID: identity2ID}, {ID: identity3ID}},
+			expectedAdminsChanged:          []charon.IdentityRef{{ID: identity2ID}, {ID: identity3ID}},
+			expectedRolesIdentitiesChanged: []charon.IdentityRef{{ID: identity1ID}},
 			expectedApps: []charon.OrganizationApplicationRef{
 				{
 					Organization: charon.OrganizationRef{ID: orgID},
@@ -471,16 +642,82 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			changes, identities, apps := tt.updated.Changes(tt.existing)
+			changes, adminsChanged, rolesIdentitiesChanged, apps := tt.updated.Changes(tt.existing)
 
 			// Sort expected slices to match deterministic ordering from Changes method.
-			slices.SortFunc(tt.expectedIdentities, charon.TestingIdentityRefCmp)
+			slices.SortFunc(tt.expectedAdminsChanged, charon.TestingIdentityRefCmp)
+			slices.SortFunc(tt.expectedRolesIdentitiesChanged, charon.TestingIdentityRefCmp)
 			slices.SortFunc(tt.expectedApps, charon.TestingOrganizationApplicationRefCmp)
 
 			// Check all expected outputs with deterministic ordering.
 			assert.Equal(t, tt.expectedChanges, changes, "Changes mismatch")
-			assert.Equal(t, tt.expectedIdentities, identities, "Identities mismatch")
+			assert.Equal(t, tt.expectedAdminsChanged, adminsChanged, "Admin identities mismatch")
+			assert.Equal(t, tt.expectedRolesIdentitiesChanged, rolesIdentitiesChanged, "Role identities mismatch")
 			assert.Equal(t, tt.expectedApps, apps, "Applications mismatch")
 		})
 	}
+}
+
+// TestUpdateOrganizationActivityIdentityScoping verifies that when updateOrganization writes
+// an activity record, identities derived from admin changes are wrapped with the Charon organization
+// (because Admin IdentityRefs are Charon organization-scoped IDs), while identities derived from
+// role changes are wrapped with the organization being updated (because role map keys are scoped
+// to that organization).
+func TestUpdateOrganizationActivityIdentityScoping(t *testing.T) {
+	t.Parallel()
+
+	_, service, _, _, _ := startTestServer(t) //nolint:dogsled
+
+	accountID := identifier.New()
+	ctx := service.TestingWithAccountID(t.Context(), accountID)
+	ctx = service.TestingWithSessionID(ctx)
+	ctx = service.TestingWithRequestID(ctx)
+
+	creatorID := createTestIdentity(t, service, ctx)
+	ctx = service.TestingWithIdentityID(ctx, creatorID)
+
+	// A second identity that we will add as an admin of a non-Charon organization.
+	addedAdminID := createTestIdentity(t, service, ctx)
+
+	organization := &charon.Organization{
+		OrganizationPublic: charon.OrganizationPublic{
+			Name:        "Activity Scoping Test Org",
+			Description: "",
+		},
+		Admins:       []charon.IdentityRef{},
+		Applications: []charon.OrganizationApplication{},
+	}
+	errE := service.TestingCreateOrganization(ctx, organization)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	require.NotNil(t, organization.ID)
+
+	// Add the second identity as admin and update.
+	organization.Admins = append(organization.Admins, charon.IdentityRef{ID: addedAdminID})
+	errE = service.TestingUpdateOrganization(ctx, organization)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	// Find the OrganizationUpdate activity for this org.
+	activities, errE := service.TestingListActivities(ctx)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	var updateActivity *charon.Activity
+	orgRef := charon.OrganizationRef{ID: *organization.ID}
+	for _, a := range activities {
+		if a.Type == charon.ActivityOrganizationUpdate && a.IsForOrganization(orgRef) {
+			updateActivity = a
+			break
+		}
+	}
+	require.NotNil(t, updateActivity, "expected an OrganizationUpdate activity for the test org")
+
+	// The activity must record the permission addition.
+	assert.Contains(t, updateActivity.Changes, charon.ActivityChangePermissionsAdded)
+
+	// The added-admin identity must appear in the activity's identities wrapped with Charon
+	// (not with the updated organization), because Admin IdentityRefs are Charon organization-scoped IDs.
+	charonID := service.TestingCharonOrganizationID()
+	require.Len(t, updateActivity.Identities, 1)
+	assert.Equal(t, charonID, updateActivity.Identities[0].Organization.ID)
+	assert.Equal(t, addedAdminID, updateActivity.Identities[0].Identity.ID)
+	assert.NotEqual(t, *organization.ID, updateActivity.Identities[0].Organization.ID)
 }

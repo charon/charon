@@ -7,6 +7,7 @@ import (
 	"github.com/go-jose/go-jose/v3"
 	"github.com/russellhaering/gosaml2/types"
 	"gitlab.com/tozd/go/errors"
+	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
 )
 
@@ -34,6 +35,35 @@ func (s *Service) TestingUpdateIdentity(ctx context.Context, identity *Identity)
 
 func (s *Service) TestingGetIdentity(ctx context.Context, id identifier.Identifier) (*Identity, bool, errors.E) {
 	return s.getIdentity(ctx, id)
+}
+
+func (s *Service) TestingCreateOrganization(ctx context.Context, organization *Organization) errors.E {
+	return s.createOrganization(ctx, organization)
+}
+
+func (s *Service) TestingUpdateOrganization(ctx context.Context, organization *Organization) errors.E {
+	return s.updateOrganization(ctx, organization)
+}
+
+func (s *Service) TestingCharonOrganizationID() identifier.Identifier {
+	return s.charonOrganization().ID
+}
+
+func (s *Service) TestingListActivities(_ context.Context) ([]*Activity, errors.E) {
+	s.activitiesMu.RLock()
+	defer s.activitiesMu.RUnlock()
+
+	activities := make([]*Activity, 0, len(s.activities))
+	for id, data := range s.activities {
+		var activity Activity
+		errE := x.UnmarshalWithoutUnknownFields(data, &activity)
+		if errE != nil {
+			errors.Details(errE)["id"] = id
+			return nil, errE
+		}
+		activities = append(activities, &activity)
+	}
+	return activities, nil
 }
 
 func (s *Service) TestListIdentity(ctx context.Context) ([]IdentityRef, errors.E) {

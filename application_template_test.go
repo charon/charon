@@ -239,3 +239,43 @@ func TestApplicationTemplateChanges(t *testing.T) {
 		})
 	}
 }
+
+func TestRoleValidate(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		role    charon.Role
+		wantErr string
+	}{
+		{name: "valid two character key", role: charon.Role{Key: "ad"}},
+		{name: "valid alphanumeric key", role: charon.Role{Key: "admin"}},
+		{name: "valid mixed case key", role: charon.Role{Key: "AdminUser"}},
+		{name: "valid key with hyphen", role: charon.Role{Key: "user-1"}},
+		{name: "valid key with underscore", role: charon.Role{Key: "user_admin"}},
+		{name: "valid key ending in digit", role: charon.Role{Key: "Admin99"}},
+		{name: "empty key", role: charon.Role{Key: ""}, wantErr: "key is required"},
+		{name: "single character key", role: charon.Role{Key: "a"}, wantErr: "invalid key"},
+		{name: "key starting with digit", role: charon.Role{Key: "1admin"}, wantErr: "invalid key"},
+		{name: "key starting with underscore", role: charon.Role{Key: "_admin"}, wantErr: "invalid key"},
+		{name: "key starting with hyphen", role: charon.Role{Key: "-admin"}, wantErr: "invalid key"},
+		{name: "key ending with underscore", role: charon.Role{Key: "admin_"}, wantErr: "invalid key"},
+		{name: "key ending with hyphen", role: charon.Role{Key: "admin-"}, wantErr: "invalid key"},
+		{name: "key with space", role: charon.Role{Key: "admin user"}, wantErr: "invalid key"},
+		{name: "key with disallowed character", role: charon.Role{Key: "admin@org"}, wantErr: "invalid key"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			errE := tt.role.Validate(t.Context())
+			if tt.wantErr == "" {
+				require.NoError(t, errE, "% -+#.1v", errE)
+			} else {
+				require.Error(t, errE)
+				assert.Contains(t, errE.Error(), tt.wantErr)
+			}
+		})
+	}
+}
