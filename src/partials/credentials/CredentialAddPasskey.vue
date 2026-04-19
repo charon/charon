@@ -115,8 +115,14 @@ async function onSubmit() {
       }
       registrationFailed.value = true
       await nextTick(() => {
-        // We refocus button to retry.
-        document.getElementById("credentialaddpasskey-button-add")?.focus()
+        // WebAuthn authenticator dialogs steal focus, so wait for the window
+        // to regain focus before refocusing the retry button.
+        const refocus = () => document.getElementById("credentialaddpasskey-button-add")?.focus()
+        if (document.hasFocus()) {
+          refocus()
+        } else {
+          window.addEventListener("focus", refocus, { once: true, signal: abortController.signal })
+        }
       })
       return
     }
