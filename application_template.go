@@ -611,6 +611,10 @@ func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *Appl
 		return scope == ""
 	})
 
+	if a.Roles == nil {
+		a.Roles = []Role{}
+	}
+
 	rolesSet := mapset.NewThreadUnsafeSet[string]()
 	for i, role := range a.Roles {
 		errE := role.Validate(ctx)
