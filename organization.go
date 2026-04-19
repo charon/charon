@@ -836,26 +836,17 @@ func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []
 		}
 	}
 
-	existingRolesMap := existing.Roles
-	if existingRolesMap == nil {
-		existingRolesMap = make(map[identifier.Identifier][]string)
-	}
-	newRolesMap := o.Roles
-	if newRolesMap == nil {
-		newRolesMap = make(map[identifier.Identifier][]string)
-	}
-
 	allIdentityIDs := mapset.NewThreadUnsafeSet[identifier.Identifier]()
-	for identityID := range existingRolesMap {
+	for identityID := range existing.Roles {
 		allIdentityIDs.Add(identityID)
 	}
-	for identityID := range newRolesMap {
+	for identityID := range o.Roles {
 		allIdentityIDs.Add(identityID)
 	}
 
 	for identityID := range allIdentityIDs.Iter() {
-		existingRoles := existingRolesMap[identityID]
-		newRoles := newRolesMap[identityID]
+		existingRoles := existing.Roles[identityID]
+		newRoles := o.Roles[identityID]
 
 		addedRoles, removedRoles := detectSliceChanges(existingRoles, newRoles)
 
