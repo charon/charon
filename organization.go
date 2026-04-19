@@ -785,8 +785,6 @@ func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []
 		changes = append(changes, ActivityChangePermissionsRemoved)
 	}
 
-	identitiesChangedSet := adminsAdded.Union(adminsRemoved)
-
 	// We make copies of app structs on purpose, so that we can change Active field as needed.
 	existingAppMap := map[OrganizationApplicationRef]OrganizationApplication{}
 	for _, app := range existing.Applications {
@@ -836,28 +834,32 @@ func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []
 		}
 	}
 
-	allIdentityIDs := mapset.NewThreadUnsafeSet[identifier.Identifier]()
-	for identityID := range existing.Roles {
-		allIdentityIDs.Add(identityID)
-	}
-	for identityID := range o.Roles {
-		allIdentityIDs.Add(identityID)
-	}
+	allIdentityIDs := mapset.NewThreadUnsafeSetFromMapKeys(existing.Roles).Union(mapset.NewThreadUnsafeSetFromMapKeys(o.Roles))
 
-	for identityID := range allIdentityIDs.Iter() {
+	identitiesWithRolesChanged := mapset.NewThreadUnsafeSet[IdentityRef]()
+	anyRolesAdded := false
+	anyRolesRemoved := false
+	for identityID := range mapset.Elements(allIdentityIDs) {
 		existingRoles := existing.Roles[identityID]
 		newRoles := o.Roles[identityID]
 
 		addedRoles, removedRoles := detectSliceChanges(existingRoles, newRoles)
 
 		if !addedRoles.IsEmpty() {
-			changes = append(changes, ActivityChangeRolesAdded)
-			identitiesChangedSet.Add(IdentityRef{ID: identityID})
+			anyRolesAdded = true
+			identitiesWithRolesChanged.Add(IdentityRef{ID: identityID})
 		}
 		if !removedRoles.IsEmpty() {
-			changes = append(changes, ActivityChangeRolesRemoved)
-			identitiesChangedSet.Add(IdentityRef{ID: identityID})
+			anyRolesRemoved = true
+			identitiesWithRolesChanged.Add(IdentityRef{ID: identityID})
 		}
+	}
+
+	if anyRolesAdded {
+		changes = append(changes, ActivityChangeRolesAdded)
+	}
+	if anyRolesRemoved {
+		changes = append(changes, ActivityChangeRolesRemoved)
 	}
 
 	if !addedAppSet.IsEmpty() {
@@ -876,7 +878,7 @@ func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []
 		changes = append(changes, ActivityChangeMembershipDisabled)
 	}
 
-	identitiesChanged := identitiesChangedSet.ToSlice()
+	identitiesChanged := adminsAdded.Union(adminsRemoved).Union(identitiesWithRolesChanged).ToSlice()
 	slices.SortFunc(identitiesChanged, identityRefCmp)
 
 	appsChanged := addedAppSet.Union(removedAppSet).Union(changedAppSet).Union(activatedAppSet).Union(disabledAppSet).ToSlice()
