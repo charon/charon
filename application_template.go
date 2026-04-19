@@ -893,7 +893,7 @@ func (s *Service) createApplicationTemplate(ctx context.Context, applicationTemp
 
 	return s.logActivity(
 		ctx, ActivityApplicationTemplateCreate, nil, nil, []ApplicationTemplateRef{{ID: *applicationTemplate.ID}},
-		nil, nil, nil, nil, OrganizationRef{ID: co.ID},
+		nil, nil, nil, nil, co.Ref(),
 	)
 }
 
@@ -938,14 +938,14 @@ func (s *Service) updateApplicationTemplate(ctx context.Context, applicationTemp
 	scopedIdentities := []OrganizationIdentityRef{}
 	for _, identity := range identities {
 		scopedIdentities = append(scopedIdentities, OrganizationIdentityRef{
-			Organization: OrganizationRef{ID: co.ID},
+			Organization: co.Ref(),
 			Identity:     identity,
 		})
 	}
 
 	return s.logActivity(
 		ctx, ActivityApplicationTemplateUpdate, scopedIdentities, nil, []ApplicationTemplateRef{{ID: *applicationTemplate.ID}},
-		nil, nil, changes, nil, OrganizationRef{ID: co.ID},
+		nil, nil, changes, nil, co.Ref(),
 	)
 }
 

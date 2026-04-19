@@ -1006,7 +1006,7 @@ func (s *Service) createOrganization(ctx context.Context, organization *Organiza
 
 	s.setOrganization(*organization.ID, data)
 
-	return s.logActivity(ctx, ActivityOrganizationCreate, nil, []OrganizationRef{{ID: *organization.ID}}, nil, nil, nil, nil, nil, OrganizationRef{ID: co.ID})
+	return s.logActivity(ctx, ActivityOrganizationCreate, nil, []OrganizationRef{organization.Ref()}, nil, nil, nil, nil, nil, co.Ref())
 }
 
 func (s *Service) updateOrganization(ctx context.Context, organization *Organization) errors.E {
@@ -1052,21 +1052,21 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 	scopedIdentities := []OrganizationIdentityRef{}
 	for _, identity := range adminsChanged {
 		scopedIdentities = append(scopedIdentities, OrganizationIdentityRef{
-			Organization: OrganizationRef{ID: co.ID},
+			Organization: co.Ref(),
 			Identity:     identity,
 		})
 	}
 	// Role-changed IdentityRefs are organization-scoped IDs in this organization, so we wrap them with it.
 	for _, identity := range rolesIdentitiesChanged {
 		scopedIdentities = append(scopedIdentities, OrganizationIdentityRef{
-			Organization: OrganizationRef{ID: *organization.ID},
+			Organization: organization.Ref(),
 			Identity:     identity,
 		})
 	}
 
 	return s.logActivity(
-		ctx, ActivityOrganizationUpdate, scopedIdentities, []OrganizationRef{{ID: *organization.ID}},
-		nil, organizationApplications, nil, changes, nil, OrganizationRef{ID: co.ID},
+		ctx, ActivityOrganizationUpdate, scopedIdentities, []OrganizationRef{organization.Ref()},
+		nil, organizationApplications, nil, changes, nil, co.Ref(),
 	)
 }
 
@@ -1568,7 +1568,7 @@ func (s *Service) OrganizationUsersGetAPI(w http.ResponseWriter, req *http.Reque
 		// TODO: Should admins be able to see also users who have disabled organization, but have still joined in the past?
 		//       If we allow this, we should also change OrganizationIdentityGet to return disabled identities for admins, too.
 		if idOrg != nil && idOrg.Active {
-			result = append(result, IdentityRef{ID: *idOrg.ID})
+			result = append(result, idOrg.Ref())
 		}
 	}
 
@@ -1836,7 +1836,7 @@ func (s *Service) OrganizationBlockedStatusGetAPI(w http.ResponseWriter, req *ht
 				s.WriteJSON(w, req, OrganizationBlockedStatus{
 					Blocked: BlockedUserOnly,
 					Notes: []OrganizationBlockedStatusNotes{{
-						Identity:         IdentityRef{ID: *idOrg.ID},
+						Identity:         idOrg.Ref(),
 						OrganizationNote: blockedIdentity.OrganizationNote,
 						UserNote:         blockedIdentity.UserNote,
 					}},

@@ -39,6 +39,21 @@ type IdentityOrganization struct {
 	Applications []OrganizationApplicationApplicationRef `json:"applications"`
 }
 
+// Ref returns a reference to this identity within its organization
+// (using the organization-scoped ID).
+func (i *IdentityOrganization) Ref() IdentityRef {
+	return IdentityRef{ID: *i.ID}
+}
+
+// OrganizationIdentityRef returns the organization-scoped reference
+// to this identity in its organization.
+func (i *IdentityOrganization) OrganizationIdentityRef() OrganizationIdentityRef {
+	return OrganizationIdentityRef{
+		Organization: i.Organization,
+		Identity:     i.Ref(),
+	}
+}
+
 // Validate validates the IdentityOrganization struct.
 func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityOrganization, service *Service, identity *Identity) errors.E {
 	if existing == nil {
@@ -266,7 +281,7 @@ func (i *Identity) HasUserAccess(identities mapset.Set[IdentityRef]) bool {
 // HasAdminAccess returns true if at least one of the identities is among admins.
 func (i *Identity) HasAdminAccess(identities mapset.Set[IdentityRef], isCreator bool) bool {
 	admins := mapset.NewThreadUnsafeSet(i.Admins...)
-	iRef := IdentityRef{ID: *i.ID}
+	iRef := i.Ref()
 	creatorIsAdmin := admins.Contains(iRef)
 	if creatorIsAdmin {
 		// Because we record that the creator is an admin by adding identity itself
@@ -294,10 +309,8 @@ func (i *Identity) OrganizationIdentityRef(organization OrganizationRef) *Organi
 	if idOrg == nil {
 		return nil
 	}
-	return &OrganizationIdentityRef{
-		Identity:     IdentityRef{ID: *idOrg.ID},
-		Organization: organization,
-	}
+	ref := idOrg.OrganizationIdentityRef()
+	return &ref
 }
 
 // IdentityRef is a reference to an identity.
@@ -696,9 +709,9 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 	}
 
 	return s.logActivity(ctx, ActivityIdentityCreate, []OrganizationIdentityRef{{
-		Organization: OrganizationRef{ID: co.ID},
+		Organization: co.Ref(),
 		Identity:     i,
-	}}, nil, nil, nil, accounts, nil, nil, OrganizationRef{ID: co.ID})
+	}}, nil, nil, nil, accounts, nil, nil, co.Ref())
 }
 
 func (s *Service) updateAccountsWithLock(identity IdentityRef, identitiesBefore, identitiesAfter mapset.Set[IdentityRef]) errors.E {
@@ -855,12 +868,12 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 	scopedIdentities := []OrganizationIdentityRef{}
 	for _, identity := range identities {
 		scopedIdentities = append(scopedIdentities, OrganizationIdentityRef{
-			Organization: OrganizationRef{ID: co.ID},
+			Organization: co.Ref(),
 			Identity:     identity,
 		})
 	}
 
-	return s.logActivity(ctx, ActivityIdentityUpdate, scopedIdentities, organizations, nil, applications, nil, changes, nil, OrganizationRef{ID: co.ID})
+	return s.logActivity(ctx, ActivityIdentityUpdate, scopedIdentities, organizations, nil, applications, nil, changes, nil, co.Ref())
 }
 
 // updateAccounts updates accounts which have access to the identity after the set
