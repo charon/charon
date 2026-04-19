@@ -2,7 +2,6 @@ package charon_test
 
 import (
 	"bytes"
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -51,7 +50,7 @@ func createApplicationTemplate(t *testing.T, ts *httptest.Server, service *charo
 	data, errE := x.MarshalWithoutEscapeHTML(applicationTemplate)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, ts.URL+applicationTemplateCreate, bytes.NewReader(data))
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, ts.URL+applicationTemplateCreate, bytes.NewReader(data))
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Content-Type", "application/json")
@@ -68,7 +67,7 @@ func createApplicationTemplate(t *testing.T, ts *httptest.Server, service *charo
 	applicationTemplateGet, errE := service.ReverseAPI("ApplicationTemplateGet", waf.Params{"id": applicationTemplateRef.ID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	req, err = http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+applicationTemplateGet, nil)
+	req, err = http.NewRequestWithContext(t.Context(), http.MethodGet, ts.URL+applicationTemplateGet, nil)
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	resp, err = ts.Client().Do(req) //nolint:bodyclose

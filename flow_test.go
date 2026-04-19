@@ -1,7 +1,6 @@
 package charon_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -19,7 +18,7 @@ func TestStore(t *testing.T) {
 
 	_, service, _, _, _ := startTestServer(t) //nolint:dogsled
 
-	ctx := context.Background()
+	ctx := t.Context()
 	f := &charon.TestingFlow{
 		ID:        identifier.New(),
 		CreatedAt: time.Now().UTC(),
@@ -46,10 +45,10 @@ func TestAuthFlowExpiredPasswordAndCode(t *testing.T) {
 	startPasswordSignin(t, ts, service, email, []byte("test1234"), nil, flowID, "Charon", "Dashboard") //nolint:bodyclose
 
 	// Change the flow's CreatedAt to more than 24 hours ago to simulate flow's expiration.
-	flow, errE := service.TestingGetFlow(context.Background(), flowID)
+	flow, errE := service.TestingGetFlow(t.Context(), flowID)
 	require.NoError(t, errE, "% -+#.1v", errE)
 	flow.CreatedAt = flow.CreatedAt.Add(-25 * time.Hour)
-	errE = service.TestingSetFlow(context.Background(), flow)
+	errE = service.TestingSetFlow(t.Context(), flow)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	// Flow is now expired, so the next step should return 404 Not Found.

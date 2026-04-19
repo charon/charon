@@ -2,7 +2,6 @@ package charon_test
 
 import (
 	"bytes"
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -66,7 +65,7 @@ func createOrganization(t *testing.T, ts *httptest.Server, service *charon.Servi
 	data, errE := x.MarshalWithoutEscapeHTML(organization)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, ts.URL+organizationCreate, bytes.NewReader(data))
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, ts.URL+organizationCreate, bytes.NewReader(data))
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Content-Type", "application/json")
@@ -84,7 +83,7 @@ func createOrganization(t *testing.T, ts *httptest.Server, service *charon.Servi
 	organizationGet, errE := service.ReverseAPI("OrganizationGet", waf.Params{"id": organizationRef.ID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	req, err = http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+organizationGet, nil)
+	req, err = http.NewRequestWithContext(t.Context(), http.MethodGet, ts.URL+organizationGet, nil)
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	resp, err = ts.Client().Do(req) //nolint:bodyclose

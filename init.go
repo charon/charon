@@ -18,7 +18,7 @@ type charonOrganization struct {
 	RedirectURI                       string
 }
 
-func initCharonOrganization(config *Config, service *Service) (func() charonOrganization, errors.E) {
+func initCharonOrganization(ctx context.Context, config *Config, service *Service) (func() charonOrganization, errors.E) {
 	return initWithHost(config, service.domain, func(host string) charonOrganization {
 		charonOrganizationID := identifier.New()
 		charonAppID := identifier.New()
@@ -84,7 +84,7 @@ func initCharonOrganization(config *Config, service *Service) (func() charonOrga
 			},
 		}
 
-		errE := organization.validate(context.Background(), &organization, service)
+		errE := organization.validate(ctx, &organization, service)
 		if errE != nil {
 			// Internal error: this should never happen.
 			panic(errE)

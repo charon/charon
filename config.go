@@ -368,7 +368,7 @@ type Service struct {
 }
 
 // Init initializes the HTTP service and is used together with Prepare to implement Run.
-func (config *Config) Init(files fs.FS) (*Service, errors.E) { //nolint:maintidx
+func (config *Config) Init(ctx context.Context, files fs.FS) (*Service, errors.E) { //nolint:maintidx
 	// This is not set when Config is not populated by Kong.
 	if config.Title == "" {
 		config.Title = DefaultTitle
@@ -777,7 +777,7 @@ func (config *Config) Init(files fs.FS) (*Service, errors.E) { //nolint:maintidx
 
 	// We iterate over providers using an index to be able to mutate them.
 	for i := range providers {
-		errE = providers[i].initProvider(config)
+		errE = providers[i].initProvider(ctx, config)
 		if errE != nil {
 			errors.Details(errE)["provider"] = providers[i].Key
 			return nil, errE
@@ -788,7 +788,7 @@ func (config *Config) Init(files fs.FS) (*Service, errors.E) { //nolint:maintidx
 }
 
 // Prepare prepares the HTTP service for serving.
-func (config *Config) Prepare(service *Service) (http.Handler, errors.E) {
+func (config *Config) Prepare(ctx context.Context, service *Service) (http.Handler, errors.E) {
 	// Construct the main handler for the service using the router.
 	router := new(waf.Router)
 	handler, errE := service.RouteWith(router)
@@ -798,27 +798,27 @@ func (config *Config) Prepare(service *Service) (http.Handler, errors.E) {
 
 	// We prepare initialization of OIDC and providers and in the common case
 	// (when server's bind port is not 0) immediately do the initialization.
-	service.oidc, errE = initOIDC(config, service)
+	service.oidc, errE = initOIDC(ctx, config, service)
 	if errE != nil {
 		return nil, errE
 	}
-	service.oidcProviders, errE = initOIDCProviders(config, service)
+	service.oidcProviders, errE = initOIDCProviders(ctx, config, service)
 	if errE != nil {
 		return nil, errE
 	}
-	service.samlProviders, errE = initSAMLProviders(config, service)
+	service.samlProviders, errE = initSAMLProviders(ctx, config, service)
 	if errE != nil {
 		return nil, errE
 	}
-	service.passkeyProvider, errE = initPasskeyProvider(config, service)
+	service.passkeyProvider, errE = initPasskeyProvider(ctx, config, service)
 	if errE != nil {
 		return nil, errE
 	}
-	service.codeProvider, errE = initCodeProvider(config, service)
+	service.codeProvider, errE = initCodeProvider(ctx, config, service)
 	if errE != nil {
 		return nil, errE
 	}
-	service.charonOrganization, errE = initCharonOrganization(config, service)
+	service.charonOrganization, errE = initCharonOrganization(ctx, config, service)
 	if errE != nil {
 		return nil, errE
 	}
@@ -843,12 +843,12 @@ func (config *Config) Run(files fs.FS) errors.E {
 
 	ctx = config.Logger.WithContext(ctx)
 
-	service, errE := config.Init(files)
+	service, errE := config.Init(ctx, files)
 	if errE != nil {
 		return errE
 	}
 
-	handler, errE := config.Prepare(service)
+	handler, errE := config.Prepare(ctx, service)
 	if errE != nil {
 		return errE
 	}

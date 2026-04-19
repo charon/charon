@@ -1,7 +1,6 @@
 package charon_test
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -21,7 +20,7 @@ func signoutUser(t *testing.T, ts *httptest.Server, service *charon.Service, acc
 	authSignout, errE := service.ReverseAPI("AuthSignout", nil, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, ts.URL+authSignout, strings.NewReader(`{"location":"/"}`))
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, ts.URL+authSignout, strings.NewReader(`{"location":"/"}`))
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Content-Type", "application/json")
@@ -55,7 +54,7 @@ func verifyAllActivities(t *testing.T, ts *httptest.Server, service *charon.Serv
 	activityListGet, errE := service.ReverseAPI("ActivityList", nil, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+activityListGet, nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, ts.URL+activityListGet, nil)
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	resp, err := ts.Client().Do(req) //nolint:bodyclose
@@ -75,7 +74,7 @@ func verifyAllActivities(t *testing.T, ts *httptest.Server, service *charon.Serv
 
 		activityGet, errE := service.ReverseAPI("ActivityGet", waf.Params{"id": activityRef.ID.String()}, nil)
 		require.NoError(t, errE, "% -+#.1v", errE)
-		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+activityGet, nil)
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, ts.URL+activityGet, nil)
 		require.NoError(t, err)
 		req.Header.Set("Authorization", "Bearer "+accessToken)
 		resp, err := ts.Client().Do(req) //nolint:bodyclose
@@ -110,7 +109,7 @@ func verifyLatestActivity(
 	activityListGet, errE := service.ReverseAPI("ActivityList", nil, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+activityListGet, nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, ts.URL+activityListGet, nil)
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	resp, err := ts.Client().Do(req) //nolint:bodyclose
@@ -130,7 +129,7 @@ func verifyLatestActivity(
 	activityGet, errE := service.ReverseAPI("ActivityGet", waf.Params{"id": latestActivityID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	req, err = http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+activityGet, nil)
+	req, err = http.NewRequestWithContext(t.Context(), http.MethodGet, ts.URL+activityGet, nil)
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	resp, err = ts.Client().Do(req) //nolint:bodyclose

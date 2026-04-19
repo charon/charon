@@ -1,7 +1,6 @@
 package charon_test
 
 import (
-	"context"
 	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
@@ -80,7 +79,7 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 		"scope":           []string{"openid profile email offline_access"},
 	}
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, ts.URL+oidcIntrospect, strings.NewReader(data.Encode()))
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, ts.URL+oidcIntrospect, strings.NewReader(data.Encode()))
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(clientID+":chc-"+applicationClientSecret)))
@@ -143,7 +142,7 @@ func validateNotValidIntrospect(t *testing.T, ts *httptest.Server, service *char
 		"scope":           []string{"openid profile email offline_access"},
 	}
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, ts.URL+oidcIntrospect, strings.NewReader(data.Encode()))
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, ts.URL+oidcIntrospect, strings.NewReader(data.Encode()))
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(clientID+":chc-"+applicationClientSecret)))

@@ -51,7 +51,7 @@ func (ks samlMemoryKeyStore) GetKeyPair() (*rsa.PrivateKey, []byte, error) {
 	return ks.privateKey, ks.cert, nil
 }
 
-func initSAMLProviders(config *Config, service *Service) (func() map[Provider]samlProvider, errors.E) {
+func initSAMLProviders(_ context.Context, config *Config, service *Service) (func() map[Provider]samlProvider, errors.E) {
 	return initWithHost(config, service.domain, func(host string) map[Provider]samlProvider {
 		samlProviders := map[Provider]samlProvider{}
 		for _, p := range service.providers {
@@ -127,11 +127,11 @@ func initSAMLProvider(service *Service, host string, p SiteProvider) (samlProvid
 	}, nil
 }
 
-func (p *SiteProvider) initSAMLProvider(config *Config) errors.E {
+func (p *SiteProvider) initSAMLProvider(ctx context.Context, config *Config) errors.E {
 	config.Logger.Debug().Msgf("enabling %s SAML provider", p.Key)
 
 	client := cleanhttp.DefaultPooledClient()
-	metadata, errE := fetchSAMLMetadata(context.Background(), client, p.samlMetadataURL)
+	metadata, errE := fetchSAMLMetadata(ctx, client, p.samlMetadataURL)
 	if errE != nil {
 		return errors.WithMessage(errE, "failed to fetch metadata")
 	}

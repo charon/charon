@@ -1,6 +1,7 @@
 package charon
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"strings"
@@ -67,12 +68,12 @@ type Site struct {
 	TermsOfService bool `json:"termsOfService,omitempty" yaml:"-"`
 }
 
-func (p *SiteProvider) initProvider(config *Config) errors.E {
+func (p *SiteProvider) initProvider(ctx context.Context, config *Config) errors.E {
 	switch p.Type {
 	case ThirdPartyProviderOIDC:
-		return p.initOIDCProvider(config)
+		return p.initOIDCProvider(ctx, config)
 	case ThirdPartyProviderSAML:
-		return p.initSAMLProvider(config)
+		return p.initSAMLProvider(ctx, config)
 	default:
 		errE := errors.New("unsupported provider type")
 		errors.Details(errE)["type"] = p.Type

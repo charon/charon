@@ -27,7 +27,7 @@ func TestCreateIdentity(t *testing.T) {
 	}
 
 	accountID := identifier.New()
-	ctx := service.TestingWithAccountID(context.Background(), accountID)
+	ctx := service.TestingWithAccountID(t.Context(), accountID)
 	ctx = service.TestingWithSessionID(ctx)
 	ctx = service.TestingWithRequestID(ctx)
 
@@ -111,7 +111,7 @@ func TestUpdateIdentity(t *testing.T) {
 	_, service, _, _, _ := startTestServer(t) //nolint:dogsled
 
 	accountID := identifier.New()
-	ctx := service.TestingWithAccountID(context.Background(), accountID)
+	ctx := service.TestingWithAccountID(t.Context(), accountID)
 	ctx = service.TestingWithSessionID(ctx)
 	ctx = service.TestingWithRequestID(ctx)
 
@@ -180,7 +180,7 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	_, service, _, _, _ := startTestServer(t) //nolint:dogsled
 
 	userAccountID := identifier.New()
-	userCtx := service.TestingWithAccountID(context.Background(), userAccountID)
+	userCtx := service.TestingWithAccountID(t.Context(), userAccountID)
 	userCtx = service.TestingWithSessionID(userCtx)
 	userCtx = service.TestingWithRequestID(userCtx)
 
@@ -190,7 +190,7 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	userIdentityRef := charon.IdentityRef{ID: userIdentityID}
 
 	adminAccountID := identifier.New()
-	adminCtx := service.TestingWithAccountID(context.Background(), adminAccountID)
+	adminCtx := service.TestingWithAccountID(t.Context(), adminAccountID)
 	adminCtx = service.TestingWithSessionID(adminCtx)
 	adminCtx = service.TestingWithRequestID(adminCtx)
 
@@ -577,7 +577,7 @@ func setupIdentityHierarchy(t *testing.T, service *charon.Service) []testIdentit
 	t.Helper()
 
 	accountID := identifier.New()
-	ctxRoot := service.TestingWithAccountID(context.Background(), accountID)
+	ctxRoot := service.TestingWithAccountID(t.Context(), accountID)
 	ctxRoot = service.TestingWithSessionID(ctxRoot)
 	ctxRoot = service.TestingWithRequestID(ctxRoot)
 	rootIdentityID := createTestIdentity(t, service, ctxRoot)
@@ -585,14 +585,14 @@ func setupIdentityHierarchy(t *testing.T, service *charon.Service) []testIdentit
 	ctxRoot = service.TestingWithIdentityID(ctxRoot, rootIdentityID)
 
 	accountID1 := identifier.New()
-	ctx1 := service.TestingWithAccountID(context.Background(), accountID1)
+	ctx1 := service.TestingWithAccountID(t.Context(), accountID1)
 	ctx1 = service.TestingWithSessionID(ctx1)
 	ctx1 = service.TestingWithRequestID(ctx1)
 	child1IdentityID := createTestIdentity(t, service, ctx1)
 	ctx1 = service.TestingWithIdentityID(ctx1, child1IdentityID)
 
 	accountID2 := identifier.New()
-	ctx2 := service.TestingWithAccountID(context.Background(), accountID2)
+	ctx2 := service.TestingWithAccountID(t.Context(), accountID2)
 	ctx2 = service.TestingWithSessionID(ctx2)
 	ctx2 = service.TestingWithRequestID(ctx2)
 	child2IdentityID := createTestIdentity(t, service, ctx2)

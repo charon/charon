@@ -1,7 +1,6 @@
 package charon_test
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -97,7 +96,7 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 	gravatarURL := g.GetURL()
 
 	// After sign-up, GET (with access token) should return success.
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+userinfo, nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, ts.URL+userinfo, nil)
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	resp, err = ts.Client().Do(req) //nolint:bodyclose
@@ -114,7 +113,7 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 	signoutUser(t, ts, service, accessToken)
 
 	// After sign-out GET (with revoked access token) should return error.
-	req, err = http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+userinfo, nil)
+	req, err = http.NewRequestWithContext(t.Context(), http.MethodGet, ts.URL+userinfo, nil)
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	resp, err = ts.Client().Do(req) //nolint:bodyclose
@@ -147,7 +146,7 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 	accessToken, identityID = signinUser(t, ts, service, username, username, charon.CompletedSignin, flowID, nonce, state, pkceVerifier, config, verifier)
 
 	// After sign-in, GET (with new access token) should again return success.
-	req, err = http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+userinfo, nil)
+	req, err = http.NewRequestWithContext(t.Context(), http.MethodGet, ts.URL+userinfo, nil)
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	resp, err = ts.Client().Do(req) //nolint:bodyclose

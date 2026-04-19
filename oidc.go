@@ -232,7 +232,7 @@ func (c *configurableCoreStrategy) ValidateRefreshToken(ctx context.Context, req
 	return c.hmacStrategy.ValidateRefreshToken(ctx, requester, token) //nolint:wrapcheck
 }
 
-func initOIDC(config *Config, service *Service) (func() *fosite.Fosite, errors.E) {
+func initOIDC(_ context.Context, config *Config, service *Service) (func() *fosite.Fosite, errors.E) {
 	return initWithHost(config, service.domain, func(host string) *fosite.Fosite {
 		tokenPath, errE := service.ReverseAPI("OIDCToken", nil, nil)
 		if errE != nil {

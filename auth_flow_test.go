@@ -2,7 +2,6 @@ package charon_test
 
 import (
 	"bytes"
-	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -110,7 +109,7 @@ func createAuthFlow(t *testing.T, ts *httptest.Server, service *charon.Service) 
 	errE = x.DecodeJSON(resp.Body, &serviceContext)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	ctx := oidc.ClientContext(context.Background(), ts.Client())
+	ctx := oidc.ClientContext(t.Context(), ts.Client())
 	provider, err := oidc.NewProvider(ctx, ts.URL)
 	require.NoError(t, err)
 
@@ -336,7 +335,7 @@ func doRedirectAndAccessToken(t *testing.T, ts *httptest.Server, service *charon
 	assert.Equal(t, "openid profile email", query.Get("scope"))
 	assert.Equal(t, state, query.Get("state"))
 
-	ctx := oidc.ClientContext(context.Background(), ts.Client())
+	ctx := oidc.ClientContext(t.Context(), ts.Client())
 	opts := []oauth2.AuthCodeOption{}
 	opts = append(opts, oauth2.VerifierOption(pkceVerifier))
 	oauth2Token, err := config.Exchange(ctx, query.Get("code"), opts...)

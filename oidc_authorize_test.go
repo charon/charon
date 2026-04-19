@@ -1,7 +1,6 @@
 package charon_test
 
 import (
-	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
@@ -154,7 +153,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 				"token": []string{code},
 			}
 
-			req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, ts.URL+oidcIntrospect, strings.NewReader(data.Encode()))
+			req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, ts.URL+oidcIntrospect, strings.NewReader(data.Encode()))
 			require.NoError(t, err)
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(clientID+":chc-"+applicationClientSecret)))
@@ -188,7 +187,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 
 			secretID, err := base64.RawURLEncoding.DecodeString(split[1])
 			require.NoError(t, err)
-			session, errE := service.TestingGetSessionBySecretID(context.Background(), [32]byte(secretID))
+			session, errE := service.TestingGetSessionBySecretID(t.Context(), [32]byte(secretID))
 			require.NoError(t, errE, "% -+#.1v", errE)
 
 			sessionID := session.ID.String()

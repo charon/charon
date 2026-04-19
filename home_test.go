@@ -175,10 +175,10 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 		},
 	}
 
-	service, errE := config.Init(testFiles)
+	service, errE := config.Init(t.Context(), testFiles)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	handler, errE := config.Prepare(service)
+	handler, errE := config.Prepare(t.Context(), service)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	ts := httptest.NewUnstartedServer(nil)

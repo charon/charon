@@ -1,6 +1,7 @@
 package charon
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -86,7 +87,7 @@ func withPreferredCredentialAlgorithms(preferredAlgorithms []webauthncose.COSEAl
 	}
 }
 
-func initPasskeyProvider(config *Config, service *Service) (func() *webauthn.WebAuthn, errors.E) {
+func initPasskeyProvider(_ context.Context, config *Config, service *Service) (func() *webauthn.WebAuthn, errors.E) {
 	return initWithHost(config, service.domain, func(host string) *webauthn.WebAuthn {
 		origin := "https://" + host
 		wconfig := &webauthn.Config{ //nolint:exhaustruct

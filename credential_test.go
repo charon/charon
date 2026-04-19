@@ -2,7 +2,6 @@ package charon_test
 
 import (
 	"bytes"
-	"context"
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
@@ -73,7 +72,7 @@ func TestCredentialEmailAccessControl(t *testing.T) {
 		credentialGet, errE := service.ReverseAPI("CredentialGet", waf.Params{"id": credentialRef[i].ID.String()}, nil)
 		require.NoError(t, errE, "% -+#.1v", errE)
 
-		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+credentialGet, nil)
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, ts.URL+credentialGet, nil)
 		require.NoError(t, err)
 		req.Header.Set("Authorization", "Bearer "+accessToken2)
 
@@ -210,7 +209,7 @@ func credentialListGet(t *testing.T, ts *httptest.Server, service *charon.Servic
 	credentialListGet, errE := service.ReverseAPI("CredentialList", nil, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+credentialListGet, nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, ts.URL+credentialListGet, nil)
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 
@@ -235,7 +234,7 @@ func credentialGet(t *testing.T, ts *httptest.Server, service *charon.Service, a
 	credentialGet, errE := service.ReverseAPI("CredentialGet", waf.Params{"id": credentialID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, ts.URL+credentialGet, nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, ts.URL+credentialGet, nil)
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 
@@ -256,7 +255,7 @@ func credentialGet(t *testing.T, ts *httptest.Server, service *charon.Service, a
 func credentialAdd(t *testing.T, ts *httptest.Server, accessToken string, addRequest json.RawMessage, url string) charon.CredentialAddResponse {
 	t.Helper()
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, ts.URL+url, bytes.NewReader(addRequest))
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, ts.URL+url, bytes.NewReader(addRequest))
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Content-Type", "application/json")
@@ -388,7 +387,7 @@ func credentialRemove(t *testing.T, ts *httptest.Server, service *charon.Service
 	credentialRemove, errE := service.ReverseAPI("CredentialRemove", waf.Params{"id": credentialID.String()}, nil)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, ts.URL+credentialRemove, strings.NewReader("{}"))
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, ts.URL+credentialRemove, strings.NewReader("{}"))
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Content-Type", "application/json")
@@ -425,7 +424,7 @@ func credentialRenameStart(t *testing.T, ts *httptest.Server, service *charon.Se
 	data, errE := x.MarshalWithoutEscapeHTML(renameRequest)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, ts.URL+credentialRename, bytes.NewReader(data))
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, ts.URL+credentialRename, bytes.NewReader(data))
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Content-Type", "application/json")

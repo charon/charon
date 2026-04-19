@@ -1,7 +1,6 @@
 package charon_test
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -136,7 +135,8 @@ func startOIDCTestServer(t *testing.T) (*httptest.Server, *storage.MemoryStore) 
 
 	oauth2Provider = compose.ComposeAllEnabled(config, store, privateKey)
 
-	hashedSecret, err := config.GetSecretsHasher(context.Background()).Hash(context.Background(), []byte(oidcTestingSecret))
+	ctx := t.Context()
+	hashedSecret, err := config.GetSecretsHasher(ctx).Hash(ctx, []byte(oidcTestingSecret))
 	require.NoError(t, err)
 
 	// We set everything except the redirect. We set redirect in the caller of this function,

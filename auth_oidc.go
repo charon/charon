@@ -25,7 +25,7 @@ type oidcProvider struct {
 	SupportsPKCE bool
 }
 
-func initOIDCProviders(config *Config, service *Service) (func() map[Provider]oidcProvider, errors.E) {
+func initOIDCProviders(_ context.Context, config *Config, service *Service) (func() map[Provider]oidcProvider, errors.E) {
 	return initWithHost(config, service.domain, func(host string) map[Provider]oidcProvider {
 		oidcProviders := map[Provider]oidcProvider{}
 		for _, p := range service.providers {
@@ -72,11 +72,11 @@ func initOIDCProvider(service *Service, host string, p SiteProvider) (oidcProvid
 	}, nil
 }
 
-func (p *SiteProvider) initOIDCProvider(config *Config) errors.E {
+func (p *SiteProvider) initOIDCProvider(ctx context.Context, config *Config) errors.E {
 	config.Logger.Debug().Msgf("enabling %s OIDC provider", p.Key)
 
 	client := cleanhttp.DefaultPooledClient()
-	ctx := oidc.ClientContext(context.Background(), client)
+	ctx = oidc.ClientContext(ctx, client)
 	provider, err := oidc.NewProvider(ctx, p.oidcIssuer)
 	if err != nil {
 		return errors.WithStack(err)
