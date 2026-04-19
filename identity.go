@@ -108,16 +108,16 @@ func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityO
 	}
 
 	// We validate only added applications so that we do not error out on disabled or removed applications.
-	unknown := mapset.NewThreadUnsafeSet[OrganizationApplicationApplicationRef]()
-	for newApplication := range mapset.Elements(mapset.NewThreadUnsafeSet(i.Applications...).Difference(existingApplications)) {
-		if application := organization.GetApplication(&newApplication.ID); application == nil || !application.Active {
-			unknown.Add(newApplication)
+	unknownApplications := mapset.NewThreadUnsafeSet[OrganizationApplicationApplicationRef]()
+	for addedApplication := range mapset.Elements(mapset.NewThreadUnsafeSet(i.Applications...).Difference(existingApplications)) {
+		if application := organization.GetApplication(&addedApplication.ID); application == nil || !application.Active {
+			unknownApplications.Add(addedApplication)
 		}
 	}
-	if !unknown.IsEmpty() {
-		errE := errors.New("unknown applications")
-		applications := unknown.ToSlice()
+	if !unknownApplications.IsEmpty() {
+		applications := unknownApplications.ToSlice()
 		slices.SortFunc(applications, organizationApplicationApplicationRefCmp)
+		errE := errors.New("unknown applications")
 		errors.Details(errE)["applications"] = applications
 		return errE
 	}

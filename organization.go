@@ -739,23 +739,29 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 	for orgIdentityID, roles := range o.Roles {
 		// We remove duplicates.
 		o.Roles[orgIdentityID] = removeDuplicates(roles)
-		// TODO: if an application is deactivated/removed from organization, obsolete roles stay.
-		//       See: https://gitlab.com/charon/charon/-/issues/77
-		for _, roleKey := range o.Roles[orgIdentityID] {
-			existingRoles := []string{}
-			if existing != nil && existing.Roles != nil {
-				existingRoles = existing.Roles[orgIdentityID]
-			}
 
-			if !validRoles.Contains(roleKey) && !slices.Contains(existingRoles, roleKey) {
-				errE := errors.New("invalid role")
-				errors.Details(errE)["organizationID"] = o.ID
-				errors.Details(errE)["orgIdentityID"] = orgIdentityID
-				errors.Details(errE)["roleKey"] = roleKey
-				return errE
-			}
+		existingRoles := mapset.NewThreadUnsafeSet[string]()
+		if existing != nil {
+			existingRoles.Append(existing.Roles[orgIdentityID]...)
+		}
+
+		// We validate only added roles so that we do not error out on disabled or removed applications.
+		addedRoles := mapset.NewThreadUnsafeSet(o.Roles[orgIdentityID]...).Difference(existingRoles)
+		unknownRoles := addedRoles.Difference(validRoles)
+
+		if !unknownRoles.IsEmpty() {
+			roles := unknownRoles.ToSlice()
+			slices.Sort(roles)
+			errE := errors.New("unknown roles")
+			errors.Details(errE)["organization"] = o.ID
+			errors.Details(errE)["identity"] = orgIdentityID
+			errors.Details(errE)["roles"] = roles
+			return errE
 		}
 	}
+
+	// TODO: If an application is deactivated/removed from organization, obsolete roles stay.
+	//       See: https://gitlab.com/charon/charon/-/issues/77
 
 	return nil
 }
