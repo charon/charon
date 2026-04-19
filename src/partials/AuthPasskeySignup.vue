@@ -2,7 +2,7 @@
 import type { AuthFlowPasskeyCreateCompleteRequest, AuthFlowResponse, Flow } from "@/types"
 
 import { startRegistration, WebAuthnAbortService } from "@simplewebauthn/browser"
-import { getCurrentInstance, nextTick, onBeforeUnmount, onMounted, ref } from "vue"
+import { getCurrentInstance, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
@@ -39,6 +39,24 @@ defineExpose({
 })
 
 onBeforeUnmount(onBeforeLeave)
+
+// flush: "post" so this fires after onPasskeySignup's finally has decremented
+// progress and Vue has re-rendered the button without the disabled attribute.
+// The document.hasFocus() branch handles the WebAuthn ceremony taking window
+// focus away: in that case we wait for focus to return before refocusing.
+watch(
+  signupFailed,
+  (newValue) => {
+    if (!newValue) return
+    const refocus = () => document.getElementById("authpasskeysignup-button-signup")?.focus()
+    if (document.hasFocus()) {
+      refocus()
+    } else {
+      window.addEventListener("focus", refocus, { once: true, signal: abortController.signal })
+    }
+  },
+  { flush: "post" },
+)
 
 function onAfterEnter() {
   document.getElementById("authpasskeysignup-button-signup")?.focus()
@@ -105,10 +123,6 @@ async function onPasskeySignup() {
       }
       signupFailed.value = true
       signupFailedAtLeastOnce.value = true
-      await nextTick(() => {
-        // We refocus button to retry.
-        document.getElementById("authpasskeysignup-button-signup")?.focus()
-      })
       return
     }
 

@@ -72,6 +72,22 @@ watch(
   { immediate: true },
 )
 
+// Covers the case where the hash arrives while AuthCode is already mounted
+// (same-URL hash change is a soft navigation, so onAfterEnter won't fire).
+// flush: "post" is required because the hash watcher sets code.value from
+// empty to the extracted code, which flips canNext() from false to true and
+// clears the submit button's :disabled prop. Post-flush waits for that
+// re-render, otherwise focus() could land on a still-disabled button.
+watch(
+  codeFromHash,
+  (v) => {
+    if (v) {
+      document.getElementById("authcode-button-submitcode")?.focus()
+    }
+  },
+  { flush: "post" },
+)
+
 // Define transition hooks to be called by the parent component.
 // See: https://github.com/vuejs/rfcs/discussions/613
 onMounted(() => {
