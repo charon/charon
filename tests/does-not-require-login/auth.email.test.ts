@@ -100,6 +100,16 @@ test.describe.serial("Charon Sign-in Flows", () => {
     await expect(codeField).toBeVisible()
     await expect(codeField).toBeFocused()
     await checkpoint(page, "auth-page-after-clicking-send-code")
+
+    // Click RESEND CODE - older codes remain valid so we can still use "code" below.
+    // This is primarily here to test that focus changes to code field after resending.
+    const resendCodeButton = page.locator("button#authcode-button-resendcode")
+    await expect(resendCodeButton).toBeVisible()
+    await resendCodeButton.click()
+    await expect(codeField).toBeFocused()
+    // Consume the resend email so the inbox stays clean for subsequent tests.
+    await extractCodeFromEmail(EMAIL_CODE_REGEX_MATCHER)
+
     await codeField.fill(code)
 
     // Find and click the enabled NEXT button (not disabled).
@@ -477,7 +487,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     const nextButton2 = page.locator("button#authcode-button-submitcode")
     await expect(nextButton2).toBeVisible()
     await expect(codeField).toBeVisible()
-    await expect(codeField).toBeFocused()
+    await expect(nextButton2).toBeFocused()
     await checkpoint(page, "auth-page-after-entering-code-from-link", { mask: [page.locator("input#code")] })
     await nextButton2.click()
 
@@ -618,6 +628,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     // Find and click the enabled NEXT button (not disabled).
     const nextButton2 = page.locator("button#authcode-button-submitcode")
     await expect(nextButton2).toBeVisible()
+    await expect(nextButton2).toBeFocused()
     await checkpoint(page, "auth-page-after-entering-wrong-code-from-link")
     await nextButton2.click()
 
