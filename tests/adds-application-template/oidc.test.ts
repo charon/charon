@@ -56,6 +56,7 @@ test.describe.serial("Charon OIDC Flows", () => {
     // Add redirect url.
     const redirectField = page.locator("#client-public-0-redirectUriTemplates-0")
     await expect(redirectField).toBeVisible()
+    await expect(redirectField).toBeFocused()
     await redirectField.fill("{uriBase}/debug")
 
     const updatePublicClientButton = page.locator("#applicationtemplateget-button-updatepublicclient")
@@ -104,6 +105,7 @@ test.describe.serial("Charon OIDC Flows", () => {
 
     const uriBaseField = page.locator("input#application-0-values-0")
     await expect(uriBaseField).toBeVisible()
+    await expect(uriBaseField).toBeFocused()
     await checkpoint(page, "oidc-organization-adding-application")
     await uriBaseField.fill("https://oidcdebugger.com")
     const activateApplicationButton = page.locator("#organizationget-button-activateordisable-0")
