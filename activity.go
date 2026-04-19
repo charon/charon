@@ -77,8 +77,8 @@ type Activity struct {
 	Organizations            []OrganizationRef            `json:"organizations,omitempty"`
 	ApplicationTemplates     []ApplicationTemplateRef     `json:"applicationTemplates,omitempty"`
 	OrganizationApplications []OrganizationApplicationRef `json:"organizationApplications,omitempty"`
-	Accounts                 []AccountRef                 `json:"-"`
 	Roles                    []string                     `json:"roles,omitempty"`
+	Accounts                 []AccountRef                 `json:"-"`
 
 	// For sign-in activities, this is the list of providers that were used to authenticate the user.
 	Providers []Provider `json:"providers,omitempty"`
@@ -288,8 +288,8 @@ func (s *Service) logActivity(
 		Organizations:            nil,
 		ApplicationTemplates:     nil,
 		OrganizationApplications: nil,
-		Accounts:                 nil,
 		Roles:                    nil,
+		Accounts:                 nil,
 	}
 
 	if len(identities) > 0 {
