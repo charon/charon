@@ -114,8 +114,6 @@ func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityO
 			unknown.Add(newApplication)
 		}
 	}
-	// TODO: if an application is removed from organization, obsolete application stays.
-	//       See: https://gitlab.com/charon/charon/-/issues/77
 	if !unknown.IsEmpty() {
 		errE := errors.New("unknown applications")
 		applications := unknown.ToSlice()
@@ -123,6 +121,9 @@ func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityO
 		errors.Details(errE)["applications"] = applications
 		return errE
 	}
+
+	// TODO: If an application is removed from organization, obsolete application stays in IdentityOrganization.
+	//       See: https://gitlab.com/charon/charon/-/issues/77
 
 	return nil
 }
