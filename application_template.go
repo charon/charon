@@ -398,9 +398,7 @@ func (r *Role) Validate(_ context.Context) errors.E {
 		return errors.New("key is required")
 	}
 	if !validRoleKeyRegexp.MatchString(r.Key) {
-		errE := errors.New("invalid key")
-		errors.Details(errE)["key"] = r.Key
-		return errE
+		return errors.New("invalid key")
 	}
 	return nil
 }
@@ -621,9 +619,7 @@ func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *Appl
 		if errE != nil {
 			errE = errors.WithMessage(errE, "role")
 			errors.Details(errE)["i"] = i
-			if role.Key != "" {
-				errors.Details(errE)["key"] = role.Key
-			}
+			errors.Details(errE)["key"] = role.Key
 			return errE
 		}
 
