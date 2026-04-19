@@ -560,6 +560,10 @@ type Organization struct {
 
 	Applications []OrganizationApplication `json:"applications"`
 
+	// Roles is a map of organization-scoped identity IDs to a slice of roles that the user
+	// has for that organization. Roles for each user are public but we do not want to
+	// allow users to be enumerated. This is why Roles map is not public, but we publicly
+	// expose the roles for each user through OrganizationIdentity.
 	Roles map[identifier.Identifier][]string `json:"roles"`
 }
 
@@ -1171,8 +1175,14 @@ func (s *Service) OrganizationAppGetAPI(w http.ResponseWriter, req *http.Request
 type OrganizationIdentity struct {
 	IdentityPublic
 
+	// Organization provides additional information on the organization that the identity
+	// belongs to. It is exposed only to admins of the organization.
 	Organization *IdentityOrganization `json:"organization,omitempty"`
-	Roles        []string              `json:"roles,omitempty"`
+
+	// Roles are roles that the user has for the organization. Roles for each user are
+	// public but we do not want to allow users to be enumerated. This is why Roles map
+	// in Organization struct is not public, but Roles here are.
+	Roles []string `json:"roles,omitempty"`
 }
 
 func (s *Service) getIdentityFromOrganization(_ context.Context, organizationID, identityID identifier.Identifier) (*Identity, *IdentityOrganization, errors.E) {
