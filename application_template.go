@@ -474,6 +474,8 @@ func interpolateVariables(template string, values map[string]string) (string, er
 type ApplicationTemplate struct {
 	ApplicationTemplatePublic
 
+	// Admins lists identities that have admin access to this application template
+	// Charon organization-scoped IDs.
 	Admins []IdentityRef `json:"admins"`
 }
 

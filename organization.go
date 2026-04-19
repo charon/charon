@@ -556,6 +556,8 @@ type blockedNotes struct {
 type Organization struct {
 	OrganizationPublic
 
+	// Admins lists identities that have admin access to this organization.
+	// Charon organization-scoped IDs.
 	Admins []IdentityRef `json:"admins"`
 
 	Applications []OrganizationApplication `json:"applications"`
@@ -766,10 +768,12 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 	return nil
 }
 
-// Changes compares the current Organization with an existing one and returns the types of changes
-// that occurred, admin identities that were added or removed and organization applications
-// that were added, removed or changed.
-func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []IdentityRef, []OrganizationApplicationRef) {
+// Changes compares the current Organization with an existing one and returns:
+//   - the types of changes that occurred,
+//   - admin identities that were added or removed (Charon organization-scoped IDs),
+//   - identities whose role assignments changed (organization-scoped IDs in this organization),
+//   - organization applications that were added, removed or changed.
+func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []IdentityRef, []IdentityRef, []OrganizationApplicationRef) {
 	changes := []ActivityChangeType{}
 
 	if !reflect.DeepEqual(o.OrganizationPublic, existing.OrganizationPublic) {
@@ -878,13 +882,16 @@ func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []
 		changes = append(changes, ActivityChangeMembershipDisabled)
 	}
 
-	identitiesChanged := adminsAdded.Union(adminsRemoved).Union(identitiesWithRolesChanged).ToSlice()
-	slices.SortFunc(identitiesChanged, identityRefCmp)
+	adminsChanged := adminsAdded.Union(adminsRemoved).ToSlice()
+	slices.SortFunc(adminsChanged, identityRefCmp)
+
+	rolesIdentitiesChanged := identitiesWithRolesChanged.ToSlice()
+	slices.SortFunc(rolesIdentitiesChanged, identityRefCmp)
 
 	appsChanged := addedAppSet.Union(removedAppSet).Union(changedAppSet).Union(activatedAppSet).Union(disabledAppSet).ToSlice()
 	slices.SortFunc(appsChanged, organizationApplicationRefCmp)
 
-	return changes, identitiesChanged, appsChanged
+	return changes, adminsChanged, rolesIdentitiesChanged, appsChanged
 }
 
 func (s *Service) getOrganization(_ context.Context, id identifier.Identifier) (*Organization, errors.E) {
@@ -1031,7 +1038,7 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 		return errE
 	}
 
-	changes, identities, organizationApplications := organization.Changes(existingOrganization)
+	changes, adminsChanged, rolesIdentitiesChanged, organizationApplications := organization.Changes(existingOrganization)
 
 	if len(changes) == 0 {
 		// No changes, do not continue.
@@ -1041,8 +1048,16 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
 	s.setOrganization(*organization.ID, data)
 
+	// Admin IdentityRefs are Charon organization-scoped IDs, so we wrap them with the Charon organization.
 	scopedIdentities := []OrganizationIdentityRef{}
-	for _, identity := range identities {
+	for _, identity := range adminsChanged {
+		scopedIdentities = append(scopedIdentities, OrganizationIdentityRef{
+			Organization: OrganizationRef{ID: co.ID},
+			Identity:     identity,
+		})
+	}
+	// Role-changed IdentityRefs are organization-scoped IDs in this organization, so we wrap them with it.
+	for _, identity := range rolesIdentitiesChanged {
 		scopedIdentities = append(scopedIdentities, OrganizationIdentityRef{
 			Organization: OrganizationRef{ID: *organization.ID},
 			Identity:     identity,

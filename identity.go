@@ -210,7 +210,11 @@ type Identity struct {
 	// Description for users with access to the identity.
 	Description string `json:"description,omitempty"`
 
-	Users  []IdentityRef `json:"users,omitempty"`
+	// Users lists identities that have user access to this identity.
+	// Charon organization-scoped IDs.
+	Users []IdentityRef `json:"users,omitempty"`
+	// Admins lists identities that have admin access to this identity.
+	// Charon organization-scoped IDs.
 	Admins []IdentityRef `json:"admins"`
 
 	Organizations []IdentityOrganization `json:"organizations"`
@@ -297,6 +301,9 @@ func (i *Identity) OrganizationIdentityRef(organization OrganizationRef) *Organi
 }
 
 // IdentityRef is a reference to an identity.
+//
+// It can be organization-scoped ID or not, depending on the context.
+// Inside OrganizationIdentityRef it is always organization-scoped.
 type IdentityRef struct {
 	ID identifier.Identifier `json:"id"`
 }
