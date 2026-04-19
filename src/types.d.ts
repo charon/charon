@@ -449,6 +449,8 @@ export type ActivityChangeType =
   | "membershipChanged"
   | "membershipActivated"
   | "membershipDisabled"
+  | "rolesAdded"
+  | "rolesRemoved"
 
 export type Activity = {
   id: string
@@ -459,6 +461,7 @@ export type Activity = {
   organizations?: OrganizationRef[]
   applicationTemplates?: ApplicationTemplateRef[]
   organizationApplications?: OrganizationApplicationRef[]
+  roles?: string[]
   providers?: string[]
   changes?: ActivityChangeType[]
   sessionId: string

@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import type { Component, DeepReadonly } from "vue"
 
-import type { Activity, ActivityRef, ApplicationTemplate, IdentityPublic, Organization, OrganizationApplicationPublic, OrganizationRef } from "@/types"
+import type {
+  Activity,
+  ActivityChangeType,
+  ActivityRef,
+  ApplicationTemplate,
+  IdentityPublic,
+  Organization,
+  OrganizationApplicationPublic,
+  OrganizationRef,
+} from "@/types"
 
 import { LocalScope } from "@all1ndev/vue-local-scope"
 import { CalculatorIcon, IdentificationIcon, LockClosedIcon, LockOpenIcon, ShieldCheckIcon, ShieldExclamationIcon, UserGroupIcon } from "@heroicons/vue/24/outline"
@@ -80,7 +89,7 @@ function getActivityDescription(activityType: string): string {
 }
 
 function getChangeDescription(
-  changeType: string,
+  changeType: ActivityChangeType,
   activityType: string,
   identitiesCount: number,
   organizationsCount: number,
@@ -168,6 +177,7 @@ function getChangeDescription(
     case "rolesRemoved":
       return [t("partials.ActivityListItem.changes.rolesRemoved")]
     default:
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       throw new Error(`unknown change type: ${changeType}`)
   }
 }
