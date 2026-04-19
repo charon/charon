@@ -331,6 +331,9 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                   </template>
                 </i18n-t>
               </div>
+              <div v-if="doc.roles?.length" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm">
+                <span v-for="role in doc.roles" :key="role" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{ role }}</span>
+              </div>
               <div class="activitylistitem-text-timestamp text-xs text-neutral-500">{{ getFormattedTimestamp(doc.timestamp) }}</div>
               <div class="activitylistitem-text-session text-xs text-neutral-500">Session: {{ doc.sessionId }}</div>
             </div>
