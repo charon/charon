@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, DeepReadonly, Ref } from "vue"
+import type { DeepReadonly, Ref } from "vue"
 import type { ComponentExposed } from "vue-component-type-helpers"
 
 import type {
@@ -13,7 +13,7 @@ import type {
   Organizations,
 } from "@/types"
 
-import { nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
+import { computed, nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
