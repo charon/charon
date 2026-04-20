@@ -224,7 +224,7 @@ async function onSubmit() {
           </div>
         </div>
         <div class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
-          <IdentityPublic :identity="identity!" :is-current="!metadata.is_current" :!!can-update="metadata.can_update" />
+          <IdentityPublic :identity="identity!" :is-current="!!metadata.is_current" :can-update="!!metadata.can_update" />
         </div>
         <div class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
           <div v-if="updateError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
