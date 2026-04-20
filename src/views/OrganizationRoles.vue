@@ -230,6 +230,10 @@ async function onSubmit() {
           <div v-if="updateError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
           <div v-if="updateSuccess" class="mb-4 text-success-600">{{ t("views.OrganizationRoles.rolesUpdated") }}</div>
           <div v-if="!availableRoles.length" class="mb-4 text-gray-500 italic"> {{ t("views.OrganizationRoles.noRoles") }} </div>
+          <!--
+            We set novalidate because we do not want UA to show hints.
+            We show them ourselves when we want them.
+          -->
           <form v-else class="flex flex-col" novalidate @submit.prevent="onSubmit">
             <fieldset class="mb-4">
               <legend class="mb-1">{{ t("views.OrganizationRoles.availableRoles") }}</legend>
