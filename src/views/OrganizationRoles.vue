@@ -56,21 +56,26 @@ async function loadOrganization() {
     return
   }
 
-  const organizationURL = router.apiResolve({
-    name: "OrganizationGet",
-    params: {
-      id: props.id,
-    },
-  }).href
+  progress.value += 1
+  try {
+    const organizationURL = router.apiResolve({
+      name: "OrganizationGet",
+      params: {
+        id: props.id,
+      },
+    }).href
 
-  const response = await getURL<Organization>(organizationURL, null, abortController.signal, progress)
-  if (abortController.signal.aborted) {
-    return
+    const response = await getURL<Organization>(organizationURL, null, abortController.signal, progress)
+    if (abortController.signal.aborted) {
+      return
+    }
+
+    organization.value = response.doc
+    organizationMetadata.value = response.metadata
+    availableRoles.value = computeAvailableRoles(organization.value)
+  } finally {
+    progress.value -= 1
   }
-
-  organization.value = response.doc
-  organizationMetadata.value = response.metadata
-  availableRoles.value = computeAvailableRoles(organization.value)
 }
 
 onBeforeMount(async () => {
@@ -170,42 +175,58 @@ async function onSubmit() {
 
   progress.value += 1
   try {
-    const newRoles = { ...(organization.value!.roles || {}) }
-    if (selectedRoleKeys.value.length) {
-      newRoles[props.identityId] = selectedRoleKeys.value
-    } else {
-      delete newRoles[props.identityId]
-    }
-    const payload: Organization = {
-      id: props.id,
-      name: organization.value!.name,
-      description: organization.value!.description,
-      admins: organization.value!.admins,
-      applications: organization.value!.applications,
-      roles: newRoles,
-    }
-    const url = router.apiResolve({
-      name: "OrganizationUpdate",
-      params: {
+    try {
+      const newRoles = { ...(organization.value!.roles || {}) }
+      if (selectedRoleKeys.value.length) {
+        newRoles[props.identityId] = selectedRoleKeys.value
+      } else {
+        delete newRoles[props.identityId]
+      }
+      const payload: Organization = {
         id: props.id,
-      },
-    }).href
+        name: organization.value!.name,
+        description: organization.value!.description,
+        admins: organization.value!.admins,
+        applications: organization.value!.applications,
+        roles: newRoles,
+      }
+      const url = router.apiResolve({
+        name: "OrganizationUpdate",
+        params: {
+          id: props.id,
+        },
+      }).href
 
-    await postJSON(url, payload, abortController.signal, progress)
-    if (abortController.signal.aborted) {
-      return
+      await postJSON(url, payload, abortController.signal, progress)
+      if (abortController.signal.aborted) {
+        return
+      }
+
+      success.value = true
+    } catch (error) {
+      if (abortController.signal.aborted) {
+        return
+      }
+      console.error("OrganizationRoles.onSubmit", error)
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      unexpectedError.value = `${error}`
+    } finally {
+      // We update organization state even on errors.
+      try {
+        await loadOrganization()
+      } catch (error) {
+        if (abortController.signal.aborted) {
+          // eslint-disable-next-line no-unsafe-finally
+          return
+        }
+        console.error("OrganizationRoles.onSubmit", error)
+        // If there is already an error, we ignore any additional error.
+        if (!unexpectedError.value) {
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          unexpectedError.value = `${error}`
+        }
+      }
     }
-
-    await loadOrganization()
-
-    success.value = true
-  } catch (error) {
-    if (abortController.signal.aborted) {
-      return
-    }
-    console.error("OrganizationRoles.onSubmit", error)
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-    unexpectedError.value = `${error}`
   } finally {
     progress.value -= 1
   }
