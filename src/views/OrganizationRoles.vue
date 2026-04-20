@@ -127,10 +127,17 @@ function computeAvailableRoles(organization: Organization): Role[] {
     orphanedRoleKeys.forEach((key) => {
       const roleFromInactive = allRolesMap.get(key)
       if (roleFromInactive) {
-        resultMap.set(key, {
-          key: roleFromInactive.key,
-          description: `${roleFromInactive.description} (inactive app)`,
-        })
+        if (roleFromInactive.description) {
+          resultMap.set(key, {
+            key: roleFromInactive.key,
+            description: `${roleFromInactive.description} (inactive app)`,
+          })
+        } else {
+          resultMap.set(key, {
+            key: roleFromInactive.key,
+            description: `(inactive app)`,
+          })
+        }
       } else {
         resultMap.set(key, {
           key,
