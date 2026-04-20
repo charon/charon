@@ -31,7 +31,7 @@ import Footer from "@/partials/Footer.vue"
 import IdentityFull from "@/partials/IdentityFull.vue"
 import IdentityOrganization from "@/partials/IdentityOrganization.vue"
 import NavBar from "@/partials/NavBar.vue"
-import WithIdentityPublicDocument from "@/partials/WithIdentityPublicDocument.vue"
+import WithOrganizationIdentityDocument from "@/partials/WithOrganizationIdentityDocument.vue"
 import { useProgress } from "@/progress"
 import { clone, equals, getIdentityOrganization, getOrganization } from "@/utils"
 
@@ -212,6 +212,7 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
         for (const allIdentity of updatedAllIdentities) {
           for (const identityOrganization of allIdentity.identity.organizations) {
             if (identityOrganization.organization.id === props.id) {
+              const rolesForIdentity = organization.value!.roles?.[identityOrganization.id!] || []
               updatedIdentitiesForOrganization.push({
                 id: identityOrganization.id,
                 active: identityOrganization.active,
@@ -220,6 +221,7 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
                 identity: clone(allIdentity.identity),
                 url: allIdentity.url,
                 applications: identityOrganization.applications,
+                roles: rolesForIdentity,
                 isCurrent: allIdentity.isCurrent,
                 canUpdate: allIdentity.canUpdate,
                 blocked: allIdentity.blocked,
@@ -323,6 +325,7 @@ async function onBasicSubmit() {
     description: description.value,
     admins: organization.value!.admins,
     applications: organization.value!.applications,
+    roles: organization.value!.roles,
   }
   await onSubmit(payload, "basic", basicUpdated, basicUnexpectedError)
 }
@@ -355,6 +358,7 @@ async function onApplicationsSubmit() {
     description: organization.value!.description,
     admins: organization.value!.admins,
     applications: applications.value,
+    roles: organization.value!.roles,
   }
   await onSubmit(payload, "applications", applicationsUpdated, applicationsUnexpectedError)
 }
@@ -474,6 +478,7 @@ async function onAdminsSubmit() {
     description: organization.value!.description,
     admins: admins.value,
     applications: organization.value!.applications,
+    roles: organization.value!.roles,
   }
   await onSubmit(payload, "admins", adminsUpdated, adminsUnexpectedError)
 }
@@ -515,6 +520,7 @@ async function onAddIdentity(allIdentity: AllIdentity | DeepReadonly<AllIdentity
     active: false,
     identity: allIdentity.identity,
     applications: [],
+    roles: [],
     url: undefined,
     isCurrent: allIdentity.isCurrent,
     canUpdate: allIdentity.canUpdate,
@@ -842,11 +848,15 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
                 <li v-for="(admin, i) in admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
-                    <WithIdentityPublicDocument v-if="organization?.admins?.find((a) => a.id === admin.id)" :item="admin" :organization-id="siteContext.organizationId">
+                    <WithOrganizationIdentityDocument
+                      v-if="organization?.admins?.find((a) => a.id === admin.id)"
+                      :item="admin"
+                      :organization-id="siteContext.organizationId"
+                    >
                       <div class="flex flex-col items-start">
                         <Button type="button" @click.prevent="admins.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                       </div>
-                    </WithIdentityPublicDocument>
+                    </WithOrganizationIdentityDocument>
                     <div v-else class="flex flex-row gap-4">
                       <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="min-w-0 flex-auto grow" :progress="progress" required />
                       <Button type="button" @click.prevent="admins.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
@@ -885,6 +895,7 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
                       organization: { id },
                       applications: identityForOrganization.applications,
                     }"
+                    :roles="identityForOrganization.roles"
                   >
                     <div v-if="identityForOrganization.canUpdate" class="flex flex-row gap-4">
                       <Button type="button" :progress="progress" @click.prevent="identityForOrganization.active = !identityForOrganization.active">{{

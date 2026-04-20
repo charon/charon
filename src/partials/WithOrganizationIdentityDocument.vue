@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { IdentityPublic as IdentityPublicType, IdentityRef } from "@/types"
+import type { IdentityRef, OrganizationIdentity } from "@/types"
 
 import { useI18n } from "vue-i18n"
 
@@ -14,11 +14,11 @@ defineProps<{
 
 const { t } = useI18n({ useScope: "global" })
 
-const WithIdentityPublicDocument = WithDocument<IdentityPublicType>
+const WithOrganizationIdentityDocument = WithDocument<OrganizationIdentity>
 </script>
 
 <template>
-  <WithIdentityPublicDocument :params="{ id: organizationId, identityId: item.id }" name="OrganizationIdentity">
+  <WithOrganizationIdentityDocument :params="{ id: organizationId, identityId: item.id }" name="OrganizationIdentity">
     <template #default="{ doc, metadata, url }">
       <IdentityPublic :identity="doc" :url="url" :is-current="metadata.is_current" :can-update="metadata.can_update" :labels="labels">
         <slot :identity="doc" :is-current="metadata.is_current" :can-update="metadata.can_update"></slot>
@@ -32,5 +32,5 @@ const WithIdentityPublicDocument = WithDocument<IdentityPublicType>
         <slot :identity="undefined" :is-current="undefined" :can-update="undefined"></slot>
       </div>
     </template>
-  </WithIdentityPublicDocument>
+  </WithOrganizationIdentityDocument>
 </template>

@@ -39,6 +39,21 @@ type IdentityOrganization struct {
 	Applications []OrganizationApplicationApplicationRef `json:"applications"`
 }
 
+// Ref returns a reference to this identity within its organization
+// (using the organization-scoped identity ID).
+func (i *IdentityOrganization) Ref() IdentityRef {
+	return IdentityRef{ID: *i.ID}
+}
+
+// OrganizationIdentityRef returns the organization-scoped reference
+// to this identity in its organization.
+func (i *IdentityOrganization) OrganizationIdentityRef() OrganizationIdentityRef {
+	return OrganizationIdentityRef{
+		Organization: i.Organization,
+		Identity:     i.Ref(),
+	}
+}
+
 // Validate validates the IdentityOrganization struct.
 func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityOrganization, service *Service, identity *Identity) errors.E {
 	if existing == nil {
@@ -49,7 +64,7 @@ func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityO
 		}
 		co := service.charonOrganization()
 		if co.ID == i.Organization.ID {
-			// A special case for Charon organization: organization-scoped identity ID is the same as the identity ID.
+			// A special case for Charon organization: organization-scoped identity ID is the same as the database ID.
 			// Permissions generally use organization-scoped IDs and operate only with identities which are added to
 			// the organization, but for Charon organization we want permissions to operate also on identities which
 			// have not been added to the Charon organization (so that users can give permissions over identities to
@@ -57,7 +72,7 @@ func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityO
 			// to address this would be to always add all identities to the Charon organization so that they all get
 			// assigned its organization-scoped IDs, but that would then mean that we would also have to prevent removing
 			// Charon organization and also users will not know which identities they have previously used with the
-			// Charon organization (as it would look like they used all of them). Instead, we use the identity ID as
+			// Charon organization (as it would look like they used all of them). Instead, we use the database ID as
 			// organization-scoped ID. This allows us to have an ID for use in Charon organization identity permissions
 			// even if the identity has not been added to the Charon organization. This also enables our approach of
 			// recording that identity's creator is an admin by adding the identity itself as an admin for itself.
@@ -108,18 +123,22 @@ func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityO
 	}
 
 	// We validate only added applications so that we do not error out on disabled or removed applications.
-	unknown := mapset.NewThreadUnsafeSet[OrganizationApplicationApplicationRef]()
-	for newApplication := range mapset.Elements(mapset.NewThreadUnsafeSet(i.Applications...).Difference(existingApplications)) {
-		if application := organization.GetApplication(&newApplication.ID); application == nil || !application.Active {
-			unknown.Add(newApplication)
+	unknownApplications := mapset.NewThreadUnsafeSet[OrganizationApplicationApplicationRef]()
+	for addedApplication := range mapset.Elements(mapset.NewThreadUnsafeSet(i.Applications...).Difference(existingApplications)) {
+		if application := organization.GetApplication(&addedApplication.ID); application == nil || !application.Active {
+			unknownApplications.Add(addedApplication)
 		}
 	}
-	if !unknown.IsEmpty() {
-		errE := errors.New("unknown applications")
-		applications := unknown.ToSlice()
+	if !unknownApplications.IsEmpty() {
+		applications := unknownApplications.ToSlice()
 		slices.SortFunc(applications, organizationApplicationApplicationRefCmp)
+		errE := errors.New("unknown applications")
 		errors.Details(errE)["applications"] = applications
+		return errE
 	}
+
+	// TODO: If an application is removed from organization, obsolete application stays in IdentityOrganization.
+	//       See: https://gitlab.com/charon/charon/-/issues/77
 
 	return nil
 }
@@ -206,7 +225,11 @@ type Identity struct {
 	// Description for users with access to the identity.
 	Description string `json:"description,omitempty"`
 
-	Users  []IdentityRef `json:"users,omitempty"`
+	// Users lists identities that have user access to this identity.
+	// Database identity IDs.
+	Users []IdentityRef `json:"users,omitempty"`
+	// Admins lists identities that have admin access to this identity.
+	// Database identity IDs.
 	Admins []IdentityRef `json:"admins"`
 
 	Organizations []IdentityOrganization `json:"organizations"`
@@ -258,7 +281,7 @@ func (i *Identity) HasUserAccess(identities mapset.Set[IdentityRef]) bool {
 // HasAdminAccess returns true if at least one of the identities is among admins.
 func (i *Identity) HasAdminAccess(identities mapset.Set[IdentityRef], isCreator bool) bool {
 	admins := mapset.NewThreadUnsafeSet(i.Admins...)
-	iRef := IdentityRef{ID: *i.ID}
+	iRef := i.Ref()
 	creatorIsAdmin := admins.Contains(iRef)
 	if creatorIsAdmin {
 		// Because we record that the creator is an admin by adding identity itself
@@ -286,13 +309,14 @@ func (i *Identity) OrganizationIdentityRef(organization OrganizationRef) *Organi
 	if idOrg == nil {
 		return nil
 	}
-	return &OrganizationIdentityRef{
-		Identity:     IdentityRef{ID: *idOrg.ID},
-		Organization: organization,
-	}
+	ref := idOrg.OrganizationIdentityRef()
+	return &ref
 }
 
 // IdentityRef is a reference to an identity.
+//
+// The ID can be a database ID or an organization-scoped identity ID, depending on the context.
+// Inside OrganizationIdentityRef it is always an organization-scoped identity ID.
 type IdentityRef struct {
 	ID identifier.Identifier `json:"id"`
 }
@@ -685,9 +709,9 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 	}
 
 	return s.logActivity(ctx, ActivityIdentityCreate, []OrganizationIdentityRef{{
-		Organization: OrganizationRef{ID: co.ID},
+		Organization: co.Ref(),
 		Identity:     i,
-	}}, nil, nil, nil, accounts, nil, nil, OrganizationRef{ID: co.ID})
+	}}, nil, nil, nil, accounts, nil, nil, co.Ref())
 }
 
 func (s *Service) updateAccountsWithLock(identity IdentityRef, identitiesBefore, identitiesAfter mapset.Set[IdentityRef]) errors.E {
@@ -844,12 +868,12 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 	scopedIdentities := []OrganizationIdentityRef{}
 	for _, identity := range identities {
 		scopedIdentities = append(scopedIdentities, OrganizationIdentityRef{
-			Organization: OrganizationRef{ID: co.ID},
+			Organization: co.Ref(),
 			Identity:     identity,
 		})
 	}
 
-	return s.logActivity(ctx, ActivityIdentityUpdate, scopedIdentities, organizations, nil, applications, nil, changes, nil, OrganizationRef{ID: co.ID})
+	return s.logActivity(ctx, ActivityIdentityUpdate, scopedIdentities, organizations, nil, applications, nil, changes, nil, co.Ref())
 }
 
 // updateAccounts updates accounts which have access to the identity after the set

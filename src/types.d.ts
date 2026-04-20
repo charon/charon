@@ -208,6 +208,11 @@ export type ApplicationTemplateRef = {
   id: string
 }
 
+export type Role = {
+  key: string
+  description: string
+}
+
 export type VariableType = "uriPrefix"
 
 export type Variable = {
@@ -260,6 +265,7 @@ export type ApplicationTemplatePublic = ApplicationTemplateCreate & {
   description: string
   homepageTemplate: string
   idScopes: string[]
+  roles: Role[]
   variables: Variable[]
   clientsPublic: ApplicationTemplateClientPublic[]
   clientsBackend: ApplicationTemplateClientBackend[]
@@ -337,6 +343,7 @@ export type IdentityForOrganization = {
   identity: Identity | DeepReadonly<Identity>
   url?: string
   applications: OrganizationApplicationApplicationRef[]
+  roles: string[]
   isCurrent: boolean
   canUpdate: boolean
   blocked: BlockedIdentityType
@@ -373,14 +380,24 @@ export type Organization = OrganizationPublic & {
   // OrganizationPublic so we have these fields as optional.
   admins?: IdentityRef[]
   applications?: OrganizationApplication[]
+  roles?: Record<string, string[]>
 }
 
 export type OrganizationCreate = {
   name: string
 }
 
-export type IdentityForAdmin = IdentityPublic & {
-  organizations: IdentityOrganization[]
+// OrganizationIdentity is the shape returned by the OrganizationIdentity API to any
+// authorized caller. Roles for each user are public, so they are always present (an
+// empty array when the user has no role assignments).
+export type OrganizationIdentity = IdentityPublic & {
+  roles: string[]
+}
+
+// OrganizationIdentityForAdmin extends OrganizationIdentity with fields exposed only to organization
+// admins. The organization field is guaranteed when the API caller is an admin.
+export type OrganizationIdentityForAdmin = OrganizationIdentity & {
+  organization: IdentityOrganization
 }
 
 export type Identity = IdentityCreate &
@@ -433,6 +450,8 @@ export type ActivityChangeType =
   | "membershipChanged"
   | "membershipActivated"
   | "membershipDisabled"
+  | "rolesAdded"
+  | "rolesRemoved"
 
 export type Activity = {
   id: string
@@ -443,6 +462,7 @@ export type Activity = {
   organizations?: OrganizationRef[]
   applicationTemplates?: ApplicationTemplateRef[]
   organizationApplications?: OrganizationApplicationRef[]
+  roles?: string[]
   providers?: string[]
   changes?: ActivityChangeType[]
   sessionId: string

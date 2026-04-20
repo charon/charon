@@ -10,7 +10,7 @@ import { isSignedIn } from "@/auth"
 import ButtonLink from "@/components/ButtonLink.vue"
 import Footer from "@/partials/Footer.vue"
 import NavBar from "@/partials/NavBar.vue"
-import OrganizationListItem from "@/partials/OrganizationListItem.vue"
+import WithOrganizationDocument from "@/partials/WithOrganizationDocument.vue"
 import { useProgress } from "@/progress"
 
 const { t } = useI18n({ useScope: "global" })
@@ -74,7 +74,7 @@ onBeforeMount(async () => {
           isSignedIn() ? t("views.OrganizationList.noOrganizationsCreate") : t("views.OrganizationList.noOrganizationsSignIn")
         }}</div>
         <div v-for="organization in organizations" :key="organization.id" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
-          <OrganizationListItem :item="organization" />
+          <WithOrganizationDocument :item="organization" />
         </div>
       </template>
     </div>

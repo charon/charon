@@ -9,7 +9,7 @@ import { getURL } from "@/api"
 import ActivityListItem from "@/partials/ActivityListItem.vue"
 import Footer from "@/partials/Footer.vue"
 import NavBar from "@/partials/NavBar.vue"
-import OrganizationListItem from "@/partials/OrganizationListItem.vue"
+import WithOrganizationDocument from "@/partials/WithOrganizationDocument.vue"
 import { useProgress } from "@/progress"
 
 const props = defineProps<{
@@ -71,7 +71,7 @@ onBeforeMount(async () => {
         <div class="flex flex-col gap-4">
           <h1 class="text-2xl font-bold">{{ t("views.OrganizationActivity.organizationActivity") }}</h1>
           <div>
-            <OrganizationListItem :item="{ id }" />
+            <WithOrganizationDocument :item="{ id }" />
           </div>
         </div>
       </div>

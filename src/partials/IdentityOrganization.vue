@@ -12,6 +12,7 @@ import { getHomepage } from "@/utils"
 
 defineProps<{
   identityOrganization: IdentityOrganization | DeepReadonly<IdentityOrganization>
+  roles: readonly string[]
 }>()
 
 const { t } = useI18n({ useScope: "global" })
@@ -19,6 +20,10 @@ const { t } = useI18n({ useScope: "global" })
 const WithOrganizationApplicationDocument = WithDocument<OrganizationApplicationPublic>
 const WithOrganizationBlockedStatusDocument = WithDocument<OrganizationBlockedStatus>
 const withOrganizationBlockedStatusDocument = ref<ComponentExposed<typeof WithOrganizationBlockedStatusDocument> | null>(null)
+
+function getSortedRoles(roles: readonly string[]): string[] {
+  return [...roles].sort()
+}
 
 defineExpose({
   organizationBlockedStatus: computed(() => withOrganizationBlockedStatusDocument.value?.doc || undefined),
@@ -57,6 +62,11 @@ defineExpose({
         </WithOrganizationBlockedStatusDocument>
         <strong v-else>{{ identityOrganization.active ? t("common.labels.active") : t("common.labels.disabled") }}</strong>
       </div>
+      <div>{{ t("partials.IdentityOrganization.roles") }}</div>
+      <div v-if="roles.length">
+        {{ getSortedRoles(roles).join(", ") }}
+      </div>
+      <div v-else class="italic">{{ t("partials.IdentityOrganization.noRoles") }}</div>
       <div>{{ t("partials.IdentityOrganization.apps") }}</div>
       <ol v-if="identityOrganization.applications.length">
         <li v-for="application in identityOrganization.applications" :key="application.id">

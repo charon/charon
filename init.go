@@ -18,6 +18,11 @@ type charonOrganization struct {
 	RedirectURI                       string
 }
 
+// Ref returns a reference to the Charon organization.
+func (c charonOrganization) Ref() OrganizationRef {
+	return OrganizationRef{ID: c.ID}
+}
+
 func initCharonOrganization(ctx context.Context, config *Config, service *Service) (func() charonOrganization, errors.E) {
 	return initWithHost(config, service.domain, func(host string) charonOrganization {
 		charonOrganizationID := identifier.New()
@@ -50,6 +55,7 @@ func initCharonOrganization(ctx context.Context, config *Config, service *Servic
 							Description:      "",
 							HomepageTemplate: uri,
 							IDScopes:         []string{"openid", "profile", "email"},
+							Roles:            []Role{},
 							Variables:        []Variable{},
 							ClientsPublic: []ApplicationTemplateClientPublic{
 								{
@@ -82,6 +88,7 @@ func initCharonOrganization(ctx context.Context, config *Config, service *Servic
 					ClientsService: []OrganizationApplicationClientService{},
 				},
 			},
+			Roles: nil,
 		}
 
 		errE := organization.validate(ctx, &organization, service)

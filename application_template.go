@@ -384,6 +384,25 @@ func (c *ApplicationTemplateClientService) Validate(_ context.Context, existing 
 	return nil
 }
 
+var validRoleKeyRegexp = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_-]*[a-zA-Z0-9]$`)
+
+// Role represents user role defined in application template that can be applied to users in organization.
+type Role struct {
+	Key         string `json:"key"`
+	Description string `json:"description"`
+}
+
+// Validate validates the Role struct.
+func (r *Role) Validate(_ context.Context) errors.E {
+	if r.Key == "" {
+		return errors.New("key is required")
+	}
+	if !validRoleKeyRegexp.MatchString(r.Key) {
+		return errors.New("invalid key")
+	}
+	return nil
+}
+
 // VariableType represents the type of the variable.
 type VariableType string
 
@@ -455,6 +474,8 @@ func interpolateVariables(template string, values map[string]string) (string, er
 type ApplicationTemplate struct {
 	ApplicationTemplatePublic
 
+	// Admins lists identities that have admin access to this application template.
+	// Database identity IDs.
 	Admins []IdentityRef `json:"admins"`
 }
 
@@ -468,6 +489,7 @@ type ApplicationTemplatePublic struct {
 
 	IDScopes []string `json:"idScopes"`
 
+	Roles          []Role                             `json:"roles"`
 	Variables      []Variable                         `json:"variables"`
 	ClientsPublic  []ApplicationTemplateClientPublic  `json:"clientsPublic"`
 	ClientsBackend []ApplicationTemplateClientBackend `json:"clientsBackend"`
@@ -543,7 +565,7 @@ func applicationTemplateRefCmp(a ApplicationTemplateRef, b ApplicationTemplateRe
 }
 
 // Validate validates the ApplicationTemplatePublic struct.
-func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *ApplicationTemplatePublic) errors.E {
+func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *ApplicationTemplatePublic) errors.E { //nolint:maintidx
 	if existing == nil {
 		if a.ID != nil {
 			errE := errors.New("ID provided for new document")
@@ -588,6 +610,32 @@ func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *Appl
 	a.IDScopes = slices.DeleteFunc(a.IDScopes, func(scope string) bool {
 		return scope == ""
 	})
+
+	if a.Roles == nil {
+		a.Roles = []Role{}
+	}
+
+	rolesSet := mapset.NewThreadUnsafeSet[string]()
+	for i, role := range a.Roles {
+		errE := role.Validate(ctx)
+		if errE != nil {
+			errE = errors.WithMessage(errE, "role")
+			errors.Details(errE)["i"] = i
+			errors.Details(errE)["key"] = role.Key
+			return errE
+		}
+
+		if rolesSet.Contains(role.Key) {
+			errE := errors.New("duplicate role key")
+			errors.Details(errE)["i"] = i
+			errors.Details(errE)["key"] = role.Key
+			return errE
+		}
+		rolesSet.Add(role.Key)
+
+		// Role might have been changed by Validate, so we assign it back.
+		a.Roles[i] = role
+	}
 
 	// TODO: Validate that a.IDScopes is a (non-strict) subset of supported ID scopes.
 
@@ -845,7 +893,7 @@ func (s *Service) createApplicationTemplate(ctx context.Context, applicationTemp
 
 	return s.logActivity(
 		ctx, ActivityApplicationTemplateCreate, nil, nil, []ApplicationTemplateRef{{ID: *applicationTemplate.ID}},
-		nil, nil, nil, nil, OrganizationRef{ID: co.ID},
+		nil, nil, nil, nil, co.Ref(),
 	)
 }
 
@@ -890,14 +938,14 @@ func (s *Service) updateApplicationTemplate(ctx context.Context, applicationTemp
 	scopedIdentities := []OrganizationIdentityRef{}
 	for _, identity := range identities {
 		scopedIdentities = append(scopedIdentities, OrganizationIdentityRef{
-			Organization: OrganizationRef{ID: co.ID},
+			Organization: co.Ref(),
 			Identity:     identity,
 		})
 	}
 
 	return s.logActivity(
 		ctx, ActivityApplicationTemplateUpdate, scopedIdentities, nil, []ApplicationTemplateRef{{ID: *applicationTemplate.ID}},
-		nil, nil, changes, nil, OrganizationRef{ID: co.ID},
+		nil, nil, changes, nil, co.Ref(),
 	)
 }
 

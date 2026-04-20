@@ -2,7 +2,7 @@
 import type { DeepReadonly } from "vue"
 import type { ComponentExposed } from "vue-component-type-helpers"
 
-import type { Identities, IdentityForAdmin } from "@/types"
+import type { Identities, OrganizationIdentityForAdmin } from "@/types"
 
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useI18n } from "vue-i18n"
@@ -15,7 +15,7 @@ import Footer from "@/partials/Footer.vue"
 import IdentityOrganization from "@/partials/IdentityOrganization.vue"
 import IdentityPublic from "@/partials/IdentityPublic.vue"
 import NavBar from "@/partials/NavBar.vue"
-import OrganizationListItem from "@/partials/OrganizationListItem.vue"
+import WithOrganizationDocument from "@/partials/WithOrganizationDocument.vue"
 import { useProgress } from "@/progress"
 
 const props = defineProps<{
@@ -68,6 +68,14 @@ onBeforeMount(async () => {
   }
 })
 
+async function onRoles(identityId: string) {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  await router.push({ name: "OrganizationRoles", params: { id: props.id, identityId: identityId } })
+}
+
 async function onBlock(identityId: string) {
   if (abortController.signal.aborted) {
     return
@@ -86,9 +94,9 @@ function updateOrganizationBlockedStatuses(userId: string, component: IdentityOr
   }
 }
 
-function identityLabels(identity: IdentityForAdmin | DeepReadonly<IdentityForAdmin>): string[] {
+function identityLabels(identity: OrganizationIdentityForAdmin | DeepReadonly<OrganizationIdentityForAdmin>): string[] {
   const labels: string[] = []
-  if (!identity.organizations[0].active) {
+  if (!identity.organization.active) {
     labels.push(t("common.labels.disabled"))
   }
   const organizationBlockedStatus = organizationBlockedStatusComponents.value.get(identity.id)?.organizationBlockedStatus
@@ -98,7 +106,7 @@ function identityLabels(identity: IdentityForAdmin | DeepReadonly<IdentityForAdm
   return labels
 }
 
-const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
+const WithOrganizationIdentityForAdminDocument = WithDocument<OrganizationIdentityForAdmin>
 </script>
 
 <template>
@@ -111,7 +119,7 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
         <div class="flex flex-col gap-4">
           <h1 class="text-2xl font-bold">{{ t("views.OrganizationUsers.usersForOrganization") }}</h1>
           <div>
-            <OrganizationListItem :item="{ id }" />
+            <WithOrganizationDocument :item="{ id }" />
           </div>
         </div>
       </div>
@@ -120,12 +128,13 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
       <template v-else>
         <div v-if="!users.length" class="w-full rounded-sm border border-gray-200 bg-white p-4 italic shadow-sm">{{ t("views.OrganizationUsers.noUsers") }}</div>
         <div v-for="user in users" :key="user.id" class="organizationusers-div-userentry w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
-          <WithIdentityForAdminDocument :params="{ id, identityId: user.id }" name="OrganizationIdentity">
+          <WithOrganizationIdentityForAdminDocument :params="{ id, identityId: user.id }" name="OrganizationIdentity">
             <template #default="{ doc, metadata, url }">
               <IdentityPublic :identity="doc" :url="url" :is-current="metadata.is_current" :can-update="metadata.can_update" :labels="identityLabels(doc)" />
               <IdentityOrganization
                 :ref="(el) => updateOrganizationBlockedStatuses(user.id, el as IdentityOrganizationComponent | null)"
-                :identity-organization="doc.organizations[0]"
+                :identity-organization="doc.organization"
+                :roles="doc.roles"
               >
                 <template #default="{ organizationBlockedStatus }">
                   <!-- Only when just identity is blocked we can show the button. Admin cannot unblock account-level block. -->
@@ -133,14 +142,17 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
                     v-if="!organizationBlockedStatus || organizationBlockedStatus.blocked === 'onlyIdentity' || organizationBlockedStatus.blocked === 'notBlocked'"
                     class="flex flex-col items-start"
                   >
-                    <Button type="button" :progress="progress" @click.prevent="onBlock(user.id)">{{
-                      !organizationBlockedStatus || organizationBlockedStatus.blocked === "notBlocked" ? t("common.buttons.block") : t("common.buttons.unblock")
-                    }}</Button>
+                    <div class="flex flex-row gap-4">
+                      <Button type="button" :progress="progress" @click.prevent="onRoles(user.id)">{{ t("common.buttons.roles") }}</Button>
+                      <Button type="button" :progress="progress" @click.prevent="onBlock(user.id)">{{
+                        !organizationBlockedStatus || organizationBlockedStatus.blocked === "notBlocked" ? t("common.buttons.block") : t("common.buttons.unblock")
+                      }}</Button>
+                    </div>
                   </div>
                 </template>
               </IdentityOrganization>
             </template>
-          </WithIdentityForAdminDocument>
+          </WithOrganizationIdentityForAdminDocument>
         </div>
       </template>
     </div>

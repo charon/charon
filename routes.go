@@ -404,6 +404,14 @@ func (s *Service) setRoutes() { //nolint:maintidx
 				},
 			},
 		},
+		"OrganizationRoles": {
+			RouteOptions: waf.RouteOptions{
+				Handlers: map[string]waf.Handler{
+					http.MethodGet: s.OrganizationRoles,
+				},
+			},
+			Path: "/o/roles/:id/:identityId",
+		},
 		"OrganizationBlockUser": {
 			RouteOptions: waf.RouteOptions{
 				Handlers: map[string]waf.Handler{

@@ -8,6 +8,7 @@ import type {
   ApplicationTemplateClientService,
   IdentityRef,
   Metadata,
+  Role,
   Variable,
 } from "@/types"
 
@@ -23,7 +24,7 @@ import TextArea from "@/components/TextArea.vue"
 import siteContext from "@/context"
 import Footer from "@/partials/Footer.vue"
 import NavBar from "@/partials/NavBar.vue"
-import WithIdentityPublicDocument from "@/partials/WithIdentityPublicDocument.vue"
+import WithOrganizationIdentityDocument from "@/partials/WithOrganizationIdentityDocument.vue"
 import { useProgress } from "@/progress"
 import { clone, equals } from "@/utils"
 
@@ -47,6 +48,10 @@ const name = ref("")
 const description = ref("")
 const homepageTemplate = ref("")
 const idScopes = ref<string[]>([])
+
+const rolesUnexpectedError = ref("")
+const rolesUpdated = ref(false)
+const roles = ref<Role[]>([])
 
 const variablesUnexpectedError = ref("")
 const variablesUpdated = ref(false)
@@ -72,6 +77,8 @@ function resetOnInteraction() {
   // We reset flags and errors on interaction.
   basicUnexpectedError.value = ""
   basicUpdated.value = false
+  rolesUnexpectedError.value = ""
+  rolesUpdated.value = false
   variablesUnexpectedError.value = ""
   variablesUpdated.value = false
   clientsPublicUnexpectedError.value = ""
@@ -92,7 +99,7 @@ function initWatchInteraction() {
     return
   }
 
-  const stop = watch([name, description, homepageTemplate, idScopes, variables, clientsPublic, clientsBackend, clientsService, admins], resetOnInteraction, {
+  const stop = watch([name, description, homepageTemplate, idScopes, roles, variables, clientsPublic, clientsBackend, clientsService, admins], resetOnInteraction, {
     deep: true,
   })
   if (watchInteractionStop !== null) {
@@ -109,7 +116,10 @@ onBeforeUnmount(() => {
   abortController.abort()
 })
 
-async function loadData(update: "init" | "basic" | "variables" | "clientsPublic" | "clientsBackend" | "clientsService" | "admins" | null, dataError: Ref<string> | null) {
+async function loadData(
+  update: "init" | "basic" | "roles" | "variables" | "clientsPublic" | "clientsBackend" | "clientsService" | "admins" | null,
+  dataError: Ref<string> | null,
+) {
   if (abortController.signal.aborted) {
     return
   }
@@ -153,6 +163,9 @@ async function loadData(update: "init" | "basic" | "variables" | "clientsPublic"
       homepageTemplate.value = response.doc.homepageTemplate
       idScopes.value = clone(response.doc.idScopes)
     }
+    if (update === "init" || update === "roles") {
+      roles.value = clone(response.doc.roles || [])
+    }
     if (update === "init" || update === "variables") {
       variables.value = clone(response.doc.variables)
     }
@@ -191,7 +204,7 @@ onBeforeMount(async () => {
 
 async function onSubmit(
   payload: ApplicationTemplate,
-  update: "basic" | "variables" | "clientsPublic" | "clientsBackend" | "clientsService" | "admins",
+  update: "basic" | "roles" | "variables" | "clientsPublic" | "clientsBackend" | "clientsService" | "admins",
   updated: Ref<boolean>,
   unexpectedError: Ref<string>,
 ) {
@@ -284,6 +297,7 @@ async function onBasicSubmit() {
     description: description.value,
     homepageTemplate: homepageTemplate.value,
     idScopes: idScopes.value,
+    roles: applicationTemplate.value!.roles,
     variables: applicationTemplate.value!.variables,
     clientsPublic: applicationTemplate.value!.clientsPublic,
     clientsBackend: applicationTemplate.value!.clientsBackend,
@@ -291,6 +305,60 @@ async function onBasicSubmit() {
     admins: applicationTemplate.value!.admins,
   }
   await onSubmit(payload, "basic", basicUpdated, basicUnexpectedError)
+}
+
+function canRolesSubmit(): boolean {
+  // Submission is on purpose not disabled on rolesUnexpectedError so that user can retry.
+
+  // Required fields.
+  for (const role of roles.value) {
+    if (!role.key) {
+      return false
+    }
+  }
+
+  // Anything changed?
+  if (!equals(applicationTemplate.value!.roles, roles.value)) {
+    return true
+  }
+
+  return false
+}
+
+async function onRolesSubmit() {
+  const payload: ApplicationTemplate = {
+    // We update only roles.
+    id: props.id,
+    name: applicationTemplate.value!.name,
+    description: applicationTemplate.value!.description,
+    homepageTemplate: applicationTemplate.value!.homepageTemplate,
+    idScopes: applicationTemplate.value!.idScopes,
+    roles: roles.value,
+    variables: applicationTemplate.value!.variables,
+    clientsPublic: applicationTemplate.value!.clientsPublic,
+    clientsBackend: applicationTemplate.value!.clientsBackend,
+    clientsService: applicationTemplate.value!.clientsService,
+    admins: applicationTemplate.value!.admins,
+  }
+  await onSubmit(payload, "roles", rolesUpdated, rolesUnexpectedError)
+}
+
+async function onAddRole() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  // No need to call resetOnInteraction here because we modify variables
+  // which we watch to call resetOnInteraction.
+
+  roles.value.push({
+    key: "",
+    description: "",
+  })
+
+  await nextTick(() => {
+    document.getElementById(`applicationtemplateget-role-${roles.value.length - 1}-key`)?.focus()
+  })
 }
 
 function canVariablesSubmit(): boolean {
@@ -319,6 +387,7 @@ async function onVariablesSubmit() {
     description: applicationTemplate.value!.description,
     homepageTemplate: applicationTemplate.value!.homepageTemplate,
     idScopes: applicationTemplate.value!.idScopes,
+    roles: applicationTemplate.value!.roles,
     variables: variables.value,
     clientsPublic: applicationTemplate.value!.clientsPublic,
     clientsBackend: applicationTemplate.value!.clientsBackend,
@@ -391,6 +460,7 @@ async function onClientsPublicSubmit() {
     description: applicationTemplate.value!.description,
     homepageTemplate: applicationTemplate.value!.homepageTemplate,
     idScopes: applicationTemplate.value!.idScopes,
+    roles: applicationTemplate.value!.roles,
     variables: applicationTemplate.value!.variables,
     clientsPublic: c,
     clientsBackend: applicationTemplate.value!.clientsBackend,
@@ -489,6 +559,7 @@ async function onClientsBackendSubmit() {
     description: applicationTemplate.value!.description,
     homepageTemplate: applicationTemplate.value!.homepageTemplate,
     idScopes: applicationTemplate.value!.idScopes,
+    roles: applicationTemplate.value!.roles,
     variables: applicationTemplate.value!.variables,
     clientsPublic: applicationTemplate.value!.clientsPublic,
     clientsBackend: c,
@@ -580,6 +651,7 @@ async function onClientsServiceSubmit() {
     description: applicationTemplate.value!.description,
     homepageTemplate: applicationTemplate.value!.homepageTemplate,
     idScopes: applicationTemplate.value!.idScopes,
+    roles: applicationTemplate.value!.roles,
     variables: applicationTemplate.value!.variables,
     clientsPublic: applicationTemplate.value!.clientsPublic,
     clientsBackend: applicationTemplate.value!.clientsBackend,
@@ -631,6 +703,7 @@ async function onAdminsSubmit() {
     description: applicationTemplate.value!.description,
     homepageTemplate: applicationTemplate.value!.homepageTemplate,
     idScopes: applicationTemplate.value!.idScopes,
+    roles: applicationTemplate.value!.roles,
     variables: applicationTemplate.value!.variables,
     clientsPublic: applicationTemplate.value!.clientsPublic,
     clientsBackend: applicationTemplate.value!.clientsBackend,
@@ -725,6 +798,53 @@ async function onAddAdmin() {
               }}</Button>
             </div>
           </form>
+
+          <template v-if="metadata.can_update || roles.length || canRolesSubmit() || rolesUnexpectedError || rolesUpdated">
+            <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.roles") }}</h2>
+            <div v-if="rolesUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
+            <div v-else-if="rolesUpdated" class="text-success-600">{{ t("views.ApplicationTemplateGet.rolesUpdated") }}</div>
+            <!--
+              We set novalidate because we do not want UA to show hints.
+              We show them ourselves when we want them.
+            -->
+            <form v-if="metadata.can_update || roles.length || canRolesSubmit()" class="flex flex-col" novalidate @submit.prevent="onRolesSubmit">
+              <ol>
+                <li v-for="(role, i) in roles" :key="i" class="mb-4 grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
+                  <div>{{ i + 1 }}.</div>
+                  <div class="flex flex-col">
+                    <label :for="`applicationtemplateget-role-${i}-key`" class="mb-1">{{ t("views.ApplicationTemplateGet.name") }}</label>
+                    <InputText
+                      :id="`applicationtemplateget-role-${i}-key`"
+                      v-model="role.key"
+                      class="min-w-0 flex-auto grow"
+                      :readonly="!metadata.can_update"
+                      :progress="progress"
+                      required
+                    />
+                    <label :for="`applicationtemplateget-role-${i}-description`" class="mt-4 mb-1"
+                      >{{ t("common.fields.description") }}
+                      <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
+                    >
+                    <TextArea
+                      :id="`applicationtemplateget-role-${i}-description`"
+                      v-model="role.description"
+                      class="min-w-0 flex-auto grow"
+                      :readonly="!metadata.can_update"
+                      :progress="progress"
+                    />
+                    <div v-if="metadata.can_update" class="mt-4 flex flex-row justify-end">
+                      <Button type="button" :progress="progress" @click.prevent="roles.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
+                    </div>
+                  </div>
+                </li>
+              </ol>
+              <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
+                <Button type="button" @click.prevent="onAddRole">{{ t("views.ApplicationTemplateGet.addRole") }}</Button>
+                <Button type="submit" primary :disabled="!canRolesSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
+              </div>
+            </form>
+          </template>
+
           <template v-if="metadata.can_update || variables.length || canVariablesSubmit() || variablesUnexpectedError || variablesUpdated">
             <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.variables") }}</h2>
             <div v-if="variablesUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
@@ -1249,7 +1369,7 @@ async function onAddAdmin() {
                 <li v-for="(admin, i) in admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
-                    <WithIdentityPublicDocument
+                    <WithOrganizationIdentityDocument
                       v-if="applicationTemplate?.admins?.find((a) => a.id === admin.id)"
                       :item="admin"
                       :organization-id="siteContext.organizationId"
@@ -1257,7 +1377,7 @@ async function onAddAdmin() {
                       <div class="flex flex-col items-start">
                         <Button type="button" @click.prevent="admins.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                       </div>
-                    </WithIdentityPublicDocument>
+                    </WithOrganizationIdentityDocument>
                     <div v-else class="flex flex-row gap-4">
                       <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="min-w-0 flex-auto grow" :progress="progress" required />
                       <Button type="button" @click.prevent="admins.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>

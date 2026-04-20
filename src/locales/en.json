@@ -23,6 +23,7 @@
       "resume": "Resume",
       "pause": "Pause",
       "redirect": "Redirect",
+      "roles": "User roles",
       "block": "Block",
       "unblock": "Unblock",
       "rename": "Rename"
@@ -207,6 +208,8 @@
       "status": "Status:",
       "apps": "Apps:",
       "noApps": "none",
+      "roles": "User roles:",
+      "noRoles": "none",
       "statusAndBlocked": "{status}, {blocked}"
     },
     "ActivityListItem": {
@@ -236,7 +239,9 @@
         "organizationsActivated": "activated organizations",
         "organizationsDisabled": "disabled organizations",
         "identitiesAdded": "added identities",
-        "identitiesRemoved": "removed identities"
+        "identitiesRemoved": "removed identities",
+        "rolesAdded": "added roles",
+        "rolesRemoved": "removed roles"
       },
       "entityLinks": "{entity}: {links}"
     },
@@ -263,6 +268,8 @@
       "applicationTemplateName": "Application template name",
       "homepageTemplate": "Homepage template",
       "spaceSeparatedScopes": "Space-separated OpenID scopes the app might request",
+      "roles": "User roles",
+      "addRole": "Add user role",
       "variables": "Variables",
       "name": "Name",
       "addVariable": "Add variable",
@@ -281,6 +288,7 @@
       "tokenEndpointAuthMethod": "Token endpoint authentication method",
       "serviceClients": "Service clients",
       "applicationsUpdated": "Application template updated successfully.",
+      "rolesUpdated": "User roles updated successfully.",
       "variablesUpdated": "Variables updated successfully.",
       "publicClientsUpdated": "Public clients updated successfully.",
       "backendClientsUpdated": "Backend clients updated successfully.",
@@ -346,6 +354,12 @@
     "OrganizationUsers": {
       "usersForOrganization": "Users for organization",
       "noUsers": "There are no users."
+    },
+    "OrganizationRoles": {
+      "rolesInOrganization": "User roles in organization",
+      "rolesUpdated": "@:views.ApplicationTemplateGet.rolesUpdated",
+      "noRoles": "There are no user roles. Add an application with user roles to this organization first.",
+      "availableRoles": "Enabled user roles for the user from roles available in the organization:"
     },
     "OrganizationBlockUser": {
       "blockUser": "Block user in organization",

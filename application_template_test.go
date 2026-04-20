@@ -239,3 +239,123 @@ func TestApplicationTemplateChanges(t *testing.T) {
 		})
 	}
 }
+
+func TestRoleValidate(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		role    charon.Role
+		wantErr string
+	}{
+		{name: "valid two character key", role: charon.Role{Key: "ad"}},
+		{name: "valid alphanumeric key", role: charon.Role{Key: "admin"}},
+		{name: "valid mixed case key", role: charon.Role{Key: "AdminUser"}},
+		{name: "valid key with hyphen", role: charon.Role{Key: "user-1"}},
+		{name: "valid key with underscore", role: charon.Role{Key: "user_admin"}},
+		{name: "valid key ending in digit", role: charon.Role{Key: "Admin99"}},
+		{name: "empty key", role: charon.Role{Key: ""}, wantErr: "key is required"},
+		{name: "single character key", role: charon.Role{Key: "a"}, wantErr: "invalid key"},
+		{name: "key starting with digit", role: charon.Role{Key: "1admin"}, wantErr: "invalid key"},
+		{name: "key starting with underscore", role: charon.Role{Key: "_admin"}, wantErr: "invalid key"},
+		{name: "key starting with hyphen", role: charon.Role{Key: "-admin"}, wantErr: "invalid key"},
+		{name: "key ending with underscore", role: charon.Role{Key: "admin_"}, wantErr: "invalid key"},
+		{name: "key ending with hyphen", role: charon.Role{Key: "admin-"}, wantErr: "invalid key"},
+		{name: "key with space", role: charon.Role{Key: "admin user"}, wantErr: "invalid key"},
+		{name: "key with disallowed character", role: charon.Role{Key: "admin@org"}, wantErr: "invalid key"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			errE := tt.role.Validate(t.Context())
+			if tt.wantErr == "" {
+				require.NoError(t, errE, "% -+#.1v", errE)
+			} else {
+				assert.EqualError(t, errE, tt.wantErr)
+			}
+		})
+	}
+}
+
+// TestApplicationTemplateValidateRoles covers role-related normalization and validation
+// rules in ApplicationTemplatePublic.Validate: nil-to-empty normalization, duplicate
+// detection, and propagation of Role.Validate errors. Other Validate behavior is covered
+// indirectly by integration tests.
+func TestApplicationTemplateValidateRoles(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name          string
+		roles         []charon.Role
+		expectedRoles []charon.Role
+		wantErr       string
+	}{
+		{
+			name:          "nil roles normalized to empty slice",
+			roles:         nil,
+			expectedRoles: []charon.Role{},
+		},
+		{
+			name:          "empty roles slice stays empty",
+			roles:         []charon.Role{},
+			expectedRoles: []charon.Role{},
+		},
+		{
+			name:          "single valid role",
+			roles:         []charon.Role{{Key: "admin", Description: "Admin role"}},
+			expectedRoles: []charon.Role{{Key: "admin", Description: "Admin role"}},
+		},
+		{
+			name: "multiple distinct valid roles",
+			roles: []charon.Role{
+				{Key: "admin", Description: ""},
+				{Key: "viewer", Description: ""},
+				{Key: "editor", Description: ""},
+			},
+			expectedRoles: []charon.Role{
+				{Key: "admin", Description: ""},
+				{Key: "viewer", Description: ""},
+				{Key: "editor", Description: ""},
+			},
+		},
+		{
+			name: "duplicate role keys rejected",
+			roles: []charon.Role{
+				{Key: "admin", Description: "first"},
+				{Key: "admin", Description: "second"},
+			},
+			wantErr: "duplicate role key",
+		},
+		{
+			name:    "invalid role key (single character) rejected",
+			roles:   []charon.Role{{Key: "a"}},
+			wantErr: "role: invalid key",
+		},
+		{
+			name:    "empty role key rejected",
+			roles:   []charon.Role{{Key: ""}},
+			wantErr: "role: key is required",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			template := &charon.ApplicationTemplatePublic{
+				Name:  "Test Template",
+				Roles: tt.roles,
+			}
+			errE := template.Validate(t.Context(), nil)
+
+			if tt.wantErr == "" {
+				require.NoError(t, errE, "% -+#.1v", errE)
+				assert.Equal(t, tt.expectedRoles, template.Roles)
+			} else {
+				assert.EqualError(t, errE, tt.wantErr)
+			}
+		})
+	}
+}

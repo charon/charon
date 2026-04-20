@@ -57,6 +57,10 @@ const (
 	ActivityChangeMembershipActivated ActivityChangeType = "membershipActivated"
 	// ActivityChangeMembershipDisabled represents deactivation/disabling a membership.
 	ActivityChangeMembershipDisabled ActivityChangeType = "membershipDisabled"
+	// ActivityChangeRolesAdded represents adding new roles.
+	ActivityChangeRolesAdded ActivityChangeType = "rolesAdded"
+	// ActivityChangeRolesRemoved represents removing roles.
+	ActivityChangeRolesRemoved ActivityChangeType = "rolesRemoved"
 )
 
 // Activity represents a user activity record.
@@ -73,6 +77,7 @@ type Activity struct {
 	Organizations            []OrganizationRef            `json:"organizations,omitempty"`
 	ApplicationTemplates     []ApplicationTemplateRef     `json:"applicationTemplates,omitempty"`
 	OrganizationApplications []OrganizationApplicationRef `json:"organizationApplications,omitempty"`
+	Roles                    []string                     `json:"roles,omitempty"`
 	Accounts                 []AccountRef                 `json:"-"`
 
 	// For sign-in activities, this is the list of providers that were used to authenticate the user.
@@ -283,6 +288,7 @@ func (s *Service) logActivity(
 		Organizations:            nil,
 		ApplicationTemplates:     nil,
 		OrganizationApplications: nil,
+		Roles:                    nil,
 		Accounts:                 nil,
 	}
 

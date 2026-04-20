@@ -1,0 +1,292 @@
+<script setup lang="ts">
+import type { Metadata, Organization, OrganizationIdentityForAdmin, Role } from "@/types"
+
+import { sortBy } from "lodash-es"
+import { onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
+import { useI18n } from "vue-i18n"
+import { useRouter } from "vue-router"
+
+import { getURL, postJSON } from "@/api"
+import Button from "@/components/Button.vue"
+import CheckBox from "@/components/CheckBox.vue"
+import Footer from "@/partials/Footer.vue"
+import IdentityPublic from "@/partials/IdentityPublic.vue"
+import NavBar from "@/partials/NavBar.vue"
+import OrganizationPublic from "@/partials/OrganizationPublic.vue"
+import { useProgress } from "@/progress"
+
+const props = defineProps<{
+  id: string
+  identityId: string
+}>()
+
+const { t } = useI18n({ useScope: "global" })
+const router = useRouter()
+const progress = useProgress()
+
+const abortController = new AbortController()
+const dataLoading = ref(true)
+const dataLoadingError = ref("")
+
+const identity = ref<OrganizationIdentityForAdmin | null>(null)
+const metadata = ref<Metadata>({})
+const organization = ref<Organization | null>(null)
+const organizationMetadata = ref<Metadata>({})
+const availableRoles = ref<Role[]>([])
+const selectedRoleKeys = ref<string[]>([])
+const unexpectedError = ref("")
+const success = ref(false)
+
+function resetOnInteraction() {
+  // We reset flags and errors on interaction.
+  unexpectedError.value = ""
+  success.value = false
+  // dataLoading and dataLoadingError are not listed here on
+  // purpose because they are used only on mount.
+}
+
+watch([selectedRoleKeys], resetOnInteraction)
+
+onBeforeUnmount(() => {
+  abortController.abort()
+})
+
+async function loadOrganization() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  progress.value += 1
+  try {
+    const organizationURL = router.apiResolve({
+      name: "OrganizationGet",
+      params: {
+        id: props.id,
+      },
+    }).href
+
+    const response = await getURL<Organization>(organizationURL, null, abortController.signal, progress)
+    if (abortController.signal.aborted) {
+      return
+    }
+
+    organization.value = response.doc
+    organizationMetadata.value = response.metadata
+    availableRoles.value = computeAvailableRoles(organization.value)
+  } finally {
+    progress.value -= 1
+  }
+}
+
+onBeforeMount(async () => {
+  progress.value += 1
+  try {
+    const identityURL = router.apiResolve({
+      name: "OrganizationIdentity",
+      params: {
+        id: props.id,
+        identityId: props.identityId,
+      },
+    }).href
+
+    const response = await getURL<OrganizationIdentityForAdmin>(identityURL, null, abortController.signal, progress)
+    if (abortController.signal.aborted) {
+      return
+    }
+
+    identity.value = response.doc
+    metadata.value = response.metadata
+
+    selectedRoleKeys.value = [...identity.value.roles]
+
+    await loadOrganization()
+  } catch (error) {
+    if (abortController.signal.aborted) {
+      return
+    }
+    console.error("OrganizationRoles.onBeforeMount", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    dataLoadingError.value = `${error}`
+  } finally {
+    dataLoading.value = false
+    progress.value -= 1
+  }
+})
+
+function computeAvailableRoles(organization: Organization): Role[] {
+  const allApps = organization.applications ?? []
+  const activeApps = allApps.filter((app) => app.active)
+
+  const activeRoles = activeApps.flatMap((app) => app.applicationTemplate.roles ?? [])
+  const activeRoleKeys = new Set(activeRoles.map((role) => role.key))
+
+  const assignedRoleKeys = organization.roles?.[props.identityId] ?? []
+
+  const resultMap = new Map(activeRoles.map((role) => [role.key, role]))
+
+  const orphanedRoleKeys = assignedRoleKeys.filter((key) => !activeRoleKeys.has(key))
+  if (orphanedRoleKeys.length > 0) {
+    const allRoles = allApps.flatMap((app) => app.applicationTemplate.roles ?? [])
+    const allRolesMap = new Map(allRoles.map((role) => [role.key, role]))
+
+    orphanedRoleKeys.forEach((key) => {
+      const roleFromInactive = allRolesMap.get(key)
+      if (roleFromInactive) {
+        if (roleFromInactive.description) {
+          resultMap.set(key, {
+            key: roleFromInactive.key,
+            description: `${roleFromInactive.description} (inactive app)`,
+          })
+        } else {
+          resultMap.set(key, {
+            key: roleFromInactive.key,
+            description: `(inactive app)`,
+          })
+        }
+      } else {
+        resultMap.set(key, {
+          key,
+          // If app and with it role was deleted, we do not have a description for it.
+          description: `(removed app)`,
+        })
+      }
+    })
+  }
+
+  return sortBy(Array.from(resultMap.values()), "key")
+}
+
+function canSubmit(): boolean {
+  const currentRoles = organization.value!.roles?.[props.identityId] || []
+
+  if (selectedRoleKeys.value.length !== currentRoles.length) {
+    return true
+  }
+
+  return !selectedRoleKeys.value.every((role) => currentRoles.includes(role))
+}
+
+async function onSubmit() {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  resetOnInteraction()
+
+  progress.value += 1
+  try {
+    try {
+      const newRoles = { ...(organization.value!.roles || {}) }
+      if (selectedRoleKeys.value.length) {
+        newRoles[props.identityId] = selectedRoleKeys.value
+      } else {
+        delete newRoles[props.identityId]
+      }
+      const payload: Organization = {
+        id: props.id,
+        name: organization.value!.name,
+        description: organization.value!.description,
+        admins: organization.value!.admins,
+        applications: organization.value!.applications,
+        roles: newRoles,
+      }
+      const url = router.apiResolve({
+        name: "OrganizationUpdate",
+        params: {
+          id: props.id,
+        },
+      }).href
+
+      await postJSON(url, payload, abortController.signal, progress)
+      if (abortController.signal.aborted) {
+        return
+      }
+
+      success.value = true
+    } catch (error) {
+      if (abortController.signal.aborted) {
+        return
+      }
+      console.error("OrganizationRoles.onSubmit", error)
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      unexpectedError.value = `${error}`
+    } finally {
+      // We update organization state even on errors.
+      try {
+        await loadOrganization()
+      } catch (error) {
+        if (abortController.signal.aborted) {
+          // eslint-disable-next-line no-unsafe-finally
+          return
+        }
+        console.error("OrganizationRoles.onSubmit", error)
+        // If there is already an error, we ignore any additional error.
+        if (!unexpectedError.value) {
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          unexpectedError.value = `${error}`
+        }
+      }
+    }
+  } finally {
+    progress.value -= 1
+  }
+}
+</script>
+
+<template>
+  <Teleport to="header">
+    <NavBar />
+  </Teleport>
+  <div class="mt-12 flex w-full flex-col items-center border-t border-transparent sm:mt-[4.5rem]">
+    <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,65ch)] gap-1 sm:m-4 sm:gap-4">
+      <div v-if="dataLoading" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">{{ t("common.data.dataLoading") }}</div>
+      <div v-else-if="dataLoadingError" class="w-full rounded-sm border border-gray-200 bg-white p-4 text-error-600 shadow-sm">{{ t("common.errors.unexpected") }}</div>
+      <template v-else>
+        <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
+          <div class="flex flex-col gap-4">
+            <h1 class="text-2xl font-bold">{{ t("views.OrganizationRoles.rolesInOrganization") }}</h1>
+            <div>
+              <OrganizationPublic :organization="organization!" :metadata="organizationMetadata" />
+            </div>
+          </div>
+        </div>
+        <div class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
+          <IdentityPublic :identity="identity!" :is-current="!!metadata.is_current" :can-update="!!metadata.can_update" />
+        </div>
+        <div class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
+          <div v-if="!availableRoles.length" class="italic"> {{ t("views.OrganizationRoles.noRoles") }} </div>
+          <!--
+            We set novalidate because we do not want UA to show hints.
+            We show them ourselves when we want them.
+          -->
+          <form v-else class="flex flex-col" novalidate @submit.prevent="onSubmit">
+            <fieldset class="mb-4">
+              <legend class="mb-1">{{ t("views.OrganizationRoles.availableRoles") }}</legend>
+              <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                <template v-for="role in availableRoles" :key="role.key">
+                  <CheckBox :id="`organizationroles-checkbox-${role.key}`" v-model="selectedRoleKeys" :value="role.key" :progress="progress" class="mx-2" />
+                  <div class="flex flex-col">
+                    <label :for="`organizationroles-checkbox-${role.key}`" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                      ><code>{{ role.key }}</code></label
+                    >
+                    <label :for="`organizationroles-checkbox-${role.key}`" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
+                      role.description
+                    }}</label>
+                  </div>
+                </template>
+              </div>
+            </fieldset>
+            <div v-if="unexpectedError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
+            <div v-if="success" class="mb-4 text-success-600">{{ t("views.OrganizationRoles.rolesUpdated") }}</div>
+            <div class="flex flex-row justify-end">
+              <Button type="submit" primary :disabled="!canSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
+            </div>
+          </form>
+        </div>
+      </template>
+    </div>
+  </div>
+  <Teleport to="footer">
+    <Footer />
+  </Teleport>
+</template>

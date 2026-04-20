@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import type { Component, DeepReadonly } from "vue"
 
-import type { Activity, ActivityRef, ApplicationTemplate, IdentityPublic, Organization, OrganizationApplicationPublic, OrganizationRef } from "@/types"
+import type {
+  Activity,
+  ActivityChangeType,
+  ActivityRef,
+  ApplicationTemplate,
+  Organization,
+  OrganizationApplicationPublic,
+  OrganizationIdentity,
+  OrganizationRef,
+} from "@/types"
 
 import { LocalScope } from "@all1ndev/vue-local-scope"
 import { CalculatorIcon, IdentificationIcon, LockClosedIcon, LockOpenIcon, ShieldCheckIcon, ShieldExclamationIcon, UserGroupIcon } from "@heroicons/vue/24/outline"
@@ -80,7 +89,7 @@ function getActivityDescription(activityType: string): string {
 }
 
 function getChangeDescription(
-  changeType: string,
+  changeType: ActivityChangeType,
   activityType: string,
   identitiesCount: number,
   organizationsCount: number,
@@ -163,7 +172,12 @@ function getChangeDescription(
         return [t("partials.ActivityListItem.changes.organizationsDisabled")]
       }
       throw new Error(`unknown change type context: ${changeType}`)
+    case "rolesAdded":
+      return [t("partials.ActivityListItem.changes.rolesAdded")]
+    case "rolesRemoved":
+      return [t("partials.ActivityListItem.changes.rolesRemoved")]
     default:
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       throw new Error(`unknown change type: ${changeType}`)
   }
 }
@@ -194,7 +208,7 @@ function transformActivity(activity: DeepReadonly<Activity>): DeepReadonly<Activ
 }
 
 const WithActivityDocument = WithDocument<Activity>
-const WithIdentityPublicDocument = WithDocument<IdentityPublic>
+const WithOrganizationIdentityDocument = WithDocument<OrganizationIdentity>
 const WithOrganizationDocument = WithDocument<Organization>
 const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
 const WithOrganizationApplicationDocument = WithDocument<OrganizationApplicationPublic>
@@ -241,7 +255,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                   <template #links>
                     <template v-for="(organizationIdentity, i) in doc.identities" :key="`${organizationIdentity.organization.id}/${organizationIdentity.identity.id}`">
                       <template v-if="i > 0">, </template>
-                      <WithIdentityPublicDocument
+                      <WithOrganizationIdentityDocument
                         :params="{ id: organizationIdentity.organization.id, identityId: organizationIdentity.identity.id }"
                         name="OrganizationIdentity"
                       >
@@ -256,7 +270,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                         <template #error="{ url: identityErrorUrl }">
                           <span :data-url="identityErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
                         </template>
-                      </WithIdentityPublicDocument>
+                      </WithOrganizationIdentityDocument>
                     </template>
                   </template>
                 </i18n-t>
@@ -316,6 +330,9 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                     </template>
                   </template>
                 </i18n-t>
+              </div>
+              <div v-if="doc.roles?.length" class="flex flex-row flex-wrap content-start items-start gap-1 text-sm">
+                <span v-for="role in doc.roles" :key="role" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{ role }}</span>
               </div>
               <div class="activitylistitem-text-timestamp text-xs text-neutral-500">{{ getFormattedTimestamp(doc.timestamp) }}</div>
               <div class="activitylistitem-text-session text-xs text-neutral-500">Session: {{ doc.sessionId }}</div>

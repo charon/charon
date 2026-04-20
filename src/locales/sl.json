@@ -23,6 +23,7 @@
       "resume": "Nadaljuj",
       "pause": "Ustavi",
       "redirect": "Preusmeri",
+      "roles": "Uporabniške vloge",
       "block": "Blokiraj",
       "unblock": "Odblokiraj",
       "rename": "Preimenuj"
@@ -152,10 +153,10 @@
       "createNewIdentity": "@:partials.AuthIdentity.newIdentityButton",
       "identitiesUsedWithOrg": "Identitete uporabljene z organizacijo, vendar ne z aplikacijo",
       "disabledIdentities": "Onemogočene identitete",
+      "blockedIdentities": "Blokirane identitete",
       "noIdentityUsed": "Še niste uporabili nobene identitete s to organizacijo.",
       "noIdentityUsedWithApp": "Še niste uporabili nobene identitete s to aplikacijo v organizaciji.",
-      "allPreviousDisabled": "Vse prej uporabljene identitete s to organizacijo so onemogočene.",
-      "blockedIdentities": "Blokirane identitete"
+      "allPreviousDisabled": "Vse prej uporabljene identitete s to organizacijo so onemogočene."
     },
     "AuthManualRedirect": {
       "failed": "{strongSorry} Prijava ali registracija ni uspela.",
@@ -207,6 +208,8 @@
       "status": "Status:",
       "apps": "Aplikacije:",
       "noApps": "brez",
+      "roles": "Uporabniške vloge:",
+      "noRoles": "brez",
       "statusAndBlocked": "{status}, {blocked}"
     },
     "ActivityListItem": {
@@ -236,7 +239,9 @@
         "organizationsActivated": "aktivirane organizacije",
         "organizationsDisabled": "onemogočene organizacije",
         "identitiesAdded": "dodane identitete",
-        "identitiesRemoved": "odstranjene identitete"
+        "identitiesRemoved": "odstranjene identitete",
+        "rolesAdded": "dodane vloge",
+        "rolesRemoved": "odstranjene vloge"
       },
       "entityLinks": "{entity}: {links}"
     },
@@ -263,6 +268,8 @@
       "applicationTemplateName": "Ime predloge aplikacije",
       "homepageTemplate": "Predloga domače strani",
       "spaceSeparatedScopes": "Z znaki ločeni OpenID dosegi, ki jih lahko aplikacija zahteva",
+      "roles": "Uporabniške vloge",
+      "addRole": "Dodaj uporabniško vlogo",
       "variables": "Spremenljivke",
       "name": "Ime",
       "addVariable": "Dodaj spremenljivko",
@@ -281,6 +288,7 @@
       "tokenEndpointAuthMethod": "Metoda overjanja končne točke žetona",
       "serviceClients": "Servisni odjemalci",
       "applicationsUpdated": "Predloga aplikacije je bila uspešno posodobljena.",
+      "rolesUpdated": "Uporabniške vloge so bile uspešno posodobljene.",
       "variablesUpdated": "Spremenljivke so bile uspešno posodobljene.",
       "publicClientsUpdated": "Javni odjemalci so bili uspešno posodobljeni.",
       "backendClientsUpdated": "Zaledni odjemalci so bili uspešno posodobljeni.",
@@ -347,12 +355,11 @@
       "usersForOrganization": "Uporabniki za organizacijo",
       "noUsers": "Ni uporabnikov."
     },
-    "ActivityList": {
-      "noActivities": "Ni aktivnosti."
-    },
-    "OrganizationActivity": {
-      "organizationActivity": "Aktivnost za organizacijo",
-      "noActivities": "Ni aktivnosti."
+    "OrganizationRoles": {
+      "rolesInOrganization": "Uporabniške vloge v organizaciji",
+      "rolesUpdated": "@:views.ApplicationTemplateGet.rolesUpdated",
+      "noRoles": "Uporabniških vlog ni. Dodajte aplikacijo z uporabniškimi vlogami v to organizacijo.",
+      "availableRoles": "Omogočene uporabniške vloge za uporabnika izmed vlog, ki so na voljo v organizaciji:"
     },
     "OrganizationBlockUser": {
       "blockUser": "Blokiraj uporabnika v organizaciji",
@@ -363,6 +370,13 @@
       "organizationNote": "Opomba samo za administratorje organizacije",
       "userNote": "Opomba za blokiranega uporabnika oziroma uporabnike",
       "blockingSuccess": "Uporabnik je bil uspešno blokiran."
+    },
+    "ActivityList": {
+      "noActivities": "Ni aktivnosti."
+    },
+    "OrganizationActivity": {
+      "organizationActivity": "Aktivnost za organizacijo",
+      "noActivities": "Ni aktivnosti."
     },
     "CredentialAdd": {
       "addCredential": "Dodajte metodo avtentikacije",
