@@ -239,9 +239,9 @@ async function onSubmit() {
                 <template v-for="role in availableRoles" :key="role.key">
                   <CheckBox :id="`organizationroles-checkbox-${role.key}`" v-model="selectedRoleKeys" :value="role.key" :progress="progress" class="mx-2" />
                   <div class="flex flex-col">
-                    <label :for="`organizationroles-checkbox-${role.key}`" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
-                      role.key
-                    }}</label>
+                    <label :for="`organizationroles-checkbox-${role.key}`" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                      ><code>{{ role.key }}</code></label
+                    >
                     <label :for="`organizationroles-checkbox-${role.key}`" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
                       role.description
                     }}</label>
