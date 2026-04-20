@@ -350,7 +350,7 @@ async function onAddRole() {
   })
 
   await nextTick(() => {
-    document.getElementById(`role-${roles.value.length - 1}-key`)?.focus()
+    document.getElementById(`applicationtemplateget-role-${roles.value.length - 1}-key`)?.focus()
   })
 }
 
@@ -805,14 +805,21 @@ async function onAddAdmin() {
                 <li v-for="(role, i) in roles" :key="i" class="mb-4 grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
-                    <label :for="`role-${i}-key`" class="mb-1">{{ t("views.ApplicationTemplateGet.name") }}</label>
-                    <InputText :id="`role-${i}-key`" v-model="role.key" class="min-w-0 flex-auto grow" :readonly="!metadata.can_update" :progress="progress" required />
-                    <label :for="`role-${i}-description`" class="mt-4 mb-1"
+                    <label :for="`applicationtemplateget-role-${i}-key`" class="mb-1">{{ t("views.ApplicationTemplateGet.name") }}</label>
+                    <InputText
+                      :id="`applicationtemplateget-role-${i}-key`"
+                      v-model="role.key"
+                      class="min-w-0 flex-auto grow"
+                      :readonly="!metadata.can_update"
+                      :progress="progress"
+                      required
+                    />
+                    <label :for="`applicationtemplateget-role-${i}-description`" class="mt-4 mb-1"
                       >{{ t("common.fields.description") }}
                       <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
                     >
                     <TextArea
-                      :id="`role-${i}-description`"
+                      :id="`applicationtemplateget-role-${i}-description`"
                       v-model="role.description"
                       class="min-w-0 flex-auto grow"
                       :readonly="!metadata.can_update"
