@@ -463,7 +463,7 @@ async function loadOrganizations() {
       newOrganizations.set(org.id, {
         organization: results[index].response.doc,
         url: results[index].url,
-        canUpdate: !!results[index].response.metadata.can_update,
+        metadata: results[index].response.metadata,
       })
     })
 
@@ -622,7 +622,7 @@ function getIdentityRoles(identityOrganization: IdentityOrganizationType): strin
                     <OrganizationPublic
                       v-if="orgData"
                       :organization="orgData.organization"
-                      :can-update="orgData.canUpdate"
+                      :metadata="orgData.metadata"
                       :labels="organizationLabels(identityOrganization)"
                       h3
                     />
@@ -655,7 +655,7 @@ function getIdentityRoles(identityOrganization: IdentityOrganizationType): strin
                 <OrganizationPublic
                   v-if="loadedOrganizations.get(organization.id)"
                   :organization="loadedOrganizations.get(organization.id)!.organization"
-                  :can-update="loadedOrganizations.get(organization.id)!.canUpdate"
+                  :metadata="loadedOrganizations.get(organization.id)!.metadata"
                   h3
                 >
                   <div class="flex flex-col items-start">

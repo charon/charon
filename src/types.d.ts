@@ -387,7 +387,7 @@ export type Organization = OrganizationPublic & {
 export type OrganizationForIdentity = {
   organization: Organization
   url?: string
-  canUpdate: boolean
+  metadata: Metadata
 }
 
 export type OrganizationCreate = {

@@ -219,7 +219,7 @@ async function onSubmit() {
           <div class="flex flex-col gap-4">
             <h1 class="text-2xl font-bold">{{ t("views.OrganizationRoles.rolesInOrganization") }}</h1>
             <div>
-              <OrganizationPublic :organization="organization!" :can-update="!!organizationMetadata.can_update" />
+              <OrganizationPublic :organization="organization!" :metadata="organizationMetadata" />
             </div>
           </div>
         </div>

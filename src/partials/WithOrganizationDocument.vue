@@ -20,8 +20,8 @@ const WithOrganizationDocument = WithDocument<Organization>
 <template>
   <WithOrganizationDocument :params="{ id: item.id }" name="OrganizationGet">
     <template #default="{ doc, metadata, url }">
-      <OrganizationPublic :organization="doc" :url="url" :can-update="metadata.can_update" :h3="h3" :labels="labels">
-        <slot :organization="doc" :can-update="metadata.can_update"></slot>
+      <OrganizationPublic :organization="doc" :url="url" :metadata="metadata" :h3="h3" :labels="labels">
+        <slot :organization="doc" :metadata="metadata"></slot>
       </OrganizationPublic>
     </template>
     <template #error="{ url }">
@@ -29,7 +29,7 @@ const WithOrganizationDocument = WithDocument<Organization>
         <div class="flex grow">
           <span class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
         </div>
-        <slot :organization="undefined" :can-update="undefined"></slot>
+        <slot :organization="undefined" :metadata="undefined"></slot>
       </div>
     </template>
   </WithOrganizationDocument>
