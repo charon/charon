@@ -383,13 +383,6 @@ export type Organization = OrganizationPublic & {
   roles?: Record<string, string[]>
 }
 
-// This is used only on the frontend.
-export type OrganizationForIdentity = {
-  organization: Organization
-  url?: string
-  metadata: Metadata
-}
-
 export type OrganizationCreate = {
   name: string
 }

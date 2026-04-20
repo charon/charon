@@ -2,16 +2,7 @@
 import type { DeepReadonly, Ref } from "vue"
 import type { ComponentExposed } from "vue-component-type-helpers"
 
-import type {
-  Identity,
-  IdentityOrganization as IdentityOrganizationType,
-  IdentityRef,
-  Metadata,
-  Organization,
-  OrganizationForIdentity,
-  OrganizationRef,
-  Organizations,
-} from "@/types"
+import type { Identity, IdentityOrganization as IdentityOrganizationType, IdentityRef, Metadata, Organization, OrganizationRef, Organizations } from "@/types"
 
 import { computed, nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
@@ -21,11 +12,13 @@ import { getURL, postJSON } from "@/api"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
 import TextArea from "@/components/TextArea.vue"
+import WithDocument from "@/components/WithDocument.vue"
 import siteContext from "@/context"
 import Footer from "@/partials/Footer.vue"
 import IdentityOrganization from "@/partials/IdentityOrganization.vue"
 import NavBar from "@/partials/NavBar.vue"
 import OrganizationPublic from "@/partials/OrganizationPublic.vue"
+import WithOrganizationDocument from "@/partials/WithOrganizationDocument.vue"
 import WithOrganizationIdentityDocument from "@/partials/WithOrganizationIdentityDocument.vue"
 import { useProgress } from "@/progress"
 import { clone, equals } from "@/utils"
@@ -44,7 +37,6 @@ const dataLoadingError = ref("")
 const identity = ref<Identity | null>(null)
 const metadata = ref<Metadata>({})
 const organizations = ref<Organizations>([])
-const loadedOrganizations = ref(new Map<string, OrganizationForIdentity>())
 
 const basicUnexpectedError = ref("")
 const basicUpdated = ref(false)
@@ -170,7 +162,6 @@ async function loadData(update: "init" | "basic" | "users" | "admins" | "organiz
       }
 
       organizations.value = organizationsResponse.doc
-      await loadOrganizations()
     }
   } catch (error) {
     if (abortController.signal.aborted) {
@@ -439,52 +430,8 @@ function organizationLabels(identityOrganization: IdentityOrganizationType | Dee
   return labels
 }
 
-async function loadOrganizations() {
-  if (abortController.signal.aborted) {
-    return
-  }
-
-  const promises = organizations.value.map(async (organization) => {
-    const organizationURL = router.apiResolve({
-      name: "OrganizationGet",
-      params: { id: organization.id },
-    }).href
-    const response = await getURL<Organization>(organizationURL, null, abortController.signal, progress)
-    return { url: organizationURL, response }
-  })
-
-  try {
-    const results = await Promise.all(promises)
-    if (abortController.signal.aborted) return
-
-    const newOrganizations = new Map<string, OrganizationForIdentity>()
-
-    organizations.value.forEach((org, index) => {
-      newOrganizations.set(org.id, {
-        organization: results[index].response.doc,
-        url: results[index].url,
-        metadata: results[index].response.metadata,
-      })
-    })
-
-    loadedOrganizations.value = newOrganizations
-  } catch (error) {
-    if (abortController.signal.aborted) {
-      return
-    }
-    console.error("IdentityGet.loadOrganizations", error)
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-    dataLoadingError.value = `${error}`
-  }
-}
-
-function getIdentityRoles(identityOrganization: IdentityOrganizationType): string[] {
-  if (!identityOrganization.id) {
-    return []
-  }
-  const organizationData = loadedOrganizations.value.get(identityOrganization.organization.id)
-  return organizationData?.organization.roles?.[identityOrganization.id] ?? []
-}
+// We name it WithOrganizationDoc and not WithOrganizationDocument so that it does not collide with WithOrganizationDocument partial.
+const WithOrganizationDoc = WithDocument<Organization>
 
 // TODO: Remember previous organization-scoped identity IDs and reuse them if an organization is removed and then added back without calling update in-between.
 </script>
@@ -618,27 +565,30 @@ function getIdentityRoles(identityOrganization: IdentityOrganizationType): strin
             <form v-if="identityOrganizations.length || canOrganizationsSubmit()" class="flex flex-col" novalidate @submit.prevent="onOrganizationsSubmit">
               <ul>
                 <li v-for="(identityOrganization, i) in identityOrganizations" :key="identityOrganization.organization.id" class="mb-4 flex flex-col">
-                  <template v-for="orgData in [loadedOrganizations.get(identityOrganization.organization.id)]" :key="orgData!.organization.id">
-                    <OrganizationPublic
-                      v-if="orgData"
-                      :organization="orgData.organization"
-                      :metadata="orgData.metadata"
-                      :labels="organizationLabels(identityOrganization)"
-                      h3
-                    />
-                  </template>
-                  <IdentityOrganization
-                    :ref="(el) => updateOrganizationBlockedStatuses(identityOrganization.organization.id, el as IdentityOrganizationComponent)"
-                    :identity-organization="identityOrganization"
-                    :roles="getIdentityRoles(identityOrganization)"
-                  >
-                    <div v-if="metadata.can_update" class="flex flex-row gap-4">
-                      <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = !identityOrganization.active">{{
-                        identityOrganization.active ? t("common.buttons.disable") : t("common.buttons.activate")
-                      }}</Button>
-                      <Button type="button" :progress="progress" @click.prevent="identityOrganizations.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
-                    </div>
-                  </IdentityOrganization>
+                  <WithOrganizationDoc :params="{ id: identityOrganization.organization.id }" name="OrganizationGet">
+                    <template #default="{ doc, metadata: orgMetadata }">
+                      <OrganizationPublic :organization="doc" :metadata="orgMetadata" :labels="organizationLabels(identityOrganization)" h3 />
+                      <IdentityOrganization
+                        :ref="(el) => updateOrganizationBlockedStatuses(identityOrganization.organization.id, el as IdentityOrganizationComponent)"
+                        :identity-organization="identityOrganization"
+                        :roles="identityOrganization.id ? (doc.roles?.[identityOrganization.id] ?? []) : []"
+                      >
+                        <div v-if="metadata.can_update" class="flex flex-row gap-4">
+                          <Button type="button" :progress="progress" @click.prevent="identityOrganization.active = !identityOrganization.active">{{
+                            identityOrganization.active ? t("common.buttons.disable") : t("common.buttons.activate")
+                          }}</Button>
+                          <Button type="button" :progress="progress" @click.prevent="identityOrganizations.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
+                        </div>
+                      </IdentityOrganization>
+                    </template>
+                    <template #error="{ url }">
+                      <div class="flex flex-row gap-4" :data-url="url">
+                        <div class="flex grow">
+                          <span class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
+                        </div>
+                      </div>
+                    </template>
+                  </WithOrganizationDoc>
                 </li>
               </ul>
               <div v-if="metadata.can_update" class="flex flex-row justify-end">
@@ -652,16 +602,11 @@ function getIdentityRoles(identityOrganization: IdentityOrganizationType): strin
             <h2 class="text-xl font-bold">{{ t("views.IdentityGet.availableOrganizations") }}</h2>
             <ul class="flex flex-col gap-4">
               <li v-for="organization in availableOrganizations" :key="organization.id">
-                <OrganizationPublic
-                  v-if="loadedOrganizations.get(organization.id)"
-                  :organization="loadedOrganizations.get(organization.id)!.organization"
-                  :metadata="loadedOrganizations.get(organization.id)!.metadata"
-                  h3
-                >
+                <WithOrganizationDocument :item="organization" h3>
                   <div class="flex flex-col items-start">
                     <Button type="button" :progress="progress" primary @click.prevent="onAddOrganization(organization)">{{ t("common.buttons.add") }}</Button>
                   </div>
-                </OrganizationPublic>
+                </WithOrganizationDocument>
               </li>
             </ul>
           </template>
