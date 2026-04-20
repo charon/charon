@@ -167,18 +167,20 @@ async function onSubmit() {
 
   progress.value += 1
   try {
+    const newRoles = { ...(organization.value!.roles || {}) }
+    if (selectedRoleKeys.value.length) {
+      newRoles[props.identityId] = selectedRoleKeys.value
+    } else {
+      delete newRoles[props.identityId]
+    }
     const payload: Organization = {
       id: props.id,
       name: organization.value!.name,
       description: organization.value!.description,
       admins: organization.value!.admins,
       applications: organization.value!.applications,
-      roles: {
-        ...(organization.value!.roles || {}),
-        [props.identityId]: selectedRoleKeys.value,
-      },
+      roles: newRoles,
     }
-
     const url = router.apiResolve({
       name: "OrganizationUpdate",
       params: {
@@ -196,7 +198,7 @@ async function onSubmit() {
     if (abortController.signal.aborted) {
       return
     }
-    console.error("OrganizationRoles.onUpdate", error)
+    console.error("OrganizationRoles.onSubmit", error)
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   } finally {
