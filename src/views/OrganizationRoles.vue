@@ -34,13 +34,13 @@ const organization = ref<Organization | null>(null)
 const organizationMetadata = ref<Metadata>({})
 const availableRoles = ref<Role[]>([])
 const selectedRoleKeys = ref<string[]>([])
-const updateError = ref("")
-const updateSuccess = ref(false)
+const unexpectedError = ref("")
+const success = ref(false)
 
 function resetOnInteraction() {
   // We reset flags and errors on interaction.
-  updateError.value = ""
-  updateSuccess.value = false
+  unexpectedError.value = ""
+  success.value = false
   // dataLoading and dataLoadingError are not listed here on
   // purpose because they are used only on mount.
 }
@@ -191,14 +191,14 @@ async function onSubmit() {
       return
     }
 
-    updateSuccess.value = true
+    success.value = true
   } catch (error) {
     if (abortController.signal.aborted) {
       return
     }
     console.error("OrganizationRoles.onUpdate", error)
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-    updateError.value = `${error}`
+    unexpectedError.value = `${error}`
   } finally {
     await loadOrganization()
     progress.value -= 1
@@ -227,8 +227,6 @@ async function onSubmit() {
           <IdentityPublic :identity="identity!" :is-current="!!metadata.is_current" :can-update="!!metadata.can_update" />
         </div>
         <div class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
-          <div v-if="updateError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
-          <div v-if="updateSuccess" class="mb-4 text-success-600">{{ t("views.OrganizationRoles.rolesUpdated") }}</div>
           <div v-if="!availableRoles.length" class="italic"> {{ t("views.OrganizationRoles.noRoles") }} </div>
           <!--
             We set novalidate because we do not want UA to show hints.
@@ -241,16 +239,20 @@ async function onSubmit() {
                 <template v-for="role in availableRoles" :key="role.key">
                   <CheckBox :id="`organizationroles-checkbox-${role.key}`" v-model="selectedRoleKeys" :value="role.key" :progress="progress" class="mx-2" />
                   <div class="flex flex-col">
-                    <label :for="`organizationroles-checkbox-${role.key}`">{{ role.key }}</label>
-                    <label :for="`organizationroles-checkbox-${role.key}`">{{ role.description }}</label>
+                    <label :for="`organizationroles-checkbox-${role.key}`" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
+                      role.key
+                    }}</label>
+                    <label :for="`organizationroles-checkbox-${role.key}`" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
+                      role.description
+                    }}</label>
                   </div>
                 </template>
               </div>
             </fieldset>
-            <div class="flex justify-end">
-              <Button type="submit" primary :disabled="!canSubmit()" :progress="progress">
-                {{ t("common.buttons.update") }}
-              </Button>
+            <div v-if="unexpectedError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
+            <div v-if="success" class="mb-4 text-success-600">{{ t("views.OrganizationRoles.rolesUpdated") }}</div>
+            <div class="flex flex-row justify-end">
+              <Button type="submit" primary :disabled="!canSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
             </div>
           </form>
         </div>
