@@ -37,6 +37,10 @@ func (s *Service) TestingGetIdentity(ctx context.Context, id identifier.Identifi
 	return s.getIdentity(ctx, id)
 }
 
+func (s *Service) TestingCreateApplicationTemplate(ctx context.Context, applicationTemplate *ApplicationTemplate) errors.E {
+	return s.createApplicationTemplate(ctx, applicationTemplate)
+}
+
 func (s *Service) TestingCreateOrganization(ctx context.Context, organization *Organization) errors.E {
 	return s.createOrganization(ctx, organization)
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/alexedwards/argon2id"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
@@ -720,4 +721,161 @@ func TestUpdateOrganizationActivityIdentityScoping(t *testing.T) {
 	assert.Equal(t, charonID, updateActivity.Identities[0].Organization.ID)
 	assert.Equal(t, addedAdminID, updateActivity.Identities[0].Identity.ID)
 	assert.NotEqual(t, *organization.ID, updateActivity.Identities[0].Organization.ID)
+}
+
+// TestOrganizationValidateRoles covers role-related normalization and validation rules
+// in Organization.validate that aren't reachable as a pure unit test (they need a real
+// Service for hasIdentities and OrganizationApplication.Validate). The ID space of
+// Roles map keys is the organization-scoped ID space of this organization, but the
+// validator does not require those IDs to actually exist as IdentityOrganizations,
+// so we use synthetic IDs.
+func TestOrganizationValidateRoles(t *testing.T) {
+	t.Parallel()
+
+	_, service, _, _, _ := startTestServer(t) //nolint:dogsled
+
+	accountID := identifier.New()
+	ctx := service.TestingWithAccountID(t.Context(), accountID)
+	ctx = service.TestingWithSessionID(ctx)
+	ctx = service.TestingWithRequestID(ctx)
+
+	adminID := createTestIdentity(t, service, ctx)
+	ctx = service.TestingWithIdentityID(ctx, adminID)
+
+	appTemplate := &charon.ApplicationTemplate{
+		ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
+			Name:             "Roles App",
+			HomepageTemplate: "https://example.com",
+			Roles: []charon.Role{
+				{Key: "admin", Description: "Admin"},
+				{Key: "viewer", Description: "Viewer"},
+			},
+			// Set Variables explicitly to empty so Validate does not auto-add the uriBase default;
+			// we have no clients in OrganizationApplication so we do not need any variables.
+			Variables:      []charon.Variable{},
+			ClientsPublic:  []charon.ApplicationTemplateClientPublic{},
+			ClientsBackend: []charon.ApplicationTemplateClientBackend{},
+			ClientsService: []charon.ApplicationTemplateClientService{},
+		},
+		Admins: []charon.IdentityRef{},
+	}
+	errE := service.TestingCreateApplicationTemplate(ctx, appTemplate)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	makeOrgApp := func(active bool) charon.OrganizationApplication {
+		return charon.OrganizationApplication{
+			OrganizationApplicationPublic: charon.OrganizationApplicationPublic{
+				Active:              active,
+				ApplicationTemplate: appTemplate.ApplicationTemplatePublic,
+				Values:              []charon.Value{},
+			},
+			ClientsPublic:  []charon.OrganizationApplicationClientPublic{},
+			ClientsBackend: []charon.OrganizationApplicationClientBackend{},
+			ClientsService: []charon.OrganizationApplicationClientService{},
+		}
+	}
+
+	t.Run("nil roles map normalized to empty", func(t *testing.T) {
+		t.Parallel()
+		org := &charon.Organization{
+			OrganizationPublic: charon.OrganizationPublic{Name: "Nil Roles Org"},
+			Admins:             []charon.IdentityRef{},
+			Applications:       []charon.OrganizationApplication{makeOrgApp(true)},
+			Roles:              nil,
+		}
+		errE := service.TestingCreateOrganization(ctx, org)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		assert.NotNil(t, org.Roles)
+		assert.Empty(t, org.Roles)
+	})
+
+	t.Run("valid role assigned to identity", func(t *testing.T) {
+		t.Parallel()
+		targetID := identifier.New()
+		org := &charon.Organization{
+			OrganizationPublic: charon.OrganizationPublic{Name: "Valid Role Org"},
+			Admins:             []charon.IdentityRef{},
+			Applications:       []charon.OrganizationApplication{makeOrgApp(true)},
+			Roles: map[identifier.Identifier][]string{
+				targetID: {"admin"},
+			},
+		}
+		errE := service.TestingCreateOrganization(ctx, org)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		assert.Equal(t, []string{"admin"}, org.Roles[targetID])
+	})
+
+	t.Run("unknown role rejected on add", func(t *testing.T) {
+		t.Parallel()
+		targetID := identifier.New()
+		org := &charon.Organization{
+			OrganizationPublic: charon.OrganizationPublic{Name: "Unknown Role Org"},
+			Admins:             []charon.IdentityRef{},
+			Applications:       []charon.OrganizationApplication{makeOrgApp(true)},
+			Roles: map[identifier.Identifier][]string{
+				targetID: {"nonexistent"},
+			},
+		}
+		errE := service.TestingCreateOrganization(ctx, org)
+		require.Error(t, errE)
+		assert.ErrorIs(t, errE, charon.ErrOrganizationValidationFailed)
+		assert.EqualError(t, errors.Cause(errE), "unknown roles")
+	})
+
+	t.Run("duplicate role keys deduplicated", func(t *testing.T) {
+		t.Parallel()
+		targetID := identifier.New()
+		org := &charon.Organization{
+			OrganizationPublic: charon.OrganizationPublic{Name: "Dup Roles Org"},
+			Admins:             []charon.IdentityRef{},
+			Applications:       []charon.OrganizationApplication{makeOrgApp(true)},
+			Roles: map[identifier.Identifier][]string{
+				targetID: {"admin", "viewer", "admin"},
+			},
+		}
+		errE := service.TestingCreateOrganization(ctx, org)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		assert.ElementsMatch(t, []string{"admin", "viewer"}, org.Roles[targetID])
+		assert.Len(t, org.Roles[targetID], 2)
+	})
+
+	t.Run("role from inactive app rejected on add", func(t *testing.T) {
+		t.Parallel()
+		targetID := identifier.New()
+		org := &charon.Organization{
+			OrganizationPublic: charon.OrganizationPublic{Name: "Inactive App Org"},
+			Admins:             []charon.IdentityRef{},
+			Applications:       []charon.OrganizationApplication{makeOrgApp(false)},
+			Roles: map[identifier.Identifier][]string{
+				targetID: {"admin"},
+			},
+		}
+		errE := service.TestingCreateOrganization(ctx, org)
+		require.Error(t, errE)
+		assert.ErrorIs(t, errE, charon.ErrOrganizationValidationFailed)
+		assert.EqualError(t, errors.Cause(errE), "unknown roles")
+	})
+
+	t.Run("existing role tolerated when app deactivated", func(t *testing.T) {
+		t.Parallel()
+		targetID := identifier.New()
+		org := &charon.Organization{
+			OrganizationPublic: charon.OrganizationPublic{Name: "Escape Hatch Org"},
+			Admins:             []charon.IdentityRef{},
+			Applications:       []charon.OrganizationApplication{makeOrgApp(true)},
+			Roles: map[identifier.Identifier][]string{
+				targetID: {"admin"},
+			},
+		}
+		errE := service.TestingCreateOrganization(ctx, org)
+		require.NoError(t, errE, "% -+#.1v", errE)
+
+		// Deactivate the app while keeping the role assignment.
+		// The role is no longer valid (not in any active app), but it is in existing.Roles,
+		// so it should be tolerated.
+		org.Applications[0].Active = false
+		errE = service.TestingUpdateOrganization(ctx, org)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		assert.Equal(t, []string{"admin"}, org.Roles[targetID])
+	})
 }
