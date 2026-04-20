@@ -358,7 +358,7 @@
     "OrganizationRoles": {
       "rolesInOrganization": "Uporabniške vloge v organizaciji",
       "rolesUpdated": "@:views.ApplicationTemplateGet.rolesUpdated",
-      "noRoles": "Uporabniških vlog ni. Dodajte aplikacijo z uporabniškimi vlogami v organizacijo.",
+      "noRoles": "Uporabniških vlog ni. Dodajte aplikacijo z uporabniškimi vlogami v to organizacijo.",
       "availableRoles": "Omogočene uporabniške vloge za uporabnika izmed vlog, ki so na voljo v organizaciji:"
     },
     "OrganizationBlockUser": {
