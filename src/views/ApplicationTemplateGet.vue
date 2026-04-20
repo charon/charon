@@ -24,7 +24,7 @@ import TextArea from "@/components/TextArea.vue"
 import siteContext from "@/context"
 import Footer from "@/partials/Footer.vue"
 import NavBar from "@/partials/NavBar.vue"
-import WithIdentityPublicDocument from "@/partials/WithIdentityPublicDocument.vue"
+import WithOrganizationIdentityDocument from "@/partials/WithOrganizationIdentityDocument.vue"
 import { useProgress } from "@/progress"
 import { clone, equals } from "@/utils"
 
@@ -1355,7 +1355,7 @@ async function onAddAdmin() {
                 <li v-for="(admin, i) in admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
-                    <WithIdentityPublicDocument
+                    <WithOrganizationIdentityDocument
                       v-if="applicationTemplate?.admins?.find((a) => a.id === admin.id)"
                       :item="admin"
                       :organization-id="siteContext.organizationId"
@@ -1363,7 +1363,7 @@ async function onAddAdmin() {
                       <div class="flex flex-col items-start">
                         <Button type="button" @click.prevent="admins.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                       </div>
-                    </WithIdentityPublicDocument>
+                    </WithOrganizationIdentityDocument>
                     <div v-else class="flex flex-row gap-4">
                       <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="min-w-0 flex-auto grow" :progress="progress" required />
                       <Button type="button" @click.prevent="admins.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>

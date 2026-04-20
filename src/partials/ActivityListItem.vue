@@ -6,9 +6,9 @@ import type {
   ActivityChangeType,
   ActivityRef,
   ApplicationTemplate,
-  IdentityPublic,
   Organization,
   OrganizationApplicationPublic,
+  OrganizationIdentity,
   OrganizationRef,
 } from "@/types"
 
@@ -208,7 +208,7 @@ function transformActivity(activity: DeepReadonly<Activity>): DeepReadonly<Activ
 }
 
 const WithActivityDocument = WithDocument<Activity>
-const WithIdentityPublicDocument = WithDocument<IdentityPublic>
+const WithOrganizationIdentityDocument = WithDocument<OrganizationIdentity>
 const WithOrganizationDocument = WithDocument<Organization>
 const WithApplicationTemplateDocument = WithDocument<ApplicationTemplate>
 const WithOrganizationApplicationDocument = WithDocument<OrganizationApplicationPublic>
@@ -255,7 +255,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                   <template #links>
                     <template v-for="(organizationIdentity, i) in doc.identities" :key="`${organizationIdentity.organization.id}/${organizationIdentity.identity.id}`">
                       <template v-if="i > 0">, </template>
-                      <WithIdentityPublicDocument
+                      <WithOrganizationIdentityDocument
                         :params="{ id: organizationIdentity.organization.id, identityId: organizationIdentity.identity.id }"
                         name="OrganizationIdentity"
                       >
@@ -270,7 +270,7 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
                         <template #error="{ url: identityErrorUrl }">
                           <span :data-url="identityErrorUrl" class="text-error-600 italic">{{ t("common.data.loadingDataFailed") }}</span>
                         </template>
-                      </WithIdentityPublicDocument>
+                      </WithOrganizationIdentityDocument>
                     </template>
                   </template>
                 </i18n-t>

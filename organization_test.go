@@ -661,9 +661,9 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 
 // TestUpdateOrganizationActivityIdentityScoping verifies that when updateOrganization writes
 // an activity record, identities derived from admin changes are wrapped with the Charon organization
-// (because Admin IdentityRefs are Charon organization-scoped IDs), while identities derived from
-// role changes are wrapped with the organization being updated (because role map keys are scoped
-// to that organization).
+// (because Admin IdentityRefs are database ID which are also Charon organization-scoped IDs),
+// while identities derived from role changes are wrapped with the organization being updated
+// (because role map keys are organization-scoped identity IDs in that organization).
 func TestUpdateOrganizationActivityIdentityScoping(t *testing.T) {
 	t.Parallel()
 
@@ -715,7 +715,8 @@ func TestUpdateOrganizationActivityIdentityScoping(t *testing.T) {
 	assert.Contains(t, updateActivity.Changes, charon.ActivityChangePermissionsAdded)
 
 	// The added-admin identity must appear in the activity's identities wrapped with Charon
-	// (not with the updated organization), because Admin IdentityRefs are Charon organization-scoped IDs.
+	// (not with the updated organization), because Admin IdentityRefs are database IDs
+	// which are also Charon organization-scoped IDs.
 	charonID := service.TestingCharonOrganizationID()
 	require.Len(t, updateActivity.Identities, 1)
 	assert.Equal(t, charonID, updateActivity.Identities[0].Organization.ID)
@@ -725,10 +726,9 @@ func TestUpdateOrganizationActivityIdentityScoping(t *testing.T) {
 
 // TestOrganizationValidateRoles covers role-related normalization and validation rules
 // in Organization.validate that aren't reachable as a pure unit test (they need a real
-// Service for hasIdentities and OrganizationApplication.Validate). The ID space of
-// Roles map keys is the organization-scoped ID space of this organization, but the
-// validator does not require those IDs to actually exist as IdentityOrganizations,
-// so we use synthetic IDs.
+// Service for hasIdentities and OrganizationApplication.Validate). Roles map keys are
+// organization-scoped identity IDs in this organization, but the validator does not
+// require those IDs to actually exist as IdentityOrganizations, so we use synthetic IDs.
 func TestOrganizationValidateRoles(t *testing.T) {
 	t.Parallel()
 

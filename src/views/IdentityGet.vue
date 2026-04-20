@@ -26,7 +26,7 @@ import Footer from "@/partials/Footer.vue"
 import IdentityOrganization from "@/partials/IdentityOrganization.vue"
 import NavBar from "@/partials/NavBar.vue"
 import OrganizationPublic from "@/partials/OrganizationPublic.vue"
-import WithIdentityPublicDocument from "@/partials/WithIdentityPublicDocument.vue"
+import WithOrganizationIdentityDocument from "@/partials/WithOrganizationIdentityDocument.vue"
 import { useProgress } from "@/progress"
 import { clone, equals } from "@/utils"
 
@@ -551,7 +551,7 @@ function getIdentityRoles(identityOrganization: IdentityOrganizationType): strin
               <li v-for="(user, i) in users" :key="i" class="grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
                 <div>{{ i + 1 }}.</div>
                 <div class="flex flex-col">
-                  <WithIdentityPublicDocument
+                  <WithOrganizationIdentityDocument
                     v-if="identity?.users?.find((a) => a.id === user.id)"
                     :item="user"
                     :organization-id="siteContext.organizationId"
@@ -560,7 +560,7 @@ function getIdentityRoles(identityOrganization: IdentityOrganizationType): strin
                     <div v-if="metadata.can_update" class="flex flex-col items-start">
                       <Button type="button" @click.prevent="users.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                     </div>
-                  </WithIdentityPublicDocument>
+                  </WithOrganizationIdentityDocument>
                   <div v-else-if="metadata.can_update" class="flex flex-row gap-4">
                     <InputText :id="`user-${i}-id`" v-model="users[i].id" class="min-w-0 flex-auto grow" :progress="progress" required />
                     <Button type="button" @click.prevent="users.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
@@ -585,7 +585,7 @@ function getIdentityRoles(identityOrganization: IdentityOrganizationType): strin
               <li v-for="(admin, i) in admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
                 <div>{{ i + 1 }}.</div>
                 <div class="flex flex-col">
-                  <WithIdentityPublicDocument
+                  <WithOrganizationIdentityDocument
                     v-if="identity?.admins?.find((a) => a.id === admin.id)"
                     :item="admin"
                     :organization-id="siteContext.organizationId"
@@ -594,7 +594,7 @@ function getIdentityRoles(identityOrganization: IdentityOrganizationType): strin
                     <div v-if="metadata.can_update" class="flex flex-col items-start">
                       <Button type="button" @click.prevent="admins.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>
                     </div>
-                  </WithIdentityPublicDocument>
+                  </WithOrganizationIdentityDocument>
                   <div v-else-if="metadata.can_update" class="flex flex-row gap-4">
                     <InputText :id="`admin-${i}-id`" v-model="admins[i].id" class="min-w-0 flex-auto grow" :progress="progress" required />
                     <Button type="button" @click.prevent="admins.splice(i, 1)">{{ t("common.buttons.remove") }}</Button>

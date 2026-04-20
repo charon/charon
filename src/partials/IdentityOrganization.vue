@@ -10,9 +10,9 @@ import { useI18n } from "vue-i18n"
 import WithDocument from "@/components/WithDocument.vue"
 import { getHomepage } from "@/utils"
 
-const props = defineProps<{
+defineProps<{
   identityOrganization: IdentityOrganization | DeepReadonly<IdentityOrganization>
-  roles?: readonly string[]
+  roles: readonly string[]
 }>()
 
 const { t } = useI18n({ useScope: "global" })
@@ -63,8 +63,8 @@ defineExpose({
         <strong v-else>{{ identityOrganization.active ? t("common.labels.active") : t("common.labels.disabled") }}</strong>
       </div>
       <div>{{ t("partials.IdentityOrganization.roles") }}</div>
-      <div v-if="props.roles && props.roles.length">
-        {{ getSortedRoles(props.roles).join(", ") }}
+      <div v-if="roles.length">
+        {{ getSortedRoles(roles).join(", ") }}
       </div>
       <div v-else class="italic">{{ t("partials.IdentityOrganization.noRoles") }}</div>
       <div>{{ t("partials.IdentityOrganization.apps") }}</div>

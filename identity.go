@@ -40,7 +40,7 @@ type IdentityOrganization struct {
 }
 
 // Ref returns a reference to this identity within its organization
-// (using the organization-scoped ID).
+// (using the organization-scoped identity ID).
 func (i *IdentityOrganization) Ref() IdentityRef {
 	return IdentityRef{ID: *i.ID}
 }
@@ -64,7 +64,7 @@ func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityO
 		}
 		co := service.charonOrganization()
 		if co.ID == i.Organization.ID {
-			// A special case for Charon organization: organization-scoped identity ID is the same as the identity ID.
+			// A special case for Charon organization: organization-scoped identity ID is the same as the database ID.
 			// Permissions generally use organization-scoped IDs and operate only with identities which are added to
 			// the organization, but for Charon organization we want permissions to operate also on identities which
 			// have not been added to the Charon organization (so that users can give permissions over identities to
@@ -72,7 +72,7 @@ func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityO
 			// to address this would be to always add all identities to the Charon organization so that they all get
 			// assigned its organization-scoped IDs, but that would then mean that we would also have to prevent removing
 			// Charon organization and also users will not know which identities they have previously used with the
-			// Charon organization (as it would look like they used all of them). Instead, we use the identity ID as
+			// Charon organization (as it would look like they used all of them). Instead, we use the database ID as
 			// organization-scoped ID. This allows us to have an ID for use in Charon organization identity permissions
 			// even if the identity has not been added to the Charon organization. This also enables our approach of
 			// recording that identity's creator is an admin by adding the identity itself as an admin for itself.
@@ -226,10 +226,10 @@ type Identity struct {
 	Description string `json:"description,omitempty"`
 
 	// Users lists identities that have user access to this identity.
-	// Charon organization-scoped IDs.
+	// Database identity IDs.
 	Users []IdentityRef `json:"users,omitempty"`
 	// Admins lists identities that have admin access to this identity.
-	// Charon organization-scoped IDs.
+	// Database identity IDs.
 	Admins []IdentityRef `json:"admins"`
 
 	Organizations []IdentityOrganization `json:"organizations"`
@@ -315,8 +315,8 @@ func (i *Identity) OrganizationIdentityRef(organization OrganizationRef) *Organi
 
 // IdentityRef is a reference to an identity.
 //
-// It can be organization-scoped ID or not, depending on the context.
-// Inside OrganizationIdentityRef it is always organization-scoped.
+// The ID can be a database ID or an organization-scoped identity ID, depending on the context.
+// Inside OrganizationIdentityRef it is always an organization-scoped identity ID.
 type IdentityRef struct {
 	ID identifier.Identifier `json:"id"`
 }

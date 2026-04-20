@@ -394,9 +394,17 @@ export type OrganizationCreate = {
   name: string
 }
 
-export type IdentityForAdmin = IdentityPublic & {
-  organization?: IdentityOrganization
-  roles?: string[]
+// OrganizationIdentity is the shape returned by the OrganizationIdentity API to any
+// authorized caller. Roles for each user are public, so they are always present (an
+// empty array when the user has no role assignments).
+export type OrganizationIdentity = IdentityPublic & {
+  roles: string[]
+}
+
+// OrganizationIdentityForAdmin extends OrganizationIdentity with fields exposed only to organization
+// admins. The organization field is guaranteed when the API caller is an admin.
+export type OrganizationIdentityForAdmin = OrganizationIdentity & {
+  organization: IdentityOrganization
 }
 
 export type Identity = IdentityCreate &

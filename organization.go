@@ -557,7 +557,7 @@ type Organization struct {
 	OrganizationPublic
 
 	// Admins lists identities that have admin access to this organization.
-	// Charon organization-scoped IDs.
+	// Database identity IDs.
 	Admins []IdentityRef `json:"admins"`
 
 	Applications []OrganizationApplication `json:"applications"`
@@ -770,7 +770,7 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 
 // Changes compares the current Organization with an existing one and returns:
 //   - the types of changes that occurred,
-//   - admin identities that were added or removed (Charon organization-scoped IDs),
+//   - admin identities that were added or removed (database IDs which are also Charon organization-scoped IDs),
 //   - identities whose role assignments changed (organization-scoped IDs in this organization),
 //   - organization applications that were added, removed or changed.
 func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []IdentityRef, []IdentityRef, []OrganizationApplicationRef) {
@@ -1048,7 +1048,8 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
 	s.setOrganization(*organization.ID, data)
 
-	// Admin IdentityRefs are Charon organization-scoped IDs, so we wrap them with the Charon organization.
+	// Admin IdentityRefs are database IDs which are also Charon organization-scoped IDs.
+	// We wrap them with the Charon organization.
 	scopedIdentities := []OrganizationIdentityRef{}
 	for _, identity := range adminsChanged {
 		scopedIdentities = append(scopedIdentities, OrganizationIdentityRef{
@@ -1056,7 +1057,8 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 			Identity:     identity,
 		})
 	}
-	// Role-changed IdentityRefs are organization-scoped IDs in this organization, so we wrap them with it.
+	// Role-changed IdentityRefs are organization-scoped identity IDs in this organization,
+	// so we wrap them with it.
 	for _, identity := range rolesIdentitiesChanged {
 		scopedIdentities = append(scopedIdentities, OrganizationIdentityRef{
 			Organization: organization.Ref(),
@@ -1200,7 +1202,7 @@ type OrganizationIdentity struct {
 	// Roles are roles that the user has for the organization. Roles for each user are
 	// public but we do not want to allow users to be enumerated. This is why Roles map
 	// in Organization struct is not public, but Roles here are.
-	Roles []string `json:"roles,omitempty"`
+	Roles []string `json:"roles"`
 }
 
 func (s *Service) getIdentityFromOrganization(_ context.Context, organizationID, identityID identifier.Identifier) (*Identity, *IdentityOrganization, errors.E) {
@@ -1251,9 +1253,14 @@ func (s *Service) OrganizationIdentityGetAPI(w http.ResponseWriter, req *http.Re
 	ctx := req.Context()
 	co := s.charonOrganization()
 
-	organizationID, errE := identifier.MaybeString(params["id"])
-	if errE != nil {
-		s.NotFoundWithError(w, req, errors.WrapWith(errE, ErrOrganizationNotFound))
+	// TODO: Can we move roles information into identity object so that we do not need to do additional fetch here?
+	//       See: https://gitlab.com/charon/charon/-/merge_requests/42#note_3264395707
+	organization, errE := s.getOrganizationFromID(ctx, params["id"])
+	if errors.Is(errE, ErrOrganizationNotFound) {
+		s.NotFoundWithError(w, req, errE)
+		return
+	} else if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
 
@@ -1267,14 +1274,15 @@ func (s *Service) OrganizationIdentityGetAPI(w http.ResponseWriter, req *http.Re
 	hasOrganizationAdminAccess := false
 
 	// We do not use RequireAuthenticated here, because we want to use a (possibly) non-Charon organization ID.
-	currentIdentityID, accountID, _, errE := s.getIdentityFromRequest(w, req, organizationID.String())
+	currentIdentityID, accountID, _, errE := s.getIdentityFromRequest(w, req, organization.ID.String())
 	if errors.Is(errE, ErrIdentityNotPresent) {
 		// User is not authenticated for this organization.
 		// Maybe they are authenticated using Charon organization and are an user with access
 		// to the identity or they are an admin of the organization.
 
-		// Maybe we already check for Charon organization above.
-		if co.ID == organizationID {
+		// Maybe we already checked for Charon organization in getIdentityFromRequest call above.
+		// Then it is no point in checking again.
+		if co.ID == *organization.ID {
 			s.WithError(ctx, errE)
 			waf.Error(w, req, http.StatusUnauthorized)
 			return
@@ -1292,15 +1300,6 @@ func (s *Service) OrganizationIdentityGetAPI(w http.ResponseWriter, req *http.Re
 			return
 		}
 
-		organization, errE := s.getOrganizationFromID(ctx, params["id"])
-		if errors.Is(errE, ErrOrganizationNotFound) {
-			s.NotFoundWithError(w, req, errE)
-			return
-		} else if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-
 		hasOrganizationAdminAccess = organization.HasAdminAccess(IdentityRef{ID: currentIdentityID})
 	} else if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -1310,8 +1309,8 @@ func (s *Service) OrganizationIdentityGetAPI(w http.ResponseWriter, req *http.Re
 	var identity *Identity
 	var idOrg *IdentityOrganization
 
-	if co.ID == organizationID {
-		// A special case for Charon organization: organization-scoped identity ID is the same as the identity ID.
+	if co.ID == *organization.ID {
+		// A special case for Charon organization: organization-scoped identity ID is the same as the database ID.
 		// We need a special case here because we want to return even identities which have not been added to the
 		// Charon organization (so that users can give permissions over identities to other users while those
 		// identities have never been used with the Charon organization itself).
@@ -1335,24 +1334,30 @@ func (s *Service) OrganizationIdentityGetAPI(w http.ResponseWriter, req *http.Re
 			return
 		}
 
-		// This can potentially return nil if the identity is not in the Charon organization,
-		// but we want to support this case and this is why we have this special case in
-		// the first place (otherwise we could just always use getIdentityFromOrganization).
-		idOrg = identity.GetOrganization(&organizationID)
+		// GetOrganization can potentially return nil if the identity is not in the Charon
+		// organization, but we want to support this case and this is why we have this special
+		// case in the first place (otherwise we could just always use getIdentityFromOrganization).
+		idOrg = identity.GetOrganization(organization.ID)
+		if idOrg == nil {
+			// The identity has not joined the Charon organization, but we still want to support
+			// this lookup. We synthesize an IdentityOrganization that mirrors what
+			// IdentityOrganization.Validate would have produced for Charon organization: the
+			// organization-scoped identity ID is the database ID itself, and we treat the
+			// synthetic membership as active so it does not trip the "disabled" check below.
+			idOrg = &IdentityOrganization{
+				ID:           identity.ID,
+				Active:       true,
+				Organization: co.Ref(),
+				Applications: []OrganizationApplicationApplicationRef{},
+			}
+		}
 
 		// Handle the case when user is an admin of the Charon organization and is authenticated for it, too.
 		if hasOrganizationAccessToken {
-			organization, errE := s.getOrganization(ctx, organizationID)
-			if errE != nil {
-				// Charon organization should always be found.
-				s.InternalServerErrorWithError(w, req, errE)
-				return
-			}
-
 			hasOrganizationAdminAccess = organization.HasAdminAccess(IdentityRef{ID: currentIdentityID})
 		}
 	} else {
-		identity, idOrg, errE = s.getIdentityFromOrganization(ctx, organizationID, identityID)
+		identity, idOrg, errE = s.getIdentityFromOrganization(ctx, *organization.ID, identityID)
 		if errors.Is(errE, ErrIdentityNotFound) {
 			s.NotFoundWithError(w, req, errE)
 			return
@@ -1389,7 +1394,7 @@ func (s *Service) OrganizationIdentityGetAPI(w http.ResponseWriter, req *http.Re
 		// We allow access to users with access to the identity.
 	} else if hasOrganizationAccessToken {
 		// We allow access to users from the same organization, but only if they have not been disabled.
-		if idOrg != nil && !idOrg.Active {
+		if !idOrg.Active {
 			s.NotFound(w, req)
 			return
 		}
@@ -1398,30 +1403,21 @@ func (s *Service) OrganizationIdentityGetAPI(w http.ResponseWriter, req *http.Re
 		return
 	}
 
+	roles := organization.Roles[*idOrg.ID]
+	if roles == nil {
+		roles = []string{}
+	}
+
 	orgIdentity := OrganizationIdentity{
 		IdentityPublic: identity.IdentityPublic,
 		Organization:   nil,
-		Roles:          nil,
+		// Roles of an individual identity is available to all.
+		Roles: roles,
 	}
 
-	if hasOrganizationAdminAccess && idOrg != nil {
+	if hasOrganizationAdminAccess {
+		// Organization information is available only to organization admins.
 		orgIdentity.Organization = idOrg
-	}
-
-	if idOrg != nil {
-		organization, errE := s.getOrganizationFromID(ctx, params["id"])
-		if errors.Is(errE, ErrOrganizationNotFound) {
-			s.NotFoundWithError(w, req, errE)
-			return
-		} else if errE != nil {
-			s.InternalServerErrorWithError(w, req, errE)
-			return
-		}
-		if organization.Roles != nil {
-			if roles, exists := organization.Roles[*idOrg.ID]; exists {
-				orgIdentity.Roles = roles
-			}
-		}
 	}
 
 	s.WriteJSON(w, req, orgIdentity, map[string]interface{}{

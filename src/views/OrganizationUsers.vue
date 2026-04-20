@@ -2,7 +2,7 @@
 import type { DeepReadonly } from "vue"
 import type { ComponentExposed } from "vue-component-type-helpers"
 
-import type { Identities, IdentityForAdmin } from "@/types"
+import type { Identities, OrganizationIdentityForAdmin } from "@/types"
 
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useI18n } from "vue-i18n"
@@ -94,9 +94,9 @@ function updateOrganizationBlockedStatuses(userId: string, component: IdentityOr
   }
 }
 
-function identityLabels(identity: IdentityForAdmin | DeepReadonly<IdentityForAdmin>): string[] {
+function identityLabels(identity: OrganizationIdentityForAdmin | DeepReadonly<OrganizationIdentityForAdmin>): string[] {
   const labels: string[] = []
-  if (!identity.organization?.active) {
+  if (!identity.organization.active) {
     labels.push(t("common.labels.disabled"))
   }
   const organizationBlockedStatus = organizationBlockedStatusComponents.value.get(identity.id)?.organizationBlockedStatus
@@ -106,7 +106,7 @@ function identityLabels(identity: IdentityForAdmin | DeepReadonly<IdentityForAdm
   return labels
 }
 
-const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
+const WithOrganizationIdentityForAdminDocument = WithDocument<OrganizationIdentityForAdmin>
 </script>
 
 <template>
@@ -128,11 +128,10 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
       <template v-else>
         <div v-if="!users.length" class="w-full rounded-sm border border-gray-200 bg-white p-4 italic shadow-sm">{{ t("views.OrganizationUsers.noUsers") }}</div>
         <div v-for="user in users" :key="user.id" class="organizationusers-div-userentry w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
-          <WithIdentityForAdminDocument :params="{ id, identityId: user.id }" name="OrganizationIdentity">
+          <WithOrganizationIdentityForAdminDocument :params="{ id, identityId: user.id }" name="OrganizationIdentity">
             <template #default="{ doc, metadata, url }">
               <IdentityPublic :identity="doc" :url="url" :is-current="metadata.is_current" :can-update="metadata.can_update" :labels="identityLabels(doc)" />
               <IdentityOrganization
-                v-if="doc.organization"
                 :ref="(el) => updateOrganizationBlockedStatuses(user.id, el as IdentityOrganizationComponent | null)"
                 :identity-organization="doc.organization"
                 :roles="doc.roles"
@@ -153,7 +152,7 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
                 </template>
               </IdentityOrganization>
             </template>
-          </WithIdentityForAdminDocument>
+          </WithOrganizationIdentityForAdminDocument>
         </div>
       </template>
     </div>

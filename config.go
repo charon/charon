@@ -361,7 +361,7 @@ type Service struct {
 	// Map from organization ID to map of organization-scoped identity IDs which have been blocked in the organization, to corresponding notes.
 	identitiesBlocked map[identifier.Identifier]map[identifier.Identifier]blockedNotes
 	// Map from organization ID to map of account IDs which have been blocked in the organization,
-	// to a map between identity ID which was blocked with the account and corresponding notes.
+	// to a map between organization-scoped identity ID which was blocked with the account and corresponding notes.
 	accountsBlocked map[identifier.Identifier]map[identifier.Identifier]map[identifier.Identifier]blockedNotes
 	// We use only one mutex for both identitiesBlocked and accountsBlocked as they are always used together.
 	identitiesBlockedMu sync.RWMutex

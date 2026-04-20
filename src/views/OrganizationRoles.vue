@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { IdentityForAdmin, Metadata, Organization, Role } from "@/types"
+import type { Metadata, Organization, OrganizationIdentityForAdmin, Role } from "@/types"
 
 import { sortBy } from "lodash-es"
 import { onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
@@ -28,7 +28,7 @@ const abortController = new AbortController()
 const dataLoading = ref(true)
 const dataLoadingError = ref("")
 
-const identity = ref<IdentityForAdmin | null>(null)
+const identity = ref<OrganizationIdentityForAdmin | null>(null)
 const metadata = ref<Metadata>({})
 const organization = ref<Organization | null>(null)
 const organizationMetadata = ref<Metadata>({})
@@ -84,7 +84,7 @@ onBeforeMount(async () => {
       },
     }).href
 
-    const response = await getURL<IdentityForAdmin>(identityURL, null, abortController.signal, progress)
+    const response = await getURL<OrganizationIdentityForAdmin>(identityURL, null, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }
@@ -92,9 +92,7 @@ onBeforeMount(async () => {
     identity.value = response.doc
     metadata.value = response.metadata
 
-    if (identity.value.roles) {
-      selectedRoleKeys.value = [...identity.value.roles]
-    }
+    selectedRoleKeys.value = [...identity.value.roles]
 
     await loadOrganization()
   } catch (error) {

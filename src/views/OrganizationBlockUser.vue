@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BlockedIdentityType, IdentityForAdmin, OrganizationBlockRequest } from "@/types"
+import type { BlockedIdentityType, OrganizationBlockRequest, OrganizationIdentityForAdmin } from "@/types"
 
 import { onBeforeUnmount, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
@@ -84,7 +84,7 @@ async function onSubmit() {
   }
 }
 
-const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
+const WithOrganizationIdentityForAdminDocument = WithDocument<OrganizationIdentityForAdmin>
 </script>
 
 <template>
@@ -102,11 +102,11 @@ const WithIdentityForAdminDocument = WithDocument<IdentityForAdmin>
         </div>
       </div>
       <div class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
-        <WithIdentityForAdminDocument :params="{ id, identityId }" name="OrganizationIdentity">
+        <WithOrganizationIdentityForAdminDocument :params="{ id, identityId }" name="OrganizationIdentity">
           <template #default="{ doc, metadata, url }">
             <IdentityPublic :identity="doc" :url="url" :is-current="metadata.is_current" :can-update="metadata.can_update" />
           </template>
-        </WithIdentityForAdminDocument>
+        </WithOrganizationIdentityForAdminDocument>
       </div>
       <div v-if="success" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <div class="text-success-600">{{ t("views.OrganizationBlockUser.blockingSuccess") }}</div>
