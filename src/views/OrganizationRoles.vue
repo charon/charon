@@ -117,11 +117,7 @@ function computeAvailableRoles(organization: Organization): Role[] {
 
   const assignedRoleKeys = organization.roles?.[props.identityId] ?? []
 
-  const resultMap = new Map<string, Role>()
-
-  activeRoles.forEach((role) => {
-    resultMap.set(role.key, role)
-  })
+  const resultMap = new Map(activeRoles.map((role) => [role.key, role]))
 
   const orphanedRoleKeys = assignedRoleKeys.filter((key) => !activeRoleKeys.has(key))
   if (orphanedRoleKeys.length > 0) {
