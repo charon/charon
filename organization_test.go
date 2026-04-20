@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/alexedwards/argon2id"
+	"github.com/mohae/deepcopy"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/tozd/go/errors"
@@ -763,10 +764,11 @@ func TestOrganizationValidateRoles(t *testing.T) {
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	makeOrgApp := func(active bool) charon.OrganizationApplication {
+		appTmpl := deepcopy.Copy(appTemplate.ApplicationTemplatePublic).(charon.ApplicationTemplatePublic) //nolint:forcetypeassert,errcheck
 		return charon.OrganizationApplication{
 			OrganizationApplicationPublic: charon.OrganizationApplicationPublic{
 				Active:              active,
-				ApplicationTemplate: appTemplate.ApplicationTemplatePublic,
+				ApplicationTemplate: appTmpl,
 				Values:              []charon.Value{},
 			},
 			ClientsPublic:  []charon.OrganizationApplicationClientPublic{},
