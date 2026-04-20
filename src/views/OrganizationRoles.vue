@@ -193,6 +193,8 @@ async function onSubmit() {
       return
     }
 
+    await loadOrganization()
+
     success.value = true
   } catch (error) {
     if (abortController.signal.aborted) {
@@ -202,7 +204,6 @@ async function onSubmit() {
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     unexpectedError.value = `${error}`
   } finally {
-    await loadOrganization()
     progress.value -= 1
   }
 }
