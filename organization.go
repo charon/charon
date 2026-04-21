@@ -655,7 +655,7 @@ func (o *Organization) HasAdminAccess(identities ...IdentityRef) bool {
 // Validate validates the Organization struct.
 //
 // Validate requires ctx with identityIDContextKey set.
-func (o *Organization) Validate(ctx context.Context, existing *Organization, service *Service, allAvailableProviders []Provider) errors.E {
+func (o *Organization) Validate(ctx context.Context, existing *Organization, service *Service) errors.E {
 	// Current user must be among admins if it is changing the organization.
 	// We check this elsewhere, here we make sure the user is stored as an admin.
 	currentIdentity := IdentityRef{ID: mustGetIdentityID(ctx)}
@@ -663,15 +663,11 @@ func (o *Organization) Validate(ctx context.Context, existing *Organization, ser
 		o.Admins = append(o.Admins, currentIdentity)
 	}
 
-	if allAvailableProviders == nil {
-		allAvailableProviders = service.getAllAvailableProviders(ctx)
-	}
-
-	return o.validate(ctx, existing, service, allAvailableProviders)
+	return o.validate(ctx, existing, service)
 }
 
 // validate is a version of Validate which allows empty Admins.
-func (o *Organization) validate(ctx context.Context, existing *Organization, service *Service, allAvailableProviders []Provider) errors.E {
+func (o *Organization) validate(ctx context.Context, existing *Organization, service *Service) errors.E {
 	var e *OrganizationPublic
 	if existing == nil {
 		e = nil
@@ -784,8 +780,9 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 		}
 	}
 
+	availableProviders := service.getAvailableProviders()
 	for _, provider := range o.AllowedProviders {
-		if !slices.Contains(allAvailableProviders, provider) {
+		if !slices.Contains(availableProviders, provider) {
 			errE := errors.New("unknown provider")
 			errors.Details(errE)["provider"] = provider
 			return errE
@@ -1025,10 +1022,9 @@ func (s *Service) setAccountsBlock(
 func (s *Service) createOrganization(ctx context.Context, organization *Organization) errors.E {
 	co := s.charonOrganization()
 
-	allowedProviders := s.getAllAvailableProviders(ctx)
-	organization.AllowedProviders = allowedProviders
+	organization.AllowedProviders = s.getAvailableProviders()
 
-	errE := organization.Validate(ctx, nil, s, allowedProviders)
+	errE := organization.Validate(ctx, nil, s)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrOrganizationValidationFailed)
 	}
@@ -1061,7 +1057,7 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 		return errors.WithDetails(ErrOrganizationUnauthorized, "id", organization.ID)
 	}
 
-	errE = organization.Validate(ctx, existingOrganization, s, nil)
+	errE = organization.Validate(ctx, existingOrganization, s)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrOrganizationValidationFailed)
 	}
@@ -1928,13 +1924,10 @@ func (s *Service) OrganizationRoles(w http.ResponseWriter, req *http.Request, _ 
 	}
 }
 
-func (s *Service) getAllAvailableProviders(ctx context.Context) []Provider {
-	providers := []Provider{}
+func (s *Service) getAvailableProviders() []Provider {
+	providers := []Provider{ProviderUsername, ProviderEmail, ProviderPassword, ProviderPasskey}
 
-	providers = append(providers, ProviderUsername, ProviderEmail, ProviderPassword, ProviderPasskey)
-
-	site := waf.MustGetSite[*Site](ctx)
-	for _, p := range site.Providers {
+	for _, p := range s.providers {
 		providers = append(providers, p.Key)
 	}
 

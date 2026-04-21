@@ -37,11 +37,6 @@ func initCharonOrganization(ctx context.Context, config *Config, service *Servic
 
 		refreshTokenLifespan := x.Duration(time.Hour * 24 * 30) //nolint:mnd
 
-		allAllowedProviders := []Provider{ProviderUsername, ProviderEmail, ProviderPassword, ProviderPasskey}
-		for _, p := range service.providers {
-			allAllowedProviders = append(allAllowedProviders, p.Key)
-		}
-
 		organization := Organization{
 			OrganizationPublic: OrganizationPublic{
 				ID:          &charonOrganizationID,
@@ -94,10 +89,10 @@ func initCharonOrganization(ctx context.Context, config *Config, service *Servic
 				},
 			},
 			Roles:            nil,
-			AllowedProviders: allAllowedProviders,
+			AllowedProviders: service.getAvailableProviders(),
 		}
 
-		errE := organization.validate(ctx, &organization, service, allAllowedProviders)
+		errE := organization.validate(ctx, &organization, service)
 		if errE != nil {
 			// Internal error: this should never happen.
 			panic(errE)
