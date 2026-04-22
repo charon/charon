@@ -8,6 +8,9 @@ test.describe.serial("Charon User Roles", () => {
     const rolesOrganizationName = "Roles Test Organization"
     await signInWithPassword(page, rolesUsername, "tester123", true, true)
 
+    // Mask the available applications list to avoid flakiness from UUID-based ordering.
+    const availableApplicationsMask = page.locator("ul:has(.organizationget-button-add)")
+
     // Create application template with role.
     await createApplicationTemplate(page, "Roles Application", "roles")
 
@@ -54,14 +57,14 @@ test.describe.serial("Charon User Roles", () => {
     await expect(page.locator("#organizationget-text-status-0")).toBeVisible()
     // Without waiting, navbar sometimes appears in the middle of the screenshot.
     await page.waitForTimeout(1000)
-    await checkpoint(page, "roles-organization-with-application-pending")
+    await checkpoint(page, "roles-organization-with-application-pending", { mask: [availableApplicationsMask] })
     await updateApplicationButton.click()
 
     // Check for the success message.
     await expect(page.locator("#organizationget-text-applicationsupdated")).toBeVisible()
     // Without waiting, navbar sometimes appears in the middle of the screenshot.
     await page.waitForTimeout(1000)
-    await checkpoint(page, "roles-organization-with-application-activated")
+    await checkpoint(page, "roles-organization-with-application-activated", { mask: [availableApplicationsMask] })
 
     // Add admin identity to the organization.
     const adminIdentityItem = page.locator(`li:has-text("${rolesUsername}"):has(button:has-text("Add"))`)
@@ -85,7 +88,7 @@ test.describe.serial("Charon User Roles", () => {
     await expect(page.locator("#organizationget-text-identitiesupdated")).toBeVisible()
     // Without waiting, navbar sometimes appears in the middle of the screenshot.
     await page.waitForTimeout(1000)
-    await checkpoint(page, "roles-organization-admin-identity-added")
+    await checkpoint(page, "roles-organization-admin-identity-added", { mask: [availableApplicationsMask] })
 
     // Navigate to manage users and assign role to added identity.
     const manageUsersButton = page.locator("#organizationget-button-manageusers")
@@ -126,7 +129,7 @@ test.describe.serial("Charon User Roles", () => {
     await expect(page.locator("#organizationget-text-applicationsupdated")).toBeVisible()
     // Without waiting, navbar sometimes appears in the middle of the screenshot.
     await page.waitForTimeout(1000)
-    await checkpoint(page, "roles-organization-with-application-disabled")
+    await checkpoint(page, "roles-organization-with-application-disabled", { mask: [availableApplicationsMask] })
 
     await expect(manageUsersButton).toBeVisible()
     await manageUsersButton.click()
@@ -161,14 +164,14 @@ test.describe.serial("Charon User Roles", () => {
     await expect(page.locator("#organizationget-text-status-0")).toBeVisible()
     // Without waiting, navbar sometimes appears in the middle of the screenshot.
     await page.waitForTimeout(1000)
-    await checkpoint(page, "roles-organization-application-pending-reenable")
+    await checkpoint(page, "roles-organization-application-pending-reenable", { mask: [availableApplicationsMask] })
     await updateApplicationButton.click()
 
     // Check for the success message.
     await expect(page.locator("#organizationget-text-applicationsupdated")).toBeVisible()
     // Without waiting, navbar sometimes appears in the middle of the screenshot.
     await page.waitForTimeout(1000)
-    await checkpoint(page, "roles-organization-application-reenabled")
+    await checkpoint(page, "roles-organization-application-reenabled", { mask: [availableApplicationsMask] })
 
     await takeActivityScreenshot(page, "roles-activity")
 
@@ -207,14 +210,14 @@ test.describe.serial("Charon User Roles", () => {
     await expect(updateApplicationButton).toBeVisible()
     // Without waiting, navbar sometimes appears in the middle of the screenshot.
     await page.waitForTimeout(1000)
-    await checkpoint(page, "roles-organization-application-pending-remove")
+    await checkpoint(page, "roles-organization-application-pending-remove", { mask: [availableApplicationsMask] })
     await updateApplicationButton.click()
 
     // Check for the success message.
     await expect(page.locator("#organizationget-text-applicationsupdated")).toBeVisible()
     // Without waiting, navbar sometimes appears in the middle of the screenshot.
     await page.waitForTimeout(1000)
-    await checkpoint(page, "roles-organization-application-removed")
+    await checkpoint(page, "roles-organization-application-removed", { mask: [availableApplicationsMask] })
 
     // Navigate to roles: role shows with "(removed app)" annotation, still assigned.
     await expect(manageUsersButton).toBeVisible()
