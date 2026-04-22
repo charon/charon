@@ -240,5 +240,7 @@ test.describe.serial("Charon User Roles", () => {
     // Removed app role disappears.
     await expect(roleCheckbox).not.toBeVisible()
     await checkpoint(page, "organizationroles-removed-roles-gone")
+
+    console.log("Successfully added application template to organization and manipulated user roles.")
   })
 })
