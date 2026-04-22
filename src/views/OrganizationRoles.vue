@@ -254,13 +254,13 @@ async function onSubmit() {
           <IdentityPublic :identity="identity!" :is-current="!!metadata.is_current" :can-update="!!metadata.can_update" />
         </div>
         <div class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
-          <div v-if="!availableRoles.length" class="italic"> {{ t("views.OrganizationRoles.noRoles") }} </div>
           <!--
             We set novalidate because we do not want UA to show hints.
             We show them ourselves when we want them.
           -->
-          <form v-else class="flex flex-col" novalidate @submit.prevent="onSubmit">
-            <fieldset class="mb-4">
+          <form class="flex flex-col" novalidate @submit.prevent="onSubmit">
+            <div v-if="!availableRoles.length" class="mb-4 italic"> {{ t("views.OrganizationRoles.noRoles") }} </div>
+            <fieldset v-else class="mb-4">
               <legend class="mb-1">{{ t("views.OrganizationRoles.availableRoles") }}</legend>
               <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
                 <template v-for="role in availableRoles" :key="role.key">
@@ -277,9 +277,9 @@ async function onSubmit() {
               </div>
             </fieldset>
             <div v-if="unexpectedError" class="mb-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
-            <div v-if="success" class="mb-4 text-success-600">{{ t("views.OrganizationRoles.rolesUpdated") }}</div>
-            <div class="flex flex-row justify-end">
-              <Button type="submit" primary :disabled="!canSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
+            <div v-if="success" id="organizationroles-text-rolesupdated" class="mb-4 text-success-600">{{ t("views.OrganizationRoles.rolesUpdated") }}</div>
+            <div v-if="availableRoles.length" class="flex flex-row justify-end">
+              <Button id="organizationroles-button-update" type="submit" primary :disabled="!canSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
             </div>
           </form>
         </div>

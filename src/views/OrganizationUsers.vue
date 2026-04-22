@@ -127,7 +127,7 @@ const WithOrganizationIdentityForAdminDocument = WithDocument<OrganizationIdenti
       <div v-else-if="dataLoadingError" class="w-full rounded-sm border border-gray-200 bg-white p-4 text-error-600 shadow-sm">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
         <div v-if="!users.length" class="w-full rounded-sm border border-gray-200 bg-white p-4 italic shadow-sm">{{ t("views.OrganizationUsers.noUsers") }}</div>
-        <div v-for="user in users" :key="user.id" class="organizationusers-div-userentry w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
+        <div v-for="(user, i) in users" :key="user.id" class="organizationusers-div-userentry w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
           <WithOrganizationIdentityForAdminDocument :params="{ id, identityId: user.id }" name="OrganizationIdentity">
             <template #default="{ doc, metadata, url }">
               <IdentityPublic :identity="doc" :url="url" :is-current="metadata.is_current" :can-update="metadata.can_update" :labels="identityLabels(doc)" />
@@ -143,7 +143,9 @@ const WithOrganizationIdentityForAdminDocument = WithDocument<OrganizationIdenti
                     class="flex flex-col items-start"
                   >
                     <div class="flex flex-row gap-4">
-                      <Button type="button" :progress="progress" @click.prevent="onRoles(user.id)">{{ t("common.buttons.roles") }}</Button>
+                      <Button :id="`organizationusers-button-roles-${i}`" type="button" :progress="progress" @click.prevent="onRoles(user.id)">{{
+                        t("common.buttons.roles")
+                      }}</Button>
                       <Button type="button" :progress="progress" @click.prevent="onBlock(user.id)">{{
                         !organizationBlockedStatus || organizationBlockedStatus.blocked === "notBlocked" ? t("common.buttons.block") : t("common.buttons.unblock")
                       }}</Button>
