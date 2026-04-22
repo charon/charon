@@ -9,7 +9,7 @@ test.describe.serial("Charon User Roles", () => {
     await signInWithPassword(page, rolesUsername, "tester123", true, true)
 
     // Create application template with role.
-    await createApplicationTemplate(page, "Roles Application", "roles-applications-create-application", "roles")
+    await createApplicationTemplate(page, "Roles Application", "roles")
 
     const addRoleButton = page.locator("#applicationtemplateget-button-addrole")
     await expect(addRoleButton).toBeVisible()

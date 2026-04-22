@@ -6,7 +6,7 @@ export const CHARON_URL = process.env.CHARON_URL || "https://localhost:8080"
 
 export const expect = test.expect
 
-export async function createApplicationTemplate(page: Page, applicationName: string, checkpointName: string, checkpointPrefix: string) {
+export async function createApplicationTemplate(page: Page, applicationName: string, checkpointPrefix: string) {
   // Find and click the Application Templates link.
   const applicationsLink = page.locator("#menu-list-applicationTemplates")
   await expect(applicationsLink).toBeVisible()
@@ -21,7 +21,7 @@ export async function createApplicationTemplate(page: Page, applicationName: str
   const applicationNameField = page.locator("input#applicationtemplatecreate-input-name")
   await expect(applicationNameField).toBeVisible()
   await expect(applicationNameField).toBeFocused()
-  await checkpoint(page, checkpointName)
+  await checkpoint(page, `${checkpointPrefix}-applications-create-application)`)
   await applicationNameField.fill(applicationName)
 
   const applicationSubmitButton = page.locator("#applicationtemplatecreate-button-create")
