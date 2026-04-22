@@ -180,7 +180,7 @@ test.describe.serial("Charon User Roles", () => {
     const organizationMenuButton = page.locator("#menu-list-organizations")
     await expect(organizationMenuButton).toBeVisible()
     await organizationMenuButton.click()
-    const orgLink = page.locator(`a:has-text("${rolesOrganizationName}")`)
+    const orgLink = page.locator(`a.link:has-text("${rolesOrganizationName}")`)
     await expect(orgLink).toBeVisible()
     await orgLink.click()
 
