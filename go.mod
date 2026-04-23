@@ -20,7 +20,7 @@ require (
 	gitlab.com/tozd/go/errors v0.10.0
 	gitlab.com/tozd/go/x v0.0.0-20260326230658-7f3b8e405781
 	gitlab.com/tozd/go/zerolog v0.11.2
-	gitlab.com/tozd/identifier v0.8.1
+	gitlab.com/tozd/identifier v0.8.2
 	gitlab.com/tozd/waf v0.23.0
 	golang.org/x/oauth2 v0.35.0
 )
