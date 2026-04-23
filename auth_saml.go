@@ -288,9 +288,16 @@ func initSAMLKeyStore(config *Config, samlKey []byte) (dsig.X509KeyStore, errors
 		serialNumber[0] &= 0b0111_1111
 		tml := x509.Certificate{ //nolint:exhaustruct
 			SerialNumber: new(big.Int).SetBytes(serialNumber),
-			NotBefore:    time.Now(),
-			// Certificate will be valid for 10 years.
-			NotAfter: time.Now().AddDate(10, 0, 0), //nolint:mnd
+			// Fixed validity so the certificate's DER encoding is deterministic. If we used real timestamp here
+			// (like now + expiration period) then DER encoding would change even if everything else is deterministic.
+			// For an IdP which embeds the SP cert in xenc:EncryptedKey/ds:X509Data (as a hint for which recipient key
+			// it encrypted to), gosaml2 does a byte-equality check against our current cert and refuses to decrypt on
+			// mismatch, even though the RSA private key is unchanged and would decrypt fine. The XML-Enc spec treats
+			// X509Data as a hint, not a verification input, so this is a gosaml2-side strictness. We work around it by
+			// keeping the DER stable. RFC 5280 §4.1.2.5 defines 99991231235959Z as the GeneralizedTime sentinel for
+			// "no well-defined expiration date".
+			NotBefore: time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
+			NotAfter:  time.Date(9999, 12, 31, 23, 59, 59, 0, time.UTC),
 			Subject: pkix.Name{ //nolint:exhaustruct
 				CommonName: config.Title,
 			},
