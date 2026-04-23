@@ -96,5 +96,8 @@
     "vitest": "^4.1.2",
     "vue-component-type-helpers": "^3.2.5",
     "vue-tsc": "^3.2.5"
+  },
+  "overrides": {
+    "uuid": "^14.0.0"
   }
 }
