@@ -46,6 +46,7 @@ test.describe.serial("Charon User Roles", () => {
     const uriBaseField = page.locator("input#application-0-values-0")
     await expect(uriBaseField).toBeVisible()
     await expect(uriBaseField).toBeFocused()
+    await checkpoint(page, "roles-organization-adding-application")
     await uriBaseField.fill("https://oidcdebugger.com")
     const activateOrDisableButton = page.locator("#organizationget-button-activateordisable-0")
     await expect(activateOrDisableButton).toBeVisible()
@@ -123,6 +124,9 @@ test.describe.serial("Charon User Roles", () => {
 
     await expect(updateApplicationButton).toBeVisible()
     await expect(page.locator("#organizationget-text-status-0")).toBeVisible()
+    // Without waiting, navbar sometimes appears in the middle of the screenshot.
+    await page.waitForTimeout(1000)
+    await checkpoint(page, "roles-organization-with-pending-deactivation-application", { mask: [availableApplicationsMask] })
     await updateApplicationButton.click()
 
     // Check for the success message.
@@ -187,10 +191,13 @@ test.describe.serial("Charon User Roles", () => {
     // Add role back to user.
     await expect(manageUsersButton).toBeVisible()
     await manageUsersButton.click()
+
     await expect(userRolesButton).toBeVisible()
     await userRolesButton.click()
+
     await expect(roleCheckbox).toBeVisible()
     await roleCheckbox.click()
+
     await expect(updateRolesButton).toBeVisible()
     await updateRolesButton.click()
 
@@ -222,12 +229,15 @@ test.describe.serial("Charon User Roles", () => {
     // Navigate to roles: role shows with "(removed app)" annotation, still assigned.
     await expect(manageUsersButton).toBeVisible()
     await manageUsersButton.click()
+
     await expect(userRolesButton).toBeVisible()
     await userRolesButton.click()
     await expect(roleCheckbox).toBeVisible()
     await checkpoint(page, "roles-organization-with-role-from-removed-application")
+
     // Uncheck role, role from removed application disappears.
     await roleCheckbox.click()
+
     await expect(updateRolesButton).toBeVisible()
     await checkpoint(page, "roles-organization-with-role-unselected-removed-application")
     await updateRolesButton.click()
