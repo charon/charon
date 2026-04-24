@@ -19,7 +19,7 @@ require (
 	gitlab.com/tozd/go/cli v0.7.0
 	gitlab.com/tozd/go/errors v0.10.0
 	gitlab.com/tozd/go/x v0.0.0-20260326230658-7f3b8e405781
-	gitlab.com/tozd/go/zerolog v0.11.2
+	gitlab.com/tozd/go/zerolog v0.11.4
 	gitlab.com/tozd/identifier v0.8.2
 	gitlab.com/tozd/waf v0.23.0
 	golang.org/x/oauth2 v0.35.0
@@ -62,7 +62,7 @@ require (
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.8.0 // indirect
-	github.com/go-git/go-git/v5 v5.17.2 // indirect
+	github.com/go-git/go-git/v5 v5.18.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-webauthn/webauthn v0.15.0
