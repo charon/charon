@@ -96,16 +96,6 @@ export interface WebAuthnCredential {
   userHandle?: string
 }
 
-// Add a simple WebAuthnCredential interface since playwright does not export the Protocol type.
-export interface WebAuthnCredential {
-  credentialId: string
-  isResidentCredential: boolean
-  privateKey: string
-  rpId?: string
-  signCount: number
-  userHandle?: string
-}
-
 export async function getIdFromAddedVirtualAuthenticator(client: CDPSession): Promise<string> {
   await client.send("WebAuthn.enable")
   const addVirtualAuthenticatorResult = await client.send("WebAuthn.addVirtualAuthenticator", {
