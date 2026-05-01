@@ -201,10 +201,7 @@ test.describe.serial("Charon OIDC Flows", () => {
       await expect(redirectButton).toBeFocused()
       await redirectButton.click()
 
-      // Wait for the flow and the key exchange to complete successfully.
-      await page.waitForTimeout(1000)
       await expect(page.getByText("The flow was successful.")).toBeVisible()
-
       // Extract the id_token from the page content.
       const bodyText = await page.textContent("body")
       expect(bodyText).not.toBeNull()
