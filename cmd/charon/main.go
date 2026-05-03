@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	mailAuthTypes := []string{}
+	mailAuthTypes := make([]string, 0, len(charon.MailAuthTypes))
 	for t := range charon.MailAuthTypes {
 		mailAuthTypes = append(mailAuthTypes, t)
 	}

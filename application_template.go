@@ -1029,11 +1029,10 @@ func (s *Service) ApplicationTemplateGetGetAPI(w http.ResponseWriter, req *http.
 
 // ApplicationTemplateListGetAPI is the API handler for listing application templates, GET request.
 func (s *Service) ApplicationTemplateListGetAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	result := []ApplicationTemplateRef{}
-
 	s.applicationTemplatesMu.RLock()
 	defer s.applicationTemplatesMu.RUnlock()
 
+	result := make([]ApplicationTemplateRef, 0, len(s.applicationTemplates))
 	for id := range s.applicationTemplates {
 		result = append(result, ApplicationTemplateRef{ID: id})
 	}

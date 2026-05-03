@@ -156,7 +156,7 @@ func (a *Account) HasCredentialDisplayName(provider Provider, displayName string
 
 // GetEmailAddresses returns the email addresses of the account.
 func (a *Account) GetEmailAddresses() []string {
-	emails := []string{}
+	emails := make([]string, 0, len(a.Credentials[ProviderEmail]))
 	for _, credential := range a.Credentials[ProviderEmail] {
 		// Not-mapped e-mail address is stored in the display name.
 		emails = append(emails, credential.DisplayName)

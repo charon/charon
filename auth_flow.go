@@ -79,7 +79,7 @@ func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *flow
 	}
 
 	w.WriteHeader(http.StatusBadRequest)
-	_, _ = w.Write(encoded)
+	_, _ = w.Write(encoded) //nolint:gosec
 }
 
 // AuthFlowGetGet is the frontend handler for getting the auth flow.
@@ -431,7 +431,7 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 		}
 
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write(encoded)
+		_, _ = w.Write(encoded) //nolint:gosec
 		return
 	}
 

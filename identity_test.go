@@ -130,7 +130,7 @@ func TestUpdateIdentity(t *testing.T) {
 	admin2Ref := charon.IdentityRef{ID: admin2}
 
 	newUsers := []charon.IdentityRef{user1Ref, user2Ref}
-	newAdmins := []charon.IdentityRef{admin1Ref, admin2Ref}
+	newAdmins := []charon.IdentityRef{admin1Ref, admin2Ref} //nolint:prealloc
 
 	createdIdentity.Users = newUsers
 	createdIdentity.Admins = newAdmins

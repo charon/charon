@@ -56,7 +56,7 @@ func (s *Service) setRoutes() { //nolint:maintidx
 			API: waf.RouteOptions{
 				CORS: &waf.CORSOptions{
 					AllowedOrigins: []string{"*"},
-					AllowedMethods: []string{"POST"},
+					AllowedMethods: []string{http.MethodPost},
 					AllowedHeaders: []string{"Authorization"},
 					MaxAge:         corsMaxAge,
 				},
@@ -70,7 +70,7 @@ func (s *Service) setRoutes() { //nolint:maintidx
 			API: waf.RouteOptions{
 				CORS: &waf.CORSOptions{
 					AllowedOrigins: []string{"*"},
-					AllowedMethods: []string{"POST"},
+					AllowedMethods: []string{http.MethodPost},
 					AllowedHeaders: []string{"Authorization"},
 					MaxAge:         corsMaxAge,
 				},
@@ -92,7 +92,7 @@ func (s *Service) setRoutes() { //nolint:maintidx
 			API: waf.RouteOptions{
 				CORS: &waf.CORSOptions{
 					AllowedOrigins: []string{"*"},
-					AllowedMethods: []string{"GET", "HEAD", "POST"},
+					AllowedMethods: []string{http.MethodGet, http.MethodHead, http.MethodPost},
 					AllowedHeaders: []string{"Authorization"},
 					MaxAge:         corsMaxAge,
 				},
@@ -106,7 +106,7 @@ func (s *Service) setRoutes() { //nolint:maintidx
 			RouteOptions: waf.RouteOptions{
 				CORS: &waf.CORSOptions{
 					AllowedOrigins: []string{"*"},
-					AllowedMethods: []string{"GET", "HEAD"},
+					AllowedMethods: []string{http.MethodGet, http.MethodHead},
 					MaxAge:         corsMaxAge,
 				},
 				Handlers: map[string]waf.Handler{
@@ -119,7 +119,7 @@ func (s *Service) setRoutes() { //nolint:maintidx
 			RouteOptions: waf.RouteOptions{
 				CORS: &waf.CORSOptions{
 					AllowedOrigins: []string{"*"},
-					AllowedMethods: []string{"GET", "HEAD"},
+					AllowedMethods: []string{http.MethodGet, http.MethodHead},
 					MaxAge:         corsMaxAge,
 				},
 				Handlers: map[string]waf.Handler{
@@ -132,7 +132,7 @@ func (s *Service) setRoutes() { //nolint:maintidx
 			RouteOptions: waf.RouteOptions{
 				CORS: &waf.CORSOptions{
 					AllowedOrigins: []string{"*"},
-					AllowedMethods: []string{"GET", "HEAD"},
+					AllowedMethods: []string{http.MethodGet, http.MethodHead},
 					MaxAge:         corsMaxAge,
 				},
 				Handlers: map[string]waf.Handler{

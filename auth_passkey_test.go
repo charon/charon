@@ -230,7 +230,7 @@ func signinMockPasskey(t *testing.T, ts *httptest.Server, service *charon.Servic
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	clientDataHash := sha256.Sum256(byteClientDataJSON)
-	sigData := []byte{}
+	sigData := make([]byte, 0, len(rawAuthData)+len(clientDataHash))
 	sigData = append(sigData, rawAuthData...)
 	sigData = append(sigData, clientDataHash[:]...)
 	sigDataHash := sha256.Sum256(sigData)

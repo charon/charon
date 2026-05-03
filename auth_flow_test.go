@@ -124,7 +124,7 @@ func createAuthFlow(t *testing.T, ts *httptest.Server, service *charon.Service) 
 	state := identifier.New().String()
 	pkceVerifier := oauth2.GenerateVerifier()
 
-	opts := []oauth2.AuthCodeOption{}
+	opts := []oauth2.AuthCodeOption{} //nolint:prealloc
 	opts = append(opts, oidc.Nonce(nonce))
 	opts = append(opts, oauth2.S256ChallengeOption(pkceVerifier))
 
@@ -336,7 +336,7 @@ func doRedirectAndAccessToken(t *testing.T, ts *httptest.Server, service *charon
 	assert.Equal(t, state, query.Get("state"))
 
 	ctx := oidc.ClientContext(t.Context(), ts.Client())
-	opts := []oauth2.AuthCodeOption{}
+	opts := []oauth2.AuthCodeOption{} //nolint:prealloc
 	opts = append(opts, oauth2.VerifierOption(pkceVerifier))
 	oauth2Token, err := config.Exchange(ctx, query.Get("code"), opts...)
 	require.NoError(t, err)

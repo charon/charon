@@ -1434,11 +1434,10 @@ func (s *Service) OrganizationIdentityGetAPI(w http.ResponseWriter, req *http.Re
 
 // OrganizationListGetAPI is the API handler for listing organizations, GET request.
 func (s *Service) OrganizationListGetAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	result := []OrganizationRef{}
-
 	s.organizationsMu.RLock()
 	defer s.organizationsMu.RUnlock()
 
+	result := make([]OrganizationRef, 0, len(s.organizations))
 	for id := range s.organizations {
 		result = append(result, OrganizationRef{ID: id})
 	}

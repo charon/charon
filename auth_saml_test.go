@@ -243,7 +243,7 @@ func parseAuthnRequest(t *testing.T, xmlData string) (string, string, errors.E) 
 	t.Helper()
 
 	var req authnRequest
-	err := xml.Unmarshal([]byte(xmlData), &req)
+	err := xml.Unmarshal([]byte(xmlData), &req) //nolint:gosec
 	if err != nil {
 		return "", "", errors.WithStack(err)
 	}

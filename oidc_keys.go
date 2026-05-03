@@ -12,8 +12,7 @@ import (
 
 // OIDCKeysGet provides public key used to sign tokens.
 func (s *Service) OIDCKeysGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	keys := []jose.JSONWebKey{}
-
+	keys := make([]jose.JSONWebKey, 0, len(s.oidcKeys))
 	for _, key := range s.oidcKeys {
 		keys = append(keys, key.Public())
 	}

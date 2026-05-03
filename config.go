@@ -502,7 +502,7 @@ func (config *Config) Init(ctx context.Context, files fs.FS) (*Service, errors.E
 		})
 	}
 	if config.Providers.Facebook.ClientID != "" && config.Providers.Facebook.Secret != nil {
-		providers = append(providers, SiteProvider{
+		providers = append(providers, SiteProvider{ //nolint:gosec
 			Key:          "facebook",
 			Name:         "Facebook",
 			Type:         ThirdPartyProviderOIDC,

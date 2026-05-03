@@ -307,7 +307,7 @@ func extractNameIDFormatFromXML(rawXML string) (string, string, errors.E) {
 		Assertions []Assertion `xml:"Assertion"`
 	}
 	var resp Response
-	err = xml.Unmarshal(decodedXML, &resp)
+	err = xml.Unmarshal(decodedXML, &resp) //nolint:gosec
 	if err != nil {
 		return "", "", errors.WithDetails(err, "xml", x.ByteSlice2String(decodedXML))
 	}
