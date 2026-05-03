@@ -58,7 +58,7 @@ func (s *Service) OIDCIntrospectPostAPI(w http.ResponseWriter, req *http.Request
 			return
 		}
 
-		response := map[string]interface{}{
+		response := map[string]any{
 			"active": true,
 		}
 

@@ -87,7 +87,7 @@ func startOIDCTestServer(t *testing.T) (*httptest.Server, *storage.MemoryStore) 
 		session.SetSubject(subject)
 		session.IDTokenClaims().Subject = subject
 		session.IDTokenClaims().AuthTime = time.Now().UTC()
-		session.IDTokenClaims().Extra = map[string]interface{}{
+		session.IDTokenClaims().Extra = map[string]any{
 			"username": "OIDCusername",
 		}
 

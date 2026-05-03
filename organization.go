@@ -1147,7 +1147,7 @@ func (s *Service) OrganizationGetGetAPI(w http.ResponseWriter, req *http.Request
 	}
 
 	if hasIdentity && organization.HasAdminAccess(IdentityRef{ID: identityID}) {
-		s.WriteJSON(w, req, organization, map[string]interface{}{
+		s.WriteJSON(w, req, organization, map[string]any{
 			"can_update": true,
 		})
 		return
@@ -1420,7 +1420,7 @@ func (s *Service) OrganizationIdentityGetAPI(w http.ResponseWriter, req *http.Re
 		orgIdentity.Organization = idOrg
 	}
 
-	s.WriteJSON(w, req, orgIdentity, map[string]interface{}{
+	s.WriteJSON(w, req, orgIdentity, map[string]any{
 		"can_use":    hasUserAccess,
 		"can_update": hasAdminAccess,
 		// identity.ID is organization-scoped (we make it so above) and it makes sense to

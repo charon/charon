@@ -124,7 +124,7 @@ const (
 var _ oauth2.CoreStrategy = (*configurableCoreStrategy)(nil)
 
 func newConfigurableCoreStrategy(
-	keyGetter func(context.Context) (interface{}, error), strategy oauth2.CoreStrategy, config fosite.Configurator,
+	keyGetter func(context.Context) (any, error), strategy oauth2.CoreStrategy, config fosite.Configurator,
 ) *configurableCoreStrategy {
 	return &configurableCoreStrategy{
 		hmacStrategy: strategy,
@@ -269,7 +269,7 @@ func initOIDC(_ context.Context, config *Config, service *Service) (func() *fosi
 		//       See: https://github.com/ory/fosite/issues/786
 		// TODO: Implement support and add all from signingAlgValuesSupported.
 		//       See: https://github.com/ory/fosite/issues/788
-		getPrivateKey := func(context.Context) (interface{}, error) {
+		getPrivateKey := func(context.Context) (any, error) {
 			for _, key := range service.oidcKeys {
 				// TODO: This is currently hard-coded to RS256 until we can support all from signingAlgValuesSupported.
 				//       See: https://github.com/ory/fosite/issues/788
@@ -473,7 +473,7 @@ func (s *OIDCSession) Clone() fosite.Session { //nolint:ireturn
 // GetExtraClaims implements fosite.ExtraClaimsSession and claims
 // are used to populate the response of the introspection endpoint.
 // The returned value is a copy of JWTClaims.
-func (s *OIDCSession) GetExtraClaims() map[string]interface{} {
+func (s *OIDCSession) GetExtraClaims() map[string]any {
 	if s == nil {
 		return nil
 	}

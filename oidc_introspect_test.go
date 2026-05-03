@@ -43,7 +43,7 @@ type introspectRefreshTokenResponse struct {
 	ExpirationTime   *jwt.NumericDate `json:"exp,omitempty"`
 }
 
-func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, appID, organizationID, token string, identityID identifier.Identifier) map[string]interface{} {
+func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, appID, organizationID, token string, identityID identifier.Identifier) map[string]any {
 	t.Helper()
 
 	keySet := getKeys(t, ts, service)
@@ -52,7 +52,7 @@ func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now
 	require.NoError(t, err)
 
 	claims := jwt.Claims{}
-	all := map[string]interface{}{}
+	all := map[string]any{}
 	err = parsedToken.Claims(keySet, &claims, &all)
 	require.NoError(t, err)
 
@@ -199,8 +199,8 @@ func validateAccessToken(
 		require.NoError(t, errE, "% -+#.1v", errE)
 		delete(all, "jti")
 
-		assert.Equal(t, map[string]interface{}{
-			"aud":       []interface{}{organizationID, appID, clientID},
+		assert.Equal(t, map[string]any{
+			"aud":       []any{organizationID, appID, clientID},
 			"client_id": clientID,
 			"iss":       ts.URL,
 			"scope":     "openid profile email offline_access",

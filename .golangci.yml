@@ -10,6 +10,7 @@ linters:
     - gocognit
     - gocyclo
     - godox
+    - gomodguard
     - nlreturn
     - unqueryvet
     - varnamelen
@@ -55,10 +56,10 @@ linters:
           - revive
         text: "exported: exported var Err"
       - linters:
-        - exhaustruct
-        - goconst
-        - lll
-        - wrapcheck
+          - exhaustruct
+          - goconst
+          - lll
+          - wrapcheck
         path: .*_test\.go
 formatters:
   enable:

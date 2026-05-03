@@ -67,8 +67,8 @@ func validateIDToken(
 	require.NoError(t, errE, "% -+#.1v", errE)
 	delete(all, "jti")
 
-	assert.Equal(t, map[string]interface{}{
-		"aud":                []interface{}{clientID},
+	assert.Equal(t, map[string]any{
+		"aud":                []any{clientID},
 		"client_id":          clientID,
 		"iss":                ts.URL,
 		"sid":                sessionID,

@@ -134,47 +134,47 @@ func TestFindFirstString(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		token    map[string]interface{}
+		token    map[string]any
 		keys     []string
 		expected string
 	}{
 		{
 			name:     "simple string",
-			token:    map[string]interface{}{"firstName": "Alice"},
+			token:    map[string]any{"firstName": "Alice"},
 			keys:     []string{"firstName"},
 			expected: "Alice",
 		},
 		{
 			name:     "simple string with spaces",
-			token:    map[string]interface{}{"first_name": "   Alice  "},
+			token:    map[string]any{"first_name": "   Alice  "},
 			keys:     []string{"first_name"},
 			expected: "Alice",
 		},
 		{
 			name:     "empty string",
-			token:    map[string]interface{}{"given_name": ""},
+			token:    map[string]any{"given_name": ""},
 			keys:     []string{"given_name"},
 			expected: "",
 		},
 		{
 			name: "multiple strings",
-			token: map[string]interface{}{
-				"givenName": []interface{}{"", "     Alice  ", "Bob"},
+			token: map[string]any{
+				"givenName": []any{"", "     Alice  ", "Bob"},
 			},
 			keys:     []string{"givenName"},
 			expected: "Alice",
 		},
 		{
 			name: "array with non-string elements",
-			token: map[string]interface{}{
-				"firstName": []interface{}{true, 123, ts, " Alice    "},
+			token: map[string]any{
+				"firstName": []any{true, 123, ts, " Alice    "},
 			},
 			keys:     []string{"firstName"},
 			expected: "Alice",
 		},
 		{
 			name: "non-existing key",
-			token: map[string]interface{}{
+			token: map[string]any{
 				"lastName": "Smith",
 			},
 			keys:     []string{"firstName"},
@@ -182,7 +182,7 @@ func TestFindFirstString(t *testing.T) {
 		},
 		{
 			name: "multiple keys",
-			token: map[string]interface{}{
+			token: map[string]any{
 				"first_name":   " Alice",
 				"username":     " name surname ",
 				"emailAddress": " foo@bar.com ",
@@ -198,16 +198,16 @@ func TestFindFirstString(t *testing.T) {
 		},
 		{
 			name: "empty array",
-			token: map[string]interface{}{
-				"names": []interface{}{},
+			token: map[string]any{
+				"names": []any{},
 			},
 			keys:     []string{"names"},
 			expected: "",
 		},
 		{
 			name: "all empty strings in array",
-			token: map[string]interface{}{
-				"values": []interface{}{"", "   ", "\t\n", "\r", "\n", "\r\n"},
+			token: map[string]any{
+				"values": []any{"", "   ", "\t\n", "\r", "\n", "\r\n"},
 			},
 			keys:     []string{"values"},
 			expected: "",

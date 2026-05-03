@@ -624,7 +624,7 @@ func mockSAMLSignin(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	require.NoError(t, err)
 
 	// MockSAML requires an email for authentication, which is not included in location.
-	authPayload := map[string]interface{}{
+	authPayload := map[string]any{
 		"email": "jackson@example.com",
 	}
 	for key, values := range locationURL.Query() {

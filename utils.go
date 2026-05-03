@@ -519,7 +519,7 @@ func initWithHost[T any](config *Config, domain string, init func(string) T) (fu
 }
 
 func hasConnectionUpgrade(req *http.Request) bool {
-	for _, value := range strings.Split(req.Header.Get("Connection"), ",") {
+	for value := range strings.SplitSeq(req.Header.Get("Connection"), ",") {
 		if strings.ToLower(strings.TrimSpace(value)) == "upgrade" {
 			return true
 		}
@@ -585,7 +585,7 @@ func pointerEqual[T comparable](a *T, b *T) bool {
 // getKeyThumbprint computes SHA256 key thumbprint as described in RFC 7638,
 // which we use for the "kid" (key ID) field of a JWK.
 // See: https://tools.ietf.org/html/rfc7638
-func getKeyThumbprint(publicKey interface{}, algorithm string) (string, errors.E) {
+func getKeyThumbprint(publicKey any, algorithm string) (string, errors.E) {
 	thumbprint, err := (&jose.JSONWebKey{ //nolint:exhaustruct
 		Key:       publicKey,
 		Algorithm: algorithm,
@@ -600,7 +600,7 @@ func getKeyThumbprint(publicKey interface{}, algorithm string) (string, errors.E
 // getKeyThumbprints computes SHA1 and SHA256 key thumbprints as described in RFC 7517,
 // section 4.8, used for the "x5t" and "x5t#S256" fields of a JWK.
 // See: https://tools.ietf.org/html/rfc7517#section-4.8
-func getKeyThumbprints(publicKey interface{}) ([]byte, []byte, errors.E) {
+func getKeyThumbprints(publicKey any) ([]byte, []byte, errors.E) {
 	pemKey, err := x509.MarshalPKIXPublicKey(publicKey)
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
@@ -788,7 +788,7 @@ func withGosamlError(err error) errors.E {
 	if errors.As(err, &errVerification) { //nolint:nestif
 		// We check if errVerification maybe already implements Unwrap.
 		// See: https://github.com/russellhaering/gosaml2/pull/242
-		if _, ok := interface{}(errVerification).(unwrapper); errVerification.Cause != nil && !ok {
+		if _, ok := any(errVerification).(unwrapper); errVerification.Cause != nil && !ok {
 			errE = errors.WrapWith(errVerification.Cause, errE)
 		}
 	} else if errors.As(err, &errMissingElement) {
@@ -802,7 +802,7 @@ func withGosamlError(err error) errors.E {
 	} else if errors.As(err, &errSaml) {
 		// We check if errSaml maybe already implements Unwrap.
 		// See: https://github.com/russellhaering/gosaml2/pull/242
-		if _, ok := interface{}(errSaml).(unwrapper); errSaml.System != nil && !ok {
+		if _, ok := any(errSaml).(unwrapper); errSaml.System != nil && !ok {
 			errE = errors.WrapWith(errSaml.System, errE)
 		}
 	} else if errors.As(err, &errParsing) {
@@ -880,7 +880,7 @@ func detectSliceChanges[T comparable](oldSlice, newSlice []T) (mapset.Set[T], ma
 
 // findFirstString returns the first non-empty string value (after whitespace trimming) for keyNames in the map.
 // It returns an empty string if no such value is found.
-func findFirstString(m map[string]interface{}, keyNames ...string) string {
+func findFirstString(m map[string]any, keyNames ...string) string {
 	for _, key := range keyNames {
 		value, _ := m[key].(string)
 		v := strings.TrimSpace(value)
@@ -889,7 +889,7 @@ func findFirstString(m map[string]interface{}, keyNames ...string) string {
 		}
 
 		// TODO: What to do here? Should we create multiple identities for each of the value?
-		arr, _ := m[key].([]interface{})
+		arr, _ := m[key].([]any)
 		for _, item := range arr {
 			s, _ := item.(string)
 			s = strings.TrimSpace(s)
@@ -1074,7 +1074,7 @@ func (s *Service) completePasskeyRegistration(
 
 func getThirdPartyDisplayName(account *Account, jsonData json.RawMessage, providerKey Provider, providerID string) (string, errors.E) {
 	var errE errors.E
-	var token map[string]interface{}
+	var token map[string]any
 	errE = x.Unmarshal(jsonData, &token)
 	if errE != nil {
 		errors.Details(errE)["provider"] = providerKey

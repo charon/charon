@@ -1018,7 +1018,7 @@ func (s *Service) ApplicationTemplateGetGetAPI(w http.ResponseWriter, req *http.
 	}
 
 	if hasIdentity && applicationTemplate.HasAdminAccess(IdentityRef{ID: identityID}) {
-		s.WriteJSON(w, req, applicationTemplate, map[string]interface{}{
+		s.WriteJSON(w, req, applicationTemplate, map[string]any{
 			"can_update": true,
 		})
 		return

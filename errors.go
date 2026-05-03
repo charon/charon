@@ -22,7 +22,7 @@ type validationError struct {
 	Code      ErrorCode
 	err       error
 	stack     []uintptr
-	details   map[string]interface{}
+	details   map[string]any
 	detailsMu *sync.Mutex
 }
 
@@ -34,12 +34,12 @@ func (v *validationError) Unwrap() error {
 	return v.err
 }
 
-func (v *validationError) Details() map[string]interface{} {
+func (v *validationError) Details() map[string]any {
 	v.detailsMu.Lock()
 	defer v.detailsMu.Unlock()
 
 	if v.details == nil {
-		v.details = map[string]interface{}{
+		v.details = map[string]any{
 			"code": v.Code,
 		}
 	}

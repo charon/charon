@@ -1154,7 +1154,7 @@ func (s *Service) IdentityGetGetAPI(w http.ResponseWriter, req *http.Request, pa
 	if isAdmin {
 		// getIdentityFromID checked that user has user or admin access to the identity
 		// so here we know that they have both.
-		s.WriteJSON(w, req, identity, map[string]interface{}{
+		s.WriteJSON(w, req, identity, map[string]any{
 			"can_use":    true,
 			"can_update": true,
 			"is_current": hasCurrentIdentityID && *identity.ID == currentIdentityID,
@@ -1164,7 +1164,7 @@ func (s *Service) IdentityGetGetAPI(w http.ResponseWriter, req *http.Request, pa
 
 	// getIdentityFromID checked that user has user or admin access to the identity
 	// so here we know that they have only user access.
-	s.WriteJSON(w, req, identity, map[string]interface{}{
+	s.WriteJSON(w, req, identity, map[string]any{
 		"can_use":    true,
 		"is_current": hasCurrentIdentityID && *identity.ID == currentIdentityID,
 	})

@@ -168,7 +168,7 @@ func (s *Service) makeIdentityFromCredentials(credentials []Credential) (*Identi
 			// Not-mapped username is stored in the display name.
 			identity.Username = credential.DisplayName
 		default:
-			var token map[string]interface{}
+			var token map[string]any
 			errE := x.UnmarshalWithoutUnknownFields(credential.Data, &token)
 			if errE != nil {
 				return nil, errE
