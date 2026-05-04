@@ -201,6 +201,10 @@ test.describe.serial("Charon OIDC Flows", () => {
       await expect(redirectButton).toBeFocused()
       await redirectButton.click()
 
+      // Favicon on this website is the last thing to load. Therefore, wait for it to avoid adding a timeout.
+      await page.waitForResponse(response =>
+        response.url().endsWith('favicon-16x16.png') && response.status() === 200
+      );
       await expect(page.getByText("The flow was successful.")).toBeVisible()
       // Extract the id_token from the page content.
       const bodyText = await page.textContent("body")
