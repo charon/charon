@@ -83,6 +83,12 @@ const fixedBuiltInProviders = ["username", "email", "password"]
 // is always available when password is allowed and cannot be restricted independently.
 // Mirrors getAvailableProviders in organization.go.
 const availableProviders = [...fixedBuiltInProviders, "passkey", ...siteContext.providers.map((p) => p.key)]
+// TODO: Handle the stale-provider trap. If a third-party provider was removed from
+//       the site config while an org still has it in stored allowedProviders, no
+//       checkbox is rendered for it but selectedProviders still contains it. The
+//       user cannot remove it through the UI and any save fails backend validation
+//       as "unknown provider". Render orphans as a labelled "no longer available"
+//       group so the admin can uncheck and save.
 // "all" means empty allowedProviders on the server (all providers, including future ones).
 // "selected" means an explicit list is stored.
 const providersMode = ref<"all" | "selected">("all")

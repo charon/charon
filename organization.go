@@ -789,6 +789,11 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 			}
 		}
 
+		// TODO: Tolerate previously-available providers that are no longer configured.
+		//       If a third-party provider is removed from the site config, every org with it in AllowedProviders becomes un-updatable: any save fails here
+		//       as "unknown provider", even when the admin is changing an unrelated field. Maybe mirror the Roles validator (which only validates *added*
+		//       roles so disabled apps don't poison existing role assignments) by comparing against existing.AllowedProviders and rejecting only newly-added
+		//       unknown providers. Or just show such stale providers in UI so that admin can remove them.
 		availableProviders := service.getAvailableProviders()
 		for _, provider := range o.AllowedProviders {
 			if !slices.Contains(availableProviders, provider) {
