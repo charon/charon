@@ -705,6 +705,7 @@ async function onProvidersSubmit() {
     description: organization.value!.description,
     admins: organization.value!.admins,
     applications: organization.value!.applications,
+    roles: organization.value!.roles,
     allowedProviders: providersPayload(),
   }
   await onSubmit(payload, "providers", providersUpdated, providersUnexpectedError)
