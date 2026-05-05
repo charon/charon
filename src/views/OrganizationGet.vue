@@ -884,7 +884,7 @@ function canProvidersSubmit(): boolean {
                       </li>
                     </ol>
                     <div class="mt-4 flex flex-row items-center justify-between gap-4">
-                      <div :id="`organizationget-text-status-${i}`">
+                      <div>
                         <i18n-t keypath="views.OrganizationGet.status" scope="global">
                           <template #strongStatus>
                             <strong>{{ application.active ? t("common.labels.active") : t("common.labels.disabled") }}</strong>
