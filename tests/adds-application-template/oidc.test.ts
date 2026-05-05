@@ -201,17 +201,15 @@ test.describe.serial("Charon OIDC Flows", () => {
       await expect(redirectButton).toBeFocused()
       await redirectButton.click()
 
-      // Favicon on this website is the last thing to load. Therefore, wait for it to avoid adding a timeout.
-      await page.waitForResponse(response =>
-        response.url().endsWith('favicon-16x16.png') && response.status() === 200
-      );
       await expect(page.getByText("The flow was successful.")).toBeVisible()
-      // Extract the id_token from the page content.
-      const bodyText = await page.textContent("body")
-      expect(bodyText).not.toBeNull()
+      const result = page.locator("[title='PKCE result']")
+      await expect(result).toBeVisible()
+      // Extract the result text.
+      const resultText = await result.textContent()
+      expect(resultText).not.toBeNull()
 
       // Extract the id_token using regex - JWT format is xxx.yyy.zzz.
-      const idTokenMatch = bodyText!.match(/id_token[=:\s]+([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)/)
+      const idTokenMatch = resultText!.match(/id_token[=:\s]+([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)/)
       expect(idTokenMatch).not.toBeNull()
       const idToken = idTokenMatch![1]
 
