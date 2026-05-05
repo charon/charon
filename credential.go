@@ -1214,6 +1214,7 @@ func (s *Service) CredentialConfirmEmailPostAPI(w http.ResponseWriter, req *http
 	_, errE = account.cleanupCodeCredentials(emailCredentialID.String())
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
+		return
 	}
 
 	code, errE := getRandomCode()
@@ -1313,6 +1314,7 @@ func (s *Service) CredentialConfirmEmailCompletePostAPI(w http.ResponseWriter, r
 	hasRemaining, errE := account.cleanupCodeCredentials(emailCredentialIDString)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
+		return
 	}
 
 	errE = s.setAccount(ctx, account)
@@ -1353,6 +1355,7 @@ func (s *Service) CredentialConfirmEmailCompletePostAPI(w http.ResponseWriter, r
 		hasRemaining, errE = account.cleanupCodeCredentials(emailCredentialIDString)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
+			return
 		}
 
 		errE = s.setAccount(ctx, account)
@@ -1382,6 +1385,7 @@ func (s *Service) CredentialConfirmEmailCompletePostAPI(w http.ResponseWriter, r
 	errE = account.removeCodeCredentials(emailCredentialIDString)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
+		return
 	}
 
 	errE = s.setAccount(ctx, account)

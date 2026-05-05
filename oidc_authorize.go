@@ -225,6 +225,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 				if errE != nil {
 					// This should never happen, identity email has already been validated.
 					s.InternalServerErrorWithError(w, req, errE)
+					return true
 				}
 				idTokenClaims.Add("email", mappedEmail)
 				idTokenClaims.Add("email_verified", true)
