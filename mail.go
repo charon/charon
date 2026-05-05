@@ -25,6 +25,7 @@ func init() { //nolint:gochecknoinits
 	}
 }
 
+// flowOrCredentialID is used to construct the message ID.
 func (s *Service) sendMail(
 	ctx context.Context,
 	flowOrCredentialID identifier.Identifier,
