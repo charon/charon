@@ -328,7 +328,6 @@ func (s *Service) ActivityListGetAPI(w http.ResponseWriter, req *http.Request, _
 	}
 
 	currentAccountID := mustGetAccountID(ctx)
-
 	currentIdentityID := mustGetIdentityID(ctx)
 
 	result := []ActivityRef{}
@@ -412,7 +411,6 @@ func (s *Service) ActivityGetGetAPI(w http.ResponseWriter, req *http.Request, pa
 	}
 
 	currentAccountID := mustGetAccountID(ctx)
-
 	currentIdentityID := mustGetIdentityID(ctx)
 
 	// Verify this activity is for this user (identity or account).
