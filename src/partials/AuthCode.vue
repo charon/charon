@@ -60,7 +60,6 @@ watch(codeError, async (newValue) => {
   }
 })
 
-
 // Define transition hooks to be called by the parent component.
 // See: https://github.com/vuejs/rfcs/discussions/613
 onMounted(() => {
