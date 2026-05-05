@@ -688,12 +688,13 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
 }
 
 // Map the UI state back to the payload field: empty slice for "all" mode, the explicit
-// list for "selected" mode.
+// list for "selected" mode. Sorted so a toggle-off-then-on (which Vue's v-model appends
+// to the end of the array) doesn't register as a change against the canonical server form.
 function providersPayload(): string[] {
   if (providersMode.value === "all") {
     return []
   }
-  return selectedProviders.value
+  return [...selectedProviders.value].sort()
 }
 
 async function onProvidersSubmit() {
@@ -724,7 +725,8 @@ function canProvidersSubmit(): boolean {
   // Submission is on purpose not disabled on providersUnexpectedError so that user can retry.
 
   // Anything changed?
-  if (!equals(organization.value!.allowedProviders || [], providersPayload())) {
+  const stored = [...(organization.value!.allowedProviders || [])].sort()
+  if (!equals(stored, providersPayload())) {
     return true
   }
 
