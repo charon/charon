@@ -100,6 +100,56 @@ func TestAuthFlowPasskey(t *testing.T) {
 	})
 }
 
+// TestAuthFlowPasskeyRejectedWhenNotAllowed verifies that both passkey start endpoints
+// (create and get) refuse to proceed when the flow's AllowedProviders restricts auth to
+// providers other than ProviderPasskey. The flow is set up via createAuthFlow (which
+// leaves AllowedProviders empty, i.e. unrestricted) and then mutated via TestingSetFlow
+// to simulate an OIDC authorize that came from an organization with a restricted set.
+func TestAuthFlowPasskeyRejectedWhenNotAllowed(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		endpoint string
+	}{
+		{"AuthFlowPasskeyCreateStart rejected", "AuthFlowPasskeyCreateStart"},
+		{"AuthFlowPasskeyGetStart rejected", "AuthFlowPasskeyGetStart"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			ts, service, _, _, _ := startTestServer(t)
+
+			flowID, _, _, _, _, _ := createAuthFlow(t, ts, service)
+
+			// Restrict the flow to non-passkey providers only.
+			f, errE := service.TestingGetFlow(t.Context(), flowID)
+			require.NoError(t, errE, "% -+#.1v", errE)
+			f.AllowedProviders = []charon.Provider{charon.ProviderUsername, charon.ProviderEmail, charon.ProviderPassword}
+			errE = service.TestingSetFlow(t.Context(), f)
+			require.NoError(t, errE, "% -+#.1v", errE)
+
+			endpoint, errE := service.ReverseAPI(tt.endpoint, waf.Params{"id": flowID.String()}, nil)
+			require.NoError(t, errE, "% -+#.1v", errE)
+
+			resp, err := ts.Client().Post(ts.URL+endpoint, "application/json", strings.NewReader(`{}`)) //nolint:noctx,bodyclose
+			require.NoError(t, err)
+			t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
+
+			// failAuthStep returns 400 with CompletedFailed appended.
+			assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+			assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+			var authFlowResponse charon.AuthFlowResponse
+			errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
+			require.NoError(t, errE, "% -+#.1v", errE)
+			assert.Contains(t, authFlowResponse.Completed, charon.CompletedFailed)
+			assert.Nil(t, authFlowResponse.Passkey)
+		})
+	}
+}
+
 func createMockPasskeyCredential(t *testing.T, ts *httptest.Server, authFlowResponsePasskey *charon.AuthFlowResponsePasskey) (charon.AuthFlowPasskeyCreateCompleteRequest, *rsa.PrivateKey, string, []byte, []byte) {
 	t.Helper()
 

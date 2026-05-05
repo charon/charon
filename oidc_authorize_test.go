@@ -217,3 +217,40 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 		})
 	}
 }
+
+// TestOIDCAuthorizeCopiesAllowedProvidersIntoFlow verifies that OIDCAuthorizeGet copies
+// the organization's AllowedProviders into the newly created flow. The flow snapshots
+// the policy at authorize time, so changes to the org afterwards should not affect the
+// in-progress flow (the snapshot is what matters).
+func TestOIDCAuthorizeCopiesAllowedProvidersIntoFlow(t *testing.T) {
+	t.Parallel()
+
+	ts, service, _, _, _ := startTestServer(t) //nolint:dogsled
+
+	// Mutate the Charon dashboard organization (which is what createAuthFlow uses) to
+	// have an explicit allowed-provider list. We bypass the admin check by writing
+	// directly to storage.
+	charonOrgID := service.TestingCharonOrganizationID()
+	org, errE := service.TestingGetOrganization(t.Context(), charonOrgID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	org.AllowedProviders = []charon.Provider{charon.ProviderEmail, charon.ProviderPassword, charon.ProviderUsername}
+	errE = service.TestingStoreOrganization(org)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	// Run an OIDC authorize. createAuthFlow goes through OIDCAuthorizeGet end-to-end.
+	flowID, _, _, _, _, _ := createAuthFlow(t, ts, service) //nolint:dogsled
+
+	// The flow must have inherited AllowedProviders from the organization.
+	f, errE := service.TestingGetFlow(t.Context(), flowID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Equal(t, []charon.Provider{charon.ProviderEmail, charon.ProviderPassword, charon.ProviderUsername}, f.AllowedProviders)
+
+	// Changing the org after the flow exists must not retroactively change the flow.
+	org.AllowedProviders = []charon.Provider{}
+	errE = service.TestingStoreOrganization(org)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	f, errE = service.TestingGetFlow(t.Context(), flowID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Equal(t, []charon.Provider{charon.ProviderEmail, charon.ProviderPassword, charon.ProviderUsername}, f.AllowedProviders)
+}

@@ -53,6 +53,31 @@ func (s *Service) TestingCharonOrganizationID() identifier.Identifier {
 	return s.charonOrganization().ID
 }
 
+func (s *Service) TestingGetAvailableProviders() []Provider {
+	return s.getAvailableProviders()
+}
+
+// TestingGetOrganization fetches an organization by ID, bypassing the API layer.
+func (s *Service) TestingGetOrganization(ctx context.Context, id identifier.Identifier) (*Organization, errors.E) {
+	return s.getOrganization(ctx, id)
+}
+
+// TestingStoreOrganization writes the (already validated) organization directly into
+// storage, bypassing the admin checks in updateOrganization. Useful for tests that need
+// to mutate the Charon dashboard organization, since it has no real admins in tests.
+func (s *Service) TestingStoreOrganization(organization *Organization) errors.E {
+	data, errE := x.MarshalWithoutEscapeHTML(organization)
+	if errE != nil {
+		return errE
+	}
+	s.setOrganization(*organization.ID, data)
+	return nil
+}
+
+func TestingFlowIsProviderAllowed(f *flow, provider Provider) bool {
+	return f.isProviderAllowed(provider)
+}
+
 func (s *Service) TestingListActivities(_ context.Context) ([]*Activity, errors.E) {
 	s.activitiesMu.RLock()
 	defer s.activitiesMu.RUnlock()

@@ -638,6 +638,90 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				},
 			},
 		},
+		{
+			name: "allowed providers added (empty -> non-empty)",
+			existing: &charon.Organization{
+				OrganizationPublic: charon.OrganizationPublic{
+					ID:   &orgID,
+					Name: "Test Org",
+				},
+				AllowedProviders: []charon.Provider{},
+			},
+			updated: &charon.Organization{
+				OrganizationPublic: charon.OrganizationPublic{
+					ID:   &orgID,
+					Name: "Test Org",
+				},
+				AllowedProviders: []charon.Provider{charon.ProviderEmail, charon.ProviderPassword, charon.ProviderUsername},
+			},
+			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeOtherData},
+			expectedAdminsChanged:          []charon.IdentityRef{},
+			expectedRolesIdentitiesChanged: []charon.IdentityRef{},
+			expectedApps:                   []charon.OrganizationApplicationRef{},
+		},
+		{
+			name: "allowed providers removed (non-empty -> empty)",
+			existing: &charon.Organization{
+				OrganizationPublic: charon.OrganizationPublic{
+					ID:   &orgID,
+					Name: "Test Org",
+				},
+				AllowedProviders: []charon.Provider{charon.ProviderEmail, charon.ProviderPassword, charon.ProviderUsername},
+			},
+			updated: &charon.Organization{
+				OrganizationPublic: charon.OrganizationPublic{
+					ID:   &orgID,
+					Name: "Test Org",
+				},
+				AllowedProviders: []charon.Provider{},
+			},
+			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeOtherData},
+			expectedAdminsChanged:          []charon.IdentityRef{},
+			expectedRolesIdentitiesChanged: []charon.IdentityRef{},
+			expectedApps:                   []charon.OrganizationApplicationRef{},
+		},
+		{
+			name: "allowed providers same set reports no change",
+			existing: &charon.Organization{
+				OrganizationPublic: charon.OrganizationPublic{
+					ID:   &orgID,
+					Name: "Test Org",
+				},
+				AllowedProviders: []charon.Provider{charon.ProviderEmail, charon.ProviderPassword, charon.ProviderUsername},
+			},
+			updated: &charon.Organization{
+				OrganizationPublic: charon.OrganizationPublic{
+					ID:   &orgID,
+					Name: "Test Org",
+				},
+				AllowedProviders: []charon.Provider{charon.ProviderEmail, charon.ProviderPassword, charon.ProviderUsername},
+			},
+			expectedChanges:                []charon.ActivityChangeType{},
+			expectedAdminsChanged:          []charon.IdentityRef{},
+			expectedRolesIdentitiesChanged: []charon.IdentityRef{},
+			expectedApps:                   []charon.OrganizationApplicationRef{},
+		},
+		{
+			name: "allowed providers extended with passkey",
+			existing: &charon.Organization{
+				OrganizationPublic: charon.OrganizationPublic{
+					ID:   &orgID,
+					Name: "Test Org",
+				},
+				AllowedProviders: []charon.Provider{charon.ProviderEmail, charon.ProviderPassword, charon.ProviderUsername},
+			},
+			updated: &charon.Organization{
+				OrganizationPublic: charon.OrganizationPublic{
+					ID:   &orgID,
+					Name: "Test Org",
+				},
+				AllowedProviders: []charon.Provider{charon.ProviderEmail, charon.ProviderPasskey, charon.ProviderPassword, charon.ProviderUsername},
+			},
+			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeOtherData},
+			expectedAdminsChanged:          []charon.IdentityRef{},
+			expectedRolesIdentitiesChanged: []charon.IdentityRef{},
+			expectedApps:                   []charon.OrganizationApplicationRef{},
+		},
 	}
 
 	for _, tt := range tests {
@@ -880,4 +964,174 @@ func TestOrganizationValidateRoles(t *testing.T) {
 		require.NoError(t, errE, "% -+#.1v", errE)
 		assert.Equal(t, []string{"admin"}, org.Roles[targetID])
 	})
+}
+
+// TestOrganizationValidateAllowedProviders covers the AllowedProviders rules in
+// Organization.validate: nil normalization, dedupe + sort, the all-or-explicit semantic
+// (empty list = all providers allowed), the requirement that fixed built-in providers
+// (username/email/password) are present when the list is explicit, and rejection of
+// providers not exposed by getAvailableProviders.
+func TestOrganizationValidateAllowedProviders(t *testing.T) {
+	t.Parallel()
+
+	_, service, _, _, _ := startTestServer(t) //nolint:dogsled
+
+	accountID := identifier.New()
+	ctx := service.TestingWithAccountID(t.Context(), accountID)
+	ctx = service.TestingWithSessionID(ctx)
+	ctx = service.TestingWithRequestID(ctx)
+
+	adminID := createTestIdentity(t, service, ctx)
+	ctx = service.TestingWithIdentityID(ctx, adminID)
+
+	t.Run("nil AllowedProviders normalized to empty", func(t *testing.T) {
+		t.Parallel()
+		org := &charon.Organization{
+			OrganizationPublic: charon.OrganizationPublic{Name: "Nil Providers Org"},
+			Admins:             []charon.IdentityRef{},
+			Applications:       []charon.OrganizationApplication{},
+			AllowedProviders:   nil,
+		}
+		errE := service.TestingCreateOrganization(ctx, org)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		assert.NotNil(t, org.AllowedProviders)
+		assert.Empty(t, org.AllowedProviders)
+	})
+
+	t.Run("empty AllowedProviders means all allowed (no validation)", func(t *testing.T) {
+		t.Parallel()
+		org := &charon.Organization{
+			OrganizationPublic: charon.OrganizationPublic{Name: "Empty Providers Org"},
+			Admins:             []charon.IdentityRef{},
+			Applications:       []charon.OrganizationApplication{},
+			AllowedProviders:   []charon.Provider{},
+		}
+		errE := service.TestingCreateOrganization(ctx, org)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		assert.Empty(t, org.AllowedProviders)
+	})
+
+	t.Run("explicit list with all fixed built-ins succeeds", func(t *testing.T) {
+		t.Parallel()
+		org := &charon.Organization{
+			OrganizationPublic: charon.OrganizationPublic{Name: "Builtins Only Org"},
+			Admins:             []charon.IdentityRef{},
+			Applications:       []charon.OrganizationApplication{},
+			AllowedProviders:   []charon.Provider{charon.ProviderUsername, charon.ProviderEmail, charon.ProviderPassword},
+		}
+		errE := service.TestingCreateOrganization(ctx, org)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		// Validate sorts the canonical form.
+		assert.Equal(t, []charon.Provider{charon.ProviderEmail, charon.ProviderPassword, charon.ProviderUsername}, org.AllowedProviders)
+	})
+
+	t.Run("explicit list with passkey added succeeds", func(t *testing.T) {
+		t.Parallel()
+		org := &charon.Organization{
+			OrganizationPublic: charon.OrganizationPublic{Name: "Plus Passkey Org"},
+			Admins:             []charon.IdentityRef{},
+			Applications:       []charon.OrganizationApplication{},
+			AllowedProviders:   []charon.Provider{charon.ProviderUsername, charon.ProviderEmail, charon.ProviderPassword, charon.ProviderPasskey},
+		}
+		errE := service.TestingCreateOrganization(ctx, org)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		assert.Equal(t, []charon.Provider{charon.ProviderEmail, charon.ProviderPasskey, charon.ProviderPassword, charon.ProviderUsername}, org.AllowedProviders)
+	})
+
+	t.Run("explicit list with configured third-party provider succeeds", func(t *testing.T) {
+		t.Parallel()
+		org := &charon.Organization{
+			OrganizationPublic: charon.OrganizationPublic{Name: "Plus OIDC Org"},
+			Admins:             []charon.IdentityRef{},
+			Applications:       []charon.OrganizationApplication{},
+			AllowedProviders:   []charon.Provider{charon.ProviderUsername, charon.ProviderEmail, charon.ProviderPassword, "oidcTesting"},
+		}
+		errE := service.TestingCreateOrganization(ctx, org)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		assert.Contains(t, org.AllowedProviders, charon.Provider("oidcTesting"))
+	})
+
+	t.Run("missing fixed built-in provider rejected", func(t *testing.T) {
+		t.Parallel()
+		org := &charon.Organization{
+			OrganizationPublic: charon.OrganizationPublic{Name: "Missing Builtin Org"},
+			Admins:             []charon.IdentityRef{},
+			Applications:       []charon.OrganizationApplication{},
+			// Missing ProviderUsername.
+			AllowedProviders: []charon.Provider{charon.ProviderEmail, charon.ProviderPassword},
+		}
+		errE := service.TestingCreateOrganization(ctx, org)
+		require.Error(t, errE)
+		assert.ErrorIs(t, errE, charon.ErrOrganizationValidationFailed)
+		assert.EqualError(t, errors.Cause(errE), "fixed built-in provider missing")
+	})
+
+	t.Run("unknown provider rejected", func(t *testing.T) {
+		t.Parallel()
+		org := &charon.Organization{
+			OrganizationPublic: charon.OrganizationPublic{Name: "Unknown Provider Org"},
+			Admins:             []charon.IdentityRef{},
+			Applications:       []charon.OrganizationApplication{},
+			AllowedProviders:   []charon.Provider{charon.ProviderUsername, charon.ProviderEmail, charon.ProviderPassword, "doesNotExist"},
+		}
+		errE := service.TestingCreateOrganization(ctx, org)
+		require.Error(t, errE)
+		assert.ErrorIs(t, errE, charon.ErrOrganizationValidationFailed)
+		assert.EqualError(t, errors.Cause(errE), "unknown provider")
+	})
+
+	t.Run("ProviderCode rejected as not user-selectable", func(t *testing.T) {
+		t.Parallel()
+		// ProviderCode is the email-code fallback; it is not part of getAvailableProviders
+		// and so must be rejected as "unknown provider" when an admin tries to list it.
+		org := &charon.Organization{
+			OrganizationPublic: charon.OrganizationPublic{Name: "Code Provider Org"},
+			Admins:             []charon.IdentityRef{},
+			Applications:       []charon.OrganizationApplication{},
+			AllowedProviders:   []charon.Provider{charon.ProviderUsername, charon.ProviderEmail, charon.ProviderPassword, charon.ProviderCode},
+		}
+		errE := service.TestingCreateOrganization(ctx, org)
+		require.Error(t, errE)
+		assert.ErrorIs(t, errE, charon.ErrOrganizationValidationFailed)
+		assert.EqualError(t, errors.Cause(errE), "unknown provider")
+	})
+
+	t.Run("duplicates deduplicated and result sorted", func(t *testing.T) {
+		t.Parallel()
+		org := &charon.Organization{
+			OrganizationPublic: charon.OrganizationPublic{Name: "Duplicates Org"},
+			Admins:             []charon.IdentityRef{},
+			Applications:       []charon.OrganizationApplication{},
+			// Out of order with duplicates.
+			AllowedProviders: []charon.Provider{charon.ProviderPassword, charon.ProviderUsername, charon.ProviderEmail, charon.ProviderPassword, charon.ProviderUsername},
+		}
+		errE := service.TestingCreateOrganization(ctx, org)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		assert.Equal(t, []charon.Provider{charon.ProviderEmail, charon.ProviderPassword, charon.ProviderUsername}, org.AllowedProviders)
+	})
+}
+
+// TestGetAvailableProviders verifies the provider set an organization admin can choose
+// from: the four built-ins (username, email, password, passkey) plus any configured
+// third-party site providers. ProviderCode is intentionally absent because it is the
+// password-flow fallback and is not user-selectable.
+func TestGetAvailableProviders(t *testing.T) {
+	t.Parallel()
+
+	_, service, _, _, _ := startTestServer(t) //nolint:dogsled
+
+	got := service.TestingGetAvailableProviders()
+
+	// Built-ins must always be present.
+	assert.Contains(t, got, charon.ProviderUsername)
+	assert.Contains(t, got, charon.ProviderEmail)
+	assert.Contains(t, got, charon.ProviderPassword)
+	assert.Contains(t, got, charon.ProviderPasskey)
+
+	// startTestServer wires up oidcTesting and samlTesting as site providers.
+	assert.Contains(t, got, charon.Provider("oidcTesting"))
+	assert.Contains(t, got, charon.Provider("samlTesting"))
+
+	// ProviderCode is intentionally not user-selectable.
+	assert.NotContains(t, got, charon.ProviderCode)
 }
