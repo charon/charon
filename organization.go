@@ -1938,7 +1938,9 @@ func (s *Service) OrganizationRoles(w http.ResponseWriter, req *http.Request, _ 
 // always available when password is allowed and cannot be restricted independently.
 // Mirrors availableProviders in src/views/OrganizationGet.vue.
 func (s *Service) getAvailableProviders() []Provider {
-	providers := []Provider{ProviderUsername, ProviderEmail, ProviderPassword, ProviderPasskey}
+	builtIn := []Provider{ProviderUsername, ProviderEmail, ProviderPassword, ProviderPasskey}
+	providers := make([]Provider, 0, len(builtIn)+len(s.providers))
+	providers = append(providers, builtIn...)
 
 	for _, p := range s.providers {
 		providers = append(providers, p.Key)
