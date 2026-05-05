@@ -76,6 +76,7 @@ const identitiesForOrganization = ref<IdentityForOrganization[]>([])
 
 const providersUnexpectedError = ref("")
 const providersUpdated = ref(false)
+// Keep in sync with fixedBuiltInProviders in organization.go.
 const fixedBuiltInProviders = ["username", "email", "password"]
 const availableProviders = [...fixedBuiltInProviders, "passkey", ...siteContext.providers.map((p) => p.key)]
 // "all" means empty allowedProviders on the server (all providers, including future ones).

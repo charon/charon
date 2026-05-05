@@ -779,6 +779,7 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 	// listed providers must exist.
 	if len(o.AllowedProviders) > 0 {
 		// TODO: Add support for removing the following (3) built-in providers. For now they are required to be present.
+		// Keep in sync with fixedBuiltInProviders in src/views/OrganizationGet.vue.
 		fixedBuiltInProviders := [3]Provider{ProviderUsername, ProviderEmail, ProviderPassword}
 		for _, provider := range fixedBuiltInProviders {
 			if !slices.Contains(o.AllowedProviders, provider) {
