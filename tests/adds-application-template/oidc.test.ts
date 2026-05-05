@@ -4,6 +4,7 @@ import { CHARON_URL, checkpoint, expect, takeScreenshotsOfEntries, test } from "
 test.describe.serial("Charon OIDC Flows", () => {
   test("Test OIDC login", async ({ context }) => {
     const page = await context.newPage()
+    const oidcOrganizationName = "Test OIDC Organization 1"
 
     // Grant permissions for oidcdebugger.com to perform PKCE token exchange.
     await context.grantPermissions(["local-network-access"], { origin: "https://oidcdebugger.com" })
@@ -49,7 +50,7 @@ test.describe.serial("Charon OIDC Flows", () => {
     await expect(homeButton).toBeVisible()
     await homeButton.click()
 
-    await createOrganization(page, "Test OIDC Organization 1")
+    await createOrganization(page, oidcOrganizationName)
 
     // Add oidc app to the organization.
     const oidcItem = page.locator('li:has-text("OIDC Application")')
@@ -198,8 +199,7 @@ test.describe.serial("Charon OIDC Flows", () => {
     await expect(organizationsLink).toBeVisible()
     await organizationsLink.click()
 
-    // Select organization "Test OIDC Organization 1".
-    const organization1Link = page.locator('a.link:has-text("Test OIDC Organization 1")')
+    const organization1Link = page.locator(`a.link:has-text("${oidcOrganizationName}")`)
     await expect(organization1Link).toBeVisible()
     await organization1Link.click()
 
