@@ -131,7 +131,7 @@ test.describe.serial("Charon Sign-in Flows", () => {
     await selectButton.click()
 
     // Waiting for the automatic 3 seconds redirect.
-    await page.waitForTimeout(1000)
+    await page.waitForTimeout(1300)
     const redirectButton = page.locator("#authautoredirect-button-redirect")
     await expect(redirectButton).toBeVisible()
     await expect(redirectButton).toBeFocused()

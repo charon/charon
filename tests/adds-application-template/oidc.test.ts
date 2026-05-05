@@ -43,9 +43,6 @@ test.describe.serial("Charon OIDC Flows", () => {
 
     // Check for the success message.
     await expect(page.getByText("Application template updated successfully.")).toBeVisible()
-    // Without waiting, navbar sometimes appears in the middle of the screenshot.
-    await page.waitForTimeout(1000)
-
     await checkpoint(page, "oidc-applications-created-application-with-id-scopes")
 
     // Create a public client.
@@ -65,8 +62,6 @@ test.describe.serial("Charon OIDC Flows", () => {
 
     // Check for the success message.
     await expect(page.getByText("Public clients updated successfully.")).toBeVisible()
-    // Without waiting, navbar sometimes appears in the middle of the screenshot.
-    await page.waitForTimeout(1000)
     await checkpoint(page, "oidc-applications-created-application-with-updated-public-client")
 
     // Click on home.
@@ -116,8 +111,6 @@ test.describe.serial("Charon OIDC Flows", () => {
     const updateApplicationButton = page.locator("#organizationget-button-applicationsupdate")
     await expect(updateApplicationButton).toBeVisible()
     await expect(page.getByText("Status: active")).toBeVisible()
-    // Without waiting, navbar sometimes appears in the middle of the screenshot.
-    await page.waitForTimeout(1000)
     await checkpoint(page, "oidc-organization-with-pending-activation-application")
     await updateApplicationButton.click()
 
@@ -129,8 +122,6 @@ test.describe.serial("Charon OIDC Flows", () => {
 
     // Check for the success message.
     await expect(page.getByText("Added applications updated successfully.")).toBeVisible()
-    // Without waiting, navbar sometimes appears in the middle of the screenshot.
-    await page.waitForTimeout(1000)
     await checkpoint(page, "oidc-organization-with-added-and-activated-application", { mask: [clientIdField] })
 
     // Test with all three response modes.
@@ -210,16 +201,15 @@ test.describe.serial("Charon OIDC Flows", () => {
       await expect(redirectButton).toBeFocused()
       await redirectButton.click()
 
-      // Wait for the flow and the key exchange to complete successfully.
-      await page.waitForTimeout(1000)
       await expect(page.getByText("The flow was successful.")).toBeVisible()
-
-      // Extract the id_token from the page content.
-      const bodyText = await page.textContent("body")
-      expect(bodyText).not.toBeNull()
+      const result = page.locator("[title='PKCE result']")
+      await expect(result).toBeVisible()
+      // Extract the result text.
+      const resultText = await result.textContent()
+      expect(resultText).not.toBeNull()
 
       // Extract the id_token using regex - JWT format is xxx.yyy.zzz.
-      const idTokenMatch = bodyText!.match(/id_token[=:\s]+([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)/)
+      const idTokenMatch = resultText!.match(/id_token[=:\s]+([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)/)
       expect(idTokenMatch).not.toBeNull()
       const idToken = idTokenMatch![1]
 
