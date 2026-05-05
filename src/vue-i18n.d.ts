@@ -408,7 +408,6 @@ declare module "vue-i18n" {
       CredentialList: {
         noCredentialsCreate: string
         noCredentialsSignIn: string
-        verify: string
       }
       CredentialConfirmEmail: {
         confirmEmail: string
