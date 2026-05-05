@@ -1474,7 +1474,7 @@ func (s *Service) maybeAddEmailCredentialFromThirdPartyToken(
 		}
 	}
 
-	var token map[string]interface{}
+	var token map[string]any
 	errE := x.UnmarshalWithoutUnknownFields(jsonData, &token)
 	if errE != nil {
 		errors.Details(errE)["provider"] = providerKey
