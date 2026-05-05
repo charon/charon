@@ -89,7 +89,7 @@ func initCharonOrganization(ctx context.Context, config *Config, service *Servic
 				},
 			},
 			Roles:            nil,
-			AllowedProviders: []Provider{},
+			AllowedProviders: nil,
 		}
 
 		errE := organization.validate(ctx, &organization, service)
