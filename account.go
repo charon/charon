@@ -148,7 +148,7 @@ func (a *Account) getCredentialByID(credentialID identifier.Identifier) (*Creden
 		}
 		for i, credential := range a.Credentials[provider] {
 			if credential.ID == credentialID {
-				return &a.Credentials[provider][i], provider, i
+				return &credential, provider, i
 			}
 		}
 	}
