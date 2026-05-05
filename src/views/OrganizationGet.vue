@@ -78,6 +78,10 @@ const providersUnexpectedError = ref("")
 const providersUpdated = ref(false)
 // Keep in sync with fixedBuiltInProviders in organization.go.
 const fixedBuiltInProviders = ["username", "email", "password"]
+// "code" is intentionally omitted: it is an automatic fallback to the password flow
+// (e.g. for password recovery via e-mail) rather than a user-selectable provider, so it
+// is always available when password is allowed and cannot be restricted independently.
+// Mirrors getAvailableProviders in organization.go.
 const availableProviders = [...fixedBuiltInProviders, "passkey", ...siteContext.providers.map((p) => p.key)]
 // "all" means empty allowedProviders on the server (all providers, including future ones).
 // "selected" means an explicit list is stored.

@@ -1932,6 +1932,11 @@ func (s *Service) OrganizationRoles(w http.ResponseWriter, req *http.Request, _ 
 	}
 }
 
+// getAvailableProviders returns providers an organization admin can put in AllowedProviders.
+// ProviderCode is intentionally omitted: it is an automatic fallback to the password flow
+// (e.g. for password recovery via e-mail) rather than a user-selectable provider, so it is
+// always available when password is allowed and cannot be restricted independently.
+// Mirrors availableProviders in src/views/OrganizationGet.vue.
 func (s *Service) getAvailableProviders() []Provider {
 	providers := []Provider{ProviderUsername, ProviderEmail, ProviderPassword, ProviderPasskey}
 
