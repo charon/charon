@@ -10,7 +10,7 @@ test.describe.serial("Charon OIDC Flows", () => {
 
     await signInWithPassword(page, "tester-oidc", "tester123", true, true)
 
-    await createApplicationTemplate(page, "OIDC Application",  "oidc")
+    await createApplicationTemplate(page, "OIDC Application", "oidc")
 
     const idScopesField = page.locator("#applicationtemplateget-input-idscopes")
     await expect(idScopesField).toBeVisible()

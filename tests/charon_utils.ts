@@ -21,7 +21,7 @@ export async function createApplicationTemplate(page: Page, applicationName: str
   const applicationNameField = page.locator("input#applicationtemplatecreate-input-name")
   await expect(applicationNameField).toBeVisible()
   await expect(applicationNameField).toBeFocused()
-  await checkpoint(page, `${checkpointPrefix}-applications-create-application)`)
+  await checkpoint(page, `${checkpointPrefix}-applications-create-application`)
   await applicationNameField.fill(applicationName)
 
   const applicationSubmitButton = page.locator("#applicationtemplatecreate-button-create")
