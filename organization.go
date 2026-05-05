@@ -770,6 +770,9 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 	if o.AllowedProviders == nil {
 		o.AllowedProviders = []Provider{}
 	}
+	// AllowedProviders is semantically a set, so dedup and sort for a canonical representation.
+	o.AllowedProviders = removeDuplicates(o.AllowedProviders)
+	slices.Sort(o.AllowedProviders)
 
 	// An empty AllowedProviders means all available providers are allowed.
 	// When non-empty, the fixed built-in providers must be present and all
