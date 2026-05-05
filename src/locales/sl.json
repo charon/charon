@@ -339,17 +339,17 @@
       "availableApplications": "Razpoložljive aplikacije",
       "addedIdentities": "Dodane identitete",
       "availableIdentities": "Razpoložljive identitete",
+      "allowedAuthMethods": "Dovoljene metode avtentikacije",
+      "allowedAuthMethodsAll": "Vse metode avtentikacije",
+      "allowedAuthMethodsSelected": "Samo izbrane metode avtentikacije",
+      "allowedAuthMethodsUpdated": "Dovoljene metode avtentikacije uspešno posodobljene.",
       "backendClients": "@:views.ApplicationTemplateGet.backendClients",
       "clientId": "ID odjemalca:",
       "clientSecret": "Skrivnost odjemalca:",
       "configuration": "Konfiguracija",
       "publicClients": "@:views.ApplicationTemplateGet.publicClients",
       "serviceClients": "@:views.ApplicationTemplateGet.serviceClients",
-      "status": "Status: {strongStatus}",
-      "allowedAuthMethods": "Dovoljene metode avtentikacije",
-      "allowedAuthMethodsAll": "Vse metode avtentikacije",
-      "allowedAuthMethodsSelected": "Samo izbrane metode avtentikacije",
-      "allowedAuthMethodsUpdated": "Dovoljene metode avtentikacije uspešno posodobljene."
+      "status": "Status: {strongStatus}"
     },
     "OrganizationList": {
       "noOrganizationsCreate": "Ni organizacij. Ustvarite prvo.",

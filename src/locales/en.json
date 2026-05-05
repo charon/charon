@@ -339,17 +339,17 @@
       "availableApplications": "Available applications",
       "addedIdentities": "Added identities",
       "availableIdentities": "Available identities",
+      "allowedAuthMethods": "Allowed authentication methods",
+      "allowedAuthMethodsAll": "All authentication methods",
+      "allowedAuthMethodsSelected": "Only selected authentication methods",
+      "allowedAuthMethodsUpdated": "Allowed authentication methods updated successfully.",
       "backendClients": "@:views.ApplicationTemplateGet.backendClients",
       "clientId": "Client ID:",
       "clientSecret": "Client secret:",
       "configuration": "Configuration",
       "publicClients": "@:views.ApplicationTemplateGet.publicClients",
       "serviceClients": "@:views.ApplicationTemplateGet.serviceClients",
-      "status": "Status: {strongStatus}",
-      "allowedAuthMethods": "Allowed authentication methods",
-      "allowedAuthMethodsAll": "All authentication methods",
-      "allowedAuthMethodsSelected": "Only selected authentication methods",
-      "allowedAuthMethodsUpdated": "Allowed authentication methods updated successfully."
+      "status": "Status: {strongStatus}"
     },
     "OrganizationList": {
       "noOrganizationsCreate": "There are no organizations. Create the first one.",

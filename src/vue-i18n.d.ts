@@ -350,6 +350,10 @@ declare module "vue-i18n" {
         availableApplications: string
         addedIdentities: string
         availableIdentities: string
+        allowedAuthMethods: string
+        allowedAuthMethodsAll: string
+        allowedAuthMethodsSelected: string
+        allowedAuthMethodsUpdated: string
         backendClients: string
         clientId: string
         clientSecret: string
@@ -357,10 +361,6 @@ declare module "vue-i18n" {
         publicClients: string
         serviceClients: string
         status: string
-        allowedAuthMethods: string
-        allowedAuthMethodsAll: string
-        allowedAuthMethodsSelected: string
-        allowedAuthMethodsUpdated: string
       }
       OrganizationList: {
         noOrganizationsCreate: string
