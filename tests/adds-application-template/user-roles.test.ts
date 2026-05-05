@@ -29,10 +29,11 @@ test.describe.serial("Charon User Roles", () => {
     await expect(page.locator("#applicationtemplateget-text-rolesupdated")).toBeVisible()
     await checkpoint(page, "roles-applications-with-role-added")
 
-    // Create organization.
+    // Click on home.
     const homeButton = page.locator("#navbar-link-home")
     await expect(homeButton).toBeVisible()
     await homeButton.click()
+
     await createOrganization(page, rolesOrganizationName)
 
     // Add application template to organization.
