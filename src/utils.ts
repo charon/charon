@@ -1,4 +1,4 @@
-import { DeepReadonly, ref, Ref, watchEffect } from "vue"
+import type { DeepReadonly, Ref } from "vue"
 
 import type {
   AuthFlowResponsePassword,
@@ -17,7 +17,7 @@ import type {
 } from "@/types"
 
 import { cloneDeep, isEqual } from "lodash-es"
-import { toRaw } from "vue"
+import { ref, toRaw, watchEffect } from "vue"
 import { useRoute } from "vue-router"
 
 export function redirectServerSide(url: string, replace: boolean, progress: Ref<number>) {
