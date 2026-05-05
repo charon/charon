@@ -26,11 +26,15 @@ const abortController = new AbortController()
 const passwordError = ref("")
 const unexpectedError = ref("")
 
-const allowedThirdPartyProviders = computed(() =>
-  siteContext.providers.filter((p) => (p.type === "oidc" || p.type === "saml") && props.flow.getAllowedProviders().includes(p.key)),
-)
+// Empty AllowedProviders means all providers are allowed.
+const isProviderAllowed = (key: string) => {
+  const allowed = props.flow.getAllowedProviders()
+  return allowed.length === 0 || allowed.includes(key)
+}
 
-const isPasskeyAllowed = computed(() => props.flow.getAllowedProviders().includes("passkey"))
+const allowedThirdPartyProviders = computed(() => siteContext.providers.filter((p) => (p.type === "oidc" || p.type === "saml") && isProviderAllowed(p.key)))
+
+const isPasskeyAllowed = computed(() => isProviderAllowed("passkey"))
 
 function getErrorMessage(errorCode: string) {
   switch (errorCode) {

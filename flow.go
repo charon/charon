@@ -257,5 +257,6 @@ func (s *Service) setFlow(_ context.Context, fl *flow) errors.E {
 }
 
 func (f *flow) isProviderAllowed(provider Provider) bool {
-	return slices.Contains(f.AllowedProviders, provider)
+	// Empty AllowedProviders means all providers are allowed.
+	return len(f.AllowedProviders) == 0 || slices.Contains(f.AllowedProviders, provider)
 }

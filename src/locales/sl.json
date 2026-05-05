@@ -347,6 +347,8 @@
       "serviceClients": "@:views.ApplicationTemplateGet.serviceClients",
       "status": "Status: {strongStatus}",
       "allowedAuthMechanisms": "Dovoljeni mehanizmi avtentikacije",
+      "allowedAuthMechanismsAll": "Vsi mehanizmi avtentikacije",
+      "allowedAuthMechanismsSelected": "Samo izbrani mehanizmi avtentikacije",
       "allowedAuthMechanismsUpdated": "Dovoljeni mehanizmi avtentikacije uspešno posodobljeni."
     },
     "OrganizationList": {

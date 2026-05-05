@@ -347,6 +347,8 @@
       "serviceClients": "@:views.ApplicationTemplateGet.serviceClients",
       "status": "Status: {strongStatus}",
       "allowedAuthMechanisms": "Allowed authentication mechanisms",
+      "allowedAuthMechanismsAll": "All authentication mechanisms",
+      "allowedAuthMechanismsSelected": "Only selected authentication mechanisms",
       "allowedAuthMechanismsUpdated": "Allowed authentication mechanisms updated successfully."
     },
     "OrganizationList": {

@@ -70,7 +70,7 @@ export type AuthFlowResponse = {
   organizationId: string
   appId: string
   providers?: string[]
-  allowedProviders: string[]
+  allowedProviders?: string[]
   emailOrUsername?: string
 } & (
   | {

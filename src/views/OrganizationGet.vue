@@ -25,6 +25,7 @@ import Button from "@/components/Button.vue"
 import ButtonLink from "@/components/ButtonLink.vue"
 import CheckBox from "@/components/CheckBox.vue"
 import InputText from "@/components/InputText.vue"
+import RadioButton from "@/components/RadioButton.vue"
 import TextArea from "@/components/TextArea.vue"
 import siteContext from "@/context"
 import ApplicationTemplateListItem from "@/partials/ApplicationTemplateListItem.vue"
@@ -77,7 +78,17 @@ const providersUnexpectedError = ref("")
 const providersUpdated = ref(false)
 const fixedBuiltInProviders = ["username", "email", "password"]
 const availableProviders = [...fixedBuiltInProviders, "passkey", ...siteContext.providers.map((p) => p.key)]
-const selectedProviders = ref<string[]>([])
+// "all" means empty allowedProviders on the server (all providers, including future ones).
+// "selected" means an explicit list is stored.
+const providersMode = ref<"all" | "selected">("all")
+const selectedProviders = ref<string[]>([...availableProviders])
+// In "all" mode all checkboxes should render as checked (they are also disabled), so keep
+// selectedProviders in sync whenever the user switches to it.
+watch(providersMode, (mode) => {
+  if (mode === "all") {
+    selectedProviders.value = [...availableProviders]
+  }
+})
 
 const allIdentities = ref<AllIdentity[]>([])
 const availableIdentities = computed(() => {
@@ -141,7 +152,7 @@ function initWatchInteraction() {
     return
   }
 
-  const stop = watch([name, description, applications, admins, identitiesForOrganization], resetOnInteraction, { deep: true })
+  const stop = watch([name, description, applications, admins, identitiesForOrganization, providersMode, selectedProviders], resetOnInteraction, { deep: true })
   if (watchInteractionStop !== null) {
     throw new Error("watchInteractionStop already set")
   }
@@ -193,7 +204,16 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
         admins.value = clone(response.doc.admins || [])
       }
       if (update === "init" || update === "providers") {
-        selectedProviders.value = clone(response.doc.allowedProviders || [])
+        // Empty allowedProviders on the server means "all providers (incl. future)".
+        // The UI represents that as the "all" radio mode. A non-empty list is the "selected" mode.
+        const stored = response.doc.allowedProviders || []
+        if (stored.length === 0) {
+          providersMode.value = "all"
+          selectedProviders.value = [...availableProviders]
+        } else {
+          providersMode.value = "selected"
+          selectedProviders.value = clone(stored)
+        }
       }
     }
 
@@ -667,6 +687,15 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
   return labels
 }
 
+// Map the UI state back to the payload field: empty slice for "all" mode, the explicit
+// list for "selected" mode.
+function providersPayload(): string[] {
+  if (providersMode.value === "all") {
+    return []
+  }
+  return selectedProviders.value
+}
+
 async function onProvidersSubmit() {
   const payload: Organization = {
     // We update only selected providers.
@@ -675,12 +704,19 @@ async function onProvidersSubmit() {
     description: organization.value!.description,
     admins: organization.value!.admins,
     applications: organization.value!.applications,
-    allowedProviders: selectedProviders.value,
+    allowedProviders: providersPayload(),
   }
   await onSubmit(payload, "providers", providersUpdated, providersUnexpectedError)
 
   if (providersUnexpectedError.value) {
-    selectedProviders.value = clone(organization.value!.allowedProviders || [])
+    const stored = organization.value!.allowedProviders || []
+    if (stored.length === 0) {
+      providersMode.value = "all"
+      selectedProviders.value = [...availableProviders]
+    } else {
+      providersMode.value = "selected"
+      selectedProviders.value = clone(stored)
+    }
   }
 }
 
@@ -688,7 +724,7 @@ function canProvidersSubmit(): boolean {
   // Submission is on purpose not disabled on providersUnexpectedError so that user can retry.
 
   // Anything changed?
-  if (!equals(organization.value!.allowedProviders || [], selectedProviders.value)) {
+  if (!equals(organization.value!.allowedProviders || [], providersPayload())) {
     return true
   }
 
@@ -987,19 +1023,31 @@ function canProvidersSubmit(): boolean {
             <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onProvidersSubmit">
               <fieldset class="mb-4">
                 <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                  <RadioButton id="organization-providers-mode-all" v-model="providersMode" value="all" :progress="progress" class="mx-2" />
+                  <label for="organization-providers-mode-all" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
+                    t("views.OrganizationGet.allowedAuthMechanismsAll")
+                  }}</label>
+                  <RadioButton id="organization-providers-mode-selected" v-model="providersMode" value="selected" :progress="progress" class="mx-2" />
+                  <label for="organization-providers-mode-selected" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
+                    t("views.OrganizationGet.allowedAuthMechanismsSelected")
+                  }}</label>
+                </div>
+              </fieldset>
+              <fieldset class="mb-4 ml-6">
+                <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
                   <template v-for="p in availableProviders" :key="p">
                     <CheckBox
                       :id="`organization-providers-checkbox-${p}`"
                       v-model="selectedProviders"
                       :value="p"
                       :progress="progress"
-                      :disabled="fixedBuiltInProviders.includes(p)"
+                      :disabled="providersMode === 'all' || fixedBuiltInProviders.includes(p)"
                       class="mx-2"
                     />
                     <div class="flex flex-col">
                       <label
                         :for="`organization-providers-checkbox-${p}`"
-                        :class="progress > 0 || fixedBuiltInProviders.includes(p) ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                        :class="progress > 0 || providersMode === 'all' || fixedBuiltInProviders.includes(p) ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
                         >{{ p }}</label
                       >
                     </div>

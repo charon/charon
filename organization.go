@@ -767,25 +767,31 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 	// TODO: If an application is deactivated/removed from organization, obsolete roles stay.
 	//       See: https://gitlab.com/charon/charon/-/issues/77
 
-	if len(o.AllowedProviders) == 0 {
-		return errors.New("at least 1 authentication method is required")
-	}
-	// TODO: Add support of removing the following (3) built-in providers. For now they are required to be present.
-	fixedBuiltInProviders := [3]Provider{ProviderUsername, ProviderEmail, ProviderPassword}
-	for _, provider := range fixedBuiltInProviders {
-		if !slices.Contains(o.AllowedProviders, provider) {
-			errE := errors.New("fixed built-in provider missing")
-			errors.Details(errE)["provider"] = provider
-			return errE
-		}
+	if o.AllowedProviders == nil {
+		o.AllowedProviders = []Provider{}
 	}
 
-	availableProviders := service.getAvailableProviders()
-	for _, provider := range o.AllowedProviders {
-		if !slices.Contains(availableProviders, provider) {
-			errE := errors.New("unknown provider")
-			errors.Details(errE)["provider"] = provider
-			return errE
+	// An empty AllowedProviders means all available providers are allowed.
+	// When non-empty, the fixed built-in providers must be present and all
+	// listed providers must exist.
+	if len(o.AllowedProviders) > 0 {
+		// TODO: Add support for removing the following (3) built-in providers. For now they are required to be present.
+		fixedBuiltInProviders := [3]Provider{ProviderUsername, ProviderEmail, ProviderPassword}
+		for _, provider := range fixedBuiltInProviders {
+			if !slices.Contains(o.AllowedProviders, provider) {
+				errE := errors.New("fixed built-in provider missing")
+				errors.Details(errE)["provider"] = provider
+				return errE
+			}
+		}
+
+		availableProviders := service.getAvailableProviders()
+		for _, provider := range o.AllowedProviders {
+			if !slices.Contains(availableProviders, provider) {
+				errE := errors.New("unknown provider")
+				errors.Details(errE)["provider"] = provider
+				return errE
+			}
 		}
 	}
 
@@ -1021,8 +1027,6 @@ func (s *Service) setAccountsBlock(
 
 func (s *Service) createOrganization(ctx context.Context, organization *Organization) errors.E {
 	co := s.charonOrganization()
-
-	organization.AllowedProviders = s.getAvailableProviders()
 
 	errE := organization.Validate(ctx, nil, s)
 	if errE != nil {
