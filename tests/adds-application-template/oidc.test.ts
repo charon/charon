@@ -82,7 +82,7 @@ test.describe.serial("Charon OIDC Flows", () => {
     expect(oidcClientId).not.toBeNull()
 
     // Check for the success message.
-	  await expect(page.locator("#organizationget-text-applicationsupdated")).toBeVisible()
+    await expect(page.locator("#organizationget-text-applicationsupdated")).toBeVisible()
     await checkpoint(page, "oidc-organization-with-added-and-activated-application", { mask: [clientIdField] })
 
     // Test with all three response modes.
