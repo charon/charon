@@ -84,14 +84,15 @@ type flow struct {
 	OIDCAuthorizeRequest *fosite.AuthorizeRequest
 
 	// State while the user is authenticating themselves.
-	AuthAttempts    int
-	Providers       []Provider
-	EmailOrUsername string
-	OIDCProvider    *flowOIDCProvider
-	SAMLProvider    *flowSAMLProvider
-	Passkey         *flowPasskey
-	Password        *flowPassword
-	Code            *flowCode
+	AuthAttempts     int
+	Providers        []Provider
+	AllowedProviders []Provider
+	EmailOrUsername  string
+	OIDCProvider     *flowOIDCProvider
+	SAMLProvider     *flowSAMLProvider
+	Passkey          *flowPasskey
+	Password         *flowPassword
+	Code             *flowCode
 }
 
 func (f *flow) Expired() bool {
@@ -253,4 +254,9 @@ func (s *Service) setFlow(_ context.Context, fl *flow) errors.E {
 
 	s.flows[fl.ID] = data
 	return nil
+}
+
+func (f *flow) isProviderAllowed(provider Provider) bool {
+	// Empty AllowedProviders means all providers are allowed.
+	return len(f.AllowedProviders) == 0 || slices.Contains(f.AllowedProviders, provider)
 }

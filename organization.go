@@ -567,6 +567,8 @@ type Organization struct {
 	// allow users to be enumerated. This is why Roles map is not public, but we publicly
 	// expose the roles for each user through OrganizationIdentity.
 	Roles map[identifier.Identifier][]string `json:"roles"`
+
+	AllowedProviders []Provider `json:"allowedProviders"`
 }
 
 // GetApplication returns the application template added to the organization (i.e., the application)
@@ -765,6 +767,43 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 	// TODO: If an application is deactivated/removed from organization, obsolete roles stay.
 	//       See: https://gitlab.com/charon/charon/-/issues/77
 
+	if o.AllowedProviders == nil {
+		o.AllowedProviders = []Provider{}
+	}
+	// AllowedProviders is semantically a set, so dedup and sort for a canonical representation.
+	o.AllowedProviders = removeDuplicates(o.AllowedProviders)
+	slices.Sort(o.AllowedProviders)
+
+	// An empty AllowedProviders means all available providers are allowed.
+	// When non-empty, the fixed built-in providers must be present and all
+	// listed providers must exist.
+	if len(o.AllowedProviders) > 0 {
+		// TODO: Add support for removing the following (3) built-in providers. For now they are required to be present.
+		// Keep in sync with fixedBuiltInProviders in src/views/OrganizationGet.vue.
+		fixedBuiltInProviders := [3]Provider{ProviderUsername, ProviderEmail, ProviderPassword}
+		for _, provider := range fixedBuiltInProviders {
+			if !slices.Contains(o.AllowedProviders, provider) {
+				errE := errors.New("fixed built-in provider missing")
+				errors.Details(errE)["provider"] = provider
+				return errE
+			}
+		}
+
+		// TODO: Tolerate previously-available providers that are no longer configured.
+		//       If a third-party provider is removed from the site config, every org with it in AllowedProviders becomes un-updatable: any save fails here
+		//       as "unknown provider", even when the admin is changing an unrelated field. Maybe mirror the Roles validator (which only validates *added*
+		//       roles so disabled apps don't poison existing role assignments) by comparing against existing.AllowedProviders and rejecting only newly-added
+		//       unknown providers. Or just show such stale providers in UI so that admin can remove them.
+		availableProviders := service.getAvailableProviders()
+		for _, provider := range o.AllowedProviders {
+			if !slices.Contains(availableProviders, provider) {
+				errE := errors.New("unknown provider")
+				errors.Details(errE)["provider"] = provider
+				return errE
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -787,6 +826,10 @@ func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []
 	}
 	if !adminsRemoved.IsEmpty() {
 		changes = append(changes, ActivityChangePermissionsRemoved)
+	}
+
+	if !reflect.DeepEqual(existing.AllowedProviders, o.AllowedProviders) {
+		changes = append(changes, ActivityChangeOtherData)
 	}
 
 	// We make copies of app structs on purpose, so that we can change Active field as needed.
@@ -1892,4 +1935,21 @@ func (s *Service) OrganizationRoles(w http.ResponseWriter, req *http.Request, _ 
 	} else {
 		s.ServeStaticFile(w, req, "/index.html")
 	}
+}
+
+// getAvailableProviders returns providers an organization admin can put in AllowedProviders.
+// ProviderCode is intentionally omitted: it is an automatic fallback to the password flow
+// (e.g. for password recovery via e-mail) rather than a user-selectable provider, so it is
+// always available when password is allowed and cannot be restricted independently.
+// Mirrors availableProviders in src/views/OrganizationGet.vue.
+func (s *Service) getAvailableProviders() []Provider {
+	builtIn := []Provider{ProviderUsername, ProviderEmail, ProviderPassword, ProviderPasskey}
+	providers := make([]Provider, 0, len(builtIn)+len(s.providers))
+	providers = append(providers, builtIn...)
+
+	for _, p := range s.providers {
+		providers = append(providers, p.Key)
+	}
+
+	return providers
 }

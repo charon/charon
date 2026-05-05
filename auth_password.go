@@ -132,6 +132,7 @@ func (s *Service) AuthFlowPasswordStartPostAPI(w http.ResponseWriter, req *http.
 		OrganizationID:     flow.OrganizationID,
 		AppID:              flow.AppID,
 		Providers:          flow.Providers,
+		AllowedProviders:   flow.AllowedProviders,
 		EmailOrUsername:    flow.EmailOrUsername,
 		ThirdPartyProvider: nil,
 		Passkey:            nil,

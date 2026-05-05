@@ -23,7 +23,9 @@ import { setupArgon2id } from "@/argon2id"
 import { isSignedIn } from "@/auth"
 import Button from "@/components/Button.vue"
 import ButtonLink from "@/components/ButtonLink.vue"
+import CheckBox from "@/components/CheckBox.vue"
 import InputText from "@/components/InputText.vue"
+import RadioButton from "@/components/RadioButton.vue"
 import TextArea from "@/components/TextArea.vue"
 import siteContext from "@/context"
 import ApplicationTemplateListItem from "@/partials/ApplicationTemplateListItem.vue"
@@ -71,6 +73,33 @@ const organizationIdentitiesUnexpectedError = ref("")
 const organizationIdentitiesUpdated = ref(false)
 let identitiesForOrganizationInitial: IdentityForOrganization[] = []
 const identitiesForOrganization = ref<IdentityForOrganization[]>([])
+
+const providersUnexpectedError = ref("")
+const providersUpdated = ref(false)
+// Keep in sync with fixedBuiltInProviders in organization.go.
+const fixedBuiltInProviders = ["username", "email", "password"]
+// "code" is intentionally omitted: it is an automatic fallback to the password flow
+// (e.g. for password recovery via e-mail) rather than a user-selectable provider, so it
+// is always available when password is allowed and cannot be restricted independently.
+// Mirrors getAvailableProviders in organization.go.
+const availableProviders = [...fixedBuiltInProviders, "passkey", ...siteContext.providers.map((p) => p.key)]
+// TODO: Handle the stale-provider trap. If a third-party provider was removed from
+//       the site config while an org still has it in stored allowedProviders, no
+//       checkbox is rendered for it but selectedProviders still contains it. The
+//       user cannot remove it through the UI and any save fails backend validation
+//       as "unknown provider". Render orphans as a labelled "no longer available"
+//       group so the admin can uncheck and save.
+// "all" means empty allowedProviders on the server (all providers, including future ones).
+// "selected" means an explicit list is stored.
+const providersMode = ref<"all" | "selected">("all")
+const selectedProviders = ref<string[]>([...availableProviders])
+// In "all" mode all checkboxes should render as checked (they are also disabled), so keep
+// selectedProviders in sync whenever the user switches to it.
+watch(providersMode, (mode) => {
+  if (mode === "all") {
+    selectedProviders.value = [...availableProviders]
+  }
+})
 
 const allIdentities = ref<AllIdentity[]>([])
 const availableIdentities = computed(() => {
@@ -122,6 +151,8 @@ function resetOnInteraction() {
   adminsUpdated.value = false
   organizationIdentitiesUnexpectedError.value = ""
   organizationIdentitiesUpdated.value = false
+  providersUnexpectedError.value = ""
+  providersUpdated.value = false
   // dataLoading and dataLoadingError are not listed here on
   // purpose because they are used only on mount.
 }
@@ -132,7 +163,7 @@ function initWatchInteraction() {
     return
   }
 
-  const stop = watch([name, description, applications, admins, identitiesForOrganization], resetOnInteraction, { deep: true })
+  const stop = watch([name, description, applications, admins, identitiesForOrganization, providersMode, selectedProviders], resetOnInteraction, { deep: true })
   if (watchInteractionStop !== null) {
     throw new Error("watchInteractionStop already set")
   }
@@ -147,7 +178,7 @@ onBeforeUnmount(() => {
   abortController.abort()
 })
 
-async function loadData(update: "init" | "basic" | "applications" | "admins" | "identities" | null, dataError: Ref<string> | null) {
+async function loadData(update: "init" | "basic" | "applications" | "admins" | "identities" | "providers" | null, dataError: Ref<string> | null) {
   if (abortController.signal.aborted) {
     return
   }
@@ -182,6 +213,18 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
       }
       if (update === "init" || update === "admins") {
         admins.value = clone(response.doc.admins || [])
+      }
+      if (update === "init" || update === "providers") {
+        // Empty allowedProviders on the server means "all providers (incl. future)".
+        // The UI represents that as the "all" radio mode. A non-empty list is the "selected" mode.
+        const stored = response.doc.allowedProviders || []
+        if (stored.length === 0) {
+          providersMode.value = "all"
+          selectedProviders.value = [...availableProviders]
+        } else {
+          providersMode.value = "selected"
+          selectedProviders.value = clone(stored)
+        }
       }
     }
 
@@ -257,7 +300,7 @@ onBeforeMount(async () => {
   await loadData("init", dataLoadingError)
 })
 
-async function onSubmit(payload: Organization, update: "basic" | "applications" | "admins", updated: Ref<boolean>, unexpectedError: Ref<string>) {
+async function onSubmit(payload: Organization, update: "basic" | "applications" | "admins" | "providers", updated: Ref<boolean>, unexpectedError: Ref<string>) {
   if (abortController.signal.aborted) {
     return
   }
@@ -326,6 +369,7 @@ async function onBasicSubmit() {
     admins: organization.value!.admins,
     applications: organization.value!.applications,
     roles: organization.value!.roles,
+    allowedProviders: organization.value!.allowedProviders,
   }
   await onSubmit(payload, "basic", basicUpdated, basicUnexpectedError)
 }
@@ -359,6 +403,7 @@ async function onApplicationsSubmit() {
     admins: organization.value!.admins,
     applications: applications.value,
     roles: organization.value!.roles,
+    allowedProviders: organization.value!.allowedProviders,
   }
   await onSubmit(payload, "applications", applicationsUpdated, applicationsUnexpectedError)
 }
@@ -479,6 +524,7 @@ async function onAdminsSubmit() {
     admins: admins.value,
     applications: organization.value!.applications,
     roles: organization.value!.roles,
+    allowedProviders: organization.value!.allowedProviders,
   }
   await onSubmit(payload, "admins", adminsUpdated, adminsUnexpectedError)
 }
@@ -650,6 +696,53 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
     labels.push(t("common.labels.blocked"))
   }
   return labels
+}
+
+// Map the UI state back to the payload field: empty slice for "all" mode, the explicit
+// list for "selected" mode. Sorted so a toggle-off-then-on (which Vue's v-model appends
+// to the end of the array) doesn't register as a change against the canonical server form.
+function providersPayload(): string[] {
+  if (providersMode.value === "all") {
+    return []
+  }
+  return [...selectedProviders.value].sort()
+}
+
+async function onProvidersSubmit() {
+  const payload: Organization = {
+    // We update only selected providers.
+    id: props.id,
+    name: organization.value!.name,
+    description: organization.value!.description,
+    admins: organization.value!.admins,
+    applications: organization.value!.applications,
+    roles: organization.value!.roles,
+    allowedProviders: providersPayload(),
+  }
+  await onSubmit(payload, "providers", providersUpdated, providersUnexpectedError)
+
+  if (providersUnexpectedError.value) {
+    const stored = organization.value!.allowedProviders || []
+    if (stored.length === 0) {
+      providersMode.value = "all"
+      selectedProviders.value = [...availableProviders]
+    } else {
+      providersMode.value = "selected"
+      selectedProviders.value = clone(stored)
+    }
+  }
+}
+
+function canProvidersSubmit(): boolean {
+  // Submission is on purpose not disabled on providersUnexpectedError so that user can retry.
+
+  // Anything changed?
+  const stored = [...(organization.value!.allowedProviders || [])].sort()
+  if (!equals(stored, providersPayload())) {
+    return true
+  }
+
+  return false
 }
 
 // TODO: Remember previous client ID and secrets and reuse them if an add application is removed and then added back without calling update in-between.
@@ -932,6 +1025,55 @@ function allIdentityLabels(allIdentity: AllIdentity): string[] {
                 </IdentityFull>
               </li>
             </ul>
+          </template>
+          <template v-if="metadata.can_update || providersUnexpectedError || providersUpdated">
+            <h2 class="text-xl font-bold">{{ t("views.OrganizationGet.allowedAuthMethods") }}</h2>
+            <div v-if="providersUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
+            <div v-else-if="providersUpdated" class="text-success-600">{{ t("views.OrganizationGet.allowedAuthMethodsUpdated") }}</div>
+            <!--
+              We set novalidate because we do not want UA to show hints.
+              We show them ourselves when we want them.
+            -->
+            <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onProvidersSubmit">
+              <fieldset class="mb-4">
+                <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                  <RadioButton id="organization-providers-mode-all" v-model="providersMode" value="all" :progress="progress" class="mx-2" />
+                  <label for="organization-providers-mode-all" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
+                    t("views.OrganizationGet.allowedAuthMethodsAll")
+                  }}</label>
+                  <RadioButton id="organization-providers-mode-selected" v-model="providersMode" value="selected" :progress="progress" class="mx-2" />
+                  <label for="organization-providers-mode-selected" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
+                    t("views.OrganizationGet.allowedAuthMethodsSelected")
+                  }}</label>
+                </div>
+              </fieldset>
+              <fieldset class="mb-4 ml-6">
+                <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                  <template v-for="p in availableProviders" :key="p">
+                    <CheckBox
+                      :id="`organization-providers-checkbox-${p}`"
+                      v-model="selectedProviders"
+                      :value="p"
+                      :progress="progress"
+                      :disabled="providersMode === 'all' || fixedBuiltInProviders.includes(p)"
+                      class="mx-2"
+                    />
+                    <div class="flex flex-col">
+                      <label
+                        :for="`organization-providers-checkbox-${p}`"
+                        :class="progress > 0 || providersMode === 'all' || fixedBuiltInProviders.includes(p) ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                        >{{ p }}</label
+                      >
+                    </div>
+                  </template>
+                </div>
+              </fieldset>
+              <div class="flex justify-end">
+                <Button id="providers-update" type="submit" primary :disabled="!canProvidersSubmit()" :progress="progress">
+                  {{ t("common.buttons.update") }}
+                </Button>
+              </div>
+            </form>
           </template>
         </template>
       </div>

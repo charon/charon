@@ -43,7 +43,7 @@ func grantAllScopes(request fosite.Requester) {
 //       See: https://github.com/ory/fosite/issues/409
 // TODO: Support also cases where frontend is never involved and redirect happens on the server side.
 //       Currently the frontend redirects at the end, but with "prompt=none" or when prompt is not
-//       required we could just finish the whole flow serer side and never even load frontend.
+//       required we could just finish the whole flow server side and never even load frontend.
 // TODO: If session is already provided through Cookie, skip to organization step (unless prompt or something else requires us to re-authenticate).
 
 // OIDCAuthorizeGet handler does not really do the whole handling of the authorization request,
@@ -86,7 +86,14 @@ func (s *Service) OIDCAuthorizeGet(w http.ResponseWriter, req *http.Request, _ w
 
 	client := ar.Client.(*OIDCClient) //nolint:errcheck,forcetypeassert
 
-	errE := s.setFlow(req.Context(), &flow{
+	organization, errE := s.getOrganization(ctx, client.OrganizationID)
+	if errE != nil {
+		s.WithError(ctx, errE)
+		oidc.WriteAuthorizeError(ctx, w, authorizeRequest, errE)
+		return
+	}
+
+	errE = s.setFlow(ctx, &flow{
 		ID:        id,
 		CreatedAt: time.Now().UTC(),
 		Completed: []Completed{},
@@ -100,14 +107,15 @@ func (s *Service) OIDCAuthorizeGet(w http.ResponseWriter, req *http.Request, _ w
 
 		OIDCAuthorizeRequest: ar,
 
-		AuthAttempts:    0,
-		Providers:       nil,
-		EmailOrUsername: "",
-		OIDCProvider:    nil,
-		SAMLProvider:    nil,
-		Passkey:         nil,
-		Password:        nil,
-		Code:            nil,
+		AuthAttempts:     0,
+		Providers:        nil,
+		AllowedProviders: organization.AllowedProviders,
+		EmailOrUsername:  "",
+		OIDCProvider:     nil,
+		SAMLProvider:     nil,
+		Passkey:          nil,
+		Password:         nil,
+		Code:             nil,
 	})
 	if errE != nil {
 		s.WithError(ctx, errE)

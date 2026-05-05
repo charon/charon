@@ -225,6 +225,41 @@ func oidcSignin(t *testing.T, ts *httptest.Server, service *charon.Service, oidc
 	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{"oidcTesting"}), identityID
 }
 
+// TestAuthFlowThirdPartyRejectedWhenNotAllowed verifies AuthFlowThirdPartyProviderStart
+// refuses a third-party provider that is not in the flow's AllowedProviders set. The
+// flow is set up via createAuthFlow (unrestricted) and then mutated via TestingSetFlow
+// to simulate an OIDC authorize from an organization with an explicit allow list that
+// does not contain "oidcTesting".
+func TestAuthFlowThirdPartyRejectedWhenNotAllowed(t *testing.T) {
+	t.Parallel()
+
+	ts, service, _, _, _ := startTestServer(t) //nolint:dogsled
+
+	flowID, _, _, _, _, _ := createAuthFlow(t, ts, service) //nolint:dogsled
+
+	// Restrict to the fixed built-ins only - no third-party providers.
+	f, errE := service.TestingGetFlow(t.Context(), flowID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	f.AllowedProviders = []charon.Provider{charon.ProviderUsername, charon.ProviderEmail, charon.ProviderPassword}
+	errE = service.TestingSetFlow(t.Context(), f)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	authFlowThirdPartyProviderStart, errE := service.ReverseAPI("AuthFlowThirdPartyProviderStart", waf.Params{"id": flowID.String()}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	resp, err := ts.Client().Post(ts.URL+authFlowThirdPartyProviderStart, "application/json", strings.NewReader(`{"provider":"oidcTesting"}`)) //nolint:noctx,bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
+
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+	var authFlowResponse charon.AuthFlowResponse
+	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &authFlowResponse)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Contains(t, authFlowResponse.Completed, charon.CompletedFailed)
+	assert.Nil(t, authFlowResponse.ThirdPartyProvider)
+}
+
 func TestAuthFlowOIDC(t *testing.T) { //nolint:dupl
 	t.Parallel()
 

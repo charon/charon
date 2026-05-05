@@ -130,6 +130,13 @@ func (s *Service) AuthFlowPasskeyGetStartPostAPI(w http.ResponseWriter, req *htt
 		return
 	}
 
+	if !flow.isProviderAllowed(ProviderPasskey) {
+		errE := errors.New("provider not allowed")
+		errors.Details(errE)["provider"] = ProviderPasskey
+		s.failAuthStep(w, req, true, flow, errE)
+		return
+	}
+
 	var ea emptyRequest
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &ea)
 	if errE != nil {
@@ -162,6 +169,7 @@ func (s *Service) AuthFlowPasskeyGetStartPostAPI(w http.ResponseWriter, req *htt
 		OrganizationID:     flow.OrganizationID,
 		AppID:              flow.AppID,
 		Providers:          flow.Providers,
+		AllowedProviders:   flow.AllowedProviders,
 		EmailOrUsername:    flow.EmailOrUsername,
 		ThirdPartyProvider: nil,
 		Passkey: &AuthFlowResponsePasskey{
@@ -321,6 +329,13 @@ func (s *Service) AuthFlowPasskeyCreateStartPostAPI(w http.ResponseWriter, req *
 		return
 	}
 
+	if !flow.isProviderAllowed(ProviderPasskey) {
+		errE := errors.New("provider not allowed")
+		errors.Details(errE)["provider"] = ProviderPasskey
+		s.failAuthStep(w, req, true, flow, errE)
+		return
+	}
+
 	var ea emptyRequest
 	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &ea)
 	if errE != nil {
@@ -356,6 +371,7 @@ func (s *Service) AuthFlowPasskeyCreateStartPostAPI(w http.ResponseWriter, req *
 		OrganizationID:     flow.OrganizationID,
 		AppID:              flow.AppID,
 		Providers:          flow.Providers,
+		AllowedProviders:   flow.AllowedProviders,
 		EmailOrUsername:    flow.EmailOrUsername,
 		ThirdPartyProvider: nil,
 		Passkey: &AuthFlowResponsePasskey{

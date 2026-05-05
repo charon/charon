@@ -350,6 +350,10 @@ declare module "vue-i18n" {
         availableApplications: string
         addedIdentities: string
         availableIdentities: string
+        allowedAuthMethods: string
+        allowedAuthMethodsAll: string
+        allowedAuthMethodsSelected: string
+        allowedAuthMethodsUpdated: string
         backendClients: string
         clientId: string
         clientSecret: string

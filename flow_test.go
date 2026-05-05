@@ -31,6 +31,36 @@ func TestStore(t *testing.T) {
 	assert.Nil(t, f2.OIDCAuthorizeRequest)
 }
 
+func TestFlowIsProviderAllowed(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		allowed  []charon.Provider
+		query    charon.Provider
+		expected bool
+	}{
+		{"empty AllowedProviders means all are allowed", nil, charon.ProviderPasskey, true},
+		{"empty slice (zero-length) is also permissive", []charon.Provider{}, "oidcTesting", true},
+		{"non-empty list contains provider", []charon.Provider{charon.ProviderUsername, charon.ProviderEmail, charon.ProviderPassword, charon.ProviderPasskey}, charon.ProviderPasskey, true},
+		{"non-empty list does not contain provider", []charon.Provider{charon.ProviderUsername, charon.ProviderEmail, charon.ProviderPassword}, charon.ProviderPasskey, false},
+		{"non-empty list does not contain third-party", []charon.Provider{charon.ProviderUsername, charon.ProviderEmail, charon.ProviderPassword}, "oidcTesting", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			f := &charon.TestingFlow{
+				ID:               identifier.New(),
+				CreatedAt:        time.Now().UTC(),
+				AllowedProviders: tt.allowed,
+			}
+			assert.Equal(t, tt.expected, charon.TestingFlowIsProviderAllowed(f, tt.query))
+		})
+	}
+}
+
 func TestAuthFlowExpiredPasswordAndCode(t *testing.T) {
 	t.Parallel()
 

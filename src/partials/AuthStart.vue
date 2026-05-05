@@ -26,6 +26,16 @@ const abortController = new AbortController()
 const passwordError = ref("")
 const unexpectedError = ref("")
 
+// Empty AllowedProviders means all providers are allowed.
+const isProviderAllowed = (key: string) => {
+  const allowed = props.flow.getAllowedProviders()
+  return allowed.length === 0 || allowed.includes(key)
+}
+
+const allowedThirdPartyProviders = computed(() => siteContext.providers.filter((p) => (p.type === "oidc" || p.type === "saml") && isProviderAllowed(p.key)))
+
+const isPasskeyAllowed = computed(() => isProviderAllowed("passkey"))
+
 function getErrorMessage(errorCode: string) {
   switch (errorCode) {
     case "invalidEmailOrUsername":
@@ -203,12 +213,21 @@ function onThirdPartyProvider(provider: string) {
       <div v-if="passwordError" id="authstart-error-emailorusername" class="mt-4 text-error-600">{{ getErrorMessage(passwordError) }}</div>
       <div v-else-if="unexpectedError" class="mt-4 text-error-600">{{ t("common.errors.unexpected") }}</div>
     </div>
-    <h2 class="m-4 text-center text-xl font-bold uppercase">{{ t("partials.AuthStart.orUse") }}</h2>
-    <Button id="authstart-button-passkey" primary type="button" :disabled="!browserSupportsWebAuthn()" :progress="progress" @click.prevent="onPasskey">{{
-      t("common.providers.passkeyTitle")
-    }}</Button>
+    <template v-if="isPasskeyAllowed || allowedThirdPartyProviders.length > 0"
+      ><h2 class="m-4 text-center text-xl font-bold uppercase">{{ t("partials.AuthStart.orUse") }}</h2></template
+    >
     <Button
-      v-for="p in siteContext.providers"
+      v-if="isPasskeyAllowed"
+      id="authstart-button-passkey"
+      primary
+      type="button"
+      :disabled="!browserSupportsWebAuthn()"
+      :progress="progress"
+      @click.prevent="onPasskey"
+      >{{ t("common.providers.passkeyTitle") }}</Button
+    >
+    <Button
+      v-for="p in allowedThirdPartyProviders"
       :id="`authstart-button-${p.key}`"
       :key="p.key"
       primary
