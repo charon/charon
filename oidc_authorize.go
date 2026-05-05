@@ -86,14 +86,14 @@ func (s *Service) OIDCAuthorizeGet(w http.ResponseWriter, req *http.Request, _ w
 
 	client := ar.Client.(*OIDCClient) //nolint:errcheck,forcetypeassert
 
-	organization, errE := s.getOrganization(req.Context(), client.OrganizationID)
+	organization, errE := s.getOrganization(ctx, client.OrganizationID)
 	if errE != nil {
 		s.WithError(ctx, errE)
 		oidc.WriteAuthorizeError(ctx, w, authorizeRequest, errE)
 		return
 	}
 
-	errE = s.setFlow(req.Context(), &flow{
+	errE = s.setFlow(ctx, &flow{
 		ID:        id,
 		CreatedAt: time.Now().UTC(),
 		Completed: []Completed{},
