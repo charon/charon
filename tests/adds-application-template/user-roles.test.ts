@@ -8,7 +8,7 @@ test.describe.serial("Charon User Roles", () => {
     const rolesOrganizationName = "Roles Test Organization"
     await signInWithPassword(page, rolesUsername, "tester123", true, true)
 
-    // Mask the available applications list to avoid flakiness from UUID-based ordering.
+    // Mask the available applications list to avoid flakiness from identifier-based ordering.
     const availableApplicationsMask = page.locator("ul:has(.organizationget-button-add)")
 
     // Create application template with role.
