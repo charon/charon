@@ -346,10 +346,10 @@
       "publicClients": "@:views.ApplicationTemplateGet.publicClients",
       "serviceClients": "@:views.ApplicationTemplateGet.serviceClients",
       "status": "Status: {strongStatus}",
-      "allowedAuthMechanisms": "Allowed authentication mechanisms",
-      "allowedAuthMechanismsAll": "All authentication mechanisms",
-      "allowedAuthMechanismsSelected": "Only selected authentication mechanisms",
-      "allowedAuthMechanismsUpdated": "Allowed authentication mechanisms updated successfully."
+      "allowedAuthMethods": "Allowed authentication methods",
+      "allowedAuthMethodsAll": "All authentication methods",
+      "allowedAuthMethodsSelected": "Only selected authentication methods",
+      "allowedAuthMethodsUpdated": "Allowed authentication methods updated successfully."
     },
     "OrganizationList": {
       "noOrganizationsCreate": "There are no organizations. Create the first one.",

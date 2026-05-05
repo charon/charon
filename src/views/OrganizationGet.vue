@@ -1013,9 +1013,9 @@ function canProvidersSubmit(): boolean {
             </ul>
           </template>
           <template v-if="metadata.can_update || providersUnexpectedError || providersUpdated">
-            <h2 class="text-xl font-bold">{{ t("views.OrganizationGet.allowedAuthMechanisms") }}</h2>
+            <h2 class="text-xl font-bold">{{ t("views.OrganizationGet.allowedAuthMethods") }}</h2>
             <div v-if="providersUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
-            <div v-else-if="providersUpdated" class="text-success-600">{{ t("views.OrganizationGet.allowedAuthMechanismsUpdated") }}</div>
+            <div v-else-if="providersUpdated" class="text-success-600">{{ t("views.OrganizationGet.allowedAuthMethodsUpdated") }}</div>
             <!--
               We set novalidate because we do not want UA to show hints.
               We show them ourselves when we want them.
@@ -1025,11 +1025,11 @@ function canProvidersSubmit(): boolean {
                 <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
                   <RadioButton id="organization-providers-mode-all" v-model="providersMode" value="all" :progress="progress" class="mx-2" />
                   <label for="organization-providers-mode-all" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
-                    t("views.OrganizationGet.allowedAuthMechanismsAll")
+                    t("views.OrganizationGet.allowedAuthMethodsAll")
                   }}</label>
                   <RadioButton id="organization-providers-mode-selected" v-model="providersMode" value="selected" :progress="progress" class="mx-2" />
                   <label for="organization-providers-mode-selected" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
-                    t("views.OrganizationGet.allowedAuthMechanismsSelected")
+                    t("views.OrganizationGet.allowedAuthMethodsSelected")
                   }}</label>
                 </div>
               </fieldset>
