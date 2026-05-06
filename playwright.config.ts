@@ -62,12 +62,12 @@ export default defineConfig({
     },
     {
       name: "adds-application-template", // This creates a globally visible application template, should be isolated.
-      testMatch: /adds-application-template\/oidc\.test\.ts$/,
+      testMatch: /adds-application-template\/.*\.test\.ts$/,
       dependencies: ["requires-login"],
     },
     {
       name: "adds-roles", // Depends on adds-application-template so the globally visible application template exists first.
-      testMatch: /adds-application-template\/user-roles\.test\.ts$/,
+      testMatch: /adds-roles\/.*\.test\.ts$/,
       dependencies: ["adds-application-template"],
     },
     // SIPASS tests - only run when SIPASS env variables are present
