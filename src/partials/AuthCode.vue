@@ -39,12 +39,19 @@ function getErrorMessage(errorCode: string) {
 }
 
 function resetOnInteraction() {
+  codeFromHash.value = false
+
   // We reset errors on interaction.
   codeError.value = ""
   unexpectedError.value = ""
 }
 
-watch([code], resetOnInteraction)
+// We use flush: "sync" because useHashParam sets code.value first and after
+// that sets codeFromHash.value to true. Without it, codeFromHash.value would
+// be reset to false inside resetOnInteraction. Now, codeFromHash.value is
+// reset but then useHashParam sets it back. We have to do that because
+// code.value is not changed only on interaction but also by useHashParam.
+watch([code], resetOnInteraction, { flush: "sync" })
 
 // flush: "post" is required because useAuthCode sets code.value from empty to the
 // extracted code in the same tick that flips codeFromHash, which makes canNext()
@@ -190,7 +197,7 @@ async function onResend() {
   progress.value += 1
   try {
     code.value = ""
-    codeFromHash.value = false
+
     const url = router.apiResolve({
       name: "AuthFlowCodeStart",
       params: {

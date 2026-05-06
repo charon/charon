@@ -312,6 +312,8 @@ export function useHashParam(paramName: string): {
     const params = new URLSearchParams(h.substring(1))
     const c = params.get(paramName)
     if (c) {
+      // It is important that we first set param.value and then set paramFromHash.value
+      // because we rely on that with resetOnInteraction watch.
       param.value = c
       paramFromHash.value = true
     }
