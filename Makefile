@@ -84,4 +84,4 @@ sops:
 	SOPS_AGE_KEY_FILE=keys.txt gitlab-config sops .gitlab-conf.yml
 
 watch:
-	CompileDaemon -build="make --silent charon" -command="./charon -D -k localhost+2.pem -K localhost+2-key.pem" -include="*.json" -include="go.mod" -include="go.sum" -exclude-dir=.git -graceful-kill=true -log-prefix=false -color=true
+	CompileDaemon -build="make --silent charon" -command="./charon -D -k localhost+2.pem -K localhost+2-key.pem" -include="*.json" -include="go.mod" -include="go.sum" -exclude-dir=.git -exclude-dir=.claude -graceful-kill=true -log-prefix=false -color=true
