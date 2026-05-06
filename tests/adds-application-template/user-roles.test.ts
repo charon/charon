@@ -143,7 +143,7 @@ test.describe.serial("Charon User Roles", () => {
 
     // Inactive app role disappears.
     await expect(roleCheckbox).not.toBeVisible()
-    await checkpoint(page, "roles-organization-without-roles")
+    await checkpoint(page, "roles-organization-without-roles-after-app-deactivation")
 
     // To take activity screenshot, go back to organization and re-enable the application.
     await page.goBack()
@@ -224,7 +224,7 @@ test.describe.serial("Charon User Roles", () => {
 
     // Removed app role disappears.
     await expect(roleCheckbox).not.toBeVisible()
-    await checkpoint(page, "roles-organization-without-roles")
+    await checkpoint(page, "roles-organization-without-roles-after-app-removal")
 
     console.log("Successfully added application template to organization and manipulated user roles.")
   })
