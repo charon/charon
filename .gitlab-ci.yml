@@ -122,13 +122,13 @@ test_e2e:
 
   after_script:
     - echo "Prepared combined (E2E + unit tests) backend coverage link:"
-    - echo "https://${CI_PAGES_HOSTNAME}/-/${CI_PROJECT_NAME}/-/jobs/${CI_JOB_ID}/artifacts/coverage.html"
+    - echo "https://${CI_PROJECT_NAMESPACE}.${CI_PAGES_DOMAIN}/-/${CI_PROJECT_NAME}/-/jobs/${CI_JOB_ID}/artifacts/coverage.html"
     - echo "Prepared E2E report link:"
-    - echo "https://${CI_PAGES_HOSTNAME}/-/${CI_PROJECT_NAME}/-/jobs/${CI_JOB_ID}/artifacts/playwright-report/index.html"
+    - echo "https://${CI_PROJECT_NAMESPACE}.${CI_PAGES_DOMAIN}/-/${CI_PROJECT_NAME}/-/jobs/${CI_JOB_ID}/artifacts/playwright-report/index.html"
     - echo "Prepared combined (E2E + unit tests) frontend coverage link:"
-    - echo "https://${CI_PAGES_HOSTNAME}/-/${CI_PROJECT_NAME}/-/jobs/${CI_JOB_ID}/artifacts/coverage-frontend/index.html"
+    - echo "https://${CI_PROJECT_NAMESPACE}.${CI_PAGES_DOMAIN}/-/${CI_PROJECT_NAME}/-/jobs/${CI_JOB_ID}/artifacts/coverage-frontend/index.html"
     - echo "Prepared accessibility report link:"
-    - echo "https://${CI_PAGES_HOSTNAME}/-/${CI_PROJECT_NAME}/-/jobs/${CI_JOB_ID}/artifacts/a11y-report/a11y-report.html"
+    - echo "https://${CI_PROJECT_NAMESPACE}.${CI_PAGES_DOMAIN}/-/${CI_PROJECT_NAME}/-/jobs/${CI_JOB_ID}/artifacts/a11y-report/a11y-report.html"
 
   artifacts:
     when: always
