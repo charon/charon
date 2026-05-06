@@ -879,6 +879,7 @@ func (s *Service) CredentialRemovePostAPI(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
+	// getCredentialByID never returns a code provider credential.
 	credential, foundProvider, foundIndex := account.getCredentialByID(credentialID)
 	if foundIndex == -1 {
 		s.NotFound(w, req)
@@ -970,6 +971,8 @@ func (s *Service) CredentialRenamePostAPI(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
+	// getCredentialByID never returns a code provider credential, so we do not have to check
+	// bellow for ProviderCode, to prevent exposing it over the API.
 	_, foundProvider, foundIndex := account.getCredentialByID(credentialID)
 
 	if foundIndex == -1 {
