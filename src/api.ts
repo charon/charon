@@ -6,6 +6,7 @@ import type {
   AuthFlowPasswordStartRequest,
   AuthFlowResponse,
   AuthFlowResponsePassword,
+  CredentialResponse,
   Flow,
   Identities,
   Identity,
@@ -332,6 +333,33 @@ export async function getAllIdentities(
     }
 
     return allIdentities
+  } finally {
+    progress.value -= 1
+  }
+}
+
+export async function sendCredentialConfirmationEmail(
+  router: Router,
+  credentialId: string,
+  abortController: AbortController,
+  progress: Ref<number>,
+): Promise<{ error?: string }> {
+  try {
+    progress.value += 1
+    const url = router.apiResolve({
+      name: "CredentialConfirmEmail",
+      params: { id: credentialId },
+    }).href
+
+    const response = await postJSON<CredentialResponse>(url, {}, abortController.signal, progress)
+    if (abortController.signal.aborted) {
+      return {}
+    }
+    if ("error" in response) {
+      return { error: response.error }
+    }
+
+    return {}
   } finally {
     progress.value -= 1
   }

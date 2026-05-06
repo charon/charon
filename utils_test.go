@@ -315,7 +315,7 @@ func TestNormalizeEmailOrUsername(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			preserved, mapped, errE := charon.TestingNormalizeEmailOrUsername(tt.input, tt.check)
+			preserved, mapped, errE := charon.TestingValidateEmailOrUsername(tt.input, tt.check)
 
 			assert.Equal(t, tt.wantPreserved, preserved)
 			assert.Equal(t, tt.wantMapped, mapped)

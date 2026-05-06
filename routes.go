@@ -305,7 +305,7 @@ func (s *Service) setRoutes() { //nolint:maintidx
 		"ApplicationTemplateGet": {
 			RouteOptions: waf.RouteOptions{
 				Handlers: map[string]waf.Handler{
-					http.MethodGet: s.ApplicationTemplateGet,
+					http.MethodGet: s.ApplicationTemplateGetGet,
 				},
 			},
 			Path: "/a/:id",
@@ -407,7 +407,7 @@ func (s *Service) setRoutes() { //nolint:maintidx
 		"OrganizationRoles": {
 			RouteOptions: waf.RouteOptions{
 				Handlers: map[string]waf.Handler{
-					http.MethodGet: s.OrganizationRoles,
+					http.MethodGet: s.OrganizationRolesGet,
 				},
 			},
 			Path: "/o/roles/:id/:identityId",
@@ -612,6 +612,27 @@ func (s *Service) setRoutes() { //nolint:maintidx
 			API: waf.RouteOptions{
 				Handlers: map[string]waf.Handler{
 					http.MethodPost: s.CredentialRenamePostAPI,
+				},
+			},
+		},
+		"CredentialConfirmEmail": {
+			RouteOptions: waf.RouteOptions{
+				Handlers: map[string]waf.Handler{
+					http.MethodGet: s.CredentialConfirmEmailGet,
+				},
+			},
+			Path: "/authentication/confirm/:id",
+			API: waf.RouteOptions{
+				Handlers: map[string]waf.Handler{
+					http.MethodPost: s.CredentialConfirmEmailPostAPI,
+				},
+			},
+		},
+		"CredentialConfirmEmailComplete": {
+			Path: "/authentication/confirmComplete/:id",
+			API: waf.RouteOptions{
+				Handlers: map[string]waf.Handler{
+					http.MethodPost: s.CredentialConfirmEmailCompletePostAPI,
 				},
 			},
 		},

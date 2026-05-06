@@ -25,13 +25,21 @@ func init() { //nolint:gochecknoinits
 	}
 }
 
-func (s *Service) sendMail(ctx context.Context, flow *flow, emails []string, subject *tt.Template, body *tt.Template, data any) errors.E {
+// flowOrCredentialID is used to construct the message ID.
+func (s *Service) sendMail(
+	ctx context.Context,
+	flowOrCredentialID identifier.Identifier,
+	emails []string,
+	subject *tt.Template,
+	body *tt.Template,
+	data any,
+) errors.E {
 	logger := zerolog.Ctx(ctx)
 	ms := []*mail.Msg{}
 	for _, to := range emails {
 		m := mail.NewMsg()
 		id := identifier.New()
-		messageID := fmt.Sprintf("%s.%s@%s", id, flow.ID, s.domain)
+		messageID := fmt.Sprintf("%s.%s@%s", id, flowOrCredentialID, s.domain)
 		m.SetMessageIDWithValue(messageID)
 		err := m.From(s.mailFrom)
 		if err != nil {

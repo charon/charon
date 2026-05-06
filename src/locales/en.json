@@ -26,7 +26,8 @@
       "roles": "User roles",
       "block": "Block",
       "unblock": "Unblock",
-      "rename": "Rename"
+      "rename": "Rename",
+      "confirm": "Confirm"
     },
     "errors": {
       "unexpected": "Unexpected error. Please try again.",
@@ -45,7 +46,8 @@
         "username": "Username should be at least 3 characters."
       },
       "credentialInUse": {
-        "username": "Username is already in use by another account."
+        "username": "Username is already in use by another account.",
+        "email": "E-mail address is already in use by another account."
       },
       "alreadyPresent": {
         "email": "This e-mail address is already present on this account.",
@@ -53,7 +55,8 @@
         "password": "This password or passphrase is already present on this account."
       },
       "credentialDisplayNameInUse": "Display name is already in use.",
-      "credentialDisplayNameMissing": "Display name is missing."
+      "credentialDisplayNameMissing": "Display name is missing.",
+      "confirmationFailed": "Confirmation failed. Resend a code to try again."
     },
     "labels": {
       "optional": "(optional)",
@@ -66,7 +69,7 @@
       "blocked": "blocked",
       "shared": "shared",
       "individual": "individual",
-      "verified": "verified"
+      "confirmed": "confirmed"
     },
     "data": {
       "dataLoading": "Loading...",
@@ -319,7 +322,12 @@
       "usersUpdated": "Users updated successfully.",
       "organizationsUpdated": "Added organizations updated successfully.",
       "addedOrganizations": "Added organizations",
-      "availableOrganizations": "Available organizations"
+      "availableOrganizations": "Available organizations",
+      "selectNoEmail": "none",
+      "unconfirmedEmailsHint": "There are unconfirmed e-mail addresses. You need to {link} before you can use them.",
+      "confirmEmailsLink": "confirm them",
+      "noEmailsHint": "There are no confirmed e-mail addresses available. You need to {link} before you can use it.",
+      "addAndConfirmLink": "add one and confirm it"
     },
     "IdentityList": {
       "noIdentitiesCreate": "There are no identities. Create the first one.",
@@ -388,8 +396,16 @@
     },
     "CredentialList": {
       "noCredentialsCreate": "No authentication methods configured. Create the first one.",
-      "noCredentialsSignIn": "There are no authentication methods. Sign-in or sign-up to create the first one.",
-      "verify": "Verify"
+      "noCredentialsSignIn": "There are no authentication methods. Sign-in or sign-up to create the first one."
+    },
+    "CredentialConfirmEmail": {
+      "confirmEmail": "Confirm e-mail address",
+      "resendButton": "@:partials.AuthCode.resendButton",
+      "codeSentEmail": "@:partials.AuthCode.codeSentEmail",
+      "codeFromHashEmail": "@:partials.AuthCode.codeFromHashEmail",
+      "waitForCode": "@:partials.AuthCode.waitForCode",
+      "sentCount": "@:partials.AuthCode.sentCount",
+      "confirmCode": "@:partials.AuthCode.confirmCode"
     },
     "Footer": {
       "terms": "Terms",

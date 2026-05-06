@@ -18,12 +18,13 @@ import (
 // TODO: Should we remove ErrIdentityUnauthorized and just use ErrIdentityNotFound?
 
 var (
-	ErrIdentityNotFound         = errors.Base("identity not found")
-	ErrIdentityAlreadyExists    = errors.Base("identity already exists")
-	ErrIdentityUnauthorized     = errors.Base("identity access unauthorized")
-	ErrIdentityUpdateNotAllowed = errors.Base("identity update not allowed")
-	ErrIdentityValidationFailed = errors.Base("identity validation failed")
-	ErrIdentityBlocked          = errors.Base("identity blocked")
+	ErrIdentityNotFound          = errors.Base("identity not found")
+	ErrIdentityAlreadyExists     = errors.Base("identity already exists")
+	ErrIdentityUnauthorized      = errors.Base("identity access unauthorized")
+	ErrIdentityUpdateNotAllowed  = errors.Base("identity update not allowed")
+	ErrIdentityValidationFailed  = errors.Base("identity validation failed")
+	ErrIdentityBlocked           = errors.Base("identity blocked")
+	ErrIdentityEmailNotConfirmed = errors.Base("identity email not confirmed")
 
 	errEmptyIdentity = errors.Base("empty identity")
 )
@@ -157,7 +158,7 @@ type IdentityPublic struct {
 }
 
 // Validate validates the IdentityPublic struct.
-func (i *IdentityPublic) Validate(ctx context.Context, existing *IdentityPublic) errors.E {
+func (i *IdentityPublic) Validate(ctx context.Context, existing *IdentityPublic, service *Service) errors.E {
 	if existing == nil {
 		if i.ID != nil {
 			errE := errors.New("ID provided for new document")
@@ -190,15 +191,32 @@ func (i *IdentityPublic) Validate(ctx context.Context, existing *IdentityPublic)
 		i.Username = username
 	}
 
-	// TODO: E-mails should be possible to be only those which have been validated.
 	if i.Email != "" {
-		email, _, errE := validateEmailOrUsername(i.Email, emailOrUsernameCheckEmail)
-		if errE != nil {
-			errors.Details(errE)["email"] = i.Email
-			return errE
-		}
+		// If e-mail address has not changed, we do not check that the current account has it confirmed.
+		// The reason is that identity can be shared between multiple accounts and only one of them has
+		// the e-mail address confirmed. So others should still be able to manage the identity and change
+		// other fields, even if they do not have the e-mail address confirmed. If e-mail address is
+		// ever unconfirmed (e.g., credential is removed), then we remove that e-mail address from all
+		// identities which use it. In this way we assure that e-mail addresses in identities are always
+		// confirmed through some credential by some account.
+		if existing == nil || i.Email != existing.Email {
+			accountID := mustGetAccountID(ctx)
+			account, errE := service.getAccount(ctx, accountID)
+			if errE != nil {
+				return errE
+			}
 
-		i.Email = email
+			// i.Email must already be the mapped/canonical form. Matching a confirmed e-mail
+			// address (which is stored in mapped/canonical form) is itself proof that the input
+			// is a well-formed mapped/canonical address.
+			if !account.HasEmailAddress(i.Email) {
+				return errors.WithDetails(
+					ErrIdentityEmailNotConfirmed,
+					"id", *i.ID,
+					"email", i.Email,
+				)
+			}
+		}
 	}
 
 	// TODO: Normalize GivenName and FullName.
@@ -343,7 +361,7 @@ func (i *Identity) Validate(ctx context.Context, existing *Identity, service *Se
 	} else {
 		e = &existing.IdentityPublic
 	}
-	errE := i.IdentityPublic.Validate(ctx, e)
+	errE := i.IdentityPublic.Validate(ctx, e, service)
 	if errE != nil {
 		return errE
 	}
@@ -620,6 +638,61 @@ func (s *Service) setIdentityCreator(i IdentityRef, account identifier.Identifie
 	s.identityCreators[i] = account
 }
 
+// removeEmailAddressFromIdentities clears identity.Email on every identity which uses given
+// mappedEmail as e-mail address. It is meant to be called after an e-mail credential
+// is removed so that identities do not retain a now-unconfirmed address.
+//
+// Confirmed e-mail addresses are unique across accounts and an account can hold at most one
+// credential per address. So once the credential for a given address is removed, that address
+// is confirmed on no account at all. Every identity carrying it is now unbacked system-wide,
+// regardless of who created or admins it.
+//
+// ctx is used as the activity actor.
+func (s *Service) removeEmailAddressFromIdentities(ctx context.Context, mappedEmail string) errors.E {
+	type pair struct {
+		existing *Identity
+		updated  *Identity
+	}
+	var matching []pair
+
+	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
+
+	collect := func() errors.E {
+		s.identitiesMu.RLock()
+		defer s.identitiesMu.RUnlock()
+
+		for id, data := range s.identities {
+			var existing Identity
+			errE := x.UnmarshalWithoutUnknownFields(data, &existing)
+			if errE != nil {
+				errors.Details(errE)["id"] = id
+				return errE
+			}
+			// identity.Email is stored in mapped/canonical form.
+			if existing.Email != mappedEmail {
+				continue
+			}
+			updated := existing
+			updated.Email = ""
+			matching = append(matching, pair{existing: &existing, updated: &updated})
+		}
+		return nil
+	}
+	errE := collect()
+	if errE != nil {
+		return errE
+	}
+
+	for _, m := range matching {
+		errE := s.applyIdentityUpdate(ctx, m.existing, m.updated)
+		if errE != nil {
+			return errE
+		}
+	}
+
+	return nil
+}
+
 func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*Identity, bool, errors.E) {
 	currentAccountID := mustGetAccountID(ctx)
 
@@ -797,8 +870,6 @@ func (s *Service) getAccountsForIdentity(identity IdentityRef) map[identifier.Id
 }
 
 func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors.E {
-	co := s.charonOrganization()
-
 	if identity.ID == nil {
 		return errors.WithMessage(ErrIdentityValidationFailed, "ID is missing")
 	}
@@ -812,17 +883,9 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 		return errors.WithDetails(ErrIdentityUnauthorized, "id", *identity.ID)
 	}
 
-	i := identity.Ref()
-
 	errE = identity.Validate(ctx, existingIdentity, s)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrIdentityValidationFailed)
-	}
-
-	data, errE := x.MarshalWithoutEscapeHTML(identity)
-	if errE != nil {
-		errors.Details(errE)["id"] = *identity.ID
-		return errE
 	}
 
 	if _, ok := getIdentityID(ctx); !ok {
@@ -837,6 +900,25 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 
 		// We set here current identity ID in the context, which is used by logActivity.
 		ctx = s.withIdentityID(ctx, *identity.ID)
+	}
+
+	return s.applyIdentityUpdate(ctx, existingIdentity, identity)
+}
+
+// applyIdentityUpdate stores the new identity, propagates access-graph changes
+// triggered by Users/Admins membership changes, and logs the corresponding
+// ActivityIdentityUpdate.
+//
+// Callers must already have ensured the change is permitted.
+func (s *Service) applyIdentityUpdate(ctx context.Context, existingIdentity, identity *Identity) errors.E {
+	co := s.charonOrganization()
+
+	i := identity.Ref()
+
+	data, errE := x.MarshalWithoutEscapeHTML(identity)
+	if errE != nil {
+		errors.Details(errE)["id"] = *identity.ID
+		return errE
 	}
 
 	changes, identities, organizations, applications := identity.Changes(existingIdentity)

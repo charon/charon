@@ -511,17 +511,25 @@ func (s *Service) handleSAMLCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	s.completeAuthStep(w, req, false, flow, account,
-		[]Credential{{
-			CredentialPublic: CredentialPublic{
-				ID:          identifier.New(),
-				Provider:    providerKey,
-				DisplayName: displayName,
-				Verified:    false,
-			},
-			ProviderID: credentialID,
-			Data:       jsonData,
-		}})
+	credentials := []Credential{{
+		CredentialPublic: CredentialPublic{
+			ID:          identifier.New(),
+			Provider:    providerKey,
+			DisplayName: displayName,
+			Confirmed:   "",
+		},
+		ProviderID: credentialID,
+		Data:       jsonData,
+	}}
+
+	credentials, errE = s.maybeAddEmailCredentialFromThirdPartyToken(account, credentials, providerKey, credentialID, jsonData)
+	if errE != nil {
+		errors.Details(errE)["provider"] = providerKey
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	s.completeAuthStep(w, req, false, flow, account, credentials)
 }
 
 // SAMLMetadataGetAPI is the API handler for getting the SAML metadata for a third-party SAML provider, GET request.

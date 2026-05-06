@@ -26,7 +26,8 @@
       "roles": "Uporabniške vloge",
       "block": "Blokiraj",
       "unblock": "Odblokiraj",
-      "rename": "Preimenuj"
+      "rename": "Preimenuj",
+      "confirm": "Potrdi"
     },
     "errors": {
       "unexpected": "Nepričakovana napaka. Prosimo, poskusite znova.",
@@ -45,7 +46,8 @@
         "username": "Uporabniško ime mora biti dolgo vsaj 3 znake."
       },
       "credentialInUse": {
-        "username": "Uporabniško ime je že v uporabi na drugem računu."
+        "username": "Uporabniško ime je že v uporabi na drugem računu.",
+        "email": "E-poštni naslov je že v uporabi na drugem računu."
       },
       "alreadyPresent": {
         "email": "Ta e-poštni naslov je že prisoten na tem računu.",
@@ -53,7 +55,8 @@
         "password": "To geslo ali geslovni stavek je že prisotno na tem računu."
       },
       "credentialDisplayNameInUse": "Prikazno ime je že v uporabi.",
-      "credentialDisplayNameMissing": "Manjka prikazno ime."
+      "credentialDisplayNameMissing": "Manjka prikazno ime.",
+      "confirmationFailed": "Potrditev ni uspela. Ponovno pošljite kodo, da poskusite ponovno."
     },
     "labels": {
       "optional": "(neobvezno)",
@@ -66,7 +69,7 @@
       "blocked": "blokirana",
       "shared": "skupna",
       "individual": "individualna",
-      "verified": "potrjen"
+      "confirmed": "potrjen"
     },
     "data": {
       "dataLoading": "Nalaganje...",
@@ -319,7 +322,12 @@
       "usersUpdated": "Uporabniki so bili uspešno posodobljeni.",
       "organizationsUpdated": "Dodane organizacije so bile uspešno posodobljene.",
       "addedOrganizations": "Dodane organizacije",
-      "availableOrganizations": "Razpoložljive organizacije"
+      "availableOrganizations": "Razpoložljive organizacije",
+      "selectNoEmail": "brez",
+      "unconfirmedEmailsHint": "Imate nepotrjene e-poštne naslove. Preden jih lahko uporabite, jih morate {link}.",
+      "confirmEmailsLink": "potrditi",
+      "noEmailsHint": "Nimate potrjenih e-poštnih naslovov. {link} e-poštni naslov, da ga uporabite.",
+      "addAndConfirmLink": "Dodajte in potrdite"
     },
     "IdentityList": {
       "noIdentitiesCreate": "Ni identitet. Ustvarite prvo.",
@@ -388,8 +396,16 @@
     },
     "CredentialList": {
       "noCredentialsCreate": "Ni metod za avtentikacijo. Ustvarite prvo.",
-      "noCredentialsSignIn": "Ni metod za avtentikacijo. Prijavite se ali registrirajte, da ustvarite prvo.",
-      "verify": "Potrdi"
+      "noCredentialsSignIn": "Ni metod za avtentikacijo. Prijavite se ali registrirajte, da ustvarite prvo."
+    },
+    "CredentialConfirmEmail": {
+      "confirmEmail": "Potrdite e-poštni naslov",
+      "resendButton": "@:partials.AuthCode.resendButton",
+      "codeSentEmail": "@:partials.AuthCode.codeSentEmail",
+      "codeFromHashEmail": "@:partials.AuthCode.codeFromHashEmail",
+      "waitForCode": "@:partials.AuthCode.waitForCode",
+      "sentCount": "@:partials.AuthCode.sentCount",
+      "confirmCode": "@:partials.AuthCode.confirmCode"
     },
     "Footer": {
       "terms": "Pogoji",

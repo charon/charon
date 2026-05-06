@@ -242,15 +242,23 @@ func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
-	s.completeAuthStep(w, req, false, flow, account,
-		[]Credential{{
-			CredentialPublic: CredentialPublic{
-				ID:          identifier.New(),
-				Provider:    providerKey,
-				DisplayName: displayName,
-				Verified:    false,
-			},
-			ProviderID: idToken.Subject,
-			Data:       jsonData,
-		}})
+	credentials := []Credential{{
+		CredentialPublic: CredentialPublic{
+			ID:          identifier.New(),
+			Provider:    providerKey,
+			DisplayName: displayName,
+			Confirmed:   "",
+		},
+		ProviderID: idToken.Subject,
+		Data:       jsonData,
+	}}
+
+	credentials, errE = s.maybeAddEmailCredentialFromThirdPartyToken(account, credentials, providerKey, idToken.Subject, jsonData)
+	if errE != nil {
+		errors.Details(errE)["provider"] = providerKey
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	s.completeAuthStep(w, req, false, flow, account, credentials)
 }

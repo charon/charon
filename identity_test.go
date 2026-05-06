@@ -8,6 +8,7 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gitlab.com/tozd/go/x"
 
 	"gitlab.com/tozd/identifier"
 
@@ -31,7 +32,11 @@ func TestCreateIdentity(t *testing.T) {
 	ctx = service.TestingWithSessionID(ctx)
 	ctx = service.TestingWithRequestID(ctx)
 
-	errE := service.TestingCreateIdentity(ctx, &newIdentity)
+	account := createTestAccountWithConfirmedEmail(t, accountID, "newuser@example.com")
+	errE := service.TestingSetAccount(ctx, account)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	errE = service.TestingCreateIdentity(ctx, &newIdentity)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
 	identityID := *newIdentity.ID
@@ -58,6 +63,10 @@ func TestCreateIdentity(t *testing.T) {
 			Email:    "another@example.com",
 		},
 	}
+
+	account = createTestAccountWithConfirmedEmail(t, accountID, "another@example.com")
+	errE = service.TestingSetAccount(ctx, account)
+	require.NoError(t, errE, "% -+#.1v", errE)
 
 	errE = service.TestingCreateIdentity(ctx, &newIdentity)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -1357,4 +1366,34 @@ func TestGetOrganizationAndGetIdentityOrganization(t *testing.T) {
 			assert.Nil(t, idOrgGetIdentityOrganization)
 		})
 	}
+}
+
+func createTestAccountWithConfirmedEmail(t *testing.T, accountID identifier.Identifier, email string) *charon.Account {
+	t.Helper()
+
+	preservedEmail, mappedEmail, errE := charon.TestingValidateEmailOrUsername(email, charon.TestingEmailOrUsernameCheckEmail)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	type emailCredential struct{}
+	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{})
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	account := &charon.Account{
+		ID: accountID,
+		Credentials: map[charon.Provider][]charon.Credential{
+			charon.ProviderEmail: {
+				{
+					CredentialPublic: charon.CredentialPublic{
+						ID:          identifier.New(),
+						Provider:    charon.ProviderEmail,
+						DisplayName: preservedEmail,
+						Confirmed:   mappedEmail,
+					},
+					ProviderID: mappedEmail,
+					Data:       jsonData,
+				},
+			},
+		},
+	}
+	return account
 }

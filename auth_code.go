@@ -37,8 +37,16 @@ type codeProvider struct {
 	origin string
 }
 
-func (p *codeProvider) URL(s *Service, flow *flow, code string) (string, errors.E) {
-	path, errE := s.Reverse("AuthFlowGet", waf.Params{"id": flow.ID.String()}, nil)
+func (p *codeProvider) AuthURL(s *Service, flowID string, code string) (string, errors.E) {
+	path, errE := s.Reverse("AuthFlowGet", waf.Params{"id": flowID}, nil)
+	if errE != nil {
+		return "", errE
+	}
+	return fmt.Sprintf("%s%s#code=%s", p.origin, path, code), nil
+}
+
+func (p *codeProvider) CredentialURL(s *Service, emailCredentialID string, code string) (string, errors.E) {
+	path, errE := s.Reverse("CredentialConfirmEmail", waf.Params{"id": emailCredentialID}, nil)
 	if errE != nil {
 		return "", errE
 	}
@@ -155,9 +163,9 @@ func (s *Service) sendCodeForExistingAccount(
 	w http.ResponseWriter, req *http.Request, flow *flow, passwordFlow bool,
 	account *Account, preservedEmailOrUsername, mappedEmailOrUsername string,
 ) {
-	var emails []string
+	var mappedEmails []string
 	if strings.Contains(mappedEmailOrUsername, "@") {
-		// We know that such credential must exist and is verified on this account
+		// We know that such credential must exist and is confirmed on this account
 		// because we found this account using getAccountByCredential with mappedEmailOrUsername.
 		credential := account.GetCredential(ProviderEmail, mappedEmailOrUsername)
 		if credential == nil {
@@ -167,14 +175,14 @@ func (s *Service) sendCodeForExistingAccount(
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
-		// Not-mapped e-mail address is stored in the display name.
-		emails = []string{credential.DisplayName}
+		// Mapped e-mail address is stored in the providerID.
+		mappedEmails = []string{credential.ProviderID}
 	} else {
 		// mappedEmailOrUsername is an username. Let's see if there are any
 		// e-mails associated with the account.
-		emails = account.GetEmailAddresses()
+		mappedEmails = account.GetEmailAddresses()
 
-		if len(emails) == 0 {
+		if len(mappedEmails) == 0 {
 			var code ErrorCode
 			if passwordFlow {
 				code = ErrorCodeWrongPassword
@@ -186,15 +194,15 @@ func (s *Service) sendCodeForExistingAccount(
 		}
 	}
 
-	s.sendCode(w, req, flow, passwordFlow, preservedEmailOrUsername, emails, &account.ID, nil)
+	s.sendCode(w, req, flow, passwordFlow, preservedEmailOrUsername, mappedEmails, &account.ID, nil)
 }
 
 func (s *Service) sendCode(
 	w http.ResponseWriter, req *http.Request, flow *flow, passwordFlow bool,
-	preservedEmailOrUsername string, emails []string, accountID *identifier.Identifier, credentials []Credential,
+	preservedEmailOrUsername string, mappedEmails []string, accountID *identifier.Identifier, credentials []Credential,
 ) {
-	if len(emails) == 0 {
-		// Internal error: this method should no be called without e-mail addresses.
+	if len(mappedEmails) == 0 {
+		// Internal error: this method should not be called without e-mail addresses.
 		panic(errors.New("no email addresses"))
 	}
 	if accountID == nil && credentials == nil || accountID != nil && credentials != nil {
@@ -255,12 +263,12 @@ func (s *Service) sendCode(
 		return
 	}
 
-	url, errE := s.codeProvider().URL(s, flow, code)
+	url, errE := s.codeProvider().AuthURL(s, flow.ID.String(), code)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
 	}
-	errE = s.sendMail(req.Context(), flow, emails, codeProviderSubjectCompiled, codeProviderTemplateCompiled, map[string]string{
+	errE = s.sendMail(req.Context(), flow.ID, mappedEmails, codeProviderSubjectCompiled, codeProviderTemplateCompiled, map[string]string{
 		"code":  code,
 		"title": s.title,
 		"url":   url,
@@ -338,7 +346,7 @@ func (s *Service) AuthFlowCodeStartPostAPI(w http.ResponseWriter, req *http.Requ
 		return
 	}
 
-	// Account does not exist (by username or by verified email).
+	// Account does not exist (by username or by confirmed email).
 	// We can send a code only if we have an e-mail address.
 	if !strings.Contains(mappedEmailOrUsername, "@") {
 		s.flowError(w, req, flow, ErrorCodeNoAccount, nil, nil)
@@ -356,9 +364,9 @@ func (s *Service) AuthFlowCodeStartPostAPI(w http.ResponseWriter, req *http.Requ
 			ID:          identifier.New(),
 			Provider:    ProviderEmail,
 			DisplayName: preservedEmailOrUsername,
-			// We set verified to true because this credential is stored with
-			// the account only after the e-mail gets verified.
-			Verified: true,
+			// We set Confirmed to the mapped address because this credential is stored
+			// with the account only after the e-mail gets confirmed.
+			Confirmed: mappedEmailOrUsername,
 		},
 		ProviderID: mappedEmailOrUsername,
 		Data:       jsonData,
@@ -366,7 +374,7 @@ func (s *Service) AuthFlowCodeStartPostAPI(w http.ResponseWriter, req *http.Requ
 
 	// Account does not exist but we have an e-mail address.
 	// We attempt to create a new account with an e-mail address only.
-	s.sendCode(w, req, flow, false, preservedEmailOrUsername, []string{preservedEmailOrUsername}, nil, credentials)
+	s.sendCode(w, req, flow, false, preservedEmailOrUsername, []string{mappedEmailOrUsername}, nil, credentials)
 }
 
 // AuthFlowCodeCompleteRequest represents the request body for the AuthFlowCodeCompletePost handler.

@@ -5,7 +5,7 @@ import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
-import { getURL, postJSON } from "@/api"
+import { getURL, postJSON, sendCredentialConfirmationEmail } from "@/api"
 import { isSignedIn } from "@/auth"
 import Button from "@/components/Button.vue"
 import ButtonLink from "@/components/ButtonLink.vue"
@@ -100,6 +100,41 @@ function resetOnInteraction() {
   currentActionCredentialId.value = null
 }
 
+async function onConfirm(credentialId: string) {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  resetOnInteraction()
+
+  progress.value += 1
+  try {
+    currentActionCredentialId.value = credentialId
+
+    const result = await sendCredentialConfirmationEmail(router, credentialId, abortController, progress)
+    if (abortController.signal.aborted) {
+      return
+    }
+
+    if (result.error) {
+      unexpectedError.value = result.error
+      return
+    }
+
+    currentActionCredentialId.value = null
+    await router.push({ name: "CredentialConfirmEmail", params: { id: credentialId } })
+  } catch (error) {
+    if (abortController.signal.aborted) {
+      return
+    }
+    console.error("CredentialList.onConfirm", error)
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    unexpectedError.value = `${error}`
+  } finally {
+    progress.value -= 1
+  }
+}
+
 async function onRemove(credentialId: string) {
   if (abortController.signal.aborted) {
     return
@@ -179,9 +214,15 @@ const WithCredentialDocument = WithDocument<CredentialPublic>
             <template #default="{ doc, url }">
               <CredentialFull :credential="doc" :url="url" :is-renaming="renamingCredentialId === credential.id" @renamed="onRenamed" @canceled="onRenameCancelled">
                 <div class="flex flex-row gap-4">
-                  <Button v-if="doc.provider === 'email' && !doc.verified" class="credentiallist-button-verify" type="button" secondary disabled>{{
-                    t("views.CredentialList.verify")
-                  }}</Button>
+                  <Button
+                    v-if="doc.provider === 'email' && !doc.confirmed"
+                    class="credentiallist-button-confirm"
+                    type="button"
+                    :progress="progress"
+                    primary
+                    @click.prevent="onConfirm(doc.id)"
+                    >{{ t("common.buttons.confirm") }}</Button
+                  >
                   <!--
                     Button is on purpose not disabled on unexpectedError so that user can retry.
                   -->

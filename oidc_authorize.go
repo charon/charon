@@ -221,8 +221,8 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 			}
 		case "email":
 			if flow.Identity.Email != "" {
+				// If identity.Email is set, it is a confirmed mapped/canonical e-mail address.
 				idTokenClaims.Add("email", flow.Identity.Email)
-				// TODO: We are not yet making sure only validated addressed can be set in an identity.
 				idTokenClaims.Add("email_verified", true)
 			}
 		}

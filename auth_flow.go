@@ -148,7 +148,7 @@ func (s *Service) AuthFlowGetGetAPI(w http.ResponseWriter, req *http.Request, pa
 	s.WriteJSON(w, req, response, nil)
 }
 
-func (s *Service) makeIdentityFromCredentials(credentials []Credential) (*Identity, errors.E) {
+func (s *Service) makeIdentityFromCredentials(account Account, credentials []Credential) (*Identity, errors.E) {
 	var identity *Identity
 	for _, credential := range credentials {
 		switch credential.Provider {
@@ -159,11 +159,14 @@ func (s *Service) makeIdentityFromCredentials(credentials []Credential) (*Identi
 		case ProviderPassword:
 			// Nothing available.
 		case ProviderEmail:
+			if credential.Confirmed == "" {
+				continue
+			}
 			if identity == nil {
 				identity = new(Identity)
 			}
-			// Not-mapped e-mail address is stored in the display name.
-			identity.Email = credential.DisplayName
+			// Identity stores the mapped/canonical e-mail address. ProviderID holds it on the credential.
+			identity.Email = credential.ProviderID
 		case ProviderUsername:
 			if identity == nil {
 				identity = new(Identity)
@@ -198,12 +201,22 @@ func (s *Service) makeIdentityFromCredentials(credentials []Credential) (*Identi
 			}
 			email := findFirstString(token, "email", "eMailAddress", "emailAddress", "email_address")
 			if email != "" {
-				// TODO: We should verify the e-mail.
-				identity.Email = email
+				_, mappedEmail, errE := validateEmailOrUsername(email, emailOrUsernameCheckEmail)
+				if errE == nil && account.HasEmailAddress(mappedEmail) {
+					identity.Email = mappedEmail
+				}
 			}
 			username := findFirstString(token, "username", "preferred_username")
 			if username != "" {
 				identity.Username = username
+			}
+			if identity.Username == "" && email != "" {
+				// Username extracted from email should pass our validation. Otherwise, skip it.
+				username, _, _ := strings.Cut(email, "@")
+				preservedUsername, _, _ := validateEmailOrUsername(username, emailOrUsernameCheckUsername)
+				if preservedUsername != "" {
+					identity.Username = preservedUsername
+				}
 			}
 
 			if oidc, oidcFound := s.oidcProviders()[credential.Provider]; oidcFound {
@@ -215,7 +228,12 @@ func (s *Service) makeIdentityFromCredentials(credentials []Credential) (*Identi
 	}
 	if identity != nil {
 		if identity.Username == "" && identity.Email != "" {
-			identity.Username, _, _ = strings.Cut(identity.Email, "@")
+			// Username extracted from email should pass our validation. Otherwise, skip it.
+			username, _, _ := strings.Cut(identity.Email, "@")
+			preservedUsername, _, _ := validateEmailOrUsername(username, emailOrUsernameCheckUsername)
+			if preservedUsername != "" {
+				identity.Username = preservedUsername
+			}
 		}
 		if identity.PictureURL == "" && identity.Email != "" {
 			// TODO: Generate some local picture and do not use remote Gravatar.
@@ -258,7 +276,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
-		identity, errE := s.makeIdentityFromCredentials(credentials)
+		identity, errE := s.makeIdentityFromCredentials(*account, credentials)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return

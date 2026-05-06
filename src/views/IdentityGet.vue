@@ -2,7 +2,17 @@
 import type { DeepReadonly, Ref } from "vue"
 import type { ComponentExposed } from "vue-component-type-helpers"
 
-import type { Identity, IdentityOrganization as IdentityOrganizationType, IdentityRef, Metadata, Organization, OrganizationRef, Organizations } from "@/types"
+import type {
+  CredentialPublic,
+  Credentials,
+  Identity,
+  IdentityOrganization as IdentityOrganizationType,
+  IdentityRef,
+  Metadata,
+  Organization,
+  OrganizationRef,
+  Organizations,
+} from "@/types"
 
 import { computed, nextTick, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
@@ -11,6 +21,7 @@ import { useRouter } from "vue-router"
 import { getURL, postJSON } from "@/api"
 import Button from "@/components/Button.vue"
 import InputText from "@/components/InputText.vue"
+import RadioButton from "@/components/RadioButton.vue"
 import TextArea from "@/components/TextArea.vue"
 import WithDocument from "@/components/WithDocument.vue"
 import siteContext from "@/context"
@@ -42,10 +53,22 @@ const basicUnexpectedError = ref("")
 const basicUpdated = ref(false)
 const username = ref("")
 const email = ref("")
+const credentials = ref<CredentialPublic[]>([])
 const givenName = ref("")
 const fullName = ref("")
 const pictureUrl = ref("")
 const description = ref("")
+
+// confirmedEmails pairs each confirmed e-mail credential's mapped/canonical address
+// (used as the value bound to the radio button and stored on identity.email) with its
+// display label (the original, non-mapped form the user typed).
+const confirmedEmails = computed(() => {
+  return credentials.value.filter((c) => c.provider === "email" && c.confirmed).map((c) => ({ mapped: c.confirmed!, display: c.displayName }))
+})
+
+const hasUnconfirmed = computed(() => {
+  return credentials.value.some((c) => c.provider === "email" && !c.confirmed)
+})
 
 const usersUnexpectedError = ref("")
 const usersUpdated = ref(false)
@@ -162,6 +185,32 @@ async function loadData(update: "init" | "basic" | "users" | "admins" | "organiz
       }
 
       organizations.value = organizationsResponse.doc
+    }
+
+    if (update === "init") {
+      const url = router.apiResolve({
+        name: "CredentialList",
+      }).href
+
+      const credentialsListResponse = await getURL<Credentials>(url, null, abortController.signal, progress)
+      if (abortController.signal.aborted) {
+        return
+      }
+
+      const fullCredentials: CredentialPublic[] = []
+      for (const credentialRef of credentialsListResponse.doc) {
+        const credentialUrl = router.apiResolve({
+          name: "CredentialGet",
+          params: { id: credentialRef.id },
+        }).href
+
+        const credentialResponse = await getURL<CredentialPublic>(credentialUrl, null, abortController.signal, progress)
+        if (abortController.signal.aborted) {
+          return
+        }
+        fullCredentials.push(credentialResponse.doc)
+      }
+      credentials.value = fullCredentials
     }
   } catch (error) {
     if (abortController.signal.aborted) {
@@ -461,7 +510,76 @@ const WithOrganizationDoc = WithDocument<Organization>
             <label for="email" class="mt-4 mb-1"
               >{{ t("common.fields.email") }} <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
             >
-            <InputText id="email" v-model="email" class="min-w-0 flex-auto grow" :readonly="!metadata.can_update" :progress="progress" />
+            <div v-if="metadata.can_update">
+              <!--
+                If identity has an email, show it first (on top). The radio value is the
+                mapped/canonical address (matching what we send to the backend), but the
+                visible label uses the credential's DisplayName when available.
+              -->
+              <div :key="identity?.email" class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                <template v-if="identity?.email">
+                  <RadioButton id="identityget-radio-email-current" v-model="email" :value="identity.email" :progress="progress" class="mx-2" />
+                  <!--
+                    identity.email might not be available among confirmed e-mails for this account, so we cannot
+                    always show its display name and we fall back to the mapped/canonical e-mail address.
+                  -->
+                  <!--
+                    TODO: We should show a tag next to the e-mail address which is not among user's credentials.
+                          So that they know that if they change the e-mail address they will not be able to go back.
+                  -->
+                  <label for="identityget-radio-email-current" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
+                    confirmedEmails.find((c) => c.mapped === identity?.email)?.display ?? identity.email
+                  }}</label>
+                </template>
+                <!-- Show available confirmedEmails, skipping identities email shown above, if found. -->
+                <template v-for="confirmedEmail in confirmedEmails" :key="confirmedEmail.mapped">
+                  <template v-if="confirmedEmail.mapped !== identity?.email">
+                    <RadioButton
+                      :id="`identityget-radio-email-${confirmedEmail.mapped}`"
+                      v-model="email"
+                      :value="confirmedEmail.mapped"
+                      :progress="progress"
+                      class="mx-2"
+                    />
+                    <label :for="`identityget-radio-email-${confirmedEmail.mapped}`" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
+                      confirmedEmail.display
+                    }}</label>
+                  </template>
+                </template>
+                <!-- If metadata.can_update, always show valid option none. -->
+                <RadioButton id="identityget-radio-email-none" v-model="email" value="" :progress="progress" class="mx-2" />
+                <label for="identityget-radio-email-none" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
+                  t("views.IdentityGet.selectNoEmail")
+                }}</label>
+              </div>
+              <div v-if="hasUnconfirmed" class="mt-4">
+                <i18n-t keypath="views.IdentityGet.unconfirmedEmailsHint" scope="global">
+                  <template #link>
+                    <router-link :to="{ name: 'CredentialList' }" class="link">{{ t("views.IdentityGet.confirmEmailsLink") }}</router-link>
+                  </template>
+                </i18n-t>
+              </div>
+              <div v-else-if="confirmedEmails.length === 0" class="mt-4">
+                <i18n-t keypath="views.IdentityGet.noEmailsHint" scope="global">
+                  <template #link>
+                    <router-link :to="{ name: 'CredentialList' }" class="link">{{ t("views.IdentityGet.addAndConfirmLink") }}</router-link>
+                  </template>
+                </i18n-t>
+              </div>
+            </div>
+            <div v-else class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+              <RadioButton :model-value="email" :value="email" disabled class="mx-2" />
+              <!--
+                  identity.email might not be available among confirmed e-mails for this account, so we cannot
+                  always show its display name and we fall back to the mapped/canonical e-mail address.
+                -->
+              <!--
+                  TODO: We should show a tag next to the e-mail address which is not among user's credentials.
+                -->
+              <label class="cursor-not-allowed text-gray-600">{{
+                email ? (confirmedEmails.find((c) => c.mapped === email)?.display ?? email) : t("views.IdentityGet.selectNoEmail")
+              }}</label>
+            </div>
             <label for="givenName" class="mt-4 mb-1"
               >{{ t("common.fields.givenName") }} <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
             >

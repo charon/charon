@@ -188,10 +188,33 @@ const (
 	TestingEmailOrUsernameCheckUsername = emailOrUsernameCheckUsername
 )
 
-func TestingNormalizeEmailOrUsername(emailOrUsername string, check emailOrUsernameCheck) (string, string, errors.E) {
+func TestingValidateEmailOrUsername(emailOrUsername string, check emailOrUsernameCheck) (string, string, errors.E) {
 	return validateEmailOrUsername(emailOrUsername, check)
 }
 
 type (
 	TestingValidationError = validationError
 )
+
+func (s *Service) TestingGetAccount(ctx context.Context, id identifier.Identifier) (*Account, errors.E) {
+	return s.getAccount(ctx, id)
+}
+
+func (s *Service) TestingSetAccount(ctx context.Context, account *Account) errors.E {
+	return s.setAccount(ctx, account)
+}
+
+func (s *Service) TestingGetAccountIDFromFlow(ctx context.Context, flowID identifier.Identifier) (identifier.Identifier, errors.E) {
+	flow, errE := s.getFlow(ctx, flowID)
+	if errE != nil {
+		return identifier.Identifier{}, errE
+	}
+	if flow.SessionID == nil {
+		return identifier.Identifier{}, errors.New("flow has no session")
+	}
+	session, errE := s.getSession(ctx, *flow.SessionID)
+	if errE != nil {
+		return identifier.Identifier{}, errE
+	}
+	return session.AccountID, nil
+}

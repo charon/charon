@@ -17,7 +17,8 @@ import type {
 } from "@/types"
 
 import { cloneDeep, isEqual } from "lodash-es"
-import { toRaw } from "vue"
+import { ref, toRaw, watchEffect } from "vue"
+import { useRoute } from "vue-router"
 
 export function redirectServerSide(url: string, replace: boolean, progress: Ref<number>) {
   // We increase the progress and never decrease it to wait for browser to do the redirect.
@@ -293,4 +294,32 @@ export async function signalPasskeyCurrentUserDetails(signal: SignalCurrentUserD
 export async function signalPasskeyUnknownCredential(signal: SignalUnknownCredential) {
   // PublicKeyCredential.signalUnknownCredential might not be available and this is fine.
   await PublicKeyCredential.signalUnknownCredential?.(signal)
+}
+
+export function useHashParam(paramName: string): {
+  param: Ref<string>
+  paramFromHash: Ref<boolean>
+} {
+  const route = useRoute()
+  const param = ref("")
+  const paramFromHash = ref(false)
+
+  watchEffect(() => {
+    const h = route.hash
+    if (!h || h.substring(0, 1) !== "#") {
+      return
+    }
+    const params = new URLSearchParams(h.substring(1))
+    const c = params.get(paramName)
+    if (c) {
+      // It is important that we first set param.value and then set paramFromHash.value
+      // because we rely on that with resetOnInteraction watch.
+      param.value = c
+      paramFromHash.value = true
+    }
+  })
+  return {
+    param: param,
+    paramFromHash: paramFromHash,
+  }
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"slices"
 
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
@@ -25,8 +26,11 @@ type CredentialPublic struct {
 	// the original (normalized but not mapped) credential value itself. Otherwise, user can rename it.
 	// Unique per account per provider.
 	DisplayName string `json:"displayName"`
-	// Verified bool is relevant for e-mail addresses, otherwise false.
-	Verified bool `json:"verified,omitempty"`
+	// Confirmed is relevant for e-mail addresses, otherwise empty. For confirmed
+	// e-mail credentials it holds the mapped/canonical e-mail address; the empty
+	// string means "not confirmed". This lets a single field answer both "is this
+	// e-mail credential confirmed?" and "what is the canonical address it confirms?".
+	Confirmed string `json:"confirmed,omitempty"`
 }
 
 // Ref returns the credential reference.
@@ -138,6 +142,23 @@ func (a *Account) GetCredential(provider Provider, providerID string) *Credentia
 	return nil
 }
 
+// getCredentialByID finds a credential by ID across providers, excluding ProviderCode.
+func (a *Account) getCredentialByID(credentialID identifier.Identifier) (*Credential, Provider, int) {
+	for provider := range a.Credentials {
+		// Code provider credentials are never exposed over the API.
+		if provider == ProviderCode {
+			continue
+		}
+		for i, credential := range a.Credentials[provider] {
+			if credential.ID == credentialID {
+				return &credential, provider, i
+			}
+		}
+	}
+
+	return nil, "", -1
+}
+
 // HasCredentialDisplayName returns true if displayName is already in use by a credential for the provider in the account.
 func (a *Account) HasCredentialDisplayName(provider Provider, displayName string) bool {
 	credentials, ok := a.Credentials[provider]
@@ -154,14 +175,24 @@ func (a *Account) HasCredentialDisplayName(provider Provider, displayName string
 	return false
 }
 
-// GetEmailAddresses returns the email addresses of the account.
+// HasEmailAddress returns true if mappedEmail is already confirmed in the account.
+// The caller is expected to pass the mapped/canonical form.
+func (a *Account) HasEmailAddress(mappedEmail string) bool {
+	return slices.Contains(a.GetEmailAddresses(), mappedEmail)
+}
+
+// GetEmailAddresses returns confirmed e-mail addresses (mapped/canonical form) of the account.
 func (a *Account) GetEmailAddresses() []string {
-	emails := make([]string, 0, len(a.Credentials[ProviderEmail]))
+	mappedEmails := make([]string, 0, len(a.Credentials[ProviderEmail]))
 	for _, credential := range a.Credentials[ProviderEmail] {
-		// Not-mapped e-mail address is stored in the display name.
-		emails = append(emails, credential.DisplayName)
+		if credential.Confirmed == "" {
+			continue
+		}
+		// The mapped/canonical e-mail address is stored in ProviderID.
+		mappedEmails = append(mappedEmails, credential.ProviderID)
 	}
-	return emails
+
+	return mappedEmails
 }
 
 func (s *Service) getAccount(_ context.Context, id identifier.Identifier) (*Account, errors.E) {
@@ -196,7 +227,7 @@ func (s *Service) getAccountByCredential(ctx context.Context, provider Provider,
 			continue
 		}
 		if provider == ProviderEmail {
-			if !credential.Verified {
+			if credential.Confirmed == "" {
 				continue
 			}
 		}

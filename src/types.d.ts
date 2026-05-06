@@ -512,7 +512,9 @@ export type CredentialPublic = {
   id: string
   provider: string
   displayName: string
-  verified?: boolean // TODO: When verifying emails.
+  // For confirmed e-mail credentials this is the mapped/canonical e-mail address.
+  // Empty (or absent) means "not confirmed". For non-email credentials it is always empty.
+  confirmed?: string
 }
 
 export type Credentials = CredentialRef[]
@@ -584,4 +586,8 @@ export type SignalCurrentUserDetails = {
 export type SignalUnknownCredential = {
   rpId: string
   credentialId: string
+}
+
+export type CredentialConfirmEmailCompleteRequest = {
+  code: string
 }

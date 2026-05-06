@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"github.com/alexedwards/argon2id"
 	"github.com/go-webauthn/webauthn/protocol"
@@ -20,17 +21,23 @@ import (
 	"gitlab.com/tozd/waf"
 )
 
-// Credential addition error codes.
+// Credential error codes.
 const (
-	// ErrorCodeCredentialInUse means credential (username) is in use by another account.
+	// ErrorCodeCredentialInUse means credential (username, confirmed email) is in use by another account.
 	ErrorCodeCredentialInUse ErrorCode = "credentialInUse" //nolint:gosec
-	// ErrorCodeAlreadyPresent AlreadyPresent means credential (email, username, password) is already on this account.
+	// ErrorCodeAlreadyPresent means credential (email, username, password) is already on this account.
 	ErrorCodeAlreadyPresent               ErrorCode = "alreadyPresent"
 	ErrorCodeCredentialDisplayNameInUse   ErrorCode = "credentialDisplayNameInUse"   //nolint:gosec
 	ErrorCodeCredentialDisplayNameMissing ErrorCode = "credentialDisplayNameMissing" //nolint:gosec
+	// ErrorCodeConfirmationFailed means all email confirmation codes have expired or maximum allowed attempts have been reached.
+	ErrorCodeConfirmationFailed ErrorCode = "confirmationFailed"
 )
 
-const credentialAddSessionExpiration = flowExpiration
+const (
+	credentialAddSessionExpiration  = flowExpiration
+	emailConfirmationCodeExpiration = credentialAddSessionExpiration
+	maxEmailConfirmationAttempts    = maxAuthAttempts
+)
 
 var (
 	credentialSessions   = map[identifier.Identifier]json.RawMessage{} //nolint:gochecknoglobals
@@ -142,15 +149,12 @@ func (s *Service) addCredentialToAccount(
 			ID:          id,
 			Provider:    providerKey,
 			DisplayName: displayName,
-			// Verified is set to false for all providers, including e-mail. E-mail verification is a separate procedure.
-			Verified: false,
+			// Confirmed starts empty for all providers, including e-mail. E-mail confirmation
+			// is a separate procedure that fills in the mapped/canonical address.
+			Confirmed: "",
 		},
 		ProviderID: providerID,
 		Data:       jsonData,
-	}
-
-	if account.Credentials == nil {
-		account.Credentials = map[Provider][]Credential{}
 	}
 
 	account.Credentials[providerKey] = append(account.Credentials[providerKey], newCredential)
@@ -865,28 +869,14 @@ func (s *Service) CredentialRemovePostAPI(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	var foundProvider Provider
-	var foundProviderID string
-	foundIndex := -1
-
 	credentialID, errE := identifier.MaybeString(params["id"])
 	if errE != nil {
 		s.BadRequestWithError(w, req, errE)
 		return
 	}
 
-FoundCredential:
-	for provider, credentials := range account.Credentials {
-		for i, credential := range credentials {
-			if credential.ID == credentialID {
-				foundProvider = provider
-				foundProviderID = credential.ProviderID
-				foundIndex = i
-				break FoundCredential
-			}
-		}
-	}
-
+	// getCredentialByID never returns a code provider credential.
+	credential, foundProvider, foundIndex := account.getCredentialByID(credentialID)
 	if foundIndex == -1 {
 		s.NotFound(w, req)
 		return
@@ -900,7 +890,7 @@ FoundCredential:
 
 	var signalUnknown *SignalUnknownCredential
 	if foundProvider == ProviderPasskey {
-		credentialIDBytes, err := base64.RawURLEncoding.DecodeString(foundProviderID)
+		credentialIDBytes, err := base64.RawURLEncoding.DecodeString(credential.ProviderID)
 		if err != nil {
 			s.InternalServerErrorWithError(w, req, errors.WithStack(err))
 			return
@@ -912,6 +902,19 @@ FoundCredential:
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
+	}
+
+	if foundProvider == ProviderEmail {
+		// Confirmed e-mail addresses are unique across accounts, so removing this
+		// credential leaves the address confirmed nowhere. Remove it from any identity
+		// that still carries it.
+		// TODO: Or should identities have a flag "confirmed" next to their e-mails which we could set to false here?
+		//       This would allow users to know which e-mail they had on the identity and then work towards reconfirming it.
+		errE = s.removeEmailAddressFromIdentities(ctx, credential.ProviderID)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
 	}
 
 	s.WriteJSON(w, req, CredentialResponse{
@@ -961,29 +964,18 @@ func (s *Service) CredentialRenamePostAPI(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	var foundProvider Provider
-	foundIndex := -1
-
-FoundCredential:
-	for provider, credentials := range account.Credentials {
-		for i, credential := range credentials {
-			if credential.ID == credentialID {
-				foundProvider = provider
-				foundIndex = i
-				break FoundCredential
-			}
-		}
-	}
+	// getCredentialByID never returns a code provider credential, so we do not have to check
+	// bellow for ProviderCode, to prevent exposing it over the API.
+	_, foundProvider, foundIndex := account.getCredentialByID(credentialID)
 
 	if foundIndex == -1 {
 		s.NotFound(w, req)
 		return
 	}
 
-	if foundProvider == ProviderEmail || foundProvider == ProviderUsername || foundProvider == ProviderCode {
+	if foundProvider == ProviderEmail || foundProvider == ProviderUsername {
 		// We do not allow changing display names of e-mail or username credentials.
 		// We store not-mapped e-mail address or username as a display name.
-		// Code provider credentials are never exposed over the API.
 		errE = errors.New("invalid credential type")
 		errors.Details(errE)["provider"] = foundProvider
 		errors.Details(errE)["id"] = credentialID
@@ -1042,4 +1034,498 @@ func newCredentialSignalResponse(update *SignalCurrentUserDetails, remove *Signa
 		return nil
 	}
 	return &SignalPasskey{Update: update, Remove: remove}
+}
+
+type codeCredential struct {
+	Code                 string    `json:"code"`
+	CreatedAt            time.Time `json:"createdAt"`
+	ConfirmationAttempts int       `json:"confirmationAttempts"`
+	EmailCredentialID    string    `json:"emailCredentialId"`
+}
+
+// Expired returns true if the email confirmation code has expired.
+func (c codeCredential) Expired() bool {
+	return time.Now().After(c.CreatedAt.Add(emailConfirmationCodeExpiration))
+}
+
+// MaxAttemptsReached returns true if maximum confirmation attempts have been reached.
+func (c codeCredential) MaxAttemptsReached() bool {
+	return c.ConfirmationAttempts >= maxEmailConfirmationAttempts
+}
+
+// CredentialConfirmEmailCompleteRequest represents the request body for the CredentialConfirmEmailCompletePostAPI handler.
+type CredentialConfirmEmailCompleteRequest struct {
+	Code string `json:"code"`
+}
+
+// cleanupCodeCredentials removes all expired or max-attempts-reached code credentials.
+// Returns true if any valid confirmation codes remain for given emailCredentialID.
+func (a *Account) cleanupCodeCredentials(emailCredentialID string) (bool, errors.E) {
+	hasRemaining := false
+	var firstErrE errors.E
+
+	a.Credentials[ProviderCode] = slices.DeleteFunc(a.Credentials[ProviderCode], func(credential Credential) bool {
+		var c codeCredential
+
+		errE := x.UnmarshalWithoutUnknownFields(credential.Data, &c)
+		if errE != nil {
+			errors.Details(errE)["id"] = credential.ID
+			errors.Details(errE)["providerID"] = credential.ProviderID
+			if firstErrE == nil {
+				firstErrE = errE
+			}
+			return false
+		}
+		if c.Expired() || c.MaxAttemptsReached() {
+			return true
+		}
+		if c.EmailCredentialID == emailCredentialID {
+			hasRemaining = true
+		}
+		return false
+	})
+
+	if len(a.Credentials[ProviderCode]) == 0 {
+		delete(a.Credentials, ProviderCode)
+	}
+
+	return hasRemaining, firstErrE
+}
+
+// removeCodeCredentials removes all code credentials for given emailCredentialID.
+func (a *Account) removeCodeCredentials(emailCredentialID string) errors.E {
+	var firstErrE errors.E
+
+	a.Credentials[ProviderCode] = slices.DeleteFunc(a.Credentials[ProviderCode], func(credential Credential) bool {
+		var c codeCredential
+
+		errE := x.UnmarshalWithoutUnknownFields(credential.Data, &c)
+		if errE != nil {
+			errors.Details(errE)["id"] = credential.ID
+			errors.Details(errE)["providerID"] = credential.ProviderID
+			if firstErrE == nil {
+				firstErrE = errE
+			}
+			return false
+		}
+		return c.EmailCredentialID == emailCredentialID
+	})
+
+	if len(a.Credentials[ProviderCode]) == 0 {
+		delete(a.Credentials, ProviderCode)
+	}
+	return firstErrE
+}
+
+// findCodeCredential tries to find a code credential matching given emailCredentialID and code.
+func (a *Account) findCodeCredential(emailCredentialID string, code string) (*Credential, errors.E) {
+	for _, credential := range a.Credentials[ProviderCode] {
+		var c codeCredential
+
+		errE := x.UnmarshalWithoutUnknownFields(credential.Data, &c)
+		if errE != nil {
+			errors.Details(errE)["id"] = credential.ID
+			// DisplayName in code credential holds the mapped e-mail.
+			errors.Details(errE)["email"] = credential.DisplayName
+			return nil, errE
+		}
+		if c.EmailCredentialID == emailCredentialID && c.Code == code {
+			return &credential, nil
+		}
+	}
+	// Code credential was not found.
+	return nil, nil //nolint:nilnil
+}
+
+// increaseCodeCredentialAttempts increments wrong attempts
+// on all code credentials for given email credential ID.
+func (a *Account) increaseCodeCredentialAttempts(emailCredentialID string) errors.E {
+	for i, credential := range a.Credentials[ProviderCode] {
+		var c codeCredential
+
+		errE := x.UnmarshalWithoutUnknownFields(credential.Data, &c)
+		if errE != nil {
+			errors.Details(errE)["id"] = credential.ID
+			// DisplayName in code credential holds the mapped e-mail.
+			errors.Details(errE)["email"] = credential.DisplayName
+			return errE
+		}
+		if c.EmailCredentialID != emailCredentialID {
+			continue
+		}
+		c.ConfirmationAttempts++
+		jsonData, errE := x.MarshalWithoutEscapeHTML(c)
+		if errE != nil {
+			errors.Details(errE)["id"] = credential.ID
+			// DisplayName in code credential holds the mapped e-mail.
+			errors.Details(errE)["email"] = credential.DisplayName
+			return errE
+		}
+		a.Credentials[ProviderCode][i].Data = jsonData
+	}
+	return nil
+}
+
+// CredentialConfirmEmailGet is the frontend handler for email confirmation.
+func (s *Service) CredentialConfirmEmailGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	if s.ProxyStaticTo != "" {
+		s.Proxy(w, req)
+	} else {
+		s.ServeStaticFile(w, req, "/index.html")
+	}
+}
+
+// CredentialConfirmEmailPostAPI is the API handler for starting email confirmation, POST request.
+func (s *Service) CredentialConfirmEmailPostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	defer req.Body.Close()              //nolint:errcheck
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	ctx := s.RequireAuthenticated(w, req)
+	if ctx == nil {
+		return
+	}
+
+	emailCredentialID, errE := identifier.MaybeString(params["id"])
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	accountID := mustGetAccountID(ctx)
+	account, errE := s.getAccount(ctx, accountID)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	emailCredential, foundProvider, emailCredentialIndex := account.getCredentialByID(emailCredentialID)
+	if emailCredentialIndex == -1 || foundProvider != ProviderEmail {
+		s.NotFound(w, req)
+		return
+	}
+
+	if emailCredential.Confirmed != "" {
+		// Nothing to do, already confirmed.
+		s.WriteJSON(w, req, CredentialResponse{
+			Error:   "",
+			Success: true,
+			Signal:  nil,
+		}, nil)
+		return
+	}
+
+	_, errE = account.cleanupCodeCredentials(emailCredentialID.String())
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	code, errE := getRandomCode()
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	codeData := codeCredential{
+		Code:                 code,
+		CreatedAt:            time.Now(),
+		ConfirmationAttempts: 0,
+		EmailCredentialID:    emailCredential.ID.String(),
+	}
+
+	jsonData, errE := x.MarshalWithoutEscapeHTML(codeData)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	newCodeCredential := Credential{
+		CredentialPublic: CredentialPublic{
+			ID:       identifier.New(),
+			Provider: ProviderCode,
+			// Code credential is internal. We store mapped e-mail in DisplayName for debugging purposes.
+			DisplayName: emailCredential.ProviderID,
+			Confirmed:   "",
+		},
+		ProviderID: "",
+		Data:       jsonData,
+	}
+
+	account.Credentials[ProviderCode] = append(account.Credentials[ProviderCode], newCodeCredential)
+
+	errE = s.setAccount(ctx, account)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	url, errE := s.codeProvider().CredentialURL(s, emailCredentialID.String(), code)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+	errE = s.sendMail(ctx, emailCredentialID, []string{emailCredential.ProviderID}, codeProviderSubjectCompiled, codeProviderTemplateCompiled, map[string]string{
+		"code":  code,
+		"title": s.title,
+		"url":   url,
+	})
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	s.WriteJSON(w, req, CredentialResponse{
+		Error:   "",
+		Success: true,
+		Signal:  nil,
+	}, nil)
+}
+
+// CredentialConfirmEmailCompletePostAPI is the API handler for completing email confirmation, POST request.
+func (s *Service) CredentialConfirmEmailCompletePostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	defer req.Body.Close()              //nolint:errcheck
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	ctx := s.RequireAuthenticated(w, req)
+	if ctx == nil {
+		return
+	}
+
+	emailCredentialID, errE := identifier.MaybeString(params["id"])
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+	emailCredentialIDString := emailCredentialID.String()
+
+	var request CredentialConfirmEmailCompleteRequest
+	errE = x.DecodeJSONWithoutUnknownFields(req.Body, &request)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	accountID := mustGetAccountID(ctx)
+	account, errE := s.getAccount(ctx, accountID)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	// Code credentials might have expired in meantime.
+	hasRemaining, errE := account.cleanupCodeCredentials(emailCredentialIDString)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	errE = s.setAccount(ctx, account)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	if !hasRemaining {
+		s.WriteJSON(w, req, CredentialResponse{
+			Error:   ErrorCodeConfirmationFailed,
+			Success: false,
+			Signal:  nil,
+		}, nil)
+		return
+	}
+
+	// We clean the provided code of all whitespace (not just at the beginning and end) before we check it.
+	code := strings.Map(func(r rune) rune {
+		if unicode.IsSpace(r) {
+			return -1
+		}
+		return r
+	}, request.Code)
+
+	codeCred, errE := account.findCodeCredential(emailCredentialIDString, code)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+	if codeCred == nil {
+		errE = account.increaseCodeCredentialAttempts(emailCredentialIDString)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+
+		hasRemaining, errE = account.cleanupCodeCredentials(emailCredentialIDString)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+
+		errE = s.setAccount(ctx, account)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+
+		if !hasRemaining {
+			s.WriteJSON(w, req, CredentialResponse{
+				Error:   ErrorCodeConfirmationFailed,
+				Success: false,
+				Signal:  nil,
+			}, nil)
+			return
+		}
+
+		s.WriteJSON(w, req, CredentialResponse{
+			Error:   ErrorCodeInvalidCode,
+			Success: false,
+			Signal:  nil,
+		}, nil)
+		return
+	}
+
+	// Code is correct, remove all code credentials.
+	errE = account.removeCodeCredentials(emailCredentialIDString)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	errE = s.setAccount(ctx, account)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	emailCredential, _, emailCredentialIndex := account.getCredentialByID(emailCredentialID)
+	if emailCredential == nil {
+		s.NotFound(w, req)
+		return
+	}
+
+	var c codeCredential
+
+	errE = x.UnmarshalWithoutUnknownFields(codeCred.Data, &c)
+	if errE != nil {
+		errors.Details(errE)["id"] = codeCred.ID
+		errors.Details(errE)["email"] = codeCred.DisplayName
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	// Confirm EmailCredentialID in code credential matches the found email credentials ID (defensive check).
+	if emailCredential.ID.String() != c.EmailCredentialID {
+		errE := errors.New("mismatch between code credential and e-mail credential")
+		errors.Details(errE)["id"] = codeCred.ID
+		errors.Details(errE)["codeEmail"] = codeCred.DisplayName
+		errors.Details(errE)["credentialEmail"] = emailCredential.DisplayName
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	// Before we confirm the e-mail address, we have to check if the
+	// e-mail address is in use and confirmed in another account.
+	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
+	accountWithConfirmedEmail, errE := s.getAccountByCredential(ctx, ProviderEmail, emailCredential.ProviderID)
+	if errE != nil && !errors.Is(errE, ErrAccountNotFound) {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	if accountWithConfirmedEmail != nil {
+		// E-mail is confirmed on the same account, no-op.
+		if accountWithConfirmedEmail.ID == accountID {
+			s.WriteJSON(w, req, CredentialResponse{
+				Error:   "",
+				Success: true,
+				Signal:  nil,
+			}, nil)
+			return
+		}
+		// E-mail is confirmed on a different account.
+		s.WriteJSON(w, req, CredentialResponse{
+			// TODO: Offer user to merge accounts.
+			Error:   ErrorCodeCredentialInUse,
+			Success: false,
+			Signal:  nil,
+		}, nil)
+		return
+	}
+
+	account.Credentials[ProviderEmail][emailCredentialIndex].Confirmed = emailCredential.ProviderID
+	errE = s.setAccount(ctx, account)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	s.WriteJSON(w, req, CredentialResponse{
+		Error:   "",
+		Success: true,
+		Signal:  nil,
+	}, nil)
+}
+
+func (s *Service) maybeAddEmailCredentialFromThirdPartyToken(
+	account *Account,
+	credentials []Credential,
+	providerKey Provider,
+	providerID string,
+	jsonData json.RawMessage,
+) ([]Credential, errors.E) {
+	if account != nil {
+		// Only add email credential on first sign-in (sign-up).
+		existingCredential := account.GetCredential(providerKey, providerID)
+		if existingCredential != nil {
+			return credentials, nil
+		}
+	}
+
+	var token map[string]any
+	errE := x.UnmarshalWithoutUnknownFields(jsonData, &token)
+	if errE != nil {
+		errors.Details(errE)["provider"] = providerKey
+		return nil, errE
+	}
+
+	email := findFirstString(token, "email", "eMailAddress", "emailAddress", "email_address")
+	if email == "" {
+		// No email in token, not an error.
+		return credentials, nil
+	}
+	preservedEmail, mappedEmail, errE := validateEmailOrUsername(email, emailOrUsernameCheckEmail)
+	if errE != nil {
+		// If third-party e-mail validation fails, we continue as if no e-mail was provided.
+		return credentials, nil //nolint:nilerr
+	}
+
+	if account != nil {
+		// Skip adding email credential if it is already present to avoid duplicates.
+		if account.HasCredential(ProviderEmail, mappedEmail) {
+			return credentials, nil
+		}
+	}
+
+	credentialData, errE := x.MarshalWithoutEscapeHTML(emailCredential{})
+	if errE != nil {
+		errors.Details(errE)["email"] = preservedEmail
+		return nil, errE
+	}
+
+	credential := &Credential{
+		CredentialPublic: CredentialPublic{
+			ID:          identifier.New(),
+			Provider:    ProviderEmail,
+			DisplayName: preservedEmail,
+			// We always add e-mail addresses from third-party as unconfirmed, even if they tell us that
+			// they have been verified by them. We do not trust them enough because this could lead to
+			// a compromise of our unrelated account which is not even using this third-party provider.
+			Confirmed: "",
+		},
+		ProviderID: mappedEmail,
+		Data:       credentialData,
+	}
+
+	credentials = append(credentials, *credential)
+
+	return credentials, nil
 }

@@ -3,7 +3,7 @@ import type { AuthFlowCodeCompleteRequest, AuthFlowCodeStartRequest, AuthFlowRes
 
 import { getCurrentInstance, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
-import { useRoute, useRouter } from "vue-router"
+import { useRouter } from "vue-router"
 
 import { postJSON } from "@/api"
 import Button from "@/components/Button.vue"
@@ -12,7 +12,7 @@ import WithDocument from "@/components/WithDocument.vue"
 import siteContext from "@/context"
 import { processResponse } from "@/flow"
 import { useProgress } from "@/progress"
-import { isEmail } from "@/utils"
+import { isEmail, useHashParam } from "@/utils"
 
 const props = defineProps<{
   flow: Flow
@@ -20,15 +20,14 @@ const props = defineProps<{
 
 const { t } = useI18n({ useScope: "global" })
 const router = useRouter()
-const route = useRoute()
 const progress = useProgress()
 
 const abortController = new AbortController()
-const code = ref("")
 const sendCounter = ref(1)
 const codeError = ref("")
 const unexpectedError = ref("")
-const codeFromHash = ref(false)
+
+const { param: code, paramFromHash: codeFromHash } = useHashParam("code")
 
 function getErrorMessage(errorCode: string) {
   switch (errorCode) {
@@ -40,12 +39,32 @@ function getErrorMessage(errorCode: string) {
 }
 
 function resetOnInteraction() {
+  codeFromHash.value = false
+
   // We reset errors on interaction.
   codeError.value = ""
   unexpectedError.value = ""
 }
 
-watch([code], resetOnInteraction)
+// We use flush: "sync" because useHashParam sets code.value first and after
+// that sets codeFromHash.value to true. Without it, codeFromHash.value would
+// be reset to false inside resetOnInteraction. Now, codeFromHash.value is
+// reset but then useHashParam sets it back. We have to do that because
+// code.value is not changed only on interaction but also by useHashParam.
+watch([code], resetOnInteraction, { flush: "sync" })
+
+// flush: "post" is required because useAuthCode sets code.value from empty to the
+// extracted code in the same tick that flips codeFromHash, which makes canNext()
+// switch from false to true and clears the submit button's :disabled prop. Post-flush
+// waits for that re-render, otherwise focus() could land on a still-disabled button.
+watch(
+  codeFromHash,
+  (hasCode) => {
+    const targetId = hasCode ? "authcode-button-submitcode" : "code"
+    document.getElementById(targetId)?.focus()
+  },
+  { flush: "post" },
+)
 
 watch(codeError, async (newValue) => {
   if (newValue) {
@@ -54,39 +73,6 @@ watch(codeError, async (newValue) => {
     })
   }
 })
-
-watch(
-  () => route.hash,
-  (h) => {
-    if (!h || h.substring(0, 1) !== "#") {
-      return
-    }
-    const params = new URLSearchParams(h.substring(1))
-    const c = params.get("code")
-    if (c) {
-      code.value = c
-      codeFromHash.value = true
-      resetOnInteraction()
-    }
-  },
-  { immediate: true },
-)
-
-// Covers the case where the hash arrives while AuthCode is already mounted
-// (same-URL hash change is a soft navigation, so onAfterEnter won't fire).
-// flush: "post" is required because the hash watcher sets code.value from
-// empty to the extracted code, which flips canNext() from false to true and
-// clears the submit button's :disabled prop. Post-flush waits for that
-// re-render, otherwise focus() could land on a still-disabled button.
-watch(
-  codeFromHash,
-  (v) => {
-    if (v) {
-      document.getElementById("authcode-button-submitcode")?.focus()
-    }
-  },
-  { flush: "post" },
-)
 
 // Define transition hooks to be called by the parent component.
 // See: https://github.com/vuejs/rfcs/discussions/613
@@ -211,7 +197,7 @@ async function onResend() {
   progress.value += 1
   try {
     code.value = ""
-    codeFromHash.value = false
+
     const url = router.apiResolve({
       name: "AuthFlowCodeStart",
       params: {
