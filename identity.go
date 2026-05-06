@@ -639,32 +639,51 @@ func (s *Service) setIdentityCreator(i IdentityRef, account identifier.Identifie
 // credential per address. So once the credential for a given address is removed, that address
 // is confirmed on no account at all. Every identity carrying it is now unbacked system-wide,
 // regardless of who created or admins it.
-func (s *Service) removeEmailAddressFromIdentities(mappedEmail string) ([]IdentityRef, errors.E) {
-	s.identitiesMu.Lock()
-	defer s.identitiesMu.Unlock()
-
-	var removed []IdentityRef
-	for id, data := range s.identities {
-		var identity Identity
-		errE := x.UnmarshalWithoutUnknownFields(data, &identity)
-		if errE != nil {
-			errors.Details(errE)["id"] = id
-			return removed, errE
-		}
-		// identity.Email is stored in mapped/canonical form.
-		if identity.Email != mappedEmail {
-			continue
-		}
-		identity.Email = ""
-		newData, errE := x.MarshalWithoutEscapeHTML(&identity)
-		if errE != nil {
-			errors.Details(errE)["id"] = id
-			return removed, errE
-		}
-		s.identities[id] = newData
-		removed = append(removed, IdentityRef{ID: id})
+//
+// ctx is used as the activity actor.
+func (s *Service) removeEmailAddressFromIdentities(ctx context.Context, mappedEmail string) errors.E {
+	type pair struct {
+		existing *Identity
+		updated  *Identity
 	}
-	return removed, nil
+	var matching []pair
+
+	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
+
+	collect := func() errors.E {
+		s.identitiesMu.RLock()
+		defer s.identitiesMu.RUnlock()
+
+		for id, data := range s.identities {
+			var existing Identity
+			errE := x.UnmarshalWithoutUnknownFields(data, &existing)
+			if errE != nil {
+				errors.Details(errE)["id"] = id
+				return errE
+			}
+			// identity.Email is stored in mapped/canonical form.
+			if existing.Email != mappedEmail {
+				continue
+			}
+			updated := existing
+			updated.Email = ""
+			matching = append(matching, pair{existing: &existing, updated: &updated})
+		}
+		return nil
+	}
+	errE := collect()
+	if errE != nil {
+		return errE
+	}
+
+	for _, m := range matching {
+		errE := s.applyIdentityUpdate(ctx, m.existing, m.updated)
+		if errE != nil {
+			return errE
+		}
+	}
+
+	return nil
 }
 
 func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*Identity, bool, errors.E) {
@@ -844,8 +863,6 @@ func (s *Service) getAccountsForIdentity(identity IdentityRef) map[identifier.Id
 }
 
 func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors.E {
-	co := s.charonOrganization()
-
 	if identity.ID == nil {
 		return errors.WithMessage(ErrIdentityValidationFailed, "ID is missing")
 	}
@@ -859,17 +876,9 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 		return errors.WithDetails(ErrIdentityUnauthorized, "id", *identity.ID)
 	}
 
-	i := identity.Ref()
-
 	errE = identity.Validate(ctx, existingIdentity, s)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrIdentityValidationFailed)
-	}
-
-	data, errE := x.MarshalWithoutEscapeHTML(identity)
-	if errE != nil {
-		errors.Details(errE)["id"] = *identity.ID
-		return errE
 	}
 
 	if _, ok := getIdentityID(ctx); !ok {
@@ -884,6 +893,25 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 
 		// We set here current identity ID in the context, which is used by logActivity.
 		ctx = s.withIdentityID(ctx, *identity.ID)
+	}
+
+	return s.applyIdentityUpdate(ctx, existingIdentity, identity)
+}
+
+// applyIdentityUpdate stores the new identity, propagates access-graph changes
+// triggered by Users/Admins membership changes, and logs the corresponding
+// ActivityIdentityUpdate.
+//
+// Callers must already have ensured the change is permitted.
+func (s *Service) applyIdentityUpdate(ctx context.Context, existingIdentity, identity *Identity) errors.E {
+	co := s.charonOrganization()
+
+	i := identity.Ref()
+
+	data, errE := x.MarshalWithoutEscapeHTML(identity)
+	if errE != nil {
+		errors.Details(errE)["id"] = *identity.ID
+		return errE
 	}
 
 	changes, identities, organizations, applications := identity.Changes(existingIdentity)

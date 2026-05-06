@@ -916,7 +916,7 @@ func (s *Service) CredentialRemovePostAPI(w http.ResponseWriter, req *http.Reque
 		// that still carries it.
 		// TODO: Or should identities have a flag "confirmed" next to their e-mails which we could set to false here?
 		//       This would allow users to know which e-mail they had on the identity and then work towards reconfirming it.
-		_, errE = s.removeEmailAddressFromIdentities(credential.ProviderID)
+		errE = s.removeEmailAddressFromIdentities(ctx, credential.ProviderID)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return

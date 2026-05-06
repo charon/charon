@@ -597,6 +597,11 @@ func TestCredentialRemoveEmailRemovesAddressFromIdentities(t *testing.T) {
 	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.Equal(t, mappedEmail, identity.Email, "non-email credential removal must not clear identity.Email")
 
+	// Snapshot activities before the e-mail credential removal so we can isolate
+	// what the removal logs.
+	activitiesBefore, errE := service.TestingListActivities(t.Context())
+	require.NoError(t, errE, "% -+#.1v", errE)
+
 	// Removing the email credential must clear identity.Email.
 	credentialRemove(t, ts, service, accessToken, emailCredentialID, false)
 	identity, _, errE = service.TestingGetIdentity(ctx, identityRef.ID)
@@ -606,6 +611,33 @@ func TestCredentialRemoveEmailRemovesAddressFromIdentities(t *testing.T) {
 	account, errE := service.TestingGetAccount(ctx, accountID)
 	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.Empty(t, account.Credentials[charon.ProviderEmail], "email credential should be gone")
+
+	// The removal must log an ActivityIdentityUpdate for I with ActivityChangeOtherData.
+	activitiesAfter, errE := service.TestingListActivities(t.Context())
+	require.NoError(t, errE, "% -+#.1v", errE)
+	diffActivities := newActivities(activitiesBefore, activitiesAfter)
+	require.Len(t, diffActivities, 1, "expected one activity")
+	newActivity := diffActivities[0]
+	assert.Equal(t, charon.ActivityIdentityUpdate, newActivity.Type)
+	assert.Equal(t, []charon.ActivityChangeType{charon.ActivityChangeOtherData}, newActivity.Changes)
+	require.Len(t, newActivity.Identities, 1)
+	assert.Equal(t, identityRef, newActivity.Identities[0].Identity)
+}
+
+// newActivities returns activities present in after that were not in before,
+// keyed by ID. Activity order across calls is unspecified.
+func newActivities(before, after []*charon.Activity) []*charon.Activity {
+	beforeIDs := map[identifier.Identifier]bool{}
+	for _, a := range before {
+		beforeIDs[*a.ID] = true
+	}
+	var added []*charon.Activity
+	for _, a := range after {
+		if !beforeIDs[*a.ID] {
+			added = append(added, a)
+		}
+	}
+	return added
 }
 
 // TestCredentialRemoveEmailRemovesAddressFromSharedIdentities verifies that even an
@@ -688,6 +720,9 @@ func TestCredentialRemoveEmailRemovesAddressFromSharedIdentities(t *testing.T) {
 	}
 	require.True(t, found, "expected email credential")
 
+	activitiesBefore, errE := service.TestingListActivities(t.Context())
+	require.NoError(t, errE, "% -+#.1v", errE)
+
 	credentialRemove(t, ts, service, accessTokenA, emailCredentialID, false)
 
 	// Even though I is now shared with B, the removed credential was the only confirmation
@@ -695,11 +730,21 @@ func TestCredentialRemoveEmailRemovesAddressFromSharedIdentities(t *testing.T) {
 	identityA, _, errE = service.TestingGetIdentity(ctxA, identityRefA.ID)
 	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.Empty(t, identityA.Email, "shared identity should be cleared because confirmed emails are globally unique")
+
+	activitiesAfter, errE := service.TestingListActivities(t.Context())
+	require.NoError(t, errE, "% -+#.1v", errE)
+	diffActivities := newActivities(activitiesBefore, activitiesAfter)
+	require.Len(t, diffActivities, 1)
+	newActivity := diffActivities[0]
+	assert.Equal(t, charon.ActivityIdentityUpdate, newActivity.Type)
+	assert.Equal(t, []charon.ActivityChangeType{charon.ActivityChangeOtherData}, newActivity.Changes)
+	require.Len(t, newActivity.Identities, 1)
+	assert.Equal(t, identityRefA, newActivity.Identities[0].Identity)
 }
 
 // TestCredentialRemoveEmailRemovesAddressFromTransferredIdentity covers the case that
 // the original creator's admin entry on the identity is removed (ownership transferred
-// to another account) and only then they remove their e-mail credential. The cascade has
+// to another account) and only then they remove their e-mail credential. The removal has
 // to clear the e-mail even on identities the credential-removing account no longer admins,
 // because confirmed e-mail addresses are globally unique and the removed credential was
 // the only confirmation backing the address anywhere.
@@ -708,6 +753,8 @@ func TestCredentialRemoveEmailRemovesAddressFromTransferredIdentity(t *testing.T
 
 	user := identifier.New().String()
 	email := user + "@example.com"
+	_, mappedEmail, errE := charon.TestingValidateEmailOrUsername(email, charon.TestingEmailOrUsernameCheckEmail)
+	require.NoError(t, errE, "% -+#.1v", errE)
 
 	ts, service, smtpServer, _, _ := startTestServer(t)
 
@@ -726,6 +773,9 @@ func TestCredentialRemoveEmailRemovesAddressFromTransferredIdentity(t *testing.T
 	for ref := range accessA {
 		identityRefA = ref
 	}
+
+	// Sign A out so the later sign-in (after the ownership transfer) starts cleanly.
+	signoutUser(t, ts, service, accessTokenA)
 
 	// Account B signs up so we have a real identity to share I with. We don't sign A out;
 	// A's bearer access token stays valid even though ts.Client() cookies become B's.
@@ -769,25 +819,50 @@ func TestCredentialRemoveEmailRemovesAddressFromTransferredIdentity(t *testing.T
 	_, _, errE = service.TestingGetIdentity(ctxA, identityRefA.ID)
 	require.ErrorIs(t, errE, charon.ErrIdentityUnauthorized)
 
-	// A still has their original session (we didn't sign A out), so the original
-	// access token works for the credential remove call.
-	credentialRefs := credentialListGet(t, ts, service, accessTokenA, 2)
+	// Sign A back in. A has 0 identities accessible after the transfer, so chooseIdentity
+	// will auto-create a new one for A - that becomes the active identity in A's session
+	// and will be the actor recorded on the new activity.
+	flowIDA2, nonceA2, stateA2, pkceVerifierA2, configA2, verifierA2 := createAuthFlow(t, ts, service)
+	accessTokenA2, newIdentityIDA := signinUser(t, ts, service, email, email, charon.CompletedSignin, flowIDA2, nonceA2, stateA2, pkceVerifierA2, configA2, verifierA2)
+
+	// chooseIdentity's auto-create helper adds a "user@example.com" e-mail credential to
+	// A's account so the new identity passes validation, so A now has password + 2 emails.
+	credentialRefs := credentialListGet(t, ts, service, accessTokenA2, 3)
 	var emailCredentialID identifier.Identifier
 	var found bool
 	for _, ref := range credentialRefs {
-		cred := credentialGet(t, ts, service, accessTokenA, ref.ID)
-		if cred.Provider == charon.ProviderEmail {
+		cred := credentialGet(t, ts, service, accessTokenA2, ref.ID)
+		// Pick the original e-mail credential (the one whose mapped form matches I's e-mail),
+		// not the helper-added "user@example.com".
+		if cred.Provider == charon.ProviderEmail && cred.Confirmed == mappedEmail {
 			emailCredentialID = ref.ID
 			found = true
 			break
 		}
 	}
-	require.True(t, found, "expected email credential")
+	require.True(t, found, "expected original email credential")
 
-	credentialRemove(t, ts, service, accessTokenA, emailCredentialID, false)
+	activitiesBefore, errE := service.TestingListActivities(t.Context())
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	credentialRemove(t, ts, service, accessTokenA2, emailCredentialID, false)
 
 	// Verify from B's perspective (A no longer has access) that I.Email was cleared.
 	identityFromB, _, errE = service.TestingGetIdentity(ctxB, identityRefA.ID)
 	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.Empty(t, identityFromB.Email, "transferred identity should be cleared even though A no longer admins it")
+
+	// The removal logs ActivityIdentityUpdate against I (the affected identity) with
+	// A's currently-active identity (the freshly-created one) as the actor.
+	activitiesAfter, errE := service.TestingListActivities(t.Context())
+	require.NoError(t, errE, "% -+#.1v", errE)
+	diffActivities := newActivities(activitiesBefore, activitiesAfter)
+	require.Len(t, diffActivities, 1)
+	newActivity := diffActivities[0]
+	assert.Equal(t, charon.ActivityIdentityUpdate, newActivity.Type)
+	assert.Equal(t, []charon.ActivityChangeType{charon.ActivityChangeOtherData}, newActivity.Changes)
+	require.Len(t, newActivity.Identities, 1)
+	assert.Equal(t, identityRefA, newActivity.Identities[0].Identity)
+	require.NotNil(t, newActivity.Actor)
+	assert.Equal(t, newIdentityIDA, newActivity.Actor.Identity.ID, "actor should be A's new active identity, not the transferred-away one")
 }
