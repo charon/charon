@@ -34,7 +34,7 @@ const (
 )
 
 const (
-	credentialAddSessionExpiration  = time.Hour * 24
+	credentialAddSessionExpiration  = flowExpiration
 	emailConfirmationCodeExpiration = credentialAddSessionExpiration
 	maxEmailConfirmationAttempts    = maxAuthAttempts
 )
