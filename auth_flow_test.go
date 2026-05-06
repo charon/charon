@@ -2,7 +2,6 @@ package charon_test
 
 import (
 	"bytes"
-	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -162,7 +161,7 @@ func createAuthFlow(t *testing.T, ts *httptest.Server, service *charon.Service) 
 func createIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, flowID identifier.Identifier) charon.IdentityRef {
 	t.Helper()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	accountID, errE := service.TestingGetAccountIDFromFlow(ctx, flowID)
 	require.NoError(t, errE, "% -+#.1v", errE)
 	account, errE := service.TestingGetAccount(ctx, accountID)
