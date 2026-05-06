@@ -523,6 +523,10 @@ const WithOrganizationDoc = WithDocument<Organization>
                     identity.email might not be available among confirmed e-mails for this account, so we cannot
                     always show its display name and we fall back to the mapped/canonical e-mail address.
                   -->
+                  <!--
+                    TODO: We should show a tag next to the e-mail address which is not among user's credentials.
+                          So that they know that if they change the e-mail address they will not be able to go back.
+                  -->
                   <label for="identityget-radio-email-current" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
                     confirmedEmails.find((c) => c.mapped === identity?.email)?.display ?? identity.email
                   }}</label>
@@ -569,6 +573,9 @@ const WithOrganizationDoc = WithDocument<Organization>
                 <!--
                   identity.email might not be available among confirmed e-mails for this account, so we cannot
                   always show its display name and we fall back to the mapped/canonical e-mail address.
+                -->
+                <!--
+                  TODO: We should show a tag next to the e-mail address which is not among user's credentials.
                 -->
                 <label class="cursor-not-allowed text-gray-600">{{
                   email ? (confirmedEmails.find((c) => c.mapped === email)?.display ?? email) : t("views.IdentityGet.selectNoEmail")
