@@ -510,7 +510,7 @@ const WithOrganizationDoc = WithDocument<Organization>
             <label for="email" class="mt-4 mb-1"
               >{{ t("common.fields.email") }} <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
             >
-            <div v-if="metadata.can_update" class="mt-1">
+            <div v-if="metadata.can_update">
               <!--
                 If identity has an email, show it first (on top). The radio value is the
                 mapped/canonical address (matching what we send to the backend), but the
@@ -552,14 +552,14 @@ const WithOrganizationDoc = WithDocument<Organization>
                   t("views.IdentityGet.selectNoEmail")
                 }}</label>
               </div>
-              <div v-if="hasUnconfirmed" class="mt-1 text-sm text-slate-700">
+              <div v-if="hasUnconfirmed" class="mt-4">
                 <i18n-t keypath="views.IdentityGet.unconfirmedEmailsHint" scope="global">
                   <template #link>
                     <router-link :to="{ name: 'CredentialList' }" class="link">{{ t("views.IdentityGet.confirmEmailsLink") }}</router-link>
                   </template>
                 </i18n-t>
               </div>
-              <div v-else-if="confirmedEmails.length === 0" class="mt-1 text-sm text-slate-700">
+              <div v-else-if="confirmedEmails.length === 0" class="mt-4">
                 <i18n-t keypath="views.IdentityGet.noEmailsHint" scope="global">
                   <template #link>
                     <router-link :to="{ name: 'CredentialList' }" class="link">{{ t("views.IdentityGet.addAndConfirmLink") }}</router-link>
@@ -567,20 +567,18 @@ const WithOrganizationDoc = WithDocument<Organization>
                 </i18n-t>
               </div>
             </div>
-            <div v-else class="mt-1">
-              <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
-                <RadioButton :model-value="email" :value="email" disabled class="mx-2" />
-                <!--
+            <div v-else class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+              <RadioButton :model-value="email" :value="email" disabled class="mx-2" />
+              <!--
                   identity.email might not be available among confirmed e-mails for this account, so we cannot
                   always show its display name and we fall back to the mapped/canonical e-mail address.
                 -->
-                <!--
+              <!--
                   TODO: We should show a tag next to the e-mail address which is not among user's credentials.
                 -->
-                <label class="cursor-not-allowed text-gray-600">{{
-                  email ? (confirmedEmails.find((c) => c.mapped === email)?.display ?? email) : t("views.IdentityGet.selectNoEmail")
-                }}</label>
-              </div>
+              <label class="cursor-not-allowed text-gray-600">{{
+                email ? (confirmedEmails.find((c) => c.mapped === email)?.display ?? email) : t("views.IdentityGet.selectNoEmail")
+              }}</label>
             </div>
             <label for="givenName" class="mt-4 mb-1"
               >{{ t("common.fields.givenName") }} <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
