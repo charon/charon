@@ -1137,9 +1137,9 @@ func (a *Account) findCodeCredential(emailCredentialID string, code string) (*Cr
 	return nil, nil //nolint:nilnil
 }
 
-// incrementCodeCredentialAttempts increments wrong attempts
+// increaseCodeCredentialAttempts increments wrong attempts
 // on all code credentials for given email credential ID.
-func (a *Account) incrementCodeCredentialAttempts(emailCredentialID string) errors.E {
+func (a *Account) increaseCodeCredentialAttempts(emailCredentialID string) errors.E {
 	for i, credential := range a.Credentials[ProviderCode] {
 		var c codeCredential
 
@@ -1348,7 +1348,7 @@ func (s *Service) CredentialConfirmEmailCompletePostAPI(w http.ResponseWriter, r
 		return
 	}
 	if codeCred == nil {
-		errE = account.incrementCodeCredentialAttempts(emailCredentialIDString)
+		errE = account.increaseCodeCredentialAttempts(emailCredentialIDString)
 		if errE != nil {
 			s.InternalServerErrorWithError(w, req, errE)
 			return
