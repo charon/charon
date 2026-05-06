@@ -192,6 +192,13 @@ func (i *IdentityPublic) Validate(ctx context.Context, existing *IdentityPublic,
 	}
 
 	if i.Email != "" {
+		// If e-mail address has not changed, we do not check that the current account has it confirmed.
+		// The reason is that identity can be shared between multiple accounts and only one of them has
+		// the e-mail address confirmed. So others should still be able to manage the identity and change
+		// other fields, even if they do not have the e-mail address confirmed. If e-mail address is
+		// ever unconfirmed (e.g., credential is removed), then we remove that e-mail address from all
+		// identities which use it. In this way we assure that e-mail addresses in identities are always
+		// confirmed through some credential by some account.
 		if existing == nil || i.Email != existing.Email {
 			accountID := mustGetAccountID(ctx)
 			account, errE := service.getAccount(ctx, accountID)
