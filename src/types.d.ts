@@ -512,7 +512,9 @@ export type CredentialPublic = {
   id: string
   provider: string
   displayName: string
-  confirmed?: boolean
+  // For confirmed e-mail credentials this is the mapped/canonical e-mail address.
+  // Empty (or absent) means "not confirmed". For non-email credentials it is always empty.
+  confirmed?: string
 }
 
 export type Credentials = CredentialRef[]

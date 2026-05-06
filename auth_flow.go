@@ -159,14 +159,14 @@ func (s *Service) makeIdentityFromCredentials(account Account, credentials []Cre
 		case ProviderPassword:
 			// Nothing available.
 		case ProviderEmail:
-			if !credential.Confirmed {
+			if credential.Confirmed == "" {
 				continue
 			}
 			if identity == nil {
 				identity = new(Identity)
 			}
-			// Not-mapped e-mail address is stored in the display name.
-			identity.Email = credential.DisplayName
+			// Identity stores the mapped/canonical e-mail address. ProviderID holds it on the credential.
+			identity.Email = credential.ProviderID
 		case ProviderUsername:
 			if identity == nil {
 				identity = new(Identity)
@@ -200,8 +200,11 @@ func (s *Service) makeIdentityFromCredentials(account Account, credentials []Cre
 				identity.PictureURL = picture
 			}
 			email := findFirstString(token, "email", "eMailAddress", "emailAddress", "email_address")
-			if email != "" && account.HasEmailAddress(email) {
-				identity.Email = email
+			if email != "" {
+				_, mappedEmail, errE := validateEmailOrUsername(email, emailOrUsernameCheckEmail)
+				if errE == nil && account.HasEmailAddress(mappedEmail) {
+					identity.Email = mappedEmail
+				}
 			}
 			username := findFirstString(token, "username", "preferred_username")
 			if username != "" {

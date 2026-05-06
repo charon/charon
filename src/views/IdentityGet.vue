@@ -59,8 +59,11 @@ const fullName = ref("")
 const pictureUrl = ref("")
 const description = ref("")
 
+// confirmedEmails pairs each confirmed e-mail credential's mapped/canonical address
+// (used as the value bound to the radio button and stored on identity.email) with its
+// display label (the original, non-mapped form the user typed).
 const confirmedEmails = computed(() => {
-  return credentials.value.filter((c) => c.provider === "email" && c.confirmed).map((c) => c.displayName)
+  return credentials.value.filter((c) => c.provider === "email" && c.confirmed).map((c) => ({ mapped: c.confirmed!, display: c.displayName }))
 })
 
 const hasUnconfirmed = computed(() => {
@@ -508,18 +511,34 @@ const WithOrganizationDoc = WithDocument<Organization>
               >{{ t("common.fields.email") }} <span v-if="metadata.can_update" class="text-sm text-neutral-500 italic">{{ t("common.labels.optional") }}</span></label
             >
             <div v-if="metadata.can_update" class="mt-1">
-              <!-- If identity has an email, show it first (on top). -->
+              <!--
+                If identity has an email, show it first (on top). The radio value is the
+                mapped/canonical address (matching what we send to the backend), but the
+                visible label uses the credential's DisplayName when available.
+              -->
               <div :key="identity?.email" class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
                 <template v-if="identity?.email">
                   <RadioButton id="identityget-radio-email-current" v-model="email" :value="identity.email" :progress="progress" class="mx-2" />
-                  <label for="identityget-radio-email-current" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{ identity.email }}</label>
+                  <!--
+                    identity.email might not be available among confirmed e-mails for this account, so we cannot
+                    always show its display name and we fall back to the mapped/canonical e-mail address.
+                  -->
+                  <label for="identityget-radio-email-current" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
+                    confirmedEmails.find((c) => c.mapped === identity?.email)?.display ?? identity.email
+                  }}</label>
                 </template>
                 <!-- Show available confirmedEmails, skipping identities email shown above, if found. -->
-                <template v-for="confirmedEmail in confirmedEmails" :key="confirmedEmail">
-                  <template v-if="confirmedEmail !== identity?.email">
-                    <RadioButton :id="`identityget-radio-email-${confirmedEmail}`" v-model="email" :value="confirmedEmail" :progress="progress" class="mx-2" />
-                    <label :for="`identityget-radio-email-${confirmedEmail}`" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
-                      confirmedEmail
+                <template v-for="confirmedEmail in confirmedEmails" :key="confirmedEmail.mapped">
+                  <template v-if="confirmedEmail.mapped !== identity?.email">
+                    <RadioButton
+                      :id="`identityget-radio-email-${confirmedEmail.mapped}`"
+                      v-model="email"
+                      :value="confirmedEmail.mapped"
+                      :progress="progress"
+                      class="mx-2"
+                    />
+                    <label :for="`identityget-radio-email-${confirmedEmail.mapped}`" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
+                      confirmedEmail.display
                     }}</label>
                   </template>
                 </template>
@@ -547,7 +566,13 @@ const WithOrganizationDoc = WithDocument<Organization>
             <div v-else class="mt-1">
               <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
                 <RadioButton :model-value="email" :value="email" disabled class="mx-2" />
-                <label class="cursor-not-allowed text-gray-600">{{ email || t("views.IdentityGet.selectNoEmail") }}</label>
+                <!--
+                  identity.email might not be available among confirmed e-mails for this account, so we cannot
+                  always show its display name and we fall back to the mapped/canonical e-mail address.
+                -->
+                <label class="cursor-not-allowed text-gray-600">{{
+                  email ? (confirmedEmails.find((c) => c.mapped === email)?.display ?? email) : t("views.IdentityGet.selectNoEmail")
+                }}</label>
               </div>
             </div>
             <label for="givenName" class="mt-4 mb-1"

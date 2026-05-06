@@ -149,8 +149,9 @@ func (s *Service) addCredentialToAccount(
 			ID:          id,
 			Provider:    providerKey,
 			DisplayName: displayName,
-			// Confirmed is set to false for all providers, including e-mail. E-mail confirmation is a separate procedure.
-			Confirmed: false,
+			// Confirmed starts empty for all providers, including e-mail. E-mail confirmation
+			// is a separate procedure that fills in the mapped/canonical address.
+			Confirmed: "",
 		},
 		ProviderID: providerID,
 		Data:       jsonData,
@@ -909,6 +910,19 @@ func (s *Service) CredentialRemovePostAPI(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
+	if foundProvider == ProviderEmail {
+		// Confirmed e-mail addresses are unique across accounts, so removing this
+		// credential leaves the address confirmed nowhere. Remove it from any identity
+		// that still carries it.
+		// TODO: Or should identities have a flag "confirmed" next to their e-mails which we could set to false here?
+		//       This would allow users to know which e-mail they had on the identity and then work towards reconfirming it.
+		_, errE = s.removeEmailAddressFromIdentities(credential.ProviderID)
+		if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+	}
+
 	s.WriteJSON(w, req, CredentialResponse{
 		Error:   "",
 		Success: true,
@@ -1201,7 +1215,7 @@ func (s *Service) CredentialConfirmEmailPostAPI(w http.ResponseWriter, req *http
 		return
 	}
 
-	if emailCredential.Confirmed {
+	if emailCredential.Confirmed != "" {
 		// Nothing to do, already confirmed.
 		s.WriteJSON(w, req, CredentialResponse{
 			Error:   "",
@@ -1242,7 +1256,7 @@ func (s *Service) CredentialConfirmEmailPostAPI(w http.ResponseWriter, req *http
 			Provider: ProviderCode,
 			// Code credential is internal. We store mapped e-mail in DisplayName for debugging purposes.
 			DisplayName: emailCredential.ProviderID,
-			Confirmed:   false,
+			Confirmed:   "",
 		},
 		ProviderID: "",
 		Data:       jsonData,
@@ -1449,7 +1463,7 @@ func (s *Service) CredentialConfirmEmailCompletePostAPI(w http.ResponseWriter, r
 		return
 	}
 
-	account.Credentials[ProviderEmail][emailCredentialIndex].Confirmed = true
+	account.Credentials[ProviderEmail][emailCredentialIndex].Confirmed = emailCredential.ProviderID
 	errE = s.setAccount(ctx, account)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -1517,7 +1531,7 @@ func (s *Service) maybeAddEmailCredentialFromThirdPartyToken(
 			// We always add e-mail addresses from third-party as unconfirmed, even if they tell us that
 			// they have been verified by them. We do not trust them enough because this could lead to
 			// a compromise of our unrelated account which is not even using this third-party provider.
-			Confirmed: false,
+			Confirmed: "",
 		},
 		ProviderID: mappedEmail,
 		Data:       credentialData,

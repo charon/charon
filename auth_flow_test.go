@@ -172,7 +172,7 @@ func createIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, 
 	existingCred := false
 	for i, cred := range account.Credentials[charon.ProviderEmail] {
 		if cred.ProviderID == testEmail {
-			account.Credentials[charon.ProviderEmail][i].Confirmed = true
+			account.Credentials[charon.ProviderEmail][i].Confirmed = testEmail
 			existingCred = true
 			break
 		}
@@ -188,7 +188,7 @@ func createIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, 
 					ID:          identifier.New(),
 					Provider:    charon.ProviderEmail,
 					DisplayName: testEmail,
-					Confirmed:   true,
+					Confirmed:   testEmail,
 				},
 				ProviderID: testEmail,
 				Data:       jsonData,
@@ -285,10 +285,15 @@ func chooseIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, 
 		require.Contains(t, identities, identity)
 	} else {
 		require.Len(t, identities, expectedIdentities)
+		// identity.Username is stored as the preserved form, identity.Email as the
+		// mapped/canonical form. Validate-with-Any returns both; we compare each side
+		// against the matching field.
+		preserved, mapped, errE := charon.TestingValidateEmailOrUsername(expectedEmailOrUsername, charon.TestingEmailOrUsernameCheckAny)
+		require.NoError(t, errE, "% -+#.1v", errE)
 		found := false
 		for _, id := range identities {
 			i := getIdentity(t, ts, service, id, flowID)
-			if i.Username == expectedEmailOrUsername || i.Email == expectedEmailOrUsername {
+			if i.Username == preserved || i.Email == mapped {
 				identity = id
 				found = true
 				break

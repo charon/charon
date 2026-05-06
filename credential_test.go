@@ -36,11 +36,11 @@ func assertEmailAndPasswordCredential(t *testing.T, ts *httptest.Server, service
 		switch credential.Provider {
 		case charon.ProviderEmail:
 			assert.Equal(t, email, credential.DisplayName)
-			// Code confirmation marks email as confirmed.
-			assert.True(t, credential.Confirmed)
+			// Code confirmation marks email as confirmed and stores the mapped address.
+			assert.NotEmpty(t, credential.Confirmed)
 		case charon.ProviderPassword:
 			assert.Equal(t, "default password", credential.DisplayName)
-			assert.False(t, credential.Confirmed)
+			assert.Empty(t, credential.Confirmed)
 		case charon.ProviderUsername, charon.ProviderPasskey, charon.ProviderCode:
 			require.Fail(t, "unexpected credential provider", "provider: %s", credential.Provider)
 		}
@@ -116,7 +116,7 @@ func TestCredentialManagement(t *testing.T) {
 	}
 
 	// Email credential is initially added as unconfirmed.
-	assert.False(t, credentialMap[emailCredentialID].Confirmed)
+	assert.Empty(t, credentialMap[emailCredentialID].Confirmed)
 	assert.Equal(t, "OIDCusername", credentialMap[oidcCredentialID].DisplayName)
 	assert.Equal(t, "My default password", credentialMap[passwordCredentialID].DisplayName)
 	assert.Equal(t, "My first passkey", credentialMap[passkeyCredentialID].DisplayName)
@@ -154,27 +154,28 @@ func TestCredentialManagement(t *testing.T) {
 	oidcCred := credentialMap[oidcCredentialID]
 	assert.Equal(t, "oidcTesting", string(oidcCred.Provider))
 	assert.Equal(t, "My OIDC Login", oidcCred.DisplayName)
-	assert.False(t, oidcCred.Confirmed)
+	assert.Empty(t, oidcCred.Confirmed)
 
 	usernameCred := credentialMap[usernameCredentialID]
 	assert.Equal(t, charon.ProviderUsername, usernameCred.Provider)
 	assert.Equal(t, "MyCustomUsErNaMe", usernameCred.DisplayName)
-	assert.False(t, usernameCred.Confirmed)
+	assert.Empty(t, usernameCred.Confirmed)
 
 	emailCred := credentialMap[emailCredentialID]
 	assert.Equal(t, charon.ProviderEmail, emailCred.Provider)
 	assert.Equal(t, "EmAiL@example.com", emailCred.DisplayName)
-	assert.True(t, emailCred.Confirmed)
+	// Confirmed holds the mapped (lowercased) form once the address is confirmed.
+	assert.Equal(t, "email@example.com", emailCred.Confirmed)
 
 	passwordCred := credentialMap[passwordCredentialID]
 	assert.Equal(t, charon.ProviderPassword, passwordCred.Provider)
 	assert.Equal(t, "My super secret password", passwordCred.DisplayName)
-	assert.False(t, passwordCred.Confirmed)
+	assert.Empty(t, passwordCred.Confirmed)
 
 	passkeyCred := credentialMap[passkeyCredentialID]
 	assert.Equal(t, charon.ProviderPasskey, passkeyCred.Provider)
 	assert.Equal(t, "My renamed passkey", passkeyCred.DisplayName)
-	assert.False(t, passkeyCred.Confirmed)
+	assert.Empty(t, passkeyCred.Confirmed)
 
 	credentialRemove(t, ts, service, accessToken, usernameCredentialID, false)
 	credentialRemove(t, ts, service, accessToken, emailCredentialID, false)
@@ -533,4 +534,260 @@ func credentialConfirmEmail(t *testing.T, ts *httptest.Server, service *charon.S
 	assert.Empty(t, completeResponse.Error)
 	assert.True(t, completeResponse.Success)
 	assert.Nil(t, completeResponse.Signal)
+}
+
+func TestCredentialRemoveEmailRemovesAddressFromIdentities(t *testing.T) {
+	t.Parallel()
+
+	user := identifier.New().String()
+	email := user + "@example.com"
+	_, mappedEmail, errE := charon.TestingValidateEmailOrUsername(email, charon.TestingEmailOrUsernameCheckEmail)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	ts, service, smtpServer, _, _ := startTestServer(t)
+
+	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
+
+	// Sign up via password+code so the account ends up with both a password credential
+	// and a confirmed email credential, and the auto-created identity has Email set.
+	resp := startPasswordSignin(t, ts, service, email, []byte("test1234"), nil, flowID, "Charon", "Dashboard") //nolint:bodyclose
+	accessToken := completeUserCode(t, ts, service, smtpServer, resp, email, charon.CompletedSignup, []charon.Provider{charon.ProviderPassword, charon.ProviderCode}, nil, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier)
+
+	ctx := t.Context()
+	accountID, errE := service.TestingGetAccountIDFromFlow(ctx, flowID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	access := service.TestingGetIdentitiesAccess(accountID)
+	require.Len(t, access, 1)
+	var identityRef charon.IdentityRef
+	for ref := range access {
+		identityRef = ref
+	}
+
+	ctx = service.TestingWithAccountID(ctx, accountID)
+	ctx = service.TestingWithIdentityID(ctx, identityRef.ID)
+
+	identity, _, errE := service.TestingGetIdentity(ctx, identityRef.ID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	require.Equal(t, mappedEmail, identity.Email, "auto-created identity should have mapped email set after signup")
+
+	// Look up the email and password credential IDs.
+	credentialRefs := credentialListGet(t, ts, service, accessToken, 2)
+	var emailCredentialID, passwordCredentialID identifier.Identifier
+	var foundEmail, foundPassword bool
+	for _, ref := range credentialRefs {
+		cred := credentialGet(t, ts, service, accessToken, ref.ID)
+		switch cred.Provider {
+		case charon.ProviderEmail:
+			emailCredentialID = ref.ID
+			foundEmail = true
+		case charon.ProviderPassword:
+			passwordCredentialID = ref.ID
+			foundPassword = true
+		case charon.ProviderUsername, charon.ProviderPasskey, charon.ProviderCode:
+			require.Fail(t, "unexpected credential provider", "provider: %s", cred.Provider)
+		}
+	}
+	require.True(t, foundEmail, "expected email credential")
+	require.True(t, foundPassword, "expected password credential")
+
+	// Removing a non-email credential must not touch identity.Email.
+	credentialRemove(t, ts, service, accessToken, passwordCredentialID, false)
+	identity, _, errE = service.TestingGetIdentity(ctx, identityRef.ID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Equal(t, mappedEmail, identity.Email, "non-email credential removal must not clear identity.Email")
+
+	// Removing the email credential must clear identity.Email.
+	credentialRemove(t, ts, service, accessToken, emailCredentialID, false)
+	identity, _, errE = service.TestingGetIdentity(ctx, identityRef.ID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Empty(t, identity.Email, "identity email should be removed after email credential removal")
+
+	account, errE := service.TestingGetAccount(ctx, accountID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Empty(t, account.Credentials[charon.ProviderEmail], "email credential should be gone")
+}
+
+// TestCredentialRemoveEmailRemovesAddressFromSharedIdentities verifies that even an
+// identity which has been shared with additional admins has its Email cleared when the
+// original creator removes their e-mail credential. Confirmed e-mail addresses are
+// unique across accounts, so the removed credential was the only confirmation backing
+// identity.Email anywhere; leaving the value would expose a globally-unconfirmed
+// address as if it were verified.
+func TestCredentialRemoveEmailRemovesAddressFromSharedIdentities(t *testing.T) {
+	t.Parallel()
+
+	user := identifier.New().String()
+	email := user + "@example.com"
+	_, mappedEmail, errE := charon.TestingValidateEmailOrUsername(email, charon.TestingEmailOrUsernameCheckEmail)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	ts, service, smtpServer, _, _ := startTestServer(t)
+
+	// Account A signs up via password+code with the e-mail; identity I is auto-created
+	// with I.Email set to the mapped address.
+	flowIDA, nonceA, stateA, pkceVerifierA, configA, verifierA := createAuthFlow(t, ts, service)
+	respA := startPasswordSignin(t, ts, service, email, []byte("test1234"), nil, flowIDA, "Charon", "Dashboard") //nolint:bodyclose
+	accessTokenA := completeUserCode(t, ts, service, smtpServer, respA, email, charon.CompletedSignup, []charon.Provider{charon.ProviderPassword, charon.ProviderCode}, nil, flowIDA, "Charon", "Dashboard", nonceA, stateA, pkceVerifierA, configA, verifierA)
+
+	ctx := t.Context()
+	accountIDA, errE := service.TestingGetAccountIDFromFlow(ctx, flowIDA)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	accessA := service.TestingGetIdentitiesAccess(accountIDA)
+	require.Len(t, accessA, 1)
+	var identityRefA charon.IdentityRef
+	for ref := range accessA {
+		identityRefA = ref
+	}
+
+	signoutUser(t, ts, service, accessTokenA)
+
+	// Account B signs up via username only. Gives us a second account whose identity Q
+	// can be added to I.Admins via the real update path.
+	otherUser := "other" + identifier.New().String()
+	flowIDB, nonceB, stateB, pkceVerifierB, configB, verifierB := createAuthFlow(t, ts, service)
+	accessTokenB, identityIDB := signinUser(t, ts, service, otherUser, otherUser, charon.CompletedSignup, flowIDB, nonceB, stateB, pkceVerifierB, configB, verifierB)
+	signoutUser(t, ts, service, accessTokenB)
+
+	// Share I with B by adding B's identity Q as an admin of I, going through the same
+	// update + validation path the API would use.
+	ctxA := service.TestingWithAccountID(t.Context(), accountIDA)
+	ctxA = service.TestingWithIdentityID(ctxA, identityRefA.ID)
+	ctxA = service.TestingWithSessionID(ctxA)
+	ctxA = service.TestingWithRequestID(ctxA)
+
+	identityA, _, errE := service.TestingGetIdentity(ctxA, identityRefA.ID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	require.Equal(t, mappedEmail, identityA.Email)
+	require.Equal(t, []charon.IdentityRef{identityRefA}, identityA.Admins, "fresh sign-up identity should be its own only admin")
+
+	identityA.Admins = append(identityA.Admins, charon.IdentityRef{ID: identityIDB})
+	errE = service.TestingUpdateIdentity(ctxA, identityA)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	// Confirm the share actually landed: I.Admins contains both A's self-admin and Q.
+	identityA, _, errE = service.TestingGetIdentity(ctxA, identityRefA.ID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	require.ElementsMatch(t, []charon.IdentityRef{identityRefA, {ID: identityIDB}}, identityA.Admins)
+
+	// Sign back in as A to drive the credential removal through the real API.
+	flowIDA2, nonceA2, stateA2, pkceVerifierA2, configA2, verifierA2 := createAuthFlow(t, ts, service)
+	accessTokenA, _ = signinUser(t, ts, service, email, email, charon.CompletedSignin, flowIDA2, nonceA2, stateA2, pkceVerifierA2, configA2, verifierA2)
+
+	credentialRefs := credentialListGet(t, ts, service, accessTokenA, 2)
+	var emailCredentialID identifier.Identifier
+	var found bool
+	for _, ref := range credentialRefs {
+		cred := credentialGet(t, ts, service, accessTokenA, ref.ID)
+		if cred.Provider == charon.ProviderEmail {
+			emailCredentialID = ref.ID
+			found = true
+			break
+		}
+	}
+	require.True(t, found, "expected email credential")
+
+	credentialRemove(t, ts, service, accessTokenA, emailCredentialID, false)
+
+	// Even though I is now shared with B, the removed credential was the only confirmation
+	// for this address anywhere, so clearing identity.Email is correct.
+	identityA, _, errE = service.TestingGetIdentity(ctxA, identityRefA.ID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Empty(t, identityA.Email, "shared identity should be cleared because confirmed emails are globally unique")
+}
+
+// TestCredentialRemoveEmailRemovesAddressFromTransferredIdentity covers the case that
+// the original creator's admin entry on the identity is removed (ownership transferred
+// to another account) and only then they remove their e-mail credential. The cascade has
+// to clear the e-mail even on identities the credential-removing account no longer admins,
+// because confirmed e-mail addresses are globally unique and the removed credential was
+// the only confirmation backing the address anywhere.
+func TestCredentialRemoveEmailRemovesAddressFromTransferredIdentity(t *testing.T) {
+	t.Parallel()
+
+	user := identifier.New().String()
+	email := user + "@example.com"
+
+	ts, service, smtpServer, _, _ := startTestServer(t)
+
+	// Account A signs up with the e-mail; identity I is auto-created as I's own only admin.
+	flowIDA, nonceA, stateA, pkceVerifierA, configA, verifierA := createAuthFlow(t, ts, service)
+	respA := startPasswordSignin(t, ts, service, email, []byte("test1234"), nil, flowIDA, "Charon", "Dashboard") //nolint:bodyclose
+	accessTokenA := completeUserCode(t, ts, service, smtpServer, respA, email, charon.CompletedSignup, []charon.Provider{charon.ProviderPassword, charon.ProviderCode}, nil, flowIDA, "Charon", "Dashboard", nonceA, stateA, pkceVerifierA, configA, verifierA)
+
+	ctx := t.Context()
+	accountIDA, errE := service.TestingGetAccountIDFromFlow(ctx, flowIDA)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	accessA := service.TestingGetIdentitiesAccess(accountIDA)
+	require.Len(t, accessA, 1)
+	var identityRefA charon.IdentityRef
+	for ref := range accessA {
+		identityRefA = ref
+	}
+
+	// Account B signs up so we have a real identity to share I with. We don't sign A out;
+	// A's bearer access token stays valid even though ts.Client() cookies become B's.
+	otherUser := "other" + identifier.New().String()
+	flowIDB, nonceB, stateB, pkceVerifierB, configB, verifierB := createAuthFlow(t, ts, service)
+	accessTokenB, identityIDB := signinUser(t, ts, service, otherUser, otherUser, charon.CompletedSignup, flowIDB, nonceB, stateB, pkceVerifierB, configB, verifierB)
+	accountIDB, errE := service.TestingGetAccountIDFromFlow(ctx, flowIDB)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	signoutUser(t, ts, service, accessTokenB)
+
+	// As A: add B's identity Q to I.Admins (sharing).
+	ctxA := service.TestingWithAccountID(t.Context(), accountIDA)
+	ctxA = service.TestingWithIdentityID(ctxA, identityRefA.ID)
+	ctxA = service.TestingWithSessionID(ctxA)
+	ctxA = service.TestingWithRequestID(ctxA)
+
+	identityA, _, errE := service.TestingGetIdentity(ctxA, identityRefA.ID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	identityA.Admins = append(identityA.Admins, charon.IdentityRef{ID: identityIDB})
+	errE = service.TestingUpdateIdentity(ctxA, identityA)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	// As B: drop A's self-admin entry, leaving I.Admins = [Q]. A is no longer admin of I.
+	ctxB := service.TestingWithAccountID(t.Context(), accountIDB)
+	ctxB = service.TestingWithIdentityID(ctxB, identityIDB)
+	ctxB = service.TestingWithSessionID(ctxB)
+	ctxB = service.TestingWithRequestID(ctxB)
+
+	identityFromB, _, errE := service.TestingGetIdentity(ctxB, identityRefA.ID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	identityFromB.Admins = []charon.IdentityRef{{ID: identityIDB}}
+	errE = service.TestingUpdateIdentity(ctxB, identityFromB)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	// Confirm the transfer landed: I.Admins is now exactly [Q].
+	identityFromB, _, errE = service.TestingGetIdentity(ctxB, identityRefA.ID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	require.Equal(t, []charon.IdentityRef{{ID: identityIDB}}, identityFromB.Admins)
+
+	// A no longer has access to I.
+	_, _, errE = service.TestingGetIdentity(ctxA, identityRefA.ID)
+	require.ErrorIs(t, errE, charon.ErrIdentityUnauthorized)
+
+	// A still has their original session (we didn't sign A out), so the original
+	// access token works for the credential remove call.
+	credentialRefs := credentialListGet(t, ts, service, accessTokenA, 2)
+	var emailCredentialID identifier.Identifier
+	var found bool
+	for _, ref := range credentialRefs {
+		cred := credentialGet(t, ts, service, accessTokenA, ref.ID)
+		if cred.Provider == charon.ProviderEmail {
+			emailCredentialID = ref.ID
+			found = true
+			break
+		}
+	}
+	require.True(t, found, "expected email credential")
+
+	credentialRemove(t, ts, service, accessTokenA, emailCredentialID, false)
+
+	// Verify from B's perspective (A no longer has access) that I.Email was cleared.
+	identityFromB, _, errE = service.TestingGetIdentity(ctxB, identityRefA.ID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Empty(t, identityFromB.Email, "transferred identity should be cleared even though A no longer admins it")
 }

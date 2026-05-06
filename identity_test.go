@@ -1387,7 +1387,7 @@ func createTestAccountWithConfirmedEmail(t *testing.T, accountID identifier.Iden
 						ID:          identifier.New(),
 						Provider:    charon.ProviderEmail,
 						DisplayName: preservedEmail,
-						Confirmed:   true,
+						Confirmed:   mappedEmail,
 					},
 					ProviderID: mappedEmail,
 					Data:       jsonData,

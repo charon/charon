@@ -192,30 +192,24 @@ func (i *IdentityPublic) Validate(ctx context.Context, existing *IdentityPublic,
 	}
 
 	if i.Email != "" {
-		preservedEmail, mappedEmail, errE := validateEmailOrUsername(i.Email, emailOrUsernameCheckEmail)
-		if errE != nil {
-			errors.Details(errE)["email"] = i.Email
-			return errE
-		}
-
-		if existing == nil || preservedEmail != existing.Email {
+		if existing == nil || i.Email != existing.Email {
 			accountID := mustGetAccountID(ctx)
 			account, errE := service.getAccount(ctx, accountID)
 			if errE != nil {
 				return errE
 			}
 
-			_, mappedEmails := account.GetEmailAddresses()
-			if !slices.Contains(mappedEmails, mappedEmail) {
+			// i.Email must already be the mapped/canonical form. Matching a confirmed e-mail
+			// address (which is stored in mapped/canonical form) is itself proof that the input
+			// is a well-formed mapped/canonical address.
+			if !account.HasEmailAddress(i.Email) {
 				return errors.WithDetails(
 					ErrIdentityEmailNotConfirmed,
 					"id", *i.ID,
-					"email", mappedEmail,
+					"email", i.Email,
 				)
 			}
 		}
-
-		i.Email = preservedEmail
 	}
 
 	// TODO: Normalize GivenName and FullName.
@@ -635,6 +629,42 @@ func (s *Service) setIdentityCreator(i IdentityRef, account identifier.Identifie
 	defer s.identitiesAccessMu.Unlock()
 
 	s.identityCreators[i] = account
+}
+
+// removeEmailAddressFromIdentities clears identity.Email on every identity which uses given
+// mappedEmail as e-mail address. It is meant to be called after an e-mail credential
+// is removed so that identities do not retain a now-unconfirmed address.
+//
+// Confirmed e-mail addresses are unique across accounts and an account can hold at most one
+// credential per address. So once the credential for a given address is removed, that address
+// is confirmed on no account at all. Every identity carrying it is now unbacked system-wide,
+// regardless of who created or admins it.
+func (s *Service) removeEmailAddressFromIdentities(mappedEmail string) ([]IdentityRef, errors.E) {
+	s.identitiesMu.Lock()
+	defer s.identitiesMu.Unlock()
+
+	var removed []IdentityRef
+	for id, data := range s.identities {
+		var identity Identity
+		errE := x.UnmarshalWithoutUnknownFields(data, &identity)
+		if errE != nil {
+			errors.Details(errE)["id"] = id
+			return removed, errE
+		}
+		// identity.Email is stored in mapped/canonical form.
+		if identity.Email != mappedEmail {
+			continue
+		}
+		identity.Email = ""
+		newData, errE := x.MarshalWithoutEscapeHTML(&identity)
+		if errE != nil {
+			errors.Details(errE)["id"] = id
+			return removed, errE
+		}
+		s.identities[id] = newData
+		removed = append(removed, IdentityRef{ID: id})
+	}
+	return removed, nil
 }
 
 func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*Identity, bool, errors.E) {

@@ -26,8 +26,11 @@ type CredentialPublic struct {
 	// the original (normalized but not mapped) credential value itself. Otherwise, user can rename it.
 	// Unique per account per provider.
 	DisplayName string `json:"displayName"`
-	// Confirmed bool is relevant for e-mail addresses, otherwise false.
-	Confirmed bool `json:"confirmed,omitempty"`
+	// Confirmed is relevant for e-mail addresses, otherwise empty. For confirmed
+	// e-mail credentials it holds the mapped/canonical e-mail address; the empty
+	// string means "not confirmed". This lets a single field answer both "is this
+	// e-mail credential confirmed?" and "what is the canonical address it confirms?".
+	Confirmed string `json:"confirmed,omitempty"`
 }
 
 // Ref returns the credential reference.
@@ -172,33 +175,24 @@ func (a *Account) HasCredentialDisplayName(provider Provider, displayName string
 	return false
 }
 
-// HasEmailAddress maps the input and returns true if e-mail address is already confirmed in the account.
-func (a *Account) HasEmailAddress(email string) bool {
-	_, mapped, errE := validateEmailOrUsername(email, emailOrUsernameCheckEmail)
-	if errE != nil {
-		return false
-	}
-
-	_, mappedEmails := a.GetEmailAddresses()
-
-	return slices.Contains(mappedEmails, mapped)
+// HasEmailAddress returns true if mappedEmail is already confirmed in the account.
+// The caller is expected to pass the mapped/canonical form.
+func (a *Account) HasEmailAddress(mappedEmail string) bool {
+	return slices.Contains(a.GetEmailAddresses(), mappedEmail)
 }
 
-// GetEmailAddresses returns only confirmed e-mail addresses (preserved and mapped) of the account.
-func (a *Account) GetEmailAddresses() ([]string, []string) {
-	preservedEmails := make([]string, 0, len(a.Credentials[ProviderEmail]))
+// GetEmailAddresses returns confirmed e-mail addresses (mapped/canonical form) of the account.
+func (a *Account) GetEmailAddresses() []string {
 	mappedEmails := make([]string, 0, len(a.Credentials[ProviderEmail]))
 	for _, credential := range a.Credentials[ProviderEmail] {
-		if !credential.Confirmed {
+		if credential.Confirmed == "" {
 			continue
 		}
-		// Not-mapped e-mail address is stored in the display name.
-		preservedEmails = append(preservedEmails, credential.DisplayName)
-		// Mapped e-mail address is stored in the ProviderID.
+		// The mapped/canonical e-mail address is stored in ProviderID.
 		mappedEmails = append(mappedEmails, credential.ProviderID)
 	}
 
-	return preservedEmails, mappedEmails
+	return mappedEmails
 }
 
 func (s *Service) getAccount(_ context.Context, id identifier.Identifier) (*Account, errors.E) {
@@ -233,7 +227,7 @@ func (s *Service) getAccountByCredential(ctx context.Context, provider Provider,
 			continue
 		}
 		if provider == ProviderEmail {
-			if !credential.Confirmed {
+			if credential.Confirmed == "" {
 				continue
 			}
 		}

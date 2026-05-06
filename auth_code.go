@@ -180,7 +180,7 @@ func (s *Service) sendCodeForExistingAccount(
 	} else {
 		// mappedEmailOrUsername is an username. Let's see if there are any
 		// e-mails associated with the account.
-		_, mappedEmails = account.GetEmailAddresses()
+		mappedEmails = account.GetEmailAddresses()
 
 		if len(mappedEmails) == 0 {
 			var code ErrorCode
@@ -364,9 +364,9 @@ func (s *Service) AuthFlowCodeStartPostAPI(w http.ResponseWriter, req *http.Requ
 			ID:          identifier.New(),
 			Provider:    ProviderEmail,
 			DisplayName: preservedEmailOrUsername,
-			// We set confirmed to true because this credential is stored with
-			// the account only after the e-mail gets confirmed.
-			Confirmed: true,
+			// We set Confirmed to the mapped address because this credential is stored
+			// with the account only after the e-mail gets confirmed.
+			Confirmed: mappedEmailOrUsername,
 		},
 		ProviderID: mappedEmailOrUsername,
 		Data:       jsonData,

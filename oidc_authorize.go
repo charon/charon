@@ -221,13 +221,8 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 			}
 		case "email":
 			if flow.Identity.Email != "" {
-				_, mappedEmail, errE := validateEmailOrUsername(flow.Identity.Email, emailOrUsernameCheckEmail)
-				if errE != nil {
-					// This should never happen, identity email has already been validated.
-					s.InternalServerErrorWithError(w, req, errE)
-					return true
-				}
-				idTokenClaims.Add("email", mappedEmail)
+				// If identity.Email is set, it is a confirmed mapped/canonical e-mail address.
+				idTokenClaims.Add("email", flow.Identity.Email)
 				idTokenClaims.Add("email_verified", true)
 			}
 		}

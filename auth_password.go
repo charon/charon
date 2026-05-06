@@ -257,7 +257,7 @@ func (s *Service) AuthFlowPasswordCompletePostAPI(w http.ResponseWriter, req *ht
 						ID:          credential.ID,
 						Provider:    ProviderPassword,
 						DisplayName: credential.DisplayName,
-						Confirmed:   false,
+						Confirmed:   "",
 					},
 					ProviderID: "",
 					Data:       jsonData,
@@ -292,9 +292,9 @@ func (s *Service) AuthFlowPasswordCompletePostAPI(w http.ResponseWriter, req *ht
 				ID:          identifier.New(),
 				Provider:    ProviderEmail,
 				DisplayName: flow.EmailOrUsername,
-				// We set confirmed to true because this credential is stored with
-				// the account only after the e-mail gets confirmed.
-				Confirmed: true,
+				// We set Confirmed to the mapped address because this credential is stored
+				// with the account only after the e-mail gets confirmed.
+				Confirmed: mappedEmailOrUsername,
 			},
 			ProviderID: mappedEmailOrUsername,
 			Data:       jsonData,
@@ -311,7 +311,7 @@ func (s *Service) AuthFlowPasswordCompletePostAPI(w http.ResponseWriter, req *ht
 				ID:          identifier.New(),
 				Provider:    ProviderUsername,
 				DisplayName: flow.EmailOrUsername,
-				Confirmed:   false,
+				Confirmed:   "",
 			},
 			ProviderID: mappedEmailOrUsername,
 			Data:       jsonData,
@@ -338,7 +338,7 @@ func (s *Service) AuthFlowPasswordCompletePostAPI(w http.ResponseWriter, req *ht
 			Provider: ProviderPassword,
 			// TODO: Translate this to user's language.
 			DisplayName: "default password",
-			Confirmed:   false,
+			Confirmed:   "",
 		},
 		ProviderID: "",
 		Data:       jsonData,

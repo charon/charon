@@ -247,7 +247,7 @@ func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, p
 			ID:          identifier.New(),
 			Provider:    providerKey,
 			DisplayName: displayName,
-			Confirmed:   false,
+			Confirmed:   "",
 		},
 		ProviderID: idToken.Subject,
 		Data:       jsonData,
