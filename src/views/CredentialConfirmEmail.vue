@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { CredentialConfirmEmailCompleteRequest, CredentialPublic, CredentialResponse } from "@/types"
 
-import { nextTick, onBeforeUnmount, ref, watch } from "vue"
+import { onBeforeUnmount, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
@@ -50,14 +50,18 @@ function resetOnInteraction() {
 
 watch([code], resetOnInteraction)
 
+// flush: "post" is required because useAuthCode sets code.value from empty to the
+// extracted code in the same tick that flips codeFromHash, which makes canSubmit()
+// switch from false to true and clears the submit button's :disabled prop. Post-flush
+// waits for that re-render, otherwise focus() could land on a still-disabled button.
+// immediate: true gives this view its initial focus.
 watch(
   codeFromHash,
-  async (hasCode) => {
-    await nextTick()
+  (hasCode) => {
     const targetId = hasCode ? "credentialconfirmemail-button-submitcode" : "code"
     document.getElementById(targetId)?.focus()
   },
-  { immediate: true },
+  { flush: "post", immediate: true },
 )
 
 onBeforeUnmount(() => {

@@ -46,11 +46,18 @@ function resetOnInteraction() {
 
 watch([code], resetOnInteraction)
 
-watch(codeFromHash, async (hasCode) => {
-  await nextTick()
-  const targetId = hasCode ? "authcode-button-submitcode" : "code"
-  document.getElementById(targetId)?.focus()
-})
+// flush: "post" is required because useAuthCode sets code.value from empty to the
+// extracted code in the same tick that flips codeFromHash, which makes canNext()
+// switch from false to true and clears the submit button's :disabled prop. Post-flush
+// waits for that re-render, otherwise focus() could land on a still-disabled button.
+watch(
+  codeFromHash,
+  (hasCode) => {
+    const targetId = hasCode ? "authcode-button-submitcode" : "code"
+    document.getElementById(targetId)?.focus()
+  },
+  { flush: "post" },
+)
 
 watch(codeError, async (newValue) => {
   if (newValue) {
