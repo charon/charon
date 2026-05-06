@@ -66,9 +66,9 @@ export default defineConfig({
       dependencies: ["requires-login"],
     },
     {
-      name: "adds-roles", // Depends on adds-application-template so the globally visible application template exists first.
+      name: "adds-roles",
       testMatch: /adds-roles\/.*\.test\.ts$/,
-      dependencies: ["adds-application-template"],
+      dependencies: ["adds-application-template"], // Depends on adds-application-template so the globally visible application template exists first.
     },
     // SIPASS tests - only run when SIPASS env variables are present
     ...(process.env.SIPASS_TESTUSER_CERT_PATH
