@@ -157,10 +157,6 @@ func (s *Service) addCredentialToAccount(
 		Data:       jsonData,
 	}
 
-	if account.Credentials == nil {
-		account.Credentials = map[Provider][]Credential{}
-	}
-
 	account.Credentials[providerKey] = append(account.Credentials[providerKey], newCredential)
 
 	errE := s.setAccount(ctx, account)
@@ -891,9 +887,6 @@ func (s *Service) CredentialRemovePostAPI(w http.ResponseWriter, req *http.Reque
 	if len(account.Credentials[foundProvider]) == 0 {
 		delete(account.Credentials, foundProvider)
 	}
-	if len(account.Credentials) == 0 {
-		account.Credentials = nil
-	}
 
 	var signalUnknown *SignalUnknownCredential
 	if foundProvider == ProviderPasskey {
@@ -1258,10 +1251,8 @@ func (s *Service) CredentialConfirmEmailPostAPI(w http.ResponseWriter, req *http
 		Data:       jsonData,
 	}
 
-	if account.Credentials == nil {
-		account.Credentials = make(map[Provider][]Credential)
-	}
 	account.Credentials[ProviderCode] = append(account.Credentials[ProviderCode], newCodeCredential)
+
 	errE = s.setAccount(ctx, account)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
