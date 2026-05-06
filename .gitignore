@@ -25,6 +25,8 @@ node_modules
 *.njsproj
 *.sln
 *.sw?
+go.work
+go.work.sum
 
 # Secrets
 /keys.txt

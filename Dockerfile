@@ -30,7 +30,7 @@ ARG CHARON_BUILD_FLAGS
 # in the node-build stage and we cannot (missing node, etc.) and do not want to build
 # it again, but it might have file timestamps which would otherwise trigger a build.
 RUN \
-  BUILD_TIMESTAMP=$BUILD_TIMESTAMP CHARON_BUILD_FLAGS="$CHARON_BUILD_FLAGS" make -o dist build-static && \
+  VERSION=$VERSION BUILD_TIMESTAMP=$BUILD_TIMESTAMP CHARON_BUILD_FLAGS="$CHARON_BUILD_FLAGS" make -o dist build-static && \
   mv charon /go/bin/charon
 
 FROM alpine:3.22 AS debug
