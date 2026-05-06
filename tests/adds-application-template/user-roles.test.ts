@@ -55,6 +55,7 @@ test.describe.serial("Charon User Roles", () => {
     // Update the added application.
     const updateApplicationButton = page.locator("#organizationget-button-applicationsupdate")
     await expect(updateApplicationButton).toBeVisible()
+    await expect(page.locator(".organizationget-text-status").first()).toBeVisible()
     await checkpoint(page, "roles-organization-with-pending-activation-application", { mask: [availableApplicationsMask] })
     await updateApplicationButton.click()
 
@@ -115,6 +116,7 @@ test.describe.serial("Charon User Roles", () => {
     await activateOrDisableButton.click()
 
     await expect(updateApplicationButton).toBeVisible()
+    await expect(page.locator(".organizationget-text-status").first()).toBeVisible()
     await checkpoint(page, "roles-organization-with-pending-deactivation-application", { mask: [availableApplicationsMask] })
     await updateApplicationButton.click()
 
@@ -150,6 +152,7 @@ test.describe.serial("Charon User Roles", () => {
     await activateOrDisableButton.click()
 
     await expect(updateApplicationButton).toBeVisible()
+    await expect(page.locator(".organizationget-text-status").first()).toBeVisible()
     await checkpoint(page, "roles-organization-with-pending-reactivation-application", { mask: [availableApplicationsMask] })
     await updateApplicationButton.click()
 
