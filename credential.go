@@ -1278,8 +1278,9 @@ func (s *Service) CredentialConfirmEmailPostAPI(w http.ResponseWriter, req *http
 		return
 	}
 	errE = s.sendMail(ctx, emailCredentialID, []string{emailCredential.ProviderID}, codeProviderSubjectCompiled, codeProviderTemplateCompiled, map[string]string{
-		"code": code,
-		"url":  url,
+		"code":  code,
+		"title": s.title,
+		"url":   url,
 	})
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
