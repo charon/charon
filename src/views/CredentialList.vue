@@ -106,10 +106,11 @@ async function onConfirm(credentialId: string) {
   }
 
   resetOnInteraction()
-  currentActionCredentialId.value = credentialId
 
   progress.value += 1
   try {
+    currentActionCredentialId.value = credentialId
+
     const result = await sendCredentialConfirmationEmail(router, credentialId, abortController, progress)
     if (abortController.signal.aborted) {
       return
