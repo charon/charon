@@ -6,6 +6,54 @@ export const CHARON_URL = process.env.CHARON_URL || "https://localhost:8080"
 
 export const expect = test.expect
 
+export async function createApplicationTemplate(page: Page, applicationName: string, checkpointPrefix: string) {
+  // Find and click the Application Templates link.
+  const applicationsLink = page.locator("#menu-list-applicationTemplates")
+  await expect(applicationsLink).toBeVisible()
+  await applicationsLink.click()
+
+  // Create a new one.
+  const applicationCreateButton = page.locator("#applicationtemplatelist-button-create")
+  await expect(applicationCreateButton).toBeVisible()
+  await checkpoint(page, `${checkpointPrefix}-applications-first-view`)
+  await applicationCreateButton.click()
+
+  const applicationNameField = page.locator("input#applicationtemplatecreate-input-name")
+  await expect(applicationNameField).toBeVisible()
+  await expect(applicationNameField).toBeFocused()
+  await checkpoint(page, `${checkpointPrefix}-applications-create-application`)
+  await applicationNameField.fill(applicationName)
+
+  const applicationSubmitButton = page.locator("#applicationtemplatecreate-button-create")
+  await expect(applicationSubmitButton).toBeVisible()
+  await checkpoint(page, `${checkpointPrefix}-applications-create-application-filled`)
+  await applicationSubmitButton.click()
+}
+
+export async function createOrganization(page: Page, organizationName: string) {
+  // Find and click the Organizations link.
+  const organizationsLink = page.locator("#menu-list-organizations")
+  await expect(organizationsLink).toBeVisible()
+  await organizationsLink.click()
+
+  // Find and click the CREATE button.
+  const createButton = page.locator("#organizationlist-button-create")
+  await expect(createButton).toBeVisible()
+  await createButton.click()
+
+  // Create an organization.
+  // Find the organization name input field and enter organization name.
+  const orgNameField = page.locator("input#organizationcreate-input-name")
+  await expect(orgNameField).toBeVisible()
+  await expect(orgNameField).toBeFocused()
+  await orgNameField.fill(organizationName)
+
+  // Find and click the CREATE button.
+  const createOrgButton = page.locator("button#organizationcreate-button-create")
+  await expect(createOrgButton).toBeVisible()
+  await createOrgButton.click()
+}
+
 // Takes a screenshot of the activity page. Meant to be run at the end of every successful test.
 export async function takeActivityScreenshot(page: Page, name: string) {
   const homeButton = page.locator("#navbar-link-home")

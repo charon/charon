@@ -1,36 +1,17 @@
-import { signInWithPassword, takeActivityScreenshot } from "../charon_utils"
+import { createApplicationTemplate, createOrganization, signInWithPassword, takeActivityScreenshot } from "../charon_utils"
 import { CHARON_URL, checkpoint, expect, takeScreenshotsOfEntries, test } from "../utils"
 
 test.describe.serial("Charon OIDC Flows", () => {
   test("Test OIDC login", async ({ context }) => {
     const page = await context.newPage()
+    const oidcOrganizationName = "Test OIDC Organization 1"
 
     // Grant permissions for oidcdebugger.com to perform PKCE token exchange.
     await context.grantPermissions(["local-network-access"], { origin: "https://oidcdebugger.com" })
 
     await signInWithPassword(page, "tester-oidc", "tester123", true, true)
 
-    // Find and click the Application Templates link.
-    const applicationsLink = page.locator("#menu-list-applicationTemplates")
-    await expect(applicationsLink).toBeVisible()
-    await applicationsLink.click()
-
-    // Create a new one.
-    const applicationCreateButton = page.locator("#applicationtemplatelist-button-create")
-    await expect(applicationCreateButton).toBeVisible()
-    await checkpoint(page, "oidc-applications-first-view")
-    await applicationCreateButton.click()
-
-    const applicationNameField = page.locator("input#applicationtemplatecreate-input-name")
-    await expect(applicationNameField).toBeVisible()
-    await expect(applicationNameField).toBeFocused()
-    await checkpoint(page, "oidc-applications-create-application")
-    await applicationNameField.fill("OIDC Application")
-
-    const applicationSubmitButton = page.locator("#applicationtemplatecreate-button-create")
-    await expect(applicationSubmitButton).toBeVisible()
-    await checkpoint(page, "oidc-applications-create-application-filled")
-    await applicationSubmitButton.click()
+    await createApplicationTemplate(page, "OIDC Application", "oidc")
 
     const idScopesField = page.locator("#applicationtemplateget-input-idscopes")
     await expect(idScopesField).toBeVisible()
@@ -69,27 +50,7 @@ test.describe.serial("Charon OIDC Flows", () => {
     await expect(homeButton).toBeVisible()
     await homeButton.click()
 
-    // Find and click the Organizations link.
-    const organizationsLink = page.locator("#menu-list-organizations")
-    await expect(organizationsLink).toBeVisible()
-    await organizationsLink.click()
-
-    // Find and click the CREATE button.
-    const createButton = page.locator("#organizationlist-button-create")
-    await expect(createButton).toBeVisible()
-    await createButton.click()
-
-    // Create an organization.
-    // Find the organization name input field and enter organization name.
-    const orgNameField = page.locator("input#organizationcreate-input-name")
-    await expect(orgNameField).toBeVisible()
-    await expect(orgNameField).toBeFocused()
-    await orgNameField.fill("Test OIDC Organization 1")
-
-    // Find and click the CREATE button.
-    const createOrgButton = page.locator("button#organizationcreate-button-create")
-    await expect(createOrgButton).toBeVisible()
-    await createOrgButton.click()
+    await createOrganization(page, oidcOrganizationName)
 
     // Add oidc app to the organization.
     const oidcItem = page.locator('li:has-text("OIDC Application")')
@@ -121,7 +82,7 @@ test.describe.serial("Charon OIDC Flows", () => {
     expect(oidcClientId).not.toBeNull()
 
     // Check for the success message.
-    await expect(page.getByText("Added applications updated successfully.")).toBeVisible()
+    await expect(page.locator("#organizationget-text-applicationsupdated")).toBeVisible()
     await checkpoint(page, "oidc-organization-with-added-and-activated-application", { mask: [clientIdField] })
 
     // Test with all three response modes.
@@ -234,11 +195,11 @@ test.describe.serial("Charon OIDC Flows", () => {
     // Now sign in with tester and check activity logs.
     await signInWithPassword(page, "tester-oidc", "tester123", false, true)
 
+    const organizationsLink = page.locator("#menu-list-organizations")
     await expect(organizationsLink).toBeVisible()
     await organizationsLink.click()
 
-    // Select organization "Test OIDC Organization 1".
-    const organization1Link = page.locator('a.link:has-text("Test OIDC Organization 1")')
+    const organization1Link = page.locator(`a.link:has-text("${oidcOrganizationName}")`)
     await expect(organization1Link).toBeVisible()
     await organization1Link.click()
 

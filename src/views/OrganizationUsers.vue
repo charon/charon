@@ -143,7 +143,9 @@ const WithOrganizationIdentityForAdminDocument = WithDocument<OrganizationIdenti
                     class="flex flex-col items-start"
                   >
                     <div class="flex flex-row gap-4">
-                      <Button type="button" :progress="progress" @click.prevent="onRoles(user.id)">{{ t("common.buttons.roles") }}</Button>
+                      <Button class="organizationusers-button-roles" type="button" :progress="progress" @click.prevent="onRoles(user.id)">{{
+                        t("common.buttons.roles")
+                      }}</Button>
                       <Button type="button" :progress="progress" @click.prevent="onBlock(user.id)">{{
                         !organizationBlockedStatus || organizationBlockedStatus.blocked === "notBlocked" ? t("common.buttons.block") : t("common.buttons.unblock")
                       }}</Button>

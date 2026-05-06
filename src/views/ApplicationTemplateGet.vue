@@ -802,7 +802,9 @@ async function onAddAdmin() {
           <template v-if="metadata.can_update || roles.length || canRolesSubmit() || rolesUnexpectedError || rolesUpdated">
             <h2 class="text-xl font-bold">{{ t("views.ApplicationTemplateGet.roles") }}</h2>
             <div v-if="rolesUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
-            <div v-else-if="rolesUpdated" class="text-success-600">{{ t("views.ApplicationTemplateGet.rolesUpdated") }}</div>
+            <div v-else-if="rolesUpdated" id="applicationtemplateget-text-rolesupdated" class="text-success-600">{{
+              t("views.ApplicationTemplateGet.rolesUpdated")
+            }}</div>
             <!--
               We set novalidate because we do not want UA to show hints.
               We show them ourselves when we want them.
@@ -839,8 +841,10 @@ async function onAddAdmin() {
                 </li>
               </ol>
               <div v-if="metadata.can_update" class="flex flex-row justify-between gap-4">
-                <Button type="button" @click.prevent="onAddRole">{{ t("views.ApplicationTemplateGet.addRole") }}</Button>
-                <Button type="submit" primary :disabled="!canRolesSubmit()" :progress="progress">{{ t("common.buttons.update") }}</Button>
+                <Button id="applicationtemplateget-button-addrole" type="button" @click.prevent="onAddRole">{{ t("views.ApplicationTemplateGet.addRole") }}</Button>
+                <Button id="applicationtemplateget-button-updateroles" type="submit" primary :disabled="!canRolesSubmit()" :progress="progress">{{
+                  t("common.buttons.update")
+                }}</Button>
               </div>
             </form>
           </template>

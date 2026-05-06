@@ -795,7 +795,9 @@ function canProvidersSubmit(): boolean {
           <template v-if="(metadata.can_update && (applications.length || canApplicationsSubmit())) || applicationsUnexpectedError || applicationsUpdated">
             <h2 class="text-xl font-bold">{{ t("views.OrganizationGet.addedApplications") }}</h2>
             <div v-if="applicationsUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
-            <div v-else-if="applicationsUpdated" class="text-success-600">{{ t("views.OrganizationGet.addedApplicationsUpdated") }}</div>
+            <div v-else-if="applicationsUpdated" id="organizationget-text-applicationsupdated" class="text-success-600">{{
+              t("views.OrganizationGet.addedApplicationsUpdated")
+            }}</div>
             <!--
               We set novalidate because we do not want UA to show hints.
               We show them ourselves when we want them.
@@ -882,7 +884,7 @@ function canProvidersSubmit(): boolean {
                       </li>
                     </ol>
                     <div class="mt-4 flex flex-row items-center justify-between gap-4">
-                      <div>
+                      <div class="organizationget-text-status">
                         <i18n-t keypath="views.OrganizationGet.status" scope="global">
                           <template #strongStatus>
                             <strong>{{ application.active ? t("common.labels.active") : t("common.labels.disabled") }}</strong>
@@ -966,7 +968,9 @@ function canProvidersSubmit(): boolean {
           <template v-if="identitiesForOrganization.length || canIdentitiesSubmit() || organizationIdentitiesUnexpectedError || organizationIdentitiesUpdated">
             <h2 class="text-xl font-bold">{{ t("views.OrganizationGet.addedIdentities") }}</h2>
             <div v-if="organizationIdentitiesUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
-            <div v-else-if="organizationIdentitiesUpdated" class="text-success-600">{{ t("views.OrganizationGet.identitiesUpdated") }}</div>
+            <div v-else-if="organizationIdentitiesUpdated" id="organizationget-text-identitiesupdated" class="text-success-600">{{
+              t("views.OrganizationGet.identitiesUpdated")
+            }}</div>
             <!--
               We set novalidate because we do not want UA to show hints.
               We show them ourselves when we want them.
