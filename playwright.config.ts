@@ -66,7 +66,7 @@ export default defineConfig({
       dependencies: ["requires-login"],
     },
     {
-      name: "adds-roles", // Depends on adds-application-template to avoid parallel execution interference.
+      name: "adds-roles", // Depends on adds-application-template so the globally visible application template exists first.
       testMatch: /adds-application-template\/user-roles\.test\.ts$/,
       dependencies: ["adds-application-template"],
     },
