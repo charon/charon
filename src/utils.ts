@@ -296,10 +296,7 @@ export async function signalPasskeyUnknownCredential(signal: SignalUnknownCreden
   await PublicKeyCredential.signalUnknownCredential?.(signal)
 }
 
-export function useAuthCode(
-  paramName: string,
-  onFound?: (value: string) => void,
-): {
+export function useAuthCode(paramName: string): {
   code: Ref<string>
   codeFromHash: Ref<boolean>
 } {
@@ -317,7 +314,6 @@ export function useAuthCode(
     if (c) {
       code.value = c
       codeFromHash.value = true
-      onFound?.(c)
     }
   })
   return {

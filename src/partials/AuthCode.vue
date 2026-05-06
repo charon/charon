@@ -27,7 +27,7 @@ const sendCounter = ref(1)
 const codeError = ref("")
 const unexpectedError = ref("")
 
-const { code, codeFromHash } = useAuthCode("code", resetOnInteraction)
+const { code, codeFromHash } = useAuthCode("code")
 
 function getErrorMessage(errorCode: string) {
   switch (errorCode) {
