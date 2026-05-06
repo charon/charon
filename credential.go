@@ -1057,13 +1057,6 @@ func (c codeCredential) MaxAttemptsReached() bool {
 	return c.ConfirmationAttempts >= maxEmailConfirmationAttempts
 }
 
-// AccountConfirmedEmailsResponse represents the response for getting confirmed emails
-// that can be assigned to identities and whether any unconfirmed emails exist.
-type AccountConfirmedEmailsResponse struct {
-	Emails         []string `json:"emails"`
-	HasUnconfirmed bool     `json:"hasUnconfirmed"`
-}
-
 // CredentialConfirmEmailCompleteRequest represents the request body for the CredentialConfirmEmailCompletePostAPI handler.
 type CredentialConfirmEmailCompleteRequest struct {
 	Code string `json:"code"`
