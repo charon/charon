@@ -949,8 +949,8 @@ func (s *Service) updateApplicationTemplate(ctx context.Context, applicationTemp
 	)
 }
 
-// ApplicationTemplateGet is the frontend handler for getting the application template.
-func (s *Service) ApplicationTemplateGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// ApplicationTemplateGetGet is the frontend handler for getting the application template.
+func (s *Service) ApplicationTemplateGetGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {

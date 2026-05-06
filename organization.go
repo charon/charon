@@ -1928,8 +1928,8 @@ func (s *Service) OrganizationBlockedStatusGetAPI(w http.ResponseWriter, req *ht
 	waf.Error(w, req, http.StatusUnauthorized)
 }
 
-// OrganizationRoles is the frontend handler for managing user's roles.
-func (s *Service) OrganizationRoles(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+// OrganizationRolesGet is the frontend handler for managing user's roles.
+func (s *Service) OrganizationRolesGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
 	if s.ProxyStaticTo != "" {
 		s.Proxy(w, req)
 	} else {
