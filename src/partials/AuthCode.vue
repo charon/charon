@@ -12,7 +12,7 @@ import WithDocument from "@/components/WithDocument.vue"
 import siteContext from "@/context"
 import { processResponse } from "@/flow"
 import { useProgress } from "@/progress"
-import { isEmail, useAuthCode } from "@/utils"
+import { isEmail, useHashParam } from "@/utils"
 
 const props = defineProps<{
   flow: Flow
@@ -27,7 +27,7 @@ const sendCounter = ref(1)
 const codeError = ref("")
 const unexpectedError = ref("")
 
-const { code, codeFromHash } = useAuthCode("code")
+const { param: code, paramFromHash: codeFromHash } = useHashParam("code")
 
 function getErrorMessage(errorCode: string) {
   switch (errorCode) {

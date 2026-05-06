@@ -12,7 +12,7 @@ import WithDocument from "@/components/WithDocument.vue"
 import Footer from "@/partials/Footer.vue"
 import NavBar from "@/partials/NavBar.vue"
 import { useProgress } from "@/progress"
-import { useAuthCode } from "@/utils"
+import { useHashParam } from "@/utils"
 
 const props = defineProps<{
   id: string
@@ -27,7 +27,7 @@ const sendCounter = ref(1)
 const codeError = ref("")
 const unexpectedError = ref("")
 
-const { code, codeFromHash } = useAuthCode("code")
+const { param: code, paramFromHash: codeFromHash } = useHashParam("code")
 
 function getErrorMessage(errorCode: string) {
   switch (errorCode) {

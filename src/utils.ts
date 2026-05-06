@@ -296,13 +296,13 @@ export async function signalPasskeyUnknownCredential(signal: SignalUnknownCreden
   await PublicKeyCredential.signalUnknownCredential?.(signal)
 }
 
-export function useAuthCode(paramName: string): {
-  code: Ref<string>
-  codeFromHash: Ref<boolean>
+export function useHashParam(paramName: string): {
+  param: Ref<string>
+  paramFromHash: Ref<boolean>
 } {
   const route = useRoute()
-  const code = ref("")
-  const codeFromHash = ref(false)
+  const param = ref("")
+  const paramFromHash = ref(false)
 
   watchEffect(() => {
     const h = route.hash
@@ -312,12 +312,12 @@ export function useAuthCode(paramName: string): {
     const params = new URLSearchParams(h.substring(1))
     const c = params.get(paramName)
     if (c) {
-      code.value = c
-      codeFromHash.value = true
+      param.value = c
+      paramFromHash.value = true
     }
   })
   return {
-    code,
-    codeFromHash,
+    param: param,
+    paramFromHash: paramFromHash,
   }
 }
