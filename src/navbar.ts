@@ -10,8 +10,11 @@ prefersReducedMotionQuery.addEventListener("change", (e) => {
 
 export function useNavbar(): { navbar: TemplateRef<HTMLElement>; attrs: Ref<{ style: StyleValue; class: { "animate-navbar": boolean } }> } {
   const navbar = useTemplateRef<HTMLElement>("navbar")
-  const attrs = ref({
-    style: { position: "absolute" as "absolute" | "fixed", top: "0px" },
+  const attrs = ref<{
+    style: { position: "absolute" | "fixed"; top: string }
+    class: { "animate-navbar": boolean }
+  }>({
+    style: { position: "absolute", top: "0px" },
     class: { "animate-navbar": false },
   })
   let lastScrollPosition = 0
