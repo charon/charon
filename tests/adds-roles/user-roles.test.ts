@@ -46,7 +46,7 @@ test.describe.serial("Charon User Roles", () => {
     const uriBaseField = page.locator("input#application-0-values-0")
     await expect(uriBaseField).toBeVisible()
     await expect(uriBaseField).toBeFocused()
-    await checkpoint(page, "roles-organization-adding-application")
+    await checkpoint(page, "roles-organization-adding-application", { mask: [availableApplicationsMask] })
     await uriBaseField.fill("https://oidcdebugger.com")
     const activateOrDisableButton = page.locator("#organizationget-button-activateordisable-0")
     await expect(activateOrDisableButton).toBeVisible()
