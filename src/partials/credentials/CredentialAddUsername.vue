@@ -74,18 +74,15 @@ async function onSubmit() {
 
   progress.value += 1
   try {
+    const payload: CredentialAddUsernameRequest = {
+      username: username.value,
+    }
+
     const url = router.apiResolve({
       name: "CredentialAddUsername",
     }).href
 
-    const response = await postJSON<CredentialAddResponse>(
-      url,
-      {
-        username: username.value,
-      } as CredentialAddUsernameRequest,
-      abortController.signal,
-      progress,
-    )
+    const response = await postJSON<CredentialAddResponse>(url, payload, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }

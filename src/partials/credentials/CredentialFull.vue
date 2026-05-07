@@ -103,19 +103,16 @@ async function onSubmit() {
 
   progress.value += 1
   try {
+    const payload: CredentialRenameRequest = {
+      displayName: displayName.value,
+    }
+
     const url = router.apiResolve({
       name: "CredentialRename",
       params: { id: props.credential.id },
     }).href
 
-    const response = await postJSON<CredentialResponse>(
-      url,
-      {
-        displayName: displayName.value,
-      } as CredentialRenameRequest,
-      abortController.signal,
-      progress,
-    )
+    const response = await postJSON<CredentialResponse>(url, payload, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }
