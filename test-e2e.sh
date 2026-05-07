@@ -10,7 +10,7 @@ set -o pipefail
 #  -w /workspace \
 #  docker:28-dind \
 #  sh -c " \
-#    dockerd-entrypoint.sh > /tmp/dockerd.log 2>&1 & \
+#    dockerd-entrypoint.sh --feature containerd-snapshotter=true > /tmp/dockerd.log 2>&1 & \
 #    sleep 2 && \
 #    DOCKER_HOST=unix:///var/run/docker.sock ./test-e2e.sh \
 #  "
@@ -127,12 +127,9 @@ cleanup_certs=1
 
 echo "2. Building Docker images..."
 
-# Build the Charon Docker image from Dockerfile.
-docker build --target production --build-arg CHARON_BUILD_FLAGS="-cover -race -covermode atomic" --build-arg VITE_COVERAGE=true --build-arg VITE_E2E_TESTS=true -t "$CHARON_IMAGE" .
+# Build both Charon and Playwright images in parallel.
+CHARON_IMAGE="$CHARON_IMAGE" PLAYWRIGHT_IMAGE="$PLAYWRIGHT_IMAGE" docker buildx bake -f test-docker-bake.hcl
 cleanup_charon_image=1
-
-# Build the Playwright test image.
-docker build -f playwright.dockerfile -t "$PLAYWRIGHT_IMAGE" .
 cleanup_playwright_image=1
 
 echo "3. Starting Mailpit container..."
