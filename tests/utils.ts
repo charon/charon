@@ -143,7 +143,9 @@ export async function checkpoint(page: Page, name: string, options: CheckpointOp
   // Move mouse to the same location so the same element gets focused every time.
   await page.mouse.move(0, 0)
   // Anchor scroll to the top so position:fixed elements land at the top of fullPage screenshots.
-  await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" }))
+  if (options?.fullPage === true) {
+    await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" }))
+  }
   const screenshotPath = test.info().snapshotPath(`${name}.png`, { kind: "screenshot" })
   const screenshotOptions = {
     fullPage: options?.fullPage ?? true,
