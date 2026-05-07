@@ -130,14 +130,11 @@ async function onPasskeySignup() {
       return
     }
 
-    const complete = await postJSON<AuthFlowResponse>(
-      completeUrl,
-      {
-        createResponse: attestation,
-      } as AuthFlowPasskeyCreateCompleteRequest,
-      abortController.signal,
-      progress,
-    )
+    const payload: AuthFlowPasskeyCreateCompleteRequest = {
+      createResponse: attestation,
+    }
+
+    const complete = await postJSON<AuthFlowResponse>(completeUrl, payload, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }

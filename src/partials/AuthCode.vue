@@ -143,6 +143,10 @@ async function onNext() {
 
   progress.value += 1
   try {
+    const payload: AuthFlowCodeCompleteRequest = {
+      code: code.value,
+    }
+
     const url = router.apiResolve({
       name: "AuthFlowCodeComplete",
       params: {
@@ -150,14 +154,7 @@ async function onNext() {
       },
     }).href
 
-    const response = await postJSON<AuthFlowResponse>(
-      url,
-      {
-        code: code.value,
-      } as AuthFlowCodeCompleteRequest,
-      abortController.signal,
-      progress,
-    )
+    const response = await postJSON<AuthFlowResponse>(url, payload, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }
@@ -198,6 +195,10 @@ async function onResend() {
   try {
     code.value = ""
 
+    const payload: AuthFlowCodeStartRequest = {
+      emailOrUsername: props.flow.getEmailOrUsername(),
+    }
+
     const url = router.apiResolve({
       name: "AuthFlowCodeStart",
       params: {
@@ -205,14 +206,7 @@ async function onResend() {
       },
     }).href
 
-    const response = await postJSON<AuthFlowResponse>(
-      url,
-      {
-        emailOrUsername: props.flow.getEmailOrUsername(),
-      } as AuthFlowCodeStartRequest,
-      abortController.signal,
-      progress,
-    )
+    const response = await postJSON<AuthFlowResponse>(url, payload, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }

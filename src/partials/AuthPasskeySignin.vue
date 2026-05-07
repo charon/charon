@@ -97,14 +97,11 @@ async function onAfterEnter() {
     // We do not allow cancel after this point.
     progress.value += 1
     try {
-      const complete = await postJSON<AuthFlowResponse>(
-        completeUrl,
-        {
-          getResponse: assertion,
-        } as AuthFlowPasskeyGetCompleteRequest,
-        abortController.signal,
-        progress,
-      )
+      const payload: AuthFlowPasskeyGetCompleteRequest = {
+        getResponse: assertion,
+      }
+
+      const complete = await postJSON<AuthFlowResponse>(completeUrl, payload, abortController.signal, progress)
       if (abortController.signal.aborted) {
         return
       }

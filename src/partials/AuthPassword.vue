@@ -192,13 +192,6 @@ async function onNext() {
 
   progress.value += 1
   try {
-    const url = router.apiResolve({
-      name: "AuthFlowPasswordComplete",
-      params: {
-        id: props.flow.getId(),
-      },
-    }).href
-
     if (!props.flow.getPublicKey() || !props.flow.getDeriveOptions() || !props.flow.getEncryptOptions()) {
       if (!(await getKey())) {
         // Or signal was aborted or it was an redirect response.
@@ -225,15 +218,19 @@ async function onNext() {
       return
     }
 
-    const response = await postJSON<AuthFlowResponse>(
-      url,
-      {
-        publicKey: toBase64(new Uint8Array(encrypted.publicKeyBytes)),
-        password: toBase64(new Uint8Array(encrypted.ciphertext)),
-      } as AuthFlowPasswordCompleteRequest,
-      abortController.signal,
-      progress,
-    )
+    const payload: AuthFlowPasswordCompleteRequest = {
+      publicKey: toBase64(new Uint8Array(encrypted.publicKeyBytes)),
+      password: toBase64(new Uint8Array(encrypted.ciphertext)),
+    }
+
+    const url = router.apiResolve({
+      name: "AuthFlowPasswordComplete",
+      params: {
+        id: props.flow.getId(),
+      },
+    }).href
+
+    const response = await postJSON<AuthFlowResponse>(url, payload, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }
@@ -297,6 +294,10 @@ async function onCode() {
 
   progress.value += 1
   try {
+    const payload: AuthFlowCodeStartRequest = {
+      emailOrUsername: props.flow.getEmailOrUsername(),
+    }
+
     const url = router.apiResolve({
       name: "AuthFlowCodeStart",
       params: {
@@ -310,14 +311,7 @@ async function onCode() {
     props.flow.setDeriveOptions()
     props.flow.setEncryptOptions()
 
-    const response = await postJSON<AuthFlowResponse>(
-      url,
-      {
-        emailOrUsername: props.flow.getEmailOrUsername(),
-      } as AuthFlowCodeStartRequest,
-      abortController.signal,
-      progress,
-    )
+    const response = await postJSON<AuthFlowResponse>(url, payload, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }
