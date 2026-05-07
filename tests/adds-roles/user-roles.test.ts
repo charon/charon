@@ -10,6 +10,8 @@ test.describe.serial("Charon User Roles", () => {
 
     // Mask the available applications list to avoid flakiness from identifier-based ordering.
     const availableApplicationsMask = page.locator("ul:has(.organizationget-button-add)")
+    // Mask organization identity IDs to avoid flakiness from identifier-based ordering.
+    const addedIdentitiesIDMask = page.locator(".identityorganization-text-organizationid")
 
     // Create application template with role.
     await createApplicationTemplate(page, "Roles Application", "roles")
@@ -83,7 +85,7 @@ test.describe.serial("Charon User Roles", () => {
 
     // Check for the success message.
     await expect(page.locator("#organizationget-text-identitiesupdated")).toBeVisible()
-    await checkpoint(page, "roles-organization-with-admin-identity-added", { mask: [availableApplicationsMask] })
+    await checkpoint(page, "roles-organization-with-admin-identity-added", { mask: [availableApplicationsMask, addedIdentitiesIDMask] })
 
     // Navigate to manage users and assign role to added identity.
     const manageUsersButton = page.locator("#organizationget-button-manageusers")
@@ -93,7 +95,7 @@ test.describe.serial("Charon User Roles", () => {
     const userEntry = page.locator(`.organizationusers-div-userentry:has-text("${rolesUsername}")`)
     const userRolesButton = userEntry.locator(".organizationusers-button-roles")
     await expect(userRolesButton).toBeVisible()
-    await checkpoint(page, "roles-organization-manage-users")
+    await checkpoint(page, "roles-organization-manage-users", { mask: [addedIdentitiesIDMask] })
     await userRolesButton.click()
 
     const roleCheckbox = page.locator("#organizationroles-checkbox-applicationRole")
@@ -117,12 +119,12 @@ test.describe.serial("Charon User Roles", () => {
 
     await expect(updateApplicationButton).toBeVisible()
     await expect(page.locator(".organizationget-text-status").first()).toBeVisible()
-    await checkpoint(page, "roles-organization-with-pending-deactivation-application", { mask: [availableApplicationsMask] })
+    await checkpoint(page, "roles-organization-with-pending-deactivation-application", { mask: [availableApplicationsMask, addedIdentitiesIDMask] })
     await updateApplicationButton.click()
 
     // Check for the success message.
     await expect(page.locator("#organizationget-text-applicationsupdated")).toBeVisible()
-    await checkpoint(page, "roles-organization-with-application-disabled", { mask: [availableApplicationsMask] })
+    await checkpoint(page, "roles-organization-with-application-disabled", { mask: [availableApplicationsMask, addedIdentitiesIDMask] })
 
     await expect(manageUsersButton).toBeVisible()
     await manageUsersButton.click()
@@ -153,12 +155,12 @@ test.describe.serial("Charon User Roles", () => {
 
     await expect(updateApplicationButton).toBeVisible()
     await expect(page.locator(".organizationget-text-status").first()).toBeVisible()
-    await checkpoint(page, "roles-organization-with-pending-reactivation-application", { mask: [availableApplicationsMask] })
+    await checkpoint(page, "roles-organization-with-pending-reactivation-application", { mask: [availableApplicationsMask, addedIdentitiesIDMask] })
     await updateApplicationButton.click()
 
     // Check for the success message.
     await expect(page.locator("#organizationget-text-applicationsupdated")).toBeVisible()
-    await checkpoint(page, "roles-organization-with-reactivated-application", { mask: [availableApplicationsMask] })
+    await checkpoint(page, "roles-organization-with-reactivated-application", { mask: [availableApplicationsMask, addedIdentitiesIDMask] })
 
     await takeActivityScreenshot(page, "roles-activity")
 
@@ -196,12 +198,12 @@ test.describe.serial("Charon User Roles", () => {
     await removeButton.click()
 
     await expect(updateApplicationButton).toBeVisible()
-    await checkpoint(page, "roles-organization-with-pending-removal-application", { mask: [availableApplicationsMask] })
+    await checkpoint(page, "roles-organization-with-pending-removal-application", { mask: [availableApplicationsMask, addedIdentitiesIDMask] })
     await updateApplicationButton.click()
 
     // Check for the success message.
     await expect(page.locator("#organizationget-text-applicationsupdated")).toBeVisible()
-    await checkpoint(page, "roles-organization-with-application-removed", { mask: [availableApplicationsMask] })
+    await checkpoint(page, "roles-organization-with-application-removed", { mask: [availableApplicationsMask, addedIdentitiesIDMask] })
 
     // Navigate to roles: role shows with "(removed app)" annotation, still assigned.
     await expect(manageUsersButton).toBeVisible()
