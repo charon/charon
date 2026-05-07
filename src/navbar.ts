@@ -1,11 +1,20 @@
 import type { Ref, StyleValue, TemplateRef } from "vue"
 
-import { onBeforeUnmount, onMounted, ref, useTemplateRef } from "vue"
+import { ref, useTemplateRef, watchEffect } from "vue"
+
+const prefersReducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
+const prefersReducedMotion = ref(prefersReducedMotionQuery.matches)
+prefersReducedMotionQuery.addEventListener("change", (e) => {
+  prefersReducedMotion.value = e.matches
+})
 
 export function useNavbar(): { navbar: TemplateRef<HTMLElement>; attrs: Ref<{ style: StyleValue; class: { "animate-navbar": boolean } }> } {
   const navbar = useTemplateRef<HTMLElement>("navbar")
-  const attrs = ref({
-    style: { position: "absolute" as "absolute" | "fixed", top: "0px" },
+  const attrs = ref<{
+    style: { position: "absolute" | "fixed"; top: string }
+    class: { "animate-navbar": boolean }
+  }>({
+    style: { position: "absolute", top: "0px" },
     class: { "animate-navbar": false },
   })
   let lastScrollPosition = 0
@@ -59,12 +68,20 @@ export function useNavbar(): { navbar: TemplateRef<HTMLElement>; attrs: Ref<{ st
     lastScrollPosition = currentScrollPosition
   }
 
-  onMounted(() => {
-    window.addEventListener("scroll", onScroll, { passive: true })
-  })
+  watchEffect((onCleanup) => {
+    attrs.value.style.top = "0px"
+    attrs.value.class["animate-navbar"] = false
 
-  onBeforeUnmount(() => {
-    window.removeEventListener("scroll", onScroll)
+    if (prefersReducedMotion.value) {
+      attrs.value.style.position = "fixed"
+      return
+    }
+
+    lastScrollPosition = supportScrollY ? window.scrollY : document.documentElement.scrollTop
+    window.addEventListener("scroll", onScroll, { passive: true })
+    onCleanup(() => {
+      window.removeEventListener("scroll", onScroll)
+    })
   })
 
   return { navbar, attrs }
