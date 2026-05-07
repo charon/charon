@@ -2,6 +2,7 @@ import { signInWithPassword, takeActivityScreenshot } from "../charon_utils"
 import { checkpoint, expect, test } from "../utils"
 
 test.describe.serial("Charon Navbar Flows", () => {
+  test.use({ contextOptions: { reducedMotion: "no-preference" } })
   test("Test navbar scrolling", async ({ context }) => {
     const page = await context.newPage()
 
