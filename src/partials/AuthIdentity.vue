@@ -164,6 +164,12 @@ async function onSelect(id: string) {
 
   progress.value += 1
   try {
+    const payload: AuthFlowChooseIdentityRequest = {
+      identity: {
+        id,
+      },
+    }
+
     const url = router.apiResolve({
       name: "AuthFlowChooseIdentity",
       params: {
@@ -171,16 +177,7 @@ async function onSelect(id: string) {
       },
     }).href
 
-    const response = await postJSON<AuthFlowResponse>(
-      url,
-      {
-        identity: {
-          id,
-        },
-      } as AuthFlowChooseIdentityRequest,
-      abortController.signal,
-      progress,
-    )
+    const response = await postJSON<AuthFlowResponse>(url, payload, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }

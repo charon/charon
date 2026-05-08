@@ -110,6 +110,12 @@ async function onRedirect() {
 
   progress.value += 1
   try {
+    const provider = props.flow.getThirdPartyProvider()
+
+    const payload: AuthFlowThirdPartyProviderStartRequest = {
+      provider: provider!.key,
+    }
+
     const url = router.apiResolve({
       name: "AuthFlowThirdPartyProviderStart",
       params: {
@@ -117,16 +123,7 @@ async function onRedirect() {
       },
     }).href
 
-    const provider = props.flow.getThirdPartyProvider()
-
-    const response = await postJSON<AuthFlowResponse>(
-      url,
-      {
-        provider: provider!.key,
-      } as AuthFlowThirdPartyProviderStartRequest,
-      abortController.signal,
-      progress,
-    )
+    const response = await postJSON<AuthFlowResponse>(url, payload, abortController.signal, progress)
     if (abortController.signal.aborted) {
       return
     }

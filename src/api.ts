@@ -160,6 +160,10 @@ export async function startPassword(
 ): Promise<AuthFlowResponsePassword | { error: string } | null> {
   keyProgress.value += 1
   try {
+    const payload: AuthFlowPasswordStartRequest = {
+      emailOrUsername: flow.getEmailOrUsername(),
+    }
+
     const url = router.apiResolve({
       name: "AuthFlowPasswordStart",
       params: {
@@ -167,14 +171,7 @@ export async function startPassword(
       },
     }).href
 
-    const response = await postJSON<AuthFlowResponse>(
-      url,
-      {
-        emailOrUsername: flow.getEmailOrUsername(),
-      } as AuthFlowPasswordStartRequest,
-      abortController.signal,
-      keyProgress,
-    )
+    const response = await postJSON<AuthFlowResponse>(url, payload, abortController.signal, keyProgress)
     if (abortController.signal.aborted) {
       return null
     }
