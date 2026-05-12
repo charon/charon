@@ -141,8 +141,8 @@ async function takeStableScreenshot(page: Page, screenshotOptions: PageScreensho
 
 export async function checkpoint(page: Page, name: string, options: CheckpointOptions = { mask: [], fullPage: true }) {
   // Anchor scroll to the top so position:fixed elements land at the top of fullPage screenshots.
-  if (options?.fullPage === true) {
-    await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" }))
+  if (options?.fullPage !== false) {
+   await page.evaluate(() => window.scrollTo({ top: 0, left: 0 }))
   }
   // Move mouse to the same location so the same element gets focused every time.
   await page.mouse.move(0, 0)
