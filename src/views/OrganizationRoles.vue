@@ -238,7 +238,7 @@ async function onSubmit() {
     <NavBar />
   </Teleport>
   <div class="mt-12 flex w-full flex-col items-center border-t border-transparent sm:mt-[4.5rem]">
-    <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,65ch)] gap-1 sm:m-4 sm:gap-4">
+    <div class="m-1 grid grid-cols-[minmax(0,65ch)] gap-1 sm:m-4 sm:gap-4">
       <div v-if="dataLoading" class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">{{ t("common.data.dataLoading") }}</div>
       <div v-else-if="dataLoadingError" class="w-full rounded-sm border border-gray-200 bg-white p-4 text-error-600 shadow-sm">{{ t("common.errors.unexpected") }}</div>
       <template v-else>
@@ -262,7 +262,7 @@ async function onSubmit() {
             <div v-if="!availableRoles.length" class="mb-4 italic"> {{ t("views.OrganizationRoles.noRoles") }} </div>
             <fieldset v-else class="mb-4">
               <legend class="mb-1">{{ t("views.OrganizationRoles.availableRoles") }}</legend>
-              <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+              <div class="grid grid-cols-[max-content_auto] gap-x-1">
                 <template v-for="role in availableRoles" :key="role.key">
                   <CheckBox :id="`organizationroles-checkbox-${role.key}`" v-model="selectedRoleKeys" :value="role.key" :progress="progress" class="mx-2" />
                   <div class="flex flex-col">

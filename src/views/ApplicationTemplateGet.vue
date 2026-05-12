@@ -736,7 +736,7 @@ async function onAddAdmin() {
     <NavBar />
   </Teleport>
   <div class="mt-12 flex w-full flex-col items-center border-t border-transparent sm:mt-[4.5rem]">
-    <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,65ch)] gap-1 sm:m-4 sm:gap-4">
+    <div class="m-1 grid grid-cols-[minmax(0,65ch)] gap-1 sm:m-4 sm:gap-4">
       <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <div class="flex flex-row items-center">
           <h1 class="text-2xl font-bold">{{ t("common.entities.applicationTemplates") }}</h1>
@@ -811,7 +811,7 @@ async function onAddAdmin() {
             -->
             <form v-if="metadata.can_update || roles.length || canRolesSubmit()" class="flex flex-col" novalidate @submit.prevent="onRolesSubmit">
               <ol>
-                <li v-for="(role, i) in roles" :key="i" class="mb-4 grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
+                <li v-for="(role, i) in roles" :key="i" class="mb-4 grid grid-cols-[min-content_auto] gap-x-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
                     <label :for="`applicationtemplateget-role-${i}-key`" class="mb-1">{{ t("views.ApplicationTemplateGet.name") }}</label>
@@ -859,7 +859,7 @@ async function onAddAdmin() {
             -->
             <form v-if="metadata.can_update || variables.length || canVariablesSubmit()" class="flex flex-col" novalidate @submit.prevent="onVariablesSubmit">
               <ol>
-                <li v-for="(variable, i) in variables" :key="i" class="mb-4 grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
+                <li v-for="(variable, i) in variables" :key="i" class="mb-4 grid grid-cols-[min-content_auto] gap-x-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
                     <label :for="`applicationtemplateget-variable-${i}-name`" class="mb-1">{{ t("views.ApplicationTemplateGet.name") }}</label>
@@ -908,13 +908,13 @@ async function onAddAdmin() {
             -->
             <form v-if="metadata.can_update || clientsPublic.length || canClientsPublicSubmit()" class="flex flex-col" novalidate @submit.prevent="onClientsPublicSubmit">
               <ol>
-                <li v-for="(client, i) in clientsPublic" :key="i" class="mb-4 grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
+                <li v-for="(client, i) in clientsPublic" :key="i" class="mb-4 grid grid-cols-[min-content_auto] gap-x-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
                     <fieldset>
                       <legend>{{ t("views.ApplicationTemplateGet.oidcRedirectUriTemplates") }}</legend>
                       <ol>
-                        <li v-for="(_, j) in client.redirectUriTemplates" :key="j" class="mt-4 grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
+                        <li v-for="(_, j) in client.redirectUriTemplates" :key="j" class="mt-4 grid grid-cols-[min-content_auto] gap-x-4">
                           <div>{{ j + 1 }}.</div>
                           <div class="flex flex-row gap-4">
                             <InputText
@@ -966,7 +966,7 @@ async function onAddAdmin() {
                     />
                     <fieldset class="mt-4">
                       <legend class="mb-1">{{ t("views.ApplicationTemplateGet.accessTokenType") }}</legend>
-                      <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                      <div class="grid grid-cols-[max-content_auto] gap-x-1">
                         <RadioButton
                           :id="`client-public-${i}-accessTokenType-hmac`"
                           v-model="client.accessTokenType"
@@ -1053,13 +1053,13 @@ async function onAddAdmin() {
               @submit.prevent="onClientsBackendSubmit"
             >
               <ol>
-                <li v-for="(client, i) in clientsBackend" :key="i" class="mb-4 grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
+                <li v-for="(client, i) in clientsBackend" :key="i" class="mb-4 grid grid-cols-[min-content_auto] gap-x-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
                     <fieldset>
                       <legend>{{ t("views.ApplicationTemplateGet.oidcRedirectUriTemplates") }}</legend>
                       <ol>
-                        <li v-for="(_, j) in client.redirectUriTemplates" :key="j" class="mt-4 grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
+                        <li v-for="(_, j) in client.redirectUriTemplates" :key="j" class="mt-4 grid grid-cols-[min-content_auto] gap-x-4">
                           <div>{{ j + 1 }}.</div>
                           <div class="flex flex-row gap-4">
                             <InputText
@@ -1111,7 +1111,7 @@ async function onAddAdmin() {
                     />
                     <fieldset class="mt-4">
                       <legend class="mb-1">{{ t("views.ApplicationTemplateGet.accessTokenType") }}</legend>
-                      <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                      <div class="grid grid-cols-[max-content_auto] gap-x-1">
                         <RadioButton
                           :id="`client-backend-${i}-accessTokenType-hmac`"
                           v-model="client.accessTokenType"
@@ -1142,7 +1142,7 @@ async function onAddAdmin() {
                     </fieldset>
                     <fieldset class="mt-4">
                       <legend class="mb-1">{{ t("views.ApplicationTemplateGet.tokenEndpointAuthMethod") }}</legend>
-                      <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                      <div class="grid grid-cols-[max-content_auto] gap-x-1">
                         <RadioButton
                           :id="`client-backend-${i}-tokenEndpointAuthMethod-client_secret_post`"
                           v-model="client.tokenEndpointAuthMethod"
@@ -1229,7 +1229,7 @@ async function onAddAdmin() {
               @submit.prevent="onClientsServiceSubmit"
             >
               <ol>
-                <li v-for="(client, i) in clientsService" :key="i" class="mb-4 grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
+                <li v-for="(client, i) in clientsService" :key="i" class="mb-4 grid grid-cols-[min-content_auto] gap-x-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
                     <label :for="`client-service-${i}-description`" class="mb-1"
@@ -1257,7 +1257,7 @@ async function onAddAdmin() {
                     />
                     <fieldset class="mt-4">
                       <legend class="mb-1">{{ t("views.ApplicationTemplateGet.accessTokenType") }}</legend>
-                      <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                      <div class="grid grid-cols-[max-content_auto] gap-x-1">
                         <RadioButton
                           :id="`client-service-${i}-accessTokenType-hmac`"
                           v-model="client.accessTokenType"
@@ -1288,7 +1288,7 @@ async function onAddAdmin() {
                     </fieldset>
                     <fieldset class="mt-4">
                       <legend class="mb-1">{{ t("views.ApplicationTemplateGet.tokenEndpointAuthMethod") }}</legend>
-                      <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                      <div class="grid grid-cols-[max-content_auto] gap-x-1">
                         <RadioButton
                           :id="`client-service-${i}-tokenEndpointAuthMethod-client_secret_post`"
                           v-model="client.tokenEndpointAuthMethod"
@@ -1370,7 +1370,7 @@ async function onAddAdmin() {
             -->
             <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
               <ol class="flex flex-col gap-y-4">
-                <li v-for="(admin, i) in admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
+                <li v-for="(admin, i) in admins" :key="i" class="grid grid-cols-[min-content_auto] gap-x-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
                     <WithOrganizationIdentityDocument
