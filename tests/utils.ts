@@ -195,7 +195,7 @@ export async function takeScreenshotsOfEntries(
   entrySelector: string,
   displayNameSelector: string,
   screenshotPrefix: string,
-  options: CheckpointOptions = {},
+  { mask = [] }: Pick<CheckpointOptions, "mask"> = {},
 ): Promise<void> {
   // Get all entry elements.
   const entries = page.locator(entrySelector)
@@ -211,6 +211,6 @@ export async function takeScreenshotsOfEntries(
     const displayNameElement = entry.locator(displayNameSelector)
     const displayName = (await displayNameElement.textContent())?.replace(/\s/g, "")
 
-    await checkpoint(page, `${screenshotPrefix}-${displayName}`, { ...options, fullPage: true, clip: { x: box.x, y: box.y, width: box.width, height: box.height } })
+    await checkpoint(page, `${screenshotPrefix}-${displayName}`, { mask, fullPage: true, clip: { x: box.x, y: box.y, width: box.width, height: box.height } })
   }
 }
