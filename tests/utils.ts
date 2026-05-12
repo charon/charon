@@ -139,18 +139,18 @@ async function takeStableScreenshot(page: Page, screenshotOptions: PageScreensho
   throw new Error(`unable to take stable screenshot: ${screenshotOptions.path}`)
 }
 
-export async function checkpoint(page: Page, name: string, options: CheckpointOptions = { mask: [], fullPage: true }) {
+export async function checkpoint(page: Page, name: string, { mask = [], fullPage = true, clip }: CheckpointOptions = {}) {
   // Anchor scroll to the top so position:fixed elements land at the top of fullPage screenshots.
-  if (options?.fullPage !== false) {
-   await page.evaluate(() => window.scrollTo({ top: 0, left: 0 }))
+  if (fullPage) {
+    await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" }))
   }
   // Move mouse to the same location so the same element gets focused every time.
   await page.mouse.move(0, 0)
   const screenshotPath = test.info().snapshotPath(`${name}.png`, { kind: "screenshot" })
   const screenshotOptions = {
-    fullPage: options?.fullPage ?? true,
-    mask: options?.mask,
-    clip: options?.clip,
+    fullPage: fullPage,
+    mask: mask,
+    clip: clip,
     ...(existsSync(screenshotPath) ? {} : { path: screenshotPath }),
   }
 
