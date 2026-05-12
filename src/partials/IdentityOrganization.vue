@@ -32,7 +32,7 @@ defineExpose({
 
 <template>
   <div class="mt-4 ml-4 flex flex-row items-start justify-between gap-4">
-    <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+    <div class="grid grid-cols-[max-content_auto] gap-x-1">
       <div>{{ t("partials.IdentityOrganization.id") }}</div>
       <div v-if="identityOrganization.id">
         <router-link :to="{ name: 'OrganizationIdentity', params: { id: identityOrganization.organization.id, identityId: identityOrganization.id } }" class="link"

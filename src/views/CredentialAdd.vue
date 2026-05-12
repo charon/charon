@@ -39,7 +39,7 @@ function getComponent(key: string): Component {
     <NavBar />
   </Teleport>
   <div class="mt-12 flex w-full flex-col items-center border-t border-transparent sm:mt-[4.5rem]">
-    <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,65ch)] gap-1 sm:m-4 sm:gap-4">
+    <div class="m-1 grid grid-cols-[minmax(0,65ch)] gap-1 sm:m-4 sm:gap-4">
       <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <div class="flex flex-row items-center justify-between gap-4">
           <h1 class="text-2xl font-bold">{{ t("views.CredentialAdd.addCredential") }}</h1>
@@ -49,7 +49,7 @@ function getComponent(key: string): Component {
       <div class="w-full rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <fieldset>
           <legend class="mb-1">{{ t("views.CredentialAdd.availableOptions") }}</legend>
-          <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+          <div class="grid grid-cols-[max-content_auto] gap-x-1">
             <template v-for="type in credentials" :key="type.key">
               <RadioButton :id="`credentialadd-radio-${type.key}`" v-model="credentialType" :value="type.key" :progress="progress" class="mx-2" />
               <label :for="`credentialadd-radio-${type.key}`" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{ type.label }}</label>

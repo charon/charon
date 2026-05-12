@@ -755,7 +755,7 @@ function canProvidersSubmit(): boolean {
     <NavBar />
   </Teleport>
   <div class="mt-12 flex w-full flex-col items-center border-t border-transparent sm:mt-[4.5rem]">
-    <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,65ch)] gap-1 sm:m-4 sm:gap-4">
+    <div class="m-1 grid grid-cols-[minmax(0,65ch)] gap-1 sm:m-4 sm:gap-4">
       <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <div class="flex flex-row items-center">
           <h1 class="text-2xl font-bold">{{ t("common.entities.organization") }}</h1>
@@ -819,11 +819,11 @@ function canProvidersSubmit(): boolean {
                     </fieldset>
                     <h4 v-if="application.clientsPublic?.length" class="mt-4 font-bold">{{ t("views.OrganizationGet.publicClients") }}</h4>
                     <ol v-if="application.clientsPublic?.length">
-                      <li v-for="(client, j) in application.clientsPublic" :key="j" class="mt-4 grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
+                      <li v-for="(client, j) in application.clientsPublic" :key="j" class="mt-4 grid grid-cols-[min-content_auto] gap-x-4">
                         <div>{{ j + 1 }}.</div>
                         <div class="flex flex-col gap-4">
                           <div v-if="getPublicClientDescription(application, client.client.id)">{{ getPublicClientDescription(application, client.client.id) }}</div>
-                          <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                          <div class="grid grid-cols-[max-content_auto] gap-x-1">
                             <div>{{ t("views.OrganizationGet.clientId") }}</div>
                             <div v-if="client.id">
                               <code :id="`organizationget-code-clientid-${i}`">{{ client.id }}</code>
@@ -837,11 +837,11 @@ function canProvidersSubmit(): boolean {
                     </ol>
                     <h4 v-if="application.clientsBackend?.length" class="mt-4 font-bold">{{ t("views.OrganizationGet.backendClients") }}</h4>
                     <ol v-if="application.clientsBackend?.length">
-                      <li v-for="(client, j) in application.clientsBackend" :key="j" class="mt-4 grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
+                      <li v-for="(client, j) in application.clientsBackend" :key="j" class="mt-4 grid grid-cols-[min-content_auto] gap-x-4">
                         <div>{{ j + 1 }}.</div>
                         <div class="flex flex-col gap-4">
                           <div v-if="getBackendClientDescription(application, client.client.id)">{{ getBackendClientDescription(application, client.client.id) }}</div>
-                          <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                          <div class="grid grid-cols-[max-content_auto] gap-x-1">
                             <div>{{ t("views.OrganizationGet.clientId") }}</div>
                             <div v-if="client.id">
                               <code>{{ client.id }}</code>
@@ -861,11 +861,11 @@ function canProvidersSubmit(): boolean {
                     </ol>
                     <h4 v-if="application.clientsService?.length" class="mt-4 font-bold">{{ t("views.OrganizationGet.serviceClients") }}</h4>
                     <ol v-if="application.clientsService?.length">
-                      <li v-for="(client, j) in application.clientsService" :key="j" class="mt-4 grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
+                      <li v-for="(client, j) in application.clientsService" :key="j" class="mt-4 grid grid-cols-[min-content_auto] gap-x-4">
                         <div>{{ j + 1 }}.</div>
                         <div class="flex flex-col gap-4">
                           <div v-if="getServiceClientDescription(application, client.client.id)">{{ getServiceClientDescription(application, client.client.id) }}</div>
-                          <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                          <div class="grid grid-cols-[max-content_auto] gap-x-1">
                             <div>{{ t("views.OrganizationGet.clientId") }}</div>
                             <div v-if="client.id">
                               <code>{{ client.id }}</code>
@@ -940,7 +940,7 @@ function canProvidersSubmit(): boolean {
             -->
             <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
               <ol class="flex flex-col gap-y-4">
-                <li v-for="(admin, i) in admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
+                <li v-for="(admin, i) in admins" :key="i" class="grid grid-cols-[min-content_auto] gap-x-4">
                   <div>{{ i + 1 }}.</div>
                   <div class="flex flex-col">
                     <WithOrganizationIdentityDocument
@@ -1040,7 +1040,7 @@ function canProvidersSubmit(): boolean {
             -->
             <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onProvidersSubmit">
               <fieldset class="mb-4">
-                <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                <div class="grid grid-cols-[max-content_auto] gap-x-1">
                   <RadioButton id="organization-providers-mode-all" v-model="providersMode" value="all" :progress="progress" class="mx-2" />
                   <label for="organization-providers-mode-all" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
                     t("views.OrganizationGet.allowedAuthMethodsAll")
@@ -1052,7 +1052,7 @@ function canProvidersSubmit(): boolean {
                 </div>
               </fieldset>
               <fieldset class="mb-4 ml-6">
-                <div class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+                <div class="grid grid-cols-[max-content_auto] gap-x-1">
                   <template v-for="p in availableProviders" :key="p">
                     <CheckBox
                       :id="`organization-providers-checkbox-${p}`"

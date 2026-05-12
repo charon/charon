@@ -490,7 +490,7 @@ const WithOrganizationDoc = WithDocument<Organization>
     <NavBar />
   </Teleport>
   <div class="mt-12 flex w-full flex-col items-center border-t border-transparent sm:mt-[4.5rem]">
-    <div class="m-1 grid auto-rows-auto grid-cols-[minmax(0,65ch)] gap-1 sm:m-4 sm:gap-4">
+    <div class="m-1 grid grid-cols-[minmax(0,65ch)] gap-1 sm:m-4 sm:gap-4">
       <div class="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
         <div class="flex flex-row items-center">
           <h1 class="text-2xl font-bold">{{ t("common.entities.identity") }}</h1>
@@ -516,7 +516,7 @@ const WithOrganizationDoc = WithDocument<Organization>
                 mapped/canonical address (matching what we send to the backend), but the
                 visible label uses the credential's DisplayName when available.
               -->
-              <div :key="identity?.email" class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+              <div :key="identity?.email" class="grid grid-cols-[max-content_auto] gap-x-1">
                 <template v-if="identity?.email">
                   <RadioButton id="identityget-radio-email-current" v-model="email" :value="identity.email" :progress="progress" class="mx-2" />
                   <!--
@@ -567,7 +567,7 @@ const WithOrganizationDoc = WithDocument<Organization>
                 </i18n-t>
               </div>
             </div>
-            <div v-else class="grid auto-rows-auto grid-cols-[max-content_auto] gap-x-1">
+            <div v-else class="grid grid-cols-[max-content_auto] gap-x-1">
               <RadioButton :model-value="email" :value="email" disabled class="mx-2" />
               <!--
                   identity.email might not be available among confirmed e-mails for this account, so we cannot
@@ -613,7 +613,7 @@ const WithOrganizationDoc = WithDocument<Organization>
           -->
           <form class="flex flex-col" novalidate @submit.prevent="onUsersSubmit">
             <ol class="flex flex-col gap-y-4">
-              <li v-for="(user, i) in users" :key="i" class="grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
+              <li v-for="(user, i) in users" :key="i" class="grid grid-cols-[min-content_auto] gap-x-4">
                 <div>{{ i + 1 }}.</div>
                 <div class="flex flex-col">
                   <WithOrganizationIdentityDocument
@@ -647,7 +647,7 @@ const WithOrganizationDoc = WithDocument<Organization>
           -->
           <form class="flex flex-col" novalidate @submit.prevent="onAdminsSubmit">
             <ol class="flex flex-col gap-y-4">
-              <li v-for="(admin, i) in admins" :key="i" class="grid auto-rows-auto grid-cols-[min-content_auto] gap-x-4">
+              <li v-for="(admin, i) in admins" :key="i" class="grid grid-cols-[min-content_auto] gap-x-4">
                 <div>{{ i + 1 }}.</div>
                 <div class="flex flex-col">
                   <WithOrganizationIdentityDocument
