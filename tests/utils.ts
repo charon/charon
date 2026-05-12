@@ -148,9 +148,9 @@ export async function checkpoint(page: Page, name: string, { mask = [], fullPage
   await page.mouse.move(0, 0)
   const screenshotPath = test.info().snapshotPath(`${name}.png`, { kind: "screenshot" })
   const screenshotOptions = {
-    fullPage: fullPage,
-    mask: mask,
-    clip: clip,
+    fullPage,
+    mask,
+    clip,
     ...(existsSync(screenshotPath) ? {} : { path: screenshotPath }),
   }
 
