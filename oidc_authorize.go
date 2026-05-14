@@ -228,6 +228,22 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 		}
 	}
 
+	organization, errE := s.getOrganization(ctx, flow.OrganizationID)
+	if errE != nil {
+		s.WithError(ctx, errE)
+		oidc.WriteAuthorizeError(ctx, w, authorizeRequest, errE)
+		return true
+	}
+
+	roles := organization.Roles[oidcSession.Subject]
+	if roles == nil {
+		roles = []string{}
+	}
+	idTokenClaims.Add("roles", roles)
+	// Initialize JWTClaims if nil.
+	_ = oidcSession.GetJWTClaims()
+	oidcSession.JWTClaims.Add("roles", roles)
+
 	response, err := oidc.NewAuthorizeResponse(ctx, authorizeRequest, oidcSession)
 	if err != nil {
 		errE = withFositeError(err)
