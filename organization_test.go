@@ -1359,6 +1359,7 @@ func TestRolesInOrganizationIdentityAndTokens(t *testing.T) {
 	// Assign role.
 	organization.Roles = map[identifier.Identifier][]string{identityID: {role}}
 	organization = updateOrganization(t, ts, service, accessToken, organization)
+	verifyLatestActivity(t, ts, service, accessToken, charon.ActivityOrganizationUpdate, []charon.ActivityChangeType{charon.ActivityChangeRolesAdded}, nil, 1, 1, 0, 0)
 
 	// Verify role appears in tokens.
 	expectedRoles := []string{role}
@@ -1371,6 +1372,7 @@ func TestRolesInOrganizationIdentityAndTokens(t *testing.T) {
 	// Remove role.
 	organization.Roles = map[identifier.Identifier][]string{}
 	organization = updateOrganization(t, ts, service, accessToken, organization)
+	verifyLatestActivity(t, ts, service, accessToken, charon.ActivityOrganizationUpdate, []charon.ActivityChangeType{charon.ActivityChangeRolesRemoved}, nil, 1, 1, 0, 0)
 
 	// Verify roles are empty again.
 	orgAccessToken, idToken, _, _, sessionID, now = doOIDCOrganizationFlow(t, ts, service, username, clientID, *organization.ID, time.Hour, nonce)
