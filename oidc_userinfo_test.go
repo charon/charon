@@ -20,16 +20,17 @@ import (
 
 //nolint:tagliatelle
 type userInfoResponse struct {
-	Subject           string `json:"sub"`
-	Email             string `json:"email"`
-	EmailVerified     bool   `json:"email_verified"`
-	GivenName         string `json:"given_name"`
-	Name              string `json:"name"`
-	Picture           string `json:"picture"`
-	PreferredUsername string `json:"preferred_username"`
+	Subject           string   `json:"sub"`
+	Email             string   `json:"email"`
+	EmailVerified     bool     `json:"email_verified"`
+	GivenName         string   `json:"given_name"`
+	Name              string   `json:"name"`
+	Picture           string   `json:"picture"`
+	PreferredUsername string   `json:"preferred_username"`
+	Roles             []string `json:"roles"`
 }
 
-func validateUserInfo(t *testing.T, ts *httptest.Server, service *charon.Service, token string, identityID identifier.Identifier) {
+func validateUserInfo(t *testing.T, ts *httptest.Server, service *charon.Service, token string, identityID identifier.Identifier, expectedRoles []string) {
 	t.Helper()
 
 	oidcUserInfo, errE := service.ReverseAPI("OIDCUserInfo", nil, nil)
@@ -57,6 +58,7 @@ func validateUserInfo(t *testing.T, ts *httptest.Server, service *charon.Service
 	assert.Equal(t, "User Name", response.Name)
 	assert.Equal(t, "https://example.com/picture.png", response.Picture)
 	assert.Equal(t, "username", response.PreferredUsername)
+	assert.Equal(t, expectedRoles, response.Roles)
 }
 
 func TestRouteUserinfoAndSignOut(t *testing.T) {
@@ -107,7 +109,7 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"picture":"`+gravatarURL+`","preferred_username":"`+username+`","sub":"`+identityID.String()+`"}`, string(out))
+		assert.Equal(t, `{"picture":"`+gravatarURL+`","preferred_username":"`+username+`","roles":[],"sub":"`+identityID.String()+`"}`, string(out))
 	}
 
 	signoutUser(t, ts, service, accessToken)
@@ -157,7 +159,7 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, 2, resp.ProtoMajor)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-		assert.Equal(t, `{"picture":"`+gravatarURL+`","preferred_username":"`+username+`","sub":"`+identityID.String()+`"}`, string(out))
+		assert.Equal(t, `{"picture":"`+gravatarURL+`","preferred_username":"`+username+`","roles":[],"sub":"`+identityID.String()+`"}`, string(out))
 	}
 
 	// Loading old flow when signed in again does not work because sessions are bound to flows.

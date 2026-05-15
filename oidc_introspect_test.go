@@ -33,6 +33,7 @@ type introspectAccessTokenResponse struct {
 	Issuer           string          `json:"iss"`
 	JTI              string          `json:"jti"`
 	Session          string          `json:"sid"`
+	Roles            []string        `json:"roles"`
 }
 
 //nolint:tagliatelle
@@ -165,7 +166,7 @@ func validateAccessToken(
 	t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time,
 	clientID, appID, organizationID, sessionID, accessToken string,
 	lastTimestamps map[string]time.Time, identityID identifier.Identifier,
-	accessTokenType charon.AccessTokenType, lifespan time.Duration,
+	accessTokenType charon.AccessTokenType, lifespan time.Duration, expectedRoles []string,
 ) string {
 	t.Helper()
 	response := validateIntrospect(t, ts, service, now, clientID, appID, organizationID, sessionID, accessToken, "access_token", identityID, &lifespan)
@@ -199,10 +200,15 @@ func validateAccessToken(
 		require.NoError(t, errE, "% -+#.1v", errE)
 		delete(all, "jti")
 
+		roles := make([]any, len(expectedRoles))
+		for i, role := range expectedRoles {
+			roles[i] = role
+		}
 		assert.Equal(t, map[string]any{
 			"aud":       []any{organizationID, appID, clientID},
 			"client_id": clientID,
 			"iss":       ts.URL,
+			"roles":     roles,
 			"scope":     "openid profile email offline_access",
 			"sid":       sessionID,
 			"sub":       identityID.String(),
@@ -212,6 +218,8 @@ func validateAccessToken(
 		assert.Equal(t, timestamps["exp"], int64(response.ExpirationTime))
 		assert.Equal(t, timestamps["iat"], int64(response.IssueTime))
 	}
+
+	assert.Equal(t, expectedRoles, response.Roles)
 
 	return response.JTI
 }
