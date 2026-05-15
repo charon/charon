@@ -8,8 +8,9 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gitlab.com/charon/charon"
 	"gitlab.com/tozd/identifier"
+
+	"gitlab.com/charon/charon"
 )
 
 type testCase struct {
