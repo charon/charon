@@ -1332,52 +1332,58 @@ func TestGetAvailableProviders(t *testing.T) {
 func TestRolesInOrganizationIdentityAndTokens(t *testing.T) {
 	t.Parallel()
 
-	ts, service, _, _, _ := startTestServer(t) //nolint:dogsled
-
 	role := "viewer"
 
-	username := identifier.New().String()
-	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
-	accessToken, _ := signinUser(t, ts, service, username, username, charon.CompletedSignup, flowID, nonce, state, pkceVerifier, config, verifier)
+	for _, accessTokenType := range []charon.AccessTokenType{charon.AccessTokenHMAC, charon.AccessTokenJWT} {
+		t.Run(string(accessTokenType), func(t *testing.T) {
+			t.Parallel()
 
-	days30 := 30 * 24 * time.Hour
-	applicationTemplate := createApplicationTemplate(t, ts, service, accessToken, charon.AccessTokenJWT, time.Hour, time.Hour, &days30, []charon.Role{{Key: role, Description: ""}})
-	organization := createOrganization(t, ts, service, accessToken, applicationTemplate)
+			ts, service, _, _, _ := startTestServer(t)
 
-	appID := organization.Applications[0].ID.String()
-	clientID := organization.Applications[0].ClientsBackend[0].ID.String()
-	organizationID := organization.ID.String()
+			username := identifier.New().String()
+			flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
+			accessToken, _ := signinUser(t, ts, service, username, username, charon.CompletedSignup, flowID, nonce, state, pkceVerifier, config, verifier)
 
-	// After adding organization with applicationTemplate, organization.Roles are empty, no identity has a role assigned.
-	emptyRoles := []string{}
-	orgAccessToken, idToken, _, identityID, sessionID, now := doOIDCOrganizationFlow(t, ts, service, username, clientID, *organization.ID, time.Hour, nonce)
-	validateAccessToken(t, ts, service, now, clientID, appID, organizationID, sessionID, orgAccessToken, map[string]time.Time{}, identityID, charon.AccessTokenJWT, time.Hour, emptyRoles)
-	validateIDToken(t, ts, service, now, clientID, appID, organizationID, sessionID, nonce, orgAccessToken, idToken, map[string]time.Time{}, identityID, emptyRoles)
-	validateUserInfo(t, ts, service, orgAccessToken, identityID, emptyRoles)
-	validateOrganizationIdentity(t, ts, service, orgAccessToken, organizationID, identityID, emptyRoles)
+			days30 := 30 * 24 * time.Hour
+			applicationTemplate := createApplicationTemplate(t, ts, service, accessToken, accessTokenType, time.Hour, time.Hour, &days30, []charon.Role{{Key: role, Description: ""}})
+			organization := createOrganization(t, ts, service, accessToken, applicationTemplate)
 
-	// Assign role.
-	organization.Roles = map[identifier.Identifier][]string{identityID: {role}}
-	organization = updateOrganization(t, ts, service, accessToken, organization)
-	verifyLatestActivity(t, ts, service, accessToken, charon.ActivityOrganizationUpdate, []charon.ActivityChangeType{charon.ActivityChangeRolesAdded}, nil, 1, 1, 0, 0)
+			appID := organization.Applications[0].ID.String()
+			clientID := organization.Applications[0].ClientsBackend[0].ID.String()
+			organizationID := organization.ID.String()
 
-	// Verify role appears in tokens.
-	expectedRoles := []string{role}
-	orgAccessToken, idToken, _, _, sessionID, now = doOIDCOrganizationFlow(t, ts, service, username, clientID, *organization.ID, time.Hour, nonce)
-	validateAccessToken(t, ts, service, now, clientID, appID, organizationID, sessionID, orgAccessToken, map[string]time.Time{}, identityID, charon.AccessTokenJWT, time.Hour, expectedRoles)
-	validateIDToken(t, ts, service, now, clientID, appID, organizationID, sessionID, nonce, orgAccessToken, idToken, map[string]time.Time{}, identityID, expectedRoles)
-	validateUserInfo(t, ts, service, orgAccessToken, identityID, expectedRoles)
-	validateOrganizationIdentity(t, ts, service, orgAccessToken, organizationID, identityID, expectedRoles)
+			// After adding organization with applicationTemplate, organization.Roles are empty, no identity has a role assigned.
+			emptyRoles := []string{}
+			orgAccessToken, idToken, _, identityID, sessionID, now := doOIDCOrganizationFlow(t, ts, service, username, clientID, *organization.ID, time.Hour, nonce)
+			validateAccessToken(t, ts, service, now, clientID, appID, organizationID, sessionID, orgAccessToken, map[string]time.Time{}, identityID, accessTokenType, time.Hour, emptyRoles)
+			validateIDToken(t, ts, service, now, clientID, appID, organizationID, sessionID, nonce, orgAccessToken, idToken, map[string]time.Time{}, identityID, emptyRoles)
+			validateUserInfo(t, ts, service, orgAccessToken, identityID, emptyRoles)
+			validateOrganizationIdentity(t, ts, service, orgAccessToken, organizationID, identityID, emptyRoles)
 
-	// Remove role.
-	organization.Roles = map[identifier.Identifier][]string{}
-	organization = updateOrganization(t, ts, service, accessToken, organization)
-	verifyLatestActivity(t, ts, service, accessToken, charon.ActivityOrganizationUpdate, []charon.ActivityChangeType{charon.ActivityChangeRolesRemoved}, nil, 1, 1, 0, 0)
+			// Assign role.
+			organization.Roles = map[identifier.Identifier][]string{identityID: {role}}
+			organization = updateOrganization(t, ts, service, accessToken, organization)
+			verifyLatestActivity(t, ts, service, accessToken, charon.ActivityOrganizationUpdate, []charon.ActivityChangeType{charon.ActivityChangeRolesAdded}, nil, 1, 1, 0, 0)
 
-	// Verify roles are empty again.
-	orgAccessToken, idToken, _, _, sessionID, now = doOIDCOrganizationFlow(t, ts, service, username, clientID, *organization.ID, time.Hour, nonce)
-	validateAccessToken(t, ts, service, now, clientID, appID, organizationID, sessionID, orgAccessToken, map[string]time.Time{}, identityID, charon.AccessTokenJWT, time.Hour, emptyRoles)
-	validateIDToken(t, ts, service, now, clientID, appID, organizationID, sessionID, nonce, orgAccessToken, idToken, map[string]time.Time{}, identityID, emptyRoles)
-	validateUserInfo(t, ts, service, orgAccessToken, identityID, emptyRoles)
-	validateOrganizationIdentity(t, ts, service, orgAccessToken, organizationID, identityID, emptyRoles)
+			// Verify role appears in tokens.
+			expectedRoles := []string{role}
+			orgAccessToken, idToken, _, _, sessionID, now = doOIDCOrganizationFlow(t, ts, service, username, clientID, *organization.ID, time.Hour, nonce)
+			validateAccessToken(t, ts, service, now, clientID, appID, organizationID, sessionID, orgAccessToken, map[string]time.Time{}, identityID, accessTokenType, time.Hour, expectedRoles)
+			validateIDToken(t, ts, service, now, clientID, appID, organizationID, sessionID, nonce, orgAccessToken, idToken, map[string]time.Time{}, identityID, expectedRoles)
+			validateUserInfo(t, ts, service, orgAccessToken, identityID, expectedRoles)
+			validateOrganizationIdentity(t, ts, service, orgAccessToken, organizationID, identityID, expectedRoles)
+
+			// Remove role.
+			organization.Roles = map[identifier.Identifier][]string{}
+			organization = updateOrganization(t, ts, service, accessToken, organization)
+			verifyLatestActivity(t, ts, service, accessToken, charon.ActivityOrganizationUpdate, []charon.ActivityChangeType{charon.ActivityChangeRolesRemoved}, nil, 1, 1, 0, 0)
+
+			// Verify roles are empty again.
+			orgAccessToken, idToken, _, _, sessionID, now = doOIDCOrganizationFlow(t, ts, service, username, clientID, *organization.ID, time.Hour, nonce)
+			validateAccessToken(t, ts, service, now, clientID, appID, organizationID, sessionID, orgAccessToken, map[string]time.Time{}, identityID, accessTokenType, time.Hour, emptyRoles)
+			validateIDToken(t, ts, service, now, clientID, appID, organizationID, sessionID, nonce, orgAccessToken, idToken, map[string]time.Time{}, identityID, emptyRoles)
+			validateUserInfo(t, ts, service, orgAccessToken, identityID, emptyRoles)
+			validateOrganizationIdentity(t, ts, service, orgAccessToken, organizationID, identityID, emptyRoles)
+		})
+	}
 }
