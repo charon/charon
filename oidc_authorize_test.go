@@ -1,23 +1,15 @@
 package charon_test
 
 import (
-	"crypto/sha256"
-	"encoding/base64"
 	"fmt"
-	"io"
-	"net/http"
-	"net/url"
-	"strings"
 	"testing"
 	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gitlab.com/tozd/identifier"
-	"gitlab.com/tozd/waf"
-
 	"gitlab.com/charon/charon"
+	"gitlab.com/tozd/identifier"
 )
 
 type testCase struct {
@@ -62,10 +54,6 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 			ts, service, _, _, _ := startTestServer(t)
 
 			username := identifier.New().String()
-			challenge := identifier.New().String() + identifier.New().String() + identifier.New().String()
-
-			challengeHash := sha256.Sum256([]byte(challenge))
-			codeChallenge := base64.RawURLEncoding.EncodeToString(challengeHash[:])
 
 			flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
 			accessToken, _ := signinUser(t, ts, service, username, username, charon.CompletedSignup, flowID, nonce, state, pkceVerifier, config, verifier)
@@ -77,120 +65,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 			appID := organization.Applications[0].ID.String()
 			clientID := organization.Applications[0].ClientsBackend[0].ID.String()
 
-			qs := url.Values{
-				"client_id":             []string{clientID},
-				"redirect_uri":          []string{"https://example.com/redirect"},
-				"scope":                 []string{"openid profile email offline_access"},
-				"response_type":         []string{"code"},
-				"response_mode":         []string{"query"},
-				"code_challenge_method": []string{"S256"},
-				"code_challenge":        []string{codeChallenge},
-				"state":                 []string{state},
-				"nonce":                 []string{nonce},
-			}
-			oidcAuthorize, errE := service.Reverse("OIDCAuthorize", nil, qs)
-			require.NoError(t, errE, "% -+#.1v", errE)
-
-			resp, err := ts.Client().Get(ts.URL + oidcAuthorize) //nolint:noctx,bodyclose
-			require.NoError(t, err)
-			t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
-			out, err := io.ReadAll(resp.Body)
-			require.NoError(t, err)
-			assert.Equal(t, http.StatusSeeOther, resp.StatusCode, string(out))
-			assert.Equal(t, 2, resp.ProtoMajor)
-			location := resp.Header.Get("Location")
-			assert.NotEmpty(t, location)
-
-			route, errE := service.GetRoute(location, http.MethodGet)
-			require.NoError(t, errE, "% -+#.1v", errE)
-			assert.Equal(t, "AuthFlowGet", route.Name)
-
-			flowID, errE = identifier.MaybeString(route.Params["id"])
-			require.NoError(t, errE, "% -+#.1v", errE)
-
-			authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
-			require.NoError(t, errE, "% -+#.1v", errE)
-
-			// Flow is available, for created organization and app.
-			resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
-			if assert.NoError(t, err) {
-				assertFlowResponse(t, ts, service, resp, organization.ID, []charon.Completed{}, nil, "", assertAppName(t, "Test organization", "Test application"))
-			}
-
-			resp = startPasswordSignin(t, ts, service, username, []byte("test1234"), organization.ID, flowID, "Test organization", "Test application") //nolint:bodyclose
-			assertSignedUser(t, charon.CompletedSignin, flowID, resp)
-
-			// Flow is available and CompletedSignin is completed.
-			resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
-			require.NoError(t, err)
-			assertFlowResponse(t, ts, service, resp, organization.ID, []charon.Completed{charon.CompletedSignin}, []charon.Provider{charon.ProviderPassword}, "", assertAppName(t, "Test organization", "Test application"))
-
-			identityID := chooseIdentity(t, ts, service, *organization.ID, flowID, "Test organization", "Test application", charon.CompletedSignin, []charon.Provider{charon.ProviderPassword}, 2, "username")
-
-			location = doRedirect(t, ts, service, *organization.ID, flowID, "Test organization", "Test application", charon.CompletedSignin, []charon.Provider{charon.ProviderPassword})
-
-			assert.True(t, strings.HasPrefix(location, "https://example.com/redirect?"), location)
-
-			// Flow is available and is finished.
-			resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
-			if assert.NoError(t, err) {
-				assertFlowResponse(t, ts, service, resp, organization.ID, []charon.Completed{charon.CompletedSignin, charon.CompletedIdentity, charon.CompletedFinishReady, charon.CompletedFinished}, []charon.Provider{charon.ProviderPassword}, "", assertAppName(t, "Test organization", "Test application"))
-			}
-
-			parsedLocation, err := url.Parse(location)
-			require.NoError(t, err)
-			locationQuery := parsedLocation.Query()
-			code := locationQuery.Get("code")
-			locationQuery.Del("code")
-			assert.NotEmpty(t, code)
-			assert.Equal(t, url.Values{"scope": []string{"openid profile email offline_access"}, "state": []string{state}}, locationQuery)
-
-			// Introspection of the code should not be possible.
-			oidcIntrospect, errE := service.ReverseAPI("OIDCIntrospect", nil, nil)
-			require.NoError(t, errE, "% -+#.1v", errE)
-
-			data := url.Values{
-				"token": []string{code},
-			}
-
-			req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, ts.URL+oidcIntrospect, strings.NewReader(data.Encode()))
-			require.NoError(t, err)
-			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-			req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(clientID+":chc-"+applicationClientSecret)))
-			resp, err = ts.Client().Do(req) //nolint:bodyclose
-			require.NoError(t, err)
-			t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
-			assert.Equal(t, http.StatusOK, resp.StatusCode)
-			assert.Equal(t, 2, resp.ProtoMajor)
-			assert.Equal(t, "application/json;charset=UTF-8", resp.Header.Get("Content-Type"))
-			body, err := io.ReadAll(resp.Body)
-			require.NoError(t, err)
-			assert.Equal(t, `{"active":false}`+"\n", string(body))
-
-			accessToken, idToken, refreshToken, now := exchangeCodeForTokens(t, ts, service, clientID, code, challenge, tt.accessTokenLifespan)
-
-			u, err := url.Parse(ts.URL)
-			require.NoError(t, err)
-			cookies := ts.Client().Jar.Cookies(u)
-
-			var sessionToken string
-			for _, cookie := range cookies {
-				if cookie.Name == charon.TestingSessionCookiePrefix()+flowID.String() {
-					sessionToken = cookie.Value
-					break
-				}
-			}
-			require.NotEmpty(t, sessionToken)
-
-			split := strings.Split(sessionToken, ".")
-			require.Len(t, split, 2)
-
-			secretID, err := base64.RawURLEncoding.DecodeString(split[1])
-			require.NoError(t, err)
-			session, errE := service.TestingGetSessionBySecretID(t.Context(), [32]byte(secretID))
-			require.NoError(t, errE, "% -+#.1v", errE)
-
-			sessionID := session.ID.String()
+			accessToken, idToken, refreshToken, identityID, sessionID, now := doOIDCOrganizationFlow(t, ts, service, username, clientID, organization, tt.accessTokenLifespan, nonce)
 
 			accessTokenLastTimestamps := map[string]time.Time{}
 			idTokenLastTimestamps := map[string]time.Time{}
