@@ -2,10 +2,16 @@ package charon_test
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/base64"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"slices"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/alexedwards/argon2id"
 	"github.com/mohae/deepcopy"
@@ -20,6 +26,28 @@ import (
 )
 
 const applicationClientSecret = "client-secret"
+
+func getOrganization(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken, organizationID string) *charon.Organization {
+	t.Helper()
+
+	organizationGet, errE := service.ReverseAPI("OrganizationGet", waf.Params{"id": organizationID}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, ts.URL+organizationGet, nil)
+	require.NoError(t, err)
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	resp, err := ts.Client().Do(req) //nolint:bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, 2, resp.ProtoMajor)
+	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+	var organization charon.Organization
+	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &organization)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	return &organization
+}
 
 func createOrganization(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string, applicationTemplate *charon.ApplicationTemplate) *charon.Organization {
 	t.Helper()
@@ -78,29 +106,192 @@ func createOrganization(t *testing.T, ts *httptest.Server, service *charon.Servi
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-	var organizationRef charon.Organization
+	var organizationRef charon.OrganizationRef
 	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &organizationRef)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	organizationGet, errE := service.ReverseAPI("OrganizationGet", waf.Params{"id": organizationRef.ID.String()}, nil)
+	verifyLatestActivity(t, ts, service, accessToken, charon.ActivityOrganizationCreate, nil, nil, 0, 1, 0, 0)
+
+	return getOrganization(t, ts, service, accessToken, organizationRef.ID.String())
+}
+
+func updateOrganization(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string, organization *charon.Organization) *charon.Organization {
+	t.Helper()
+
+	data, errE := x.MarshalWithoutEscapeHTML(organization)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	req, err = http.NewRequestWithContext(t.Context(), http.MethodGet, ts.URL+organizationGet, nil)
+	organizationUpdate, errE := service.ReverseAPI("OrganizationUpdate", waf.Params{"id": organization.ID.String()}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, ts.URL+organizationUpdate, bytes.NewReader(data))
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
-	resp, err = ts.Client().Do(req) //nolint:bodyclose
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := ts.Client().Do(req) //nolint:bodyclose
+
 	require.NoError(t, err)
 	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, 2, resp.ProtoMajor)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
-	var newOrganization charon.Organization
-	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &newOrganization)
+	var organizationRef charon.OrganizationRef
+	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &organizationRef)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	verifyLatestActivity(t, ts, service, accessToken, charon.ActivityOrganizationCreate, nil, nil, 0, 1, 0, 0)
+	return getOrganization(t, ts, service, accessToken, organizationRef.ID.String())
+}
 
-	return &newOrganization
+func validateOrganizationIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken, organizationID string, identityID identifier.Identifier, expectedRoles []string) {
+	t.Helper()
+
+	organizationIdentityGet, errE := service.ReverseAPI("OrganizationIdentity", waf.Params{"id": organizationID, "identityId": identityID.String()}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, ts.URL+organizationIdentityGet, nil)
+	require.NoError(t, err)
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	resp, err := ts.Client().Do(req) //nolint:bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, 2, resp.ProtoMajor)
+	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+	var organizationIdentity charon.OrganizationIdentity
+	errE = x.DecodeJSONWithoutUnknownFields(resp.Body, &organizationIdentity)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	assert.Equal(t, expectedRoles, organizationIdentity.Roles)
+}
+
+func doOIDCOrganizationFlow(
+	t *testing.T, ts *httptest.Server, service *charon.Service,
+	username, clientID string, organizationID identifier.Identifier, accessTokenLifespan time.Duration, nonce string,
+) (string, string, string, identifier.Identifier, string, time.Time) {
+	t.Helper()
+
+	state := identifier.New().String()
+	challenge := identifier.New().String() + identifier.New().String() + identifier.New().String()
+
+	challengeHash := sha256.Sum256([]byte(challenge))
+	codeChallenge := base64.RawURLEncoding.EncodeToString(challengeHash[:])
+
+	qs := url.Values{
+		"client_id":             []string{clientID},
+		"redirect_uri":          []string{"https://example.com/redirect"},
+		"scope":                 []string{"openid profile email offline_access"},
+		"response_type":         []string{"code"},
+		"response_mode":         []string{"query"},
+		"code_challenge_method": []string{"S256"},
+		"code_challenge":        []string{codeChallenge},
+		"state":                 []string{state},
+		"nonce":                 []string{nonce},
+	}
+	oidcAuthorize, errE := service.Reverse("OIDCAuthorize", nil, qs)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	resp, err := ts.Client().Get(ts.URL + oidcAuthorize) //nolint:noctx,bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
+	out, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusSeeOther, resp.StatusCode, string(out))
+	assert.Equal(t, 2, resp.ProtoMajor)
+	location := resp.Header.Get("Location")
+	assert.NotEmpty(t, location)
+
+	route, errE := service.GetRoute(location, http.MethodGet)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Equal(t, "AuthFlowGet", route.Name)
+
+	flowID, errE := identifier.MaybeString(route.Params["id"])
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	authFlowGet, errE := service.ReverseAPI("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	// Flow is available, for created organization and app.
+	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
+	if assert.NoError(t, err) {
+		assertFlowResponse(t, ts, service, resp, &organizationID, []charon.Completed{}, nil, "", assertAppName(t, "Test organization", "Test application"))
+	}
+
+	resp = startPasswordSignin(t, ts, service, username, []byte("test1234"), &organizationID, flowID, "Test organization", "Test application") //nolint:bodyclose
+	assertSignedUser(t, charon.CompletedSignin, flowID, resp)
+
+	// Flow is available and CompletedSignin is completed.
+	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
+	require.NoError(t, err)
+	assertFlowResponse(t, ts, service, resp, &organizationID, []charon.Completed{charon.CompletedSignin}, []charon.Provider{charon.ProviderPassword}, "", assertAppName(t, "Test organization", "Test application"))
+
+	identityID := chooseIdentity(t, ts, service, organizationID, flowID, "Test organization", "Test application", charon.CompletedSignin, []charon.Provider{charon.ProviderPassword}, 2, "username")
+
+	location = doRedirect(t, ts, service, organizationID, flowID, "Test organization", "Test application", charon.CompletedSignin, []charon.Provider{charon.ProviderPassword})
+
+	assert.True(t, strings.HasPrefix(location, "https://example.com/redirect?"), location)
+
+	// Flow is available and is finished.
+	resp, err = ts.Client().Get(ts.URL + authFlowGet) //nolint:noctx,bodyclose
+	if assert.NoError(t, err) {
+		assertFlowResponse(t, ts, service, resp, &organizationID, []charon.Completed{charon.CompletedSignin, charon.CompletedIdentity, charon.CompletedFinishReady, charon.CompletedFinished}, []charon.Provider{charon.ProviderPassword}, "", assertAppName(t, "Test organization", "Test application"))
+	}
+
+	parsedLocation, err := url.Parse(location)
+	require.NoError(t, err)
+	locationQuery := parsedLocation.Query()
+	code := locationQuery.Get("code")
+	locationQuery.Del("code")
+	assert.NotEmpty(t, code)
+	assert.Equal(t, url.Values{"scope": []string{"openid profile email offline_access"}, "state": []string{state}}, locationQuery)
+
+	// Introspection of the code should not be possible.
+	oidcIntrospect, errE := service.ReverseAPI("OIDCIntrospect", nil, nil)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	data := url.Values{
+		"token": []string{code},
+	}
+
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, ts.URL+oidcIntrospect, strings.NewReader(data.Encode()))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(clientID+":chc-"+applicationClientSecret)))
+	resp, err = ts.Client().Do(req) //nolint:bodyclose
+	require.NoError(t, err)
+	t.Cleanup(func(r *http.Response) func() { return func() { r.Body.Close() } }(resp)) //nolint:errcheck,gosec
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, 2, resp.ProtoMajor)
+	assert.Equal(t, "application/json;charset=UTF-8", resp.Header.Get("Content-Type"))
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	assert.Equal(t, `{"active":false}`+"\n", string(body))
+
+	accessToken, idToken, refreshToken, now := exchangeCodeForTokens(t, ts, service, clientID, code, challenge, accessTokenLifespan)
+
+	u, err := url.Parse(ts.URL)
+	require.NoError(t, err)
+	cookies := ts.Client().Jar.Cookies(u)
+
+	var sessionToken string
+	for _, cookie := range cookies {
+		if cookie.Name == charon.TestingSessionCookiePrefix()+flowID.String() {
+			sessionToken = cookie.Value
+			break
+		}
+	}
+	require.NotEmpty(t, sessionToken)
+
+	split := strings.Split(sessionToken, ".")
+	require.Len(t, split, 2)
+
+	secretID, err := base64.RawURLEncoding.DecodeString(split[1])
+	require.NoError(t, err)
+	session, errE := service.TestingGetSessionBySecretID(t.Context(), [32]byte(secretID))
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	sessionID := session.ID.String()
+
+	return accessToken, idToken, refreshToken, identityID, sessionID, now
 }
 
 func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
@@ -1134,4 +1325,57 @@ func TestGetAvailableProviders(t *testing.T) {
 
 	// ProviderCode is intentionally not user-selectable.
 	assert.NotContains(t, got, charon.ProviderCode)
+}
+
+// TestRolesInOrganizationIdentityAndTokens tests the full cycle of roles in organization:
+// create appTemplate w/ roles, createOrganization, add role to identity, re-auth, verify roles, remove them, re-auth and verify again.
+func TestRolesInOrganizationIdentityAndTokens(t *testing.T) {
+	t.Parallel()
+
+	ts, service, _, _, _ := startTestServer(t) //nolint:dogsled
+
+	role := "viewer"
+
+	username := identifier.New().String()
+	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
+	accessToken, _ := signinUser(t, ts, service, username, username, charon.CompletedSignup, flowID, nonce, state, pkceVerifier, config, verifier)
+
+	days30 := 30 * 24 * time.Hour
+	applicationTemplate := createApplicationTemplate(t, ts, service, accessToken, charon.AccessTokenJWT, time.Hour, time.Hour, &days30, []charon.Role{{Key: role, Description: ""}})
+	organization := createOrganization(t, ts, service, accessToken, applicationTemplate)
+
+	appID := organization.Applications[0].ID.String()
+	clientID := organization.Applications[0].ClientsBackend[0].ID.String()
+	organizationID := organization.ID.String()
+
+	// After adding organization with applicationTemplate, organization.Roles are empty, no identity has a role assigned.
+	emptyRoles := []string{}
+	orgAccessToken, idToken, _, identityID, sessionID, now := doOIDCOrganizationFlow(t, ts, service, username, clientID, *organization.ID, time.Hour, nonce)
+	validateAccessToken(t, ts, service, now, clientID, appID, organizationID, sessionID, orgAccessToken, map[string]time.Time{}, identityID, charon.AccessTokenJWT, time.Hour, emptyRoles)
+	validateIDToken(t, ts, service, now, clientID, appID, organizationID, sessionID, nonce, orgAccessToken, idToken, map[string]time.Time{}, identityID, emptyRoles)
+	validateUserInfo(t, ts, service, orgAccessToken, identityID, emptyRoles)
+	validateOrganizationIdentity(t, ts, service, orgAccessToken, organizationID, identityID, emptyRoles)
+
+	// Assign role.
+	organization.Roles = map[identifier.Identifier][]string{identityID: {role}}
+	organization = updateOrganization(t, ts, service, accessToken, organization)
+
+	// Verify role appears in tokens.
+	expectedRoles := []string{role}
+	orgAccessToken, idToken, _, _, sessionID, now = doOIDCOrganizationFlow(t, ts, service, username, clientID, *organization.ID, time.Hour, nonce)
+	validateAccessToken(t, ts, service, now, clientID, appID, organizationID, sessionID, orgAccessToken, map[string]time.Time{}, identityID, charon.AccessTokenJWT, time.Hour, expectedRoles)
+	validateIDToken(t, ts, service, now, clientID, appID, organizationID, sessionID, nonce, orgAccessToken, idToken, map[string]time.Time{}, identityID, expectedRoles)
+	validateUserInfo(t, ts, service, orgAccessToken, identityID, expectedRoles)
+	validateOrganizationIdentity(t, ts, service, orgAccessToken, organizationID, identityID, expectedRoles)
+
+	// Remove role.
+	organization.Roles = map[identifier.Identifier][]string{}
+	organization = updateOrganization(t, ts, service, accessToken, organization)
+
+	// Verify roles are empty again.
+	orgAccessToken, idToken, _, _, sessionID, now = doOIDCOrganizationFlow(t, ts, service, username, clientID, *organization.ID, time.Hour, nonce)
+	validateAccessToken(t, ts, service, now, clientID, appID, organizationID, sessionID, orgAccessToken, map[string]time.Time{}, identityID, charon.AccessTokenJWT, time.Hour, emptyRoles)
+	validateIDToken(t, ts, service, now, clientID, appID, organizationID, sessionID, nonce, orgAccessToken, idToken, map[string]time.Time{}, identityID, emptyRoles)
+	validateUserInfo(t, ts, service, orgAccessToken, identityID, emptyRoles)
+	validateOrganizationIdentity(t, ts, service, orgAccessToken, organizationID, identityID, emptyRoles)
 }
