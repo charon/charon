@@ -65,7 +65,7 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 			appID := organization.Applications[0].ID.String()
 			clientID := organization.Applications[0].ClientsBackend[0].ID.String()
 
-			accessToken, idToken, refreshToken, identityID, sessionID, now := doOIDCOrganizationFlow(t, ts, service, username, clientID, organization, tt.accessTokenLifespan, nonce)
+			accessToken, idToken, refreshToken, identityID, sessionID, now := doOIDCOrganizationFlow(t, ts, service, username, clientID, *organization.ID, tt.accessTokenLifespan, nonce)
 
 			accessTokenLastTimestamps := map[string]time.Time{}
 			idTokenLastTimestamps := map[string]time.Time{}
