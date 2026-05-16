@@ -2,7 +2,15 @@ import type { CDPSession } from "@playwright/test"
 
 import { checkpoint, clearConsoleErrors, expect, takeScreenshotsOfEntries, test } from "../utils"
 
-import { getIdFromAddedVirtualAuthenticator, signInWithPassword, simulatePasskeyInput, takeActivityScreenshot } from "../charon_utils"
+import {
+  EMAIL_CODE_REGEX_MATCHER,
+  EMAIL_LINK_REGEX_MATCHER,
+  extractCodeFromEmail,
+  getIdFromAddedVirtualAuthenticator,
+  signInWithPassword,
+  simulatePasskeyInput,
+  takeActivityScreenshot,
+} from "../charon_utils"
 
 test.describe.serial("Charon Auth Methods Flows", () => {
   test("Test adding a new password", async ({ context }) => {
@@ -420,6 +428,207 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     await signInWithPassword(page, "tester-auth-method-another-username", "tester123", true, true)
 
     console.log("Successfully added a new username, signed in, removed it, and signed in as a new user.")
+  })
+
+  test("Test adding a new email", async ({ context }) => {
+    const page = await context.newPage()
+
+    await signInWithPassword(page, "tester-auth-method-new-email", "tester123", true, true)
+
+    const authMethodsLink = page.locator("#menu-list-credentials")
+    await expect(authMethodsLink).toBeVisible()
+    await authMethodsLink.click()
+
+    const addButton = page.locator("#credentiallist-button-add")
+    await expect(addButton).toBeVisible()
+    await addButton.click()
+
+    const emailRadio = page.locator("#credentialadd-radio-email")
+    await expect(emailRadio).toBeVisible()
+    await emailRadio.click()
+
+    const emailInput = page.locator("#credentialaddemail-input-email")
+    await expect(emailInput).toBeVisible()
+    await expect(emailInput).toBeFocused()
+    await emailInput.fill("new-email@example.com")
+
+    const addEmailButton = page.locator("#credentialaddemail-button-add")
+    await expect(addEmailButton).toBeVisible()
+    await checkpoint(page, "auth-methods-add-email-filled")
+    await addEmailButton.click()
+
+    const confirmEmailButton = page.locator(".credentiallist-button-confirm")
+    await expect(confirmEmailButton).toBeVisible()
+    await confirmEmailButton.click()
+
+    // Get email code from mailpit.
+    const code: string = await extractCodeFromEmail(EMAIL_CODE_REGEX_MATCHER)
+
+    // Find the code input field and enter it.
+    const codeField = page.locator("input#code")
+    await expect(codeField).toBeVisible()
+    await checkpoint(page, "auth-page-after-clicking-confirm-auth-method-email-code")
+
+    await codeField.fill(code)
+
+    // Find and click the enabled SUBMIT button (not disabled).
+    const submitCodeButton = page.locator("button#credentialconfirmemail-button-submitcode")
+    await expect(submitCodeButton).toBeVisible()
+    await checkpoint(page, "auth-page-after-entering-auth-method-email-code", { mask: [codeField] })
+    await submitCodeButton.click()
+
+    // Check that confirmed appears next to the email.
+    const emailCredential = page.locator('.credentiallist-div-credentialentry:has-text("new-email@example.com")')
+    const confirmedLabel = emailCredential.locator(".credentialfull-label-confirmed")
+    await expect(confirmedLabel).toBeVisible()
+    await takeScreenshotsOfEntries(page, ".credentiallist-div-credentialentry", ".credentialfull-displayname", "auth-methods-after-confirming-first-email")
+
+    // Sign in with email.
+    const signOutButton = page.locator("#navbar-button-signout")
+    const homeButton = page.locator("#navbar-link-home")
+    await expect(homeButton).toBeVisible()
+    await homeButton.click()
+    await expect(signOutButton).toBeVisible()
+    await signOutButton.click()
+
+    const signInButton = page.locator("#navbar-button-signin")
+    await expect(signInButton).toBeVisible()
+    await signInButton.click()
+
+    const emailField = page.locator("input#authstart-input-email")
+    await expect(emailField).toBeVisible()
+    await emailField.fill("new-email@example.com")
+
+    const nextButton = page.locator("button#authstart-button-next")
+    await expect(nextButton).toBeVisible()
+    await checkpoint(page, "auth-page-after-entering-first-email-signin")
+    await nextButton.click()
+
+    // Click SEND CODE.
+    const sendCodeButton = page.locator("button#authpassword-button-sendcode")
+    await expect(sendCodeButton).toBeVisible()
+    await checkpoint(page, "auth-page-after-clicking-next-first-email-signin")
+    await sendCodeButton.click()
+
+    // Get email code from mailpit.
+    const signInCode: string = await extractCodeFromEmail(EMAIL_CODE_REGEX_MATCHER)
+
+    const signInCodeField = page.locator("input#code")
+    await expect(signInCodeField).toBeVisible()
+    await signInCodeField.fill(signInCode)
+
+    const signInSubmitButton = page.locator("button#authcode-button-submitcode")
+    await expect(signInSubmitButton).toBeVisible()
+    await checkpoint(page, "auth-page-after-entering-first-email-signin-code", { mask: [signInCodeField] })
+    await signInSubmitButton.click()
+
+    // Select the same identity to verify it's the same account.
+    const testerIdentity = page.locator('li:has-text("tester-auth-method-new-email")')
+    const selectButton = testerIdentity.locator("button.authidentity-selector-identity")
+    await expect(selectButton).toBeVisible()
+    await checkpoint(page, "signin-successful-signin-first-email-previous-identities-page-from-code")
+    await selectButton.click()
+
+    // Verify success.
+    await expect(page.locator("#authautoredirect-text-congratulations")).toBeVisible()
+    await checkpoint(page, "auth-page-after-selecting-first-email-identity")
+
+    // Wait for redirect.
+    await page.waitForTimeout(1300)
+    const redirectButton = page.locator("#authautoredirect-button-redirect")
+    await expect(redirectButton).toBeVisible()
+    await expect(redirectButton).toBeFocused()
+    await page.waitForTimeout(2200)
+
+    // Add second email.
+    await expect(authMethodsLink).toBeVisible()
+    await authMethodsLink.click()
+
+    await expect(addButton).toBeVisible()
+    await addButton.click()
+
+    await expect(emailRadio).toBeVisible()
+    await emailRadio.click()
+
+    await expect(emailInput).toBeVisible()
+    await expect(emailInput).toBeFocused()
+    await emailInput.fill("second-email@example.com")
+
+    await expect(addEmailButton).toBeVisible()
+    await checkpoint(page, "auth-methods-add-second-email-filled")
+    await addEmailButton.click()
+
+    await expect(confirmEmailButton).toBeVisible()
+    await confirmEmailButton.click()
+
+    // Get email link from mailpit.
+    const confirmLink: string = await extractCodeFromEmail(EMAIL_LINK_REGEX_MATCHER)
+
+    // Navigate to the confirmation link — code is autofilled from the URL hash.
+    await page.goto(confirmLink)
+
+    await expect(submitCodeButton).toBeVisible()
+    await expect(submitCodeButton).toBeFocused()
+    await checkpoint(page, "auth-page-after-entering-auth-method-email-link", { mask: [page.locator("input#code")] })
+    await submitCodeButton.click()
+
+    // Check that confirmed appears next to the second email.
+    const emailCredential2 = page.locator('.credentiallist-div-credentialentry:has-text("second-email@example.com")')
+    const confirmedLabel2 = emailCredential2.locator(".credentialfull-label-confirmed")
+    await expect(confirmedLabel2).toBeVisible()
+
+    // Old email should remain confirmed.
+    await expect(confirmedLabel).toBeVisible()
+    await takeScreenshotsOfEntries(page, ".credentiallist-div-credentialentry", ".credentialfull-displayname", "auth-methods-after-confirming-second-email")
+
+    // Sign in with second email.
+    await expect(homeButton).toBeVisible()
+    await homeButton.click()
+    await expect(signOutButton).toBeVisible()
+    await signOutButton.click()
+
+    await expect(signInButton).toBeVisible()
+    await signInButton.click()
+
+    await expect(emailField).toBeVisible()
+    await emailField.fill("second-email@example.com")
+
+    await expect(nextButton).toBeVisible()
+    await nextButton.click()
+
+    // Click SEND CODE.
+    await expect(sendCodeButton).toBeVisible()
+    await sendCodeButton.click()
+
+    // Get email code from mailpit.
+    const signInCode2: string = await extractCodeFromEmail(EMAIL_CODE_REGEX_MATCHER)
+
+    await expect(signInCodeField).toBeVisible()
+    await signInCodeField.fill(signInCode2)
+
+    await expect(signInSubmitButton).toBeVisible()
+    await checkpoint(page, "auth-page-after-entering-second-email-signin-code", { mask: [signInCodeField] })
+    await signInSubmitButton.click()
+
+    // Select the same identity to verify it's the same account.
+    await expect(selectButton).toBeVisible()
+    await checkpoint(page, "signin-successful-signin-second-email-previous-identities-page-from-code")
+    await selectButton.click()
+
+    // Verify success.
+    await expect(page.locator("#authautoredirect-text-congratulations")).toBeVisible()
+    await checkpoint(page, "auth-page-after-selecting-second-email-identity")
+
+    // Wait for redirect.
+    await page.waitForTimeout(1300)
+    const redirectButton2 = page.locator("#authautoredirect-button-redirect")
+    await expect(redirectButton2).toBeVisible()
+    await expect(redirectButton2).toBeFocused()
+    await page.waitForTimeout(2200)
+
+    await expect(authMethodsLink).toBeVisible()
+
+    console.log("Successfully added an email as an authentication method and verified it via code and via link.")
   })
 
   test("Test adding a passkey with duplicate displayname refocuses displayname input", async ({ context }) => {
