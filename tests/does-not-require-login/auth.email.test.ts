@@ -1,33 +1,5 @@
-import { takeActivityScreenshot } from "../charon_utils"
-import { CHARON_URL, checkpoint, expect, MAILPIT_URL, test } from "../utils"
-
-const EMAIL_CODE_REGEX_MATCHER: RegExp = /code to complete your Charon sign-in or sign-up:\s+(\d{6})\s+You can also open:/s
-const EMAIL_LINK_REGEX_MATCHER: RegExp = /You can also open:\s+(https:\/\/[^\s]+)/s
-
-async function extractCodeFromEmail(matcher: RegExp): Promise<string> {
-  let timeoutCounter = 0
-  const timeoutMaxCounter = 100 // 5 seconds.
-  const messageNotFoundText = "Message not found"
-  let emailText = messageNotFoundText
-  while (emailText == messageNotFoundText && timeoutCounter < timeoutMaxCounter) {
-    const emailResponse = await fetch(`${MAILPIT_URL}/view/latest.txt`)
-    emailText = await emailResponse.text()
-    if (emailText == messageNotFoundText) {
-      // 50ms timeout
-      await new Promise((resolve) => setTimeout(resolve, 50))
-      timeoutCounter += 1
-    }
-  }
-  expect(emailText).not.toBe(messageNotFoundText)
-  await fetch(`${MAILPIT_URL}/api/v1/messages`, { method: "DELETE" })
-  const codeMatch = emailText.match(matcher)
-  const code = codeMatch ? codeMatch[1] : ""
-  expect(code).toMatch(/\d{6}$/)
-
-  const emailTextAfterEmailsDeleted = await (await fetch(`${MAILPIT_URL}/view/latest.txt`)).text()
-  expect(emailTextAfterEmailsDeleted).toBe(messageNotFoundText)
-  return code
-}
+import { EMAIL_CODE_REGEX_MATCHER, EMAIL_LINK_REGEX_MATCHER, extractCodeFromEmail, takeActivityScreenshot } from "../charon_utils"
+import { CHARON_URL, checkpoint, expect, test } from "../utils"
 
 test.describe.serial("Charon Sign-in Flows", () => {
   test("Successful email sign-in flow via code with flow restarts", async ({ context }) => {
@@ -112,11 +84,11 @@ test.describe.serial("Charon Sign-in Flows", () => {
 
     await codeField.fill(code)
 
-    // Find and click the enabled NEXT button (not disabled).
-    const nextButton2 = page.locator("button#authcode-button-submitcode")
-    await expect(nextButton2).toBeVisible()
+    // Find and click the enabled SUBMIT button (not disabled).
+    const submitCodeButton = page.locator("button#authcode-button-submitcode")
+    await expect(submitCodeButton).toBeVisible()
     await checkpoint(page, "auth-page-after-entering-code", { mask: [codeField] })
-    await nextButton2.click()
+    await submitCodeButton.click()
 
     // Code should be accepted - verify successful sign-up message.
     await expect(page.getByText("You successfully signed up into Charon")).toBeVisible()

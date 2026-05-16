@@ -155,7 +155,7 @@ async function onSubmit() {
       <h2 class="credentialfull-provider text-xl">{{ getProviderNameTitle(t, credential.provider) }}</h2>
       <div class="mt-1 flex flex-row items-center gap-1">
         <span class="credentialfull-displayname">{{ credential.displayName }}</span>
-        <span v-if="credential.confirmed" class="rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{
+        <span v-if="credential.confirmed" class="credentialfull-label-confirmed rounded-xs bg-slate-100 px-1.5 py-0.5 text-sm leading-none text-gray-600 shadow-xs">{{
           t("common.labels.confirmed")
         }}</span>
       </div>
