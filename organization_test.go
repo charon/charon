@@ -1327,8 +1327,8 @@ func TestGetAvailableProviders(t *testing.T) {
 	assert.NotContains(t, got, charon.ProviderCode)
 }
 
-// TestRolesInOrganizationIdentityAndTokens tests the full cycle of roles in organization:
-// create appTemplate w/ roles, createOrganization, add role to identity, re-auth, verify roles, remove them, re-auth and verify again.
+// TestRolesInOrganizationIdentityAndTokens tests the full cycle of roles in organization
+// for both re-authentication and refresh-token flows.
 func TestRolesInOrganizationIdentityAndTokens(t *testing.T) {
 	t.Parallel()
 
@@ -1354,7 +1354,7 @@ func TestRolesInOrganizationIdentityAndTokens(t *testing.T) {
 
 			// After adding organization with applicationTemplate, organization.Roles are empty, no identity has a role assigned.
 			emptyRoles := []string{}
-			orgAccessToken, idToken, _, identityID, sessionID, now := doOIDCOrganizationFlow(t, ts, service, username, clientID, *organization.ID, time.Hour, nonce)
+			orgAccessToken, idToken, refreshToken, identityID, sessionID, now := doOIDCOrganizationFlow(t, ts, service, username, clientID, *organization.ID, time.Hour, nonce)
 			validateAccessToken(t, ts, service, now, clientID, appID, organizationID, sessionID, orgAccessToken, map[string]time.Time{}, identityID, accessTokenType, time.Hour, emptyRoles)
 			validateIDToken(t, ts, service, now, clientID, appID, organizationID, sessionID, nonce, orgAccessToken, idToken, map[string]time.Time{}, identityID, emptyRoles)
 			validateUserInfo(t, ts, service, orgAccessToken, identityID, emptyRoles)
@@ -1365,25 +1365,39 @@ func TestRolesInOrganizationIdentityAndTokens(t *testing.T) {
 			organization = updateOrganization(t, ts, service, accessToken, organization)
 			verifyLatestActivity(t, ts, service, accessToken, charon.ActivityOrganizationUpdate, []charon.ActivityChangeType{charon.ActivityChangeRolesAdded}, nil, 1, 1, 0, 0)
 
-			// Verify role appears in tokens.
+			// Added role must appear in refreshed tokens.
 			expectedRoles := []string{role}
-			orgAccessToken, idToken, _, _, sessionID, now = doOIDCOrganizationFlow(t, ts, service, username, clientID, *organization.ID, time.Hour, nonce)
+			orgAccessToken, idToken, refreshToken, now = exchangeRefreshTokenForTokens(t, ts, service, clientID, refreshToken, orgAccessToken, time.Hour)
 			validateAccessToken(t, ts, service, now, clientID, appID, organizationID, sessionID, orgAccessToken, map[string]time.Time{}, identityID, accessTokenType, time.Hour, expectedRoles)
 			validateIDToken(t, ts, service, now, clientID, appID, organizationID, sessionID, nonce, orgAccessToken, idToken, map[string]time.Time{}, identityID, expectedRoles)
 			validateUserInfo(t, ts, service, orgAccessToken, identityID, expectedRoles)
 			validateOrganizationIdentity(t, ts, service, orgAccessToken, organizationID, identityID, expectedRoles)
+
+			// Re-auth, role must appear in new session token.
+			reauthAccessToken, reauthIDToken, _, _, reauthSessionID, reauthNow := doOIDCOrganizationFlow(t, ts, service, username, clientID, *organization.ID, time.Hour, nonce)
+			validateAccessToken(t, ts, service, reauthNow, clientID, appID, organizationID, reauthSessionID, reauthAccessToken, map[string]time.Time{}, identityID, accessTokenType, time.Hour, expectedRoles)
+			validateIDToken(t, ts, service, reauthNow, clientID, appID, organizationID, reauthSessionID, nonce, reauthAccessToken, reauthIDToken, map[string]time.Time{}, identityID, expectedRoles)
+			validateUserInfo(t, ts, service, reauthAccessToken, identityID, expectedRoles)
+			validateOrganizationIdentity(t, ts, service, reauthAccessToken, organizationID, identityID, expectedRoles)
 
 			// Remove role.
 			organization.Roles = map[identifier.Identifier][]string{}
 			organization = updateOrganization(t, ts, service, accessToken, organization)
 			verifyLatestActivity(t, ts, service, accessToken, charon.ActivityOrganizationUpdate, []charon.ActivityChangeType{charon.ActivityChangeRolesRemoved}, nil, 1, 1, 0, 0)
 
-			// Verify roles are empty again.
-			orgAccessToken, idToken, _, _, sessionID, now = doOIDCOrganizationFlow(t, ts, service, username, clientID, *organization.ID, time.Hour, nonce)
+			// Removed role must not appear in refreshed tokens.
+			orgAccessToken, idToken, _, now = exchangeRefreshTokenForTokens(t, ts, service, clientID, refreshToken, orgAccessToken, time.Hour)
 			validateAccessToken(t, ts, service, now, clientID, appID, organizationID, sessionID, orgAccessToken, map[string]time.Time{}, identityID, accessTokenType, time.Hour, emptyRoles)
 			validateIDToken(t, ts, service, now, clientID, appID, organizationID, sessionID, nonce, orgAccessToken, idToken, map[string]time.Time{}, identityID, emptyRoles)
 			validateUserInfo(t, ts, service, orgAccessToken, identityID, emptyRoles)
 			validateOrganizationIdentity(t, ts, service, orgAccessToken, organizationID, identityID, emptyRoles)
+
+			// Re-auth, role must not appear in new session token.
+			reauthAccessToken, reauthIDToken, _, _, reauthSessionID, reauthNow = doOIDCOrganizationFlow(t, ts, service, username, clientID, *organization.ID, time.Hour, nonce)
+			validateAccessToken(t, ts, service, reauthNow, clientID, appID, organizationID, reauthSessionID, reauthAccessToken, map[string]time.Time{}, identityID, accessTokenType, time.Hour, emptyRoles)
+			validateIDToken(t, ts, service, reauthNow, clientID, appID, organizationID, reauthSessionID, nonce, reauthAccessToken, reauthIDToken, map[string]time.Time{}, identityID, emptyRoles)
+			validateUserInfo(t, ts, service, reauthAccessToken, identityID, emptyRoles)
+			validateOrganizationIdentity(t, ts, service, reauthAccessToken, organizationID, identityID, emptyRoles)
 		})
 	}
 }
