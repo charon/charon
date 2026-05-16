@@ -351,6 +351,7 @@ type OIDCSession struct {
 	RequestedAt time.Time                      `json:"requestedAt"`
 	AuthTime    time.Time                      `json:"authTime"`
 	ClientID    identifier.Identifier          `json:"clientId"`
+	Roles       []string                       `json:"roles"`
 	// Fosite modifies these structs in-place and we have to keep a pointer
 	// to them so that we return always the same struct between calls.
 	JWTClaims  *jwt.JWTClaims `json:"jwtClaims"`
@@ -378,6 +379,12 @@ func (s *OIDCSession) GetJWTClaims() jwt.JWTClaimsContainer { //nolint:ireturn
 	// We reset IssuedAt every time.
 	// See: https://github.com/ory/fosite/issues/774
 	s.JWTClaims.IssuedAt = time.Now().UTC()
+
+	roles := s.Roles
+	if roles == nil {
+		roles = []string{}
+	}
+	s.JWTClaims.Add("roles", roles)
 
 	return s.JWTClaims
 }
@@ -411,6 +418,12 @@ func (s *OIDCSession) IDTokenClaims() *jwt.IDTokenClaims {
 
 	// We do not reset IssuedAt every time here because it is already done by fosite.
 	// See: https://github.com/ory/fosite/issues/774
+
+	roles := s.Roles
+	if roles == nil {
+		roles = []string{}
+	}
+	s.IDTokenClaimsInternal.Add("roles", roles)
 
 	return s.IDTokenClaimsInternal
 }

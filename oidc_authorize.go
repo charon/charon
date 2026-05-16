@@ -188,14 +188,27 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 	// have to provide a way for the user to approve those and change call here.
 	grantAllScopes(authorizeRequest)
 
+	organization, errE := s.getOrganization(ctx, flow.OrganizationID)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return true
+	}
+
+	subject := *flow.Identity.GetOrganization(&flow.OrganizationID).ID
+	roles := organization.Roles[subject]
+	if roles == nil {
+		roles = []string{}
+	}
+
 	oidcSession := &OIDCSession{ //nolint:forcetypeassert
 		AccountID:              session.AccountID,
-		Subject:                *flow.Identity.GetOrganization(&flow.OrganizationID).ID,
+		Subject:                subject,
 		SessionID:              session.ID,
 		ExpiresAt:              nil,
 		RequestedAt:            flow.CreatedAt,
 		AuthTime:               *flow.AuthTime,
 		ClientID:               authorizeRequest.GetClient().(*OIDCClient).ID, //nolint:errcheck
+		Roles:                  roles,
 		JWTClaims:              nil,
 		JWTHeaders:             nil,
 		IDTokenClaimsInternal:  nil,
@@ -227,22 +240,6 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 			}
 		}
 	}
-
-	organization, errE := s.getOrganization(ctx, flow.OrganizationID)
-	if errE != nil {
-		s.WithError(ctx, errE)
-		oidc.WriteAuthorizeError(ctx, w, authorizeRequest, errE)
-		return true
-	}
-
-	roles := organization.Roles[oidcSession.Subject]
-	if roles == nil {
-		roles = []string{}
-	}
-	idTokenClaims.Add("roles", roles)
-	// Initialize JWTClaims if nil.
-	_ = oidcSession.GetJWTClaims()
-	oidcSession.JWTClaims.Add("roles", roles)
 
 	response, err := oidc.NewAuthorizeResponse(ctx, authorizeRequest, oidcSession)
 	if err != nil {
