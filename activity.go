@@ -174,10 +174,10 @@ type ActivityRef struct {
 }
 
 func (s *Service) getActivity(_ context.Context, id identifier.Identifier) (*Activity, errors.E) {
-	s.activitiesMu.RLock()
-	defer s.activitiesMu.RUnlock()
+	s.activities.RLock()
+	defer s.activities.RUnlock()
 
-	data, ok := s.activities[id]
+	data, ok := s.activities.Get(id)
 	if !ok {
 		return nil, errors.WithDetails(ErrActivityNotFound, "id", id)
 	}
@@ -210,11 +210,10 @@ func (s *Service) createActivity(ctx context.Context, activity *Activity) errors
 		return errE
 	}
 
-	s.activitiesMu.Lock()
-	defer s.activitiesMu.Unlock()
+	s.activities.Lock()
+	defer s.activities.Unlock()
 
-	s.activities[*activity.ID] = data
-	return nil
+	return s.activities.Set(*activity.ID, data)
 }
 
 // logActivity creates a new activity record for the current user.
@@ -332,12 +331,12 @@ func (s *Service) ActivityListGetAPI(w http.ResponseWriter, req *http.Request, _
 
 	result := []ActivityRef{}
 
-	s.activitiesMu.RLock()
-	defer s.activitiesMu.RUnlock()
+	s.activities.RLock()
+	defer s.activities.RUnlock()
 
 	// Collect activities for the current user only (identity or account).
 	activities := []*Activity{}
-	for id, data := range s.activities {
+	for id, data := range s.activities.All() {
 		var activity Activity
 		errE := x.UnmarshalWithoutUnknownFields(data, &activity)
 		if errE != nil {
@@ -499,12 +498,12 @@ func (s *Service) OrganizationActivityGetAPI(w http.ResponseWriter, req *http.Re
 
 	result := []ActivityRef{}
 
-	s.activitiesMu.RLock()
-	defer s.activitiesMu.RUnlock()
+	s.activities.RLock()
+	defer s.activities.RUnlock()
 
 	// Collect activities that include this organization.
 	activities := []*Activity{}
-	for id, data := range s.activities {
+	for id, data := range s.activities.All() {
 		var activity Activity
 		errE := x.UnmarshalWithoutUnknownFields(data, &activity)
 		if errE != nil {

@@ -27,7 +27,6 @@ import (
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
 	z "gitlab.com/tozd/go/zerolog"
-	"gitlab.com/tozd/identifier"
 	"golang.org/x/oauth2"
 
 	"gitlab.com/tozd/waf"
@@ -247,10 +246,11 @@ type Config struct {
 
 	Sites []Site `help:"Site configuration as JSON or YAML. Can be provided multiple times." name:"site" placeholder:"SITE" sep:"none" short:"s" yaml:"sites"`
 
-	Domains      []string             `                  help:"Domain name(s) to use. If not provided, they are determined from domain names found in TLS certificates."                                 name:"domain" placeholder:"STRING" yaml:"domains"`
-	MainDomain   string               `                  help:"When using multiple domains, which one is the main one."                                                                                                                     yaml:"mainDomain"`
-	ExternalPort int                  `                  help:"Port on which Charon is accessible when it is different from the port on which the program listens."                                                    placeholder:"INT"    yaml:"externalPort"`
-	Secret       kong.FileContentFlag `env:"SECRET_PATH" help:"File with base64 (URL encoding, no padding) encoded 32 bytes with \"${secretPrefixCharonConfig}\" prefix used for session and OIDC HMAC."               placeholder:"PATH"   yaml:"secret"`
+	Domains       []string             `                  help:"Domain name(s) to use. If not provided, they are determined from domain names found in TLS certificates."                                 name:"domain"         placeholder:"STRING" yaml:"domains"`
+	MainDomain    string               `                  help:"When using multiple domains, which one is the main one."                                                                                                                             yaml:"mainDomain"`
+	ExternalPort  int                  `                  help:"Port on which Charon is accessible when it is different from the port on which the program listens."                                                            placeholder:"INT"    yaml:"externalPort"`
+	Secret        kong.FileContentFlag `env:"SECRET_PATH" help:"File with base64 (URL encoding, no padding) encoded 32 bytes with \"${secretPrefixCharonConfig}\" prefix used for session and OIDC HMAC."                       placeholder:"PATH"   yaml:"secret"`
+	DataDirectory string               `                  help:"Directory used to persist application state. If not provided, state is kept only in memory."                                              name:"data-directory" placeholder:"PATH"   yaml:"dataDirectory"`
 
 	Providers Providers `                          embed:"" group:"Providers:"                                                                                                                      yaml:"providers"`
 	Title     string    `default:"${defaultTitle}"                             help:"Title of this Charon instance as shown to users when sites are not configured." placeholder:"STRING" short:"T" yaml:"title"`
@@ -336,33 +336,32 @@ type Service struct {
 	mailFrom   string
 
 	// TODO: Move to a database.
-	accounts               map[identifier.Identifier][]byte
-	accountsMu             sync.RWMutex
-	applicationTemplates   map[identifier.Identifier][]byte
-	applicationTemplatesMu sync.RWMutex
-	flows                  map[identifier.Identifier][]byte
-	flowsMu                sync.RWMutex
-	identities             map[identifier.Identifier][]byte
-	identitiesMu           sync.RWMutex
-	organizations          map[identifier.Identifier][]byte
-	organizationsMu        sync.RWMutex
-	sessions               map[identifier.Identifier][]byte
-	sessionsMu             sync.RWMutex
-	activities             map[identifier.Identifier][]byte
-	activitiesMu           sync.RWMutex
-	// Map from account ID to map from identity refs (to which account ID has access) to
-	// paths which are the support for the access.
-	identitiesAccess map[identifier.Identifier]map[IdentityRef][][]IdentityRef
-	// Map from identity ref to the account ID that created it.
+	accounts             *Store
+	applicationTemplates *Store
+	flows                *Store
+	identities           *Store
+	organizations        *Store
+	sessions             *Store
+	activities           *Store
+	// Store of per-account identity access. Each entry is a JSON-encoded
+	// map[IdentityRef][][]IdentityRef keyed by account ID: identities (to which
+	// the account has access) -> paths supporting the access.
+	identitiesAccess *Store
+	// Store of identity creators. Each entry is a JSON-encoded Identifier
+	// (the creator's account ID) keyed by the identity ID.
 	// TODO: Should creator be just an internal field of Identity struct?
-	identityCreators map[IdentityRef]identifier.Identifier
+	identityCreators *Store
 	// We use only one mutex for both identitiesAccess and identityCreators as they are always used together.
 	identitiesAccessMu sync.RWMutex
-	// Map from organization ID to map of organization-scoped identity IDs which have been blocked in the organization, to corresponding notes.
-	identitiesBlocked map[identifier.Identifier]map[identifier.Identifier]blockedNotes
-	// Map from organization ID to map of account IDs which have been blocked in the organization,
-	// to a map between organization-scoped identity ID which was blocked with the account and corresponding notes.
-	accountsBlocked map[identifier.Identifier]map[identifier.Identifier]map[identifier.Identifier]blockedNotes
+	// Store of identities blocked per organization. Each entry is a JSON-encoded
+	// map[identifier.Identifier]blockedNotes keyed by organization ID: organization-scoped
+	// identity IDs which have been blocked in the organization, to corresponding notes.
+	identitiesBlocked *Store
+	// Store of accounts blocked per organization. Each entry is a JSON-encoded
+	// map[identifier.Identifier]map[identifier.Identifier]blockedNotes keyed by organization ID:
+	// account IDs which have been blocked in the organization, to a map between organization-scoped
+	// identity ID which was blocked with the account and corresponding notes.
+	accountsBlocked *Store
 	// We use only one mutex for both identitiesBlocked and accountsBlocked as they are always used together.
 	identitiesBlockedMu sync.RWMutex
 }
@@ -680,6 +679,30 @@ func (config *Config) Init(ctx context.Context, files fs.FS) (*Service, errors.E
 		Config: &hmacStrategyConfigurator{Secret: secret},
 	}
 
+	stores := map[string]**Store{}
+	registerStore := func(name string, dst **Store) {
+		stores[name] = dst
+	}
+	registerStore("accounts", new(*Store))
+	registerStore("applicationTemplates", new(*Store))
+	registerStore("flows", new(*Store))
+	registerStore("identities", new(*Store))
+	registerStore("organizations", new(*Store))
+	registerStore("sessions", new(*Store))
+	registerStore("activities", new(*Store))
+	registerStore("identitiesAccess", new(*Store))
+	registerStore("identityCreators", new(*Store))
+	registerStore("identitiesBlocked", new(*Store))
+	registerStore("accountsBlocked", new(*Store))
+	for name, dst := range stores {
+		st, errE := newStore(config.DataDirectory, name)
+		if errE != nil {
+			errors.Details(errE)["store"] = name
+			return nil, errE
+		}
+		*dst = st
+	}
+
 	service := &Service{ //nolint:forcetypeassert
 		Service: waf.Service[*Site]{
 			Logger:          config.Logger,
@@ -711,41 +734,34 @@ func (config *Config) Init(ctx context.Context, files fs.FS) (*Service, errors.E
 				}
 			},
 		},
-		hmac:                   hmacStrategy,
-		oidc:                   nil,
-		oidcKeys:               config.OIDC.keys,
-		providers:              providers,
-		oidcProviders:          nil,
-		samlProviders:          nil,
-		passkeyProvider:        nil,
-		codeProvider:           nil,
-		charonOrganization:     nil,
-		domain:                 domain,
-		title:                  config.Title,
-		termsOfService:         config.TermsOfService,
-		privacyPolicy:          config.PrivacyPolicy,
-		mailClient:             nil,
-		mailFrom:               config.Mail.From,
-		accounts:               map[identifier.Identifier][]byte{},
-		accountsMu:             sync.RWMutex{},
-		applicationTemplates:   map[identifier.Identifier][]byte{},
-		applicationTemplatesMu: sync.RWMutex{},
-		flows:                  map[identifier.Identifier][]byte{},
-		flowsMu:                sync.RWMutex{},
-		identities:             map[identifier.Identifier][]byte{},
-		identitiesMu:           sync.RWMutex{},
-		organizations:          map[identifier.Identifier][]byte{},
-		organizationsMu:        sync.RWMutex{},
-		sessions:               map[identifier.Identifier][]byte{},
-		sessionsMu:             sync.RWMutex{},
-		activities:             map[identifier.Identifier][]byte{},
-		activitiesMu:           sync.RWMutex{},
-		identitiesAccess:       map[identifier.Identifier]map[IdentityRef][][]IdentityRef{},
-		identityCreators:       map[IdentityRef]identifier.Identifier{},
-		identitiesAccessMu:     sync.RWMutex{},
-		identitiesBlocked:      map[identifier.Identifier]map[identifier.Identifier]blockedNotes{},
-		accountsBlocked:        map[identifier.Identifier]map[identifier.Identifier]map[identifier.Identifier]blockedNotes{},
-		identitiesBlockedMu:    sync.RWMutex{},
+		hmac:                 hmacStrategy,
+		oidc:                 nil,
+		oidcKeys:             config.OIDC.keys,
+		providers:            providers,
+		oidcProviders:        nil,
+		samlProviders:        nil,
+		passkeyProvider:      nil,
+		codeProvider:         nil,
+		charonOrganization:   nil,
+		domain:               domain,
+		title:                config.Title,
+		termsOfService:       config.TermsOfService,
+		privacyPolicy:        config.PrivacyPolicy,
+		mailClient:           nil,
+		mailFrom:             config.Mail.From,
+		accounts:             *stores["accounts"],
+		applicationTemplates: *stores["applicationTemplates"],
+		flows:                *stores["flows"],
+		identities:           *stores["identities"],
+		organizations:        *stores["organizations"],
+		sessions:             *stores["sessions"],
+		activities:           *stores["activities"],
+		identitiesAccess:     *stores["identitiesAccess"],
+		identityCreators:     *stores["identityCreators"],
+		identitiesAccessMu:   sync.RWMutex{},
+		identitiesBlocked:    *stores["identitiesBlocked"],
+		accountsBlocked:      *stores["accountsBlocked"],
+		identitiesBlockedMu:  sync.RWMutex{},
 	}
 
 	service.setRoutes()

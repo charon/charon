@@ -938,10 +938,10 @@ func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []
 }
 
 func (s *Service) getOrganization(_ context.Context, id identifier.Identifier) (*Organization, errors.E) {
-	s.organizationsMu.RLock()
-	defer s.organizationsMu.RUnlock()
+	s.organizations.RLock()
+	defer s.organizations.RUnlock()
 
-	data, ok := s.organizations[id]
+	data, ok := s.organizations.Get(id)
 	if !ok {
 		return nil, errors.WithDetails(ErrOrganizationNotFound, "id", id)
 	}
@@ -954,73 +954,90 @@ func (s *Service) getOrganization(_ context.Context, id identifier.Identifier) (
 	return &organization, nil
 }
 
-func (s *Service) setOrganization(id identifier.Identifier, data []byte) {
-	s.organizationsMu.Lock()
-	defer s.organizationsMu.Unlock()
+func (s *Service) setOrganization(id identifier.Identifier, data []byte) errors.E {
+	s.organizations.Lock()
+	defer s.organizations.Unlock()
 
-	s.organizations[id] = data
+	return s.organizations.Set(id, data)
 }
 
-func (s *Service) deleteBlock(organizationID, orgIdentityID identifier.Identifier) bool {
+func (s *Service) deleteBlock(organizationID, orgIdentityID identifier.Identifier) (bool, errors.E) {
 	s.identitiesBlockedMu.Lock()
 	defer s.identitiesBlockedMu.Unlock()
 
-	if s.identitiesBlocked[organizationID] == nil {
-		return false
+	blocked, errE := s.loadIdentitiesBlocked(organizationID)
+	if errE != nil {
+		return false, errE
+	}
+	if blocked == nil {
+		return false, nil
 	}
 
-	_, ok := s.identitiesBlocked[organizationID][orgIdentityID]
+	_, ok := blocked[orgIdentityID]
+	delete(blocked, orgIdentityID)
 
-	delete(s.identitiesBlocked[organizationID], orgIdentityID)
-
-	if len(s.identitiesBlocked[organizationID]) == 0 {
-		delete(s.identitiesBlocked, organizationID)
+	errE = s.saveIdentitiesBlocked(organizationID, blocked)
+	if errE != nil {
+		return false, errE
 	}
 
-	return ok
+	return ok, nil
 }
 
-func (s *Service) setBlock(organizationID, orgIdentityID identifier.Identifier, organizationNote, userNote string) bool {
+func (s *Service) setBlock(organizationID, orgIdentityID identifier.Identifier, organizationNote, userNote string) (bool, errors.E) {
 	s.identitiesBlockedMu.Lock()
 	defer s.identitiesBlockedMu.Unlock()
 
-	if s.identitiesBlocked[organizationID] == nil {
-		s.identitiesBlocked[organizationID] = map[identifier.Identifier]blockedNotes{}
+	blocked, errE := s.loadIdentitiesBlocked(organizationID)
+	if errE != nil {
+		return false, errE
+	}
+	if blocked == nil {
+		blocked = map[identifier.Identifier]blockedNotes{}
 	}
 
-	_, ok := s.identitiesBlocked[organizationID][orgIdentityID]
+	_, ok := blocked[orgIdentityID]
 
 	// It is OK to overwrite the note because we do not allow multiple notes for the same identity.
-	s.identitiesBlocked[organizationID][orgIdentityID] = blockedNotes{
+	blocked[orgIdentityID] = blockedNotes{
 		OrganizationNote: organizationNote,
 		UserNote:         userNote,
 	}
 
-	return !ok
+	errE = s.saveIdentitiesBlocked(organizationID, blocked)
+	if errE != nil {
+		return false, errE
+	}
+
+	return !ok, nil
 }
 
 func (s *Service) setAccountsBlock(
 	organizationID, orgIdentityID identifier.Identifier, accountIDs map[identifier.Identifier][][]IdentityRef,
 	organizationNote, userNote string,
-) []AccountRef {
+) ([]AccountRef, errors.E) {
 	s.identitiesBlockedMu.Lock()
 	defer s.identitiesBlockedMu.Unlock()
 
-	if s.accountsBlocked[organizationID] == nil {
-		s.accountsBlocked[organizationID] = map[identifier.Identifier]map[identifier.Identifier]blockedNotes{}
+	current, errE := s.loadAccountsBlocked(organizationID)
+	if errE != nil {
+		return nil, errE
+	}
+	if current == nil {
+		current = map[identifier.Identifier]map[identifier.Identifier]blockedNotes{}
 	}
 
 	blockedAccountIDs := []AccountRef{}
 
 	for accountID := range accountIDs {
-		if s.accountsBlocked[organizationID][accountID] == nil {
-			s.accountsBlocked[organizationID][accountID] = map[identifier.Identifier]blockedNotes{}
+		if current[accountID] == nil {
+			current[accountID] = map[identifier.Identifier]blockedNotes{}
 		}
 
-		_, ok := s.accountsBlocked[organizationID][accountID][orgIdentityID]
+		_, ok := current[accountID][orgIdentityID]
 
 		// It is OK to overwrite the note because we do not allow multiple notes for the same account & identity pair.
-		s.accountsBlocked[organizationID][accountID][orgIdentityID] = blockedNotes{
+		current[accountID][orgIdentityID] = blockedNotes{
 			OrganizationNote: organizationNote,
 			UserNote:         userNote,
 		}
@@ -1031,7 +1048,12 @@ func (s *Service) setAccountsBlock(
 		}
 	}
 
-	return blockedAccountIDs
+	errE = s.saveAccountsBlocked(organizationID, current)
+	if errE != nil {
+		return nil, errE
+	}
+
+	return blockedAccountIDs, nil
 }
 
 func (s *Service) createOrganization(ctx context.Context, organization *Organization) errors.E {
@@ -1047,7 +1069,10 @@ func (s *Service) createOrganization(ctx context.Context, organization *Organiza
 		return errE
 	}
 
-	s.setOrganization(*organization.ID, data)
+	errE = s.setOrganization(*organization.ID, data)
+	if errE != nil {
+		return errE
+	}
 
 	return s.logActivity(ctx, ActivityOrganizationCreate, nil, []OrganizationRef{organization.Ref()}, nil, nil, nil, nil, nil, co.Ref())
 }
@@ -1089,7 +1114,10 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 	}
 
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	s.setOrganization(*organization.ID, data)
+	errE = s.setOrganization(*organization.ID, data)
+	if errE != nil {
+		return errE
+	}
 
 	// Admin IdentityRefs are database IDs which are also Charon organization-scoped IDs.
 	// We wrap them with the Charon organization.
@@ -1249,11 +1277,11 @@ type OrganizationIdentity struct {
 }
 
 func (s *Service) getIdentityFromOrganization(_ context.Context, organizationID, identityID identifier.Identifier) (*Identity, *IdentityOrganization, errors.E) {
-	s.identitiesMu.RLock()
-	defer s.identitiesMu.RUnlock()
+	s.identities.RLock()
+	defer s.identities.RUnlock()
 
 	// TODO: Use an index instead of iterating over all identities.
-	for id, data := range s.identities {
+	for id, data := range s.identities.All() {
 		var identity Identity
 		errE := x.UnmarshalWithoutUnknownFields(data, &identity)
 		if errE != nil {
@@ -1477,11 +1505,11 @@ func (s *Service) OrganizationIdentityGetAPI(w http.ResponseWriter, req *http.Re
 
 // OrganizationListGetAPI is the API handler for listing organizations, GET request.
 func (s *Service) OrganizationListGetAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	s.organizationsMu.RLock()
-	defer s.organizationsMu.RUnlock()
+	s.organizations.RLock()
+	defer s.organizations.RUnlock()
 
-	result := make([]OrganizationRef, 0, len(s.organizations))
-	for id := range s.organizations {
+	result := make([]OrganizationRef, 0, s.organizations.Len())
+	for id := range s.organizations.All() {
 		result = append(result, OrganizationRef{ID: id})
 	}
 
@@ -1591,10 +1619,10 @@ func (s *Service) OrganizationUsersGetAPI(w http.ResponseWriter, req *http.Reque
 
 	result := []IdentityRef{}
 
-	s.identitiesMu.RLock()
-	defer s.identitiesMu.RUnlock()
+	s.identities.RLock()
+	defer s.identities.RUnlock()
 
-	for _, data := range s.identities {
+	for _, data := range s.identities.All() {
 		var identity Identity
 		errE := x.UnmarshalWithoutUnknownFields(data, &identity)
 		if errE != nil {
@@ -1621,26 +1649,33 @@ func (s *Service) isIdentityOrAccountBlockedInOrganization(_ context.Context, id
 
 	// Check if the identity is blocked in the organization.
 	idOrg := identity.GetOrganization(&organizationID)
-	if idOrg != nil && s.identitiesBlocked[organizationID] != nil {
-		_, ok := s.identitiesBlocked[organizationID][*idOrg.ID]
-		if ok {
+	if idOrg != nil {
+		blocked, errE := s.loadIdentitiesBlocked(organizationID)
+		if errE != nil {
+			return false, errE
+		}
+		if _, ok := blocked[*idOrg.ID]; ok {
 			return true, nil
 		}
 	}
 
 	// Check if the account is blocked in the organization.
-	if s.accountsBlocked[organizationID] != nil {
-		_, ok := s.accountsBlocked[organizationID][accountID]
-		if ok {
-			return true, nil
-		}
+	accountsBlocked, errE := s.loadAccountsBlocked(organizationID)
+	if errE != nil {
+		return false, errE
+	}
+	if _, ok := accountsBlocked[accountID]; ok {
+		return true, nil
 	}
 
 	return false, nil
 }
 
 func (s *Service) unblockIdentity(ctx context.Context, organizationID, orgIdentityID identifier.Identifier) errors.E {
-	ok := s.deleteBlock(organizationID, orgIdentityID)
+	ok, errE := s.deleteBlock(organizationID, orgIdentityID)
+	if errE != nil {
+		return errE
+	}
 
 	// We log only the first time the identity is unblocked.
 	if !ok {
@@ -1659,7 +1694,10 @@ func (s *Service) blockIdentity(
 	ctx context.Context, organizationID, orgIdentityID identifier.Identifier,
 	organizationNote, userNote string,
 ) errors.E {
-	ok := s.setBlock(organizationID, orgIdentityID, organizationNote, userNote)
+	ok, errE := s.setBlock(organizationID, orgIdentityID, organizationNote, userNote)
+	if errE != nil {
+		return errE
+	}
 
 	// We log only the first time the identity is blocked.
 	if !ok {
@@ -1678,9 +1716,15 @@ func (s *Service) blockAccounts(
 	ctx context.Context, identity *Identity, organizationID, orgIdentityID identifier.Identifier,
 	organizationNote, userNote string,
 ) errors.E {
-	accountIDs := s.getAccountsForIdentityWithLock(identity.Ref())
+	accountIDs, errE := s.getAccountsForIdentityWithLock(identity.Ref())
+	if errE != nil {
+		return errE
+	}
 
-	blockedAccountIDs := s.setAccountsBlock(organizationID, orgIdentityID, accountIDs, organizationNote, userNote)
+	blockedAccountIDs, errE := s.setAccountsBlock(organizationID, orgIdentityID, accountIDs, organizationNote, userNote)
+	if errE != nil {
+		return errE
+	}
 
 	if len(blockedAccountIDs) == 0 {
 		return nil
@@ -1861,10 +1905,21 @@ func (s *Service) OrganizationBlockedStatusGetAPI(w http.ResponseWriter, req *ht
 	s.identitiesBlockedMu.RLock()
 	defer s.identitiesBlockedMu.RUnlock()
 
+	identitiesBlocked, errE := s.loadIdentitiesBlocked(*organization.ID)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+	accountsBlocked, errE := s.loadAccountsBlocked(*organization.ID)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
 	// Check if the identity is blocked in the organization.
 	if (isOrgAdmin && idOrg.Active) || hasUserAccess || hasAdminAccess {
-		if s.identitiesBlocked[*organization.ID] != nil {
-			blockedIdentity, ok := s.identitiesBlocked[*organization.ID][*idOrg.ID]
+		if identitiesBlocked != nil {
+			blockedIdentity, ok := identitiesBlocked[*idOrg.ID]
 			if ok {
 				// Only organization admin can see organization note.
 				if !isOrgAdmin {
@@ -1887,8 +1942,8 @@ func (s *Service) OrganizationBlockedStatusGetAPI(w http.ResponseWriter, req *ht
 	// Check if the account (of caller) is blocked in the organization,
 	// then also this identity is blocked for them.
 	if hasUserAccess || hasAdminAccess {
-		if s.accountsBlocked[*organization.ID] != nil {
-			blockedIdentities, ok := s.accountsBlocked[*organization.ID][currentAccountID]
+		if accountsBlocked != nil {
+			blockedIdentities, ok := accountsBlocked[currentAccountID]
 			if ok {
 				notes := []OrganizationBlockedStatusNotes{}
 				for orgIdentityID, blockedIdentity := range blockedIdentities {

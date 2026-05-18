@@ -196,10 +196,10 @@ func (a *Account) GetEmailAddresses() []string {
 }
 
 func (s *Service) getAccount(_ context.Context, id identifier.Identifier) (*Account, errors.E) {
-	s.accountsMu.RLock()
-	defer s.accountsMu.RUnlock()
+	s.accounts.RLock()
+	defer s.accounts.RUnlock()
 
-	data, ok := s.accounts[id]
+	data, ok := s.accounts.Get(id)
 	if !ok {
 		return nil, errors.WithDetails(ErrAccountNotFound, "id", id)
 	}
@@ -212,26 +212,25 @@ func (s *Service) getAccount(_ context.Context, id identifier.Identifier) (*Acco
 	return &account, nil
 }
 
-func (s *Service) getAccountByCredential(ctx context.Context, provider Provider, providerID string) (*Account, errors.E) {
-	s.accountsMu.RLock()
-	defer s.accountsMu.RUnlock()
+func (s *Service) getAccountByCredential(_ context.Context, provider Provider, providerID string) (*Account, errors.E) {
+	s.accounts.RLock()
+	defer s.accounts.RUnlock()
 
-	for id := range s.accounts {
-		account, errE := s.getAccount(ctx, id)
+	for id, data := range s.accounts.All() {
+		var account Account
+		errE := x.UnmarshalWithoutUnknownFields(data, &account)
 		if errE != nil {
+			errors.Details(errE)["id"] = id
 			return nil, errE
 		}
-
 		credential := account.GetCredential(provider, providerID)
 		if credential == nil {
 			continue
 		}
-		if provider == ProviderEmail {
-			if credential.Confirmed == "" {
-				continue
-			}
+		if provider == ProviderEmail && credential.Confirmed == "" {
+			continue
 		}
-		return account, nil
+		return &account, nil
 	}
 
 	return nil, errors.WithDetails(ErrAccountNotFound, "provider", provider, "providerID", providerID)
@@ -244,9 +243,8 @@ func (s *Service) setAccount(_ context.Context, account *Account) errors.E {
 		return errE
 	}
 
-	s.accountsMu.Lock()
-	defer s.accountsMu.Unlock()
+	s.accounts.Lock()
+	defer s.accounts.Unlock()
 
-	s.accounts[account.ID] = data
-	return nil
+	return s.accounts.Set(account.ID, data)
 }

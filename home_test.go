@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -20,6 +21,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gitlab.com/tozd/go/x"
 	z "gitlab.com/tozd/go/zerolog"
+	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 	"golang.org/x/net/publicsuffix"
 
@@ -173,6 +175,15 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 				MetadataURL: samlTS.URL + "/saml/metadata",
 			},
 		},
+	}
+
+	// When CHARON_TEST_DATA_DIRECTORY is set, run this test against a real file-backed
+	// store rooted at <env>/<random>. The parent is created if it does not exist; each
+	// test gets a fresh subdirectory so test runs do not interfere with each other.
+	if root := os.Getenv("CHARON_TEST_DATA_DIRECTORY"); root != "" {
+		err := os.MkdirAll(root, 0o700) //nolint:gosec
+		require.NoError(t, err)
+		config.DataDirectory = filepath.Join(root, identifier.New().String())
 	}
 
 	service, errE := config.Init(t.Context(), testFiles)

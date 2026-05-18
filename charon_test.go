@@ -70,8 +70,7 @@ func (s *Service) TestingStoreOrganization(organization *Organization) errors.E 
 	if errE != nil {
 		return errE
 	}
-	s.setOrganization(*organization.ID, data)
-	return nil
+	return s.setOrganization(*organization.ID, data)
 }
 
 func TestingFlowIsProviderAllowed(f *flow, provider Provider) bool {
@@ -79,11 +78,11 @@ func TestingFlowIsProviderAllowed(f *flow, provider Provider) bool {
 }
 
 func (s *Service) TestingListActivities(_ context.Context) ([]*Activity, errors.E) {
-	s.activitiesMu.RLock()
-	defer s.activitiesMu.RUnlock()
+	s.activities.RLock()
+	defer s.activities.RUnlock()
 
-	activities := make([]*Activity, 0, len(s.activities))
-	for id, data := range s.activities {
+	activities := make([]*Activity, 0, s.activities.Len())
+	for id, data := range s.activities.All() {
 		var activity Activity
 		errE := x.UnmarshalWithoutUnknownFields(data, &activity)
 		if errE != nil {
@@ -115,19 +114,18 @@ func (s *Service) TestingWithRequestID(ctx context.Context) context.Context {
 	return context.WithValue(ctx, "test-request-id", identifier.New()) //nolint:revive,staticcheck
 }
 
-func (s *Service) TestingGetIdentitiesAccess(accountID identifier.Identifier) map[IdentityRef][][]IdentityRef {
+func (s *Service) TestingGetIdentitiesAccess(accountID identifier.Identifier) (map[IdentityRef][][]IdentityRef, errors.E) {
 	s.identitiesAccessMu.RLock()
 	defer s.identitiesAccessMu.RUnlock()
 
-	return s.identitiesAccess[accountID]
+	return s.loadIdentityAccess(accountID)
 }
 
-func (s *Service) TestingGetCreatedIdentities(identity IdentityRef) (identifier.Identifier, bool) {
+func (s *Service) TestingGetCreatedIdentities(identity IdentityRef) (identifier.Identifier, bool, errors.E) {
 	s.identitiesAccessMu.RLock()
 	defer s.identitiesAccessMu.RUnlock()
 
-	a, ok := s.identityCreators[identity]
-	return a, ok
+	return s.loadIdentityCreator(identity.ID)
 }
 
 func TestingNormalizeUsernameCaseMapped(username string) (string, errors.E) {

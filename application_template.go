@@ -853,10 +853,10 @@ func (a *ApplicationTemplate) Changes(existing *ApplicationTemplate) ([]Activity
 }
 
 func (s *Service) getApplicationTemplate(_ context.Context, id identifier.Identifier) (*ApplicationTemplate, errors.E) {
-	s.applicationTemplatesMu.RLock()
-	defer s.applicationTemplatesMu.RUnlock()
+	s.applicationTemplates.RLock()
+	defer s.applicationTemplates.RUnlock()
 
-	data, ok := s.applicationTemplates[id]
+	data, ok := s.applicationTemplates.Get(id)
 	if !ok {
 		return nil, errors.WithDetails(ErrApplicationTemplateNotFound, "id", id)
 	}
@@ -869,11 +869,11 @@ func (s *Service) getApplicationTemplate(_ context.Context, id identifier.Identi
 	return &applicationTemplate, nil
 }
 
-func (s *Service) setApplicationTemplate(id identifier.Identifier, data []byte) {
-	s.applicationTemplatesMu.Lock()
-	defer s.applicationTemplatesMu.Unlock()
+func (s *Service) setApplicationTemplate(id identifier.Identifier, data []byte) errors.E {
+	s.applicationTemplates.Lock()
+	defer s.applicationTemplates.Unlock()
 
-	s.applicationTemplates[id] = data
+	return s.applicationTemplates.Set(id, data)
 }
 
 func (s *Service) createApplicationTemplate(ctx context.Context, applicationTemplate *ApplicationTemplate) errors.E {
@@ -889,7 +889,10 @@ func (s *Service) createApplicationTemplate(ctx context.Context, applicationTemp
 		return errE
 	}
 
-	s.setApplicationTemplate(*applicationTemplate.ID, data)
+	errE = s.setApplicationTemplate(*applicationTemplate.ID, data)
+	if errE != nil {
+		return errE
+	}
 
 	return s.logActivity(
 		ctx, ActivityApplicationTemplateCreate, nil, nil, []ApplicationTemplateRef{{ID: *applicationTemplate.ID}},
@@ -933,7 +936,10 @@ func (s *Service) updateApplicationTemplate(ctx context.Context, applicationTemp
 	}
 
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	s.setApplicationTemplate(*applicationTemplate.ID, data)
+	errE = s.setApplicationTemplate(*applicationTemplate.ID, data)
+	if errE != nil {
+		return errE
+	}
 
 	scopedIdentities := []OrganizationIdentityRef{}
 	for _, identity := range identities {
@@ -1029,11 +1035,11 @@ func (s *Service) ApplicationTemplateGetGetAPI(w http.ResponseWriter, req *http.
 
 // ApplicationTemplateListGetAPI is the API handler for listing application templates, GET request.
 func (s *Service) ApplicationTemplateListGetAPI(w http.ResponseWriter, req *http.Request, _ waf.Params) {
-	s.applicationTemplatesMu.RLock()
-	defer s.applicationTemplatesMu.RUnlock()
+	s.applicationTemplates.RLock()
+	defer s.applicationTemplates.RUnlock()
 
-	result := make([]ApplicationTemplateRef, 0, len(s.applicationTemplates))
-	for id := range s.applicationTemplates {
+	result := make([]ApplicationTemplateRef, 0, s.applicationTemplates.Len())
+	for id := range s.applicationTemplates.All() {
 		result = append(result, ApplicationTemplateRef{ID: id})
 	}
 

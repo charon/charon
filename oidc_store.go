@@ -33,10 +33,10 @@ func (s *oidcMemoryStore) GetClient(ctx context.Context, strID string) (fosite.C
 
 	service := ctx.Value(serviceContextKey).(*Service) //nolint:forcetypeassert,errcheck
 
-	service.organizationsMu.RLock()
-	defer service.organizationsMu.RUnlock()
+	service.organizations.RLock()
+	defer service.organizations.RUnlock()
 
-	for orgID, data := range service.organizations {
+	for orgID, data := range service.organizations.All() {
 		var organization Organization
 		errE := x.UnmarshalWithoutUnknownFields(data, &organization)
 		if errE != nil {

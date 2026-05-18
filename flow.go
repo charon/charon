@@ -203,10 +203,10 @@ func (f *flow) HasDeclined() bool {
 }
 
 func (s *Service) getFlow(_ context.Context, id identifier.Identifier) (*flow, errors.E) {
-	s.flowsMu.RLock()
-	defer s.flowsMu.RUnlock()
+	s.flows.RLock()
+	defer s.flows.RUnlock()
 
-	data, ok := s.flows[id]
+	data, ok := s.flows.Get(id)
 	if !ok {
 		return nil, errors.WithDetails(ErrFlowNotFound, "id", id)
 	}
@@ -249,11 +249,10 @@ func (s *Service) setFlow(_ context.Context, fl *flow) errors.E {
 		return errE
 	}
 
-	s.flowsMu.Lock()
-	defer s.flowsMu.Unlock()
+	s.flows.Lock()
+	defer s.flows.Unlock()
 
-	s.flows[fl.ID] = data
-	return nil
+	return s.flows.Set(fl.ID, data)
 }
 
 func (f *flow) isProviderAllowed(provider Provider) bool {

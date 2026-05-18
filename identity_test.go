@@ -42,7 +42,8 @@ func TestCreateIdentity(t *testing.T) {
 	identityID := *newIdentity.ID
 	identityRef := charon.IdentityRef{ID: identityID}
 
-	access := service.TestingGetIdentitiesAccess(accountID)
+	access, errE := service.TestingGetIdentitiesAccess(accountID)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		identityRef: {{}},
 	}, access)
@@ -73,7 +74,8 @@ func TestCreateIdentity(t *testing.T) {
 
 	newIdentityRef := charon.IdentityRef{ID: *newIdentity.ID}
 
-	access = service.TestingGetIdentitiesAccess(accountID)
+	access, errE = service.TestingGetIdentitiesAccess(accountID)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		identityRef:    {{}},
 		newIdentityRef: {{identityRef}},
@@ -88,10 +90,12 @@ func TestCreateIdentity(t *testing.T) {
 	assert.Contains(t, createdIdentity.Admins, identityRef)
 
 	// Only the first identity has a creator (account), the second not.
-	a, ok := service.TestingGetCreatedIdentities(identityRef)
+	a, ok, errE := service.TestingGetCreatedIdentities(identityRef)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.True(t, ok)
 	assert.Equal(t, accountID, a)
-	_, ok = service.TestingGetCreatedIdentities(newIdentityRef)
+	_, ok, errE = service.TestingGetCreatedIdentities(newIdentityRef)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.False(t, ok)
 }
 
@@ -166,7 +170,8 @@ func TestUpdateIdentity(t *testing.T) {
 	assert.ElementsMatch(t, newUsers, updatedIdentity.Users)
 	assert.ElementsMatch(t, newAdmins, updatedIdentity.Admins)
 
-	access := service.TestingGetIdentitiesAccess(accountID)
+	access, errE := service.TestingGetIdentitiesAccess(accountID)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		user1Ref:    {{}},
 		user2Ref:    {{}},
@@ -177,7 +182,8 @@ func TestUpdateIdentity(t *testing.T) {
 
 	// All identities were created without identity ID in the context and thus have a creator.
 	for _, id := range []charon.IdentityRef{user1Ref, user2Ref, admin1Ref, admin2Ref, identityRef} {
-		a, ok := service.TestingGetCreatedIdentities(id)
+		a, ok, errE := service.TestingGetCreatedIdentities(id)
+		require.NoError(t, errE, "% -+#.1v", errE)
 		assert.True(t, ok)
 		assert.Equal(t, accountID, a)
 	}
@@ -206,18 +212,22 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	adminIdentityID := createTestIdentity(t, service, adminCtx)
 	adminIdentityRef := charon.IdentityRef{ID: adminIdentityID}
 
-	access := service.TestingGetIdentitiesAccess(userAccountID)
+	access, errE := service.TestingGetIdentitiesAccess(userAccountID)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		userIdentityRef: {{}},
 	}, access)
-	access = service.TestingGetIdentitiesAccess(adminAccountID)
+	access, errE = service.TestingGetIdentitiesAccess(adminAccountID)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		adminIdentityRef: {{}},
 	}, access)
-	a, ok := service.TestingGetCreatedIdentities(userIdentityRef)
+	a, ok, errE := service.TestingGetCreatedIdentities(userIdentityRef)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.True(t, ok)
 	assert.Equal(t, userAccountID, a)
-	a, ok = service.TestingGetCreatedIdentities(adminIdentityRef)
+	a, ok, errE = service.TestingGetCreatedIdentities(adminIdentityRef)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.True(t, ok)
 	assert.Equal(t, adminAccountID, a)
 
@@ -246,19 +256,23 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	errE = service.TestingUpdateIdentity(userCtx, userIdentity)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	access = service.TestingGetIdentitiesAccess(userAccountID)
+	access, errE = service.TestingGetIdentitiesAccess(userAccountID)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		userIdentityRef: {{}},
 	}, access)
-	access = service.TestingGetIdentitiesAccess(adminAccountID)
+	access, errE = service.TestingGetIdentitiesAccess(adminAccountID)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		adminIdentityRef: {{}},
 		userIdentityRef:  {{adminIdentityRef}},
 	}, access)
-	a, ok = service.TestingGetCreatedIdentities(userIdentityRef)
+	a, ok, errE = service.TestingGetCreatedIdentities(userIdentityRef)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.True(t, ok)
 	assert.Equal(t, userAccountID, a)
-	a, ok = service.TestingGetCreatedIdentities(adminIdentityRef)
+	a, ok, errE = service.TestingGetCreatedIdentities(adminIdentityRef)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.True(t, ok)
 	assert.Equal(t, adminAccountID, a)
 
@@ -312,18 +326,22 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	errE = service.TestingUpdateIdentity(userCtx, updatedUserIdentity)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	access = service.TestingGetIdentitiesAccess(userAccountID)
+	access, errE = service.TestingGetIdentitiesAccess(userAccountID)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		userIdentityRef: {{}},
 	}, access)
-	access = service.TestingGetIdentitiesAccess(adminAccountID)
+	access, errE = service.TestingGetIdentitiesAccess(adminAccountID)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		adminIdentityRef: {{}},
 	}, access)
-	a, ok = service.TestingGetCreatedIdentities(userIdentityRef)
+	a, ok, errE = service.TestingGetCreatedIdentities(userIdentityRef)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.True(t, ok)
 	assert.Equal(t, userAccountID, a)
-	a, ok = service.TestingGetCreatedIdentities(adminIdentityRef)
+	a, ok, errE = service.TestingGetCreatedIdentities(adminIdentityRef)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.True(t, ok)
 	assert.Equal(t, adminAccountID, a)
 
@@ -345,19 +363,23 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	errE = service.TestingUpdateIdentity(userCtx, updatedUserIdentity)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	access = service.TestingGetIdentitiesAccess(userAccountID)
+	access, errE = service.TestingGetIdentitiesAccess(userAccountID)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		userIdentityRef: {{}},
 	}, access)
-	access = service.TestingGetIdentitiesAccess(adminAccountID)
+	access, errE = service.TestingGetIdentitiesAccess(adminAccountID)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		adminIdentityRef: {{}},
 		userIdentityRef:  {{adminIdentityRef}},
 	}, access)
-	a, ok = service.TestingGetCreatedIdentities(userIdentityRef)
+	a, ok, errE = service.TestingGetCreatedIdentities(userIdentityRef)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.True(t, ok)
 	assert.Equal(t, userAccountID, a)
-	a, ok = service.TestingGetCreatedIdentities(adminIdentityRef)
+	a, ok, errE = service.TestingGetCreatedIdentities(adminIdentityRef)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.True(t, ok)
 	assert.Equal(t, adminAccountID, a)
 
@@ -408,17 +430,21 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	errE = service.TestingUpdateIdentity(adminCtx, updatedUserIdentity)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	access = service.TestingGetIdentitiesAccess(userAccountID)
+	access, errE = service.TestingGetIdentitiesAccess(userAccountID)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.Equal(t, map[charon.IdentityRef][][]charon.IdentityRef(nil), access)
-	access = service.TestingGetIdentitiesAccess(adminAccountID)
+	access, errE = service.TestingGetIdentitiesAccess(adminAccountID)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		adminIdentityRef: {{}},
 		userIdentityRef:  {{adminIdentityRef}},
 	}, access)
-	a, ok = service.TestingGetCreatedIdentities(userIdentityRef)
+	a, ok, errE = service.TestingGetCreatedIdentities(userIdentityRef)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.True(t, ok)
 	assert.Equal(t, userAccountID, a)
-	a, ok = service.TestingGetCreatedIdentities(adminIdentityRef)
+	a, ok, errE = service.TestingGetCreatedIdentities(adminIdentityRef)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.True(t, ok)
 	assert.Equal(t, adminAccountID, a)
 
@@ -478,19 +504,23 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.ElementsMatch(t, []charon.IdentityRef{adminIdentityRef, userIdentityRef}, result)
 
-	access = service.TestingGetIdentitiesAccess(userAccountID)
+	access, errE = service.TestingGetIdentitiesAccess(userAccountID)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		userIdentityRef: {{}},
 	}, access)
-	access = service.TestingGetIdentitiesAccess(adminAccountID)
+	access, errE = service.TestingGetIdentitiesAccess(adminAccountID)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		adminIdentityRef: {{}},
 		userIdentityRef:  {{adminIdentityRef}},
 	}, access)
-	a, ok = service.TestingGetCreatedIdentities(userIdentityRef)
+	a, ok, errE = service.TestingGetCreatedIdentities(userIdentityRef)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.True(t, ok)
 	assert.Equal(t, userAccountID, a)
-	a, ok = service.TestingGetCreatedIdentities(adminIdentityRef)
+	a, ok, errE = service.TestingGetCreatedIdentities(adminIdentityRef)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.True(t, ok)
 	assert.Equal(t, adminAccountID, a)
 
@@ -498,24 +528,29 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	thirdIdentityID := createTestIdentity(t, service, userCtx)
 	thirdIdentityRef := charon.IdentityRef{ID: thirdIdentityID}
 
-	access = service.TestingGetIdentitiesAccess(userAccountID)
+	access, errE = service.TestingGetIdentitiesAccess(userAccountID)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		userIdentityRef:  {{}},
 		thirdIdentityRef: {{userIdentityRef}},
 	}, access)
-	access = service.TestingGetIdentitiesAccess(adminAccountID)
+	access, errE = service.TestingGetIdentitiesAccess(adminAccountID)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		adminIdentityRef: {{}},
 		userIdentityRef:  {{adminIdentityRef}},
 		thirdIdentityRef: {{adminIdentityRef, userIdentityRef}},
 	}, access)
-	a, ok = service.TestingGetCreatedIdentities(userIdentityRef)
+	a, ok, errE = service.TestingGetCreatedIdentities(userIdentityRef)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.True(t, ok)
 	assert.Equal(t, userAccountID, a)
-	a, ok = service.TestingGetCreatedIdentities(adminIdentityRef)
+	a, ok, errE = service.TestingGetCreatedIdentities(adminIdentityRef)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.True(t, ok)
 	assert.Equal(t, adminAccountID, a)
-	_, ok = service.TestingGetCreatedIdentities(thirdIdentityRef)
+	_, ok, errE = service.TestingGetCreatedIdentities(thirdIdentityRef)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.False(t, ok)
 
 	// Both accounts should have admin access to the third identity (because admin account
@@ -539,24 +574,29 @@ func TestIdentityAccessControl(t *testing.T) { //nolint:maintidx
 	errE = service.TestingUpdateIdentity(userCtx, thirdIdentity)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	access = service.TestingGetIdentitiesAccess(userAccountID)
+	access, errE = service.TestingGetIdentitiesAccess(userAccountID)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		userIdentityRef:  {{}},
 		thirdIdentityRef: {{userIdentityRef}},
 	}, access)
-	access = service.TestingGetIdentitiesAccess(adminAccountID)
+	access, errE = service.TestingGetIdentitiesAccess(adminAccountID)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		adminIdentityRef: {{}},
 		userIdentityRef:  {{adminIdentityRef}},
 		thirdIdentityRef: {{adminIdentityRef, userIdentityRef}},
 	}, access)
-	a, ok = service.TestingGetCreatedIdentities(userIdentityRef)
+	a, ok, errE = service.TestingGetCreatedIdentities(userIdentityRef)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.True(t, ok)
 	assert.Equal(t, userAccountID, a)
-	a, ok = service.TestingGetCreatedIdentities(adminIdentityRef)
+	a, ok, errE = service.TestingGetCreatedIdentities(adminIdentityRef)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.True(t, ok)
 	assert.Equal(t, adminAccountID, a)
-	_, ok = service.TestingGetCreatedIdentities(thirdIdentityRef)
+	_, ok, errE = service.TestingGetCreatedIdentities(thirdIdentityRef)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.False(t, ok)
 
 	// Both accounts should have admin access to the third identity (because admin account
@@ -663,23 +703,27 @@ func TestRecursiveIdentityAccess(t *testing.T) {
 		assert.ErrorIs(t, errE, charon.ErrIdentityUnauthorized)
 	}
 
-	access := service.TestingGetIdentitiesAccess(ids[0].account)
+	access, errE := service.TestingGetIdentitiesAccess(ids[0].account)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		ids[0].id: {{}},
 		ids[1].id: {{ids[0].id}},
 		ids[2].id: {{ids[0].id}},
 	}, access)
-	access = service.TestingGetIdentitiesAccess(ids[1].account)
+	access, errE = service.TestingGetIdentitiesAccess(ids[1].account)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		ids[1].id: {{}},
 	}, access)
-	access = service.TestingGetIdentitiesAccess(ids[2].account)
+	access, errE = service.TestingGetIdentitiesAccess(ids[2].account)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		ids[2].id: {{}},
 	}, access)
 
 	for _, id := range ids {
-		a, ok := service.TestingGetCreatedIdentities(id.id)
+		a, ok, errE := service.TestingGetCreatedIdentities(id.id)
+		require.NoError(t, errE, "% -+#.1v", errE)
 		assert.True(t, ok)
 		assert.Equal(t, id.account, a)
 	}
@@ -700,25 +744,29 @@ func TestCyclicIdentityAccess(t *testing.T) {
 	errE = service.TestingUpdateIdentity(ids[0].ctx, updatedRootIdentity)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	access := service.TestingGetIdentitiesAccess(ids[0].account)
+	access, errE := service.TestingGetIdentitiesAccess(ids[0].account)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		ids[0].id: {{}},
 		ids[1].id: {{ids[0].id}},
 		ids[2].id: {{ids[0].id}},
 	}, access)
-	access = service.TestingGetIdentitiesAccess(ids[1].account)
+	access, errE = service.TestingGetIdentitiesAccess(ids[1].account)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		ids[0].id: {{ids[1].id}},
 		ids[1].id: {{}},
 		ids[2].id: {{ids[1].id, ids[0].id}},
 	}, access)
-	access = service.TestingGetIdentitiesAccess(ids[2].account)
+	access, errE = service.TestingGetIdentitiesAccess(ids[2].account)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		ids[2].id: {{}},
 	}, access)
 
 	for _, id := range ids {
-		a, ok := service.TestingGetCreatedIdentities(id.id)
+		a, ok, errE := service.TestingGetCreatedIdentities(id.id)
+		require.NoError(t, errE, "% -+#.1v", errE)
 		assert.True(t, ok)
 		assert.Equal(t, id.account, a)
 	}
@@ -733,15 +781,18 @@ func TestCyclicIdentityAccess(t *testing.T) {
 	errE = service.TestingUpdateIdentity(ids[1].ctx, updatedRootIdentity)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	access = service.TestingGetIdentitiesAccess(ids[0].account)
+	access, errE = service.TestingGetIdentitiesAccess(ids[0].account)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assert.Equal(t, map[charon.IdentityRef][][]charon.IdentityRef(nil), access)
-	access = service.TestingGetIdentitiesAccess(ids[1].account)
+	access, errE = service.TestingGetIdentitiesAccess(ids[1].account)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		ids[0].id: {{ids[1].id}},
 		ids[1].id: {{}},
 		ids[2].id: {{ids[1].id, ids[0].id}},
 	}, access)
-	access = service.TestingGetIdentitiesAccess(ids[2].account)
+	access, errE = service.TestingGetIdentitiesAccess(ids[2].account)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		ids[2].id: {{}},
 	}, access)
@@ -764,19 +815,22 @@ func TestCyclicIdentityAccess(t *testing.T) {
 	errE = service.TestingUpdateIdentity(ids[1].ctx, updatedRootIdentity)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	access = service.TestingGetIdentitiesAccess(ids[0].account)
+	access, errE = service.TestingGetIdentitiesAccess(ids[0].account)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		ids[0].id: {{}},
 		ids[1].id: {{ids[0].id}},
 		ids[2].id: {{ids[0].id}},
 	}, access)
-	access = service.TestingGetIdentitiesAccess(ids[1].account)
+	access, errE = service.TestingGetIdentitiesAccess(ids[1].account)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		ids[0].id: {{ids[1].id}},
 		ids[1].id: {{}},
 		ids[2].id: {{ids[1].id, ids[0].id}},
 	}, access)
-	access = service.TestingGetIdentitiesAccess(ids[2].account)
+	access, errE = service.TestingGetIdentitiesAccess(ids[2].account)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		ids[2].id: {{}},
 	}, access)
@@ -786,19 +840,22 @@ func TestCyclicIdentityAccess(t *testing.T) {
 	errE = service.TestingUpdateIdentity(ids[0].ctx, updatedRootIdentity)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	access = service.TestingGetIdentitiesAccess(ids[0].account)
+	access, errE = service.TestingGetIdentitiesAccess(ids[0].account)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		ids[0].id: {{}},
 		ids[1].id: {{ids[0].id}},
 		ids[2].id: {{ids[0].id}},
 	}, access)
-	access = service.TestingGetIdentitiesAccess(ids[1].account)
+	access, errE = service.TestingGetIdentitiesAccess(ids[1].account)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		ids[0].id: {{ids[1].id}},
 		ids[1].id: {{}},
 		ids[2].id: {{ids[1].id, ids[0].id}},
 	}, access)
-	access = service.TestingGetIdentitiesAccess(ids[2].account)
+	access, errE = service.TestingGetIdentitiesAccess(ids[2].account)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	assertEqualAccess(t, map[charon.IdentityRef][][]charon.IdentityRef{
 		ids[0].id: {{ids[2].id}},
 		ids[1].id: {{ids[2].id, ids[0].id}},

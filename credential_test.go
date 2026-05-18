@@ -557,7 +557,8 @@ func TestCredentialRemoveEmailRemovesAddressFromIdentities(t *testing.T) {
 	accountID, errE := service.TestingGetAccountIDFromFlow(ctx, flowID)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	access := service.TestingGetIdentitiesAccess(accountID)
+	access, errE := service.TestingGetIdentitiesAccess(accountID)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	require.Len(t, access, 1)
 	var identityRef charon.IdentityRef
 	for ref := range access {
@@ -666,7 +667,8 @@ func TestCredentialRemoveEmailRemovesAddressFromSharedIdentities(t *testing.T) {
 	accountIDA, errE := service.TestingGetAccountIDFromFlow(ctx, flowIDA)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	accessA := service.TestingGetIdentitiesAccess(accountIDA)
+	accessA, errE := service.TestingGetIdentitiesAccess(accountIDA)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	require.Len(t, accessA, 1)
 	var identityRefA charon.IdentityRef
 	for ref := range accessA {
@@ -767,7 +769,8 @@ func TestCredentialRemoveEmailRemovesAddressFromTransferredIdentity(t *testing.T
 	accountIDA, errE := service.TestingGetAccountIDFromFlow(ctx, flowIDA)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
-	accessA := service.TestingGetIdentitiesAccess(accountIDA)
+	accessA, errE := service.TestingGetIdentitiesAccess(accountIDA)
+	require.NoError(t, errE, "% -+#.1v", errE)
 	require.Len(t, accessA, 1)
 	var identityRefA charon.IdentityRef
 	for ref := range accessA {

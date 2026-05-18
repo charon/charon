@@ -104,10 +104,14 @@ func initCharonOrganization(ctx context.Context, config *Config, service *Servic
 			panic(errE)
 		}
 
-		service.organizationsMu.Lock()
-		defer service.organizationsMu.Unlock()
+		service.organizations.Lock()
+		defer service.organizations.Unlock()
 
-		service.organizations[charonOrganizationID] = data
+		errE = service.organizations.Set(charonOrganizationID, data)
+		if errE != nil {
+			// We cannot do much about this error.
+			panic(errE)
+		}
 
 		return charonOrganization{
 			ID:                                charonOrganizationID,

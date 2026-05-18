@@ -597,9 +597,13 @@ func (i *Identity) Changes(existing *Identity) ([]ActivityChangeType, []Identity
 // s.identitiesAccessMu should be locked for reading while calling this function.
 func (s *Service) getIdentitiesForAccount(
 	_ context.Context, accountID identifier.Identifier, identity IdentityRef,
-) (mapset.Set[IdentityRef], bool, errors.E) { //nolint:unparam
-	ids := mapset.NewThreadUnsafeSetFromMapKeys(s.identitiesAccess[accountID])
-	isCreator := slices.ContainsFunc(s.identitiesAccess[accountID][identity], func(i []IdentityRef) bool {
+) (mapset.Set[IdentityRef], bool, errors.E) {
+	access, errE := s.loadIdentityAccess(accountID)
+	if errE != nil {
+		return nil, false, errE
+	}
+	ids := mapset.NewThreadUnsafeSetFromMapKeys(access)
+	isCreator := slices.ContainsFunc(access[identity], func(i []IdentityRef) bool {
 		// Creator has empty support path.
 		return slices.Equal(i, []IdentityRef{})
 	})
@@ -607,10 +611,10 @@ func (s *Service) getIdentitiesForAccount(
 }
 
 func (s *Service) getIdentityWithoutAccessCheck(_ context.Context, id identifier.Identifier) (*Identity, errors.E) {
-	s.identitiesMu.RLock()
-	defer s.identitiesMu.RUnlock()
+	s.identities.RLock()
+	defer s.identities.RUnlock()
 
-	data, ok := s.identities[id]
+	data, ok := s.identities.Get(id)
 	if !ok {
 		return nil, errors.WithDetails(ErrIdentityNotFound, "id", id)
 	}
@@ -624,18 +628,18 @@ func (s *Service) getIdentityWithoutAccessCheck(_ context.Context, id identifier
 	return &identity, nil
 }
 
-func (s *Service) setIdentity(id identifier.Identifier, data []byte) {
-	s.identitiesMu.Lock()
-	defer s.identitiesMu.Unlock()
+func (s *Service) setIdentity(id identifier.Identifier, data []byte) errors.E {
+	s.identities.Lock()
+	defer s.identities.Unlock()
 
-	s.identities[id] = data
+	return s.identities.Set(id, data)
 }
 
-func (s *Service) setIdentityCreator(i IdentityRef, account identifier.Identifier) {
+func (s *Service) setIdentityCreator(i IdentityRef, account identifier.Identifier) errors.E {
 	s.identitiesAccessMu.Lock()
 	defer s.identitiesAccessMu.Unlock()
 
-	s.identityCreators[i] = account
+	return s.saveIdentityCreator(i.ID, account)
 }
 
 // removeEmailAddressFromIdentities clears identity.Email on every identity which uses given
@@ -658,10 +662,10 @@ func (s *Service) removeEmailAddressFromIdentities(ctx context.Context, mappedEm
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
 
 	collect := func() errors.E {
-		s.identitiesMu.RLock()
-		defer s.identitiesMu.RUnlock()
+		s.identities.RLock()
+		defer s.identities.RUnlock()
 
-		for id, data := range s.identities {
+		for id, data := range s.identities.All() {
 			var existing Identity
 			errE := x.UnmarshalWithoutUnknownFields(data, &existing)
 			if errE != nil {
@@ -696,15 +700,15 @@ func (s *Service) removeEmailAddressFromIdentities(ctx context.Context, mappedEm
 func (s *Service) getIdentity(ctx context.Context, id identifier.Identifier) (*Identity, bool, errors.E) {
 	currentAccountID := mustGetAccountID(ctx)
 
-	s.identitiesMu.RLock()
-	defer s.identitiesMu.RUnlock()
+	s.identities.RLock()
+	defer s.identities.RUnlock()
 
-	// We lock s.identitiesAccessMu inside s.identitiesMu lock to have
+	// We lock s.identitiesAccessMu inside s.identities lock to have
 	// consistent view of identities and accounts.
 	s.identitiesAccessMu.RLock()
 	defer s.identitiesAccessMu.RUnlock()
 
-	data, ok := s.identities[id]
+	data, ok := s.identities.Get(id)
 	if !ok {
 		return nil, false, errors.WithDetails(ErrIdentityNotFound, "id", id)
 	}
@@ -760,7 +764,10 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 		// between the identity and the account, bootstrapping correct propagation of which accounts have
 		// access based on identities.
 		// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-		s.setIdentityCreator(i, currentAccountID)
+		errE := s.setIdentityCreator(i, currentAccountID)
+		if errE != nil {
+			return errE
+		}
 
 		// We set here current identity ID in the context, which is used by logActivity.
 		ctx = s.withIdentityID(ctx, *identity.ID)
@@ -771,7 +778,10 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 	}
 
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	s.setIdentity(*identity.ID, data)
+	errE = s.setIdentity(*identity.ID, data)
+	if errE != nil {
+		return errE
+	}
 
 	identities := mapset.NewThreadUnsafeSet(identity.Users...)
 	identities.Append(identity.Admins...)
@@ -788,10 +798,10 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 }
 
 func (s *Service) updateAccountsWithLock(identity IdentityRef, identitiesBefore, identitiesAfter mapset.Set[IdentityRef]) errors.E {
-	s.identitiesMu.Lock()
-	defer s.identitiesMu.Unlock()
+	s.identities.Lock()
+	defer s.identities.Unlock()
 
-	// We lock s.identitiesAccessMu inside s.identitiesMu lock to have
+	// We lock s.identitiesAccessMu inside s.identities lock to have
 	// consistent view of identities and accounts.
 	s.identitiesAccessMu.Lock()
 	defer s.identitiesAccessMu.Unlock()
@@ -803,40 +813,44 @@ func (s *Service) updateAccountsWithLock(identity IdentityRef, identitiesBefore,
 // access to, recording the support for the access.
 //
 // s.identitiesAccessMu should be locked while calling this function.
-func (s *Service) setAccountForIdentity(accountID identifier.Identifier, identity IdentityRef, support []IdentityRef) {
+func (s *Service) setAccountForIdentity(accountID identifier.Identifier, identity IdentityRef, support []IdentityRef) errors.E {
 	if slices.Contains(support, identity) {
 		// We do not do anything if the support path contains the identity
 		// because it means that support forms a cycle.
-		return
+		return nil
 	}
-	identities, ok := s.identitiesAccess[accountID]
-	if !ok {
-		s.identitiesAccess[accountID] = map[IdentityRef][][]IdentityRef{
-			identity: {support},
-		}
-		return
+	identities, errE := s.loadIdentityAccess(accountID)
+	if errE != nil {
+		return errE
+	}
+	if identities == nil {
+		identities = map[IdentityRef][][]IdentityRef{}
 	}
 	supports := identities[identity]
 	if slices.ContainsFunc(supports, func(e []IdentityRef) bool {
 		return slices.Equal(e, support)
 	}) {
-		return
+		return nil
 	}
 	identities[identity] = append(supports, support)
+	return s.saveIdentityAccess(accountID, identities)
 }
 
 // unsetAccountForIdentity removes the support from the set of identities the account has
 // access to.
 //
 // s.identitiesAccessMu should be locked while calling this function.
-func (s *Service) unsetAccountForIdentity(accountID identifier.Identifier, identity IdentityRef, support []IdentityRef) {
-	identities, ok := s.identitiesAccess[accountID]
-	if !ok {
-		return
+func (s *Service) unsetAccountForIdentity(accountID identifier.Identifier, identity IdentityRef, support []IdentityRef) errors.E {
+	identities, errE := s.loadIdentityAccess(accountID)
+	if errE != nil {
+		return errE
+	}
+	if identities == nil {
+		return nil
 	}
 	supports, ok := identities[identity]
 	if !ok {
-		return
+		return nil
 	}
 	identities[identity] = slices.DeleteFunc(supports, func(e []IdentityRef) bool {
 		return slices.Equal(e, support)
@@ -844,12 +858,10 @@ func (s *Service) unsetAccountForIdentity(accountID identifier.Identifier, ident
 	if len(identities[identity]) == 0 {
 		delete(identities, identity)
 	}
-	if len(identities) == 0 {
-		delete(s.identitiesAccess, accountID)
-	}
+	return s.saveIdentityAccess(accountID, identities)
 }
 
-func (s *Service) getAccountsForIdentityWithLock(identity IdentityRef) map[identifier.Identifier][][]IdentityRef {
+func (s *Service) getAccountsForIdentityWithLock(identity IdentityRef) (map[identifier.Identifier][][]IdentityRef, errors.E) {
 	s.identitiesAccessMu.RLock()
 	defer s.identitiesAccessMu.RUnlock()
 
@@ -859,14 +871,23 @@ func (s *Service) getAccountsForIdentityWithLock(identity IdentityRef) map[ident
 // getAccountsForIdentity returns all accounts that have access to the identity.
 //
 // s.identitiesAccessMu should be locked while calling this function.
-func (s *Service) getAccountsForIdentity(identity IdentityRef) map[identifier.Identifier][][]IdentityRef {
+func (s *Service) getAccountsForIdentity(identity IdentityRef) (map[identifier.Identifier][][]IdentityRef, errors.E) {
 	accountIDs := map[identifier.Identifier][][]IdentityRef{}
-	for accountID, identities := range s.identitiesAccess {
-		if supports, ok := identities[identity]; ok {
-			accountIDs[accountID] = supports
+	for accountID, data := range s.identitiesAccess.All() {
+		var entries []identityAccessEntry
+		errE := x.UnmarshalWithoutUnknownFields(data, &entries)
+		if errE != nil {
+			errors.Details(errE)["accountId"] = accountID
+			return nil, errE
+		}
+		for _, e := range entries {
+			if e.Identity == identity {
+				accountIDs[accountID] = e.Supports
+				break
+			}
 		}
 	}
-	return accountIDs
+	return accountIDs, nil
 }
 
 func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors.E {
@@ -929,7 +950,10 @@ func (s *Service) applyIdentityUpdate(ctx context.Context, existingIdentity, ide
 	}
 
 	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
-	s.setIdentity(*identity.ID, data)
+	errE = s.setIdentity(*identity.ID, data)
+	if errE != nil {
+		return errE
+	}
 
 	identitiesBefore := mapset.NewThreadUnsafeSet(existingIdentity.Users...)
 	identitiesBefore.Append(existingIdentity.Admins...)
@@ -965,20 +989,37 @@ func (s *Service) applyIdentityUpdate(ctx context.Context, existingIdentity, ide
 //
 // s.identitiesMu and s.identitiesAccessMu should be locked while calling this function.
 func (s *Service) updateAccounts(identity IdentityRef, identitiesBefore, identitiesAfter mapset.Set[IdentityRef]) errors.E {
-	beforeAccounts := s.getAccountsForIdentity(identity)
+	beforeAccounts, errE := s.getAccountsForIdentity(identity)
+	if errE != nil {
+		return errE
+	}
 
 	// We remove support from all removed identities from corresponding accounts for the identity.
 	for removed := range mapset.Elements(identitiesBefore.Difference(identitiesAfter)) {
-		for a, supports := range s.getAccountsForIdentity(removed) {
+		accounts, errE := s.getAccountsForIdentity(removed)
+		if errE != nil {
+			return errE
+		}
+		for a, supports := range accounts {
 			for _, support := range supports {
 				sp := slices.Clone(support)
 				sp = append(sp, removed)
-				s.unsetAccountForIdentity(a, identity, sp)
+				errE := s.unsetAccountForIdentity(a, identity, sp)
+				if errE != nil {
+					return errE
+				}
 			}
 		}
 		if removed == identity {
-			if a, ok := s.identityCreators[identity]; ok {
-				s.unsetAccountForIdentity(a, identity, []IdentityRef{})
+			a, ok, errE := s.loadIdentityCreator(identity.ID)
+			if errE != nil {
+				return errE
+			}
+			if ok {
+				errE := s.unsetAccountForIdentity(a, identity, []IdentityRef{})
+				if errE != nil {
+					return errE
+				}
 			}
 		}
 	}
@@ -986,20 +1027,37 @@ func (s *Service) updateAccounts(identity IdentityRef, identitiesBefore, identit
 	// We add support from all added identities to corresponding accounts for the identity.
 	for added := range mapset.Elements(identitiesAfter.Difference(identitiesBefore)) {
 		if added == identity {
-			if a, ok := s.identityCreators[identity]; ok {
-				s.setAccountForIdentity(a, identity, []IdentityRef{})
+			a, ok, errE := s.loadIdentityCreator(identity.ID)
+			if errE != nil {
+				return errE
+			}
+			if ok {
+				errE := s.setAccountForIdentity(a, identity, []IdentityRef{})
+				if errE != nil {
+					return errE
+				}
 			}
 		}
-		for a, supports := range s.getAccountsForIdentity(added) {
+		accounts, errE := s.getAccountsForIdentity(added)
+		if errE != nil {
+			return errE
+		}
+		for a, supports := range accounts {
 			for _, support := range supports {
 				sp := slices.Clone(support)
 				sp = append(sp, added)
-				s.setAccountForIdentity(a, identity, sp)
+				errE := s.setAccountForIdentity(a, identity, sp)
+				if errE != nil {
+					return errE
+				}
 			}
 		}
 	}
 
-	afterAccounts := s.getAccountsForIdentity(identity)
+	afterAccounts, errE := s.getAccountsForIdentity(identity)
+	if errE != nil {
+		return errE
+	}
 
 	if reflect.DeepEqual(beforeAccounts, afterAccounts) {
 		// If nothing changed, we can stop here.
@@ -1033,7 +1091,7 @@ func (s *Service) propagateAccountsUpdate(identity IdentityRef, identityBeforeAc
 
 		identitySet := mapset.NewThreadUnsafeSet(i)
 
-		for _, data := range s.identities {
+		for _, data := range s.identities.All() {
 			var otherIdentity Identity
 			errE := x.UnmarshalWithoutUnknownFields(data, &otherIdentity)
 			if errE != nil {
@@ -1055,7 +1113,10 @@ func (s *Service) propagateAccountsUpdate(identity IdentityRef, identityBeforeAc
 
 			o := otherIdentity.Ref()
 
-			beforeAccounts := s.getAccountsForIdentity(o)
+			beforeAccounts, errE := s.getAccountsForIdentity(o)
+			if errE != nil {
+				return errE
+			}
 
 			afterKeys := mapset.NewThreadUnsafeSetFromMapKeys(after)
 			beforeKeys := mapset.NewThreadUnsafeSetFromMapKeys(before)
@@ -1066,7 +1127,10 @@ func (s *Service) propagateAccountsUpdate(identity IdentityRef, identityBeforeAc
 				for _, support := range before[a] {
 					sp := slices.Clone(support)
 					sp = append(sp, i)
-					s.unsetAccountForIdentity(a, o, sp)
+					errE := s.unsetAccountForIdentity(a, o, sp)
+					if errE != nil {
+						return errE
+					}
 				}
 			}
 
@@ -1081,13 +1145,19 @@ func (s *Service) propagateAccountsUpdate(identity IdentityRef, identityBeforeAc
 				for _, support := range before[a] {
 					sp := slices.Clone(support)
 					sp = append(sp, i)
-					s.unsetAccountForIdentity(a, o, sp)
+					errE := s.unsetAccountForIdentity(a, o, sp)
+					if errE != nil {
+						return errE
+					}
 				}
 				// Then we add all support from after, this might re-add support from before, too.
 				for _, support := range after[a] {
 					sp := slices.Clone(support)
 					sp = append(sp, i)
-					s.setAccountForIdentity(a, o, sp)
+					errE := s.setAccountForIdentity(a, o, sp)
+					if errE != nil {
+						return errE
+					}
 				}
 			}
 
@@ -1097,11 +1167,17 @@ func (s *Service) propagateAccountsUpdate(identity IdentityRef, identityBeforeAc
 				for _, support := range after[a] {
 					sp := slices.Clone(support)
 					sp = append(sp, i)
-					s.setAccountForIdentity(a, o, sp)
+					errE := s.setAccountForIdentity(a, o, sp)
+					if errE != nil {
+						return errE
+					}
 				}
 			}
 
-			afterAccounts := s.getAccountsForIdentity(o)
+			afterAccounts, errE := s.getAccountsForIdentity(o)
+			if errE != nil {
+				return errE
+			}
 
 			if reflect.DeepEqual(beforeAccounts, afterAccounts) {
 				// If nothing changed, we do not have to recurse for this identity.
@@ -1253,13 +1329,13 @@ func (s *Service) IdentityGetGetAPI(w http.ResponseWriter, req *http.Request, pa
 }
 
 func (s *Service) hasIdentities(_ context.Context, ids mapset.Set[IdentityRef]) mapset.Set[IdentityRef] {
-	s.identitiesMu.RLock()
-	defer s.identitiesMu.RUnlock()
+	s.identities.RLock()
+	defer s.identities.RUnlock()
 
 	unknown := mapset.NewThreadUnsafeSet[IdentityRef]()
 
 	for id := range mapset.Elements(ids) {
-		if _, ok := s.identities[id.ID]; !ok {
+		if _, ok := s.identities.Get(id.ID); !ok {
 			unknown.Add(id)
 		}
 	}
@@ -1272,15 +1348,15 @@ func (s *Service) identityList(ctx context.Context) ([]IdentityRef, errors.E) {
 
 	result := []IdentityRef{}
 
-	s.identitiesMu.RLock()
-	defer s.identitiesMu.RUnlock()
+	s.identities.RLock()
+	defer s.identities.RUnlock()
 
-	// We lock s.identitiesAccessMu inside s.identitiesMu lock to have
+	// We lock s.identitiesAccessMu inside s.identities lock to have
 	// consistent view of identities and accounts.
 	s.identitiesAccessMu.RLock()
 	defer s.identitiesAccessMu.RUnlock()
 
-	for id, data := range s.identities {
+	for id, data := range s.identities.All() {
 		var identity Identity
 		errE := x.UnmarshalWithoutUnknownFields(data, &identity)
 		if errE != nil {
