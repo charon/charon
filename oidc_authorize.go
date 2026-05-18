@@ -207,6 +207,7 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 		RequestedAt:            flow.CreatedAt,
 		AuthTime:               *flow.AuthTime,
 		ClientID:               client.ID,
+		IsIdentitySession:      true,
 		Roles:                  organization.Roles[subject],
 		JWTClaims:              nil,
 		JWTHeaders:             nil,

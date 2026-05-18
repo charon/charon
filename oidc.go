@@ -351,8 +351,12 @@ type OIDCSession struct {
 	RequestedAt time.Time                      `json:"requestedAt"`
 	AuthTime    time.Time                      `json:"authTime"`
 	ClientID    identifier.Identifier          `json:"clientId"`
+	// IsIdentitySession is true when Subject is an organization-scoped identity ID (authorization_code et al.),
+	// false for client_credentials where Subject is an AppID. Used to gate identity-only claims like "roles".
+	IsIdentitySession bool `json:"isIdentitySession"`
 	// Roles assigned to Subject at the time tokens were last issued.
 	// Snapshot from authorize. Refreshed from the organization on each refresh_token grant.
+	// Only emitted as a claim when IsIdentitySession is true.
 	Roles []string `json:"roles"`
 	// Fosite modifies these structs in-place and we have to keep a pointer
 	// to them so that we return always the same struct between calls.
@@ -382,9 +386,12 @@ func (s *OIDCSession) GetJWTClaims() jwt.JWTClaimsContainer { //nolint:ireturn
 	// See: https://github.com/ory/fosite/issues/774
 	s.JWTClaims.IssuedAt = time.Now().UTC()
 
-	// Roles claim is always present regardless of scope, so tokens for an identity consistently reflect organization membership.
+	// Roles claim is included for identity sessions regardless of scope, so tokens for an identity consistently
+	// reflect organization membership. Omitted for client_credentials where Subject is an AppID and roles are not applicable.
 	// TODO: Should we make this configurable? Opt-in or opt-out?
-	s.JWTClaims.Add("roles", s.rolesOrEmpty())
+	if s.IsIdentitySession {
+		s.JWTClaims.Add("roles", s.rolesOrEmpty())
+	}
 
 	return s.JWTClaims
 }
@@ -419,9 +426,12 @@ func (s *OIDCSession) IDTokenClaims() *jwt.IDTokenClaims {
 	// We do not reset IssuedAt every time here because it is already done by fosite.
 	// See: https://github.com/ory/fosite/issues/774
 
-	// Roles claim is always present regardless of scope, so tokens for an identity consistently reflect organization membership.
+	// Roles claim is included for identity sessions regardless of scope, so tokens for an identity consistently
+	// reflect organization membership. Omitted for client_credentials where Subject is an AppID and roles are not applicable.
 	// TODO: Should we make this configurable? Opt-in or opt-out?
-	s.IDTokenClaimsInternal.Add("roles", s.rolesOrEmpty())
+	if s.IsIdentitySession {
+		s.IDTokenClaimsInternal.Add("roles", s.rolesOrEmpty())
+	}
 
 	return s.IDTokenClaimsInternal
 }

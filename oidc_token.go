@@ -64,6 +64,8 @@ func (s *Service) OIDCTokenPostAPI(w http.ResponseWriter, req *http.Request, _ w
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
+		// refresh_token grants are always identity sessions (client_credentials does not issue refresh tokens).
+		session.IsIdentitySession = true
 		session.Roles = organization.Roles[session.Subject]
 	}
 
