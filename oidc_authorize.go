@@ -188,27 +188,26 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 	// have to provide a way for the user to approve those and change call here.
 	grantAllScopes(authorizeRequest)
 
-	organization, errE := s.getOrganization(ctx, flow.OrganizationID)
+	// Look up roles via the client's organization for consistency with the refresh_token path in OIDCTokenPostAPI,
+	// which only has access to the client (no flow). client.OrganizationID equals flow.OrganizationID by construction.
+	client := authorizeRequest.GetClient().(*OIDCClient) //nolint:errcheck,forcetypeassert
+	organization, errE := s.getOrganization(ctx, client.OrganizationID)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return true
 	}
 
 	subject := *flow.Identity.GetOrganization(&flow.OrganizationID).ID
-	roles := organization.Roles[subject]
-	if roles == nil {
-		roles = []string{}
-	}
 
-	oidcSession := &OIDCSession{ //nolint:forcetypeassert
+	oidcSession := &OIDCSession{
 		AccountID:              session.AccountID,
 		Subject:                subject,
 		SessionID:              session.ID,
 		ExpiresAt:              nil,
 		RequestedAt:            flow.CreatedAt,
 		AuthTime:               *flow.AuthTime,
-		ClientID:               authorizeRequest.GetClient().(*OIDCClient).ID, //nolint:errcheck
-		Roles:                  roles,
+		ClientID:               client.ID,
+		Roles:                  organization.Roles[subject],
 		JWTClaims:              nil,
 		JWTHeaders:             nil,
 		IDTokenClaimsInternal:  nil,

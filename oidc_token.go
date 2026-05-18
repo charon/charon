@@ -56,6 +56,7 @@ func (s *Service) OIDCTokenPostAPI(w http.ResponseWriter, req *http.Request, _ w
 
 	if accessRequest.GetGrantTypes().ExactOne("refresh_token") {
 		// Refresh roles from the current organization state so tokens issued via refresh carry up-to-date roles.
+		// Without this, session.Roles would remain the snapshot taken at the original authorize step.
 		session := accessRequest.GetSession().(*OIDCSession) //nolint:errcheck,forcetypeassert
 		client := accessRequest.GetClient().(*OIDCClient)    //nolint:errcheck,forcetypeassert
 		organization, errE := s.getOrganization(ctx, client.OrganizationID)
@@ -63,11 +64,7 @@ func (s *Service) OIDCTokenPostAPI(w http.ResponseWriter, req *http.Request, _ w
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
-		roles := organization.Roles[session.Subject]
-		if roles == nil {
-			roles = []string{}
-		}
-		session.Roles = roles
+		session.Roles = organization.Roles[session.Subject]
 	}
 
 	response, err := oidc.NewAccessResponse(ctx, accessRequest)

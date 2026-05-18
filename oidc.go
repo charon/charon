@@ -351,7 +351,9 @@ type OIDCSession struct {
 	RequestedAt time.Time                      `json:"requestedAt"`
 	AuthTime    time.Time                      `json:"authTime"`
 	ClientID    identifier.Identifier          `json:"clientId"`
-	Roles       []string                       `json:"roles"`
+	// Roles assigned to Subject at the time tokens were last issued.
+	// Snapshot from authorize. Refreshed from the organization on each refresh_token grant.
+	Roles []string `json:"roles"`
 	// Fosite modifies these structs in-place and we have to keep a pointer
 	// to them so that we return always the same struct between calls.
 	JWTClaims  *jwt.JWTClaims `json:"jwtClaims"`
@@ -380,11 +382,9 @@ func (s *OIDCSession) GetJWTClaims() jwt.JWTClaimsContainer { //nolint:ireturn
 	// See: https://github.com/ory/fosite/issues/774
 	s.JWTClaims.IssuedAt = time.Now().UTC()
 
-	roles := s.Roles
-	if roles == nil {
-		roles = []string{}
-	}
-	s.JWTClaims.Add("roles", roles)
+	// Roles claim is always present regardless of scope, so tokens for an identity consistently reflect organization membership.
+	// TODO: Should we make this configurable? Opt-in or opt-out?
+	s.JWTClaims.Add("roles", s.rolesOrEmpty())
 
 	return s.JWTClaims
 }
@@ -419,13 +419,20 @@ func (s *OIDCSession) IDTokenClaims() *jwt.IDTokenClaims {
 	// We do not reset IssuedAt every time here because it is already done by fosite.
 	// See: https://github.com/ory/fosite/issues/774
 
-	roles := s.Roles
-	if roles == nil {
-		roles = []string{}
-	}
-	s.IDTokenClaimsInternal.Add("roles", roles)
+	// Roles claim is always present regardless of scope, so tokens for an identity consistently reflect organization membership.
+	// TODO: Should we make this configurable? Opt-in or opt-out?
+	s.IDTokenClaimsInternal.Add("roles", s.rolesOrEmpty())
 
 	return s.IDTokenClaimsInternal
+}
+
+// rolesOrEmpty returns Roles with nil normalized to an empty slice so the
+// "roles" claim always serializes as a JSON array, never null.
+func (s *OIDCSession) rolesOrEmpty() []string {
+	if s.Roles == nil {
+		return []string{}
+	}
+	return s.Roles
 }
 
 // IDTokenHeaders returns the header of ID token.
