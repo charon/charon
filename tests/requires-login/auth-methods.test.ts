@@ -564,7 +564,7 @@ test.describe.serial("Charon Auth Methods Flows", () => {
     // Get email link from mailpit.
     const confirmLink: string = await extractCodeFromEmail(EMAIL_LINK_REGEX_MATCHER)
 
-    // Navigate to the confirmation link — code is autofilled from the URL hash.
+    // Navigate to the confirmation link - code is autofilled from the URL hash.
     await page.goto(confirmLink)
 
     await expect(submitCodeButton).toBeVisible()
