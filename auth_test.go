@@ -101,8 +101,8 @@ func verifyAllActivities(t *testing.T, ts *httptest.Server, service *charon.Serv
 // This function only checks the latest activity, not the total count of activities.
 func verifyLatestActivity(
 	t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string,
-	expectedType charon.ActivityType, expectedChanges []charon.ActivityChangeType, expectedProviders []charon.Provider,
-	expectedIdentitiesCount, expectedOrgsCount, expectedAppTemplatesCount, expectedOrgAppsCount int,
+	expectedType charon.ActivityType, expectedChanges []charon.ActivityChangeType, expectedProviders []charon.Provider, //nolint:unparam
+	expectedIdentitiesCount, expectedOrgsCount, expectedAppTemplatesCount, expectedOrgAppsCount int, //nolint:unparam
 ) {
 	t.Helper()
 

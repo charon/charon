@@ -67,7 +67,7 @@ func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now
 	return all
 }
 
-func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, appID, organizationID, sessionID, token, typeHint string, identityID identifier.Identifier, lifespan *time.Duration) *introspectAccessTokenResponse {
+func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, appID, organizationID, sessionID, token, typeHint string, identityID identifier.Identifier, lifespan *time.Duration, expectedScope string) *introspectAccessTokenResponse {
 	t.Helper()
 
 	oidcIntrospect, errE := service.ReverseAPI("OIDCIntrospect", nil, nil)
@@ -119,7 +119,7 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 		assert.WithinDuration(t, now.Add(*lifespan), response.ExpirationTime.Time().UTC(), 3*time.Second)
 	}
 	assert.WithinDuration(t, now, response.IssueTime.Time().UTC(), 3*time.Second)
-	assert.Equal(t, "openid profile email offline_access", response.Scope)
+	assert.Equal(t, expectedScope, response.Scope)
 	assert.Equal(t, identityID.String(), response.Subject)
 	assert.Equal(t, []string{organizationID, appID, clientID}, response.Audience)
 	assert.Equal(t, ts.URL, response.Issuer)
@@ -165,10 +165,10 @@ func validateAccessToken(
 	t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time,
 	clientID, appID, organizationID, sessionID, accessToken string,
 	lastTimestamps map[string]time.Time, identityID identifier.Identifier,
-	accessTokenType charon.AccessTokenType, lifespan time.Duration,
+	accessTokenType charon.AccessTokenType, lifespan time.Duration, expectedScope string,
 ) string {
 	t.Helper()
-	response := validateIntrospect(t, ts, service, now, clientID, appID, organizationID, sessionID, accessToken, "access_token", identityID, &lifespan)
+	response := validateIntrospect(t, ts, service, now, clientID, appID, organizationID, sessionID, accessToken, "access_token", identityID, &lifespan, expectedScope)
 
 	if accessTokenType == charon.AccessTokenJWT {
 		all := validateJWT(t, ts, service, now, clientID, appID, organizationID, accessToken, identityID)
@@ -203,7 +203,7 @@ func validateAccessToken(
 			"aud":       []any{organizationID, appID, clientID},
 			"client_id": clientID,
 			"iss":       ts.URL,
-			"scope":     "openid profile email offline_access",
+			"scope":     expectedScope,
 			"sid":       sessionID,
 			"sub":       identityID.String(),
 		}, all)

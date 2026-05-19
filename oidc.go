@@ -246,9 +246,11 @@ func initOIDC(_ context.Context, config *Config, service *Service) (func() *fosi
 			IDTokenIssuer: issuer,
 			// Send some debug messages to clients?
 			SendDebugMessagesToClients: config.Server.Development,
-			ScopeStrategy:              fosite.ExactScopeStrategy,
-			AudienceMatchingStrategy:   fosite.ExactAudienceMatchingStrategy,
-			EnforcePKCE:                true,
+			// WildcardScopeStrategy supports namespaced wildcards like role.* registered on app templates,
+			// which lets a client request "any role.<key> this user holds" without enumerating role names.
+			ScopeStrategy:            fosite.WildcardScopeStrategy,
+			AudienceMatchingStrategy: fosite.ExactAudienceMatchingStrategy,
+			EnforcePKCE:              true,
 			// TODO: Support also "login", "consent", and "select_account".
 			AllowedPromptValues: []string{"none"},
 			TokenURL:            issuer + tokenPath,

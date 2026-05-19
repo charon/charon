@@ -17,7 +17,7 @@ import (
 	"gitlab.com/charon/charon"
 )
 
-func createApplicationTemplate(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string, accessTokenType charon.AccessTokenType, accessTokenLifespan, idTokenLifespan time.Duration, refreshTokenLifespan *time.Duration) *charon.ApplicationTemplate {
+func createApplicationTemplate(t *testing.T, ts *httptest.Server, service *charon.Service, accessToken string, accessTokenType charon.AccessTokenType, accessTokenLifespan, idTokenLifespan time.Duration, refreshTokenLifespan *time.Duration, roles []charon.Role) *charon.ApplicationTemplate {
 	t.Helper()
 
 	applicationTemplateCreate, errE := service.ReverseAPI("ApplicationTemplateCreate", nil, nil)
@@ -28,7 +28,8 @@ func createApplicationTemplate(t *testing.T, ts *httptest.Server, service *charo
 			Name:             "Test application",
 			Description:      "",
 			HomepageTemplate: "https://example.com",
-			IDScopes:         []string{"openid", "profile", "email", "offline_access"},
+			IDScopes:         []string{"openid", "profile", "email", "offline_access", "role.*"},
+			Roles:            roles,
 			Variables:        []charon.Variable{},
 			ClientsPublic:    []charon.ApplicationTemplateClientPublic{},
 			ClientsBackend: []charon.ApplicationTemplateClientBackend{
