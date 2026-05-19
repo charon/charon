@@ -328,10 +328,16 @@ func (s *Service) oidcDiscovery(w http.ResponseWriter, req *http.Request) {
 
 // OIDCDiscovery1Get is the frontend handler for the OIDC discovery endpoint.
 func (s *Service) OIDCDiscovery1Get(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	// Set unconditionally so the cached variant carries CORS headers even when
+	// the request had no Origin (otherwise Firefox can serve a non-CORS cached response).
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	s.oidcDiscovery(w, req)
 }
 
 // OIDCDiscovery2Get is the frontend handler for the OIDC discovery endpoint.
 func (s *Service) OIDCDiscovery2Get(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	// Set unconditionally so the cached variant carries CORS headers even when
+	// the request had no Origin (otherwise Firefox can serve a non-CORS cached response).
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	s.oidcDiscovery(w, req)
 }

@@ -12,6 +12,10 @@ import (
 
 // OIDCKeysGet provides public key used to sign tokens.
 func (s *Service) OIDCKeysGet(w http.ResponseWriter, req *http.Request, _ waf.Params) {
+	// Set unconditionally so the cached variant carries CORS headers even when
+	// the request had no Origin (otherwise Firefox can serve a non-CORS cached response).
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
 	keys := make([]jose.JSONWebKey, 0, len(s.oidcKeys))
 	for _, key := range s.oidcKeys {
 		keys = append(keys, key.Public())
