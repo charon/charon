@@ -33,7 +33,6 @@ type introspectAccessTokenResponse struct {
 	Issuer           string          `json:"iss"`
 	JTI              string          `json:"jti"`
 	Session          string          `json:"sid"`
-	Roles            []string        `json:"roles"`
 }
 
 //nolint:tagliatelle
@@ -68,7 +67,7 @@ func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now
 	return all
 }
 
-func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, appID, organizationID, sessionID, token, typeHint string, identityID identifier.Identifier, lifespan *time.Duration) *introspectAccessTokenResponse {
+func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time, clientID, appID, organizationID, sessionID, token, typeHint string, identityID identifier.Identifier, lifespan *time.Duration, expectedScope string) *introspectAccessTokenResponse {
 	t.Helper()
 
 	oidcIntrospect, errE := service.ReverseAPI("OIDCIntrospect", nil, nil)
@@ -120,7 +119,7 @@ func validateIntrospect(t *testing.T, ts *httptest.Server, service *charon.Servi
 		assert.WithinDuration(t, now.Add(*lifespan), response.ExpirationTime.Time().UTC(), 3*time.Second)
 	}
 	assert.WithinDuration(t, now, response.IssueTime.Time().UTC(), 3*time.Second)
-	assert.Equal(t, "openid profile email offline_access", response.Scope)
+	assert.Equal(t, expectedScope, response.Scope)
 	assert.Equal(t, identityID.String(), response.Subject)
 	assert.Equal(t, []string{organizationID, appID, clientID}, response.Audience)
 	assert.Equal(t, ts.URL, response.Issuer)
@@ -166,10 +165,10 @@ func validateAccessToken(
 	t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time,
 	clientID, appID, organizationID, sessionID, accessToken string,
 	lastTimestamps map[string]time.Time, identityID identifier.Identifier,
-	accessTokenType charon.AccessTokenType, lifespan time.Duration, expectedRoles []string,
+	accessTokenType charon.AccessTokenType, lifespan time.Duration, expectedScope string,
 ) string {
 	t.Helper()
-	response := validateIntrospect(t, ts, service, now, clientID, appID, organizationID, sessionID, accessToken, "access_token", identityID, &lifespan)
+	response := validateIntrospect(t, ts, service, now, clientID, appID, organizationID, sessionID, accessToken, "access_token", identityID, &lifespan, expectedScope)
 
 	if accessTokenType == charon.AccessTokenJWT {
 		all := validateJWT(t, ts, service, now, clientID, appID, organizationID, accessToken, identityID)
@@ -200,16 +199,11 @@ func validateAccessToken(
 		require.NoError(t, errE, "% -+#.1v", errE)
 		delete(all, "jti")
 
-		roles := make([]any, len(expectedRoles))
-		for i, role := range expectedRoles {
-			roles[i] = role
-		}
 		assert.Equal(t, map[string]any{
 			"aud":       []any{organizationID, appID, clientID},
 			"client_id": clientID,
 			"iss":       ts.URL,
-			"roles":     roles,
-			"scope":     "openid profile email offline_access",
+			"scope":     expectedScope,
 			"sid":       sessionID,
 			"sub":       identityID.String(),
 		}, all)
@@ -218,8 +212,6 @@ func validateAccessToken(
 		assert.Equal(t, timestamps["exp"], int64(response.ExpirationTime))
 		assert.Equal(t, timestamps["iat"], int64(response.IssueTime))
 	}
-
-	assert.Equal(t, expectedRoles, response.Roles)
 
 	return response.JTI
 }

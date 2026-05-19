@@ -16,7 +16,7 @@ import (
 	"gitlab.com/charon/charon"
 )
 
-func exchangeCodeForTokens(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, code, codeVerifier string, lifespan time.Duration) (string, string, string, time.Time) {
+func exchangeCodeForTokens(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, code, codeVerifier string, lifespan time.Duration, expectedScope string) (string, string, string, time.Time) {
 	t.Helper()
 
 	oidcToken, errE := service.ReverseAPI("OIDCToken", nil, nil)
@@ -56,13 +56,13 @@ func exchangeCodeForTokens(t *testing.T, ts *httptest.Server, service *charon.Se
 	assert.NotEmpty(t, response.IDToken)
 	assert.NotEmpty(t, response.RefreshToken)
 	assert.InDelta(t, lifespan.Seconds()-1, response.ExpiresIn, 1)
-	assert.Equal(t, "openid profile email offline_access", response.Scope)
+	assert.Equal(t, expectedScope, response.Scope)
 	assert.Equal(t, "bearer", response.TokenType)
 
 	return response.AccessToken, response.IDToken, response.RefreshToken, now
 }
 
-func exchangeRefreshTokenForTokens(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, refreshToken, accessToken string, lifespan time.Duration) (string, string, string, time.Time) {
+func exchangeRefreshTokenForTokens(t *testing.T, ts *httptest.Server, service *charon.Service, clientID, refreshToken, accessToken string, lifespan time.Duration, expectedScope string) (string, string, string, time.Time) {
 	t.Helper()
 
 	oidcToken, errE := service.ReverseAPI("OIDCToken", nil, nil)
@@ -101,7 +101,7 @@ func exchangeRefreshTokenForTokens(t *testing.T, ts *httptest.Server, service *c
 	assert.NotEmpty(t, response.IDToken)
 	assert.NotEmpty(t, response.RefreshToken)
 	assert.InDelta(t, lifespan.Seconds()-1, response.ExpiresIn, 1)
-	assert.Equal(t, "openid profile email offline_access", response.Scope)
+	assert.Equal(t, expectedScope, response.Scope)
 	assert.Equal(t, "bearer", response.TokenType)
 
 	// Previous tokens should not be valid anymore.

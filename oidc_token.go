@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/ory/fosite"
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 )
@@ -46,7 +47,9 @@ func (s *Service) OIDCTokenPostAPI(w http.ResponseWriter, req *http.Request, _ w
 		// and explicit flows this is done in the authorization handler.
 
 		grantAllAudiences(accessRequest)
-		grantAllScopes(accessRequest)
+		// client_credentials tokens never carry roles (Subject is an AppID), so passing nil userRoles is fine,
+		// any role.* / role.<key> in the request would simply not match anything and be dropped.
+		grantRequestedScopes(accessRequest, nil)
 
 		session := accessRequest.GetSession().(*OIDCSession) //nolint:errcheck,forcetypeassert
 		client := accessRequest.GetClient().(*OIDCClient)    //nolint:errcheck,forcetypeassert
@@ -55,8 +58,8 @@ func (s *Service) OIDCTokenPostAPI(w http.ResponseWriter, req *http.Request, _ w
 	}
 
 	if accessRequest.GetGrantTypes().ExactOne("refresh_token") {
-		// Refresh roles from the current organization state so tokens issued via refresh carry up-to-date roles.
-		// Without this, session.Roles would remain the snapshot taken at the original authorize step.
+		// Re-evaluate role.<key> grants against the current organization state so refreshed tokens reflect
+		// roles the user has gained or lost since the original authorize step.
 		session := accessRequest.GetSession().(*OIDCSession) //nolint:errcheck,forcetypeassert
 		client := accessRequest.GetClient().(*OIDCClient)    //nolint:errcheck,forcetypeassert
 		organization, errE := s.getOrganization(ctx, client.OrganizationID)
@@ -64,9 +67,20 @@ func (s *Service) OIDCTokenPostAPI(w http.ResponseWriter, req *http.Request, _ w
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
-		// refresh_token grants are always identity sessions (client_credentials does not issue refresh tokens).
-		session.IsIdentitySession = true
-		session.Roles = organization.Roles[session.Subject]
+
+		// Strip role.<key> scopes inherited from the original grant; grantRequestedScopes re-applies them
+		// based on the current (requested-scopes ∩ user-currently-held-roles) set. Non-role scopes are
+		// preserved because grantRequestedScopes is idempotent via fosite's GrantScope dedup.
+		ar := accessRequest.(*fosite.AccessRequest) //nolint:errcheck,forcetypeassert
+		filtered := ar.GrantedScope[:0]
+		for _, scope := range ar.GrantedScope {
+			if !strings.HasPrefix(scope, roleScopePrefix) {
+				filtered = append(filtered, scope)
+			}
+		}
+		ar.GrantedScope = filtered
+
+		grantRequestedScopes(accessRequest, organization.Roles[session.Subject])
 	}
 
 	response, err := oidc.NewAccessResponse(ctx, accessRequest)

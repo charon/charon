@@ -28,7 +28,7 @@ func createApplicationTemplate(t *testing.T, ts *httptest.Server, service *charo
 			Name:             "Test application",
 			Description:      "",
 			HomepageTemplate: "https://example.com",
-			IDScopes:         []string{"openid", "profile", "email", "offline_access"},
+			IDScopes:         []string{"openid", "profile", "email", "offline_access", "role.*"},
 			Roles:            roles,
 			Variables:        []charon.Variable{},
 			ClientsPublic:    []charon.ApplicationTemplateClientPublic{},

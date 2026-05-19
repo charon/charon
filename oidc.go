@@ -246,9 +246,11 @@ func initOIDC(_ context.Context, config *Config, service *Service) (func() *fosi
 			IDTokenIssuer: issuer,
 			// Send some debug messages to clients?
 			SendDebugMessagesToClients: config.Server.Development,
-			ScopeStrategy:              fosite.ExactScopeStrategy,
-			AudienceMatchingStrategy:   fosite.ExactAudienceMatchingStrategy,
-			EnforcePKCE:                true,
+			// WildcardScopeStrategy supports namespaced wildcards like role.* registered on app templates,
+			// which lets a client request "any role.<key> this user holds" without enumerating role names.
+			ScopeStrategy:            fosite.WildcardScopeStrategy,
+			AudienceMatchingStrategy: fosite.ExactAudienceMatchingStrategy,
+			EnforcePKCE:              true,
 			// TODO: Support also "login", "consent", and "select_account".
 			AllowedPromptValues: []string{"none"},
 			TokenURL:            issuer + tokenPath,
@@ -351,13 +353,6 @@ type OIDCSession struct {
 	RequestedAt time.Time                      `json:"requestedAt"`
 	AuthTime    time.Time                      `json:"authTime"`
 	ClientID    identifier.Identifier          `json:"clientId"`
-	// IsIdentitySession is true when Subject is an organization-scoped identity ID (authorization_code et al.),
-	// false for client_credentials where Subject is an AppID. Used to gate identity-only claims like "roles".
-	IsIdentitySession bool `json:"isIdentitySession"`
-	// Roles assigned to Subject at the time tokens were last issued.
-	// Snapshot from authorize. Refreshed from the organization on each refresh_token grant.
-	// Only emitted as a claim when IsIdentitySession is true.
-	Roles []string `json:"roles"`
 	// Fosite modifies these structs in-place and we have to keep a pointer
 	// to them so that we return always the same struct between calls.
 	JWTClaims  *jwt.JWTClaims `json:"jwtClaims"`
@@ -385,13 +380,6 @@ func (s *OIDCSession) GetJWTClaims() jwt.JWTClaimsContainer { //nolint:ireturn
 	// We reset IssuedAt every time.
 	// See: https://github.com/ory/fosite/issues/774
 	s.JWTClaims.IssuedAt = time.Now().UTC()
-
-	// Roles claim is included for identity sessions regardless of scope, so tokens for an identity consistently
-	// reflect organization membership. Omitted for client_credentials where Subject is an AppID and roles are not applicable.
-	// TODO: Should we make this configurable? Opt-in or opt-out?
-	if s.IsIdentitySession {
-		s.JWTClaims.Add("roles", s.rolesOrEmpty())
-	}
 
 	return s.JWTClaims
 }
@@ -426,23 +414,7 @@ func (s *OIDCSession) IDTokenClaims() *jwt.IDTokenClaims {
 	// We do not reset IssuedAt every time here because it is already done by fosite.
 	// See: https://github.com/ory/fosite/issues/774
 
-	// Roles claim is included for identity sessions regardless of scope, so tokens for an identity consistently
-	// reflect organization membership. Omitted for client_credentials where Subject is an AppID and roles are not applicable.
-	// TODO: Should we make this configurable? Opt-in or opt-out?
-	if s.IsIdentitySession {
-		s.IDTokenClaimsInternal.Add("roles", s.rolesOrEmpty())
-	}
-
 	return s.IDTokenClaimsInternal
-}
-
-// rolesOrEmpty returns Roles with nil normalized to an empty slice so the
-// "roles" claim always serializes as a JSON array, never null.
-func (s *OIDCSession) rolesOrEmpty() []string {
-	if s.Roles == nil {
-		return []string{}
-	}
-	return s.Roles
 }
 
 // IDTokenHeaders returns the header of ID token.

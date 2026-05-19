@@ -154,6 +154,8 @@ func (c *ApplicationTemplateClientPublic) Validate(ctx context.Context, existing
 		c.AdditionalScopes = []string{}
 	}
 
+	// TODO: Tighten to an allowlist (standard OIDC scopes plus approved namespaces like role.* / role.<key>).
+	//       Currently accepts any RFC 6749 scope token, which permits *, role.*.foo, roles.*, etc.
 	for i, scope := range c.AdditionalScopes {
 		if !validScopeRegexp.MatchString(scope) {
 			errE := errors.New("invalid scope")
@@ -242,6 +244,8 @@ func (c *ApplicationTemplateClientBackend) Validate(ctx context.Context, existin
 		c.AdditionalScopes = []string{}
 	}
 
+	// TODO: Tighten to an allowlist (standard OIDC scopes plus approved namespaces like role.* / role.<key>).
+	//       Currently accepts any RFC 6749 scope token, which permits *, role.*.foo, roles.*, etc.
 	for i, scope := range c.AdditionalScopes {
 		if !validScopeRegexp.MatchString(scope) {
 			errE := errors.New("invalid scope")
@@ -338,6 +342,8 @@ func (c *ApplicationTemplateClientService) Validate(_ context.Context, existing 
 		c.AdditionalScopes = []string{}
 	}
 
+	// TODO: Tighten to an allowlist (standard OIDC scopes plus approved namespaces like role.* / role.<key>).
+	//       Currently accepts any RFC 6749 scope token, which permits *, role.*.foo, roles.*, etc.
 	for i, scope := range c.AdditionalScopes {
 		if !validScopeRegexp.MatchString(scope) {
 			errE := errors.New("invalid scope")
@@ -596,6 +602,8 @@ func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *Appl
 		a.IDScopes = []string{}
 	}
 
+	// TODO: Tighten to an allowlist (standard OIDC scopes plus approved namespaces like role.* / role.<key>).
+	//       Currently accepts any RFC 6749 scope token, which permits *, role.*.foo, roles.*, etc.
 	for i, scope := range a.IDScopes {
 		if !validScopeRegexp.MatchString(scope) {
 			errE := errors.New("invalid scope")

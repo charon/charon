@@ -66,17 +66,17 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 			appID := organization.Applications[0].ID.String()
 			clientID := organization.Applications[0].ClientsBackend[0].ID.String()
 
-			accessToken, idToken, refreshToken, identityID, sessionID, now := doOIDCOrganizationFlow(t, ts, service, username, clientID, *organization.ID, tt.accessTokenLifespan, nonce)
+			scope := "openid profile email offline_access"
+			accessToken, idToken, refreshToken, identityID, sessionID, now := doOIDCOrganizationFlow(t, ts, service, username, clientID, *organization.ID, tt.accessTokenLifespan, nonce, scope, scope)
 
 			accessTokenLastTimestamps := map[string]time.Time{}
 			idTokenLastTimestamps := map[string]time.Time{}
-			expectedRoles := []string{}
 
 			uniqueStrings := mapset.NewThreadUnsafeSet[string]()
-			assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, accessToken, accessTokenLastTimestamps, identityID, tt.accessTokenType, tt.accessTokenLifespan, expectedRoles)))
-			assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, nonce, accessToken, idToken, idTokenLastTimestamps, identityID, expectedRoles)))
-			validateIntrospect(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, refreshToken, "refresh_token", identityID, tt.refreshTokenLifespan)
-			validateUserInfo(t, ts, service, accessToken, identityID, expectedRoles)
+			assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, accessToken, accessTokenLastTimestamps, identityID, tt.accessTokenType, tt.accessTokenLifespan, scope)))
+			assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, nonce, accessToken, idToken, idTokenLastTimestamps, identityID)))
+			validateIntrospect(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, refreshToken, "refresh_token", identityID, tt.refreshTokenLifespan, scope)
+			validateUserInfo(t, ts, service, accessToken, identityID)
 
 			// We use assert.WithinDuration with 3 seconds allowed delta, so in 10 iterations every
 			// second we should still catch if any timestamp is not progressing as expected.
@@ -84,12 +84,12 @@ func TestOIDCAuthorizeAndToken(t *testing.T) {
 				// We sleep for a second so that all timestamps increase (they are at second granularity).
 				time.Sleep(time.Second)
 
-				accessToken, idToken, refreshToken, now = exchangeRefreshTokenForTokens(t, ts, service, clientID, refreshToken, accessToken, tt.accessTokenLifespan)
+				accessToken, idToken, refreshToken, now = exchangeRefreshTokenForTokens(t, ts, service, clientID, refreshToken, accessToken, tt.accessTokenLifespan, scope)
 
-				assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, accessToken, accessTokenLastTimestamps, identityID, tt.accessTokenType, tt.accessTokenLifespan, expectedRoles)))
-				assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, nonce, accessToken, idToken, idTokenLastTimestamps, identityID, expectedRoles)))
-				validateIntrospect(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, refreshToken, "refresh_token", identityID, tt.refreshTokenLifespan)
-				validateUserInfo(t, ts, service, accessToken, identityID, expectedRoles)
+				assert.True(t, uniqueStrings.Add(validateAccessToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, accessToken, accessTokenLastTimestamps, identityID, tt.accessTokenType, tt.accessTokenLifespan, scope)))
+				assert.True(t, uniqueStrings.Add(validateIDToken(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, nonce, accessToken, idToken, idTokenLastTimestamps, identityID)))
+				validateIntrospect(t, ts, service, now, clientID, appID, organization.ID.String(), sessionID, refreshToken, "refresh_token", identityID, tt.refreshTokenLifespan, scope)
+				validateUserInfo(t, ts, service, accessToken, identityID)
 			}
 		})
 	}

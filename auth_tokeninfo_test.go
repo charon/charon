@@ -17,7 +17,7 @@ import (
 func validateIDToken(
 	t *testing.T, ts *httptest.Server, service *charon.Service, now time.Time,
 	clientID, appID, organizationID, sessionID, nonce, accessToken, idToken string,
-	lastTimestamps map[string]time.Time, identityID identifier.Identifier, expectedRoles []string,
+	lastTimestamps map[string]time.Time, identityID identifier.Identifier,
 ) string {
 	t.Helper()
 
@@ -67,10 +67,6 @@ func validateIDToken(
 	require.NoError(t, errE, "% -+#.1v", errE)
 	delete(all, "jti")
 
-	roles := make([]any, len(expectedRoles))
-	for i, role := range expectedRoles {
-		roles[i] = role
-	}
 	assert.Equal(t, map[string]any{
 		"aud":                []any{clientID},
 		"client_id":          clientID,
@@ -85,7 +81,6 @@ func validateIDToken(
 		"name":               "User Name",
 		"picture":            "https://example.com/picture.png",
 		"preferred_username": "username",
-		"roles":              roles,
 	}, all)
 
 	return jti

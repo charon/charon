@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -12,6 +13,15 @@ import (
 	"gitlab.com/tozd/identifier"
 	"gitlab.com/tozd/waf"
 )
+
+// roleScopePrefix is the namespace used to expose organization roles as OIDC scopes.
+// A client that registers role.* (matched by fosite's WildcardScopeStrategy) may request:
+//   - role.* to be granted one role.<key> scope for every role the user holds in the organization;
+//   - role.<key> to be granted that specific role if (and only if) the user holds it.
+const roleScopePrefix = "role."
+
+// roleScopeWildcard is the literal scope value clients use to request all of a user's roles.
+const roleScopeWildcard = "role.*"
 
 // grantAllAudiences copies requested audiences to request (and thus to tokens).
 // If no audience was requested, all allowed audiences are granted.
@@ -28,12 +38,27 @@ func grantAllAudiences(request fosite.Requester) {
 	}
 }
 
-// grantAllScopes copies requested scopes to request (and thus to tokens).
-// This function should be called after grantAllAudiences has been called.
-func grantAllScopes(request fosite.Requester) {
-	// Grant all requested scopes (they are already validated that they are a subset of allowed ones for the client).
+// grantRequestedScopes grants requested scopes to the request (and thus to tokens), with role-prefix handling:
+//   - role.* expands to one role.<key> grant per role the user actually holds in the organization;
+//   - role.<key> is granted only if the user holds <key> (unheld role scopes are silently dropped, per OAuth conventions);
+//   - all other scopes are granted as-is (they have already been validated against the client's allowed scopes by fosite).
+//
+// Should be called after grantAllAudiences. userRoles is the slice of role keys the subject holds in the organization.
+func grantRequestedScopes(request fosite.Requester, userRoles []string) {
 	for _, scope := range request.GetRequestedScopes() {
-		request.GrantScope(scope)
+		switch {
+		case scope == roleScopeWildcard:
+			for _, key := range userRoles {
+				request.GrantScope(roleScopePrefix + key)
+			}
+		case strings.HasPrefix(scope, roleScopePrefix):
+			key := strings.TrimPrefix(scope, roleScopePrefix)
+			if slices.Contains(userRoles, key) {
+				request.GrantScope(scope)
+			}
+		default:
+			request.GrantScope(scope)
+		}
 	}
 }
 
@@ -182,12 +207,6 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 
 	grantAllAudiences(authorizeRequest)
 
-	// We always grant all requested scopes because user can choose an identity with values they want
-	// for all requested scopes. This works because currently we support only ID token scopes and
-	// additional scopes for the app itself. If we add scopes for calling into Charon API, we will
-	// have to provide a way for the user to approve those and change call here.
-	grantAllScopes(authorizeRequest)
-
 	// Look up roles via the client's organization for consistency with the refresh_token path in OIDCTokenPostAPI,
 	// which only has access to the client (no flow). client.OrganizationID equals flow.OrganizationID by construction.
 	client := authorizeRequest.GetClient().(*OIDCClient) //nolint:errcheck,forcetypeassert
@@ -199,6 +218,10 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 
 	subject := *flow.Identity.GetOrganization(&flow.OrganizationID).ID
 
+	// We grant all non-role requested scopes (user picks an identity that satisfies them) and expand/validate
+	// role scopes against the user's current roles in the organization.
+	grantRequestedScopes(authorizeRequest, organization.Roles[subject])
+
 	oidcSession := &OIDCSession{
 		AccountID:              session.AccountID,
 		Subject:                subject,
@@ -207,8 +230,6 @@ func (s *Service) completeOIDCAuthorize(w http.ResponseWriter, req *http.Request
 		RequestedAt:            flow.CreatedAt,
 		AuthTime:               *flow.AuthTime,
 		ClientID:               client.ID,
-		IsIdentitySession:      true,
-		Roles:                  organization.Roles[subject],
 		JWTClaims:              nil,
 		JWTHeaders:             nil,
 		IDTokenClaimsInternal:  nil,
