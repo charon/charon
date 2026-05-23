@@ -741,8 +741,9 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 	}
 
 	for orgIdentityID, roles := range o.Roles {
-		// We remove duplicates.
+		// Roles for an identity are semantically a set, so dedup and sort for a canonical representation.
 		o.Roles[orgIdentityID] = removeDuplicates(roles)
+		slices.Sort(o.Roles[orgIdentityID])
 
 		existingRoles := mapset.NewThreadUnsafeSet[string]()
 		if existing != nil {
