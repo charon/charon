@@ -220,6 +220,10 @@ func (s *Service) AuthFlowPasswordCompletePostAPI(w http.ResponseWriter, req *ht
 
 	if errE == nil {
 		// Account already exist.
+		// TODO: Address a side-channel leak of account existence when there are multiple password credentials.
+		//       Iterating all password credentials makes wall-clock time scale with N, which leaks both account existence and credential count.
+		//       The sign-up branch below performs exactly one argon2id derivation, so an attacker can distinguish the two paths via timing for
+		//       accounts with more than one password credential.
 		for _, credential := range account.Credentials[ProviderPassword] {
 			var pc passwordCredential
 			errE := x.Unmarshal(credential.Data, &pc)
