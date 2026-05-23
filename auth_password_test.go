@@ -6,10 +6,12 @@ import (
 	"crypto/cipher"
 	"crypto/ecdh"
 	"crypto/rand"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/stretchr/testify/assert"
@@ -103,6 +105,45 @@ func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emai
 
 	identityID := chooseIdentity(t, ts, service, oid, flowID, "Charon", "Dashboard", signinOrSignout, []charon.Provider{charon.ProviderPassword}, 1, identityEmailOrUsername)
 	return doRedirectAndAccessToken(t, ts, service, oid, flowID, "Charon", "Dashboard", nonce, state, pkceVerifier, config, verifier, signinOrSignout, []charon.Provider{charon.ProviderPassword}), identityID
+}
+
+// TestAuthFlowPasswordSignupAttemptsExhaustion verifies that repeated password-complete
+// submissions on the email sign-up branch consume flow.AuthAttempts just like the
+// wrong-password branch does. Without this parity, an attacker reusing one flow ID
+// could determine account existence by counting how many attempts the flow tolerates
+// tolerates before transitioning to CompletedFailed.
+func TestAuthFlowPasswordSignupAttemptsExhaustion(t *testing.T) {
+	t.Parallel()
+
+	user := identifier.New().String()
+	email := user + "@example.com"
+
+	ts, service, smtpServer, _, _ := startTestServer(t)
+
+	flowID, _, _, _, _, _ := createAuthFlow(t, ts, service) //nolint:dogsled
+
+	// maxAuthAttempts - 1 attempts must each succeed (sign-up branch sends a code each time).
+	for i := range 9 {
+		password := fmt.Appendf(nil, "loopP%02d_x", i)
+		resp := startPasswordSignin(t, ts, service, email, password, nil, flowID, "Charon", "Dashboard")
+		t.Cleanup(func() { _ = resp.Body.Close() })
+		require.Equal(t, http.StatusOK, resp.StatusCode, "iteration %d expected 200", i)
+	}
+
+	// Drain the 9 code e-mails sent during the successful iterations.
+	messages, err := smtpServer.WaitForMessagesAndPurge(9, 5*time.Second)
+	require.NoError(t, err)
+	require.Len(t, messages, 9)
+
+	// 10th attempt: AuthAttempts reaches the cap and the flow fails. No further e-mail sent.
+	resp := startPasswordSignin(t, ts, service, email, []byte("loopP09_x"), nil, flowID, "Charon", "Dashboard")
+	t.Cleanup(func() { _ = resp.Body.Close() })
+
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	var flowResp charon.AuthFlowResponse
+	errE := x.DecodeJSONWithoutUnknownFields(resp.Body, &flowResp)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Contains(t, flowResp.Completed, charon.CompletedFailed)
 }
 
 // encryptPassword mimics client-side encryption as done in browser.

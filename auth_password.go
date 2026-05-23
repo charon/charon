@@ -149,6 +149,8 @@ type AuthFlowPasswordCompleteRequest struct {
 }
 
 // AuthFlowPasswordCompletePostAPI is the API handler to complete the password provider step, POST request.
+//
+//nolint:maintidx
 func (s *Service) AuthFlowPasswordCompletePostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
@@ -351,6 +353,15 @@ func (s *Service) AuthFlowPasswordCompletePostAPI(w http.ResponseWriter, req *ht
 	if strings.Contains(mappedEmailOrUsername, "@") {
 		// Account does not exist and we do have an e-mail address.
 		// We send the code to confirm the e-mail address.
+		// We increment AuthAttempts here, mirroring the wrong-password branch above, so
+		// both branches consume attempts symmetrically. Without this, an attacker who
+		// controls one flow could test account existence by submitting maxAuthAttempts
+		// password-complete attempts and observing whether the flow transitions to
+		// CompletedFailed. The wrong-password branch caps at maxAuthAttempts, the
+		// sign-up branch (without this increment) would not.
+		if !s.increaseAuthAttempts(w, req, flow) {
+			return
+		}
 		s.sendCode(w, req, flow, true, flow.EmailOrUsername, []string{mappedEmailOrUsername}, nil, credentials)
 		return
 	}
