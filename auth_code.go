@@ -422,10 +422,8 @@ func (s *Service) AuthFlowCodeCompletePostAPI(w http.ResponseWriter, req *http.R
 		return
 	}
 
-	var account *Account
 	if flow.Code.AccountID != nil {
-		var errE errors.E
-		account, errE = s.getAccount(ctx, *flow.Code.AccountID)
+		account, errE := s.getAccount(ctx, *flow.Code.AccountID)
 		if errE != nil {
 			// We return internal server error even on ErrAccountNotFound. It is unlikely that
 			// the account got deleted in meantime so there might be some logic error. In any
@@ -433,7 +431,31 @@ func (s *Service) AuthFlowCodeCompletePostAPI(w http.ResponseWriter, req *http.R
 			s.InternalServerErrorWithError(w, req, errE)
 			return
 		}
+		s.completeAuthStep(w, req, true, flow, account, flow.Code.Credentials)
+		return
 	}
 
-	s.completeAuthStep(w, req, true, flow, account, flow.Code.Credentials)
+	// Sign-up branch. flow.Code.AccountID was pinned to nil at password submit, but
+	// the window between then and now spans the user's e-mail round-trip, so an
+	// account for this address may have been created in parallel since. Re-check by
+	// the now-confirmed e-mail credential and, if found, pivot to the existing account
+	// with the same shape as sendCodeForExistingAccount: account != nil,
+	// credentials = nil. The user signs into the existing account and the typed
+	// password is discarded, matching the wrong-password recovery flow.
+	for _, credential := range flow.Code.Credentials {
+		if credential.Provider != ProviderEmail || credential.Confirmed == "" {
+			continue
+		}
+		existing, errE := s.getAccountByCredential(ctx, ProviderEmail, credential.ProviderID)
+		if errors.Is(errE, ErrAccountNotFound) {
+			continue
+		} else if errE != nil {
+			s.InternalServerErrorWithError(w, req, errE)
+			return
+		}
+		s.completeAuthStep(w, req, true, flow, existing, nil)
+		return
+	}
+
+	s.completeAuthStep(w, req, true, flow, nil, flow.Code.Credentials)
 }

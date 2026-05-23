@@ -166,3 +166,73 @@ func completeUserCode(t *testing.T, ts *httptest.Server, service *charon.Service
 	chooseIdentity(t, ts, service, oid, flowID, organization, app, signinOrSignout, providers, 1, emailOrUsername)
 	return doRedirectAndAccessToken(t, ts, service, oid, flowID, organization, app, nonce, state, pkceVerifier, config, verifier, signinOrSignout, providers)
 }
+
+// TestAuthFlowPasswordSignupRaceWithExistingAccount exercises the wide-window race
+// in the email-based password sign-up: two flows start before any account exists,
+// both pin flow.Code.AccountID = nil at password submit, both send codes to the
+// same address. When the second flow's code is confirmed, AuthFlowCodeCompletePostAPI
+// re-checks getAccountByCredential and pivots to the account created by the first
+// flow, signing the user in instead of creating a duplicate account.
+func TestAuthFlowPasswordSignupRaceWithExistingAccount(t *testing.T) {
+	t.Parallel()
+
+	user := identifier.New().String()
+	email := user + "@example.com"
+
+	ts, service, smtpServer, _, _ := startTestServer(t)
+
+	// Two concurrent sign-up flows for the same address with different passwords.
+	flowIDA, _, _, _, _, _ := createAuthFlow(t, ts, service) //nolint:dogsled
+	flowIDB, _, _, _, _, _ := createAuthFlow(t, ts, service) //nolint:dogsled
+
+	respA := startPasswordSignin(t, ts, service, email, []byte("passA1234"), nil, flowIDA, "Charon", "Dashboard")
+	t.Cleanup(func() { _ = respA.Body.Close() })
+	respB := startPasswordSignin(t, ts, service, email, []byte("passB1234"), nil, flowIDB, "Charon", "Dashboard")
+	t.Cleanup(func() { _ = respB.Body.Close() })
+
+	// Both flows have sent a code email to the same inbox.
+	messages, err := smtpServer.WaitForMessagesAndPurge(2, 2*time.Second)
+	require.NoError(t, err)
+	require.Len(t, messages, 2)
+
+	codeFor := func(flowID identifier.Identifier) string {
+		t.Helper()
+		nonAPIAuthFlowGet, errE := service.Reverse("AuthFlowGet", waf.Params{"id": flowID.String()}, nil)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		r, err := regexp.Compile(regexp.QuoteMeta(fmt.Sprintf("%s%s#code=3D", ts.URL, nonAPIAuthFlowGet)) + `(\d+)`)
+		require.NoError(t, err)
+		for _, m := range messages {
+			match := r.FindStringSubmatch(m.MsgRequest())
+			if match != nil {
+				return match[1]
+			}
+		}
+		t.Fatalf("code not found for flow %s", flowID)
+		return ""
+	}
+	codeA := codeFor(flowIDA)
+	codeB := codeFor(flowIDB)
+
+	submitCode := func(flowID identifier.Identifier, code string) *http.Response {
+		t.Helper()
+		authFlowCodeComplete, errE := service.ReverseAPI("AuthFlowCodeComplete", waf.Params{"id": flowID.String()}, nil)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		resp, err := ts.Client().Post(ts.URL+authFlowCodeComplete, "application/json", strings.NewReader(`{"code":"`+code+`"}`)) //nolint:noctx
+		require.NoError(t, err)
+		return resp
+	}
+
+	// Flow A confirms first. Creates the account, signs up.
+	assertSignedUser(t, charon.CompletedSignup, flowIDA, submitCode(flowIDA, codeA)) //nolint:bodyclose
+
+	// Flow B confirms second. Must pivot to the account A just created, completing as a sign-in.
+	assertSignedUser(t, charon.CompletedSignin, flowIDB, submitCode(flowIDB, codeB)) //nolint:bodyclose
+
+	// Both flow sessions point at the same account: no duplicate was created.
+	ctx := t.Context()
+	accountIDA, errE := service.TestingGetAccountIDFromFlow(ctx, flowIDA)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	accountIDB, errE := service.TestingGetAccountIDFromFlow(ctx, flowIDB)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Equal(t, accountIDA, accountIDB)
+}
