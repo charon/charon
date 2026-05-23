@@ -131,6 +131,7 @@ func (p *SiteProvider) initSAMLProvider(ctx context.Context, config *Config) err
 	config.Logger.Debug().Msgf("enabling %s SAML provider", p.Key)
 
 	client := cleanhttp.DefaultPooledClient()
+	// TODO: Set User-Agent header.
 	metadata, errE := fetchSAMLMetadata(ctx, client, p.samlMetadataURL)
 	if errE != nil {
 		return errors.WithMessage(errE, "failed to fetch metadata")

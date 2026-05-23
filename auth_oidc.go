@@ -76,6 +76,7 @@ func (p *SiteProvider) initOIDCProvider(ctx context.Context, config *Config) err
 	config.Logger.Debug().Msgf("enabling %s OIDC provider", p.Key)
 
 	client := cleanhttp.DefaultPooledClient()
+	// TODO: Set User-Agent header.
 	ctx = oidc.ClientContext(ctx, client)
 	provider, err := oidc.NewProvider(ctx, p.oidcIssuer)
 	if err != nil {
@@ -218,6 +219,16 @@ func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, p
 		errors.Details(errE)["provider"] = providerKey
 		s.BadRequestWithError(w, req, errE)
 		return
+	}
+
+	if idToken.AccessTokenHash != "" {
+		err = idToken.VerifyAccessToken(oauth2Token.AccessToken)
+		if err != nil {
+			errE := errors.WithStack(err)
+			errors.Details(errE)["provider"] = providerKey
+			s.BadRequestWithError(w, req, errE)
+			return
+		}
 	}
 
 	var jsonData json.RawMessage
