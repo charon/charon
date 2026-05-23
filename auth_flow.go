@@ -393,6 +393,9 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 	s.TemporaryRedirectGetMethod(w, req, l)
 }
 
+// increaseAuthAttempts returns the opposite boolean value than we usually return when
+// a function handles the request. We generally return true if the function has handled
+// the request, but here we return true if the function managed to increase auth attempts.
 func (s *Service) increaseAuthAttempts(w http.ResponseWriter, req *http.Request, flow *flow) bool {
 	ctx := req.Context()
 
