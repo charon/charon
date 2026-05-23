@@ -111,7 +111,7 @@ func signinUser(t *testing.T, ts *httptest.Server, service *charon.Service, emai
 // submissions on the email sign-up branch consume flow.AuthAttempts just like the
 // wrong-password branch does. Without this parity, an attacker reusing one flow ID
 // could determine account existence by counting how many attempts the flow tolerates
-// tolerates before transitioning to CompletedFailed.
+// before transitioning to CompletedFailed.
 func TestAuthFlowPasswordSignupAttemptsExhaustion(t *testing.T) {
 	t.Parallel()
 
