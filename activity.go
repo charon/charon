@@ -81,7 +81,10 @@ type Activity struct {
 	ApplicationTemplates     []ApplicationTemplateRef     `json:"applicationTemplates,omitempty"`
 	OrganizationApplications []OrganizationApplicationRef `json:"organizationApplications,omitempty"`
 	Roles                    []string                     `json:"roles,omitempty"`
-	Accounts                 []AccountRef                 `json:"-"`
+	// Accounts is persisted so that stored activities can be matched to the account, but it must never
+	// be exposed over the API (handlers have to clear it before writing the activity out) because that
+	// would allow linking identities to accounts.
+	Accounts []AccountRef `json:"accounts,omitempty"`
 
 	// For sign-in activities, this is the list of providers that were used to authenticate the user.
 	Providers []Provider `json:"providers,omitempty"`

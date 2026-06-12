@@ -66,6 +66,19 @@ func TestCreateIdentity(t *testing.T) {
 	assert.Empty(t, createdIdentity.Users)
 	assert.Equal(t, []charon.IdentityRef{identityRef}, createdIdentity.Admins)
 
+	// Identity creation without an identity ID in the context records the account on the activity
+	// and the account has to be preserved when the activity is stored.
+	activities, errE := service.TestingListActivities(t.Context())
+	require.NoError(t, errE, "% -+#.1v", errE)
+	identityCreateActivities := 0
+	for _, activity := range activities {
+		if activity.Type == charon.ActivityIdentityCreate {
+			assert.Equal(t, []charon.AccountRef{{ID: accountID}}, activity.Accounts)
+			identityCreateActivities++
+		}
+	}
+	assert.Equal(t, 1, identityCreateActivities)
+
 	ctx = service.TestingWithIdentityID(ctx, identityID)
 
 	newIdentity = charon.Identity{

@@ -74,8 +74,11 @@ func (c *Credential) Equal(c2 *Credential) bool {
 }
 
 // AccountRef is a reference to an account.
+//
+// Account IDs are internal and must never be exposed over the API because that would
+// allow linking identities to accounts.
 type AccountRef struct {
-	ID identifier.Identifier `json:"-"`
+	ID identifier.Identifier `json:"id"`
 }
 
 // Account represents an account which consists of an identifier and a set of credentials.

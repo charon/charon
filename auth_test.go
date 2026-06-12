@@ -149,4 +149,7 @@ func verifyLatestActivity(
 	assert.Len(t, activity.Organizations, expectedOrgsCount, "Latest activity organizations count mismatch")
 	assert.Len(t, activity.ApplicationTemplates, expectedAppTemplatesCount, "Latest activity application templates count mismatch")
 	assert.Len(t, activity.OrganizationApplications, expectedOrgAppsCount, "Latest activity organization applications count mismatch")
+
+	// Accounts are persisted with stored activities but must never be exposed over the API.
+	assert.Empty(t, activity.Accounts, "Latest activity accounts must not be exposed")
 }
