@@ -212,6 +212,11 @@ func (s *Service) getFlow(_ context.Context, id identifier.Identifier) (*flow, e
 	}
 	var fl flow
 	// We set interface fields so that unmarshal has structs to use.
+	// TODO: Re-set Lang on the reloaded OIDCAuthorizeRequest if we ever configure fosite localized messages.
+	//       Lang is tagged with json:"-" in fosite and is intentionally not persisted: fosite derives it from HTTP request in its
+	//       request constructors and Merge does not copy it. Because we resume the authorization request without going through a
+	//       fosite constructor, the reloaded request has an empty Lang and fosite would fall back to the default language for its
+	//       messages. We do not configure a message catalog, so this currently has no effect.
 	fl.OIDCAuthorizeRequest = new(fosite.AuthorizeRequest)
 	fl.OIDCAuthorizeRequest.Client = new(OIDCClient)
 	fl.OIDCAuthorizeRequest.Session = new(OIDCSession)
