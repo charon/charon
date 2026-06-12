@@ -63,8 +63,9 @@ const (
 	ActivityChangeRolesRemoved ActivityChangeType = "rolesRemoved"
 )
 
-// Activity represents a user activity record.
-type Activity struct {
+// ActivityPublic represents public fields of the activity. Handlers expose activities
+// over the API only through ActivityPublic.
+type ActivityPublic struct {
 	ID *identifier.Identifier `json:"id"`
 	// Base is the slice of strings from which the document ID is derived.
 	Base []string `json:"base"`
@@ -81,10 +82,6 @@ type Activity struct {
 	ApplicationTemplates     []ApplicationTemplateRef     `json:"applicationTemplates,omitempty"`
 	OrganizationApplications []OrganizationApplicationRef `json:"organizationApplications,omitempty"`
 	Roles                    []string                     `json:"roles,omitempty"`
-	// Accounts is persisted so that stored activities can be matched to the account, but it must never
-	// be exposed over the API (handlers have to clear it before writing the activity out) because that
-	// would allow linking identities to accounts.
-	Accounts []AccountRef `json:"accounts,omitempty"`
 
 	// For sign-in activities, this is the list of providers that were used to authenticate the user.
 	Providers []Provider `json:"providers,omitempty"`
@@ -95,6 +92,16 @@ type Activity struct {
 	// Session and request IDs from the waf framework.
 	SessionID identifier.Identifier `json:"sessionId"`
 	RequestID identifier.Identifier `json:"requestId"`
+}
+
+// Activity represents a user activity record.
+type Activity struct {
+	ActivityPublic
+
+	// Accounts is persisted so that stored activities can be matched to the account, but it is private:
+	// it is not in ActivityPublic so it is never exposed over the API because that would allow linking
+	// identities to accounts.
+	Accounts []AccountRef `json:"accounts,omitempty"`
 }
 
 // IsForOrganization returns true if activity is for the given organization.
@@ -159,7 +166,7 @@ func (a *Activity) Validate(_ context.Context, existing *Activity, service *Serv
 }
 
 // Ref returns the activity reference.
-func (a *Activity) Ref() ActivityRef {
+func (a *ActivityPublic) Ref() ActivityRef {
 	return ActivityRef{ID: *a.ID}
 }
 
@@ -269,23 +276,25 @@ func (s *Service) logActivity(
 	}
 
 	activity := &Activity{
-		// Validate will populate these.
-		ID:        nil,
-		Base:      nil,
-		Timestamp: x.Time{},
+		ActivityPublic: ActivityPublic{
+			// Validate will populate these.
+			ID:        nil,
+			Base:      nil,
+			Timestamp: x.Time{},
 
-		Type:                     activityType,
-		Actor:                    actor,
-		Providers:                providers,
-		Changes:                  changes,
-		SessionID:                sessionID,
-		RequestID:                requestID,
-		Identities:               nil,
-		Organizations:            nil,
-		ApplicationTemplates:     nil,
-		OrganizationApplications: nil,
-		Roles:                    nil,
-		Accounts:                 nil,
+			Type:                     activityType,
+			Actor:                    actor,
+			Providers:                providers,
+			Changes:                  changes,
+			SessionID:                sessionID,
+			RequestID:                requestID,
+			Identities:               nil,
+			Organizations:            nil,
+			ApplicationTemplates:     nil,
+			OrganizationApplications: nil,
+			Roles:                    nil,
+		},
+		Accounts: nil,
 	}
 
 	if len(identities) > 0 {
@@ -455,10 +464,8 @@ func (s *Service) ActivityGetGetAPI(w http.ResponseWriter, req *http.Request, pa
 		activity.Identities = identities
 	}
 
-	// We never expose accounts.
-	activity.Accounts = nil
-
-	s.WriteJSON(w, req, activity, nil)
+	// We write out only the public part of the activity so that accounts are never exposed.
+	s.WriteJSON(w, req, activity.ActivityPublic, nil)
 }
 
 // OrganizationActivityGet is the frontend handler for listing organization's activities.
@@ -596,8 +603,6 @@ func (s *Service) OrganizationActivityGetGetAPI(w http.ResponseWriter, req *http
 	}
 	activity.Organizations = organizations
 
-	// We never expose accounts.
-	activity.Accounts = nil
-
-	s.WriteJSON(w, req, activity, nil)
+	// We write out only the public part of the activity so that accounts are never exposed.
+	s.WriteJSON(w, req, activity.ActivityPublic, nil)
 }
