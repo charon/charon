@@ -40,7 +40,7 @@ func initCharonOrganization(ctx context.Context, config *Config, service *Servic
 		organization := Organization{
 			OrganizationPublic: OrganizationPublic{
 				ID:          &charonOrganizationID,
-				Name:        "Charon",
+				Name:        service.title,
 				Description: "",
 			},
 			Admins: []IdentityRef{},
