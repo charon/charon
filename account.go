@@ -20,6 +20,10 @@ type Provider string
 type CredentialPublic struct {
 	// ID is a public-facing ID used to identify the credential in public API.
 	ID identifier.Identifier `json:"id"`
+	// Base is the slice of strings from which the ID is derived. It is standalone (it does not extend
+	// the base of the account) because credentials are created before the account exists and for
+	// passkey credentials the ID doubles as the WebAuthn user handle which is fixed at registration.
+	Base []string `json:"base"`
 	// Provider is the internal provider type name or the name of the third party provider.
 	Provider Provider `json:"provider"`
 	// DisplayName is a user facing string, initially set automatically. For username/email it equals
@@ -77,6 +81,8 @@ type AccountRef struct {
 // Account represents an account which consists of an identifier and a set of credentials.
 type Account struct {
 	ID identifier.Identifier
+	// Base is the slice of strings from which the document ID is derived.
+	Base []string
 
 	Credentials map[Provider][]Credential
 }
@@ -99,14 +105,16 @@ func (a *Account) UpdateCredentials(credentials []Credential) errors.E {
 			if credential.Provider == ProviderPassword {
 				// Password credentials do not use provider ID.
 				if c.ID == credential.ID {
+					credential.Base = c.Base
 					a.Credentials[credential.Provider][i] = credential
 					updated = true
 					break
 				}
 			} else if c.ProviderID == credential.ProviderID {
-				// It is useful to retain the old public ID.
+				// It is useful to retain the old public ID (and with it its base).
 				// TODO: We should make sure that any other credential does not have the same public ID.
 				credential.ID = c.ID
+				credential.Base = c.Base
 				a.Credentials[credential.Provider][i] = credential
 				updated = true
 				break

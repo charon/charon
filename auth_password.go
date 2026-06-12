@@ -261,6 +261,7 @@ func (s *Service) AuthFlowPasswordCompletePostAPI(w http.ResponseWriter, req *ht
 				s.completeAuthStep(w, req, true, flow, account, []Credential{{
 					CredentialPublic: CredentialPublic{
 						ID:          credential.ID,
+						Base:        credential.Base,
 						Provider:    ProviderPassword,
 						DisplayName: credential.DisplayName,
 						Confirmed:   "",
@@ -293,9 +294,11 @@ func (s *Service) AuthFlowPasswordCompletePostAPI(w http.ResponseWriter, req *ht
 			return
 		}
 
+		base := s.newBase("CREDENTIAL")()
 		credentials = append(credentials, Credential{
 			CredentialPublic: CredentialPublic{
-				ID:          identifier.New(),
+				ID:          identifier.From(base...),
+				Base:        base,
 				Provider:    ProviderEmail,
 				DisplayName: flow.EmailOrUsername,
 				// We set Confirmed to the mapped address because this credential is stored
@@ -312,9 +315,11 @@ func (s *Service) AuthFlowPasswordCompletePostAPI(w http.ResponseWriter, req *ht
 			return
 		}
 
+		base := s.newBase("CREDENTIAL")()
 		credentials = append(credentials, Credential{
 			CredentialPublic: CredentialPublic{
-				ID:          identifier.New(),
+				ID:          identifier.From(base...),
+				Base:        base,
 				Provider:    ProviderUsername,
 				DisplayName: flow.EmailOrUsername,
 				Confirmed:   "",
@@ -338,9 +343,11 @@ func (s *Service) AuthFlowPasswordCompletePostAPI(w http.ResponseWriter, req *ht
 		return
 	}
 
+	base := s.newBase("CREDENTIAL")()
 	credentials = append(credentials, Credential{
 		CredentialPublic: CredentialPublic{
-			ID:       identifier.New(),
+			ID:       identifier.From(base...),
+			Base:     base,
 			Provider: ProviderPassword,
 			// TODO: Translate this to user's language.
 			DisplayName: "default password",

@@ -123,7 +123,7 @@ func startOIDCTestServer(t *testing.T) (*httptest.Server, *storage.MemoryStore) 
 	t.Cleanup(ts.Close)
 
 	secret := []byte("my super secret signing password")
-	config := &fosite.Config{
+	config := &fosite.Config{ //nolint:exhaustruct
 		IDTokenIssuer:              ts.URL,
 		SendDebugMessagesToClients: true,
 		EnforcePKCE:                true,
@@ -142,12 +142,15 @@ func startOIDCTestServer(t *testing.T) (*httptest.Server, *storage.MemoryStore) 
 	// We set everything except the redirect. We set redirect in the caller of this function,
 	// when the main testing server is running and we know its address.
 	store.Clients[oidcTestingClientID] = &fosite.DefaultClient{
-		ID:            oidcTestingClientID,
-		Secret:        hashedSecret,
-		GrantTypes:    []string{"authorization_code"},
-		ResponseTypes: []string{"code"},
-		Scopes:        []string{"openid"},
-		Public:        false,
+		ID:             oidcTestingClientID,
+		Secret:         hashedSecret,
+		RotatedSecrets: nil,
+		RedirectURIs:   nil,
+		GrantTypes:     []string{"authorization_code"},
+		ResponseTypes:  []string{"code"},
+		Scopes:         []string{"openid"},
+		Audience:       nil,
+		Public:         false,
 	}
 
 	return ts, store

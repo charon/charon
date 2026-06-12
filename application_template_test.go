@@ -25,6 +25,8 @@ func createApplicationTemplate(t *testing.T, ts *httptest.Server, service *charo
 
 	applicationTemplate := charon.ApplicationTemplate{
 		ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
+			ID:               nil,
+			Base:             nil,
 			Name:             "Test application",
 			Description:      "",
 			HomepageTemplate: "https://example.com",
@@ -34,11 +36,13 @@ func createApplicationTemplate(t *testing.T, ts *httptest.Server, service *charo
 			ClientsPublic:    []charon.ApplicationTemplateClientPublic{},
 			ClientsBackend: []charon.ApplicationTemplateClientBackend{
 				{
+					ID:                      nil,
+					Base:                    nil,
 					Description:             "",
 					AdditionalScopes:        []string{},
+					AccessTokenType:         accessTokenType,
 					TokenEndpointAuthMethod: "client_secret_post",
 					RedirectURITemplates:    []string{"https://example.com/redirect"},
-					AccessTokenType:         accessTokenType,
 					AccessTokenLifespan:     x.Duration(accessTokenLifespan),
 					IDTokenLifespan:         x.Duration(idTokenLifespan),
 					RefreshTokenLifespan:    (*x.Duration)(refreshTokenLifespan),
@@ -46,6 +50,7 @@ func createApplicationTemplate(t *testing.T, ts *httptest.Server, service *charo
 			},
 			ClientsService: []charon.ApplicationTemplateClientService{},
 		},
+		Admins: nil,
 	}
 
 	data, errE := x.MarshalWithoutEscapeHTML(applicationTemplate)
@@ -89,7 +94,8 @@ func createApplicationTemplate(t *testing.T, ts *httptest.Server, service *charo
 func TestApplicationTemplateChanges(t *testing.T) {
 	t.Parallel()
 
-	appID := identifier.New()
+	appBase := []string{"example.com", "APPLICATION_TEMPLATE", identifier.New().String()}
+	appID := identifier.From(appBase...)
 	identity1ID := identifier.New()
 	identity2ID := identifier.New()
 	identity3ID := identifier.New()
@@ -105,17 +111,33 @@ func TestApplicationTemplateChanges(t *testing.T) {
 			name: "no changes",
 			existing: &charon.ApplicationTemplate{
 				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
-					ID:          &appID,
-					Name:        "Test App",
-					Description: "Test description",
+					ID:               &appID,
+					Base:             appBase,
+					Name:             "Test App",
+					Description:      "Test description",
+					HomepageTemplate: "",
+					IDScopes:         nil,
+					Roles:            nil,
+					Variables:        nil,
+					ClientsPublic:    nil,
+					ClientsBackend:   nil,
+					ClientsService:   nil,
 				},
 				Admins: []charon.IdentityRef{{ID: identity1ID}},
 			},
 			updated: &charon.ApplicationTemplate{
 				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
-					ID:          &appID,
-					Name:        "Test App",
-					Description: "Test description",
+					ID:               &appID,
+					Base:             appBase,
+					Name:             "Test App",
+					Description:      "Test description",
+					HomepageTemplate: "",
+					IDScopes:         nil,
+					Roles:            nil,
+					Variables:        nil,
+					ClientsPublic:    nil,
+					ClientsBackend:   nil,
+					ClientsService:   nil,
 				},
 				Admins: []charon.IdentityRef{{ID: identity1ID}},
 			},
@@ -126,17 +148,35 @@ func TestApplicationTemplateChanges(t *testing.T) {
 			name: "name changed",
 			existing: &charon.ApplicationTemplate{
 				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
-					ID:          &appID,
-					Name:        "Old Name",
-					Description: "Test description",
+					ID:               &appID,
+					Base:             appBase,
+					Name:             "Old Name",
+					Description:      "Test description",
+					HomepageTemplate: "",
+					IDScopes:         nil,
+					Roles:            nil,
+					Variables:        nil,
+					ClientsPublic:    nil,
+					ClientsBackend:   nil,
+					ClientsService:   nil,
 				},
+				Admins: nil,
 			},
 			updated: &charon.ApplicationTemplate{
 				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
-					ID:          &appID,
-					Name:        "New Name",
-					Description: "Test description",
+					ID:               &appID,
+					Base:             appBase,
+					Name:             "New Name",
+					Description:      "Test description",
+					HomepageTemplate: "",
+					IDScopes:         nil,
+					Roles:            nil,
+					Variables:        nil,
+					ClientsPublic:    nil,
+					ClientsBackend:   nil,
+					ClientsService:   nil,
 				},
+				Admins: nil,
 			},
 			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangeOtherData},
 			expectedIdentities: []charon.IdentityRef{},
@@ -145,17 +185,35 @@ func TestApplicationTemplateChanges(t *testing.T) {
 			name: "description changed",
 			existing: &charon.ApplicationTemplate{
 				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
-					ID:          &appID,
-					Name:        "Test App",
-					Description: "Old description",
+					ID:               &appID,
+					Base:             appBase,
+					Name:             "Test App",
+					Description:      "Old description",
+					HomepageTemplate: "",
+					IDScopes:         nil,
+					Roles:            nil,
+					Variables:        nil,
+					ClientsPublic:    nil,
+					ClientsBackend:   nil,
+					ClientsService:   nil,
 				},
+				Admins: nil,
 			},
 			updated: &charon.ApplicationTemplate{
 				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
-					ID:          &appID,
-					Name:        "Test App",
-					Description: "New description",
+					ID:               &appID,
+					Base:             appBase,
+					Name:             "Test App",
+					Description:      "New description",
+					HomepageTemplate: "",
+					IDScopes:         nil,
+					Roles:            nil,
+					Variables:        nil,
+					ClientsPublic:    nil,
+					ClientsBackend:   nil,
+					ClientsService:   nil,
 				},
+				Admins: nil,
 			},
 			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangeOtherData},
 			expectedIdentities: []charon.IdentityRef{},
@@ -164,15 +222,33 @@ func TestApplicationTemplateChanges(t *testing.T) {
 			name: "admin added",
 			existing: &charon.ApplicationTemplate{
 				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
-					ID:   &appID,
-					Name: "Test App",
+					ID:               &appID,
+					Base:             appBase,
+					Name:             "Test App",
+					Description:      "",
+					HomepageTemplate: "",
+					IDScopes:         nil,
+					Roles:            nil,
+					Variables:        nil,
+					ClientsPublic:    nil,
+					ClientsBackend:   nil,
+					ClientsService:   nil,
 				},
 				Admins: []charon.IdentityRef{{ID: identity1ID}},
 			},
 			updated: &charon.ApplicationTemplate{
 				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
-					ID:   &appID,
-					Name: "Test App",
+					ID:               &appID,
+					Base:             appBase,
+					Name:             "Test App",
+					Description:      "",
+					HomepageTemplate: "",
+					IDScopes:         nil,
+					Roles:            nil,
+					Variables:        nil,
+					ClientsPublic:    nil,
+					ClientsBackend:   nil,
+					ClientsService:   nil,
 				},
 				Admins: []charon.IdentityRef{{ID: identity1ID}, {ID: identity2ID}},
 			},
@@ -183,15 +259,33 @@ func TestApplicationTemplateChanges(t *testing.T) {
 			name: "admin removed",
 			existing: &charon.ApplicationTemplate{
 				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
-					ID:   &appID,
-					Name: "Test App",
+					ID:               &appID,
+					Base:             appBase,
+					Name:             "Test App",
+					Description:      "",
+					HomepageTemplate: "",
+					IDScopes:         nil,
+					Roles:            nil,
+					Variables:        nil,
+					ClientsPublic:    nil,
+					ClientsBackend:   nil,
+					ClientsService:   nil,
 				},
 				Admins: []charon.IdentityRef{{ID: identity1ID}, {ID: identity2ID}},
 			},
 			updated: &charon.ApplicationTemplate{
 				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
-					ID:   &appID,
-					Name: "Test App",
+					ID:               &appID,
+					Base:             appBase,
+					Name:             "Test App",
+					Description:      "",
+					HomepageTemplate: "",
+					IDScopes:         nil,
+					Roles:            nil,
+					Variables:        nil,
+					ClientsPublic:    nil,
+					ClientsBackend:   nil,
+					ClientsService:   nil,
 				},
 				Admins: []charon.IdentityRef{{ID: identity1ID}},
 			},
@@ -202,17 +296,33 @@ func TestApplicationTemplateChanges(t *testing.T) {
 			name: "complex scenario with multiple changes",
 			existing: &charon.ApplicationTemplate{
 				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
-					ID:          &appID,
-					Name:        "Old Name",
-					Description: "Old description",
+					ID:               &appID,
+					Base:             appBase,
+					Name:             "Old Name",
+					Description:      "Old description",
+					HomepageTemplate: "",
+					IDScopes:         nil,
+					Roles:            nil,
+					Variables:        nil,
+					ClientsPublic:    nil,
+					ClientsBackend:   nil,
+					ClientsService:   nil,
 				},
 				Admins: []charon.IdentityRef{{ID: identity1ID}, {ID: identity2ID}},
 			},
 			updated: &charon.ApplicationTemplate{
 				ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
-					ID:          &appID,
-					Name:        "New Name",
-					Description: "New description",
+					ID:               &appID,
+					Base:             appBase,
+					Name:             "New Name",
+					Description:      "New description",
+					HomepageTemplate: "",
+					IDScopes:         nil,
+					Roles:            nil,
+					Variables:        nil,
+					ClientsPublic:    nil,
+					ClientsBackend:   nil,
+					ClientsService:   nil,
 				},
 				Admins: []charon.IdentityRef{{ID: identity1ID}, {ID: identity3ID}},
 			},
@@ -249,21 +359,21 @@ func TestRoleValidate(t *testing.T) {
 		role    charon.Role
 		wantErr string
 	}{
-		{name: "valid two character key", role: charon.Role{Key: "ad"}},
-		{name: "valid alphanumeric key", role: charon.Role{Key: "admin"}},
-		{name: "valid mixed case key", role: charon.Role{Key: "AdminUser"}},
-		{name: "valid key with hyphen", role: charon.Role{Key: "user-1"}},
-		{name: "valid key with underscore", role: charon.Role{Key: "user_admin"}},
-		{name: "valid key ending in digit", role: charon.Role{Key: "Admin99"}},
-		{name: "empty key", role: charon.Role{Key: ""}, wantErr: "key is required"},
-		{name: "single character key", role: charon.Role{Key: "a"}, wantErr: "invalid key"},
-		{name: "key starting with digit", role: charon.Role{Key: "1admin"}, wantErr: "invalid key"},
-		{name: "key starting with underscore", role: charon.Role{Key: "_admin"}, wantErr: "invalid key"},
-		{name: "key starting with hyphen", role: charon.Role{Key: "-admin"}, wantErr: "invalid key"},
-		{name: "key ending with underscore", role: charon.Role{Key: "admin_"}, wantErr: "invalid key"},
-		{name: "key ending with hyphen", role: charon.Role{Key: "admin-"}, wantErr: "invalid key"},
-		{name: "key with space", role: charon.Role{Key: "admin user"}, wantErr: "invalid key"},
-		{name: "key with disallowed character", role: charon.Role{Key: "admin@org"}, wantErr: "invalid key"},
+		{name: "valid two character key", role: charon.Role{Key: "ad", Description: ""}, wantErr: ""},
+		{name: "valid alphanumeric key", role: charon.Role{Key: "admin", Description: ""}, wantErr: ""},
+		{name: "valid mixed case key", role: charon.Role{Key: "AdminUser", Description: ""}, wantErr: ""},
+		{name: "valid key with hyphen", role: charon.Role{Key: "user-1", Description: ""}, wantErr: ""},
+		{name: "valid key with underscore", role: charon.Role{Key: "user_admin", Description: ""}, wantErr: ""},
+		{name: "valid key ending in digit", role: charon.Role{Key: "Admin99", Description: ""}, wantErr: ""},
+		{name: "empty key", role: charon.Role{Key: "", Description: ""}, wantErr: "key is required"},
+		{name: "single character key", role: charon.Role{Key: "a", Description: ""}, wantErr: "invalid key"},
+		{name: "key starting with digit", role: charon.Role{Key: "1admin", Description: ""}, wantErr: "invalid key"},
+		{name: "key starting with underscore", role: charon.Role{Key: "_admin", Description: ""}, wantErr: "invalid key"},
+		{name: "key starting with hyphen", role: charon.Role{Key: "-admin", Description: ""}, wantErr: "invalid key"},
+		{name: "key ending with underscore", role: charon.Role{Key: "admin_", Description: ""}, wantErr: "invalid key"},
+		{name: "key ending with hyphen", role: charon.Role{Key: "admin-", Description: ""}, wantErr: "invalid key"},
+		{name: "key with space", role: charon.Role{Key: "admin user", Description: ""}, wantErr: "invalid key"},
+		{name: "key with disallowed character", role: charon.Role{Key: "admin@org", Description: ""}, wantErr: "invalid key"},
 	}
 
 	for _, tt := range tests {
@@ -287,6 +397,8 @@ func TestRoleValidate(t *testing.T) {
 func TestApplicationTemplateValidateRoles(t *testing.T) {
 	t.Parallel()
 
+	_, service, _, _, _ := startTestServer(t) //nolint:dogsled
+
 	tests := []struct {
 		name          string
 		roles         []charon.Role
@@ -297,16 +409,19 @@ func TestApplicationTemplateValidateRoles(t *testing.T) {
 			name:          "nil roles normalized to empty slice",
 			roles:         nil,
 			expectedRoles: []charon.Role{},
+			wantErr:       "",
 		},
 		{
 			name:          "empty roles slice stays empty",
 			roles:         []charon.Role{},
 			expectedRoles: []charon.Role{},
+			wantErr:       "",
 		},
 		{
 			name:          "single valid role",
 			roles:         []charon.Role{{Key: "admin", Description: "Admin role"}},
 			expectedRoles: []charon.Role{{Key: "admin", Description: "Admin role"}},
+			wantErr:       "",
 		},
 		{
 			name: "multiple distinct valid roles",
@@ -320,6 +435,7 @@ func TestApplicationTemplateValidateRoles(t *testing.T) {
 				{Key: "viewer", Description: ""},
 				{Key: "editor", Description: ""},
 			},
+			wantErr: "",
 		},
 		{
 			name: "duplicate role keys rejected",
@@ -327,17 +443,20 @@ func TestApplicationTemplateValidateRoles(t *testing.T) {
 				{Key: "admin", Description: "first"},
 				{Key: "admin", Description: "second"},
 			},
-			wantErr: "duplicate role key",
+			expectedRoles: nil,
+			wantErr:       "duplicate role key",
 		},
 		{
-			name:    "invalid role key (single character) rejected",
-			roles:   []charon.Role{{Key: "a"}},
-			wantErr: "role: invalid key",
+			name:          "invalid role key (single character) rejected",
+			roles:         []charon.Role{{Key: "a", Description: ""}},
+			expectedRoles: nil,
+			wantErr:       "role: invalid key",
 		},
 		{
-			name:    "empty role key rejected",
-			roles:   []charon.Role{{Key: ""}},
-			wantErr: "role: key is required",
+			name:          "empty role key rejected",
+			roles:         []charon.Role{{Key: "", Description: ""}},
+			expectedRoles: nil,
+			wantErr:       "role: key is required",
 		},
 	}
 
@@ -346,10 +465,19 @@ func TestApplicationTemplateValidateRoles(t *testing.T) {
 			t.Parallel()
 
 			template := &charon.ApplicationTemplatePublic{
-				Name:  "Test Template",
-				Roles: tt.roles,
+				ID:               nil,
+				Base:             nil,
+				Name:             "Test Template",
+				Description:      "",
+				HomepageTemplate: "",
+				IDScopes:         nil,
+				Roles:            tt.roles,
+				Variables:        nil,
+				ClientsPublic:    nil,
+				ClientsBackend:   nil,
+				ClientsService:   nil,
 			}
-			errE := template.Validate(t.Context(), nil)
+			errE := template.Validate(t.Context(), nil, service)
 
 			if tt.wantErr == "" {
 				require.NoError(t, errE, "% -+#.1v", errE)

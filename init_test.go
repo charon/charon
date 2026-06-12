@@ -35,19 +35,41 @@ func TestCharonOrganizationRestart(t *testing.T) {
 		logger := zerolog.New(zerolog.NewTestWriter(t)).With().Timestamp().Logger()
 		config := charon.Config{
 			LoggingConfig: z.LoggingConfig{
-				Logger: logger,
+				Logger:      logger,
+				WithContext: nil,
+				Logging:     z.Logging{},
 			},
+			Version: false,
+			Config:  "",
 			Server: waf.Server[*charon.Site]{
-				HTTPS: waf.HTTPS{
-					CertFile: certPath,
-					KeyFile:  keyPath,
-					Listen:   "localhost:8080",
-				},
+				Logger:      zerolog.Logger{},
 				Development: true,
+				ProxyTo:     "",
+				HTTPS: waf.HTTPS{
+					CertFile:             certPath,
+					KeyFile:              keyPath,
+					LetsEncryptCache:     "",
+					Listen:               "localhost:8080",
+					ExternalPort:         0,
+					ACMEDirectory:        "",
+					ACMEDirectoryRootCAs: "",
+				},
+				HTTP:        waf.HTTP{},
+				HTTPSServer: nil,
+				HTTPServer:  nil,
 			},
-			Title:         title,
-			ExternalPort:  8080,
-			DataDirectory: dataDir,
+			Sites:          nil,
+			Domains:        nil,
+			MainDomain:     "",
+			ExternalPort:   8080,
+			Secret:         nil,
+			DataDirectory:  dataDir,
+			Providers:      charon.Providers{},
+			Title:          title,
+			TermsOfService: nil,
+			PrivacyPolicy:  nil,
+			Mail:           charon.Mail{},
+			OIDC:           charon.OIDC{},
 		}
 
 		service, errE := config.Init(t.Context(), testFiles)

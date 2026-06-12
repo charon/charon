@@ -176,6 +176,8 @@ func createMockPasskeyCredential(t *testing.T, ts *httptest.Server, authFlowResp
 		Type:         protocol.CreateCeremony,
 		Challenge:    authFlowResponsePasskey.CreateOptions.Response.Challenge.String(),
 		Origin:       ts.URL,
+		TopOrigin:    "",
+		CrossOrigin:  false,
 		TokenBinding: nil,
 		Hint:         "",
 	}
@@ -224,8 +226,11 @@ func createMockPasskeyCredential(t *testing.T, ts *httptest.Server, authFlowResp
 				AuthenticatorResponse: protocol.AuthenticatorResponse{
 					ClientDataJSON: byteClientDataJSON,
 				},
-				AttestationObject: byteAttObject,
-				Transports:        []string{"fake"},
+				Transports:         []string{"fake"},
+				AuthenticatorData:  nil,
+				PublicKey:          nil,
+				PublicKeyAlgorithm: 0,
+				AttestationObject:  byteAttObject,
 			},
 		},
 	}
@@ -273,6 +278,8 @@ func signinMockPasskey(t *testing.T, ts *httptest.Server, service *charon.Servic
 		Type:         protocol.AssertCeremony,
 		Challenge:    authFlowResponse.Passkey.GetOptions.Response.Challenge.String(),
 		Origin:       ts.URL,
+		TopOrigin:    "",
+		CrossOrigin:  false,
 		TokenBinding: nil,
 		Hint:         "",
 	}

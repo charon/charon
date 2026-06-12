@@ -253,9 +253,11 @@ func (s *Service) handleOIDCCallback(w http.ResponseWriter, req *http.Request, p
 		return
 	}
 
+	base := s.newBase("CREDENTIAL")()
 	credentials := []Credential{{
 		CredentialPublic: CredentialPublic{
-			ID:          identifier.New(),
+			ID:          identifier.From(base...),
+			Base:        base,
 			Provider:    providerKey,
 			DisplayName: displayName,
 			Confirmed:   "",

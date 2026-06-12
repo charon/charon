@@ -518,6 +518,75 @@ func initWithHost[T any](config *Config, domain string, init func(string) T) (fu
 	}), nil
 }
 
+// newBase returns a function which generates a base for deriving a new document ID. The base contains
+// the domain of the service, the name of what the ID identifies, and a random value. A function is
+// returned so that the random value is generated only when the base is needed.
+//
+// Base-derived IDs are used for content documents, those which are persisted without expiration.
+// Objects with a TTL are control-flow state and use plain random identifiers because they can be
+// safely dropped.
+func (s *Service) newBase(name string) func() []string {
+	return func() []string {
+		return []string{s.domain, name, identifier.New().String()}
+	}
+}
+
+// newChildBase returns a function which generates a base for deriving the ID of an object nested inside
+// a document. It extends the parent document's base with the name of what the ID identifies and a random
+// value. A function is returned so that the random value is generated only when the base is needed.
+func newChildBase(parentBase []string, name string) func() []string {
+	return func() []string {
+		base := slices.Clone(parentBase)
+		return append(base, name, identifier.New().String())
+	}
+}
+
+// validateIDBase validates the ID and base fields of a payload against the existing object.
+// For a new object (when hasExisting is false) it calls newBase to get the base and derives the ID from it.
+// newBase is a function so that the base is generated only when needed.
+func validateIDBase(
+	newBase func() []string, id **identifier.Identifier, base *[]string,
+	hasExisting bool, existingID *identifier.Identifier, existingBase []string,
+) errors.E {
+	if !hasExisting {
+		if *id != nil {
+			errE := errors.New("ID provided for new document")
+			errors.Details(errE)["id"] = **id
+			return errE
+		}
+		if *base != nil {
+			errE := errors.New("base provided for new document")
+			errors.Details(errE)["base"] = *base
+			return errE
+		}
+		*base = newBase()
+		i := identifier.From(*base...)
+		*id = &i
+	} else if *id == nil {
+		// This should not really happen because we fetch existing based on the ID.
+		return errors.New("ID missing for existing document")
+	} else if existingID == nil {
+		// This should not really happen because we always store documents with ID.
+		return errors.New("ID missing for existing document")
+	} else if **id != *existingID {
+		// This should not really happen because we fetch existing based on the ID.
+		errE := errors.New("payload ID does not match existing ID")
+		errors.Details(errE)["payload"] = **id
+		errors.Details(errE)["existing"] = *existingID
+		return errE
+	} else if *base == nil {
+		// Base is server-managed so we allow payloads without it.
+		*base = slices.Clone(existingBase)
+	} else if !slices.Equal(*base, existingBase) {
+		errE := errors.New("payload base does not match existing base")
+		errors.Details(errE)["payload"] = *base
+		errors.Details(errE)["existing"] = existingBase
+		return errE
+	}
+
+	return nil
+}
+
 func hasConnectionUpgrade(req *http.Request) bool {
 	for value := range strings.SplitSeq(req.Header.Get("Connection"), ",") {
 		if strings.ToLower(strings.TrimSpace(value)) == "upgrade" {

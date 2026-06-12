@@ -114,10 +114,11 @@ func createAuthFlow(t *testing.T, ts *httptest.Server, service *charon.Service) 
 	require.NoError(t, err)
 
 	config := &oauth2.Config{
-		ClientID:    serviceContext.ClientID,
-		RedirectURL: serviceContext.RedirectURI,
-		Endpoint:    provider.Endpoint(),
-		Scopes:      []string{"openid", "profile", "email"},
+		ClientID:     serviceContext.ClientID,
+		ClientSecret: "",
+		Endpoint:     provider.Endpoint(),
+		RedirectURL:  serviceContext.RedirectURI,
+		Scopes:       []string{"openid", "profile", "email"},
 	}
 
 	nonce := identifier.New().String()
@@ -155,7 +156,7 @@ func createAuthFlow(t *testing.T, ts *httptest.Server, service *charon.Service) 
 		assertFlowResponse(t, ts, service, resp, nil, []charon.Completed{}, nil, "", assertCharonDashboard)
 	}
 
-	return flowID, nonce, state, pkceVerifier, config, provider.Verifier(&oidc.Config{ClientID: serviceContext.ClientID})
+	return flowID, nonce, state, pkceVerifier, config, provider.Verifier(&oidc.Config{ClientID: serviceContext.ClientID}) //nolint:exhaustruct
 }
 
 func createIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, flowID identifier.Identifier) charon.IdentityRef {
@@ -180,11 +181,13 @@ func createIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, 
 		type emailCredential struct{}
 		jsonData, e := x.MarshalWithoutEscapeHTML(emailCredential{})
 		require.NoError(t, e, "% -+#.1v", e)
+		credentialBase := []string{"localhost", "CREDENTIAL", identifier.New().String()}
 		account.Credentials[charon.ProviderEmail] = append(
 			account.Credentials[charon.ProviderEmail],
 			charon.Credential{
 				CredentialPublic: charon.CredentialPublic{
-					ID:          identifier.New(),
+					ID:          identifier.From(credentialBase...),
+					Base:        credentialBase,
 					Provider:    charon.ProviderEmail,
 					DisplayName: testEmail,
 					Confirmed:   testEmail,
@@ -210,6 +213,7 @@ func createIdentity(t *testing.T, ts *httptest.Server, service *charon.Service, 
 			FullName:   "User Name",
 			PictureURL: "https://example.com/picture.png",
 		},
+		Base:          nil,
 		Description:   "",
 		Users:         nil,
 		Admins:        nil,

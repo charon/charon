@@ -264,8 +264,10 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 			return
 		}
 
+		accountBase := s.newBase("ACCOUNT")()
 		account = &Account{
-			ID:          identifier.New(),
+			ID:          identifier.From(accountBase...),
+			Base:        accountBase,
 			Credentials: map[Provider][]Credential{},
 		}
 		for _, credential := range credentials {

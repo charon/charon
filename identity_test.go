@@ -22,17 +22,27 @@ func TestCreateIdentity(t *testing.T) {
 
 	newIdentity := charon.Identity{
 		IdentityPublic: charon.IdentityPublic{
-			Username: "newuser",
-			Email:    "newuser@example.com",
+			ID:         nil,
+			Username:   "newuser",
+			Email:      "newuser@example.com",
+			GivenName:  "",
+			FullName:   "",
+			PictureURL: "",
 		},
+		Base:          nil,
+		Description:   "",
+		Users:         nil,
+		Admins:        nil,
+		Organizations: nil,
 	}
 
-	accountID := identifier.New()
+	accountBase := []string{"localhost", "ACCOUNT", identifier.New().String()}
+	accountID := identifier.From(accountBase...)
 	ctx := service.TestingWithAccountID(t.Context(), accountID)
 	ctx = service.TestingWithSessionID(ctx)
 	ctx = service.TestingWithRequestID(ctx)
 
-	account := createTestAccountWithConfirmedEmail(t, accountID, "newuser@example.com")
+	account := createTestAccountWithConfirmedEmail(t, accountBase, "newuser@example.com")
 	errE := service.TestingSetAccount(ctx, account)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
@@ -60,12 +70,21 @@ func TestCreateIdentity(t *testing.T) {
 
 	newIdentity = charon.Identity{
 		IdentityPublic: charon.IdentityPublic{
-			Username: "another",
-			Email:    "another@example.com",
+			ID:         nil,
+			Username:   "another",
+			Email:      "another@example.com",
+			GivenName:  "",
+			FullName:   "",
+			PictureURL: "",
 		},
+		Base:          nil,
+		Description:   "",
+		Users:         nil,
+		Admins:        nil,
+		Organizations: nil,
 	}
 
-	account = createTestAccountWithConfirmedEmail(t, accountID, "another@example.com")
+	account = createTestAccountWithConfirmedEmail(t, accountBase, "another@example.com")
 	errE = service.TestingSetAccount(ctx, account)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
@@ -102,7 +121,21 @@ func TestCreateIdentity(t *testing.T) {
 func createTestIdentity(t *testing.T, service *charon.Service, ctx context.Context) identifier.Identifier { //nolint:revive
 	t.Helper()
 
-	newIdentity := charon.Identity{IdentityPublic: charon.IdentityPublic{Username: identifier.New().String()}}
+	newIdentity := charon.Identity{
+		IdentityPublic: charon.IdentityPublic{
+			ID:         nil,
+			Username:   identifier.New().String(),
+			Email:      "",
+			GivenName:  "",
+			FullName:   "",
+			PictureURL: "",
+		},
+		Base:          nil,
+		Description:   "",
+		Users:         nil,
+		Admins:        nil,
+		Organizations: nil,
+	}
 	errE := service.TestingCreateIdentity(ctx, &newIdentity)
 	require.NoError(t, errE, "% -+#.1v", errE)
 	return *newIdentity.ID
@@ -866,7 +899,8 @@ func TestCyclicIdentityAccess(t *testing.T) {
 func TestIdentityChanges(t *testing.T) { //nolint:maintidx
 	t.Parallel()
 
-	identityID := identifier.New()
+	identityBase := []string{"example.com", "IDENTITY", identifier.New().String()}
+	identityID := identifier.From(identityBase...)
 	identity1ID := identifier.New()
 	identity2ID := identifier.New()
 	identity3ID := identifier.New()
@@ -888,34 +922,46 @@ func TestIdentityChanges(t *testing.T) { //nolint:maintidx
 			name: "no changes",
 			existing: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
-					Email:    "test@example.com",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "test@example.com",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
+				Base:        identityBase,
 				Description: "Test description",
 				Users:       []charon.IdentityRef{{ID: identity1ID}},
 				Admins:      []charon.IdentityRef{{ID: identity2ID}},
 				Organizations: []charon.IdentityOrganization{
 					{
-						Organization: charon.OrganizationRef{ID: org1ID},
+						ID:           nil,
+						Base:         nil,
 						Active:       true,
+						Organization: charon.OrganizationRef{ID: org1ID},
 						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
 					},
 				},
 			},
 			updated: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
-					Email:    "test@example.com",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "test@example.com",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
+				Base:        identityBase,
 				Description: "Test description",
 				Users:       []charon.IdentityRef{{ID: identity1ID}},
 				Admins:      []charon.IdentityRef{{ID: identity2ID}},
 				Organizations: []charon.IdentityOrganization{
 					{
-						Organization: charon.OrganizationRef{ID: org1ID},
+						ID:           nil,
+						Base:         nil,
 						Active:       true,
+						Organization: charon.OrganizationRef{ID: org1ID},
 						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
 					},
 				},
@@ -929,19 +975,33 @@ func TestIdentityChanges(t *testing.T) { //nolint:maintidx
 			name: "username changed",
 			existing: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
-					Email:    "test@example.com",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "test@example.com",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
-				Description: "Old description",
+				Base:          identityBase,
+				Description:   "Old description",
+				Users:         nil,
+				Admins:        nil,
+				Organizations: nil,
 			},
 			updated: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "newuser",
-					Email:    "test@example.com",
+					ID:         &identityID,
+					Username:   "newuser",
+					Email:      "test@example.com",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
-				Description: "Old description",
+				Base:          identityBase,
+				Description:   "Old description",
+				Users:         nil,
+				Admins:        nil,
+				Organizations: nil,
 			},
 			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangeOtherData},
 			expectedIdentities: []charon.IdentityRef{},
@@ -952,19 +1012,33 @@ func TestIdentityChanges(t *testing.T) { //nolint:maintidx
 			name: "description changed",
 			existing: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
-					Email:    "test@example.com",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "test@example.com",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
-				Description: "Old description",
+				Base:          identityBase,
+				Description:   "Old description",
+				Users:         nil,
+				Admins:        nil,
+				Organizations: nil,
 			},
 			updated: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
-					Email:    "test@example.com",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "test@example.com",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
-				Description: "New description",
+				Base:          identityBase,
+				Description:   "New description",
+				Users:         nil,
+				Admins:        nil,
+				Organizations: nil,
 			},
 			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangeOtherData},
 			expectedIdentities: []charon.IdentityRef{},
@@ -975,19 +1049,33 @@ func TestIdentityChanges(t *testing.T) { //nolint:maintidx
 			name: "admin added",
 			existing: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
-				Users:  []charon.IdentityRef{{ID: identity1ID}},
-				Admins: []charon.IdentityRef{},
+				Base:          identityBase,
+				Description:   "",
+				Users:         []charon.IdentityRef{{ID: identity1ID}},
+				Admins:        []charon.IdentityRef{},
+				Organizations: nil,
 			},
 			updated: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
-				Users:  []charon.IdentityRef{{ID: identity1ID}},
-				Admins: []charon.IdentityRef{{ID: identity2ID}},
+				Base:          identityBase,
+				Description:   "",
+				Users:         []charon.IdentityRef{{ID: identity1ID}},
+				Admins:        []charon.IdentityRef{{ID: identity2ID}},
+				Organizations: nil,
 			},
 			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangePermissionsAdded},
 			expectedIdentities: []charon.IdentityRef{{ID: identity2ID}},
@@ -998,19 +1086,33 @@ func TestIdentityChanges(t *testing.T) { //nolint:maintidx
 			name: "user added",
 			existing: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
-				Users:  []charon.IdentityRef{{ID: identity1ID}},
-				Admins: []charon.IdentityRef{},
+				Base:          identityBase,
+				Description:   "",
+				Users:         []charon.IdentityRef{{ID: identity1ID}},
+				Admins:        []charon.IdentityRef{},
+				Organizations: nil,
 			},
 			updated: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
-				Users:  []charon.IdentityRef{{ID: identity1ID}, {ID: identity3ID}},
-				Admins: []charon.IdentityRef{},
+				Base:          identityBase,
+				Description:   "",
+				Users:         []charon.IdentityRef{{ID: identity1ID}, {ID: identity3ID}},
+				Admins:        []charon.IdentityRef{},
+				Organizations: nil,
 			},
 			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangePermissionsAdded},
 			expectedIdentities: []charon.IdentityRef{{ID: identity3ID}},
@@ -1021,19 +1123,33 @@ func TestIdentityChanges(t *testing.T) { //nolint:maintidx
 			name: "admin removed",
 			existing: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
-				Users:  []charon.IdentityRef{{ID: identity1ID}},
-				Admins: []charon.IdentityRef{{ID: identity2ID}},
+				Base:          identityBase,
+				Description:   "",
+				Users:         []charon.IdentityRef{{ID: identity1ID}},
+				Admins:        []charon.IdentityRef{{ID: identity2ID}},
+				Organizations: nil,
 			},
 			updated: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
-				Users:  []charon.IdentityRef{{ID: identity1ID}},
-				Admins: []charon.IdentityRef{},
+				Base:          identityBase,
+				Description:   "",
+				Users:         []charon.IdentityRef{{ID: identity1ID}},
+				Admins:        []charon.IdentityRef{},
+				Organizations: nil,
 			},
 			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangePermissionsRemoved},
 			expectedIdentities: []charon.IdentityRef{{ID: identity2ID}},
@@ -1044,20 +1160,38 @@ func TestIdentityChanges(t *testing.T) { //nolint:maintidx
 			name: "organization membership added",
 			existing: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
+				Base:          identityBase,
+				Description:   "",
+				Users:         nil,
+				Admins:        nil,
 				Organizations: []charon.IdentityOrganization{},
 			},
 			updated: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
+				Base:        identityBase,
+				Description: "",
+				Users:       nil,
+				Admins:      nil,
 				Organizations: []charon.IdentityOrganization{
 					{
-						Organization: charon.OrganizationRef{ID: org1ID},
+						ID:           nil,
+						Base:         nil,
 						Active:       true,
+						Organization: charon.OrganizationRef{ID: org1ID},
 						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
 					},
 				},
@@ -1076,22 +1210,40 @@ func TestIdentityChanges(t *testing.T) { //nolint:maintidx
 			name: "organization membership removed",
 			existing: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
+				Base:        identityBase,
+				Description: "",
+				Users:       nil,
+				Admins:      nil,
 				Organizations: []charon.IdentityOrganization{
 					{
-						Organization: charon.OrganizationRef{ID: org1ID},
+						ID:           nil,
+						Base:         nil,
 						Active:       true,
+						Organization: charon.OrganizationRef{ID: org1ID},
 						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
 					},
 				},
 			},
 			updated: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
+				Base:          identityBase,
+				Description:   "",
+				Users:         nil,
+				Admins:        nil,
 				Organizations: []charon.IdentityOrganization{},
 			},
 			expectedChanges:    []charon.ActivityChangeType{charon.ActivityChangeMembershipRemoved},
@@ -1104,30 +1256,50 @@ func TestIdentityChanges(t *testing.T) { //nolint:maintidx
 				},
 			},
 		},
-		{
+		{ //nolint:dupl
 			name: "organization membership activated",
 			existing: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
+				Base:        identityBase,
+				Description: "",
+				Users:       nil,
+				Admins:      nil,
 				Organizations: []charon.IdentityOrganization{
 					{
-						Organization: charon.OrganizationRef{ID: org1ID},
+						ID:           nil,
+						Base:         nil,
 						Active:       false,
+						Organization: charon.OrganizationRef{ID: org1ID},
 						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
 					},
 				},
 			},
 			updated: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
+				Base:        identityBase,
+				Description: "",
+				Users:       nil,
+				Admins:      nil,
 				Organizations: []charon.IdentityOrganization{
 					{
-						Organization: charon.OrganizationRef{ID: org1ID},
+						ID:           nil,
+						Base:         nil,
 						Active:       true,
+						Organization: charon.OrganizationRef{ID: org1ID},
 						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
 					},
 				},
@@ -1137,30 +1309,50 @@ func TestIdentityChanges(t *testing.T) { //nolint:maintidx
 			expectedOrgs:       []charon.OrganizationRef{{ID: org1ID}},
 			expectedApps:       []charon.OrganizationApplicationRef{},
 		},
-		{
+		{ //nolint:dupl
 			name: "organization membership disabled",
 			existing: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
+				Base:        identityBase,
+				Description: "",
+				Users:       nil,
+				Admins:      nil,
 				Organizations: []charon.IdentityOrganization{
 					{
-						Organization: charon.OrganizationRef{ID: org1ID},
+						ID:           nil,
+						Base:         nil,
 						Active:       true,
+						Organization: charon.OrganizationRef{ID: org1ID},
 						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
 					},
 				},
 			},
 			updated: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
+				Base:        identityBase,
+				Description: "",
+				Users:       nil,
+				Admins:      nil,
 				Organizations: []charon.IdentityOrganization{
 					{
-						Organization: charon.OrganizationRef{ID: org1ID},
+						ID:           nil,
+						Base:         nil,
 						Active:       false,
+						Organization: charon.OrganizationRef{ID: org1ID},
 						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
 					},
 				},
@@ -1174,26 +1366,46 @@ func TestIdentityChanges(t *testing.T) { //nolint:maintidx
 			name: "application membership added",
 			existing: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
+				Base:        identityBase,
+				Description: "",
+				Users:       nil,
+				Admins:      nil,
 				Organizations: []charon.IdentityOrganization{
 					{
-						Organization: charon.OrganizationRef{ID: org1ID},
+						ID:           nil,
+						Base:         nil,
 						Active:       true,
+						Organization: charon.OrganizationRef{ID: org1ID},
 						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
 					},
 				},
 			},
 			updated: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
+				Base:        identityBase,
+				Description: "",
+				Users:       nil,
+				Admins:      nil,
 				Organizations: []charon.IdentityOrganization{
 					{
-						Organization: charon.OrganizationRef{ID: org1ID},
+						ID:           nil,
+						Base:         nil,
 						Active:       true,
+						Organization: charon.OrganizationRef{ID: org1ID},
 						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}, {ID: app2ID}},
 					},
 				},
@@ -1212,26 +1424,46 @@ func TestIdentityChanges(t *testing.T) { //nolint:maintidx
 			name: "application membership removed from existing organization",
 			existing: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
+				Base:        identityBase,
+				Description: "",
+				Users:       nil,
+				Admins:      nil,
 				Organizations: []charon.IdentityOrganization{
 					{
-						Organization: charon.OrganizationRef{ID: org1ID},
+						ID:           nil,
+						Base:         nil,
 						Active:       true,
+						Organization: charon.OrganizationRef{ID: org1ID},
 						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}, {ID: app2ID}},
 					},
 				},
 			},
 			updated: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
+				Base:        identityBase,
+				Description: "",
+				Users:       nil,
+				Admins:      nil,
 				Organizations: []charon.IdentityOrganization{
 					{
-						Organization: charon.OrganizationRef{ID: org1ID},
+						ID:           nil,
+						Base:         nil,
 						Active:       true,
+						Organization: charon.OrganizationRef{ID: org1ID},
 						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
 					},
 				},
@@ -1250,39 +1482,53 @@ func TestIdentityChanges(t *testing.T) { //nolint:maintidx
 			name: "complex scenario with multiple changes",
 			existing: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "testuser",
-					Email:    "old@example.com",
+					ID:         &identityID,
+					Username:   "testuser",
+					Email:      "old@example.com",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
+				Base:        identityBase,
 				Description: "Old description",
 				Users:       []charon.IdentityRef{{ID: identity1ID}},
 				Admins:      []charon.IdentityRef{{ID: identity2ID}},
 				Organizations: []charon.IdentityOrganization{
 					{
-						Organization: charon.OrganizationRef{ID: org1ID},
+						ID:           nil,
+						Base:         nil,
 						Active:       false,
+						Organization: charon.OrganizationRef{ID: org1ID},
 						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
 					},
 				},
 			},
 			updated: &charon.Identity{
 				IdentityPublic: charon.IdentityPublic{
-					ID:       &identityID,
-					Username: "newuser",
-					Email:    "new@example.com",
+					ID:         &identityID,
+					Username:   "newuser",
+					Email:      "new@example.com",
+					GivenName:  "",
+					FullName:   "",
+					PictureURL: "",
 				},
+				Base:        identityBase,
 				Description: "New description",
 				Users:       []charon.IdentityRef{{ID: identity3ID}},
 				Admins:      []charon.IdentityRef{{ID: identity2ID}},
 				Organizations: []charon.IdentityOrganization{
 					{
-						Organization: charon.OrganizationRef{ID: org1ID},
+						ID:           nil,
+						Base:         nil,
 						Active:       true,
+						Organization: charon.OrganizationRef{ID: org1ID},
 						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}, {ID: app2ID}},
 					},
 					{
-						Organization: charon.OrganizationRef{ID: org2ID},
+						ID:           nil,
+						Base:         nil,
 						Active:       true,
+						Organization: charon.OrganizationRef{ID: org2ID},
 						Applications: []charon.OrganizationApplicationApplicationRef{{ID: app1ID}},
 					},
 				},
@@ -1332,14 +1578,21 @@ func TestIdentityChanges(t *testing.T) { //nolint:maintidx
 func TestGetOrganizationInPlaceModification(t *testing.T) {
 	t.Parallel()
 
-	identityOrganizationID := identifier.New()
+	identityOrganizationBase := []string{"example.com", "IDENTITY_ORGANIZATION", identifier.New().String()}
+	identityOrganizationID := identifier.From(identityOrganizationBase...)
 	organizationID := identifier.New()
 	applicationID := charon.OrganizationApplicationApplicationRef{ID: identifier.New()}
 
 	identity := &charon.Identity{
+		IdentityPublic: charon.IdentityPublic{},
+		Base:           nil,
+		Description:    "",
+		Users:          nil,
+		Admins:         nil,
 		Organizations: []charon.IdentityOrganization{
 			{
 				ID:           &identityOrganizationID,
+				Base:         identityOrganizationBase,
 				Active:       true,
 				Organization: charon.OrganizationRef{ID: organizationID},
 				Applications: []charon.OrganizationApplicationApplicationRef{},
@@ -1367,7 +1620,8 @@ func TestGetOrganizationInPlaceModification(t *testing.T) {
 func TestGetOrganizationAndGetIdentityOrganization(t *testing.T) {
 	t.Parallel()
 
-	identityOrganizationID := identifier.New()
+	identityOrganizationBase := []string{"example.com", "IDENTITY_ORGANIZATION", identifier.New().String()}
+	identityOrganizationID := identifier.From(identityOrganizationBase...)
 	organizationID := identifier.New()
 	unknownID := identifier.New()
 
@@ -1380,8 +1634,13 @@ func TestGetOrganizationAndGetIdentityOrganization(t *testing.T) {
 		{
 			name: "ID not found",
 			identity: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{},
+				Base:           nil,
+				Description:    "",
+				Users:          nil,
+				Admins:         nil,
 				Organizations: []charon.IdentityOrganization{
-					{ID: &identityOrganizationID, Organization: charon.OrganizationRef{ID: organizationID}},
+					{ID: &identityOrganizationID, Base: identityOrganizationBase, Active: false, Organization: charon.OrganizationRef{ID: organizationID}, Applications: nil},
 				},
 			},
 			orgID:   &unknownID,
@@ -1396,8 +1655,13 @@ func TestGetOrganizationAndGetIdentityOrganization(t *testing.T) {
 		{
 			name: "ID parameter is nil",
 			identity: &charon.Identity{
+				IdentityPublic: charon.IdentityPublic{},
+				Base:           nil,
+				Description:    "",
+				Users:          nil,
+				Admins:         nil,
 				Organizations: []charon.IdentityOrganization{
-					{ID: &identityOrganizationID, Organization: charon.OrganizationRef{ID: organizationID}},
+					{ID: &identityOrganizationID, Base: identityOrganizationBase, Active: false, Organization: charon.OrganizationRef{ID: organizationID}, Applications: nil},
 				},
 			},
 			orgID:   nil,
@@ -1406,7 +1670,12 @@ func TestGetOrganizationAndGetIdentityOrganization(t *testing.T) {
 		{
 			name: "empty organizations",
 			identity: &charon.Identity{
-				Organizations: []charon.IdentityOrganization{},
+				IdentityPublic: charon.IdentityPublic{},
+				Base:           nil,
+				Description:    "",
+				Users:          nil,
+				Admins:         nil,
+				Organizations:  []charon.IdentityOrganization{},
 			},
 			orgID:   &organizationID,
 			idOrgID: &identityOrganizationID,
@@ -1425,7 +1694,7 @@ func TestGetOrganizationAndGetIdentityOrganization(t *testing.T) {
 	}
 }
 
-func createTestAccountWithConfirmedEmail(t *testing.T, accountID identifier.Identifier, email string) *charon.Account {
+func createTestAccountWithConfirmedEmail(t *testing.T, accountBase []string, email string) *charon.Account {
 	t.Helper()
 
 	preservedEmail, mappedEmail, errE := charon.TestingValidateEmailOrUsername(email, charon.TestingEmailOrUsernameCheckEmail)
@@ -1435,13 +1704,16 @@ func createTestAccountWithConfirmedEmail(t *testing.T, accountID identifier.Iden
 	jsonData, errE := x.MarshalWithoutEscapeHTML(emailCredential{})
 	require.NoError(t, errE, "% -+#.1v", errE)
 
+	credentialBase := []string{"localhost", "CREDENTIAL", identifier.New().String()}
 	account := &charon.Account{
-		ID: accountID,
+		ID:   identifier.From(accountBase...),
+		Base: accountBase,
 		Credentials: map[charon.Provider][]charon.Credential{
 			charon.ProviderEmail: {
 				{
 					CredentialPublic: charon.CredentialPublic{
-						ID:          identifier.New(),
+						ID:          identifier.From(credentialBase...),
+						Base:        credentialBase,
 						Provider:    charon.ProviderEmail,
 						DisplayName: preservedEmail,
 						Confirmed:   mappedEmail,

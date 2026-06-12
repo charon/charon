@@ -45,34 +45,26 @@ func (v *Value) Validate(_ context.Context) errors.E {
 // OrganizationApplicationClientPublic represents a public client of
 // the application template added to the organization.
 type OrganizationApplicationClientPublic struct {
-	ID     *identifier.Identifier `json:"id"`
-	Client ClientRef              `json:"client"`
+	ID *identifier.Identifier `json:"id"`
+	// Base is the slice of strings from which the ID is derived. It extends the base of the application.
+	Base []string `json:"base"`
+
+	Client ClientRef `json:"client"`
 }
 
 // Validate validates the OrganizationApplicationClientPublic struct.
 func (c *OrganizationApplicationClientPublic) Validate(
 	ctx context.Context, existing *OrganizationApplicationClientPublic,
-	applicationTemplate *ApplicationTemplatePublic, values map[string]string,
+	applicationBase []string, applicationTemplate *ApplicationTemplatePublic, values map[string]string,
 ) errors.E {
-	if existing == nil {
-		if c.ID != nil {
-			errE := errors.New("ID provided for new document")
-			errors.Details(errE)["id"] = *c.ID
-			return errE
-		}
-		id := identifier.New()
-		c.ID = &id
-	} else if c.ID == nil {
-		// This should not really happen because we fetch existing based on c.ID.
-		return errors.New("ID missing for existing document")
-	} else if existing.ID == nil {
-		// This should not really happen because we always store documents with ID.
-		return errors.New("ID missing for existing document")
-	} else if *c.ID != *existing.ID {
-		// This should not really happen because we fetch existing based on c.ID.
-		errE := errors.New("payload ID does not match existing ID")
-		errors.Details(errE)["payload"] = *c.ID
-		errors.Details(errE)["existing"] = *existing.ID
+	var existingID *identifier.Identifier
+	var existingBase []string
+	if existing != nil {
+		existingID = existing.ID
+		existingBase = existing.Base
+	}
+	errE := validateIDBase(newChildBase(applicationBase, "ORGANIZATION_APPLICATION_CLIENT_PUBLIC"), &c.ID, &c.Base, existing != nil, existingID, existingBase)
+	if errE != nil {
 		return errE
 	}
 
@@ -104,8 +96,11 @@ func (c *OrganizationApplicationClientPublic) Validate(
 // OrganizationApplicationClientBackend represents a backend client of
 // the application template added to the organization.
 type OrganizationApplicationClientBackend struct {
-	ID     *identifier.Identifier `json:"id"`
-	Client ClientRef              `json:"client"`
+	ID *identifier.Identifier `json:"id"`
+	// Base is the slice of strings from which the ID is derived. It extends the base of the application.
+	Base []string `json:"base"`
+
+	Client ClientRef `json:"client"`
 
 	// TODO: This should really be a []byte, but should not be base64 encoded when in JSON.
 	//       Go JSONv2 might support that with "format:string".
@@ -115,27 +110,16 @@ type OrganizationApplicationClientBackend struct {
 // Validate validates the OrganizationApplicationClientBackend struct.
 func (c *OrganizationApplicationClientBackend) Validate(
 	ctx context.Context, existing *OrganizationApplicationClientBackend,
-	applicationTemplate *ApplicationTemplatePublic, values map[string]string,
+	applicationBase []string, applicationTemplate *ApplicationTemplatePublic, values map[string]string,
 ) errors.E {
-	if existing == nil {
-		if c.ID != nil {
-			errE := errors.New("ID provided for new document")
-			errors.Details(errE)["id"] = *c.ID
-			return errE
-		}
-		id := identifier.New()
-		c.ID = &id
-	} else if c.ID == nil {
-		// This should not really happen because we fetch existing based on c.ID.
-		return errors.New("ID missing for existing document")
-	} else if existing.ID == nil {
-		// This should not really happen because we always store documents with ID.
-		return errors.New("ID missing for existing document")
-	} else if *c.ID != *existing.ID {
-		// This should not really happen because we fetch existing based on c.ID.
-		errE := errors.New("payload ID does not match existing ID")
-		errors.Details(errE)["payload"] = *c.ID
-		errors.Details(errE)["existing"] = *existing.ID
+	var existingID *identifier.Identifier
+	var existingBase []string
+	if existing != nil {
+		existingID = existing.ID
+		existingBase = existing.Base
+	}
+	errE := validateIDBase(newChildBase(applicationBase, "ORGANIZATION_APPLICATION_CLIENT_BACKEND"), &c.ID, &c.Base, existing != nil, existingID, existingBase)
+	if errE != nil {
 		return errE
 	}
 
@@ -181,8 +165,11 @@ func (c *OrganizationApplicationClientBackend) Validate(
 // OrganizationApplicationClientService represents a service client of
 // the application template added to the organization.
 type OrganizationApplicationClientService struct {
-	ID     *identifier.Identifier `json:"id"`
-	Client ClientRef              `json:"client"`
+	ID *identifier.Identifier `json:"id"`
+	// Base is the slice of strings from which the ID is derived. It extends the base of the application.
+	Base []string `json:"base"`
+
+	Client ClientRef `json:"client"`
 
 	// TODO: This should really be a []byte, but should not be base64 encoded when in JSON.
 	//       Go JSONv2 might support that with "format:string".
@@ -192,27 +179,16 @@ type OrganizationApplicationClientService struct {
 // Validate validates the OrganizationApplicationClientService struct.
 func (c *OrganizationApplicationClientService) Validate(
 	_ context.Context, existing *OrganizationApplicationClientService,
-	applicationTemplate *ApplicationTemplatePublic, _ map[string]string,
+	applicationBase []string, applicationTemplate *ApplicationTemplatePublic, _ map[string]string,
 ) errors.E {
-	if existing == nil {
-		if c.ID != nil {
-			errE := errors.New("ID provided for new document")
-			errors.Details(errE)["id"] = *c.ID
-			return errE
-		}
-		id := identifier.New()
-		c.ID = &id
-	} else if c.ID == nil {
-		// This should not really happen because we fetch existing based on c.ID.
-		return errors.New("ID missing for existing document")
-	} else if existing.ID == nil {
-		// This should not really happen because we always store documents with ID.
-		return errors.New("ID missing for existing document")
-	} else if *c.ID != *existing.ID {
-		// This should not really happen because we fetch existing based on c.ID.
-		errE := errors.New("payload ID does not match existing ID")
-		errors.Details(errE)["payload"] = *c.ID
-		errors.Details(errE)["existing"] = *existing.ID
+	var existingID *identifier.Identifier
+	var existingBase []string
+	if existing != nil {
+		existingID = existing.ID
+		existingBase = existing.Base
+	}
+	errE := validateIDBase(newChildBase(applicationBase, "ORGANIZATION_APPLICATION_CLIENT_SERVICE"), &c.ID, &c.Base, existing != nil, existingID, existingBase)
+	if errE != nil {
 		return errE
 	}
 
@@ -244,6 +220,8 @@ func (c *OrganizationApplicationClientService) Validate(
 // application template added to the organization.
 type OrganizationApplicationPublic struct {
 	ID *identifier.Identifier `json:"id"`
+	// Base is the slice of strings from which the ID is derived. It extends the base of the organization.
+	Base []string `json:"base"`
 
 	Active bool `json:"active"`
 
@@ -257,32 +235,23 @@ type OrganizationApplicationPublic struct {
 }
 
 // Validate validates the OrganizationApplicationPublic struct.
-func (a *OrganizationApplicationPublic) Validate(ctx context.Context, existing *OrganizationApplicationPublic, service *Service) errors.E {
-	_, errE := a.validate(ctx, existing, service)
+func (a *OrganizationApplicationPublic) Validate(ctx context.Context, existing *OrganizationApplicationPublic, service *Service, organizationBase []string) errors.E {
+	_, errE := a.validate(ctx, existing, service, organizationBase)
 	return errE
 }
 
 // validate is a version of Validate which returns values as well.
-func (a *OrganizationApplicationPublic) validate(ctx context.Context, existing *OrganizationApplicationPublic, service *Service) (map[string]string, errors.E) {
-	if existing == nil {
-		if a.ID != nil {
-			errE := errors.New("ID provided for new document")
-			errors.Details(errE)["id"] = *a.ID
-			return nil, errE
-		}
-		id := identifier.New()
-		a.ID = &id
-	} else if a.ID == nil {
-		// This should not really happen because we fetch existing based on a.ID.
-		return nil, errors.New("ID missing for existing document")
-	} else if existing.ID == nil {
-		// This should not really happen because we always store documents with ID.
-		return nil, errors.New("ID missing for existing document")
-	} else if *a.ID != *existing.ID {
-		// This should not really happen because we fetch existing based on a.ID.
-		errE := errors.New("payload ID does not match existing ID")
-		errors.Details(errE)["payload"] = *a.ID
-		errors.Details(errE)["existing"] = *existing.ID
+func (a *OrganizationApplicationPublic) validate(
+	ctx context.Context, existing *OrganizationApplicationPublic, service *Service, organizationBase []string,
+) (map[string]string, errors.E) {
+	var existingID *identifier.Identifier
+	var existingBase []string
+	if existing != nil {
+		existingID = existing.ID
+		existingBase = existing.Base
+	}
+	errE := validateIDBase(newChildBase(organizationBase, "ORGANIZATION_APPLICATION"), &a.ID, &a.Base, existing != nil, existingID, existingBase)
+	if errE != nil {
 		return nil, errE
 	}
 
@@ -297,7 +266,7 @@ func (a *OrganizationApplicationPublic) validate(ctx context.Context, existing *
 			return nil, errE
 		}
 	}
-	errE := a.ApplicationTemplate.Validate(ctx, e)
+	errE = a.ApplicationTemplate.Validate(ctx, e, service)
 	if errE != nil {
 		return nil, errE
 	}
@@ -443,14 +412,14 @@ func (a *OrganizationApplication) GetClientService(id *identifier.Identifier) *O
 }
 
 // Validate validates the OrganizationApplication struct.
-func (a *OrganizationApplication) Validate(ctx context.Context, existing *OrganizationApplication, service *Service) errors.E {
+func (a *OrganizationApplication) Validate(ctx context.Context, existing *OrganizationApplication, service *Service, organizationBase []string) errors.E {
 	var e *OrganizationApplicationPublic
 	if existing == nil {
 		e = nil
 	} else {
 		e = &existing.OrganizationApplicationPublic
 	}
-	values, errE := a.OrganizationApplicationPublic.validate(ctx, e, service) //nolint:staticcheck
+	values, errE := a.OrganizationApplicationPublic.validate(ctx, e, service, organizationBase) //nolint:staticcheck
 	if errE != nil {
 		return errE
 	}
@@ -472,7 +441,7 @@ func (a *OrganizationApplication) Validate(ctx context.Context, existing *Organi
 	clientSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
 
 	for i, client := range a.ClientsPublic {
-		errE := client.Validate(ctx, existing.GetClientPublic(client.ID), &a.ApplicationTemplate, values)
+		errE := client.Validate(ctx, existing.GetClientPublic(client.ID), a.Base, &a.ApplicationTemplate, values)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "public client")
 			errors.Details(errE)["i"] = i
@@ -493,7 +462,7 @@ func (a *OrganizationApplication) Validate(ctx context.Context, existing *Organi
 	}
 
 	for i, client := range a.ClientsBackend {
-		errE := client.Validate(ctx, existing.GetClientBackend(client.ID), &a.ApplicationTemplate, values)
+		errE := client.Validate(ctx, existing.GetClientBackend(client.ID), a.Base, &a.ApplicationTemplate, values)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "backend client")
 			errors.Details(errE)["i"] = i
@@ -514,7 +483,7 @@ func (a *OrganizationApplication) Validate(ctx context.Context, existing *Organi
 	}
 
 	for i, client := range a.ClientsService {
-		errE := client.Validate(ctx, existing.GetClientService(client.ID), &a.ApplicationTemplate, values)
+		errE := client.Validate(ctx, existing.GetClientService(client.ID), a.Base, &a.ApplicationTemplate, values)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "service client")
 			errors.Details(errE)["i"] = i
@@ -592,32 +561,24 @@ func (o *Organization) GetApplication(id *identifier.Identifier) *OrganizationAp
 
 // OrganizationPublic represents public fields of the organization.
 type OrganizationPublic struct {
-	ID          *identifier.Identifier `json:"id"`
-	Name        string                 `json:"name"`
-	Description string                 `json:"description"`
+	ID *identifier.Identifier `json:"id"`
+	// Base is the slice of strings from which the document ID is derived.
+	Base []string `json:"base"`
+
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 // Validate validates the OrganizationPublic struct.
-func (o *OrganizationPublic) Validate(_ context.Context, existing *OrganizationPublic) errors.E {
-	if existing == nil {
-		if o.ID != nil {
-			errE := errors.New("ID provided for new document")
-			errors.Details(errE)["id"] = *o.ID
-			return errE
-		}
-		id := identifier.New()
-		o.ID = &id
-	} else if o.ID == nil {
-		// This should not really happen because we fetch existing based on o.ID.
-		return errors.New("ID missing for existing document")
-	} else if existing.ID == nil {
-		// This should not really happen because we always store documents with ID.
-		return errors.New("ID missing for existing document")
-	} else if *o.ID != *existing.ID {
-		// This should not really happen because we fetch existing based on o.ID.
-		errE := errors.New("payload ID does not match existing ID")
-		errors.Details(errE)["payload"] = *o.ID
-		errors.Details(errE)["existing"] = *existing.ID
+func (o *OrganizationPublic) Validate(_ context.Context, existing *OrganizationPublic, service *Service) errors.E {
+	var existingID *identifier.Identifier
+	var existingBase []string
+	if existing != nil {
+		existingID = existing.ID
+		existingBase = existing.Base
+	}
+	errE := validateIDBase(service.newBase("ORGANIZATION"), &o.ID, &o.Base, existing != nil, existingID, existingBase)
+	if errE != nil {
 		return errE
 	}
 
@@ -674,7 +635,7 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 	} else {
 		e = &existing.OrganizationPublic
 	}
-	errE := o.OrganizationPublic.Validate(ctx, e)
+	errE := o.OrganizationPublic.Validate(ctx, e, service)
 	if errE != nil {
 		return errE
 	}
@@ -701,7 +662,7 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 
 	appsSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
 	for i, orgApp := range o.Applications {
-		errE := orgApp.Validate(ctx, existing.GetApplication(orgApp.ID), service)
+		errE := orgApp.Validate(ctx, existing.GetApplication(orgApp.ID), service, o.Base)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "application")
 			errors.Details(errE)["i"] = i
@@ -1418,6 +1379,7 @@ func (s *Service) OrganizationIdentityGetAPI(w http.ResponseWriter, req *http.Re
 			// synthetic membership as active so it does not trip the "disabled" check below.
 			idOrg = &IdentityOrganization{
 				ID:           identity.ID,
+				Base:         identity.Base,
 				Active:       true,
 				Organization: co.Ref(),
 				Applications: []OrganizationApplicationApplicationRef{},

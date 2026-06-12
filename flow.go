@@ -54,6 +54,10 @@ type flowPassword struct {
 
 type flowPasskey struct {
 	SessionData *webauthn.SessionData
+	// CredentialBase is the base of the credential being registered. It is set only for sign-up
+	// because the credential ID (the WebAuthn user handle) is derived from it already when the
+	// registration starts.
+	CredentialBase []string
 	// DisplayName is also used to mark the request as sign-in (empty) or sign-up (non-empty).
 	DisplayName string
 }

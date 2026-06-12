@@ -33,6 +33,10 @@ var (
 type IdentityOrganization struct {
 	// ID is also ID of this identity in the organization (it is organization-scoped).
 	ID *identifier.Identifier `json:"id"`
+	// Base is the slice of strings from which the ID is derived. It is standalone (it does not extend
+	// the base of the identity) so that organization-scoped IDs cannot be correlated across organizations.
+	// For the Charon organization it is a copy of the identity's base.
+	Base []string `json:"base"`
 
 	Active bool `json:"active"`
 
@@ -57,12 +61,13 @@ func (i *IdentityOrganization) OrganizationIdentityRef() OrganizationIdentityRef
 
 // Validate validates the IdentityOrganization struct.
 func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityOrganization, service *Service, identity *Identity) errors.E {
-	if existing == nil {
-		if i.ID != nil {
-			errE := errors.New("ID provided for new document")
-			errors.Details(errE)["id"] = *i.ID
-			return errE
-		}
+	var existingID *identifier.Identifier
+	var existingBase []string
+	if existing != nil {
+		existingID = existing.ID
+		existingBase = existing.Base
+	}
+	errE := validateIDBase(func() []string {
 		co := service.charonOrganization()
 		if co.ID == i.Organization.ID {
 			// A special case for Charon organization: organization-scoped identity ID is the same as the database ID.
@@ -74,27 +79,17 @@ func (i *IdentityOrganization) Validate(ctx context.Context, existing *IdentityO
 			// assigned its organization-scoped IDs, but that would then mean that we would also have to prevent removing
 			// Charon organization and also users will not know which identities they have previously used with the
 			// Charon organization (as it would look like they used all of them). Instead, we use the database ID as
-			// organization-scoped ID. This allows us to have an ID for use in Charon organization identity permissions
+			// organization-scoped ID, by copying the identity's base so that the derived ID equals the database ID.
+			// This allows us to have an ID for use in Charon organization identity permissions
 			// even if the identity has not been added to the Charon organization. This also enables our approach of
 			// recording that identity's creator is an admin by adding the identity itself as an admin for itself.
 			// Otherwise we would not have an ID to do that, unless we would (again) add all identities to the Charon
 			// organization by default. We could use an extra field to record creator's admin permission, but that is uglier.
-			i.ID = identity.ID
-		} else {
-			id := identifier.New()
-			i.ID = &id
+			return slices.Clone(identity.Base)
 		}
-	} else if i.ID == nil {
-		// This should not really happen because we fetch existing based on i.ID.
-		return errors.New("ID missing for existing document")
-	} else if existing.ID == nil {
-		// This should not really happen because we always store documents with ID.
-		return errors.New("ID missing for existing document")
-	} else if *i.ID != *existing.ID {
-		// This should not really happen because we fetch existing based on i.ID.
-		errE := errors.New("payload ID does not match existing ID")
-		errors.Details(errE)["payload"] = *i.ID
-		errors.Details(errE)["existing"] = *existing.ID
+		return service.newBase("IDENTITY_ORGANIZATION")()
+	}, &i.ID, &i.Base, existing != nil, existingID, existingBase)
+	if errE != nil {
 		return errE
 	}
 
@@ -158,29 +153,10 @@ type IdentityPublic struct {
 }
 
 // Validate validates the IdentityPublic struct.
+//
+// The ID and the base from which it is derived are validated in Identity.Validate
+// because the base is stored on the Identity struct and not on the IdentityPublic struct.
 func (i *IdentityPublic) Validate(ctx context.Context, existing *IdentityPublic, service *Service) errors.E {
-	if existing == nil {
-		if i.ID != nil {
-			errE := errors.New("ID provided for new document")
-			errors.Details(errE)["id"] = *i.ID
-			return errE
-		}
-		id := identifier.New()
-		i.ID = &id
-	} else if i.ID == nil {
-		// This should not really happen because we fetch existing based on i.ID.
-		return errors.New("ID missing for existing document")
-	} else if existing.ID == nil {
-		// This should not really happen because we always store documents with ID.
-		return errors.New("ID missing for existing document")
-	} else if *i.ID != *existing.ID {
-		// This should not really happen because we fetch existing based on i.ID.
-		errE := errors.New("payload ID does not match existing ID")
-		errors.Details(errE)["payload"] = *i.ID
-		errors.Details(errE)["existing"] = *existing.ID
-		return errE
-	}
-
 	if i.Username != "" {
 		username, _, errE := validateEmailOrUsername(i.Username, emailOrUsernameCheckUsername)
 		if errE != nil {
@@ -239,6 +215,12 @@ func (i *IdentityPublic) Validate(ctx context.Context, existing *IdentityPublic,
 // Identity represents an identity.
 type Identity struct {
 	IdentityPublic
+
+	// Base is the slice of strings from which the document ID is derived.
+	// It is not in IdentityPublic because the same identity is exposed with
+	// different organization-scoped IDs and exposing the base would allow
+	// correlating them.
+	Base []string `json:"base"`
 
 	// Description for users with access to the identity.
 	Description string `json:"description,omitempty"`
@@ -356,12 +338,19 @@ type OrganizationIdentityRef struct {
 // When not set, changes to admins are not allowed.
 func (i *Identity) Validate(ctx context.Context, existing *Identity, service *Service) errors.E {
 	var e *IdentityPublic
-	if existing == nil {
-		e = nil
-	} else {
+	var existingID *identifier.Identifier
+	var existingBase []string
+	if existing != nil {
 		e = &existing.IdentityPublic
+		existingID = existing.ID
+		existingBase = existing.Base
 	}
-	errE := i.IdentityPublic.Validate(ctx, e, service)
+	errE := validateIDBase(service.newBase("IDENTITY"), &i.ID, &i.Base, existing != nil, existingID, existingBase)
+	if errE != nil {
+		return errE
+	}
+
+	errE = i.IdentityPublic.Validate(ctx, e, service)
 	if errE != nil {
 		return errE
 	}
@@ -1231,6 +1220,7 @@ func (s *Service) selectAndActivateIdentity(ctx context.Context, identityID, org
 	// Organization not present, we add it (as active).
 	identity.Organizations = append(identity.Organizations, IdentityOrganization{
 		ID:     nil,
+		Base:   nil,
 		Active: true,
 		Organization: OrganizationRef{
 			ID: organizationID,

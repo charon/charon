@@ -65,9 +65,12 @@ const (
 
 // Activity represents a user activity record.
 type Activity struct {
-	ID        *identifier.Identifier `json:"id"`
-	Timestamp x.Time                 `json:"timestamp"`
-	Type      ActivityType           `json:"type"`
+	ID *identifier.Identifier `json:"id"`
+	// Base is the slice of strings from which the document ID is derived.
+	Base []string `json:"base"`
+
+	Timestamp x.Time       `json:"timestamp"`
+	Type      ActivityType `json:"type"`
 
 	// The identity that performed this activity.
 	Actor *OrganizationIdentityRef `json:"actor,omitempty"`
@@ -129,26 +132,15 @@ func (a *Activity) IsForUser(ctx context.Context, service *Service, identity, ac
 }
 
 // Validate validates the Activity struct.
-func (a *Activity) Validate(_ context.Context, existing *Activity) errors.E {
-	if existing == nil {
-		if a.ID != nil {
-			errE := errors.New("ID provided for new document")
-			errors.Details(errE)["id"] = *a.ID
-			return errE
-		}
-		id := identifier.New()
-		a.ID = &id
-	} else if a.ID == nil {
-		// This should not really happen because we fetch existing based on a.ID.
-		return errors.New("ID missing for existing document")
-	} else if existing.ID == nil {
-		// This should not really happen because we always store documents with ID.
-		return errors.New("ID missing for existing document")
-	} else if *a.ID != *existing.ID {
-		// This should not really happen because we fetch existing based on a.ID.
-		errE := errors.New("payload ID does not match existing ID")
-		errors.Details(errE)["payload"] = *a.ID
-		errors.Details(errE)["existing"] = *existing.ID
+func (a *Activity) Validate(_ context.Context, existing *Activity, service *Service) errors.E {
+	var existingID *identifier.Identifier
+	var existingBase []string
+	if existing != nil {
+		existingID = existing.ID
+		existingBase = existing.Base
+	}
+	errE := validateIDBase(service.newBase("ACTIVITY"), &a.ID, &a.Base, existing != nil, existingID, existingBase)
+	if errE != nil {
 		return errE
 	}
 
@@ -200,7 +192,7 @@ func (s *Service) getActivityFromID(ctx context.Context, value string) (*Activit
 }
 
 func (s *Service) createActivity(ctx context.Context, activity *Activity) errors.E {
-	errE := activity.Validate(ctx, nil)
+	errE := activity.Validate(ctx, nil, s)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrActivityValidationFailed)
 	}
@@ -253,6 +245,7 @@ func (s *Service) logActivity(
 			// into the organization. In this case we add the user now (as active).
 			currentIdentity.Organizations = append(currentIdentity.Organizations, IdentityOrganization{
 				ID:           nil,
+				Base:         nil,
 				Active:       true,
 				Organization: currentOrganization,
 				Applications: []OrganizationApplicationApplicationRef{},
@@ -275,6 +268,7 @@ func (s *Service) logActivity(
 	activity := &Activity{
 		// Validate will populate these.
 		ID:        nil,
+		Base:      nil,
 		Timestamp: x.Time{},
 
 		Type:                     activityType,

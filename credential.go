@@ -89,11 +89,15 @@ type CredentialAddPasskeyCompleteRequest struct {
 }
 
 type credentialAddSession struct {
-	ID          identifier.Identifier
-	CreatedAt   time.Time
-	Passkey     *webauthn.SessionData
-	Password    *flowPassword
-	DisplayName string
+	ID        identifier.Identifier
+	CreatedAt time.Time
+	Passkey   *webauthn.SessionData
+	Password  *flowPassword
+	// CredentialBase is the base of the credential being added. It is set only for passkey
+	// credentials because their ID (the WebAuthn user handle) is derived from it already
+	// when the registration starts.
+	CredentialBase []string
+	DisplayName    string
 }
 
 // Expired returns true if the credential add session has expired.
@@ -135,18 +139,16 @@ type SignalUnknownCredential struct {
 // This function does not check for duplicates. Duplicate checking
 // should be done by the caller before calling this function.
 func (s *Service) addCredentialToAccount(
-	ctx context.Context, account *Account, providerKey Provider, providerID string, jsonData json.RawMessage, displayName string, credentialID *identifier.Identifier,
+	ctx context.Context, account *Account, providerKey Provider, providerID string, jsonData json.RawMessage, displayName string, credentialBase []string,
 ) (identifier.Identifier, errors.E) {
-	var id identifier.Identifier
-	if credentialID != nil {
-		id = *credentialID
-	} else {
-		id = identifier.New()
+	if credentialBase == nil {
+		credentialBase = s.newBase("CREDENTIAL")()
 	}
 
 	newCredential := Credential{
 		CredentialPublic: CredentialPublic{
-			ID:          id,
+			ID:          identifier.From(credentialBase...),
+			Base:        credentialBase,
 			Provider:    providerKey,
 			DisplayName: displayName,
 			// Confirmed starts empty for all providers, including e-mail. E-mail confirmation
@@ -523,9 +525,10 @@ func (s *Service) CredentialAddPasswordStartPostAPI(w http.ResponseWriter, req *
 			PrivateKey: privateKeyBytes,
 			Nonce:      nonce,
 		},
-		Passkey:     nil,
-		CreatedAt:   time.Now(),
-		DisplayName: displayName,
+		Passkey:        nil,
+		CreatedAt:      time.Now(),
+		CredentialBase: nil,
+		DisplayName:    displayName,
 	}
 
 	errE = storeCredentialSession(session)
@@ -733,7 +736,9 @@ func (s *Service) CredentialAddPasskeyStartPostAPI(w http.ResponseWriter, req *h
 		return
 	}
 
-	userID := identifier.New()
+	// User ID also serves as public credential ID once stored in the database.
+	credentialBase := s.newBase("CREDENTIAL")()
+	userID := identifier.From(credentialBase...)
 	options, sessionData, errE := beginPasskeyRegistration(s.passkeyProvider(), userID, displayName, s.title)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
@@ -741,11 +746,12 @@ func (s *Service) CredentialAddPasskeyStartPostAPI(w http.ResponseWriter, req *h
 	}
 
 	session := credentialAddSession{
-		ID:          identifier.New(),
-		Password:    nil,
-		Passkey:     sessionData,
-		CreatedAt:   time.Now(),
-		DisplayName: displayName,
+		ID:             identifier.New(),
+		Password:       nil,
+		Passkey:        sessionData,
+		CreatedAt:      time.Now(),
+		CredentialBase: credentialBase,
+		DisplayName:    displayName,
 	}
 
 	errE = storeCredentialSession(session)
@@ -829,8 +835,9 @@ func (s *Service) CredentialAddPasskeyCompletePostAPI(w http.ResponseWriter, req
 		return
 	}
 
-	// We store user ID as credential ID for passkey provider.
-	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderPasskey, providerID, jsonData, cas.DisplayName, &credential.userID)
+	// We store user ID as credential ID for passkey provider. The user ID is derived
+	// from the credential base created when the registration started.
+	credentialID, errE := s.addCredentialToAccount(ctx, account, ProviderPasskey, providerID, jsonData, cas.DisplayName, cas.CredentialBase)
 	if errE != nil {
 		s.InternalServerErrorWithError(w, req, errE)
 		return
@@ -1239,9 +1246,11 @@ func (s *Service) CredentialConfirmEmailPostAPI(w http.ResponseWriter, req *http
 		return
 	}
 
+	base := s.newBase("CREDENTIAL")()
 	newCodeCredential := Credential{
 		CredentialPublic: CredentialPublic{
-			ID:       identifier.New(),
+			ID:       identifier.From(base...),
+			Base:     base,
 			Provider: ProviderCode,
 			// Code credential is internal. We store mapped e-mail in DisplayName for debugging purposes.
 			DisplayName: emailCredential.ProviderID,
@@ -1511,9 +1520,11 @@ func (s *Service) maybeAddEmailCredentialFromThirdPartyToken(
 		return nil, errE
 	}
 
+	base := s.newBase("CREDENTIAL")()
 	credential := &Credential{
 		CredentialPublic: CredentialPublic{
-			ID:          identifier.New(),
+			ID:          identifier.From(base...),
+			Base:        base,
 			Provider:    ProviderEmail,
 			DisplayName: preservedEmail,
 			// We always add e-mail addresses from third-party as unconfirmed, even if they tell us that

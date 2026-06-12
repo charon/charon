@@ -359,9 +359,11 @@ func (s *Service) AuthFlowCodeStartPostAPI(w http.ResponseWriter, req *http.Requ
 		return
 	}
 
+	base := s.newBase("CREDENTIAL")()
 	credentials := []Credential{{
 		CredentialPublic: CredentialPublic{
-			ID:          identifier.New(),
+			ID:          identifier.From(base...),
+			Base:        base,
 			Provider:    ProviderEmail,
 			DisplayName: preservedEmailOrUsername,
 			// We set Confirmed to the mapped address because this credential is stored

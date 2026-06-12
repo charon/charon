@@ -154,7 +154,8 @@ func (s *Service) AuthFlowPasskeyGetStartPostAPI(w http.ResponseWriter, req *htt
 	// Currently we support only one factor.
 	flow.Providers = []Provider{ProviderPasskey}
 	flow.Passkey = &flowPasskey{
-		SessionData: session,
+		SessionData:    session,
+		CredentialBase: nil,
 		// We mark the request as sign-in.
 		DisplayName: "",
 	}
@@ -307,6 +308,7 @@ func (s *Service) AuthFlowPasskeyGetCompletePostAPI(w http.ResponseWriter, req *
 		[]Credential{{
 			CredentialPublic: CredentialPublic{
 				ID:          storedCredential.ID,
+				Base:        storedCredential.Base,
 				Provider:    ProviderPasskey,
 				DisplayName: storedCredential.DisplayName,
 				Confirmed:   "",
@@ -344,7 +346,8 @@ func (s *Service) AuthFlowPasskeyCreateStartPostAPI(w http.ResponseWriter, req *
 	}
 
 	// User ID also serves as public credential ID once stored in the database.
-	userID := identifier.New()
+	credentialBase := s.newBase("CREDENTIAL")()
+	userID := identifier.From(credentialBase...)
 	displayName := userID.String()
 	options, session, errE := beginPasskeyRegistration(s.passkeyProvider(), userID, displayName, s.title)
 	if errE != nil {
@@ -356,7 +359,8 @@ func (s *Service) AuthFlowPasskeyCreateStartPostAPI(w http.ResponseWriter, req *
 	// Currently we support only one factor.
 	flow.Providers = []Provider{ProviderPasskey}
 	flow.Passkey = &flowPasskey{
-		SessionData: session,
+		SessionData:    session,
+		CredentialBase: credentialBase,
 		// We mark the request as sign-up.
 		DisplayName: displayName,
 	}
@@ -446,6 +450,7 @@ func (s *Service) AuthFlowPasskeyCreateCompletePostAPI(w http.ResponseWriter, re
 			CredentialPublic: CredentialPublic{
 				// User ID also serves as public credential ID.
 				ID:          credential.userID,
+				Base:        flowPasskey.CredentialBase,
 				Provider:    ProviderPasskey,
 				DisplayName: flowPasskey.DisplayName,
 				Confirmed:   "",

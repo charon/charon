@@ -13,6 +13,7 @@ import (
 	"strings"
 	"testing"
 	"testing/fstest"
+	"time"
 
 	smtpmock "github.com/mocktools/go-smtp-mock/v2"
 	"github.com/ory/fosite"
@@ -33,14 +34,23 @@ var publicFiles embed.FS
 
 var testFiles = fstest.MapFS{ //nolint:gochecknoglobals
 	"index.html": &fstest.MapFile{
-		Data: []byte("<html><body>dummy test content</body></html>"),
+		Data:    []byte("<html><body>dummy test content</body></html>"),
+		Mode:    0,
+		ModTime: time.Time{},
+		Sys:     nil,
 	},
 	// Symlinks are not included in publicFiles.
 	"LICENSE.txt": &fstest.MapFile{
-		Data: []byte("test license file"),
+		Data:    []byte("test license file"),
+		Mode:    0,
+		ModTime: time.Time{},
+		Sys:     nil,
 	},
 	"NOTICE.txt": &fstest.MapFile{
-		Data: []byte("test notice file"),
+		Data:    []byte("test notice file"),
+		Mode:    0,
+		ModTime: time.Time{},
+		Sys:     nil,
 	},
 }
 
@@ -128,7 +138,7 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 
 	logger := zerolog.New(zerolog.NewTestWriter(t)).With().Timestamp().Logger()
 
-	smtpServer := smtpmock.New(smtpmock.ConfigurationAttr{
+	smtpServer := smtpmock.New(smtpmock.ConfigurationAttr{ //nolint:exhaustruct
 		// See: https://github.com/mocktools/go-smtp-mock/issues/172
 		MultipleMessageReceiving: true,
 	})
@@ -141,40 +151,72 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 
 	config := charon.Config{
 		LoggingConfig: z.LoggingConfig{
-			Logger: logger,
+			Logger:      logger,
+			WithContext: nil,
+			Logging:     z.Logging{},
 		},
+		Version: false,
+		Config:  "",
 		Server: waf.Server[*charon.Site]{
+			Logger:      zerolog.Logger{},
+			Development: true,
+			ProxyTo:     "",
 			HTTPS: waf.HTTPS{
-				CertFile: certPath,
-				KeyFile:  keyPath,
+				CertFile:         certPath,
+				KeyFile:          keyPath,
+				LetsEncryptCache: "",
 				// httptest.Server allocates a random port for its listener (but does not use config.Server.Addr to do so).
 				// Having 0 for port here makes the rest of the codebase expect a random port and wait for its assignment.
-				Listen: "localhost:0",
+				Listen:               "localhost:0",
+				ExternalPort:         0,
+				ACMEDirectory:        "",
+				ACMEDirectoryRootCAs: "",
 			},
-			Development: true,
+			HTTP:        waf.HTTP{},
+			HTTPSServer: nil,
+			HTTPServer:  nil,
 		},
-		Mail: charon.Mail{
-			Host: "127.0.0.1",
-			Port: smtpServer.PortNumber(),
-			From: "noreply@example.com",
-			// go-smtp-mock does not support STARTTLS.
-			// See: https://github.com/mocktools/go-smtp-mock/issues/76
-			NotRequiredTLS: true,
-			Auth:           "none",
-		},
+		Sites:         nil,
+		Domains:       nil,
+		MainDomain:    "",
+		ExternalPort:  0,
+		Secret:        nil,
+		DataDirectory: "",
 		Providers: charon.Providers{
+			Google:   charon.OIDCProvider{},
+			Facebook: charon.OIDCProvider{},
+			SIPASS:   charon.SAMLProvider{},
 			OIDCTesting: charon.GenericOIDCProvider{
 				OIDCProvider: charon.OIDCProvider{
 					ClientID: oidcTestingClientID,
 					Secret:   []byte(oidcTestingSecret),
 				},
-				Issuer: oidcTS.URL,
+				Issuer:    oidcTS.URL,
+				ForcePKCE: false,
+				AuthURL:   "",
+				TokenURL:  "",
 			},
 			SAMLTesting: charon.SAMLProvider{
-				EntityID:    samlTestingSPEntityID,
 				MetadataURL: samlTS.URL + "/saml/metadata",
+				EntityID:    samlTestingSPEntityID,
+				Key:         nil,
 			},
 		},
+		Title:          "",
+		TermsOfService: nil,
+		PrivacyPolicy:  nil,
+		Mail: charon.Mail{
+			Host:     "127.0.0.1",
+			Port:     smtpServer.PortNumber(),
+			Username: "",
+			Password: nil,
+			Auth:     "none",
+			From:     "noreply@example.com",
+			// go-smtp-mock does not support STARTTLS.
+			// See: https://github.com/mocktools/go-smtp-mock/issues/76
+			NotRequiredTLS: true,
+		},
+		OIDC: charon.OIDC{},
 	}
 
 	// When CHARON_TEST_DATA_DIRECTORY is set, run this test against a real file-backed
@@ -202,7 +244,7 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 
 	// We have to call GetCertificate ourselves.
 	// See: https://github.com/golang/go/issues/63812
-	cert, err := ts.TLS.GetCertificate(&tls.ClientHelloInfo{
+	cert, err := ts.TLS.GetCertificate(&tls.ClientHelloInfo{ //nolint:exhaustruct
 		ServerName: "localhost",
 	})
 	require.NoError(t, err, "% -+#.1v", err)

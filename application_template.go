@@ -112,8 +112,11 @@ type ClientRef struct {
 
 // ApplicationTemplateClientPublic represents a public client of the application template.
 type ApplicationTemplateClientPublic struct {
-	ID          *identifier.Identifier `json:"id"`
-	Description string                 `json:"description"`
+	ID *identifier.Identifier `json:"id"`
+	// Base is the slice of strings from which the ID is derived. It extends the base of the application template.
+	Base []string `json:"base"`
+
+	Description string `json:"description"`
 
 	AdditionalScopes []string `json:"additionalScopes"`
 
@@ -127,26 +130,17 @@ type ApplicationTemplateClientPublic struct {
 }
 
 // Validate validates the ApplicationTemplateClientPublic struct.
-func (c *ApplicationTemplateClientPublic) Validate(ctx context.Context, existing *ApplicationTemplateClientPublic, values map[string]string) errors.E {
-	if existing == nil {
-		if c.ID != nil {
-			errE := errors.New("ID provided for new document")
-			errors.Details(errE)["id"] = *c.ID
-			return errE
-		}
-		id := identifier.New()
-		c.ID = &id
-	} else if c.ID == nil {
-		// This should not really happen because we fetch existing based on c.ID.
-		return errors.New("ID missing for existing document")
-	} else if existing.ID == nil {
-		// This should not really happen because we always store documents with ID.
-		return errors.New("ID missing for existing document")
-	} else if *c.ID != *existing.ID {
-		// This should not really happen because we fetch existing based on c.ID.
-		errE := errors.New("payload ID does not match existing ID")
-		errors.Details(errE)["payload"] = *c.ID
-		errors.Details(errE)["existing"] = *existing.ID
+func (c *ApplicationTemplateClientPublic) Validate(
+	ctx context.Context, existing *ApplicationTemplateClientPublic, templateBase []string, values map[string]string,
+) errors.E {
+	var existingID *identifier.Identifier
+	var existingBase []string
+	if existing != nil {
+		existingID = existing.ID
+		existingBase = existing.Base
+	}
+	errE := validateIDBase(newChildBase(templateBase, "APPLICATION_TEMPLATE_CLIENT_PUBLIC"), &c.ID, &c.Base, existing != nil, existingID, existingBase)
+	if errE != nil {
 		return errE
 	}
 
@@ -201,8 +195,11 @@ func (c *ApplicationTemplateClientPublic) Validate(ctx context.Context, existing
 
 // ApplicationTemplateClientBackend represents a backend client of the application template.
 type ApplicationTemplateClientBackend struct {
-	ID          *identifier.Identifier `json:"id"`
-	Description string                 `json:"description"`
+	ID *identifier.Identifier `json:"id"`
+	// Base is the slice of strings from which the ID is derived. It extends the base of the application template.
+	Base []string `json:"base"`
+
+	Description string `json:"description"`
 
 	AdditionalScopes []string `json:"additionalScopes"`
 
@@ -217,26 +214,17 @@ type ApplicationTemplateClientBackend struct {
 }
 
 // Validate validates the ApplicationTemplateClientBackend struct.
-func (c *ApplicationTemplateClientBackend) Validate(ctx context.Context, existing *ApplicationTemplateClientBackend, values map[string]string) errors.E {
-	if existing == nil {
-		if c.ID != nil {
-			errE := errors.New("ID provided for new document")
-			errors.Details(errE)["id"] = *c.ID
-			return errE
-		}
-		id := identifier.New()
-		c.ID = &id
-	} else if c.ID == nil {
-		// This should not really happen because we fetch existing based on c.ID.
-		return errors.New("ID missing for existing document")
-	} else if existing.ID == nil {
-		// This should not really happen because we always store documents with ID.
-		return errors.New("ID missing for existing document")
-	} else if *c.ID != *existing.ID {
-		// This should not really happen because we fetch existing based on c.ID.
-		errE := errors.New("payload ID does not match existing ID")
-		errors.Details(errE)["payload"] = *c.ID
-		errors.Details(errE)["existing"] = *existing.ID
+func (c *ApplicationTemplateClientBackend) Validate(
+	ctx context.Context, existing *ApplicationTemplateClientBackend, templateBase []string, values map[string]string,
+) errors.E {
+	var existingID *identifier.Identifier
+	var existingBase []string
+	if existing != nil {
+		existingID = existing.ID
+		existingBase = existing.Base
+	}
+	errE := validateIDBase(newChildBase(templateBase, "APPLICATION_TEMPLATE_CLIENT_BACKEND"), &c.ID, &c.Base, existing != nil, existingID, existingBase)
+	if errE != nil {
 		return errE
 	}
 
@@ -300,8 +288,11 @@ func (c *ApplicationTemplateClientBackend) Validate(ctx context.Context, existin
 
 // ApplicationTemplateClientService represents a service client of the application template.
 type ApplicationTemplateClientService struct {
-	ID          *identifier.Identifier `json:"id"`
-	Description string                 `json:"description"`
+	ID *identifier.Identifier `json:"id"`
+	// Base is the slice of strings from which the ID is derived. It extends the base of the application template.
+	Base []string `json:"base"`
+
+	Description string `json:"description"`
 
 	AdditionalScopes []string `json:"additionalScopes"`
 
@@ -315,26 +306,15 @@ type ApplicationTemplateClientService struct {
 }
 
 // Validate validates the ApplicationTemplateClientService struct.
-func (c *ApplicationTemplateClientService) Validate(_ context.Context, existing *ApplicationTemplateClientService, _ map[string]string) errors.E {
-	if existing == nil {
-		if c.ID != nil {
-			errE := errors.New("ID provided for new document")
-			errors.Details(errE)["id"] = *c.ID
-			return errE
-		}
-		id := identifier.New()
-		c.ID = &id
-	} else if c.ID == nil {
-		// This should not really happen because we fetch existing based on c.ID.
-		return errors.New("ID missing for existing document")
-	} else if existing.ID == nil {
-		// This should not really happen because we always store documents with ID.
-		return errors.New("ID missing for existing document")
-	} else if *c.ID != *existing.ID {
-		// This should not really happen because we fetch existing based on c.ID.
-		errE := errors.New("payload ID does not match existing ID")
-		errors.Details(errE)["payload"] = *c.ID
-		errors.Details(errE)["existing"] = *existing.ID
+func (c *ApplicationTemplateClientService) Validate(_ context.Context, existing *ApplicationTemplateClientService, templateBase []string, _ map[string]string) errors.E {
+	var existingID *identifier.Identifier
+	var existingBase []string
+	if existing != nil {
+		existingID = existing.ID
+		existingBase = existing.Base
+	}
+	errE := validateIDBase(newChildBase(templateBase, "APPLICATION_TEMPLATE_CLIENT_SERVICE"), &c.ID, &c.Base, existing != nil, existingID, existingBase)
+	if errE != nil {
 		return errE
 	}
 
@@ -488,6 +468,8 @@ type ApplicationTemplate struct {
 // ApplicationTemplatePublic represents public fields of the application template.
 type ApplicationTemplatePublic struct {
 	ID *identifier.Identifier `json:"id"`
+	// Base is the slice of strings from which the document ID is derived.
+	Base []string `json:"base"`
 
 	Name             string `json:"name"`
 	Description      string `json:"description"`
@@ -571,26 +553,15 @@ func applicationTemplateRefCmp(a ApplicationTemplateRef, b ApplicationTemplateRe
 }
 
 // Validate validates the ApplicationTemplatePublic struct.
-func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *ApplicationTemplatePublic) errors.E { //nolint:maintidx
-	if existing == nil {
-		if a.ID != nil {
-			errE := errors.New("ID provided for new document")
-			errors.Details(errE)["id"] = *a.ID
-			return errE
-		}
-		id := identifier.New()
-		a.ID = &id
-	} else if a.ID == nil {
-		// This should not really happen because we fetch existing based on a.ID.
-		return errors.New("ID missing for existing document")
-	} else if existing.ID == nil {
-		// This should not really happen because we always store documents with ID.
-		return errors.New("ID missing for existing document")
-	} else if *a.ID != *existing.ID {
-		// This should not really happen because we fetch existing based on a.ID.
-		errE := errors.New("payload ID does not match existing ID")
-		errors.Details(errE)["payload"] = *a.ID
-		errors.Details(errE)["existing"] = *existing.ID
+func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *ApplicationTemplatePublic, service *Service) errors.E { //nolint:maintidx
+	var existingID *identifier.Identifier
+	var existingBase []string
+	if existing != nil {
+		existingID = existing.ID
+		existingBase = existing.Base
+	}
+	errE := validateIDBase(service.newBase("APPLICATION_TEMPLATE"), &a.ID, &a.Base, existing != nil, existingID, existingBase)
+	if errE != nil {
 		return errE
 	}
 
@@ -697,7 +668,7 @@ func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *Appl
 	clientsSet := mapset.NewThreadUnsafeSet[identifier.Identifier]()
 
 	for i, client := range a.ClientsPublic {
-		errE := client.Validate(ctx, existing.GetClientPublic(client.ID), values)
+		errE := client.Validate(ctx, existing.GetClientPublic(client.ID), a.Base, values)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "public client")
 			errors.Details(errE)["i"] = i
@@ -720,7 +691,7 @@ func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *Appl
 	}
 
 	for i, client := range a.ClientsBackend {
-		errE := client.Validate(ctx, existing.GetClientBackend(client.ID), values)
+		errE := client.Validate(ctx, existing.GetClientBackend(client.ID), a.Base, values)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "backend client")
 			errors.Details(errE)["i"] = i
@@ -744,7 +715,7 @@ func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *Appl
 	}
 
 	for i, client := range a.ClientsService {
-		errE := client.Validate(ctx, existing.GetClientService(client.ID), values)
+		errE := client.Validate(ctx, existing.GetClientService(client.ID), a.Base, values)
 		if errE != nil {
 			errE = errors.WithMessage(errE, "service client")
 			errors.Details(errE)["i"] = i
@@ -775,7 +746,7 @@ func (a *ApplicationTemplatePublic) Validate(ctx context.Context, existing *Appl
 		return errors.New("homepage template: is required")
 	}
 
-	errE := validateRedirectURIsTemplate(ctx, a.HomepageTemplate, values)
+	errE = validateRedirectURIsTemplate(ctx, a.HomepageTemplate, values)
 	if errE != nil {
 		errE = errors.WithMessage(errE, "homepage template")
 		errors.Details(errE)["template"] = a.HomepageTemplate
@@ -805,7 +776,7 @@ func (a *ApplicationTemplate) Validate(ctx context.Context, existing *Applicatio
 	} else {
 		e = &existing.ApplicationTemplatePublic
 	}
-	errE := a.ApplicationTemplatePublic.Validate(ctx, e)
+	errE := a.ApplicationTemplatePublic.Validate(ctx, e, service)
 	if errE != nil {
 		return errE
 	}

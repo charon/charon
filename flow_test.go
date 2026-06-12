@@ -20,8 +20,24 @@ func TestStore(t *testing.T) {
 
 	ctx := t.Context()
 	f := &charon.TestingFlow{
-		ID:        identifier.New(),
-		CreatedAt: time.Now().UTC(),
+		ID:                   identifier.New(),
+		CreatedAt:            time.Now().UTC(),
+		Completed:            nil,
+		AuthTime:             nil,
+		OrganizationID:       identifier.Identifier{},
+		AppID:                identifier.Identifier{},
+		SessionID:            nil,
+		Identity:             nil,
+		OIDCAuthorizeRequest: nil,
+		AuthAttempts:         0,
+		Providers:            nil,
+		AllowedProviders:     nil,
+		EmailOrUsername:      "",
+		OIDCProvider:         nil,
+		SAMLProvider:         nil,
+		Passkey:              nil,
+		Password:             nil,
+		Code:                 nil,
 	}
 	errE := service.TestingSetFlow(ctx, f)
 	require.NoError(t, errE, "% -+#.1v", errE)
@@ -52,9 +68,24 @@ func TestFlowIsProviderAllowed(t *testing.T) {
 			t.Parallel()
 
 			f := &charon.TestingFlow{
-				ID:               identifier.New(),
-				CreatedAt:        time.Now().UTC(),
-				AllowedProviders: tt.allowed,
+				ID:                   identifier.New(),
+				CreatedAt:            time.Now().UTC(),
+				Completed:            nil,
+				AuthTime:             nil,
+				OrganizationID:       identifier.Identifier{},
+				AppID:                identifier.Identifier{},
+				SessionID:            nil,
+				Identity:             nil,
+				OIDCAuthorizeRequest: nil,
+				AuthAttempts:         0,
+				Providers:            nil,
+				AllowedProviders:     tt.allowed,
+				EmailOrUsername:      "",
+				OIDCProvider:         nil,
+				SAMLProvider:         nil,
+				Passkey:              nil,
+				Password:             nil,
+				Code:                 nil,
 			}
 			assert.Equal(t, tt.expected, charon.TestingFlowIsProviderAllowed(f, tt.query))
 		})

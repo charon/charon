@@ -57,9 +57,10 @@ func validateJWT(t *testing.T, ts *httptest.Server, service *charon.Service, now
 	require.NoError(t, err)
 
 	err = claims.ValidateWithLeeway(jwt.Expected{
-		Subject:     identityID.String(),
 		Issuer:      ts.URL,
+		Subject:     identityID.String(),
 		AnyAudience: []string{organizationID, appID, clientID},
+		ID:          "",
 		Time:        now,
 	}, 0)
 	assert.NoError(t, err, claims)
