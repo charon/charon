@@ -70,7 +70,6 @@ linters:
           - revive
         text: "exported: exported var Err"
       - linters:
-          - exhaustruct
           - goconst
           - lll
           - wrapcheck
