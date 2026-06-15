@@ -8,7 +8,6 @@ ignore ./node_modules
 require (
 	github.com/alecthomas/kong v1.13.1-0.20260401093329-db421839da20
 	github.com/alexedwards/argon2id v1.0.1-0.20251028180742-493d7dead70e
-	github.com/automattic/go-gravatar v0.0.0-20210818030622-453d3c921ea3
 	github.com/go-jose/go-jose/v3 v3.0.5
 	github.com/go-jose/go-jose/v4 v4.1.4
 	github.com/mocktools/go-smtp-mock/v2 v2.5.1

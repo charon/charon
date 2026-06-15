@@ -1,6 +1,8 @@
 package charon_test
 
 import (
+	"crypto/md5" //nolint:gosec
+	"encoding/hex"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -8,7 +10,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/automattic/go-gravatar"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/tozd/go/x"
@@ -91,9 +92,8 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
 	})
 
-	g := gravatar.NewGravatarFromEmail(username)
-	g.Default = "identicon"
-	gravatarURL := g.GetURL()
+	sum := md5.Sum([]byte(strings.TrimSpace(username))) //nolint:gosec
+	gravatarURL := "https://www.gravatar.com/avatar/" + hex.EncodeToString(sum[:]) + "?d=identicon"
 
 	// After sign-up, GET (with access token) should return success.
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, ts.URL+userinfo, nil)

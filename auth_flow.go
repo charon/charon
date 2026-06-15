@@ -1,14 +1,15 @@
 package charon
 
 import (
+	"crypto/md5" //nolint:gosec
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/automattic/go-gravatar"
 	"gitlab.com/tozd/go/errors"
 	"gitlab.com/tozd/go/x"
 	"gitlab.com/tozd/identifier"
@@ -237,18 +238,21 @@ func (s *Service) makeIdentityFromCredentials(account Account, credentials []Cre
 		}
 		if identity.PictureURL == "" && identity.Email != "" {
 			// TODO: Generate some local picture and do not use remote Gravatar.
-			g := gravatar.NewGravatarFromEmail(identity.Email)
-			g.Default = "identicon"
-			identity.PictureURL = g.GetURL()
+			identity.PictureURL = gravatarURL(identity.Email)
 		}
 		if identity.PictureURL == "" && identity.Username != "" {
 			// TODO: Generate some local picture and do not misuse username for Gravatar.
-			g := gravatar.NewGravatarFromEmail(identity.Username)
-			g.Default = "identicon"
-			identity.PictureURL = g.GetURL()
+			identity.PictureURL = gravatarURL(identity.Username)
 		}
 	}
 	return identity, nil
+}
+
+// gravatarURL returns the Gravatar avatar URL for value (an email address or username), using the
+// identicon fallback image. The hash is the MD5 of the trimmed value, as the Gravatar scheme requires.
+func gravatarURL(value string) string {
+	sum := md5.Sum([]byte(strings.TrimSpace(value))) //nolint:gosec
+	return "https://www.gravatar.com/avatar/" + hex.EncodeToString(sum[:]) + "?d=identicon"
 }
 
 func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api bool, flow *flow, account *Account, credentials []Credential) {
