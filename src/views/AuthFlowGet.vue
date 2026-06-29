@@ -30,6 +30,7 @@ import siteContext from "@/context"
 // Importing "@/flow" also fetches siteContext which we have to fetch because
 // the server sends the preload header for it. Generally this is already cached.
 import { processFirstResponse, updateSteps } from "@/flow"
+import { enabledLanguages } from "@/i18n"
 import AuthAutoRedirect from "@/partials/AuthAutoRedirect.vue"
 import AuthCode from "@/partials/AuthCode.vue"
 import AuthIdentity from "@/partials/AuthIdentity.vue"
@@ -40,6 +41,7 @@ import AuthPassword from "@/partials/AuthPassword.vue"
 import AuthStart from "@/partials/AuthStart.vue"
 import AuthThirdPartyProvider from "@/partials/AuthThirdPartyProvider.vue"
 import Footer from "@/partials/Footer.vue"
+import LanguageSwitcher from "@/partials/LanguageSwitcher.vue"
 import { useProgress } from "@/progress"
 import { getHomepage } from "@/utils"
 
@@ -388,6 +390,12 @@ const WithOrganizationApplicationDocument = WithDocument<OrganizationApplication
       </template>
     </div>
   </div>
+  <!-- The auth flow has no navbar, so the language switcher is offered on its own in the top-right corner. -->
+  <Teleport v-if="enabledLanguages.length > 1" to="header">
+    <div class="flex justify-end p-1 sm:p-4">
+      <LanguageSwitcher />
+    </div>
+  </Teleport>
   <Teleport to="footer">
     <Footer />
   </Teleport>
