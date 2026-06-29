@@ -93,6 +93,10 @@ export type AuthFlowThirdPartyProviderStartRequest = {
   provider: string
 }
 
+export type AuthFlowLocaleRequest = {
+  locale: string
+}
+
 export type AuthFlowPasskeyGetCompleteRequest = {
   getResponse: AuthenticationResponseJSON
 }

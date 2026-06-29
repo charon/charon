@@ -16,14 +16,25 @@ elements and links but that should not change how components look.
 -->
 
 <script setup lang="ts">
-import type { AuthFlowResponse, AuthFlowStep, Completed, DeriveOptions, EncryptOptions, Flow, Organization, OrganizationApplicationPublic, SiteProvider } from "@/types"
+import type {
+  AuthFlowLocaleRequest,
+  AuthFlowResponse,
+  AuthFlowStep,
+  Completed,
+  DeriveOptions,
+  EncryptOptions,
+  Flow,
+  Organization,
+  OrganizationApplicationPublic,
+  SiteProvider,
+} from "@/types"
 import type { NamedValue } from "vue-i18n"
 
 import { onBeforeMount, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
-import { getURL, restartAuth } from "@/api"
+import { getURL, postJSON, restartAuth } from "@/api"
 import Stepper from "@/components/Stepper.vue"
 import WithDocument from "@/components/WithDocument.vue"
 import siteContext from "@/context"
@@ -49,7 +60,7 @@ const props = defineProps<{
   id: string
 }>()
 
-const { t } = useI18n({ useScope: "global" })
+const { t, locale } = useI18n({ useScope: "global" })
 const router = useRouter()
 const progress = useProgress()
 
@@ -69,6 +80,7 @@ const publicKey = ref<Uint8Array<ArrayBuffer>>()
 const deriveOptions = ref<DeriveOptions>()
 const encryptOptions = ref<EncryptOptions>()
 const allowedProviders = ref<string[]>([])
+const flowLocale = ref("")
 
 onBeforeUnmount(() => {
   abortController.abort()
@@ -168,6 +180,8 @@ onBeforeMount(async () => {
     if (abortController.signal.aborted) {
       return
     }
+    // Remember the locale the flow already has, so that applying it below does not trigger a needless update.
+    flowLocale.value = response.doc.locale ?? ""
     await processFirstResponse(router, response.doc, flow, progress, abortController)
     if (abortController.signal.aborted) {
       return
@@ -182,6 +196,45 @@ onBeforeMount(async () => {
   } finally {
     dataLoading.value = false
   }
+})
+
+// updateFlowLocale persists a user-chosen interface language to the flow so that it survives a reload of the flow.
+async function updateFlowLocale(newLocale: string) {
+  if (abortController.signal.aborted) {
+    return
+  }
+
+  try {
+    const url = router.apiResolve({
+      name: "AuthFlowLocale",
+      params: {
+        id: props.id,
+      },
+    }).href
+
+    const payload: AuthFlowLocaleRequest = {
+      locale: newLocale,
+    }
+
+    await postJSON<AuthFlowResponse>(url, payload, abortController.signal, progress)
+  } catch (error) {
+    if (abortController.signal.aborted) {
+      return
+    }
+    // Persisting the locale to the flow is best-effort: the UI already reflects the change.
+    console.error("AuthFlowGet.updateFlowLocale", error)
+  }
+}
+
+// When the user changes the interface language (e.g. via the language switcher), persist it to the flow. The
+// language initially applied from the flow itself matches flowLocale, so it does not trigger a needless update.
+watch(locale, (newLocale) => {
+  if (newLocale === flowLocale.value || !enabledLanguages.includes(newLocale)) {
+    return
+  }
+  // Persisting the locale to the flow is best-effort and is attempted only once per change.
+  flowLocale.value = newLocale
+  void updateFlowLocale(newLocale)
 })
 
 async function onPreviousStep(step: string) {

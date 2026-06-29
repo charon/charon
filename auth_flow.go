@@ -671,6 +671,62 @@ func (s *Service) AuthFlowChooseIdentityPostAPI(w http.ResponseWriter, req *http
 	}, nil)
 }
 
+// AuthFlowLocaleRequest represents the request body for the AuthFlowLocalePost handler.
+type AuthFlowLocaleRequest struct {
+	Locale string `json:"locale"`
+}
+
+// AuthFlowLocalePostAPI is the API handler for updating the flow's UI locale when the user changes the interface
+// language, POST request. The chosen language is persisted on the flow so that it survives a reload of the flow.
+func (s *Service) AuthFlowLocalePostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
+	defer req.Body.Close()              //nolint:errcheck
+	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
+
+	ctx := req.Context()
+
+	flow := s.getActiveFlow(w, req, params["id"])
+	if flow == nil {
+		return
+	}
+
+	var localeRequest AuthFlowLocaleRequest
+	errE := x.DecodeJSONWithoutUnknownFields(req.Body, &localeRequest)
+	if errE != nil {
+		s.BadRequestWithError(w, req, errE)
+		return
+	}
+
+	// We accept only an enabled language, resolved the same way as the initial OIDC ui_locales preference.
+	locale := waf.MustGetSite[*Site](ctx).resolveUILocale(localeRequest.Locale)
+	if locale == "" {
+		s.BadRequestWithError(w, req, errors.New("locale is not enabled"))
+		return
+	}
+
+	flow.UILocale = locale
+
+	errE = s.setFlow(ctx, flow)
+	if errE != nil {
+		s.InternalServerErrorWithError(w, req, errE)
+		return
+	}
+
+	s.WriteJSON(w, req, AuthFlowResponse{
+		Completed:          flow.Completed,
+		OrganizationID:     flow.OrganizationID,
+		AppID:              flow.AppID,
+		Providers:          flow.Providers,
+		AllowedProviders:   flow.AllowedProviders,
+		EmailOrUsername:    flow.EmailOrUsername,
+		Locale:             flow.UILocale,
+		ThirdPartyProvider: nil,
+		Passkey:            nil,
+		Password:           nil,
+		Error:              "",
+		SignalUnknown:      nil,
+	}, nil)
+}
+
 // AuthFlowRedirectPostAPI is the API handler for marking the flow as ready to be finished
 // (and ready for the user to be redirected back to the app), POST request.
 func (s *Service) AuthFlowRedirectPostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {

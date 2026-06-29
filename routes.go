@@ -263,6 +263,14 @@ func (s *Service) setRoutes() { //nolint:maintidx
 				},
 			},
 		},
+		"AuthFlowLocale": {
+			Path: "/auth/locale/:id",
+			API: waf.RouteOptions{
+				Handlers: map[string]waf.Handler{
+					http.MethodPost: s.AuthFlowLocalePostAPI,
+				},
+			},
+		},
 		"AuthFlowGet": {
 			RouteOptions: waf.RouteOptions{
 				Handlers: map[string]waf.Handler{
