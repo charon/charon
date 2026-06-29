@@ -6,6 +6,7 @@ import type { AuthFlowResponse, Completed, Flow, SiteProvider } from "@/types"
 // It is OK that we fetch siteContext here because the server sends preload header
 // so we have to fetch it always anyway. Generally this is already cached.
 import siteContext from "@/context"
+import i18n, { enabledLanguages } from "@/i18n"
 import { equals, redirectServerSide, signalPasskeyUnknownCredential } from "@/utils"
 
 export function getThirdPartyProvider(providers: string[]): SiteProvider | null {
@@ -195,6 +196,11 @@ export async function processResponse(
 }
 
 export async function processFirstResponse(router: Router, response: AuthFlowResponse, flow: Flow, progress: Ref<number>, abortController: AbortController) {
+  // The relying party can request a UI language via the OIDC ui_locales parameter. The backend resolves it to one
+  // of the enabled languages, so when it provided one we initialize the interface to that language.
+  if (response.locale && enabledLanguages.includes(response.locale)) {
+    i18n.global.locale.value = response.locale as typeof i18n.global.locale.value
+  }
   if (response.allowedProviders) {
     flow.setAllowedProviders(response.allowedProviders)
   }

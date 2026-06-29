@@ -285,6 +285,7 @@ func (s *Service) sendCode(
 		Providers:          flow.Providers,
 		AllowedProviders:   flow.AllowedProviders,
 		EmailOrUsername:    preservedEmailOrUsername,
+		Locale:             flow.UILocale,
 		ThirdPartyProvider: nil,
 		Passkey:            nil,
 		Password:           nil,

@@ -87,6 +87,10 @@ type flow struct {
 	// State of the OIDC authorization request which started this flow.
 	OIDCAuthorizeRequest *fosite.AuthorizeRequest
 
+	// UILocale is the initial UI language for this flow, resolved from the OIDC ui_locales request parameter
+	// against the site's enabled languages, or "" when none was requested or matched.
+	UILocale string
+
 	// State while the user is authenticating themselves.
 	AuthAttempts     int
 	Providers        []Provider

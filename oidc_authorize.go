@@ -118,6 +118,10 @@ func (s *Service) OIDCAuthorizeGet(w http.ResponseWriter, req *http.Request, _ w
 		return
 	}
 
+	// The relying party can request a UI language via the OIDC ui_locales parameter. We resolve it against the
+	// site's enabled languages once here, so that every auth flow response can carry the initial UI locale.
+	uiLocale := waf.MustGetSite[*Site](ctx).resolveUILocale(ar.Form.Get("ui_locales"))
+
 	errE = s.setFlow(ctx, &flow{
 		ID:        id,
 		CreatedAt: time.Now().UTC(),
@@ -131,6 +135,8 @@ func (s *Service) OIDCAuthorizeGet(w http.ResponseWriter, req *http.Request, _ w
 		Identity:  nil,
 
 		OIDCAuthorizeRequest: ar,
+
+		UILocale: uiLocale,
 
 		AuthAttempts:     0,
 		Providers:        nil,

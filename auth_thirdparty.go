@@ -79,6 +79,7 @@ func (s *Service) handleAuthFlowThirdPartyProviderStart(
 		Providers:        flow.Providers,
 		AllowedProviders: flow.AllowedProviders,
 		EmailOrUsername:  flow.EmailOrUsername,
+		Locale:           flow.UILocale,
 		ThirdPartyProvider: &AuthFlowResponseThirdPartyProvider{
 			Location: location,
 		},

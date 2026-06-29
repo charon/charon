@@ -172,6 +172,7 @@ func (s *Service) AuthFlowPasskeyGetStartPostAPI(w http.ResponseWriter, req *htt
 		Providers:          flow.Providers,
 		AllowedProviders:   flow.AllowedProviders,
 		EmailOrUsername:    flow.EmailOrUsername,
+		Locale:             flow.UILocale,
 		ThirdPartyProvider: nil,
 		Passkey: &AuthFlowResponsePasskey{
 			CreateOptions: nil,
@@ -377,6 +378,7 @@ func (s *Service) AuthFlowPasskeyCreateStartPostAPI(w http.ResponseWriter, req *
 		Providers:          flow.Providers,
 		AllowedProviders:   flow.AllowedProviders,
 		EmailOrUsername:    flow.EmailOrUsername,
+		Locale:             flow.UILocale,
 		ThirdPartyProvider: nil,
 		Passkey: &AuthFlowResponsePasskey{
 			CreateOptions: options,

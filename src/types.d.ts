@@ -72,6 +72,7 @@ export type AuthFlowResponse = {
   providers?: string[]
   allowedProviders?: string[]
   emailOrUsername?: string
+  locale?: string
 } & (
   | {
       error: ErrorCode

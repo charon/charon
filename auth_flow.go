@@ -30,6 +30,7 @@ type AuthFlowResponse struct {
 	Providers          []Provider                          `json:"providers,omitempty"`
 	AllowedProviders   []Provider                          `json:"allowedProviders,omitempty"`
 	EmailOrUsername    string                              `json:"emailOrUsername,omitempty"`
+	Locale             string                              `json:"locale,omitempty"`
 	ThirdPartyProvider *AuthFlowResponseThirdPartyProvider `json:"thirdPartyProvider,omitempty"`
 	Passkey            *AuthFlowResponsePasskey            `json:"passkey,omitempty"`
 	Password           *AuthFlowResponsePassword           `json:"password,omitempty"`
@@ -69,6 +70,7 @@ func (s *Service) flowError(w http.ResponseWriter, req *http.Request, flow *flow
 		Providers:          flow.Providers,
 		AllowedProviders:   flow.AllowedProviders,
 		EmailOrUsername:    flow.EmailOrUsername,
+		Locale:             flow.UILocale,
 		ThirdPartyProvider: nil,
 		Passkey:            nil,
 		Password:           nil,
@@ -132,6 +134,7 @@ func (s *Service) AuthFlowGetGetAPI(w http.ResponseWriter, req *http.Request, pa
 		Providers:          flow.Providers,
 		AllowedProviders:   flow.AllowedProviders,
 		EmailOrUsername:    flow.EmailOrUsername,
+		Locale:             flow.UILocale,
 		ThirdPartyProvider: nil,
 		Passkey:            nil,
 		Password:           nil,
@@ -379,6 +382,7 @@ func (s *Service) completeAuthStep(w http.ResponseWriter, req *http.Request, api
 			Providers:          flow.Providers,
 			AllowedProviders:   flow.AllowedProviders,
 			EmailOrUsername:    flow.EmailOrUsername,
+			Locale:             flow.UILocale,
 			ThirdPartyProvider: nil,
 			Passkey:            nil,
 			Password:           nil,
@@ -450,6 +454,7 @@ func (s *Service) failAuthStep(w http.ResponseWriter, req *http.Request, api boo
 			Providers:          flow.Providers,
 			AllowedProviders:   flow.AllowedProviders,
 			EmailOrUsername:    flow.EmailOrUsername,
+			Locale:             flow.UILocale,
 			ThirdPartyProvider: nil,
 			Passkey:            nil,
 			Password:           nil,
@@ -544,6 +549,7 @@ func (s *Service) AuthFlowRestartAuthPostAPI(w http.ResponseWriter, req *http.Re
 		Providers:          flow.Providers,
 		AllowedProviders:   flow.AllowedProviders,
 		EmailOrUsername:    flow.EmailOrUsername,
+		Locale:             flow.UILocale,
 		ThirdPartyProvider: nil,
 		Passkey:            nil,
 		Password:           nil,
@@ -592,6 +598,7 @@ func (s *Service) AuthFlowDeclinePostAPI(w http.ResponseWriter, req *http.Reques
 		Providers:          flow.Providers,
 		AllowedProviders:   flow.AllowedProviders,
 		EmailOrUsername:    flow.EmailOrUsername,
+		Locale:             flow.UILocale,
 		ThirdPartyProvider: nil,
 		Passkey:            nil,
 		Password:           nil,
@@ -655,6 +662,7 @@ func (s *Service) AuthFlowChooseIdentityPostAPI(w http.ResponseWriter, req *http
 		Providers:          flow.Providers,
 		AllowedProviders:   flow.AllowedProviders,
 		EmailOrUsername:    flow.EmailOrUsername,
+		Locale:             flow.UILocale,
 		ThirdPartyProvider: nil,
 		Passkey:            nil,
 		Password:           nil,
@@ -709,6 +717,7 @@ func (s *Service) AuthFlowRedirectPostAPI(w http.ResponseWriter, req *http.Reque
 		Providers:          flow.Providers,
 		AllowedProviders:   flow.AllowedProviders,
 		EmailOrUsername:    flow.EmailOrUsername,
+		Locale:             flow.UILocale,
 		ThirdPartyProvider: nil,
 		Passkey:            nil,
 		Password:           nil,

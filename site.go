@@ -96,6 +96,27 @@ func (s *Site) validateDefaultLanguage() errors.E {
 	return nil
 }
 
+// resolveUILocale matches an OIDC ui_locales preference (a space-separated list of BCP47 language tags, ordered by
+// preference) against the site's enabled UI languages, returning the first enabled match, or "" when none match.
+// It compares on the primary language subtag, so both "en" and "en-US" match the enabled "en".
+func (s *Site) resolveUILocale(uiLocales string) string {
+	enabled := func(language string) bool {
+		if len(s.LanguagePriority) > 0 {
+			_, ok := s.LanguagePriority[language]
+			return ok
+		}
+		return language == DefaultEnabledLanguage
+	}
+	for tag := range strings.FieldsSeq(uiLocales) {
+		// Reduce a region or script qualified tag to its primary subtag, so "en-US" matches the enabled "en".
+		tag, _, _ = strings.Cut(tag, "-")
+		if enabled(tag) {
+			return tag
+		}
+	}
+	return ""
+}
+
 func (p *SiteProvider) initProvider(ctx context.Context, config *Config) errors.E {
 	switch p.Type {
 	case ThirdPartyProviderOIDC:

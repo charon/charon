@@ -134,6 +134,7 @@ func (s *Service) AuthFlowPasswordStartPostAPI(w http.ResponseWriter, req *http.
 		Providers:          flow.Providers,
 		AllowedProviders:   flow.AllowedProviders,
 		EmailOrUsername:    flow.EmailOrUsername,
+		Locale:             flow.UILocale,
 		ThirdPartyProvider: nil,
 		Passkey:            nil,
 		Password:           newPasswordEncryptionResponse(publicKeyBytes, nonce, overhead),
