@@ -134,6 +134,9 @@ declare module "vue-i18n" {
       }
     }
     partials: {
+      LanguageSwitcher: {
+        selectLanguage: string
+      }
       AuthAutoRedirect: {
         congratulations: string
         declined: string

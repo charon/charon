@@ -76,7 +76,7 @@ cleanup() {
 
   if [ "$cleanup_certs" -ne 0 ]; then
     echo "Cleaning up temporary files"
-    rm "$ROOT_CA_FILE"
+    rm "$ROOT_CA_FILE" config-e2e.yml
   fi
 
   if [ "$cleanup_ssh_tunnel" -ne 0 ]; then
@@ -125,6 +125,9 @@ chmod 644 sipasstest.peer.id+2.pem sipasstest.peer.id+2-key.pem
 cp "$(mkcert -CAROOT)/rootCA.pem" "$ROOT_CA_FILE"
 cleanup_certs=1
 
+# Use config.yml, replacing localhost domain string with $PEERDB_CONTAINER, to expose all features of PeerDB in e2e tests.
+sed "s/localhost/$PEERDB_CONTAINER/g" config.yml > config-e2e.yml
+
 echo "2. Building Docker images..."
 
 # Build both Charon and Playwright images in parallel.
@@ -160,6 +163,7 @@ docker run -d \
   -e SSL_CERT_FILE=/data/"$ROOT_CA_FILE" \
   -e SSL_CERT_DIR=/etc/ssl/certs \
   "$CHARON_IMAGE" \
+  -c /data/config-e2e.yml \
   -k /data/charon-container+2.pem \
   -K /data/charon-container+2-key.pem \
   --secret=/data/.hmac.secret \

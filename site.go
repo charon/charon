@@ -55,6 +55,10 @@ type SiteProvider struct {
 	samlIDPCertificateStore dsig.X509CertificateStore
 }
 
+// DefaultEnabledLanguage is the only UI language enabled when a site configures no LanguagePriority.
+// The frontend mirrors this value so that the empty-priority default is identical on both sides.
+const DefaultEnabledLanguage = "en"
+
 // Site represents the site configuration.
 type Site struct {
 	waf.Site `yaml:",inline"`
@@ -64,8 +68,32 @@ type Site struct {
 	Title     string         `json:"title,omitempty" yaml:"title,omitempty"`
 	Providers []SiteProvider `json:"providers"       yaml:"-"`
 
+	// LanguagePriority maps each enabled UI language to its fallback chain. Its keys are the languages the site
+	// offers in the language switcher. When it is empty, only DefaultEnabledLanguage is enabled.
+	LanguagePriority map[string][]string `json:"languagePriority,omitempty" yaml:"languagePriority,omitempty"`
+	// DefaultLanguage is the UI language used when the visitor has expressed no preference. It is required when
+	// LanguagePriority is set and must then be one of its keys.
+	DefaultLanguage string `json:"defaultLanguage,omitempty" yaml:"defaultLanguage,omitempty"`
+
 	PrivacyPolicy  bool `json:"privacyPolicy,omitempty"  yaml:"-"`
 	TermsOfService bool `json:"termsOfService,omitempty" yaml:"-"`
+}
+
+// validateDefaultLanguage checks the site's language configuration: DefaultLanguage is required once
+// LanguagePriority enables any language, and it must then be one of the enabled languages.
+func (s *Site) validateDefaultLanguage() errors.E {
+	if s.DefaultLanguage == "" {
+		if len(s.LanguagePriority) < 1 {
+			return nil
+		}
+		return errors.New("default language is required when language priority is set")
+	}
+	if _, ok := s.LanguagePriority[s.DefaultLanguage]; !ok {
+		errE := errors.New("default language is not enabled")
+		errors.Details(errE)["language"] = s.DefaultLanguage
+		return errE
+	}
+	return nil
 }
 
 func (p *SiteProvider) initProvider(ctx context.Context, config *Config) errors.E {

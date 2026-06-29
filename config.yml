@@ -1,0 +1,6 @@
+sites:
+  - domain: localhost
+    languagePriority:
+      en: []
+      sl: []
+    defaultLanguage: en

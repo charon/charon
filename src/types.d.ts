@@ -143,6 +143,10 @@ export type SiteContext = {
     revision?: string
   }
   title?: string
+  languagePriority?: {
+    [language: string]: string[]
+  }
+  defaultLanguage?: string
   providers: SiteProvider[]
   privacyPolicy?: boolean
   termsOfService?: boolean

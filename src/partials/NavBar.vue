@@ -11,6 +11,7 @@ import { postJSON } from "@/api"
 import { accessToken, currentIdentityId, isSignedIn, signIn } from "@/auth"
 import Button from "@/components/Button.vue"
 import { useNavbar } from "@/navbar"
+import LanguageSwitcher from "@/partials/LanguageSwitcher.vue"
 import { useProgress } from "@/progress"
 import { currentAbsoluteURL, redirectServerSide } from "@/utils"
 
@@ -104,6 +105,7 @@ async function onSignIn() {
       <GlobeAltIcon class="m-1 h-7 w-7 rounded-sm group-focus:ring-2 group-focus:ring-primary-500 sm:m-4 sm:h-10 sm:w-10" />
     </router-link>
     <slot><div class="grow"></div></slot>
+    <LanguageSwitcher />
     <Button v-if="isSignedIn()" id="navbar-button-signout" primary type="button" :progress="progress" @click.prevent="onSignOut">{{
       t("common.buttons.signOut")
     }}</Button>

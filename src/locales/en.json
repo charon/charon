@@ -123,6 +123,9 @@
     }
   },
   "partials": {
+    "LanguageSwitcher": {
+      "selectLanguage": "Select language"
+    },
     "AuthAutoRedirect": {
       "congratulations": "{strongCongratulations} Everything is ready to sign you in or sign you up into {appName} using the identity you have chosen.",
       "declined": "You decided to {strongDeclineSignInOrSignUp} into {appName} using {siteTitle}.",

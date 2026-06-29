@@ -293,6 +293,11 @@ func (config *Config) Validate() error {
 			return errors.WithStack(err)
 		}
 
+		errE := site.validateDefaultLanguage()
+		if errE != nil {
+			return errE
+		}
+
 		// We cannot use kong to set these defaults, so we do it here.
 		if site.Title == "" {
 			site.Title = DefaultTitle
@@ -429,11 +434,13 @@ func (config *Config) Init(ctx context.Context, files fs.FS) (*Service, errors.E
 					KeyFile:  "",
 				},
 				// We will set the rest later for all sites.
-				Build:          nil,
-				Title:          config.Title,
-				Providers:      nil,
-				TermsOfService: false,
-				PrivacyPolicy:  false,
+				Build:            nil,
+				Title:            config.Title,
+				Providers:        nil,
+				LanguagePriority: nil,
+				DefaultLanguage:  "",
+				TermsOfService:   false,
+				PrivacyPolicy:    false,
 			}
 		}
 	}
