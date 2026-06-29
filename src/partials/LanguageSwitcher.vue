@@ -33,7 +33,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div v-if="enabledLanguages.length > 1" class="pd-language-switcher relative flex shrink-0 items-center">
+  <div v-if="enabledLanguages.length > 1" class="pd-language-switcher relative shrink-0">
     <button
       type="button"
       :aria-label="t('partials.LanguageSwitcher.selectLanguage')"
