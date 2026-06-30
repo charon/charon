@@ -125,8 +125,8 @@ chmod 644 sipasstest.peer.id+2.pem sipasstest.peer.id+2-key.pem
 cp "$(mkcert -CAROOT)/rootCA.pem" "$ROOT_CA_FILE"
 cleanup_certs=1
 
-# Use config.yml, replacing localhost domain string with $PEERDB_CONTAINER, to expose all features of PeerDB in e2e tests.
-sed "s/localhost/$PEERDB_CONTAINER/g" config.yml > config-e2e.yml
+# Use config.yml, replacing localhost domain string with $CHARON_CONTAINER, to expose all features of Charon in e2e tests.
+sed "s/localhost/$CHARON_CONTAINER/g" config.yml > config-e2e.yml
 
 echo "2. Building Docker images..."
 
