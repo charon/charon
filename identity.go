@@ -780,10 +780,16 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 		return errE
 	}
 
-	return s.logActivity(ctx, ActivityIdentityCreate, []OrganizationIdentityRef{{
+	errE = s.logActivity(ctx, ActivityIdentityCreate, []OrganizationIdentityRef{{
 		Organization: co.Ref(),
 		Identity:     i,
 	}}, nil, nil, nil, accounts, nil, nil, co.Ref())
+	if errE != nil {
+		return errE
+	}
+
+	// An identity can be created already added to organizations.
+	return s.assignDefaultRolesForJoinedOrganizations(ctx, nil, identity)
 }
 
 func (s *Service) updateAccountsWithLock(identity IdentityRef, identitiesBefore, identitiesAfter mapset.Set[IdentityRef]) errors.E {
@@ -916,8 +922,9 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 }
 
 // applyIdentityUpdate stores the new identity, propagates access-graph changes
-// triggered by Users/Admins membership changes, and logs the corresponding
-// ActivityIdentityUpdate.
+// triggered by Users/Admins membership changes, logs the corresponding
+// ActivityIdentityUpdate, and assigns default roles of organizations the identity
+// has been added to.
 //
 // Callers must already have ensured the change is permitted.
 func (s *Service) applyIdentityUpdate(ctx context.Context, existingIdentity, identity *Identity) errors.E {
@@ -968,7 +975,12 @@ func (s *Service) applyIdentityUpdate(ctx context.Context, existingIdentity, ide
 		})
 	}
 
-	return s.logActivity(ctx, ActivityIdentityUpdate, scopedIdentities, organizations, nil, applications, nil, changes, nil, co.Ref())
+	errE = s.logActivity(ctx, ActivityIdentityUpdate, scopedIdentities, organizations, nil, applications, nil, changes, nil, co.Ref())
+	if errE != nil {
+		return errE
+	}
+
+	return s.assignDefaultRolesForJoinedOrganizations(ctx, existingIdentity, identity)
 }
 
 // updateAccounts updates accounts which have access to the identity after the set
@@ -1228,25 +1240,7 @@ func (s *Service) selectAndActivateIdentity(ctx context.Context, identityID, org
 		Applications: []OrganizationApplicationApplicationRef{applicationRef},
 	})
 
-	errE = s.updateIdentity(ctx, identity)
-	if errE != nil {
-		return nil, errE
-	}
-
-	// The user has just joined the organization, so they get the organization's default roles.
-	// The organization-scoped identity ID has been assigned during the update above.
-	idOrg = identity.GetOrganization(&organizationID)
-	if idOrg == nil {
-		// This should not happen.
-		return nil, errors.New("unable to find organization identity")
-	}
-
-	errE = s.assignDefaultRoles(ctx, organizationID, *idOrg.ID)
-	if errE != nil {
-		return nil, errE
-	}
-
-	return identity, nil
+	return identity, s.updateIdentity(ctx, identity)
 }
 
 // IdentityGetGet is the frontend handler for getting the identity.

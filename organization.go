@@ -1135,10 +1135,30 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 	)
 }
 
+// assignDefaultRolesForJoinedOrganizations assigns default roles of every organization which the
+// identity has been added to by the change from existing to identity. existing is nil when the
+// identity is being created, in which case all of its organizations have just been joined.
+func (s *Service) assignDefaultRolesForJoinedOrganizations(ctx context.Context, existing, identity *Identity) errors.E {
+	for _, idOrg := range identity.Organizations {
+		// Only a new membership means that the user has just joined the organization. Changes of an
+		// existing membership (e.g., its activation) do not assign default roles again.
+		if existing.GetOrganization(&idOrg.Organization.ID) != nil {
+			continue
+		}
+
+		errE := s.assignDefaultRoles(ctx, idOrg.Organization.ID, *idOrg.ID)
+		if errE != nil {
+			return errE
+		}
+	}
+
+	return nil
+}
+
 // assignDefaultRoles assigns the organization's default roles to the identity which has just joined
 // the organization, given by its organization-scoped identity ID. Default roles are in this way
-// materialized into the organization's roles at the time the user joins, so that both the admin and
-// later changes of the default roles operate on independent data.
+// materialized into the organization's roles at the time the user joins, so that later changes of
+// the default roles and of the user's roles are independent of each other.
 //
 // It does nothing (and reports no error) if the organization has no default roles or if the identity
 // already has roles in the organization.
@@ -1175,13 +1195,16 @@ func (s *Service) assignDefaultRoles(ctx context.Context, organizationID, orgIde
 		return errE
 	}
 
-	// The current user is the one who joined, so they are the actor of this activity and
-	// their organization-scoped identity is the one the roles have been assigned to.
+	// The identity the roles have been assigned to is organization-scoped in this organization, so we
+	// wrap it with it, the same as updateOrganization does for identities whose roles changed. The actor
+	// is resolved in the Charon organization because the current user might be an admin who added another
+	// identity to the organization and not the user who joined.
+	co := s.charonOrganization()
 	organizationRef := organization.Ref()
 	return s.logActivity(ctx, ActivityOrganizationUpdate, []OrganizationIdentityRef{{
 		Organization: organizationRef,
 		Identity:     IdentityRef{ID: orgIdentityID},
-	}}, []OrganizationRef{organizationRef}, nil, nil, nil, []ActivityChangeType{ActivityChangeRolesAdded}, nil, organizationRef)
+	}}, []OrganizationRef{organizationRef}, nil, nil, nil, []ActivityChangeType{ActivityChangeRolesAdded}, nil, co.Ref())
 }
 
 // OrganizationGetGet is the frontend handler for getting the organization.

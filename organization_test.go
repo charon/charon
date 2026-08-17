@@ -1974,3 +1974,146 @@ func TestOrganizationDefaultRolesOnJoin(t *testing.T) {
 	assert.Empty(t, organization.DefaultRoles)
 	validateOrganizationIdentity(t, ts, service, orgAccessToken, organizationID, identityID, []string{role})
 }
+
+// TestOrganizationDefaultRolesOnIdentityAdded verifies that the organization's default roles are
+// assigned also when an identity is added to the organization through an identity update (which is
+// what happens when an admin adds one of their identities on the organization page) and when an
+// identity is created already added to the organization. It also verifies that changing an existing
+// membership does not assign the default roles again.
+func TestOrganizationDefaultRolesOnIdentityAdded(t *testing.T) {
+	t.Parallel()
+
+	role := "viewer"
+
+	_, service, _, _, _ := startTestServer(t) //nolint:dogsled
+
+	accountID := identifier.New()
+	ctx := service.TestingWithAccountID(t.Context(), accountID)
+	ctx = service.TestingWithSessionID(ctx)
+	ctx = service.TestingWithRequestID(ctx)
+
+	adminID := createTestIdentity(t, service, ctx)
+	ctx = service.TestingWithIdentityID(ctx, adminID)
+
+	appTemplate := &charon.ApplicationTemplate{
+		ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
+			ID:               nil,
+			Base:             nil,
+			Name:             "Default Roles Join App",
+			Description:      "",
+			HomepageTemplate: "https://example.com",
+			IDScopes:         nil,
+			Roles:            []charon.Role{{Key: role, Description: "Viewer"}},
+			// Set Variables explicitly to empty so Validate does not auto-add the uriBase default;
+			// we have no clients in OrganizationApplication so we do not need any variables.
+			Variables:      []charon.Variable{},
+			ClientsPublic:  []charon.ApplicationTemplateClientPublic{},
+			ClientsBackend: []charon.ApplicationTemplateClientBackend{},
+			ClientsService: []charon.ApplicationTemplateClientService{},
+		},
+		Admins: []charon.IdentityRef{},
+	}
+	errE := service.TestingCreateApplicationTemplate(ctx, appTemplate)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	// Each subtest gets its own organization so that they can run in parallel.
+	makeOrganization := func(t *testing.T, name string) *charon.Organization {
+		t.Helper()
+
+		appTmpl := deepcopy.Copy(appTemplate.ApplicationTemplatePublic).(charon.ApplicationTemplatePublic) //nolint:forcetypeassert,errcheck
+		organization := &charon.Organization{
+			OrganizationPublic: charon.OrganizationPublic{ID: nil, Base: nil, Name: name, Description: ""},
+			Admins:             []charon.IdentityRef{},
+			Applications: []charon.OrganizationApplication{{
+				OrganizationApplicationPublic: charon.OrganizationApplicationPublic{
+					ID:                  nil,
+					Base:                nil,
+					Active:              true,
+					ApplicationTemplate: appTmpl,
+					Values:              []charon.Value{},
+				},
+				ClientsPublic:  []charon.OrganizationApplicationClientPublic{},
+				ClientsBackend: []charon.OrganizationApplicationClientBackend{},
+				ClientsService: []charon.OrganizationApplicationClientService{},
+			}},
+			Roles:            nil,
+			DefaultRoles:     []string{role},
+			AllowedProviders: nil,
+		}
+		errE := service.TestingCreateOrganization(ctx, organization)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		return organization
+	}
+
+	t.Run("identity updated to be added to the organization", func(t *testing.T) {
+		t.Parallel()
+		organization := makeOrganization(t, "Identity Update Join Org")
+		identityID := createTestIdentity(t, service, ctx)
+		identity, _, errE := service.TestingGetIdentity(ctx, identityID)
+		require.NoError(t, errE, "% -+#.1v", errE)
+
+		identity.Organizations = append(identity.Organizations, charon.IdentityOrganization{
+			ID:           nil,
+			Base:         nil,
+			Active:       true,
+			Organization: organization.Ref(),
+			Applications: []charon.OrganizationApplicationApplicationRef{},
+		})
+		errE = service.TestingUpdateIdentity(ctx, identity)
+		require.NoError(t, errE, "% -+#.1v", errE)
+
+		orgIdentityID := *identity.Organizations[0].ID
+
+		stored, errE := service.TestingGetOrganization(ctx, *organization.ID)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		assert.Equal(t, []string{role}, stored.Roles[orgIdentityID])
+
+		// An admin removes the role again and disables the membership.
+		delete(stored.Roles, orgIdentityID)
+		errE = service.TestingUpdateOrganization(ctx, stored)
+		require.NoError(t, errE, "% -+#.1v", errE)
+
+		identity.Organizations[0].Active = false
+		errE = service.TestingUpdateIdentity(ctx, identity)
+		require.NoError(t, errE, "% -+#.1v", errE)
+
+		// The membership is not new anymore, so the default role is not assigned again.
+		stored, errE = service.TestingGetOrganization(ctx, *organization.ID)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		assert.Empty(t, stored.Roles[orgIdentityID])
+	})
+
+	t.Run("identity created already added to the organization", func(t *testing.T) {
+		t.Parallel()
+		organization := makeOrganization(t, "Identity Create Join Org")
+		identity := &charon.Identity{
+			IdentityPublic: charon.IdentityPublic{
+				ID:         nil,
+				Username:   identifier.New().String(),
+				Email:      "",
+				GivenName:  "",
+				FullName:   "",
+				PictureURL: "",
+			},
+			Base:        nil,
+			Description: "",
+			Users:       nil,
+			Admins:      nil,
+			Organizations: []charon.IdentityOrganization{{
+				ID:           nil,
+				Base:         nil,
+				Active:       true,
+				Organization: organization.Ref(),
+				Applications: []charon.OrganizationApplicationApplicationRef{},
+			}},
+		}
+		errE := service.TestingCreateIdentity(ctx, identity)
+		require.NoError(t, errE, "% -+#.1v", errE)
+
+		orgIdentityID := *identity.Organizations[0].ID
+
+		stored, errE := service.TestingGetOrganization(ctx, *organization.ID)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		assert.Equal(t, []string{role}, stored.Roles[orgIdentityID])
+	})
+}
