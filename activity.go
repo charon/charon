@@ -202,6 +202,19 @@ func (s *Service) getActivityFromID(ctx context.Context, value string) (*Activit
 }
 
 func (s *Service) createActivity(ctx context.Context, activity *Activity) errors.E {
+	// TODO: Establish a total order of activities instead of ordering them by their timestamp alone.
+	//       Timestamps are stored with millisecond resolution and activities are collected by iterating
+	//       a map, so activities recorded inside the same millisecond end up in an arbitrary order in
+	//       the activity log. Tests set activityTimestampStep to a millisecond to work around that and
+	//       observe activities in the order in which they happened, moving every next timestamp further
+	//       into the future instead of really waiting between activities. A sequence number (or a finer
+	//       timestamp) used as a secondary sort key would order them deterministically for everybody,
+	//       and this could then be removed.
+	if s.activityTimestampStep > 0 {
+		steps := s.activityTimestampSteps.Add(1)
+		activity.Timestamp = x.Time(time.Now().UTC().Add(time.Duration(steps * int64(s.activityTimestampStep))))
+	}
+
 	errE := activity.Validate(ctx, nil, s)
 	if errE != nil {
 		return errors.WrapWith(errE, ErrActivityValidationFailed)

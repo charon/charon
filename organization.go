@@ -1198,6 +1198,33 @@ func (s *Service) applyJoinedOrganizations(ctx context.Context, existing, identi
 	return nil
 }
 
+// hasOtherIdentityInOrganization returns true if any identity but the given one has been added to the
+// organization, no matter if the membership is active or not.
+func (s *Service) hasOtherIdentityInOrganization(_ context.Context, organizationID identifier.Identifier, identity IdentityRef) (bool, errors.E) {
+	s.identities.RLock()
+	defer s.identities.RUnlock()
+
+	// TODO: Use an index instead of iterating over all identities.
+	for id, data := range s.identities.All() {
+		if id == identity.ID {
+			continue
+		}
+
+		var i Identity
+		errE := x.UnmarshalWithoutUnknownFields(data, &i)
+		if errE != nil {
+			errors.Details(errE)["id"] = id
+			return false, errE
+		}
+
+		if i.GetOrganization(&organizationID) != nil {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 // makeFirstCharonAdmin makes the identity which has just joined the Charon organization, given by its
 // membership idOrg, an admin of it, if the Charon organization does not have any admin yet.
 //
@@ -1220,6 +1247,18 @@ func (s *Service) makeFirstCharonAdmin(ctx context.Context, identity IdentityRef
 	}
 
 	if len(organization.Admins) > 0 {
+		return nil
+	}
+
+	// Having no admins is on its own not enough to conclude that this is the first user: admins could
+	// have removed all of them (which updateOrganization does not allow because it keeps the caller
+	// among admins, but we do not want to depend on that here) and the next user to join would then
+	// take over the deployment. So we require that nobody else has joined the Charon organization yet.
+	hasOther, errE := s.hasOtherIdentityInOrganization(ctx, co.ID, identity)
+	if errE != nil {
+		return errE
+	}
+	if hasOther {
 		return nil
 	}
 

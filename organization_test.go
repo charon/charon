@@ -2174,6 +2174,72 @@ func TestOrganizationDefaultRolesOnIdentityAdded(t *testing.T) {
 	})
 }
 
+// TestCharonOrganizationFirstUserIsAdmin verifies that the first user who joins the Charon
+// organization becomes its admin, that later users do not, and that a user who joins after the
+// admins would somehow all be removed does not take the deployment over either.
+func TestCharonOrganizationFirstUserIsAdmin(t *testing.T) {
+	t.Parallel()
+
+	_, service, _, _, _ := startTestServer(t) //nolint:dogsled
+
+	charonOrganizationID := service.TestingCharonOrganizationID()
+
+	organization, errE := service.TestingGetOrganization(t.Context(), charonOrganizationID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Empty(t, organization.Admins)
+
+	// joinCharonOrganization creates an identity for its own account and adds it to the Charon
+	// organization, the same as adding an identity to an organization on its page does.
+	joinCharonOrganization := func(t *testing.T) identifier.Identifier {
+		t.Helper()
+
+		ctx := service.TestingWithAccountID(t.Context(), identifier.New())
+		ctx = service.TestingWithSessionID(ctx)
+		ctx = service.TestingWithRequestID(ctx)
+		identityID := createTestIdentity(t, service, ctx)
+		ctx = service.TestingWithIdentityID(ctx, identityID)
+
+		identity, _, errE := service.TestingGetIdentity(ctx, identityID)
+		require.NoError(t, errE, "% -+#.1v", errE)
+
+		identity.Organizations = append(identity.Organizations, charon.IdentityOrganization{
+			ID:           nil,
+			Base:         nil,
+			Active:       true,
+			Organization: charon.OrganizationRef{ID: charonOrganizationID},
+			Applications: []charon.OrganizationApplicationApplicationRef{},
+		})
+		errE = service.TestingUpdateIdentity(ctx, identity)
+		require.NoError(t, errE, "% -+#.1v", errE)
+
+		return identityID
+	}
+
+	firstID := joinCharonOrganization(t)
+
+	organization, errE = service.TestingGetOrganization(t.Context(), charonOrganizationID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Equal(t, []charon.IdentityRef{{ID: firstID}}, organization.Admins)
+
+	// The second user does not become an admin.
+	joinCharonOrganization(t)
+
+	organization, errE = service.TestingGetOrganization(t.Context(), charonOrganizationID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Equal(t, []charon.IdentityRef{{ID: firstID}}, organization.Admins)
+
+	// Even without any admin, a user who is not the first one to join does not become an admin.
+	organization.Admins = []charon.IdentityRef{}
+	errE = service.TestingStoreOrganization(organization)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	joinCharonOrganization(t)
+
+	organization, errE = service.TestingGetOrganization(t.Context(), charonOrganizationID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	assert.Empty(t, organization.Admins)
+}
+
 // TestIdentityJoinOrganizationBlocked verifies that a user who has been blocked in an organization
 // cannot add their identity to it, neither by updating an existing identity nor by creating one
 // already added to the organization. Anybody can add their identity to any organization, so this is

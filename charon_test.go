@@ -2,6 +2,7 @@ package charon //nolint:testpackage
 
 import (
 	"context"
+	"time"
 
 	"github.com/alexedwards/argon2id"
 	"github.com/go-jose/go-jose/v3"
@@ -53,6 +54,15 @@ func (s *Service) TestingBlockAccounts(
 	ctx context.Context, identity *Identity, organizationID, orgIdentityID identifier.Identifier, organizationNote, userNote string,
 ) errors.E {
 	return s.blockAccounts(ctx, identity, organizationID, orgIdentityID, organizationNote, userNote)
+}
+
+// TestingSetActivityTimestampStep moves the timestamp of every next recorded activity for the given
+// step further into the future, so that activities cannot share a timestamp and are ordered in the
+// activity log in the order in which they happened. See createActivity.
+//
+// It has to be called before the service starts serving.
+func (s *Service) TestingSetActivityTimestampStep(step time.Duration) {
+	s.activityTimestampStep = step
 }
 
 func (s *Service) TestingCharonOrganizationID() identifier.Identifier {

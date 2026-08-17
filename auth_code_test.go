@@ -32,6 +32,7 @@ func TestAuthFlowCodeOnly(t *testing.T) {
 
 	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
 		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderCode}, 0, 1, 0, 1},
+		{charon.ActivityOrganizationUpdate, []charon.ActivityChangeType{charon.ActivityChangePermissionsAdded}, nil, 1, 1, 0, 0},
 		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
 		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
 	})
@@ -44,6 +45,7 @@ func TestAuthFlowCodeOnly(t *testing.T) {
 		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderCode}, 0, 1, 0, 1}, // Second signin.
 		{charon.ActivitySignOut, nil, nil, 0, 0, 0, 0},                                   // Signout.
 		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderCode}, 0, 1, 0, 1},
+		{charon.ActivityOrganizationUpdate, []charon.ActivityChangeType{charon.ActivityChangePermissionsAdded}, nil, 1, 1, 0, 0},
 		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
 		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
 	})
@@ -71,6 +73,7 @@ func TestAuthFlowPasswordAndCode(t *testing.T) {
 	// Verify complete activity sequence for signup.
 	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
 		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPassword, charon.ProviderCode}, 0, 1, 0, 1},
+		{charon.ActivityOrganizationUpdate, []charon.ActivityChangeType{charon.ActivityChangePermissionsAdded}, nil, 1, 1, 0, 0},
 		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
 		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
 	})
@@ -103,6 +106,7 @@ func TestAuthFlowPasswordAndCode(t *testing.T) {
 		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderCode}, 0, 1, 0, 1},                          // Signin code-only.
 		{charon.ActivitySignOut, nil, nil, 0, 0, 0, 0},                                                            // Signout after initial password+code.
 		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPassword, charon.ProviderCode}, 0, 1, 0, 1},
+		{charon.ActivityOrganizationUpdate, []charon.ActivityChangeType{charon.ActivityChangePermissionsAdded}, nil, 1, 1, 0, 0},
 		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
 		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
 	})

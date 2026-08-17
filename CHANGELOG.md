@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [#7](https://gitlab.com/charon/charon/-/issues/7)
 - Organization admins can configure default roles of the organization, which are assigned
   to a user when they join the organization.
+- The first user who joins the Charon organization becomes its admin, so that the deployment
+  can be configured through Charon Dashboard.
 
 ### Changed
 

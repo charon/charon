@@ -13,7 +13,9 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
+	"time"
 
 	"github.com/alecthomas/kong"
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -369,6 +371,13 @@ type Service struct {
 	accountsBlocked *Store
 	// We use only one mutex for both identitiesBlocked and accountsBlocked as they are always used together.
 	identitiesBlockedMu sync.RWMutex
+
+	// activityTimestampStep is how far apart timestamps of consecutively recorded activities are
+	// moved, so that no two activities can share a timestamp. It is zero in production, where the
+	// timestamp is simply the current time, and set only by tests. See createActivity.
+	activityTimestampStep time.Duration
+	// activityTimestampSteps counts recorded activities to space their timestamps apart.
+	activityTimestampSteps atomic.Int64
 }
 
 // Init initializes the HTTP service and is used together with Prepare to implement Run.
@@ -769,6 +778,9 @@ func (config *Config) Init(ctx context.Context, files fs.FS) (*Service, errors.E
 		identitiesBlocked:    *stores["identitiesBlocked"],
 		accountsBlocked:      *stores["accountsBlocked"],
 		identitiesBlockedMu:  sync.RWMutex{},
+
+		activityTimestampStep:  0,
+		activityTimestampSteps: atomic.Int64{},
 	}
 
 	service.setRoutes()

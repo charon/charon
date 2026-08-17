@@ -231,6 +231,10 @@ func startTestServer(t *testing.T) (*httptest.Server, *charon.Service, *smtpmock
 	service, errE := config.Init(t.Context(), testFiles)
 	require.NoError(t, errE, "% -+#.1v", errE)
 
+	// Tests assert the order of activities, which is determined by their millisecond-resolution
+	// timestamp alone, so we make sure that no two activities can share one.
+	service.TestingSetActivityTimestampStep(time.Millisecond)
+
 	handler, errE := config.Prepare(t.Context(), service)
 	require.NoError(t, errE, "% -+#.1v", errE)
 

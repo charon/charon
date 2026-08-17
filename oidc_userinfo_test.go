@@ -88,6 +88,7 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 
 	verifyAllActivities(t, ts, service, accessToken, []ActivityExpectation{
 		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPassword}, 0, 1, 0, 1},
+		{charon.ActivityOrganizationUpdate, []charon.ActivityChangeType{charon.ActivityChangePermissionsAdded}, nil, 1, 1, 0, 0},
 		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
 		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
 	})
@@ -175,6 +176,7 @@ func TestRouteUserinfoAndSignOut(t *testing.T) {
 		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPassword}, 0, 1, 0, 1}, // Signin (after signout).
 		{charon.ActivitySignOut, nil, nil, 0, 0, 0, 0},                                       // Signout.
 		{charon.ActivitySignIn, nil, []charon.Provider{charon.ProviderPassword}, 0, 1, 0, 1},
+		{charon.ActivityOrganizationUpdate, []charon.ActivityChangeType{charon.ActivityChangePermissionsAdded}, nil, 1, 1, 0, 0},
 		{charon.ActivityIdentityUpdate, []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded}, nil, 1, 1, 0, 1},
 		{charon.ActivityIdentityCreate, nil, nil, 1, 0, 0, 0},
 	})
