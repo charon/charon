@@ -794,7 +794,7 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 	}
 
 	// An identity can be created already added to organizations.
-	return s.assignDefaultRolesForJoinedOrganizations(ctx, nil, identity)
+	return s.applyJoinedOrganizations(ctx, nil, identity)
 }
 
 func (s *Service) updateAccountsWithLock(identity IdentityRef, identitiesBefore, identitiesAfter mapset.Set[IdentityRef]) errors.E {
@@ -933,8 +933,8 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 
 // applyIdentityUpdate stores the new identity, propagates access-graph changes
 // triggered by Users/Admins membership changes, logs the corresponding
-// ActivityIdentityUpdate, and assigns default roles of organizations the identity
-// has been added to.
+// ActivityIdentityUpdate, and applies what has to happen for organizations the
+// identity has been added to.
 //
 // Callers must already have ensured the change is permitted.
 func (s *Service) applyIdentityUpdate(ctx context.Context, existingIdentity, identity *Identity) errors.E {
@@ -990,7 +990,7 @@ func (s *Service) applyIdentityUpdate(ctx context.Context, existingIdentity, ide
 		return errE
 	}
 
-	return s.assignDefaultRolesForJoinedOrganizations(ctx, existingIdentity, identity)
+	return s.applyJoinedOrganizations(ctx, existingIdentity, identity)
 }
 
 // updateAccounts updates accounts which have access to the identity after the set

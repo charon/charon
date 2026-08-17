@@ -1170,26 +1170,83 @@ func (s *Service) checkNotBlockedInJoinedOrganizations(ctx context.Context, exis
 	return nil
 }
 
-// assignDefaultRolesForJoinedOrganizations assigns default roles of every organization which the
-// identity has been added to by the change from existing to identity. existing is nil when the
+// applyJoinedOrganizations applies what has to happen for every organization which the identity has
+// been added to by the change from existing to identity: the first user of the Charon organization
+// becomes its admin and default roles of the organization are assigned. existing is nil when the
 // identity is being created, in which case all of its organizations have just been joined.
 //
 // The identity has to be already stored when this is called.
-func (s *Service) assignDefaultRolesForJoinedOrganizations(ctx context.Context, existing, identity *Identity) errors.E {
+func (s *Service) applyJoinedOrganizations(ctx context.Context, existing, identity *Identity) errors.E {
 	for _, idOrg := range identity.Organizations {
 		// Only a new membership means that the user has just joined the organization. Changes of an
-		// existing membership (e.g., its activation) do not assign default roles again.
+		// existing membership (e.g., its activation) are not joining it again.
 		if existing.GetOrganization(&idOrg.Organization.ID) != nil {
 			continue
 		}
 
-		errE := s.assignDefaultRoles(ctx, identity.Ref(), idOrg)
+		errE := s.makeFirstCharonAdmin(ctx, identity.Ref(), idOrg)
+		if errE != nil {
+			return errE
+		}
+
+		errE = s.assignDefaultRoles(ctx, identity.Ref(), idOrg)
 		if errE != nil {
 			return errE
 		}
 	}
 
 	return nil
+}
+
+// makeFirstCharonAdmin makes the identity which has just joined the Charon organization, given by its
+// membership idOrg, an admin of it, if the Charon organization does not have any admin yet.
+//
+// The Charon organization is created during initialization without any admin, so this bootstraps the
+// administration of the deployment: the first user who joins it (which happens when they first sign
+// in into Charon Dashboard) can then configure it and add other admins.
+//
+// It does nothing (and reports no error) for any other organization, or once the Charon organization
+// has an admin.
+func (s *Service) makeFirstCharonAdmin(ctx context.Context, identity IdentityRef, idOrg IdentityOrganization) errors.E {
+	co := s.charonOrganization()
+	if co.ID != idOrg.Organization.ID {
+		return nil
+	}
+
+	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
+	organization, errE := s.getOrganization(ctx, co.ID)
+	if errE != nil {
+		return errE
+	}
+
+	if len(organization.Admins) > 0 {
+		return nil
+	}
+
+	// Admins are database identity IDs, which for the Charon organization
+	// are the same as its organization-scoped identity IDs.
+	organization.Admins = []IdentityRef{identity}
+
+	data, errE := x.MarshalWithoutEscapeHTML(organization)
+	if errE != nil {
+		errors.Details(errE)["id"] = co.ID
+		return errE
+	}
+
+	// There is nobody who could grant this permission, so we do not go through
+	// updateOrganization (which requires admin access) but write the document directly.
+	errE = s.setOrganization(co.ID, data)
+	if errE != nil {
+		return errE
+	}
+
+	// The user who joined is the actor of this activity, even when somebody else (an admin of their
+	// identity) added the identity to the Charon organization.
+	ctx = s.withIdentityID(ctx, identity.ID)
+	return s.logActivity(ctx, ActivityOrganizationUpdate, []OrganizationIdentityRef{{
+		Organization: co.Ref(),
+		Identity:     identity,
+	}}, []OrganizationRef{co.Ref()}, nil, nil, nil, []ActivityChangeType{ActivityChangePermissionsAdded}, nil, co.Ref())
 }
 
 // assignDefaultRoles assigns the organization's default roles to the identity which has just joined
