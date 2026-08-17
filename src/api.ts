@@ -299,6 +299,12 @@ export async function getAllIdentities(
         return null
       }
 
+      // TODO: Report the blocked status also for identities which are not in the organization.
+      //       The blocked status is organization-scoped, so we can ask for it only once the identity has an organization-scoped ID, and identities
+      //       which have not been added to the organization report "notBlocked" here. But the block of an account applies to all identities of the
+      //       user, so a blocked user is not able to add any of their identities to the organization, while OrganizationGet.vue still offers them
+      //       under available identities and the failed update shows only as an unexpected error. Once the backend can answer for an identity which
+      //       is not in the organization (for the caller's own identities), label such identities as blocked and do not offer adding them.
       let blockedStatus: OrganizationBlockedStatus = { blocked: "notBlocked" }
       const idOrg = getOrganization(identityResponse.doc, organizationId)
       if (idOrg) {
