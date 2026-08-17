@@ -1228,7 +1228,25 @@ func (s *Service) selectAndActivateIdentity(ctx context.Context, identityID, org
 		Applications: []OrganizationApplicationApplicationRef{applicationRef},
 	})
 
-	return identity, s.updateIdentity(ctx, identity)
+	errE = s.updateIdentity(ctx, identity)
+	if errE != nil {
+		return nil, errE
+	}
+
+	// The user has just joined the organization, so they get the organization's default roles.
+	// The organization-scoped identity ID has been assigned during the update above.
+	idOrg = identity.GetOrganization(&organizationID)
+	if idOrg == nil {
+		// This should not happen.
+		return nil, errors.New("unable to find organization identity")
+	}
+
+	errE = s.assignDefaultRoles(ctx, organizationID, *idOrg.ID)
+	if errE != nil {
+		return nil, errE
+	}
+
+	return identity, nil
 }
 
 // IdentityGetGet is the frontend handler for getting the identity.

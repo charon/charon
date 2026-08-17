@@ -394,6 +394,7 @@ export type Organization = OrganizationPublic & {
   admins?: IdentityRef[]
   applications?: OrganizationApplication[]
   roles?: Record<string, string[]>
+  defaultRoles?: string[]
   allowedProviders?: string[]
 }
 

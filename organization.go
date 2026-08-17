@@ -537,6 +537,10 @@ type Organization struct {
 	// expose the roles for each user through OrganizationIdentity.
 	Roles map[identifier.Identifier][]string `json:"roles"`
 
+	// DefaultRoles are roles which are assigned to a user when they join the organization.
+	// Changing them does not change roles of users who have already joined.
+	DefaultRoles []string `json:"defaultRoles"`
+
 	AllowedProviders []Provider `json:"allowedProviders"`
 }
 
@@ -729,6 +733,29 @@ func (o *Organization) validate(ctx context.Context, existing *Organization, ser
 	// TODO: If an application is deactivated/removed from organization, obsolete roles stay.
 	//       See: https://gitlab.com/charon/charon/-/issues/77
 
+	if o.DefaultRoles == nil {
+		o.DefaultRoles = []string{}
+	}
+	// DefaultRoles is semantically a set, so dedup and sort for a canonical representation.
+	o.DefaultRoles = removeDuplicates(o.DefaultRoles)
+	slices.Sort(o.DefaultRoles)
+
+	existingDefaultRoles := mapset.NewThreadUnsafeSet[string]()
+	if existing != nil {
+		existingDefaultRoles.Append(existing.DefaultRoles...)
+	}
+
+	// We validate only added default roles so that we do not error out on disabled or removed applications.
+	unknownDefaultRoles := mapset.NewThreadUnsafeSet(o.DefaultRoles...).Difference(existingDefaultRoles).Difference(validRoles)
+	if !unknownDefaultRoles.IsEmpty() {
+		roles := unknownDefaultRoles.ToSlice()
+		slices.Sort(roles)
+		errE := errors.New("unknown default roles")
+		errors.Details(errE)["organization"] = o.ID
+		errors.Details(errE)["roles"] = roles
+		return errE
+	}
+
 	if o.AllowedProviders == nil {
 		o.AllowedProviders = []Provider{}
 	}
@@ -790,7 +817,10 @@ func (o *Organization) Changes(existing *Organization) ([]ActivityChangeType, []
 		changes = append(changes, ActivityChangePermissionsRemoved)
 	}
 
-	if !reflect.DeepEqual(existing.AllowedProviders, o.AllowedProviders) {
+	// AllowedProviders and DefaultRoles are organization-wide settings without an activity change type of
+	// their own, so we report a change of either of them as a change of other data. We check them together
+	// so that changing both at once does not record ActivityChangeOtherData twice.
+	if !reflect.DeepEqual(existing.AllowedProviders, o.AllowedProviders) || !reflect.DeepEqual(existing.DefaultRoles, o.DefaultRoles) {
 		changes = append(changes, ActivityChangeOtherData)
 	}
 
@@ -1103,6 +1133,55 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 		ctx, ActivityOrganizationUpdate, scopedIdentities, []OrganizationRef{organization.Ref()},
 		nil, organizationApplications, nil, changes, nil, co.Ref(),
 	)
+}
+
+// assignDefaultRoles assigns the organization's default roles to the identity which has just joined
+// the organization, given by its organization-scoped identity ID. Default roles are in this way
+// materialized into the organization's roles at the time the user joins, so that both the admin and
+// later changes of the default roles operate on independent data.
+//
+// It does nothing (and reports no error) if the organization has no default roles or if the identity
+// already has roles in the organization.
+func (s *Service) assignDefaultRoles(ctx context.Context, organizationID, orgIdentityID identifier.Identifier) errors.E {
+	// TODO: This is not race safe, needs improvement once we have storage that supports transactions.
+	organization, errE := s.getOrganization(ctx, organizationID)
+	if errE != nil {
+		return errE
+	}
+
+	if len(organization.DefaultRoles) == 0 {
+		return nil
+	}
+
+	if _, ok := organization.Roles[orgIdentityID]; ok {
+		return nil
+	}
+
+	if organization.Roles == nil {
+		organization.Roles = map[identifier.Identifier][]string{}
+	}
+	organization.Roles[orgIdentityID] = slices.Clone(organization.DefaultRoles)
+
+	data, errE := x.MarshalWithoutEscapeHTML(organization)
+	if errE != nil {
+		errors.Details(errE)["id"] = organizationID
+		return errE
+	}
+
+	// The joining user is generally not an admin of the organization, so we do not go through
+	// updateOrganization (which both requires and grants admin access) but write the document directly.
+	errE = s.setOrganization(organizationID, data)
+	if errE != nil {
+		return errE
+	}
+
+	// The current user is the one who joined, so they are the actor of this activity and
+	// their organization-scoped identity is the one the roles have been assigned to.
+	organizationRef := organization.Ref()
+	return s.logActivity(ctx, ActivityOrganizationUpdate, []OrganizationIdentityRef{{
+		Organization: organizationRef,
+		Identity:     IdentityRef{ID: orgIdentityID},
+	}}, []OrganizationRef{organizationRef}, nil, nil, nil, []ActivityChangeType{ActivityChangeRolesAdded}, nil, organizationRef)
 }
 
 // OrganizationGetGet is the frontend handler for getting the organization.

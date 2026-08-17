@@ -365,6 +365,10 @@ declare module "vue-i18n" {
         allowedAuthMethodsAll: string
         allowedAuthMethodsSelected: string
         allowedAuthMethodsUpdated: string
+        defaultRoles: string
+        defaultRolesDescription: string
+        defaultRolesNoRoles: string
+        defaultRolesUpdated: string
         backendClients: string
         clientId: string
         clientSecret: string

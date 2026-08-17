@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for SAML 3rd party identity providers.
 - Support for [SIPASS identity provider](https://www.si-trust.gov.si/en/si-pass).
   [#7](https://gitlab.com/charon/charon/-/issues/7)
+- Organization admins can configure default roles of the organization, which are assigned
+  to a user when they join the organization.
 
 ### Changed
 

@@ -130,6 +130,7 @@ func initCharonOrganization(ctx context.Context, config *Config, service *Servic
 				},
 			},
 			Roles:            nil,
+			DefaultRoles:     nil,
 			AllowedProviders: nil,
 		}
 

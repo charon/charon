@@ -98,6 +98,7 @@ func createOrganization(t *testing.T, ts *httptest.Server, service *charon.Servi
 		Admins:           nil,
 		Applications:     applications,
 		Roles:            nil,
+		DefaultRoles:     nil,
 		AllowedProviders: nil,
 	}
 
@@ -352,6 +353,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 					},
 				},
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			updated: &charon.Organization{
@@ -377,6 +379,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 					},
 				},
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			expectedChanges:                []charon.ActivityChangeType{},
@@ -396,6 +399,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Admins:           nil,
 				Applications:     nil,
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			updated: &charon.Organization{
@@ -408,6 +412,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Admins:           nil,
 				Applications:     nil,
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeOtherData},
@@ -427,6 +432,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Admins:           []charon.IdentityRef{{ID: identity1ID}},
 				Applications:     nil,
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			updated: &charon.Organization{
@@ -439,6 +445,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Admins:           []charon.IdentityRef{{ID: identity1ID}, {ID: identity2ID}},
 				Applications:     nil,
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangePermissionsAdded},
@@ -458,6 +465,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Admins:           []charon.IdentityRef{{ID: identity1ID}, {ID: identity2ID}},
 				Applications:     nil,
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			updated: &charon.Organization{
@@ -470,6 +478,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Admins:           []charon.IdentityRef{{ID: identity1ID}},
 				Applications:     nil,
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangePermissionsRemoved},
@@ -489,6 +498,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Admins:           nil,
 				Applications:     []charon.OrganizationApplication{},
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			updated: &charon.Organization{
@@ -514,6 +524,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 					},
 				},
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeMembershipAdded},
@@ -551,6 +562,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 					},
 				},
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			updated: &charon.Organization{
@@ -563,6 +575,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Admins:           nil,
 				Applications:     []charon.OrganizationApplication{},
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeMembershipRemoved},
@@ -600,6 +613,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 					},
 				},
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			updated: &charon.Organization{
@@ -625,6 +639,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 					},
 				},
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeMembershipActivated},
@@ -662,6 +677,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 					},
 				},
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			updated: &charon.Organization{
@@ -687,6 +703,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 					},
 				},
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeMembershipDisabled},
@@ -736,6 +753,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 					},
 				},
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			updated: &charon.Organization{
@@ -773,6 +791,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 					},
 				},
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeMembershipChanged},
@@ -797,6 +816,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Admins:           nil,
 				Applications:     nil,
 				Roles:            map[identifier.Identifier][]string{},
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			updated: &charon.Organization{
@@ -811,6 +831,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Roles: map[identifier.Identifier][]string{
 					identity1ID: {"admin"},
 				},
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeRolesAdded},
@@ -832,6 +853,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Roles: map[identifier.Identifier][]string{
 					identity1ID: {"admin"},
 				},
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			updated: &charon.Organization{
@@ -844,6 +866,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Admins:           nil,
 				Applications:     nil,
 				Roles:            map[identifier.Identifier][]string{},
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeRolesRemoved},
@@ -865,6 +888,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Roles: map[identifier.Identifier][]string{
 					identity1ID: {"admin", "viewer"},
 				},
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			updated: &charon.Organization{
@@ -879,6 +903,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Roles: map[identifier.Identifier][]string{
 					identity1ID: {"viewer", "admin"},
 				},
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			expectedChanges:                []charon.ActivityChangeType{},
@@ -900,6 +925,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Roles: map[identifier.Identifier][]string{
 					identity1ID: {"admin"},
 				},
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			updated: &charon.Organization{
@@ -914,6 +940,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Roles: map[identifier.Identifier][]string{
 					identity1ID: {"viewer"},
 				},
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			expectedChanges: []charon.ActivityChangeType{
@@ -938,6 +965,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Roles: map[identifier.Identifier][]string{
 					identity1ID: {"admin"},
 				},
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			updated: &charon.Organization{
@@ -953,6 +981,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 					identity1ID: {},
 					identity2ID: {"viewer"},
 				},
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			expectedChanges: []charon.ActivityChangeType{
@@ -975,6 +1004,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Admins:           nil,
 				Applications:     nil,
 				Roles:            map[identifier.Identifier][]string{},
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			updated: &charon.Organization{
@@ -991,6 +1021,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 					identity2ID: {"viewer"},
 					identity3ID: {"editor"},
 				},
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeRolesAdded},
@@ -1025,6 +1056,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Roles: map[identifier.Identifier][]string{
 					identity1ID: {"admin"},
 				},
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			updated: &charon.Organization{
@@ -1064,6 +1096,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Roles: map[identifier.Identifier][]string{
 					identity1ID: {"admin", "viewer"},
 				},
+				DefaultRoles:     nil,
 				AllowedProviders: nil,
 			},
 			expectedChanges: []charon.ActivityChangeType{
@@ -1099,6 +1132,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Admins:           nil,
 				Applications:     nil,
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: []charon.Provider{},
 			},
 			updated: &charon.Organization{
@@ -1111,6 +1145,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Admins:           nil,
 				Applications:     nil,
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: []charon.Provider{charon.ProviderEmail, charon.ProviderPassword, charon.ProviderUsername},
 			},
 			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeOtherData},
@@ -1130,6 +1165,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Admins:           nil,
 				Applications:     nil,
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: []charon.Provider{charon.ProviderEmail, charon.ProviderPassword, charon.ProviderUsername},
 			},
 			updated: &charon.Organization{
@@ -1142,6 +1178,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Admins:           nil,
 				Applications:     nil,
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: []charon.Provider{},
 			},
 			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeOtherData},
@@ -1161,6 +1198,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Admins:           nil,
 				Applications:     nil,
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: []charon.Provider{charon.ProviderEmail, charon.ProviderPassword, charon.ProviderUsername},
 			},
 			updated: &charon.Organization{
@@ -1173,6 +1211,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Admins:           nil,
 				Applications:     nil,
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: []charon.Provider{charon.ProviderEmail, charon.ProviderPassword, charon.ProviderUsername},
 			},
 			expectedChanges:                []charon.ActivityChangeType{},
@@ -1192,6 +1231,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Admins:           nil,
 				Applications:     nil,
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: []charon.Provider{charon.ProviderEmail, charon.ProviderPassword, charon.ProviderUsername},
 			},
 			updated: &charon.Organization{
@@ -1204,6 +1244,7 @@ func TestOrganizationChanges(t *testing.T) { //nolint:maintidx
 				Admins:           nil,
 				Applications:     nil,
 				Roles:            nil,
+				DefaultRoles:     nil,
 				AllowedProviders: []charon.Provider{charon.ProviderEmail, charon.ProviderPasskey, charon.ProviderPassword, charon.ProviderUsername},
 			},
 			expectedChanges:                []charon.ActivityChangeType{charon.ActivityChangeOtherData},
@@ -1264,6 +1305,7 @@ func TestUpdateOrganizationActivityIdentityScoping(t *testing.T) {
 		Admins:           []charon.IdentityRef{},
 		Applications:     []charon.OrganizationApplication{},
 		Roles:            nil,
+		DefaultRoles:     nil,
 		AllowedProviders: nil,
 	}
 	errE := service.TestingCreateOrganization(ctx, organization)
@@ -1367,6 +1409,7 @@ func TestOrganizationValidateRoles(t *testing.T) {
 			Admins:             []charon.IdentityRef{},
 			Applications:       []charon.OrganizationApplication{makeOrgApp(true)},
 			Roles:              nil,
+			DefaultRoles:       nil,
 			AllowedProviders:   nil,
 		}
 		errE := service.TestingCreateOrganization(ctx, org)
@@ -1385,6 +1428,7 @@ func TestOrganizationValidateRoles(t *testing.T) {
 			Roles: map[identifier.Identifier][]string{
 				targetID: {"admin"},
 			},
+			DefaultRoles:     nil,
 			AllowedProviders: nil,
 		}
 		errE := service.TestingCreateOrganization(ctx, org)
@@ -1402,6 +1446,7 @@ func TestOrganizationValidateRoles(t *testing.T) {
 			Roles: map[identifier.Identifier][]string{
 				targetID: {"nonexistent"},
 			},
+			DefaultRoles:     nil,
 			AllowedProviders: nil,
 		}
 		errE := service.TestingCreateOrganization(ctx, org)
@@ -1420,6 +1465,7 @@ func TestOrganizationValidateRoles(t *testing.T) {
 			Roles: map[identifier.Identifier][]string{
 				targetID: {"admin", "viewer", "admin"},
 			},
+			DefaultRoles:     nil,
 			AllowedProviders: nil,
 		}
 		errE := service.TestingCreateOrganization(ctx, org)
@@ -1438,6 +1484,7 @@ func TestOrganizationValidateRoles(t *testing.T) {
 			Roles: map[identifier.Identifier][]string{
 				targetID: {"admin"},
 			},
+			DefaultRoles:     nil,
 			AllowedProviders: nil,
 		}
 		errE := service.TestingCreateOrganization(ctx, org)
@@ -1456,6 +1503,7 @@ func TestOrganizationValidateRoles(t *testing.T) {
 			Roles: map[identifier.Identifier][]string{
 				targetID: {"admin"},
 			},
+			DefaultRoles:     nil,
 			AllowedProviders: nil,
 		}
 		errE := service.TestingCreateOrganization(ctx, org)
@@ -1468,6 +1516,148 @@ func TestOrganizationValidateRoles(t *testing.T) {
 		errE = service.TestingUpdateOrganization(ctx, org)
 		require.NoError(t, errE, "% -+#.1v", errE)
 		assert.Equal(t, []string{"admin"}, org.Roles[targetID])
+	})
+}
+
+// TestOrganizationValidateDefaultRoles covers the DefaultRoles rules in Organization.validate:
+// nil normalization, dedupe + sort, rejection of role keys which are not provided by an active
+// application of the organization, and the escape hatch which tolerates already stored default
+// roles once their application is disabled.
+func TestOrganizationValidateDefaultRoles(t *testing.T) {
+	t.Parallel()
+
+	_, service, _, _, _ := startTestServer(t) //nolint:dogsled
+
+	accountID := identifier.New()
+	ctx := service.TestingWithAccountID(t.Context(), accountID)
+	ctx = service.TestingWithSessionID(ctx)
+	ctx = service.TestingWithRequestID(ctx)
+
+	adminID := createTestIdentity(t, service, ctx)
+	ctx = service.TestingWithIdentityID(ctx, adminID)
+
+	appTemplate := &charon.ApplicationTemplate{
+		ApplicationTemplatePublic: charon.ApplicationTemplatePublic{
+			ID:               nil,
+			Base:             nil,
+			Name:             "Default Roles App",
+			Description:      "",
+			HomepageTemplate: "https://example.com",
+			IDScopes:         nil,
+			Roles: []charon.Role{
+				{Key: "admin", Description: "Admin"},
+				{Key: "viewer", Description: "Viewer"},
+			},
+			// Set Variables explicitly to empty so Validate does not auto-add the uriBase default;
+			// we have no clients in OrganizationApplication so we do not need any variables.
+			Variables:      []charon.Variable{},
+			ClientsPublic:  []charon.ApplicationTemplateClientPublic{},
+			ClientsBackend: []charon.ApplicationTemplateClientBackend{},
+			ClientsService: []charon.ApplicationTemplateClientService{},
+		},
+		Admins: []charon.IdentityRef{},
+	}
+	errE := service.TestingCreateApplicationTemplate(ctx, appTemplate)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	makeOrgApp := func(active bool) charon.OrganizationApplication {
+		appTmpl := deepcopy.Copy(appTemplate.ApplicationTemplatePublic).(charon.ApplicationTemplatePublic) //nolint:forcetypeassert,errcheck
+		return charon.OrganizationApplication{
+			OrganizationApplicationPublic: charon.OrganizationApplicationPublic{
+				ID:                  nil,
+				Base:                nil,
+				Active:              active,
+				ApplicationTemplate: appTmpl,
+				Values:              []charon.Value{},
+			},
+			ClientsPublic:  []charon.OrganizationApplicationClientPublic{},
+			ClientsBackend: []charon.OrganizationApplicationClientBackend{},
+			ClientsService: []charon.OrganizationApplicationClientService{},
+		}
+	}
+
+	t.Run("nil default roles normalized to empty", func(t *testing.T) {
+		t.Parallel()
+		org := &charon.Organization{
+			OrganizationPublic: charon.OrganizationPublic{ID: nil, Base: nil, Name: "Nil Default Roles Org", Description: ""},
+			Admins:             []charon.IdentityRef{},
+			Applications:       []charon.OrganizationApplication{makeOrgApp(true)},
+			Roles:              nil,
+			DefaultRoles:       nil,
+			AllowedProviders:   nil,
+		}
+		errE := service.TestingCreateOrganization(ctx, org)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		assert.NotNil(t, org.DefaultRoles)
+		assert.Empty(t, org.DefaultRoles)
+	})
+
+	t.Run("duplicates deduplicated and result sorted", func(t *testing.T) {
+		t.Parallel()
+		org := &charon.Organization{
+			OrganizationPublic: charon.OrganizationPublic{ID: nil, Base: nil, Name: "Duplicate Default Roles Org", Description: ""},
+			Admins:             []charon.IdentityRef{},
+			Applications:       []charon.OrganizationApplication{makeOrgApp(true)},
+			Roles:              nil,
+			DefaultRoles:       []string{"viewer", "admin", "viewer"},
+			AllowedProviders:   nil,
+		}
+		errE := service.TestingCreateOrganization(ctx, org)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		assert.Equal(t, []string{"admin", "viewer"}, org.DefaultRoles)
+	})
+
+	t.Run("unknown default role rejected on add", func(t *testing.T) {
+		t.Parallel()
+		org := &charon.Organization{
+			OrganizationPublic: charon.OrganizationPublic{ID: nil, Base: nil, Name: "Unknown Default Role Org", Description: ""},
+			Admins:             []charon.IdentityRef{},
+			Applications:       []charon.OrganizationApplication{makeOrgApp(true)},
+			Roles:              nil,
+			DefaultRoles:       []string{"nonexistent"},
+			AllowedProviders:   nil,
+		}
+		errE := service.TestingCreateOrganization(ctx, org)
+		require.Error(t, errE)
+		assert.ErrorIs(t, errE, charon.ErrOrganizationValidationFailed)
+		assert.EqualError(t, errors.Cause(errE), "unknown default roles")
+	})
+
+	t.Run("default role from inactive app rejected on add", func(t *testing.T) {
+		t.Parallel()
+		org := &charon.Organization{
+			OrganizationPublic: charon.OrganizationPublic{ID: nil, Base: nil, Name: "Inactive App Default Role Org", Description: ""},
+			Admins:             []charon.IdentityRef{},
+			Applications:       []charon.OrganizationApplication{makeOrgApp(false)},
+			Roles:              nil,
+			DefaultRoles:       []string{"admin"},
+			AllowedProviders:   nil,
+		}
+		errE := service.TestingCreateOrganization(ctx, org)
+		require.Error(t, errE)
+		assert.ErrorIs(t, errE, charon.ErrOrganizationValidationFailed)
+		assert.EqualError(t, errors.Cause(errE), "unknown default roles")
+	})
+
+	t.Run("existing default role tolerated when app deactivated", func(t *testing.T) {
+		t.Parallel()
+		org := &charon.Organization{
+			OrganizationPublic: charon.OrganizationPublic{ID: nil, Base: nil, Name: "Escape Hatch Default Roles Org", Description: ""},
+			Admins:             []charon.IdentityRef{},
+			Applications:       []charon.OrganizationApplication{makeOrgApp(true)},
+			Roles:              nil,
+			DefaultRoles:       []string{"admin"},
+			AllowedProviders:   nil,
+		}
+		errE := service.TestingCreateOrganization(ctx, org)
+		require.NoError(t, errE, "% -+#.1v", errE)
+
+		// Deactivate the app while keeping the default role. The role is no longer valid
+		// (not in any active app), but it is in existing.DefaultRoles, so it is tolerated.
+		org.Applications[0].Active = false
+		errE = service.TestingUpdateOrganization(ctx, org)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		assert.Equal(t, []string{"admin"}, org.DefaultRoles)
 	})
 }
 
@@ -1496,6 +1686,7 @@ func TestOrganizationValidateAllowedProviders(t *testing.T) {
 			Admins:             []charon.IdentityRef{},
 			Applications:       []charon.OrganizationApplication{},
 			Roles:              nil,
+			DefaultRoles:       nil,
 			AllowedProviders:   nil,
 		}
 		errE := service.TestingCreateOrganization(ctx, org)
@@ -1511,6 +1702,7 @@ func TestOrganizationValidateAllowedProviders(t *testing.T) {
 			Admins:             []charon.IdentityRef{},
 			Applications:       []charon.OrganizationApplication{},
 			Roles:              nil,
+			DefaultRoles:       nil,
 			AllowedProviders:   []charon.Provider{},
 		}
 		errE := service.TestingCreateOrganization(ctx, org)
@@ -1525,6 +1717,7 @@ func TestOrganizationValidateAllowedProviders(t *testing.T) {
 			Admins:             []charon.IdentityRef{},
 			Applications:       []charon.OrganizationApplication{},
 			Roles:              nil,
+			DefaultRoles:       nil,
 			AllowedProviders:   []charon.Provider{charon.ProviderUsername, charon.ProviderEmail, charon.ProviderPassword},
 		}
 		errE := service.TestingCreateOrganization(ctx, org)
@@ -1540,6 +1733,7 @@ func TestOrganizationValidateAllowedProviders(t *testing.T) {
 			Admins:             []charon.IdentityRef{},
 			Applications:       []charon.OrganizationApplication{},
 			Roles:              nil,
+			DefaultRoles:       nil,
 			AllowedProviders:   []charon.Provider{charon.ProviderUsername, charon.ProviderEmail, charon.ProviderPassword, charon.ProviderPasskey},
 		}
 		errE := service.TestingCreateOrganization(ctx, org)
@@ -1554,6 +1748,7 @@ func TestOrganizationValidateAllowedProviders(t *testing.T) {
 			Admins:             []charon.IdentityRef{},
 			Applications:       []charon.OrganizationApplication{},
 			Roles:              nil,
+			DefaultRoles:       nil,
 			AllowedProviders:   []charon.Provider{charon.ProviderUsername, charon.ProviderEmail, charon.ProviderPassword, "oidcTesting"},
 		}
 		errE := service.TestingCreateOrganization(ctx, org)
@@ -1569,6 +1764,7 @@ func TestOrganizationValidateAllowedProviders(t *testing.T) {
 			Applications:       []charon.OrganizationApplication{},
 			Roles:              nil,
 			// Missing ProviderUsername.
+			DefaultRoles:     nil,
 			AllowedProviders: []charon.Provider{charon.ProviderEmail, charon.ProviderPassword},
 		}
 		errE := service.TestingCreateOrganization(ctx, org)
@@ -1584,6 +1780,7 @@ func TestOrganizationValidateAllowedProviders(t *testing.T) {
 			Admins:             []charon.IdentityRef{},
 			Applications:       []charon.OrganizationApplication{},
 			Roles:              nil,
+			DefaultRoles:       nil,
 			AllowedProviders:   []charon.Provider{charon.ProviderUsername, charon.ProviderEmail, charon.ProviderPassword, "doesNotExist"},
 		}
 		errE := service.TestingCreateOrganization(ctx, org)
@@ -1601,6 +1798,7 @@ func TestOrganizationValidateAllowedProviders(t *testing.T) {
 			Admins:             []charon.IdentityRef{},
 			Applications:       []charon.OrganizationApplication{},
 			Roles:              nil,
+			DefaultRoles:       nil,
 			AllowedProviders:   []charon.Provider{charon.ProviderUsername, charon.ProviderEmail, charon.ProviderPassword, charon.ProviderCode},
 		}
 		errE := service.TestingCreateOrganization(ctx, org)
@@ -1617,6 +1815,7 @@ func TestOrganizationValidateAllowedProviders(t *testing.T) {
 			Applications:       []charon.OrganizationApplication{},
 			Roles:              nil,
 			// Out of order with duplicates.
+			DefaultRoles:     nil,
 			AllowedProviders: []charon.Provider{charon.ProviderPassword, charon.ProviderUsername, charon.ProviderEmail, charon.ProviderPassword, charon.ProviderUsername},
 		}
 		errE := service.TestingCreateOrganization(ctx, org)
@@ -1728,4 +1927,50 @@ func TestRolesInOrganizationIdentityAndTokens(t *testing.T) {
 			validateOrganizationIdentity(t, ts, service, reauthAccessToken, organizationID, identityID, []string{})
 		})
 	}
+}
+
+// TestOrganizationDefaultRolesOnJoin verifies that the organization's default roles are assigned to
+// the user when they join the organization (when they first sign in into one of its applications),
+// that the assigned roles are exposed as role.<key> scopes of the issued tokens, and that changing
+// the default roles afterwards does not change roles of users who have already joined.
+func TestOrganizationDefaultRolesOnJoin(t *testing.T) {
+	t.Parallel()
+
+	role := "viewer"
+
+	ts, service, _, _, _ := startTestServer(t) //nolint:dogsled
+
+	username := identifier.New().String()
+	flowID, nonce, state, pkceVerifier, config, verifier := createAuthFlow(t, ts, service)
+	accessToken, _ := signinUser(t, ts, service, username, username, charon.CompletedSignup, flowID, nonce, state, pkceVerifier, config, verifier)
+
+	days30 := 30 * 24 * time.Hour
+	applicationTemplate := createApplicationTemplate(t, ts, service, accessToken, charon.AccessTokenHMAC, time.Hour, time.Hour, &days30, []charon.Role{{Key: role, Description: ""}})
+	organization := createOrganization(t, ts, service, accessToken, applicationTemplate)
+
+	clientID := organization.Applications[0].ClientsBackend[0].ID.String()
+	organizationID := organization.ID.String()
+
+	organization.DefaultRoles = []string{role}
+	organization = updateOrganization(t, ts, service, accessToken, organization)
+	assert.Equal(t, []string{role}, organization.DefaultRoles)
+	verifyLatestActivity(t, ts, service, accessToken, charon.ActivityOrganizationUpdate, []charon.ActivityChangeType{charon.ActivityChangeOtherData}, nil, 0, 1, 0, 0)
+
+	requestedScope := "openid profile email offline_access role.*"
+	scopeWithRole := "openid profile email offline_access role." + role
+
+	// The user has not been in the organization before, so they join it during the flow and the
+	// default role is assigned to them, which makes role.* expand to the role.<key> grant.
+	orgAccessToken, _, _, identityID, _, _ := doOIDCOrganizationFlow(t, ts, service, username, clientID, *organization.ID, time.Hour, nonce, requestedScope, scopeWithRole) //nolint:dogsled
+	validateOrganizationIdentity(t, ts, service, orgAccessToken, organizationID, identityID, []string{role})
+
+	// The default role has been materialized into the organization's roles for the joined user.
+	organization = getOrganization(t, ts, service, accessToken, organizationID)
+	assert.Equal(t, []string{role}, organization.Roles[identityID])
+
+	// Removing the default role does not remove it from the user who has already joined.
+	organization.DefaultRoles = []string{}
+	organization = updateOrganization(t, ts, service, accessToken, organization)
+	assert.Empty(t, organization.DefaultRoles)
+	validateOrganizationIdentity(t, ts, service, orgAccessToken, organizationID, identityID, []string{role})
 }

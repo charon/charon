@@ -9,14 +9,16 @@ import type {
   IdentityOrganization,
   IdentityPublic,
   Mutable,
+  Organization,
   OrganizationApplicationPublic,
   QueryValues,
   QueryValuesWithOptional,
+  Role,
   SignalCurrentUserDetails,
   SignalUnknownCredential,
 } from "@/types"
 
-import { cloneDeep, isEqual } from "lodash-es"
+import { cloneDeep, isEqual, sortBy } from "lodash-es"
 import { ref, toRaw, watchEffect } from "vue"
 import { useRoute } from "vue-router"
 
@@ -211,6 +213,54 @@ export function getOrganization(identity: Identity, id: string | undefined): Ide
   }
 
   return null
+}
+
+// computeAvailableRoles returns the roles which can be selected in the organization, sorted by key:
+// roles of its active applications together with any of the already assigned roles which are not
+// among them anymore. The latter are annotated so that the admin can tell them apart and unselect
+// them, because the backend accepts such roles only as long as they have already been stored.
+//
+// assignedRoleKeys are the currently stored role keys of the selection which is being edited, e.g.,
+// roles of one user of the organization or the organization's default roles.
+export function computeAvailableRoles(organization: Organization, assignedRoleKeys: readonly string[]): Role[] {
+  const allApps = organization.applications ?? []
+  const activeApps = allApps.filter((app) => app.active)
+
+  const activeRoles = activeApps.flatMap((app) => app.applicationTemplate.roles ?? [])
+  const activeRoleKeys = new Set(activeRoles.map((role) => role.key))
+
+  const resultMap = new Map(activeRoles.map((role) => [role.key, role]))
+
+  const orphanedRoleKeys = assignedRoleKeys.filter((key) => !activeRoleKeys.has(key))
+  if (orphanedRoleKeys.length > 0) {
+    const allRoles = allApps.flatMap((app) => app.applicationTemplate.roles ?? [])
+    const allRolesMap = new Map(allRoles.map((role) => [role.key, role]))
+
+    orphanedRoleKeys.forEach((key) => {
+      const roleFromInactive = allRolesMap.get(key)
+      if (roleFromInactive) {
+        if (roleFromInactive.description) {
+          resultMap.set(key, {
+            key: roleFromInactive.key,
+            description: `${roleFromInactive.description} (inactive app)`,
+          })
+        } else {
+          resultMap.set(key, {
+            key: roleFromInactive.key,
+            description: `(inactive app)`,
+          })
+        }
+      } else {
+        resultMap.set(key, {
+          key,
+          // If app and with it role was deleted, we do not have a description for it.
+          description: `(removed app)`,
+        })
+      }
+    })
+  }
+
+  return sortBy(Array.from(resultMap.values()), "key")
 }
 
 export function getFormattedTimestamp(timestamp: string): string {

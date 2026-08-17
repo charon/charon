@@ -35,7 +35,7 @@ import IdentityOrganization from "@/partials/IdentityOrganization.vue"
 import NavBar from "@/partials/NavBar.vue"
 import WithOrganizationIdentityDocument from "@/partials/WithOrganizationIdentityDocument.vue"
 import { useProgress } from "@/progress"
-import { clone, equals, getIdentityOrganization, getOrganization } from "@/utils"
+import { clone, computeAvailableRoles, equals, getIdentityOrganization, getOrganization } from "@/utils"
 
 const props = defineProps<{
   id: string
@@ -101,6 +101,19 @@ watch(providersMode, (mode) => {
   }
 })
 
+const defaultRolesUnexpectedError = ref("")
+const defaultRolesUpdated = ref(false)
+const selectedDefaultRoles = ref<string[]>([])
+// Roles which can be made default are those which can be assigned to a user of the organization.
+// We compute them from the stored organization and not from the applications form above so that
+// the list matches what the backend accepts until the applications are updated.
+const availableDefaultRoles = computed(() => {
+  if (organization.value === null) {
+    return []
+  }
+  return computeAvailableRoles(organization.value, organization.value.defaultRoles || [])
+})
+
 const allIdentities = ref<AllIdentity[]>([])
 const availableIdentities = computed(() => {
   const identities: AllIdentity[] = []
@@ -153,6 +166,8 @@ function resetOnInteraction() {
   organizationIdentitiesUpdated.value = false
   providersUnexpectedError.value = ""
   providersUpdated.value = false
+  defaultRolesUnexpectedError.value = ""
+  defaultRolesUpdated.value = false
   // dataLoading and dataLoadingError are not listed here on
   // purpose because they are used only on mount.
 }
@@ -163,7 +178,9 @@ function initWatchInteraction() {
     return
   }
 
-  const stop = watch([name, description, applications, admins, identitiesForOrganization, providersMode, selectedProviders], resetOnInteraction, { deep: true })
+  const stop = watch([name, description, applications, admins, identitiesForOrganization, providersMode, selectedProviders, selectedDefaultRoles], resetOnInteraction, {
+    deep: true,
+  })
   if (watchInteractionStop !== null) {
     throw new Error("watchInteractionStop already set")
   }
@@ -178,7 +195,7 @@ onBeforeUnmount(() => {
   abortController.abort()
 })
 
-async function loadData(update: "init" | "basic" | "applications" | "admins" | "identities" | "providers" | null, dataError: Ref<string> | null) {
+async function loadData(update: "init" | "basic" | "applications" | "admins" | "identities" | "providers" | "defaultRoles" | null, dataError: Ref<string> | null) {
   if (abortController.signal.aborted) {
     return
   }
@@ -225,6 +242,9 @@ async function loadData(update: "init" | "basic" | "applications" | "admins" | "
           providersMode.value = "selected"
           selectedProviders.value = clone(stored)
         }
+      }
+      if (update === "init" || update === "defaultRoles") {
+        selectedDefaultRoles.value = clone(response.doc.defaultRoles || [])
       }
     }
 
@@ -300,7 +320,12 @@ onBeforeMount(async () => {
   await loadData("init", dataLoadingError)
 })
 
-async function onSubmit(payload: Organization, update: "basic" | "applications" | "admins" | "providers", updated: Ref<boolean>, unexpectedError: Ref<string>) {
+async function onSubmit(
+  payload: Organization,
+  update: "basic" | "applications" | "admins" | "providers" | "defaultRoles",
+  updated: Ref<boolean>,
+  unexpectedError: Ref<string>,
+) {
   if (abortController.signal.aborted) {
     return
   }
@@ -369,6 +394,7 @@ async function onBasicSubmit() {
     admins: organization.value!.admins,
     applications: organization.value!.applications,
     roles: organization.value!.roles,
+    defaultRoles: organization.value!.defaultRoles,
     allowedProviders: organization.value!.allowedProviders,
   }
   await onSubmit(payload, "basic", basicUpdated, basicUnexpectedError)
@@ -403,6 +429,7 @@ async function onApplicationsSubmit() {
     admins: organization.value!.admins,
     applications: applications.value,
     roles: organization.value!.roles,
+    defaultRoles: organization.value!.defaultRoles,
     allowedProviders: organization.value!.allowedProviders,
   }
   await onSubmit(payload, "applications", applicationsUpdated, applicationsUnexpectedError)
@@ -524,6 +551,7 @@ async function onAdminsSubmit() {
     admins: admins.value,
     applications: organization.value!.applications,
     roles: organization.value!.roles,
+    defaultRoles: organization.value!.defaultRoles,
     allowedProviders: organization.value!.allowedProviders,
   }
   await onSubmit(payload, "admins", adminsUpdated, adminsUnexpectedError)
@@ -717,6 +745,7 @@ async function onProvidersSubmit() {
     admins: organization.value!.admins,
     applications: organization.value!.applications,
     roles: organization.value!.roles,
+    defaultRoles: organization.value!.defaultRoles,
     allowedProviders: providersPayload(),
   }
   await onSubmit(payload, "providers", providersUpdated, providersUnexpectedError)
@@ -739,6 +768,43 @@ function canProvidersSubmit(): boolean {
   // Anything changed?
   const stored = [...(organization.value!.allowedProviders || [])].sort()
   if (!equals(stored, providersPayload())) {
+    return true
+  }
+
+  return false
+}
+
+// Sorted so a toggle-off-then-on (which Vue's v-model appends to the end of the array) does not
+// register as a change against the canonical server form.
+function defaultRolesPayload(): string[] {
+  return [...selectedDefaultRoles.value].sort()
+}
+
+async function onDefaultRolesSubmit() {
+  const payload: Organization = {
+    // We update only default roles.
+    id: props.id,
+    name: organization.value!.name,
+    description: organization.value!.description,
+    admins: organization.value!.admins,
+    applications: organization.value!.applications,
+    roles: organization.value!.roles,
+    defaultRoles: defaultRolesPayload(),
+    allowedProviders: organization.value!.allowedProviders,
+  }
+  await onSubmit(payload, "defaultRoles", defaultRolesUpdated, defaultRolesUnexpectedError)
+
+  if (defaultRolesUnexpectedError.value) {
+    selectedDefaultRoles.value = clone(organization.value!.defaultRoles || [])
+  }
+}
+
+function canDefaultRolesSubmit(): boolean {
+  // Submission is on purpose not disabled on defaultRolesUnexpectedError so that user can retry.
+
+  // Anything changed?
+  const stored = [...(organization.value!.defaultRoles || [])].sort()
+  if (!equals(stored, defaultRolesPayload())) {
     return true
   }
 
@@ -1077,6 +1143,49 @@ function canProvidersSubmit(): boolean {
                   {{ t("common.buttons.update") }}
                 </Button>
               </div>
+            </form>
+          </template>
+          <template v-if="metadata.can_update || defaultRolesUnexpectedError || defaultRolesUpdated">
+            <h2 class="text-xl font-bold">{{ t("views.OrganizationGet.defaultRoles") }}</h2>
+            <div v-if="defaultRolesUnexpectedError" class="text-error-600">{{ t("common.errors.unexpected") }}</div>
+            <div v-else-if="defaultRolesUpdated" id="organizationget-text-defaultrolesupdated" class="text-success-600">{{
+              t("views.OrganizationGet.defaultRolesUpdated")
+            }}</div>
+            <!--
+              We set novalidate because we do not want UA to show hints.
+              We show them ourselves when we want them.
+            -->
+            <form v-if="metadata.can_update" class="flex flex-col" novalidate @submit.prevent="onDefaultRolesSubmit">
+              <div v-if="!availableDefaultRoles.length" class="italic">{{ t("views.OrganizationGet.defaultRolesNoRoles") }}</div>
+              <template v-else>
+                <fieldset class="mb-4">
+                  <legend class="mb-1">{{ t("views.OrganizationGet.defaultRolesDescription") }}</legend>
+                  <div class="grid grid-cols-[max-content_auto] gap-x-1">
+                    <template v-for="role in availableDefaultRoles" :key="role.key">
+                      <CheckBox
+                        :id="`organizationget-checkbox-defaultrole-${role.key}`"
+                        v-model="selectedDefaultRoles"
+                        :value="role.key"
+                        :progress="progress"
+                        class="mx-2"
+                      />
+                      <div class="flex flex-col">
+                        <label :for="`organizationget-checkbox-defaultrole-${role.key}`" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'"
+                          ><code>{{ role.key }}</code></label
+                        >
+                        <label :for="`organizationget-checkbox-defaultrole-${role.key}`" :class="progress > 0 ? 'cursor-not-allowed text-gray-600' : 'cursor-pointer'">{{
+                          role.description
+                        }}</label>
+                      </div>
+                    </template>
+                  </div>
+                </fieldset>
+                <div class="flex justify-end">
+                  <Button id="organizationget-button-defaultrolesupdate" type="submit" primary :disabled="!canDefaultRolesSubmit()" :progress="progress">
+                    {{ t("common.buttons.update") }}
+                  </Button>
+                </div>
+              </template>
             </form>
           </template>
         </template>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { Metadata, Organization, OrganizationIdentityForAdmin, Role } from "@/types"
 
-import { sortBy } from "lodash-es"
 import { onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
@@ -14,6 +13,7 @@ import IdentityPublic from "@/partials/IdentityPublic.vue"
 import NavBar from "@/partials/NavBar.vue"
 import OrganizationPublic from "@/partials/OrganizationPublic.vue"
 import { useProgress } from "@/progress"
+import { computeAvailableRoles } from "@/utils"
 
 const props = defineProps<{
   id: string
@@ -72,7 +72,7 @@ async function loadOrganization() {
 
     organization.value = response.doc
     organizationMetadata.value = response.metadata
-    availableRoles.value = computeAvailableRoles(organization.value)
+    availableRoles.value = computeAvailableRoles(organization.value, organization.value.roles?.[props.identityId] ?? [])
   } finally {
     progress.value -= 1
   }
@@ -113,49 +113,6 @@ onBeforeMount(async () => {
   }
 })
 
-function computeAvailableRoles(organization: Organization): Role[] {
-  const allApps = organization.applications ?? []
-  const activeApps = allApps.filter((app) => app.active)
-
-  const activeRoles = activeApps.flatMap((app) => app.applicationTemplate.roles ?? [])
-  const activeRoleKeys = new Set(activeRoles.map((role) => role.key))
-
-  const assignedRoleKeys = organization.roles?.[props.identityId] ?? []
-
-  const resultMap = new Map(activeRoles.map((role) => [role.key, role]))
-
-  const orphanedRoleKeys = assignedRoleKeys.filter((key) => !activeRoleKeys.has(key))
-  if (orphanedRoleKeys.length > 0) {
-    const allRoles = allApps.flatMap((app) => app.applicationTemplate.roles ?? [])
-    const allRolesMap = new Map(allRoles.map((role) => [role.key, role]))
-
-    orphanedRoleKeys.forEach((key) => {
-      const roleFromInactive = allRolesMap.get(key)
-      if (roleFromInactive) {
-        if (roleFromInactive.description) {
-          resultMap.set(key, {
-            key: roleFromInactive.key,
-            description: `${roleFromInactive.description} (inactive app)`,
-          })
-        } else {
-          resultMap.set(key, {
-            key: roleFromInactive.key,
-            description: `(inactive app)`,
-          })
-        }
-      } else {
-        resultMap.set(key, {
-          key,
-          // If app and with it role was deleted, we do not have a description for it.
-          description: `(removed app)`,
-        })
-      }
-    })
-  }
-
-  return sortBy(Array.from(resultMap.values()), "key")
-}
-
 function canSubmit(): boolean {
   const currentRoles = organization.value!.roles?.[props.identityId] || []
 
@@ -183,12 +140,15 @@ async function onSubmit() {
         delete newRoles[props.identityId]
       }
       const payload: Organization = {
+        // We update only roles.
         id: props.id,
         name: organization.value!.name,
         description: organization.value!.description,
         admins: organization.value!.admins,
         applications: organization.value!.applications,
         roles: newRoles,
+        defaultRoles: organization.value!.defaultRoles,
+        allowedProviders: organization.value!.allowedProviders,
       }
       const url = router.apiResolve({
         name: "OrganizationUpdate",
