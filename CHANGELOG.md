@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Go 1.25 or newer and Node 24 or newer is required.
 
+### Fixed
+
+- A user blocked in an organization cannot add their identity to it anymore by updating or creating
+  an identity. Previously this was prevented only when they joined by signing in.
+
 ## [0.6.0] - 2025-08-30
 
 ### Added

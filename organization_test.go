@@ -2173,3 +2173,88 @@ func TestOrganizationDefaultRolesOnIdentityAdded(t *testing.T) {
 		}, logged.Actor)
 	})
 }
+
+// TestIdentityJoinOrganizationBlocked verifies that a user who has been blocked in an organization
+// cannot add their identity to it, neither by updating an existing identity nor by creating one
+// already added to the organization. Anybody can add their identity to any organization, so this is
+// the same restriction as the one applied when a user joins by signing in.
+func TestIdentityJoinOrganizationBlocked(t *testing.T) {
+	t.Parallel()
+
+	_, service, _, _, _ := startTestServer(t) //nolint:dogsled
+
+	ctx := service.TestingWithAccountID(t.Context(), identifier.New())
+	ctx = service.TestingWithSessionID(ctx)
+	ctx = service.TestingWithRequestID(ctx)
+	adminID := createTestIdentity(t, service, ctx)
+	ctx = service.TestingWithIdentityID(ctx, adminID)
+
+	organization := &charon.Organization{
+		OrganizationPublic: charon.OrganizationPublic{ID: nil, Base: nil, Name: "Blocked Join Org", Description: ""},
+		Admins:             []charon.IdentityRef{},
+		Applications:       []charon.OrganizationApplication{},
+		Roles:              nil,
+		DefaultRoles:       nil,
+		AllowedProviders:   nil,
+	}
+	errE := service.TestingCreateOrganization(ctx, organization)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	membership := func() charon.IdentityOrganization {
+		return charon.IdentityOrganization{
+			ID:           nil,
+			Base:         nil,
+			Active:       true,
+			Organization: organization.Ref(),
+			Applications: []charon.OrganizationApplicationApplicationRef{},
+		}
+	}
+
+	// A user which is not an admin of the organization joins it.
+	userCtx := service.TestingWithAccountID(t.Context(), identifier.New())
+	userCtx = service.TestingWithSessionID(userCtx)
+	userCtx = service.TestingWithRequestID(userCtx)
+	userIdentityID := createTestIdentity(t, service, userCtx)
+	userCtx = service.TestingWithIdentityID(userCtx, userIdentityID)
+
+	identity, _, errE := service.TestingGetIdentity(userCtx, userIdentityID)
+	require.NoError(t, errE, "% -+#.1v", errE)
+	identity.Organizations = append(identity.Organizations, membership())
+	errE = service.TestingUpdateIdentity(userCtx, identity)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	// The organization admin blocks the user and all their accounts.
+	errE = service.TestingBlockAccounts(ctx, identity, *organization.ID, *identity.Organizations[0].ID, "spam", "You have been blocked.")
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	// The user can still update their identity, including leaving the organization.
+	identity.Organizations = nil
+	errE = service.TestingUpdateIdentity(userCtx, identity)
+	require.NoError(t, errE, "% -+#.1v", errE)
+
+	// But they cannot add themselves back.
+	identity.Organizations = []charon.IdentityOrganization{membership()}
+	errE = service.TestingUpdateIdentity(userCtx, identity)
+	assert.ErrorIs(t, errE, charon.ErrIdentityBlocked)
+	assert.EqualError(t, errE, "identity blocked")
+
+	// Nor can they join with a newly created identity.
+	newIdentity := &charon.Identity{
+		IdentityPublic: charon.IdentityPublic{
+			ID:         nil,
+			Username:   identifier.New().String(),
+			Email:      "",
+			GivenName:  "",
+			FullName:   "",
+			PictureURL: "",
+		},
+		Base:          nil,
+		Description:   "",
+		Users:         nil,
+		Admins:        nil,
+		Organizations: []charon.IdentityOrganization{membership()},
+	}
+	errE = service.TestingCreateIdentity(userCtx, newIdentity)
+	assert.ErrorIs(t, errE, charon.ErrIdentityBlocked)
+	assert.EqualError(t, errE, "identity blocked")
+}

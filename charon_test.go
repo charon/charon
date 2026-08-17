@@ -49,6 +49,12 @@ func (s *Service) TestingUpdateOrganization(ctx context.Context, organization *O
 	return s.updateOrganization(ctx, organization)
 }
 
+func (s *Service) TestingBlockAccounts(
+	ctx context.Context, identity *Identity, organizationID, orgIdentityID identifier.Identifier, organizationNote, userNote string,
+) errors.E {
+	return s.blockAccounts(ctx, identity, organizationID, orgIdentityID, organizationNote, userNote)
+}
+
 func (s *Service) TestingCharonOrganizationID() identifier.Identifier {
 	return s.charonOrganization().ID
 }

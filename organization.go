@@ -1135,6 +1135,41 @@ func (s *Service) updateOrganization(ctx context.Context, organization *Organiza
 	)
 }
 
+// checkNotBlockedInJoinedOrganizations returns ErrIdentityBlocked if the identity or the current
+// account is blocked in any of the organizations which the identity is being added to by the change
+// from existing to identity. existing is the identity as it is currently stored and is nil when the
+// identity is being created, in which case all of its organizations are being joined.
+//
+// Anybody can add their identity to any organization, so this stops a user who has been blocked in an
+// organization from adding themselves back to it, mirroring what selectAndActivateIdentity does when
+// a user joins by signing in. Organizations the identity is already in are not checked so that a
+// blocked user can still update the rest of their identity.
+//
+// A membership which is being added has no organization-scoped ID which could have been blocked yet
+// (a re-added membership always gets a new one), so in practice only the block of the account can
+// match here.
+func (s *Service) checkNotBlockedInJoinedOrganizations(ctx context.Context, existing, identity *Identity) errors.E {
+	accountID := mustGetAccountID(ctx)
+
+	for _, idOrg := range identity.Organizations {
+		organizationID := idOrg.Organization.ID
+		if existing.GetOrganization(&organizationID) != nil {
+			// Not a new membership.
+			continue
+		}
+
+		isBlocked, errE := s.isIdentityOrAccountBlockedInOrganization(ctx, existing, accountID, organizationID)
+		if errE != nil {
+			return errE
+		}
+		if isBlocked {
+			return errors.WithDetails(ErrIdentityBlocked, "organization", organizationID)
+		}
+	}
+
+	return nil
+}
+
 // assignDefaultRolesForJoinedOrganizations assigns default roles of every organization which the
 // identity has been added to by the change from existing to identity. existing is nil when the
 // identity is being created, in which case all of its organizations have just been joined.

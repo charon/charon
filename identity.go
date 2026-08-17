@@ -738,6 +738,11 @@ func (s *Service) createIdentity(ctx context.Context, identity *Identity) errors
 		return errors.WrapWith(errE, ErrIdentityValidationFailed)
 	}
 
+	errE = s.checkNotBlockedInJoinedOrganizations(ctx, nil, identity)
+	if errE != nil {
+		return errE
+	}
+
 	data, errE := x.MarshalWithoutEscapeHTML(identity)
 	if errE != nil {
 		return errE
@@ -916,6 +921,11 @@ func (s *Service) updateIdentity(ctx context.Context, identity *Identity) errors
 
 		// We set here current identity ID in the context, which is used by logActivity.
 		ctx = s.withIdentityID(ctx, *identity.ID)
+	}
+
+	errE = s.checkNotBlockedInJoinedOrganizations(ctx, existingIdentity, identity)
+	if errE != nil {
+		return errE
 	}
 
 	return s.applyIdentityUpdate(ctx, existingIdentity, identity)
@@ -1403,7 +1413,7 @@ func (s *Service) IdentityListGetAPI(w http.ResponseWriter, req *http.Request, _
 }
 
 // IdentityUpdatePostAPI is the API handler for updating the identity, POST request.
-func (s *Service) IdentityUpdatePostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) { //nolint:dupl
+func (s *Service) IdentityUpdatePostAPI(w http.ResponseWriter, req *http.Request, params waf.Params) {
 	defer req.Body.Close()              //nolint:errcheck
 	defer io.Copy(io.Discard, req.Body) //nolint:errcheck
 
@@ -1436,7 +1446,7 @@ func (s *Service) IdentityUpdatePostAPI(w http.ResponseWriter, req *http.Request
 	} else if errors.Is(errE, ErrIdentityNotFound) {
 		s.NotFoundWithError(w, req, errE)
 		return
-	} else if errors.Is(errE, ErrIdentityValidationFailed) {
+	} else if errors.Is(errE, ErrIdentityValidationFailed) || errors.Is(errE, ErrIdentityBlocked) {
 		s.BadRequestWithError(w, req, errE)
 		return
 	} else if errE != nil {
@@ -1471,7 +1481,7 @@ func (s *Service) IdentityCreatePostAPI(w http.ResponseWriter, req *http.Request
 	}
 
 	errE = s.createIdentity(ctx, &identity)
-	if errors.Is(errE, ErrIdentityValidationFailed) {
+	if errors.Is(errE, ErrIdentityValidationFailed) || errors.Is(errE, ErrIdentityBlocked) {
 		s.BadRequestWithError(w, req, errE)
 		return
 	} else if errE != nil {
