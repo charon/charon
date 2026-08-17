@@ -2116,4 +2116,60 @@ func TestOrganizationDefaultRolesOnIdentityAdded(t *testing.T) {
 		require.NoError(t, errE, "% -+#.1v", errE)
 		assert.Equal(t, []string{role}, stored.Roles[orgIdentityID])
 	})
+
+	// Adding an identity to an organization requires admin access only over the identity and not over
+	// the organization, so anybody can add their identity to any organization this way.
+	t.Run("identity of a user who is not an organization admin", func(t *testing.T) {
+		t.Parallel()
+		organization := makeOrganization(t, "Not An Admin Join Org")
+
+		otherCtx := service.TestingWithAccountID(t.Context(), identifier.New())
+		otherCtx = service.TestingWithSessionID(otherCtx)
+		otherCtx = service.TestingWithRequestID(otherCtx)
+		otherIdentityID := createTestIdentity(t, service, otherCtx)
+		otherCtx = service.TestingWithIdentityID(otherCtx, otherIdentityID)
+
+		identity, _, errE := service.TestingGetIdentity(otherCtx, otherIdentityID)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		assert.False(t, organization.HasAdminAccess(identity.Ref()))
+
+		identity.Organizations = append(identity.Organizations, charon.IdentityOrganization{
+			ID:           nil,
+			Base:         nil,
+			Active:       true,
+			Organization: organization.Ref(),
+			Applications: []charon.OrganizationApplicationApplicationRef{},
+		})
+		errE = service.TestingUpdateIdentity(otherCtx, identity)
+		require.NoError(t, errE, "% -+#.1v", errE)
+
+		orgIdentityID := *identity.Organizations[0].ID
+
+		stored, errE := service.TestingGetOrganization(otherCtx, *organization.ID)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		assert.Equal(t, []string{role}, stored.Roles[orgIdentityID])
+
+		// The role assignment is logged for the organization, with the joined user as the actor
+		// (organization-scoped, so that the activity does not link their Charon identity ID with
+		// their organization-scoped identity ID).
+		activities, errE := service.TestingListActivities(otherCtx)
+		require.NoError(t, errE, "% -+#.1v", errE)
+		var logged *charon.Activity
+		for _, activity := range activities {
+			if activity.Type == charon.ActivityOrganizationUpdate && activity.IsForOrganization(organization.Ref()) {
+				logged = activity
+				break
+			}
+		}
+		require.NotNil(t, logged)
+		assert.Equal(t, []charon.ActivityChangeType{charon.ActivityChangeRolesAdded}, logged.Changes)
+		assert.Equal(t, []charon.OrganizationIdentityRef{{
+			Organization: organization.Ref(),
+			Identity:     charon.IdentityRef{ID: orgIdentityID},
+		}}, logged.Identities)
+		assert.Equal(t, &charon.OrganizationIdentityRef{
+			Organization: organization.Ref(),
+			Identity:     charon.IdentityRef{ID: orgIdentityID},
+		}, logged.Actor)
+	})
 }
