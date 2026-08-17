@@ -69,7 +69,10 @@
       "blocked": "blocked",
       "shared": "shared",
       "individual": "individual",
-      "confirmed": "confirmed"
+      "confirmed": "confirmed",
+      "roleFromInactiveApplication": "(inactive app)",
+      "roleFromRemovedApplication": "(removed app)",
+      "roleDescriptionFromInactiveApplication": "{description} @:common.labels.roleFromInactiveApplication"
     },
     "data": {
       "dataLoading": "Loading...",

@@ -81,6 +81,9 @@ declare module "vue-i18n" {
         shared: string
         individual: string
         confirmed: string
+        roleFromInactiveApplication: string
+        roleFromRemovedApplication: string
+        roleDescriptionFromInactiveApplication: string
       }
       data: {
         dataLoading: string

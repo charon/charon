@@ -111,7 +111,7 @@ const availableDefaultRoles = computed(() => {
   if (organization.value === null) {
     return []
   }
-  return computeAvailableRoles(organization.value, organization.value.defaultRoles || [])
+  return computeAvailableRoles(organization.value, organization.value.defaultRoles || [], t)
 })
 
 const allIdentities = ref<AllIdentity[]>([])

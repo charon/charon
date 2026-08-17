@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { Metadata, Organization, OrganizationIdentityForAdmin, Role } from "@/types"
+import type { Metadata, Organization, OrganizationIdentityForAdmin } from "@/types"
 
-import { onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
+import { computed, onBeforeMount, onBeforeUnmount, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRouter } from "vue-router"
 
@@ -32,7 +32,12 @@ const identity = ref<OrganizationIdentityForAdmin | null>(null)
 const metadata = ref<Metadata>({})
 const organization = ref<Organization | null>(null)
 const organizationMetadata = ref<Metadata>({})
-const availableRoles = ref<Role[]>([])
+const availableRoles = computed(() => {
+  if (organization.value === null) {
+    return []
+  }
+  return computeAvailableRoles(organization.value, organization.value.roles?.[props.identityId] ?? [], t)
+})
 const selectedRoleKeys = ref<string[]>([])
 const unexpectedError = ref("")
 const success = ref(false)
@@ -72,7 +77,6 @@ async function loadOrganization() {
 
     organization.value = response.doc
     organizationMetadata.value = response.metadata
-    availableRoles.value = computeAvailableRoles(organization.value, organization.value.roles?.[props.identityId] ?? [])
   } finally {
     progress.value -= 1
   }

@@ -69,7 +69,10 @@
       "blocked": "blokirana",
       "shared": "skupna",
       "individual": "individualna",
-      "confirmed": "potrjen"
+      "confirmed": "potrjen",
+      "roleFromInactiveApplication": "(neaktivna aplikacija)",
+      "roleFromRemovedApplication": "(odstranjena aplikacija)",
+      "roleDescriptionFromInactiveApplication": "{description} @:common.labels.roleFromInactiveApplication"
     },
     "data": {
       "dataLoading": "Nalaganje...",

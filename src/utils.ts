@@ -1,4 +1,5 @@
 import type { DeepReadonly, Ref } from "vue"
+import type { ComposerTranslation } from "vue-i18n"
 
 import type {
   AuthFlowResponsePassword,
@@ -222,7 +223,7 @@ export function getOrganization(identity: Identity, id: string | undefined): Ide
 //
 // assignedRoleKeys are the currently stored role keys of the selection which is being edited, e.g.,
 // roles of one user of the organization or the organization's default roles.
-export function computeAvailableRoles(organization: Organization, assignedRoleKeys: readonly string[]): Role[] {
+export function computeAvailableRoles(organization: Organization, assignedRoleKeys: readonly string[], t: ComposerTranslation): Role[] {
   const allApps = organization.applications ?? []
   const activeApps = allApps.filter((app) => app.active)
 
@@ -239,22 +240,17 @@ export function computeAvailableRoles(organization: Organization, assignedRoleKe
     orphanedRoleKeys.forEach((key) => {
       const roleFromInactive = allRolesMap.get(key)
       if (roleFromInactive) {
-        if (roleFromInactive.description) {
-          resultMap.set(key, {
-            key: roleFromInactive.key,
-            description: `${roleFromInactive.description} (inactive app)`,
-          })
-        } else {
-          resultMap.set(key, {
-            key: roleFromInactive.key,
-            description: `(inactive app)`,
-          })
-        }
+        resultMap.set(key, {
+          key: roleFromInactive.key,
+          description: roleFromInactive.description
+            ? t("common.labels.roleDescriptionFromInactiveApplication", { description: roleFromInactive.description })
+            : t("common.labels.roleFromInactiveApplication"),
+        })
       } else {
         resultMap.set(key, {
           key,
           // If app and with it role was deleted, we do not have a description for it.
-          description: `(removed app)`,
+          description: t("common.labels.roleFromRemovedApplication"),
         })
       }
     })
