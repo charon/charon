@@ -9,8 +9,6 @@ authenticators (Facebook, Google, etc.) in one place and managing different (and
 exposed to apps. Apps do not have to worry about user management nor multi-tenancy. And admins of organizations
 (communities, tenants, domains, realms) using those apps can manage all users in one place, with tools to address any abuse.
 
-**WARNING: This project is still in development. Do not use in production.**
-
 ## Features
 
 - Supports multiple authentication mechanisms: username/e-mail & password, one-time codes,
